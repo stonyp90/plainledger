@@ -32,6 +32,7 @@ import ScenarioComparison from '../components/strategic/ScenarioComparison';
 import BurnRateChart from '../components/strategic/BurnRateChart';
 import CashForecastChart from '../components/strategic/CashForecastChart';
 import MultiScenarioChart from '../components/strategic/MultiScenarioChart';
+import OpExCapExChart from '../components/strategic/OpExCapExChart';
 import InitiativeEditor from '../components/strategic/InitiativeEditor';
 import AssumptionPanel from '../components/strategic/AssumptionPanel';
 import AISuggestions from '../components/strategic/AISuggestions';
@@ -719,6 +720,9 @@ export default function StrategicPlanning() {
           />
         </div>
       )}
+
+      {/* OpEx/CapEx Projection Chart */}
+      <OpExCapExChart />
 
       {/* Assumptions Panel */}
       <div className={`card transition-all ${

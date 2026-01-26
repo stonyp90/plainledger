@@ -1,7 +1,9 @@
 /**
- * AI Service - Enterprise Grade
+ * AI Service - Enterprise Grade Multi-Provider
  * 
  * Handles LLM integration for James AI strategic advisor with:
+ * - Support for all major AI providers (OpenAI, Anthropic, Google, Mistral, Cohere, Azure, Ollama)
+ * - Automatic fallback between providers
  * - Retry logic with exponential backoff
  * - Rate limiting and token tracking
  * - Comprehensive error handling
@@ -13,6 +15,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+export type AIProvider = 'openai' | 'anthropic' | 'google' | 'mistral' | 'cohere' | 'azure' | 'ollama';
+
+export interface AIProviderConfig {
+  provider: AIProvider;
+  apiKey?: string;
+  model?: string;
+  endpoint?: string;
+  enabled: boolean;
+  priority: number;
+}
+
 export interface AIGenerationOptions {
   stream?: boolean;
   tenantId?: string;
@@ -20,6 +33,8 @@ export interface AIGenerationOptions {
   maxTokens?: number;
   timeout?: number;
   retries?: number;
+  preferredProvider?: AIProvider;
+  forceProvider?: boolean;
 }
 
 export interface AIResponse {
@@ -32,6 +47,8 @@ export interface AIResponse {
     total: number;
   };
   latency?: number;
+  provider?: AIProvider;
+  model?: string;
 }
 
 export interface RateLimitInfo {
@@ -49,9 +66,7 @@ interface CircuitBreakerState {
 @Injectable()
 export class AIService {
   private readonly logger = new Logger(AIService.name);
-  private readonly openaiApiKey: string | undefined;
-  private readonly anthropicApiKey: string | undefined;
-  private readonly useOpenAI: boolean;
+  private readonly providers: Map<AIProvider, AIProviderConfig> = new Map();
   private readonly maxRetries: number;
   private readonly requestTimeout: number;
   private readonly maxTokensPerRequest: number;
@@ -71,13 +86,134 @@ export class AIService {
   // Cache TTL: 5 minutes
   private readonly CACHE_TTL_MS = 5 * 60 * 1000;
 
+  // Default models per provider
+  private readonly DEFAULT_MODELS: Record<AIProvider, string> = {
+    openai: 'gpt-4-turbo-preview',
+    anthropic: 'claude-3-opus-20240229',
+    google: 'gemini-1.5-pro',
+    mistral: 'mistral-large-latest',
+    cohere: 'command-r-plus',
+    azure: 'gpt-4',
+    ollama: 'llama2',
+  };
+
   constructor(private readonly configService: ConfigService) {
-    this.openaiApiKey = this.configService.get<string>('OPENAI_API_KEY');
-    this.anthropicApiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
-    this.useOpenAI = !!this.openaiApiKey;
     this.maxRetries = parseInt(this.configService.get<string>('AI_MAX_RETRIES') || '3', 10);
     this.requestTimeout = parseInt(this.configService.get<string>('AI_REQUEST_TIMEOUT') || '30000', 10);
     this.maxTokensPerRequest = parseInt(this.configService.get<string>('AI_MAX_TOKENS') || '4000', 10);
+    
+    // Initialize all providers
+    this.initializeProviders();
+    
+    // Log available providers
+    const availableProviders = Array.from(this.providers.entries())
+      .filter(([_, config]) => config.enabled)
+      .map(([name]) => name);
+    
+    if (availableProviders.length > 0) {
+      this.logger.log(`AI providers initialized: ${availableProviders.join(', ')}`);
+    } else {
+      this.logger.warn('No AI providers configured. Using simulated responses.');
+    }
+  }
+
+  /**
+   * Initialize all supported AI providers from environment
+   */
+  private initializeProviders(): void {
+    // OpenAI
+    const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
+    this.providers.set('openai', {
+      provider: 'openai',
+      apiKey: openaiKey,
+      model: this.configService.get<string>('OPENAI_MODEL') || this.DEFAULT_MODELS.openai,
+      enabled: !!openaiKey,
+      priority: 1,
+    });
+
+    // Anthropic
+    const anthropicKey = this.configService.get<string>('ANTHROPIC_API_KEY');
+    this.providers.set('anthropic', {
+      provider: 'anthropic',
+      apiKey: anthropicKey,
+      model: this.configService.get<string>('ANTHROPIC_MODEL') || this.DEFAULT_MODELS.anthropic,
+      enabled: !!anthropicKey,
+      priority: 2,
+    });
+
+    // Google Gemini
+    const googleKey = this.configService.get<string>('GOOGLE_AI_API_KEY');
+    this.providers.set('google', {
+      provider: 'google',
+      apiKey: googleKey,
+      model: this.configService.get<string>('GOOGLE_AI_MODEL') || this.DEFAULT_MODELS.google,
+      enabled: !!googleKey,
+      priority: 3,
+    });
+
+    // Mistral
+    const mistralKey = this.configService.get<string>('MISTRAL_API_KEY');
+    this.providers.set('mistral', {
+      provider: 'mistral',
+      apiKey: mistralKey,
+      model: this.configService.get<string>('MISTRAL_MODEL') || this.DEFAULT_MODELS.mistral,
+      enabled: !!mistralKey,
+      priority: 4,
+    });
+
+    // Cohere
+    const cohereKey = this.configService.get<string>('COHERE_API_KEY');
+    this.providers.set('cohere', {
+      provider: 'cohere',
+      apiKey: cohereKey,
+      model: this.configService.get<string>('COHERE_MODEL') || this.DEFAULT_MODELS.cohere,
+      enabled: !!cohereKey,
+      priority: 5,
+    });
+
+    // Azure OpenAI
+    const azureKey = this.configService.get<string>('AZURE_OPENAI_API_KEY');
+    const azureEndpoint = this.configService.get<string>('AZURE_OPENAI_ENDPOINT');
+    this.providers.set('azure', {
+      provider: 'azure',
+      apiKey: azureKey,
+      endpoint: azureEndpoint,
+      model: this.configService.get<string>('AZURE_OPENAI_DEPLOYMENT') || this.DEFAULT_MODELS.azure,
+      enabled: !!(azureKey && azureEndpoint),
+      priority: 6,
+    });
+
+    // Ollama (local)
+    const ollamaEndpoint = this.configService.get<string>('OLLAMA_ENDPOINT');
+    this.providers.set('ollama', {
+      provider: 'ollama',
+      endpoint: ollamaEndpoint || 'http://localhost:11434',
+      model: this.configService.get<string>('OLLAMA_MODEL') || this.DEFAULT_MODELS.ollama,
+      enabled: !!this.configService.get<string>('OLLAMA_ENABLED'),
+      priority: 7,
+    });
+  }
+
+  /**
+   * Get list of available providers
+   */
+  getAvailableProviders(): AIProviderConfig[] {
+    return Array.from(this.providers.values())
+      .filter(p => p.enabled)
+      .sort((a, b) => a.priority - b.priority);
+  }
+
+  /**
+   * Get the best available provider
+   */
+  private getBestProvider(preferred?: AIProvider): AIProviderConfig | null {
+    if (preferred) {
+      const pref = this.providers.get(preferred);
+      if (pref?.enabled) return pref;
+    }
+    
+    const available = this.getAvailableProviders();
+    return available.length > 0 ? available[0] : null;
   }
 
   /**
@@ -111,57 +247,89 @@ export class AIService {
         return cached.response;
       }
 
-      // Generate response with retry logic
+      // Get providers to try (preferred first, then by priority)
+      const providersToTry = this.getProvidersToTry(options.preferredProvider, options.forceProvider);
+      
+      if (providersToTry.length === 0) {
+        this.logger.warn('No AI providers available, using simulated response');
+        return this.generateSimulatedResponse(prompt);
+      }
+
+      // Generate response with retry logic and provider fallback
       let lastError: Error | null = null;
       const maxAttempts = options.retries || this.maxRetries;
 
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        try {
-          let response: AIResponse;
+      for (const provider of providersToTry) {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          try {
+            let response: AIResponse;
 
-          if (this.useOpenAI && this.openaiApiKey) {
-            response = await this.generateWithOpenAI(prompt, options);
-          } else if (this.anthropicApiKey) {
-            response = await this.generateWithAnthropic(prompt, options);
-          } else {
-            this.logger.warn('No AI API keys configured, using simulated response');
-            return this.generateSimulatedResponse(prompt);
-          }
+            switch (provider.provider) {
+              case 'openai':
+                response = await this.generateWithOpenAI(prompt, options, provider);
+                break;
+              case 'anthropic':
+                response = await this.generateWithAnthropic(prompt, options, provider);
+                break;
+              case 'google':
+                response = await this.generateWithGoogle(prompt, options, provider);
+                break;
+              case 'mistral':
+                response = await this.generateWithMistral(prompt, options, provider);
+                break;
+              case 'cohere':
+                response = await this.generateWithCohere(prompt, options, provider);
+                break;
+              case 'azure':
+                response = await this.generateWithAzure(prompt, options, provider);
+                break;
+              case 'ollama':
+                response = await this.generateWithOllama(prompt, options, provider);
+                break;
+              default:
+                throw new Error(`Unsupported provider: ${provider.provider}`);
+            }
 
-          // Track token usage
-          if (response.tokensUsed) {
-            this.trackTokenUsage(tenantId, response.tokensUsed.total);
-          }
+            // Track token usage
+            if (response.tokensUsed) {
+              this.trackTokenUsage(tenantId, response.tokensUsed.total);
+            }
 
-          // Record success
-          this.recordSuccess('ai-service');
+            // Record success
+            this.recordSuccess(`ai-${provider.provider}`);
 
-          // Cache response
-          response.latency = Date.now() - startTime;
-          this.requestCache.set(cacheKey, {
-            response,
-            expiresAt: Date.now() + this.CACHE_TTL_MS,
-          });
+            // Cache response
+            response.latency = Date.now() - startTime;
+            response.provider = provider.provider;
+            response.model = provider.model;
+            this.requestCache.set(cacheKey, {
+              response,
+              expiresAt: Date.now() + this.CACHE_TTL_MS,
+            });
 
-          // Log metrics
-          this.logger.log(`AI response generated in ${response.latency}ms for tenant: ${tenantId}`);
+            // Log metrics
+            this.logger.log(`AI response generated via ${provider.provider}/${provider.model} in ${response.latency}ms for tenant: ${tenantId}`);
 
-          return response;
-        } catch (error) {
-          lastError = error instanceof Error ? error : new Error(String(error));
-          this.logger.warn(`Attempt ${attempt + 1}/${maxAttempts} failed: ${lastError.message}`);
+            return response;
+          } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            this.logger.warn(`${provider.provider} attempt ${attempt + 1}/${maxAttempts} failed: ${lastError.message}`);
 
-          if (attempt < maxAttempts - 1) {
-            // Exponential backoff
-            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-            await this.sleep(delay);
+            if (attempt < maxAttempts - 1) {
+              // Exponential backoff
+              const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+              await this.sleep(delay);
+            }
           }
         }
+        
+        // Record failure for this provider
+        this.recordFailure(`ai-${provider.provider}`);
+        this.logger.warn(`All attempts failed for ${provider.provider}, trying next provider...`);
       }
 
-      // All retries failed
-      this.recordFailure('ai-service');
-      this.logger.error(`All ${maxAttempts} attempts failed. Last error: ${lastError?.message}`);
+      // All providers and retries failed
+      this.logger.error(`All providers failed. Last error: ${lastError?.message}`);
 
       // Fallback to simulated response
       return this.generateSimulatedResponse(prompt);
@@ -337,9 +505,30 @@ export class AIService {
   }
 
   /**
+   * Get ordered list of providers to try
+   */
+  private getProvidersToTry(preferred?: AIProvider, forceProvider?: boolean): AIProviderConfig[] {
+    const available = this.getAvailableProviders();
+    
+    if (preferred && forceProvider) {
+      const pref = this.providers.get(preferred);
+      return pref?.enabled ? [pref] : [];
+    }
+    
+    if (preferred) {
+      const pref = this.providers.get(preferred);
+      if (pref?.enabled) {
+        return [pref, ...available.filter(p => p.provider !== preferred)];
+      }
+    }
+    
+    return available;
+  }
+
+  /**
    * Generate response with OpenAI
    */
-  private async generateWithOpenAI(prompt: string, options: AIGenerationOptions): Promise<AIResponse> {
+  private async generateWithOpenAI(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
 
@@ -350,10 +539,10 @@ export class AIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.openaiApiKey}`,
+          'Authorization': `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4-turbo-preview',
+          model: config.model || this.DEFAULT_MODELS.openai,
           messages: [
             {
               role: 'system',
@@ -417,7 +606,7 @@ export class AIService {
   /**
    * Generate response with Anthropic
    */
-  private async generateWithAnthropic(prompt: string, options: AIGenerationOptions): Promise<AIResponse> {
+  private async generateWithAnthropic(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
 
@@ -428,11 +617,11 @@ export class AIService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.anthropicApiKey!,
+          'x-api-key': config.apiKey!,
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-3-opus-20240229',
+          model: config.model || this.DEFAULT_MODELS.anthropic,
           max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
           messages: [
             {
@@ -475,6 +664,315 @@ export class AIService {
           prompt: usage.input_tokens || 0,
           completion: usage.output_tokens || 0,
           total: (usage.input_tokens || 0) + (usage.output_tokens || 0),
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate response with Google Gemini
+   */
+  private async generateWithGoogle(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+
+    try {
+      const fetch = (await import('node-fetch')).default;
+      const model = config.model || this.DEFAULT_MODELS.google;
+      
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.\n\n${prompt}` }],
+              },
+            ],
+            generationConfig: {
+              temperature: options.temperature || 0.7,
+              maxOutputTokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+            },
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Google AI API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const message = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const usage = data.usageMetadata || {};
+
+      const parsed = this.parseStructuredResponse(message);
+
+      return {
+        message,
+        ...parsed,
+        tokensUsed: {
+          prompt: usage.promptTokenCount || 0,
+          completion: usage.candidatesTokenCount || 0,
+          total: usage.totalTokenCount || 0,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate response with Mistral AI
+   */
+  private async generateWithMistral(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+
+    try {
+      const fetch = (await import('node-fetch')).default;
+      
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model || this.DEFAULT_MODELS.mistral,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+            },
+            { role: 'user', content: prompt },
+          ],
+          temperature: options.temperature || 0.7,
+          max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Mistral API error: ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const message = data.choices?.[0]?.message?.content || '';
+      const usage = data.usage || {};
+
+      const parsed = this.parseStructuredResponse(message);
+
+      return {
+        message,
+        ...parsed,
+        tokensUsed: {
+          prompt: usage.prompt_tokens || 0,
+          completion: usage.completion_tokens || 0,
+          total: usage.total_tokens || 0,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate response with Cohere
+   */
+  private async generateWithCohere(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+
+    try {
+      const fetch = (await import('node-fetch')).default;
+      
+      const response = await fetch('https://api.cohere.ai/v1/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model || this.DEFAULT_MODELS.cohere,
+          message: prompt,
+          preamble: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+          temperature: options.temperature || 0.7,
+          max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Cohere API error: ${errorData.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const message = data.text || '';
+      const usage = data.meta?.tokens || {};
+
+      const parsed = this.parseStructuredResponse(message);
+
+      return {
+        message,
+        ...parsed,
+        tokensUsed: {
+          prompt: usage.input_tokens || 0,
+          completion: usage.output_tokens || 0,
+          total: (usage.input_tokens || 0) + (usage.output_tokens || 0),
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate response with Azure OpenAI
+   */
+  private async generateWithAzure(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+
+    try {
+      const fetch = (await import('node-fetch')).default;
+      const deployment = config.model || this.DEFAULT_MODELS.azure;
+      
+      const response = await fetch(
+        `${config.endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': config.apiKey!,
+          },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: 'system',
+                content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+              },
+              { role: 'user', content: prompt },
+            ],
+            temperature: options.temperature || 0.7,
+            max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Azure OpenAI API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const message = data.choices?.[0]?.message?.content || '';
+      const usage = data.usage || {};
+
+      const parsed = this.parseStructuredResponse(message);
+
+      return {
+        message,
+        ...parsed,
+        tokensUsed: {
+          prompt: usage.prompt_tokens || 0,
+          completion: usage.completion_tokens || 0,
+          total: usage.total_tokens || 0,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Generate response with Ollama (local)
+   */
+  private async generateWithOllama(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+
+    try {
+      const fetch = (await import('node-fetch')).default;
+      const endpoint = config.endpoint || 'http://localhost:11434';
+      
+      const response = await fetch(`${endpoint}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: config.model || this.DEFAULT_MODELS.ollama,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+            },
+            { role: 'user', content: prompt },
+          ],
+          stream: false,
+          options: {
+            temperature: options.temperature || 0.7,
+            num_predict: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+          },
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Ollama API error: ${errorData.error || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const message = data.message?.content || '';
+
+      const parsed = this.parseStructuredResponse(message);
+
+      return {
+        message,
+        ...parsed,
+        tokensUsed: {
+          prompt: data.prompt_eval_count || 0,
+          completion: data.eval_count || 0,
+          total: (data.prompt_eval_count || 0) + (data.eval_count || 0),
         },
       };
     } catch (error) {

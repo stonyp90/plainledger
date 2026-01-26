@@ -15,3 +15,4 @@ export { default as AISuggestions } from './AISuggestions';
 export { default as JamesChatbot } from './JamesChatbot';
 export { default as OKRPanel } from './OKRPanel';
 export { default as MultiScenarioChart } from './MultiScenarioChart';
+export { default as OpExCapExChart } from './OpExCapExChart';
