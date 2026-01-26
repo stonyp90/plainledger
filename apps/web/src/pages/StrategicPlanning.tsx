@@ -369,12 +369,37 @@ export default function StrategicPlanning() {
   }, [okrs, scenarios, activeScenarioId, saveToStorage]);
 
   // Build financial context for James AI
+  // Use demo data when no real financial data is available
   const financialContext: FinancialContext = useMemo(() => {
+    // Demo data for development/testing
+    const DEMO_DATA = {
+      currentCash: 850000,
+      monthlyRevenue: 120000,
+      monthlyExpenses: 145000,
+      runwayMonths: 34,
+      burnRate: 25000,
+    };
+
+    const actualCash = runwayAnalysis?.currentCash || currentCash;
+    const actualRevenue = financialData?.metrics?.revenue || 0;
+    const actualExpenses = financialData?.metrics?.expenses || 0;
+    const actualBurn = runwayAnalysis?.monthlyBurnRate || 0;
+
+    // Use demo data if all values are 0 (no real data loaded)
+    const useDemo = actualCash === 0 && actualRevenue === 0 && actualExpenses === 0;
+
+    if (useDemo) {
+      return {
+        ...DEMO_DATA,
+        zeroDate: new Date(Date.now() + DEMO_DATA.runwayMonths * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+    }
+
     if (!runwayAnalysis) {
       return {
-        currentCash: currentCash,
-        monthlyRevenue: financialData?.metrics?.revenue || 0,
-        monthlyExpenses: financialData?.metrics?.expenses || 0,
+        currentCash: actualCash,
+        monthlyRevenue: actualRevenue,
+        monthlyExpenses: actualExpenses,
         runwayMonths: Infinity,
         burnRate: 0,
       };
@@ -382,8 +407,8 @@ export default function StrategicPlanning() {
 
     return {
       currentCash: runwayAnalysis.currentCash,
-      monthlyRevenue: financialData?.metrics?.revenue || 0,
-      monthlyExpenses: financialData?.metrics?.expenses || 0,
+      monthlyRevenue: actualRevenue,
+      monthlyExpenses: actualExpenses,
       runwayMonths: runwayAnalysis.runwayMonths,
       zeroDate: runwayAnalysis.zeroDate,
       burnRate: runwayAnalysis.monthlyBurnRate,
@@ -611,37 +636,21 @@ export default function StrategicPlanning() {
           </button>
         </div>
         
-        {activeScenario.initiatives.length > 0 ? (
-          <div className={isFullscreen ? 'p-4' : ''}>
-            <GanttChart
-              initiatives={activeScenario.initiatives}
-              startDate={new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1)}
-              endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 18, 0)}
-              onInitiativeUpdate={handleInitiativeSave}
-              onInitiativeClick={(initiative) => {
-                setEditingInitiative(initiative);
-                setShowInitiativeEditor(true);
-              }}
-              viewMode="month"
-            />
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'No initiatives yet. Add your first strategic initiative.' : 'Aucune initiative. Ajoutez votre première initiative stratégique.'}
-            </p>
-            <button
-              onClick={() => {
-                setEditingInitiative(null);
-                setShowInitiativeEditor(true);
-              }}
-              className="btn-primary"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {isEn ? 'Add Initiative' : 'Ajouter initiative'}
-            </button>
-          </div>
-        )}
+        <div className={isFullscreen ? 'p-4' : ''}>
+          <GanttChart
+            initiatives={activeScenario.initiatives}
+            startDate={new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1)}
+            endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 18, 0)}
+            onInitiativeUpdate={handleInitiativeSave}
+            onInitiativeAdd={handleInitiativeSave}
+            onInitiativeDelete={handleInitiativeDelete}
+            onInitiativeClick={(initiative) => {
+              setEditingInitiative(initiative);
+              setShowInitiativeEditor(true);
+            }}
+            viewMode="month"
+          />
+        </div>
       </div>
 
       {/* Charts Row */}

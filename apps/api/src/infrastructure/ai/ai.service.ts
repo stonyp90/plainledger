@@ -609,6 +609,107 @@ export class AIService {
   private generateSimulatedResponse(prompt: string): AIResponse {
     const lowerPrompt = prompt.toLowerCase();
 
+    // Handle hiring/budget questions
+    if (lowerPrompt.includes('hire') || lowerPrompt.includes('budget') || lowerPrompt.includes('designer') || lowerPrompt.includes('developer') || lowerPrompt.includes('employee')) {
+      const role = lowerPrompt.includes('designer') ? 'designer' : lowerPrompt.includes('developer') ? 'developer' : 'new team member';
+      const avgSalary = role === 'designer' ? 85000 : role === 'developer' ? 120000 : 95000;
+      const monthlyCost = Math.round(avgSalary / 12);
+      
+      return {
+        message: `## Hiring Analysis: ${role.charAt(0).toUpperCase() + role.slice(1)}
+
+Based on your current financial position, here's my assessment:
+
+### Current Financial Status
+- **Cash Position**: $850K
+- **Monthly Burn Rate**: $25K
+- **Runway**: ~34 months
+
+### Hiring Impact Analysis
+A ${role} would typically cost:
+- **Annual Salary**: $${avgSalary.toLocaleString()} (market rate)
+- **Monthly Cost**: ~$${monthlyCost.toLocaleString()} (with benefits/overhead)
+
+### Recommendation: ✅ **Proceed with Caution**
+
+With 34 months of runway and a healthy cash position, you **can afford** to hire a ${role}. However, I recommend:
+
+1. **Start with a contract role** (3-6 months) to validate the need
+2. **Set clear milestones** tied to revenue or product goals
+3. **Monitor impact** on burn rate monthly
+
+### Impact on Runway
+- New burn rate: ~$${(25000 + monthlyCost).toLocaleString()}/month
+- Adjusted runway: ~${Math.floor(850000 / (25000 + monthlyCost))} months
+
+Would you like me to create an initiative to track this hiring decision?`,
+      };
+    }
+
+    // Handle runway/burn rate questions
+    if (lowerPrompt.includes('runway') || lowerPrompt.includes('burn') || lowerPrompt.includes('how long')) {
+      return {
+        message: `## Runway & Burn Rate Analysis
+
+### Current Status
+| Metric | Value |
+|--------|-------|
+| **Cash Position** | $850,000 |
+| **Monthly Revenue** | $120,000 |
+| **Monthly Expenses** | $145,000 |
+| **Net Burn Rate** | $25,000/month |
+| **Gross Burn Rate** | $145,000/month |
+| **Runway** | ~34 months |
+
+### Key Insights
+
+1. **Healthy Runway**: 34 months provides ample time for strategic planning and growth initiatives.
+
+2. **Burn Rate Breakdown**:
+   - Personnel: ~60% ($87K)
+   - Infrastructure: ~20% ($29K)
+   - Marketing: ~12% ($17K)
+   - Other: ~8% ($12K)
+
+3. **Path to Profitability**: You need to increase revenue by $25K/month (~21%) to break even.
+
+### Recommendations
+- ✅ Focus on revenue growth over cost cutting
+- ✅ Consider strategic investments while runway is healthy
+- ⚠️ Set alerts at 12 months runway
+
+Would you like me to generate initiatives to extend your runway or accelerate revenue?`,
+      };
+    }
+
+    // Handle cost reduction questions
+    if (lowerPrompt.includes('reduce') || lowerPrompt.includes('cost') || lowerPrompt.includes('save') || lowerPrompt.includes('cut')) {
+      return {
+        message: `## Cost Optimization Strategies
+
+Based on your current $145K monthly expenses, here are targeted reduction opportunities:
+
+### Quick Wins (1-2 months)
+| Category | Potential Savings | Action |
+|----------|------------------|--------|
+| Cloud Infrastructure | $3-5K/mo | Right-size instances, reserved pricing |
+| SaaS Subscriptions | $2-3K/mo | Audit and consolidate tools |
+| Marketing Spend | $5K/mo | Focus on highest-ROI channels |
+
+### Medium-term (3-6 months)
+1. **Renegotiate vendor contracts** - 10-15% savings potential
+2. **Implement hybrid work** - Reduce office costs by 30%
+3. **Automate manual processes** - Save 1 FTE equivalent
+
+### Total Potential Impact
+- **Realistic savings**: $10-15K/month
+- **Extended runway**: +6-10 months
+
+Would you like me to create initiatives for specific cost reduction areas?`,
+      };
+    }
+
+    // Handle initiative generation
     if (lowerPrompt.includes('initiative') || lowerPrompt.includes('generate initiative')) {
       return {
         message: "I've generated strategic initiatives based on your goals. These initiatives are designed to improve your cash position while advancing your strategic objectives.",
@@ -631,6 +732,7 @@ export class AIService {
       };
     }
 
+    // Handle OKR generation
     if (lowerPrompt.includes('okr') || lowerPrompt.includes('objective')) {
       return {
         message: "I've created OKRs aligned with your strategic initiatives. These objectives are measurable and tied to your quarterly goals.",
@@ -655,8 +757,69 @@ export class AIService {
       };
     }
 
+    // Handle revenue questions
+    if (lowerPrompt.includes('revenue') || lowerPrompt.includes('grow') || lowerPrompt.includes('increase')) {
+      return {
+        message: `## Revenue Growth Strategies
+
+### Current State
+- Monthly Revenue: $120K
+- Growth needed for breakeven: +$25K (+21%)
+
+### High-Impact Opportunities
+
+**1. Customer Expansion (Est. +$15K/mo)**
+- Upsell existing customers to higher tiers
+- Launch add-on services
+- Implementation time: 1-2 months
+
+**2. Pricing Optimization (Est. +$8K/mo)**
+- A/B test pricing tiers
+- Introduce annual plans with discounts
+- Expected conversion: 15-20% lift
+
+**3. New Market Segments (Est. +$20K/mo)**
+- Target adjacent industries
+- Partner channel development
+- Timeline: 3-6 months
+
+### Recommended Priority
+Start with customer expansion - lowest risk, fastest ROI.
+
+Shall I create specific initiatives for any of these strategies?`,
+      };
+    }
+
+    // Default response
     return {
-      message: "Based on your current financial position, I recommend focusing on extending your runway through a combination of revenue optimization and expense management. Here are three strategic approaches:\n\n1. **Revenue Acceleration**: Identify quick wins in your existing customer base through upselling or expansion.\n\n2. **Cost Optimization**: Review your monthly expenses and identify non-essential costs that can be deferred or eliminated.\n\n3. **Strategic Funding**: Consider raising capital before your runway becomes critical.",
+      message: `## Strategic Overview
+
+Based on your current financial position, here's my assessment:
+
+### Financial Health
+- **Cash**: $850K ✅ Healthy
+- **Runway**: 34 months ✅ Strong
+- **Burn Rate**: $25K/month ⚠️ Monitor
+
+### Top 3 Recommendations
+
+1. **Optimize for Growth**
+   With 34 months runway, you can afford to invest in growth initiatives while maintaining financial discipline.
+
+2. **Revenue Focus**
+   Prioritize revenue acceleration over cost cutting. A 21% revenue increase achieves profitability.
+
+3. **Strategic Hiring**
+   Consider key hires that directly impact revenue (sales, product) rather than support roles.
+
+### What Would You Like to Explore?
+- 💼 Hiring decisions and budget impact
+- 📊 Runway and burn rate analysis
+- 📈 Revenue growth strategies
+- 💰 Cost optimization opportunities
+- 🎯 Generate OKRs or initiatives
+
+Just ask about any of these topics!`,
     };
   }
 
