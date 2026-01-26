@@ -29,7 +29,7 @@ concurrency:
 env:
   AWS_REGION: ca-central-1
   NODE_VERSION: '20'
-  ECS_CLUSTER: stonyp90-shared-prod-cluster
+  ECS_CLUSTER: plainledger-prod
 
 jobs:
   # ==========================================================================
@@ -172,11 +172,11 @@ jobs:
       matrix:
         app:
           - name: api
-            ecr_repo: plainledger-api
+            ecr_repo: plainledger-prod-api
             dockerfile: apps/api/Dockerfile
             context: .
           - name: web
-            ecr_repo: plainledger-web
+            ecr_repo: plainledger-prod-web
             dockerfile: apps/web/Dockerfile
             context: .
     outputs:
@@ -187,7 +187,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-plainledger
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
       
       - name: Login to Amazon ECR
@@ -229,7 +229,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-plainledger
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
       
       - name: Deploy API service
