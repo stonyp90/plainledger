@@ -31,92 +31,125 @@ export default function Landing() {
       className="min-h-screen"
       style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
     >
-      {/* Navigation - Minimal */}
-      <nav className="fixed top-0 left-0 right-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div 
-              className="w-8 h-8 rounded flex items-center justify-center"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
-            >
-              <span className="text-sm font-bold">PL</span>
-            </div>
-            <span className="text-lg font-semibold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
-              PlainLedger
-            </span>
-          </div>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <LanguageToggle />
-            <ThemeToggle />
-            {authenticated ? (
-              <Link 
-                to="/app" 
-                className="px-5 py-2.5 rounded-full font-medium transition-all"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-text))',
-                  color: 'rgb(var(--color-bg))'
-                }}
+      {/* Navigation */}
+      <nav 
+        className="fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-md"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-bg) / 0.95)',
+          borderColor: 'rgb(var(--color-border))'
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white"
+                style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
               >
-                {isEn ? 'Go to Dashboard' : 'Accéder au dashboard'}
+                PL
+              </div>
+              <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                PlainLedger
+              </span>
+            </Link>
+
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/store#features" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Features' : 'Fonctionnalités'}
               </Link>
-            ) : (
-              <button 
-                onClick={() => login()}
-                className="px-5 py-2.5 rounded-full font-medium transition-all hover:scale-105"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-text))',
-                  color: 'rgb(var(--color-bg))'
-                }}
-              >
-                {isEn ? 'Get Started' : 'Commencer'}
-              </button>
-            )}
-          </div>
-
-          {/* Mobile Menu */}
-          <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu Dropdown */}
-        {isMobileMenuOpen && (
-          <div 
-            className="md:hidden px-6 py-4 border-t"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              borderColor: 'rgb(var(--color-border))'
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <LanguageToggle />
+              <Link to="/store#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Pricing' : 'Tarifs'}
+              </Link>
+              <Link to="/store#cpa" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'For CPAs' : 'Pour CPA'}
+              </Link>
+              <Link to="/store#testimonials" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Testimonials' : 'Témoignages'}
+              </Link>
             </div>
-            <button 
-              onClick={() => { login(); setIsMobileMenuOpen(false); }}
-              className="w-full px-5 py-3 rounded-full font-medium"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-text))',
-                color: 'rgb(var(--color-bg))'
-              }}
-            >
-              {isEn ? 'Get Started' : 'Commencer'}
-            </button>
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-3">
+              <ThemeToggle />
+              <LanguageToggle />
+              {authenticated ? (
+                <Link 
+                  to="/app" 
+                  className="px-5 py-2.5 rounded-lg font-medium transition-all btn-primary btn-sm"
+                >
+                  {isEn ? 'Go to Dashboard' : 'Accéder au dashboard'}
+                </Link>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => login()}
+                    className="text-sm font-medium"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    {isEn ? 'Sign in' : 'Connexion'}
+                  </button>
+                  <button 
+                    onClick={() => login()}
+                    className="btn-primary btn-sm"
+                  >
+                    {isEn ? 'Start free' : 'Essai gratuit'}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center gap-2">
+              <ThemeToggle />
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* Mobile Menu Dropdown */}
+          {isMobileMenuOpen && (
+            <div 
+              className="md:hidden py-4 border-t"
+              style={{ borderColor: 'rgb(var(--color-border))' }}
+            >
+              <nav className="flex flex-col gap-3">
+                <Link to="/store#features" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Features' : 'Fonctionnalités'}
+                </Link>
+                <Link to="/store#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Pricing' : 'Tarifs'}
+                </Link>
+                <Link to="/store#cpa" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'For CPAs' : 'Pour CPA'}
+                </Link>
+                <Link to="/store#testimonials" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Testimonials' : 'Témoignages'}
+                </Link>
+                <button 
+                  onClick={() => { login(); setIsMobileMenuOpen(false); }}
+                  className="text-sm font-medium py-2 text-left"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {isEn ? 'Sign in' : 'Connexion'}
+                </button>
+                <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  <LanguageToggle />
+                </div>
+              </nav>
+            </div>
+          )}
+        </div>
       </nav>
 
       {/* Hero Section - Clean & Bold */}
-      <section className="pt-32 sm:pt-40 pb-20 sm:pb-32 px-6">
+      <section className="pt-24 sm:pt-32 pb-20 sm:pb-32 px-6">
         <div className="max-w-4xl mx-auto">
           {/* Main Headline */}
           <h1 

@@ -756,6 +756,16 @@ export default function Onboarding() {
                 {isEn ? 'For CPAs' : 'Pour CPA'}
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
+              <a 
+                href="/store#testimonials" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+              >
+                {isEn ? 'Testimonials' : 'Témoignages'}
+                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+              </a>
             </nav>
 
             {/* Actions & Progress */}
@@ -822,6 +832,15 @@ export default function Onboarding() {
                   style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
                   {isEn ? 'For CPAs' : 'Pour CPA'}
+                </a>
+                <a 
+                  href="/store#testimonials" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium py-2" 
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {isEn ? 'Testimonials' : 'Témoignages'}
                 </a>
                 {/* Progress indicator (mobile) */}
                 {currentStep !== 'complete' && (

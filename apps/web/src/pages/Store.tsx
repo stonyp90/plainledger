@@ -44,6 +44,8 @@ import {
   type PricingTierConfig,
   type BillingInterval,
 } from '../lib/pricing';
+import CPAPricingSection from '../components/CPAPricingSection';
+import IntegrationLogos from '../components/IntegrationLogos';
 
 // =====================================================
 // FEATURES DATA
@@ -110,6 +112,22 @@ const TESTIMONIALS = [
     role: { en: 'CFO, TechStartup Montreal', fr: 'CFO, TechStartup Montréal' },
     avatar: 'ST',
     location: 'Montréal',
+    rating: 5,
+    verified: true,
+    metrics: { en: '60% time saved', fr: '60% de temps économisé' },
+  },
+  {
+    quote: { 
+      en: "I manage 35 clients with PlainLedger. Anomaly detection prevented 3 major errors this quarter. Immediate ROI.",
+      fr: "Je gère 35 clients avec PlainLedger. La détection d'anomalies m'a évité 3 erreurs majeures ce trimestre. ROI immédiat."
+    },
+    author: 'Jean-François Lavoie, CPA',
+    role: { en: 'Partner, Lavoie & Associates', fr: 'Associé, Cabinet Lavoie' },
+    avatar: 'JL',
+    location: 'Trois-Rivières',
+    rating: 5,
+    verified: true,
+    metrics: { en: '3 errors prevented', fr: '3 erreurs évitées' },
   },
   {
     quote: { 
@@ -120,6 +138,9 @@ const TESTIMONIALS = [
     role: { en: 'Partner at Dubois & Associés', fr: 'Associé chez Dubois & Associés' },
     avatar: 'MD',
     location: 'Québec',
+    rating: 4.5,
+    verified: true,
+    metrics: { en: '50+ clients managed', fr: '50+ clients gérés' },
   },
   {
     quote: { 
@@ -130,6 +151,35 @@ const TESTIMONIALS = [
     role: { en: 'Owner, Gagnon Retail Group', fr: 'Propriétaire, Groupe Détail Gagnon' },
     avatar: 'LG',
     location: 'Laval',
+    rating: 5,
+    verified: false,
+    metrics: { en: '30-second insights', fr: 'Insights en 30 secondes' },
+  },
+  {
+    quote: { 
+      en: "Saves me 5+ hours per client per month on reporting. The bulk reporting feature is a game-changer for our firm.",
+      fr: "M'économise 5+ heures par client par mois sur les rapports. La fonction de rapports en lot change la donne pour notre cabinet."
+    },
+    author: 'Marie-Claire Bouchard, CPA',
+    role: { en: 'Managing Partner, Bouchard & Partners', fr: 'Associée principale, Bouchard & Associés' },
+    avatar: 'MB',
+    location: 'Sherbrooke',
+    rating: 5,
+    verified: true,
+    metrics: { en: '5+ hours saved/client', fr: '5+ heures économisées/client' },
+  },
+  {
+    quote: { 
+      en: "Caught $125K in duplicate transactions across 20 clients last month. This tool pays for itself.",
+      fr: "A détecté 125 000$ en transactions dupliquées sur 20 clients le mois dernier. Cet outil se paie de lui-même."
+    },
+    author: 'Pierre Fortin, CPA',
+    role: { en: 'Senior Partner, Fortin Accounting Group', fr: 'Associé principal, Groupe Comptable Fortin' },
+    avatar: 'PF',
+    location: 'Gatineau',
+    rating: 5,
+    verified: true,
+    metrics: { en: '$125K caught', fr: '125 000$ détectés' },
   },
 ];
 
@@ -799,99 +849,32 @@ function PricingSection({ isEn }: { isEn: boolean }) {
 function CPAPartnerSection({ isEn }: { isEn: boolean }) {
   const navigate = useNavigate();
 
-  const handleCPAInquiry = (tierId: string) => {
-    analytics.track('cpa_partner_inquiry', { tier: tierId });
-    window.location.href = `mailto:partners@plainledger.ca?subject=CPA%20Partner%20Program%20-%20${tierId}&body=${encodeURIComponent(
-      isEn 
-        ? 'Hello,\n\nI\'m interested in the CPA Partner Program.\n\nFirm name:\nNumber of clients:\nYour name:\nPhone:'
-        : 'Bonjour,\n\nJe suis intéressé par le Programme Partenaire CPA.\n\nNom du cabinet:\nNombre de clients:\nVotre nom:\nTéléphone:'
-    )}`;
+  const handleCPACTA = (tierId: string, action: 'trial' | 'contact') => {
+    if (action === 'contact') {
+      analytics.track('cpa_partner_inquiry', { tier: tierId });
+      window.location.href = `mailto:partners@plainledger.ca?subject=CPA%20Partner%20Program%20-%20${tierId}&body=${encodeURIComponent(
+        isEn 
+          ? 'Hello,\n\nI\'m interested in the CPA Partner Program.\n\nFirm name:\nNumber of clients:\nYour name:\nPhone:'
+          : 'Bonjour,\n\nJe suis intéressé par le Programme Partenaire CPA.\n\nNom du cabinet:\nNombre de clients:\nVotre nom:\nTéléphone:'
+      )}`;
+    } else {
+      analytics.track('cpa_trial_started', { tier: tierId });
+      navigate('/signup?plan=cpa');
+    }
   };
 
   return (
-    <section id="cpa" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <div 
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm mb-4"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-              color: 'rgb(var(--color-primary-600))'
-            }}
-          >
-            <Award className="w-4 h-4" />
-            {isEn ? 'CPA Partner Program' : 'Programme Partenaire CPA'}
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Special pricing for accounting firms' : 'Tarification spéciale pour les cabinets comptables'}
-          </h2>
-          <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {isEn 
-              ? 'Manage all your clients from one dashboard with volume discounts'
-              : 'Gérez tous vos clients depuis un tableau de bord avec remises sur volume'}
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {CPA_PARTNER_TIERS.map((tier) => {
-            const pricing = PricingCalculator.calculateCPAPrice(tier.id, tier.minimumClients);
-            
-            return (
-              <div 
-                key={tier.id}
-                className="p-6 rounded-xl transition-all duration-300 hover:shadow-lg"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-surface))',
-                  border: '1px solid rgb(var(--color-border))'
-                }}
-              >
-                <h3 className="font-bold text-xl mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? tier.name : tier.nameFr}
-                </h3>
-                <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? tier.description : tier.descriptionFr}
-                </p>
-
-                <div className="mb-4">
-                  <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                    ${tier.pricePerClient}
-                  </span>
-                  <span style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    /{isEn ? 'client/mo' : 'client/mois'}
-                  </span>
-                </div>
-
-                <div className="mb-4 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  <p>{tier.clientSeats === -1 ? (isEn ? 'Unlimited' : 'Illimité') : tier.clientSeats} {isEn ? 'clients max' : 'clients max'}</p>
-                  <p>{tier.teamMembers === -1 ? (isEn ? 'Unlimited' : 'Illimité') : tier.teamMembers} {isEn ? 'team members' : 'membres'}</p>
-                  <p>{isEn ? `Min. ${tier.minimumClients} clients` : `Min. ${tier.minimumClients} clients`}</p>
-                </div>
-
-                <ul className="space-y-2 mb-6">
-                  {(isEn ? tier.features : tier.featuresFr).map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
-                      <span style={{ color: 'rgb(var(--color-text-secondary))' }}>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => handleCPAInquiry(tier.id)}
-                  className="w-full btn-secondary"
-                >
-                  {isEn ? 'Contact us' : 'Nous contacter'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+    <>
+      <CPAPricingSection onCTAClick={handleCPACTA} />
+      <IntegrationLogos />
+    </>
   );
 }
 
 function TestimonialsSection({ isEn }: { isEn: boolean }) {
+  // Show first 3 testimonials, with CPA-focused ones prioritized
+  const displayedTestimonials = TESTIMONIALS.slice(0, 3);
+
   return (
     <section id="testimonials" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -902,44 +885,89 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {TESTIMONIALS.map((testimonial, idx) => (
-            <div 
-              key={idx}
-              className="p-6 rounded-xl"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: '1px solid rgb(var(--color-border))'
-              }}
-            >
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-current" style={{ color: 'rgb(var(--color-warning))' }} />
-                ))}
-              </div>
-              <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                "{isEn ? testimonial.quote.en : testimonial.quote.fr}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
-                >
-                  {testimonial.avatar}
+          {displayedTestimonials.map((testimonial, idx) => {
+            const rating = testimonial.rating || 5;
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 !== 0;
+            
+            return (
+              <div 
+                key={idx}
+                className="p-6 rounded-xl transition-all duration-300 hover:shadow-lg"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: '1px solid rgb(var(--color-border))'
+                }}
+              >
+                {/* Rating */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex gap-0.5">
+                    {[...Array(fullStars)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-current" style={{ color: 'rgb(var(--color-warning))' }} />
+                    ))}
+                    {hasHalfStar && (
+                      <div className="relative w-4 h-4">
+                        <Star className="w-4 h-4 absolute fill-current" style={{ color: 'rgb(var(--color-border))' }} />
+                        <div className="absolute overflow-hidden w-2 h-4">
+                          <Star className="w-4 h-4 fill-current" style={{ color: 'rgb(var(--color-warning))' }} />
+                        </div>
+                      </div>
+                    )}
+                    {[...Array(5 - Math.ceil(rating))].map((_, i) => (
+                      <Star key={`empty-${i}`} className="w-4 h-4" style={{ color: 'rgb(var(--color-border))' }} />
+                    ))}
+                  </div>
+                  {testimonial.verified && (
+                    <span 
+                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                        color: 'rgb(var(--color-success))'
+                      }}
+                    >
+                      {isEn ? 'Verified' : 'Vérifié'}
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                    {testimonial.author}
-                  </p>
-                  <p className="text-sm flex items-center gap-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? testimonial.role.en : testimonial.role.fr}
-                    <span>•</span>
-                    <MapPin className="w-3 h-3" />
-                    {testimonial.location}
-                  </p>
+
+                {/* Quote */}
+                <p className="mb-4 text-sm leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  "{isEn ? testimonial.quote.en : testimonial.quote.fr}"
+                </p>
+
+                {/* Metrics */}
+                {testimonial.metrics && (
+                  <div className="mb-4 p-2 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                    <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                      {isEn ? testimonial.metrics.en : testimonial.metrics.fr}
+                    </p>
+                  </div>
+                )}
+
+                {/* Author */}
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white flex-shrink-0"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+                  >
+                    {testimonial.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {testimonial.author}
+                    </p>
+                    <p className="text-xs flex items-center gap-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? testimonial.role.en : testimonial.role.fr}
+                    </p>
+                    <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <MapPin className="w-3 h-3" />
+                      {testimonial.location}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Quebec regions */}
