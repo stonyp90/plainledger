@@ -73,14 +73,28 @@ export default function StrategicPlanning() {
     }
   }, []);
 
+  // Demo financial data for when no real data is available
+  const DEMO_FINANCIAL = {
+    currentCash: 850000,
+    monthlyRevenue: 120000,
+    monthlyExpenses: 145000,
+  };
+
   // Initialize with base scenario if none exists
   useEffect(() => {
-    if (scenarios.length === 0 && financialData) {
-      const currentCash = financialData.summary?.cashBalance || 0;
-      const monthlyRevenue = financialData.metrics?.revenue || 0;
-      const monthlyExpenses = financialData.metrics?.expenses || 0;
+    if (scenarios.length === 0 && !dataLoading) {
+      // Use real data if available, otherwise use demo data
+      const hasRealData = financialData && (
+        financialData.summary?.cashBalance > 0 ||
+        financialData.metrics?.revenue > 0 ||
+        financialData.metrics?.expenses > 0
+      );
       
-      const base = createBaseScenario(currentCash, monthlyRevenue, monthlyExpenses);
+      const cashToUse = hasRealData ? (financialData.summary?.cashBalance || 0) : DEMO_FINANCIAL.currentCash;
+      const revenueToUse = hasRealData ? (financialData.metrics?.revenue || 0) : DEMO_FINANCIAL.monthlyRevenue;
+      const expensesToUse = hasRealData ? (financialData.metrics?.expenses || 0) : DEMO_FINANCIAL.monthlyExpenses;
+      
+      const base = createBaseScenario(cashToUse, revenueToUse, expensesToUse);
       const optimistic = createOptimisticScenario(base);
       const pessimistic = createPessimisticScenario(base);
       
@@ -89,7 +103,7 @@ export default function StrategicPlanning() {
       setActiveScenarioId(base.id);
       saveToStorage(newScenarios, base.id);
     }
-  }, [scenarios.length, financialData]);
+  }, [scenarios.length, financialData, dataLoading]);
 
   const saveToStorage = useCallback((scenariosToSave: Scenario[], activeId: string | null, okrsToSave?: OKR[]) => {
     try {
@@ -104,7 +118,11 @@ export default function StrategicPlanning() {
   }, [okrs]);
 
   const activeScenario = scenarios.find(s => s.id === activeScenarioId) || scenarios[0];
-  const currentCash = financialData?.summary?.cashBalance || 0;
+  const hasRealData = financialData && (
+    financialData.summary?.cashBalance > 0 ||
+    financialData.metrics?.revenue > 0
+  );
+  const currentCash = hasRealData ? (financialData.summary?.cashBalance || 0) : DEMO_FINANCIAL.currentCash;
   const currentDate = new Date();
 
   // Calculate runway and forecast for active scenario
@@ -426,15 +444,14 @@ export default function StrategicPlanning() {
     );
   }
 
-  if (!financialData || !activeScenario || !runwayAnalysis || !cashForecast) {
+  if (!activeScenario || !runwayAnalysis || !cashForecast) {
     return (
       <div className="card p-8 text-center">
-        <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-error" />
-        <h3 className="font-semibold text-lg mb-2">{isEn ? 'No Data Available' : 'Aucune donnée disponible'}</h3>
+        <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <h3 className="font-semibold text-lg mb-2">{isEn ? 'Initializing...' : 'Initialisation...'}</h3>
         <p className="text-muted mb-4">
-          {isEn ? 'Financial data is required for strategic planning.' : 'Les données financières sont requises pour la planification stratégique.'}
+          {isEn ? 'Setting up strategic planning workspace.' : 'Configuration de l\'espace de planification stratégique.'}
         </p>
-        <button onClick={refresh} className="btn-primary">{isEn ? 'Refresh' : 'Actualiser'}</button>
       </div>
     );
   }
