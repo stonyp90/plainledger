@@ -15,13 +15,19 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  HttpException,
   Logger,
   Headers,
   BadRequestException,
-  TooManyRequestsException,
   UnauthorizedException,
-  UseGuards,
 } from '@nestjs/common';
+
+// TooManyRequestsException doesn't exist in NestJS, create custom
+class TooManyRequestsException extends HttpException {
+  constructor(message = 'Too Many Requests') {
+    super(message, HttpStatus.TOO_MANY_REQUESTS);
+  }
+}
 import { IsString, IsOptional, IsBoolean, IsNumber, Min, Max, MaxLength, ValidateIf } from 'class-validator';
 import { AIService } from '../../../infrastructure/ai/ai.service';
 import { Transform } from 'class-transformer';
