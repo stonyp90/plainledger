@@ -33,7 +33,7 @@ import {
   DebtToEquityCard,
 } from '../components/charts';
 import { InfoBanner } from '../components/HelpTooltip';
-import { InfoTooltip, AnomalyTooltip, MetricTooltip } from '../components/Tooltip';
+import { InfoTooltip, AnomalyTooltip, MetricTooltip, Tooltip } from '../components/Tooltip';
 import Toggle, { ToggleGroup } from '../components/Toggle';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useI18n } from '../lib/i18n';
@@ -540,7 +540,7 @@ export default function AnomalyDashboard() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Left: Total & Progress */}
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Total anomalies' : 'Total anomalies'}
@@ -585,44 +585,44 @@ export default function AnomalyDashboard() {
                   </>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div 
-                  className="text-center p-3 rounded-xl"
+                  className="text-center p-2 sm:p-3 rounded-xl transition-transform hover:scale-105"
                   style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
                 >
-                  <div className="font-bold text-xl" style={{ color: 'rgb(var(--color-error))' }}>
+                  <div className="font-bold text-lg sm:text-xl" style={{ color: 'rgb(var(--color-error))' }}>
                     {combinedAnalysis.summary.critical}
                   </div>
-                  <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? 'Critical' : 'Critiques'}
                   </div>
                 </div>
                 <div 
-                  className="text-center p-3 rounded-xl"
+                  className="text-center p-2 sm:p-3 rounded-xl transition-transform hover:scale-105"
                   style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
                 >
-                  <div className="font-bold text-xl" style={{ color: 'rgb(var(--color-warning))' }}>
+                  <div className="font-bold text-lg sm:text-xl" style={{ color: 'rgb(var(--color-warning))' }}>
                     {combinedAnalysis.summary.warning}
                   </div>
-                  <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     Attention
                   </div>
                 </div>
                 <div 
-                  className="text-center p-3 rounded-xl"
+                  className="text-center p-2 sm:p-3 rounded-xl transition-transform hover:scale-105"
                   style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
                 >
-                  <div className="font-bold text-xl" style={{ color: 'rgb(var(--color-info))' }}>
+                  <div className="font-bold text-lg sm:text-xl" style={{ color: 'rgb(var(--color-info))' }}>
                     {combinedAnalysis.summary.info}
                   </div>
-                  <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>Info</div>
+                  <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>Info</div>
                 </div>
               </div>
             </div>
             
             {/* Right: Top Risks */}
             <div 
-              className="sm:border-l sm:pl-4"
+              className="sm:border-l sm:pl-4 min-w-0"
               style={{ borderColor: 'rgb(var(--color-border))' }}
             >
               <p className="text-sm font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
@@ -631,20 +631,21 @@ export default function AnomalyDashboard() {
               {combinedAnalysis.summary.topRisks && combinedAnalysis.summary.topRisks.length > 0 ? (
                 <ul className="space-y-2">
                   {combinedAnalysis.summary.topRisks.slice(0, 4).map((risk, idx) => (
-                    <li 
-                      key={idx}
-                      className="text-sm flex items-start gap-2 p-2 rounded-lg"
-                      style={{ 
-                        backgroundColor: 'rgb(var(--color-bg-muted))',
-                        color: 'rgb(var(--color-text-secondary))' 
-                      }}
-                    >
-                      <span 
-                        className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                        style={{ backgroundColor: 'rgb(var(--color-error))' }}
-                      />
-                      <span className="line-clamp-2">{risk}</span>
-                    </li>
+                    <Tooltip key={idx} content={risk} position="bottom" delay={300}>
+                      <li 
+                        className="text-xs sm:text-sm flex items-start gap-2 p-2 rounded-lg cursor-help transition-colors hover:brightness-95"
+                        style={{ 
+                          backgroundColor: 'rgb(var(--color-bg-muted))',
+                          color: 'rgb(var(--color-text-secondary))' 
+                        }}
+                      >
+                        <span 
+                          className="w-1.5 h-1.5 rounded-full mt-1 sm:mt-1.5 flex-shrink-0"
+                          style={{ backgroundColor: 'rgb(var(--color-error))' }}
+                        />
+                        <span className="line-clamp-1 sm:line-clamp-2 break-words min-w-0">{risk}</span>
+                      </li>
+                    </Tooltip>
                   ))}
                 </ul>
               ) : (
@@ -837,9 +838,11 @@ export default function AnomalyDashboard() {
                           </>
                         )}
                       </div>
-                      <p className="text-sm truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                        {anomaly.description}
-                      </p>
+                      <Tooltip content={anomaly.description} position="bottom" delay={300}>
+                        <p className="text-sm truncate cursor-help" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          {anomaly.description}
+                        </p>
+                      </Tooltip>
                     </div>
                     
                     <div className="flex items-center gap-3 flex-shrink-0">

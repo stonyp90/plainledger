@@ -42,19 +42,26 @@ export interface NovuTriggerPayload {
 }
 
 // Workflow IDs - must match Novu Dashboard
+// Note: Keycloak handles email verification & password reset via SMTP (AWS SES)
+// These Novu workflows are for application-level notifications AFTER auth flow
 export const NovuWorkflows = {
-  // Account
-  WELCOME: 'welcome',
-  EMAIL_VERIFIED: 'email-verified',
-  PASSWORD_CHANGED: 'password-changed',
+  // Account (triggered after Keycloak auth events)
+  WELCOME: 'welcome',                              // After successful registration + email verification
+  EMAIL_VERIFIED: 'email-verified',                // Confirmation that email was verified
+  PASSWORD_CHANGED: 'password-changed',            // Security alert after password change
   ACCOUNT_DEACTIVATED: 'account-deactivated',
   ACCOUNT_REACTIVATED: 'account-reactivated',
+  
+  // Onboarding
+  ONBOARDING_COMPLETE: 'onboarding-complete',      // After user completes onboarding wizard
+  FIRST_CONNECTION: 'first-connection',            // After first data source connection
+  FIRST_REPORT: 'first-report',                    // After first report generation
   
   // Security
   LOGIN_NEW_DEVICE: 'login-new-device',
   LOGIN_NEW_LOCATION: 'login-new-location',
   LOGIN_FAILED_ATTEMPTS: 'login-failed-attempts',
-  TWO_FACTOR_ENABLED: 'two-factor-enabled',
+  TWO_FACTOR_ENABLED: 'two-factor-enabled',        // After MFA setup in Keycloak
   TWO_FACTOR_DISABLED: 'two-factor-disabled',
   SUSPICIOUS_ACTIVITY: 'suspicious-activity',
   
@@ -70,6 +77,13 @@ export const NovuWorkflows = {
   TRIAL_ENDING: 'trial-ending',
   USAGE_LIMIT_WARNING: 'usage-limit-warning',
   USAGE_LIMIT_REACHED: 'usage-limit-reached',
+  
+  // Trial & Conversion
+  TRIAL_REMINDER: 'trial-reminder',
+  TRIAL_EXPIRED: 'trial-expired',
+  FEATURE_UNLOCK: 'feature-unlock',
+  USAGE_MILESTONE: 'usage-milestone',
+  WINBACK_OFFER: 'winback-offer',
   
   // Data Sync
   SYNC_COMPLETED: 'sync-completed',
@@ -94,6 +108,10 @@ export const NovuWorkflows = {
   // Team
   TEAM_MEMBER_INVITED: 'team-member-invited',
   TEAM_ROLE_CHANGED: 'team-role-changed',
+  
+  // Contact
+  CONTACT_FORM: 'contact-form',            // Contact form submission notification
+  CONTACT_FORM_AUTO_REPLY: 'contact-form-auto-reply',  // Auto-reply to sender
 } as const;
 
 type WorkflowId = typeof NovuWorkflows[keyof typeof NovuWorkflows];
@@ -242,6 +260,73 @@ export class NovuService implements OnModuleInit {
     });
   }
 
+  async sendOnboardingComplete(userId: string, data: {
+    firstName: string;
+    organizationName: string;
+    connectionsCount: number;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.ONBOARDING_COMPLETE,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        organizationName: data.organizationName,
+        connectionsCount: data.connectionsCount,
+        dashboardUrl: `${this.getBaseUrl()}/app/dashboard`,
+        reportsUrl: `${this.getBaseUrl()}/app/reports`,
+        helpUrl: `${this.getBaseUrl()}/help`,
+      },
+    });
+  }
+
+  async sendFirstConnection(userId: string, data: {
+    firstName: string;
+    providerName: string;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.FIRST_CONNECTION,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        providerName: data.providerName,
+        dashboardUrl: `${this.getBaseUrl()}/app/dashboard`,
+        reportsUrl: `${this.getBaseUrl()}/app/reports`,
+      },
+    });
+  }
+
+  async sendFirstReport(userId: string, data: {
+    firstName: string;
+    reportType: string;
+    reportUrl: string;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.FIRST_REPORT,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        reportType: data.reportType,
+        reportUrl: data.reportUrl,
+        dashboardUrl: `${this.getBaseUrl()}/app/dashboard`,
+      },
+    });
+  }
+
+  async sendTwoFactorEnabled(userId: string, data: {
+    firstName: string;
+    timestamp: Date;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.TWO_FACTOR_ENABLED,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        timestamp: data.timestamp.toISOString(),
+        securityUrl: `${this.getBaseUrl()}/app/settings`,
+      },
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Security Notifications
   // ---------------------------------------------------------------------------
@@ -320,6 +405,113 @@ export class NovuService implements OnModuleInit {
         trialEndDate: data.trialEndDate.toISOString(),
         planName: data.planName,
         subscribeUrl: `${this.getBaseUrl()}/app/settings`,
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Trial & Conversion Notifications
+  // ---------------------------------------------------------------------------
+
+  async sendTrialReminder(userId: string, data: {
+    firstName: string;
+    daysLeft: number;
+    reportsGenerated: number;
+    anomaliesDetected: number;
+    planName: string;
+    price: number;
+    specialOfferCode?: string;
+    specialOfferDiscount?: number;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.TRIAL_REMINDER,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        daysLeft: data.daysLeft,
+        reportsGenerated: data.reportsGenerated,
+        anomaliesDetected: data.anomaliesDetected,
+        timeSaved: Math.round(data.reportsGenerated * 0.5),
+        planName: data.planName,
+        price: data.price,
+        specialOfferCode: data.specialOfferCode,
+        specialOfferDiscount: data.specialOfferDiscount,
+        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription${data.specialOfferCode ? `&code=${data.specialOfferCode}` : ''}`,
+      },
+    });
+  }
+
+  async sendTrialExpiredNotification(userId: string, data: {
+    firstName: string;
+    reportsGenerated: number;
+    anomaliesDetected: number;
+    planName: string;
+    winbackCode: string;
+    winbackDiscount: number;
+    winbackMonths: number;
+    expiresAt: Date;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.TRIAL_EXPIRED,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        reportsGenerated: data.reportsGenerated,
+        anomaliesDetected: data.anomaliesDetected,
+        moneySaved: Math.round(data.anomaliesDetected * 500),
+        planName: data.planName,
+        winbackCode: data.winbackCode,
+        winbackDiscount: data.winbackDiscount,
+        winbackMonths: data.winbackMonths,
+        expiresAt: data.expiresAt.toISOString(),
+        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription&code=${data.winbackCode}`,
+      },
+    });
+  }
+
+  async sendFeatureUnlock(userId: string, data: {
+    firstName: string;
+    featureName: string;
+    featureDescription: string;
+    planName: string;
+    price: number;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.FEATURE_UNLOCK,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        featureName: data.featureName,
+        featureDescription: data.featureDescription,
+        planName: data.planName,
+        price: data.price,
+        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
+        featuresUrl: `${this.getBaseUrl()}/pricing`,
+      },
+    });
+  }
+
+  async sendUsageMilestoneNotification(userId: string, data: {
+    firstName: string;
+    milestoneValue: number;
+    milestoneLabel: string;
+    timeSaved: number;
+    issuesFound: number;
+    moneySaved: number;
+    planName: string;
+  }): Promise<void> {
+    await this.trigger({
+      workflowId: NovuWorkflows.USAGE_MILESTONE,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        milestoneValue: data.milestoneValue,
+        milestoneLabel: data.milestoneLabel,
+        timeSaved: data.timeSaved,
+        issuesFound: data.issuesFound,
+        moneySaved: data.moneySaved,
+        planName: data.planName,
+        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
       },
     });
   }
@@ -426,6 +618,60 @@ export class NovuService implements OnModuleInit {
         organizationName: data.organizationName,
         role: data.role,
         inviteUrl: data.inviteUrl,
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Contact Form
+  // ---------------------------------------------------------------------------
+
+  async sendContactFormNotification(data: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    source?: string;
+  }): Promise<void> {
+    // Create temporary subscriber for internal notification
+    const internalSubscriberId = 'plainledger-info';
+    
+    await this.upsertSubscriber({
+      subscriberId: internalSubscriberId,
+      email: 'info@plainledger.ca',
+      firstName: 'PlainLedger',
+      lastName: 'Support',
+    });
+
+    // Send notification to info@plainledger.ca
+    await this.trigger({
+      workflowId: NovuWorkflows.CONTACT_FORM,
+      to: internalSubscriberId,
+      payload: {
+        name: data.name,
+        email: data.email,
+        subject: data.subject,
+        message: data.message,
+        source: data.source || 'website',
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    // Send auto-reply to the person who submitted the form
+    const senderSubscriberId = `contact-${Date.now()}`;
+    
+    await this.upsertSubscriber({
+      subscriberId: senderSubscriberId,
+      email: data.email,
+      firstName: data.name,
+    });
+
+    await this.trigger({
+      workflowId: NovuWorkflows.CONTACT_FORM_AUTO_REPLY,
+      to: senderSubscriberId,
+      payload: {
+        name: data.name,
+        subject: data.subject,
       },
     });
   }

@@ -312,7 +312,13 @@ export class NotificationService {
       connection_reauthorization_required: 'connection_error',
       report_generated: 'report_generated',
       sync_failed: 'connection_error',
-      // Add more mappings as needed
+      // Trial and conversion emails
+      trial_reminder: 'trial_reminder',
+      trial_expired: 'trial_expired',
+      feature_unlock: 'feature_unlock',
+      usage_milestone: 'usage_milestone',
+      trial_ending: 'trial_reminder',
+      winback_offer: 'trial_expired',
     };
 
     return templateMap[notificationType] || 'default';

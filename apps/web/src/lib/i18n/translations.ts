@@ -1225,6 +1225,68 @@ export const translations = {
   },
 
   // ============================================================================
+  // EMAIL VERIFICATION
+  // ============================================================================
+  emailVerification: {
+    title: {
+      en: 'Check Your Email',
+      fr: 'Vérifiez votre courriel',
+    },
+    subtitle: {
+      en: 'We sent a confirmation link to verify your email address.',
+      fr: 'Nous avons envoyé un lien de confirmation pour vérifier votre adresse courriel.',
+    },
+    nextSteps: {
+      en: 'Next Steps',
+      fr: 'Prochaines étapes',
+    },
+    step1: {
+      en: 'Open the email we sent to your inbox',
+      fr: 'Ouvrez le courriel que nous avons envoyé',
+    },
+    step2: {
+      en: 'Click the "Verify Email" button in the email',
+      fr: 'Cliquez sur le bouton "Vérifier le courriel"',
+    },
+    step3: {
+      en: 'Return here and click "Continue to Dashboard"',
+      fr: 'Revenez ici et cliquez sur "Continuer"',
+    },
+    continue: {
+      en: 'Continue to Dashboard',
+      fr: 'Continuer vers le tableau de bord',
+    },
+    resend: {
+      en: 'Resend confirmation email',
+      fr: 'Renvoyer le courriel de confirmation',
+    },
+    resending: {
+      en: 'Sending...',
+      fr: 'Envoi...',
+    },
+    resendSuccess: {
+      en: 'Email sent successfully!',
+      fr: 'Courriel envoyé avec succès!',
+    },
+    resendIn: {
+      en: 'Resend in {seconds}s',
+      fr: 'Renvoyer dans {seconds}s',
+    },
+    checkSpam: {
+      en: "Can't find the email? Check your spam folder.",
+      fr: "Vous ne trouvez pas le courriel? Vérifiez votre dossier spam.",
+    },
+    useOtherEmail: {
+      en: 'Use a different email address',
+      fr: 'Utiliser une autre adresse courriel',
+    },
+    needHelp: {
+      en: 'Need help? Contact support@plainledger.com',
+      fr: 'Besoin d\'aide? Contactez support@plainledger.com',
+    },
+  },
+
+  // ============================================================================
   // ERRORS & MESSAGES
   // ============================================================================
   errors: {

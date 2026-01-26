@@ -90,8 +90,9 @@ resource "aws_db_parameter_group" "main" {
   }
 
   parameter {
-    name  = "shared_preload_libraries"
-    value = "pg_stat_statements"
+    name         = "shared_preload_libraries"
+    value        = "pg_stat_statements"
+    apply_method = "pending-reboot"
   }
 
   parameter {
@@ -114,9 +115,13 @@ resource "aws_db_instance" "main" {
 
   # Engine
   engine               = "postgres"
-  engine_version       = "16.3"
+  engine_version       = "16.6"
   instance_class       = var.db_instance_class
   parameter_group_name = aws_db_parameter_group.main.name
+
+  lifecycle {
+    ignore_changes = [engine_version]
+  }
 
   # Storage
   allocated_storage     = var.db_allocated_storage

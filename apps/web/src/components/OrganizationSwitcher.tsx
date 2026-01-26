@@ -65,6 +65,20 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isOpen]);
+
   const handleSwitchTenant = async (tenant: Tenant) => {
     if (tenant.id === currentTenant?.id) {
       setIsOpen(false);
@@ -159,19 +173,38 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
   };
 
   const getPlanBadge = (plan: Tenant['plan']) => {
-    const colors = {
-      free: { bg: 'var(--color-text-muted)', text: 'var(--color-text-inverted)' },
-      starter: { bg: 'var(--color-info)', text: 'var(--color-text-inverted)' },
-      professional: { bg: 'var(--color-accent)', text: 'var(--color-text-inverted)' },
-      enterprise: { bg: 'var(--color-warning)', text: 'var(--color-text)' },
+    const planStyles: Record<Tenant['plan'], { bg: string; text: string; border: string }> = {
+      free: { 
+        bg: 'rgb(var(--color-bg-muted))', 
+        text: 'rgb(var(--color-text-muted))',
+        border: 'rgb(var(--color-border))'
+      },
+      starter: { 
+        bg: 'rgb(var(--color-info) / 0.1)', 
+        text: 'rgb(var(--color-info))',
+        border: 'rgb(var(--color-info) / 0.2)'
+      },
+      professional: { 
+        bg: 'rgb(var(--color-success) / 0.1)', 
+        text: 'rgb(var(--color-success))',
+        border: 'rgb(var(--color-success) / 0.2)'
+      },
+      enterprise: { 
+        bg: 'rgb(var(--color-warning) / 0.1)', 
+        text: 'rgb(var(--color-warning))',
+        border: 'rgb(var(--color-warning) / 0.2)'
+      },
     };
+    
+    const style = planStyles[plan];
     
     return (
       <span 
-        className="text-[10px] px-1.5 py-0.5 rounded font-medium uppercase"
+        className="text-[10px] px-1.5 py-0.5 rounded font-medium"
         style={{ 
-          backgroundColor: `rgb(${colors[plan].bg})`,
-          color: `rgb(${colors[plan].text})`
+          backgroundColor: style.bg,
+          color: style.text,
+          border: `1px solid ${style.border}`
         }}
       >
         {plan}
@@ -182,218 +215,453 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
   if (isLoading) {
     return (
       <div 
-        className="w-full flex items-center justify-center px-3 py-2 rounded-lg"
-        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))'
+        }}
       >
-        <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'rgb(var(--color-text-muted))' }} />
+        <div 
+          className="w-8 h-8 rounded-lg animate-pulse"
+          style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+        />
+        <div className="flex-1 space-y-1.5">
+          <div 
+            className="h-3.5 w-24 rounded animate-pulse"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          />
+          <div 
+            className="h-2.5 w-16 rounded animate-pulse"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          />
+        </div>
+        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
       </div>
     );
   }
 
+  // Get role color for visual distinction
+  const getRoleColor = (role: Tenant['role']) => {
+    switch (role) {
+      case 'owner': return 'var(--color-warning)';
+      case 'admin': return 'var(--color-info)';
+      case 'member': return 'var(--color-success)';
+      case 'viewer': return 'var(--color-text-muted)';
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Trigger button - Touch-friendly */}
+      {/* Trigger button - Enhanced with theme accent and visual hierarchy */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-colors hover:opacity-90 active:scale-[0.98]"
-        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+        className={`
+          w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+          hover:shadow-md active:scale-[0.98] group
+          ${isOpen ? 'shadow-md' : 'hover:border-opacity-80'}
+        `}
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: `1.5px solid ${isOpen ? 'rgb(var(--color-primary-500) / 0.5)' : 'rgb(var(--color-border))'}`,
+          boxShadow: isOpen ? '0 0 0 3px rgb(var(--color-primary-500) / 0.1)' : undefined,
+        }}
         title={currentTenant?.name || 'Sélectionner une organisation'}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-          {!compact && (
-            <span 
-              className="text-xs sm:text-sm font-medium truncate"
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Organization avatar with gradient and ring indicator */}
+          <div className="relative flex-shrink-0">
+            <div 
+              className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm transition-transform group-hover:scale-105"
+              style={{ 
+                background: currentTenant 
+                  ? 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
+                  : 'rgb(var(--color-bg-muted))',
+                color: currentTenant ? 'white' : 'rgb(var(--color-text-muted))',
+                boxShadow: currentTenant ? '0 2px 8px rgb(var(--color-primary-500) / 0.3)' : 'none'
+              }}
             >
-              {currentTenant?.name || 'Sélectionner...'}
-            </span>
+              {currentTenant ? currentTenant.name.charAt(0).toUpperCase() : <Building2 className="w-4 h-4" />}
+            </div>
+            {/* Role indicator dot */}
+            {currentTenant && (
+              <div 
+                className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center"
+                style={{ 
+                  backgroundColor: `rgb(${getRoleColor(currentTenant.role)})`,
+                  borderColor: 'rgb(var(--color-surface))'
+                }}
+                title={getRoleLabel(currentTenant.role)}
+              >
+                {currentTenant.role === 'owner' && <Crown className="w-2 h-2 text-white" />}
+              </div>
+            )}
+          </div>
+          {!compact && (
+            <div className="min-w-0 text-left flex-1">
+              <span 
+                className="text-sm font-semibold truncate block leading-tight"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {currentTenant?.name || 'Sélectionner...'}
+              </span>
+              {currentTenant && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span 
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-bg-muted))',
+                      color: 'rgb(var(--color-text-muted))'
+                    }}
+                  >
+                    {currentTenant.plan}
+                  </span>
+                  <span 
+                    className="text-[10px] truncate"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {getRoleLabel(currentTenant.role)}
+                  </span>
+                </div>
+              )}
+            </div>
           )}
         </div>
-        <ChevronDown 
-          className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          style={{ color: 'rgb(var(--color-text-muted))' }}
-        />
+        <div 
+          className={`
+            w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200
+            ${isOpen ? 'rotate-180' : ''}
+          `}
+          style={{ 
+            backgroundColor: isOpen ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))',
+            color: isOpen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))'
+          }}
+        >
+          <ChevronDown className="w-4 h-4" />
+        </div>
       </button>
 
-      {/* Dropdown - Mobile optimized */}
+      {/* Dropdown - Enhanced with better visual hierarchy */}
       {isOpen && (
         <div 
-          className="absolute left-0 right-0 mt-1.5 sm:mt-2 rounded-lg shadow-xl z-50 overflow-hidden max-h-[70vh] sm:max-h-[60vh] overflow-y-auto"
+          className="absolute left-0 right-0 mt-2 rounded-2xl z-50 overflow-hidden animate-scale-in"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
             border: '1px solid rgb(var(--color-border))',
-            WebkitOverflowScrolling: 'touch',
+            boxShadow: '0 20px 50px rgb(var(--color-primary-500) / 0.15), 0 8px 20px rgb(0 0 0 / 0.12)',
           }}
+          role="listbox"
+          aria-label="Sélectionner une organisation"
         >
-          {/* Header */}
+          {/* Header with accent bar */}
           <div 
-            className="px-3 py-2 border-b sticky top-0"
+            className="relative px-4 py-3.5 border-b"
             style={{ 
               borderColor: 'rgb(var(--color-border))',
               backgroundColor: 'rgb(var(--color-surface))',
             }}
           >
-            <p className="text-[10px] sm:text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              Vos organisations ({tenants.length})
-            </p>
+            {/* Top accent line */}
+            <div 
+              className="absolute top-0 left-4 right-4 h-0.5 rounded-full"
+              style={{ 
+                background: 'linear-gradient(90deg, rgb(var(--color-primary-500)), rgb(var(--color-primary-400)), transparent)'
+              }}
+            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-6 h-6 rounded-md flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                    color: 'rgb(var(--color-primary-500))'
+                  }}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                </div>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  Organisations
+                </p>
+              </div>
+              <span 
+                className="text-[11px] px-2.5 py-1 rounded-full font-semibold"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white'
+                }}
+              >
+                {tenants.length}
+              </span>
+            </div>
           </div>
 
-          {/* Tenant list - Touch-optimized */}
-          <div className="max-h-52 sm:max-h-64 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {/* Tenant list - Touch-optimized with better spacing */}
+          <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto py-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
             {tenants.length === 0 ? (
-              <div className="px-3 py-6 text-center">
-                <Building2 
-                  className="w-7 h-7 sm:w-8 sm:h-8 mx-auto mb-2"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                />
-                <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <div className="px-4 py-10 text-center">
+                <div 
+                  className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgb(var(--color-bg-muted)) 0%, rgb(var(--color-bg-subtle)) 100%)'
+                  }}
+                >
+                  <Building2 className="w-8 h-8" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                </div>
+                <p className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                   Aucune organisation
+                </p>
+                <p className="text-xs mt-1.5 max-w-[200px] mx-auto" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  Créez votre première organisation pour commencer
                 </p>
               </div>
             ) : (
-              tenants.map((tenant) => {
-                const RoleIcon = getRoleIcon(tenant.role);
-                const isSelected = tenant.id === currentTenant?.id;
-                
-                return (
-                  <button
-                    key={tenant.id}
-                    onClick={() => handleSwitchTenant(tenant)}
-                    className="w-full flex items-start gap-2.5 sm:gap-3 px-3 py-2.5 sm:py-3 text-left transition-colors active:scale-[0.98]"
-                    style={{
-                      backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : undefined,
-                    }}
-                    onMouseEnter={(e) => !isSelected && (e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))')}
-                    onMouseLeave={(e) => !isSelected && (e.currentTarget.style.backgroundColor = '')}
-                    disabled={tenant.status === 'suspended'}
-                  >
-                    {/* Avatar */}
-                    <div 
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-semibold text-xs sm:text-sm"
-                      style={{ 
-                        backgroundColor: isSelected 
-                          ? 'rgb(var(--color-primary-600))'
-                          : 'rgb(var(--color-bg-muted))',
-                        color: isSelected 
-                          ? 'rgb(var(--color-text-inverted))'
-                          : 'rgb(var(--color-text-secondary))'
+              <div className="space-y-1">
+                {tenants.map((tenant) => {
+                  const RoleIcon = getRoleIcon(tenant.role);
+                  const isSelected = tenant.id === currentTenant?.id;
+                  const roleColor = getRoleColor(tenant.role);
+                  
+                  return (
+                    <button
+                      key={tenant.id}
+                      onClick={() => handleSwitchTenant(tenant)}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-3 text-left transition-all duration-150
+                        rounded-xl active:scale-[0.98]
+                        ${tenant.status === 'suspended' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      `}
+                      style={{
+                        backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
+                        border: isSelected ? '1.5px solid rgb(var(--color-primary-500) / 0.3)' : '1.5px solid transparent',
                       }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected && tenant.status !== 'suspended') {
+                          e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+                          e.currentTarget.style.borderColor = 'rgb(var(--color-border))';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.borderColor = 'transparent';
+                        }
+                      }}
+                      disabled={tenant.status === 'suspended'}
+                      role="option"
+                      aria-selected={isSelected}
                     >
-                      {tenant.name.charAt(0).toUpperCase()}
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span 
-                          className="font-medium text-xs sm:text-sm truncate"
+                      {/* Avatar with role color ring */}
+                      <div className="relative flex-shrink-0">
+                        <div 
+                          className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm transition-all"
                           style={{ 
-                            color: tenant.status === 'suspended' 
-                              ? 'rgb(var(--color-text-muted))'
-                              : 'rgb(var(--color-text))'
+                            background: isSelected 
+                              ? 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
+                              : 'rgb(var(--color-bg-muted))',
+                            color: isSelected 
+                              ? 'white'
+                              : 'rgb(var(--color-text-secondary))',
+                            boxShadow: isSelected ? '0 4px 12px rgb(var(--color-primary-500) / 0.35)' : 'none'
                           }}
                         >
-                          {tenant.name}
-                        </span>
-                        {isSelected && (
-                          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
-                        <div 
-                          className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px]"
-                          style={{ color: 'rgb(var(--color-text-muted))' }}
-                        >
-                          <RoleIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                          <span>{getRoleLabel(tenant.role)}</span>
+                          {tenant.name.charAt(0).toUpperCase()}
                         </div>
-                        {getPlanBadge(tenant.plan)}
-                        {getStatusBadge(tenant)}
+                        {/* Role indicator */}
+                        <div 
+                          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                          style={{ 
+                            backgroundColor: `rgb(${roleColor})`,
+                            borderColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-surface))'
+                          }}
+                        >
+                          <RoleIcon className="w-2.5 h-2.5 text-white" />
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className="font-semibold text-sm truncate"
+                            style={{ 
+                              color: tenant.status === 'suspended' 
+                                ? 'rgb(var(--color-text-muted))'
+                                : 'rgb(var(--color-text))'
+                            }}
+                          >
+                            {tenant.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          {getPlanBadge(tenant.plan)}
+                          {getStatusBadge(tenant)}
+                        </div>
+                      </div>
+
+                      {/* Selection indicator */}
+                      <div 
+                        className={`
+                          w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all
+                          ${isSelected ? 'scale-100' : 'scale-0'}
+                        `}
+                        style={{ 
+                          backgroundColor: 'rgb(var(--color-primary-500))',
+                          boxShadow: isSelected ? '0 2px 6px rgb(var(--color-primary-500) / 0.4)' : 'none'
+                        }}
+                      >
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* Footer actions - Touch-friendly */}
+          {/* Footer actions - Clean modern design */}
           <div 
-            className="border-t p-1.5 sm:p-2"
-            style={{ borderColor: 'rgb(var(--color-border))' }}
+            className="border-t p-2.5"
+            style={{ 
+              borderColor: 'rgb(var(--color-border))',
+              backgroundColor: 'rgb(var(--color-bg-subtle))'
+            }}
           >
-            <button
-              onClick={() => {
-                setShowCreateModal(true);
-                setIsOpen(false);
-              }}
-              className="dropdown-item w-full rounded-lg text-xs sm:text-sm py-2.5 sm:py-2 active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4 flex-shrink-0" />
-              <span>Créer une organisation</span>
-            </button>
-            
-            {currentTenant && (
-              <a
-                href="/app/settings"
-                className="dropdown-item w-full rounded-lg text-xs sm:text-sm py-2.5 sm:py-2 active:scale-[0.98]"
-                onClick={() => setIsOpen(false)}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setShowCreateModal(true);
+                  setIsOpen(false);
+                }}
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-md active:scale-[0.97]"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+                }}
               >
-                <Settings className="w-4 h-4 flex-shrink-0" />
-                <span>Paramètres de l'organisation</span>
-              </a>
-            )}
+                <Plus className="w-4 h-4" />
+                <span>Créer</span>
+              </button>
+              
+              {currentTenant && (
+                <a
+                  href="/app/settings"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-sm active:scale-[0.97]"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    color: 'rgb(var(--color-text-secondary))',
+                    border: '1px solid rgb(var(--color-border))'
+                  }}
+                  onClick={() => setIsOpen(false)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+                    e.currentTarget.style.borderColor = 'rgb(var(--color-border-strong))';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
+                    e.currentTarget.style.borderColor = 'rgb(var(--color-border))';
+                  }}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Paramètres</span>
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Create Organization Modal - Mobile-first */}
+      {/* Create Organization Modal - Mobile-first with enhanced styling */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div 
+          className="fixed inset-0 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-fade-in"
+          style={{ backgroundColor: 'rgb(0 0 0 / 0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => e.target === e.currentTarget && setShowCreateModal(false)}
+        >
           <div 
-            className="w-full sm:max-w-md rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col"
+            className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-scale-in"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
+            {/* Header with gradient accent */}
             <div 
-              className="px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0"
+              className="px-5 sm:px-6 py-4 sm:py-5 border-b flex-shrink-0 relative overflow-hidden"
               style={{ borderColor: 'rgb(var(--color-border))' }}
             >
-              <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                Créer une organisation
-              </h3>
-              <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                Une organisation regroupe vos données comptables et vos collaborateurs
-              </p>
-            </div>
-            
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-              <div className="mb-4">
-                <label className="label text-xs sm:text-sm">Nom de l'organisation</label>
-                <input
-                  type="text"
-                  className="input text-sm sm:text-base"
-                  placeholder="Ex: Ma Compagnie Inc."
-                  value={newOrgName}
-                  onChange={(e) => setNewOrgName(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              
+              {/* Gradient background accent */}
               <div 
-                className="p-3 rounded-lg flex items-start gap-2"
-                style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
-              >
-                <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-info))' }} />
-                <p className="text-[10px] sm:text-xs leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  Vous serez automatiquement le propriétaire de cette organisation. 
-                  Vous pourrez inviter des membres après la création.
+                className="absolute inset-0 opacity-50"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, transparent 60%)'
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-2">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ 
+                      background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                      boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+                    }}
+                  >
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                    Créer une organisation
+                  </h3>
+                </div>
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  Une organisation regroupe vos données comptables et vos collaborateurs
                 </p>
               </div>
             </div>
             
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1">
+              <div className="mb-5">
+                <label className="label text-sm font-medium flex items-center gap-2">
+                  <Building2 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  Nom de l'organisation
+                </label>
+                <input
+                  type="text"
+                  className="input text-base mt-1.5"
+                  placeholder="Ex: Ma Compagnie Inc."
+                  value={newOrgName}
+                  onChange={(e) => setNewOrgName(e.target.value)}
+                  autoFocus
+                  style={{
+                    borderRadius: '0.75rem',
+                    padding: '0.75rem 1rem',
+                  }}
+                />
+              </div>
+              
+              <div 
+                className="p-4 rounded-xl flex items-start gap-3"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500) / 0.06)',
+                  border: '1px solid rgb(var(--color-primary-500) / 0.15)'
+                }}
+              >
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <Info className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                    Vous serez le propriétaire
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    Vous pourrez inviter des membres après la création.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
             <div 
-              className="px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 flex-shrink-0 safe-area-bottom"
+              className="px-5 sm:px-6 py-4 sm:py-5 border-t flex flex-col-reverse sm:flex-row sm:justify-end gap-3 flex-shrink-0 safe-area-bottom"
               style={{ 
                 borderColor: 'rgb(var(--color-border))',
                 backgroundColor: 'rgb(var(--color-bg-subtle))'
@@ -404,15 +672,24 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                   setShowCreateModal(false);
                   setNewOrgName('');
                 }}
-                className="btn-secondary w-full sm:w-auto justify-center text-sm"
+                className="btn-secondary w-full sm:w-auto justify-center"
                 disabled={isCreating}
               >
                 Annuler
               </button>
               <button
                 onClick={handleCreateOrg}
-                className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto text-sm"
+                className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
                 disabled={!newOrgName.trim() || isCreating}
+                style={{
+                  background: !newOrgName.trim() || isCreating 
+                    ? undefined 
+                    : 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  color: 'white',
+                  boxShadow: !newOrgName.trim() || isCreating 
+                    ? undefined 
+                    : '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+                }}
               >
                 {isCreating ? (
                   <>
@@ -422,7 +699,7 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                 ) : (
                   <>
                     <Plus className="w-4 h-4" />
-                    Créer
+                    Créer l'organisation
                   </>
                 )}
               </button>

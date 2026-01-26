@@ -129,14 +129,25 @@ export default function Layout({ children }: LayoutProps) {
           <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <Link to="/app/dashboard" className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <Link to="/app/dashboard" className="flex items-center gap-1.5 sm:gap-2 min-w-0 group">
           <div 
-            className="w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+            style={{ 
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+            }}
           >
-            <span className="text-xs sm:text-sm font-bold">PL</span>
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
           </div>
-          <span className="font-semibold text-xs sm:text-sm tracking-tight truncate" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
+          <span 
+            className="font-semibold text-sm sm:text-base tracking-tight truncate transition-colors"
+            style={{ color: 'rgb(var(--color-text))' }}
+          >
+            Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
@@ -167,14 +178,25 @@ export default function Layout({ children }: LayoutProps) {
           className="h-14 sm:h-16 flex items-center justify-between px-3 sm:px-4 border-b flex-shrink-0"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Link to="/app/dashboard" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link to="/app/dashboard" className="flex items-center gap-2 group" onClick={() => setIsMobileMenuOpen(false)}>
             <div 
-              className="w-7 h-7 rounded flex items-center justify-center"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+              }}
             >
-              <span className="text-sm font-bold">PL</span>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </div>
-            <span className="font-semibold text-sm tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
+            <span 
+              className="font-semibold text-sm tracking-tight"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
+            </span>
           </Link>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
@@ -288,14 +310,25 @@ export default function Layout({ children }: LayoutProps) {
           className="h-16 flex items-center justify-between px-6 border-b flex-shrink-0"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Link to="/app/dashboard" className="flex items-center gap-2.5">
+          <Link to="/app/dashboard" className="flex items-center gap-2.5 group">
             <div 
-              className="w-8 h-8 rounded flex items-center justify-center"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all group-hover:scale-105 group-hover:shadow-lg"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.25)'
+              }}
             >
-              <span className="text-sm font-bold">PL</span>
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </div>
-            <span className="font-semibold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
+            <span 
+              className="font-semibold text-base tracking-tight"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
+            </span>
           </Link>
           {isInternalStaff && (
             <span 

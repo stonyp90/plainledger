@@ -509,6 +509,136 @@ input[type="checkbox"] {
   font-size: 24px;
   letter-spacing: 8px;
   text-align: center;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* MFA Info Box */
+.mfa-info {
+  text-align: center;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--pl-gray-100);
+  border-radius: var(--pl-radius);
+}
+
+.mfa-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.mfa-info p {
+  color: var(--pl-gray-600);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* MFA Setup Steps */
+.mfa-setup-steps {
+  padding: 0;
+  margin: 0 0 24px;
+  list-style: none;
+  counter-reset: mfa-step;
+}
+
+.mfa-setup-steps > li {
+  position: relative;
+  padding-left: 48px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--pl-gray-200);
+}
+
+.mfa-setup-steps > li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.mfa-setup-steps > li::before {
+  counter-increment: mfa-step;
+  content: counter(mfa-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--pl-charcoal);
+  color: var(--pl-white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mfa-setup-steps p {
+  color: var(--pl-gray-600);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.mfa-setup-steps .subtitle {
+  font-size: 13px;
+  color: var(--pl-gray-500);
+  font-style: italic;
+}
+
+/* QR Code Container */
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: var(--pl-white);
+  border: 1px solid var(--pl-gray-200);
+  border-radius: var(--pl-radius);
+  margin: 16px 0;
+}
+
+.qr-code-container img {
+  max-width: 200px;
+  height: auto;
+}
+
+/* Manual Setup */
+.manual-setup {
+  background: var(--pl-gray-100);
+  padding: 16px;
+  border-radius: var(--pl-radius);
+  margin: 12px 0;
+}
+
+.manual-setup p {
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.totp-secret {
+  font-family: 'SF Mono', Monaco, monospace;
+  background: var(--pl-charcoal);
+  color: var(--pl-white);
+  padding: 4px 8px;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+/* App List */
+.app-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.app-list li {
+  background: var(--pl-gray-100);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--pl-gray-600);
 }
 
 /* Responsive */
@@ -587,6 +717,81 @@ input[type="checkbox"] {
 #kc-update-profile-form .form-group,
 #kc-register-form .form-group {
   margin-bottom: 16px;
+}
+
+/* Password Requirements */
+.password-requirements {
+  background: var(--pl-gray-100);
+  padding: 16px;
+  border-radius: var(--pl-radius);
+  margin-bottom: 20px;
+}
+
+.requirements-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pl-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px;
+}
+
+.requirements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.requirements-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--pl-gray-500);
+  transition: color 0.2s ease;
+}
+
+.requirements-list li .check-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.requirements-list li.unmet .check-icon {
+  color: var(--pl-gray-400);
+}
+
+.requirements-list li.met {
+  color: var(--pl-green);
+}
+
+.requirements-list li.met .check-icon {
+  background: var(--pl-green);
+  color: var(--pl-white);
+}
+
+/* Email Verification */
+.email-verify-container {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.email-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.email-verify-container .instruction {
+  color: var(--pl-gray-600);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 /* Info/Warning boxes */

@@ -80,7 +80,7 @@ const providers: Provider[] = [
     description: 'Free accounting software',
     descriptionFr: 'Logiciel comptable gratuit',
     logo: '/providers/wave.svg',
-    color: '#003366',
+    color: '#2E77BC',
     status: 'disconnected',
   },
   {
@@ -102,35 +102,44 @@ function ProviderLogo({ provider, size = 'md' }: { provider: Provider; size?: 's
     lg: 'w-12 h-12',
   };
   
+  // Official brand logos matching the IntegrationLogos component
   const logoMap: Record<string, JSX.Element> = {
     quickbooks: (
       <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
         <circle cx="20" cy="20" r="20" fill="#2CA01C"/>
-        <path d="M12 14h4v12h-4v-12zm12 0h4v12h-4v-12zm-6 3h4v6h-4v-6z" fill="white"/>
+        {/* Outer ring of the "q" */}
+        <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none"/>
+        {/* Vertical stem for "q" going down */}
+        <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+        {/* Inner "b" shape */}
+        <path d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none"/>
       </svg>
     ),
     xero: (
       <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
         <circle cx="20" cy="20" r="20" fill="#13B5EA"/>
-        <text x="20" y="26" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">X</text>
+        <text x="20" y="25" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="14" letterSpacing="-0.5">xero</text>
+        <circle cx="33" cy="20" r="1.5" fill="white"/>
       </svg>
     ),
     sage: (
       <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <circle cx="20" cy="20" r="20" fill="#00D639"/>
-        <text x="20" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">S</text>
+        <circle cx="20" cy="20" r="20" fill="#1D1D1B"/>
+        <text x="20" y="25" textAnchor="middle" fill="#00D639" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="12">Sage</text>
       </svg>
     ),
     freshbooks: (
       <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <circle cx="20" cy="20" r="20" fill="#0075DD"/>
-        <text x="20" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">FB</text>
+        <rect width="40" height="40" rx="6" fill="#0075DD"/>
+        <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white"/>
+        <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white"/>
       </svg>
     ),
     wave: (
       <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <circle cx="20" cy="20" r="20" fill="#003366"/>
-        <path d="M10 20 Q15 15 20 20 T30 20" stroke="white" strokeWidth="3" fill="none"/>
+        <path d="M6 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v12z" fill="#003D79"/>
+        <path d="M16 32c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v24z" fill="#2E77BC"/>
+        <path d="M26 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v16z" fill="#6AB8F7"/>
       </svg>
     ),
     csv: (

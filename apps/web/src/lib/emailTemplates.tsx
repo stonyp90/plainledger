@@ -309,7 +309,7 @@ This invitation expires on ${expiryDate}.
 
 If you didn't expect this invitation, you can safely ignore this email.
 
-Questions? Contact us at support@plainledger.com
+Questions? Contact us at support@plainledger.ca
 
 © ${new Date().getFullYear()} PlainLedger Inc. All rights reserved.
     `.trim();
@@ -336,7 +336,7 @@ Cette invitation expire le ${expiryDate}.
 
 Si vous n'attendiez pas cette invitation, vous pouvez ignorer ce courriel.
 
-Des questions ? Contactez-nous à support@plainledger.com
+Des questions ? Contactez-nous à support@plainledger.ca
 
 © ${new Date().getFullYear()} PlainLedger Inc. Tous droits réservés.
   `.trim();

@@ -16,6 +16,7 @@ import CustomDashboard from './pages/CustomDashboard';
 import BoardMeeting from './pages/BoardMeeting';
 import Store from './pages/Store';
 import Onboarding from './components/Onboarding';
+import EmailConfirmation from './pages/EmailConfirmation';
 import CrispChat from './components/CrispChat';
 import config from './lib/config';
 import { analytics } from './lib/analytics';
@@ -33,12 +34,23 @@ function hasCompletedOnboarding(): boolean {
     localStorage.removeItem('pl_onboarding_completed');
     return false;
   }
+  // Allow forcing onboarding via URL parameter
+  if (window.location.search.includes('startOnboarding=true')) {
+    return false;
+  }
   return localStorage.getItem('pl_onboarding_completed') === 'true';
+}
+
+// Check if onboarding should be required (disabled by default - users go straight to dashboard)
+function shouldRequireOnboarding(): boolean {
+  // Onboarding is now optional - users can access dashboard directly
+  // They can still start onboarding by navigating to /onboarding
+  return false;
 }
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { authenticated, initialized, login } = useKeycloak();
+  const { authenticated, initialized, login, user } = useKeycloak();
   const location = useLocation();
 
   if (!initialized) {
@@ -71,10 +83,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Check if onboarding is needed (skip for onboarding route itself)
-  if (!hasCompletedOnboarding() && !location.pathname.includes('/onboarding')) {
-    return <Navigate to="/onboarding" replace />;
+  // Check if email verification is needed (skip for verify-email route itself)
+  // In production, this checks the emailVerified flag from Keycloak
+  // Allow bypass with URL parameter for development/testing
+  const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
+  if (!skipEmailVerification && user && !user.emailVerified && !location.pathname.includes('/verify-email')) {
+    return <Navigate to="/verify-email" replace />;
   }
+
+  // Onboarding is now optional - users can go directly to dashboard
+  // They can start onboarding later from settings or by navigating to /onboarding
+  // Removed: forced redirect to /onboarding
 
   return <>{children}</>;
 }
@@ -106,9 +125,9 @@ function LoginRedirect() {
   );
 }
 
-// Protected route for onboarding (doesn't redirect to onboarding again)
-function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { authenticated, initialized, login } = useKeycloak();
+// Protected route for email verification (doesn't redirect to verify-email again)
+function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNode }) {
+  const { authenticated, initialized, login, user } = useKeycloak();
 
   if (!initialized) {
     return (
@@ -139,10 +158,58 @@ function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If onboarding already completed, go to dashboard
-  if (hasCompletedOnboarding()) {
-    return <Navigate to="/app/dashboard" replace />;
+  // If email already verified, proceed to onboarding or dashboard
+  if (user?.emailVerified) {
+    if (!hasCompletedOnboarding()) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    return <Navigate to="/app" replace />;
   }
+
+  return <>{children}</>;
+}
+
+// Protected route for onboarding (doesn't redirect to onboarding again)
+function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { authenticated, initialized, login, user } = useKeycloak();
+
+  if (!initialized) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    login();
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if email verification is needed first
+  const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
+  if (!skipEmailVerification && user && !user.emailVerified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
+  // Allow users to redo onboarding if they want - no redirect to dashboard
+  // They can manually navigate to onboarding from settings or directly via /onboarding
 
   return <>{children}</>;
 }
@@ -222,6 +289,16 @@ function App() {
         <Route 
           path="/newsletter" 
           element={<NewsletterPage />} 
+        />
+
+        {/* Email Verification - protected but separate from main app */}
+        <Route
+          path="/verify-email"
+          element={
+            <ProtectedEmailVerificationRoute>
+              <EmailConfirmation />
+            </ProtectedEmailVerificationRoute>
+          }
         />
         
         {/* Onboarding - protected but separate from main app */}

@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useRe
 import Keycloak from 'keycloak-js';
 
 // Check if mock auth is enabled (for development/testing without Keycloak)
-const MOCK_AUTH_ENABLED = import.meta.env.VITE_MOCK_AUTH === 'true';
+// Defaults to true in development mode when VITE_MOCK_AUTH is not explicitly set
+const MOCK_AUTH_ENABLED = import.meta.env.VITE_MOCK_AUTH === 'true' || 
+  (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false');
 
 // Keycloak configuration
 const keycloakConfig = {
@@ -66,6 +68,7 @@ interface KeycloakContextType {
   authenticated: boolean;
   user: UserProfile | null;
   login: (idpHint?: string) => void; // Optional IDP hint for direct login
+  register: (redirectUri?: string) => void; // Trigger registration flow
   logout: () => void;
   getToken: () => string | undefined;
   linkAccount: (provider: string) => void; // Link additional IDP accounts
@@ -195,6 +198,22 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     keycloak.login(options);
   };
 
+  // Register (signup) - redirects to Keycloak registration page
+  const register = (redirectUri?: string) => {
+    // Mock auth mode - just set authenticated
+    if (MOCK_AUTH_ENABLED) {
+      setAuthenticated(true);
+      setUser(MOCK_USER);
+      window.location.href = '/onboarding';
+      return;
+    }
+    
+    keycloak.register({
+      locale: document.documentElement.lang === 'en' ? 'en' : 'fr',
+      redirectUri: redirectUri || window.location.origin + '/onboarding',
+    });
+  };
+
   const logout = () => {
     // Mock auth mode - just clear state
     if (MOCK_AUTH_ENABLED) {
@@ -287,6 +306,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     authenticated,
     user,
     login,
+    register,
     logout,
     getToken,
     linkAccount,

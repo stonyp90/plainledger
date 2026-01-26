@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useKeycloak } from '../lib/keycloak';
 import {
   Check,
   ArrowRight,
@@ -31,6 +32,8 @@ import {
   Plus,
   Info,
   Award,
+  Sparkles,
+  Clock,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import ThemeToggle from '../components/ThemeToggle';
@@ -46,6 +49,7 @@ import {
 } from '../lib/pricing';
 import CPAPricingSection from '../components/CPAPricingSection';
 import IntegrationLogos from '../components/IntegrationLogos';
+import { Tooltip } from '../components/Tooltip';
 
 // =====================================================
 // FEATURES DATA
@@ -56,49 +60,92 @@ const FEATURES = [
     icon: BarChart3,
     title: { en: 'Smart Dashboard', fr: 'Tableau de bord intelligent' },
     description: { 
-      en: 'Real-time financial health score with AI-powered insights',
-      fr: 'Score de santé financière en temps réel avec insights IA'
+      en: 'Real-time financial health score with AI-powered insights. See cash flow, ratios, and trends at a glance.',
+      fr: 'Score de santé financière en temps réel avec insights IA. Visualisez trésorerie, ratios et tendances.'
     },
+    stat: { value: '87', label: { en: 'Health Score', fr: 'Score santé' } },
+    highlights: [
+      { en: 'Live KPIs', fr: 'KPIs en direct' },
+      { en: 'Trend analysis', fr: 'Analyse tendances' },
+      { en: 'Custom views', fr: 'Vues personnalisées' },
+    ],
+    color: 'primary',
   },
   {
     icon: AlertTriangle,
-    title: { en: 'Anomaly Detection', fr: 'Détection d\'anomalies' },
+    title: { en: 'AI Anomaly Detection', fr: 'Détection d\'anomalies IA' },
     description: { 
-      en: 'AI automatically flags unusual transactions and potential issues',
-      fr: 'L\'IA signale automatiquement les transactions inhabituelles'
+      en: 'AI automatically flags duplicate payments, fraud patterns, and unusual expenses before they become problems.',
+      fr: 'L\'IA signale paiements en double, fraudes et dépenses inhabituelles avant qu\'ils ne deviennent problèmes.'
     },
+    stat: { value: '$847K', label: { en: 'Saved avg.', fr: 'Économisé moy.' } },
+    highlights: [
+      { en: '97% accuracy', fr: '97% précision' },
+      { en: 'Real-time alerts', fr: 'Alertes temps réel' },
+      { en: 'Auto-categorize', fr: 'Auto-catégoriser' },
+    ],
+    color: 'error',
+    badge: { en: 'Most Popular', fr: 'Plus populaire' },
   },
   {
     icon: FileText,
-    title: { en: 'Financial Reports', fr: 'Rapports financiers' },
+    title: { en: 'Instant Reports', fr: 'Rapports instantanés' },
     description: { 
-      en: 'Balance sheet, income statement, cash flow - ready in seconds',
-      fr: 'Bilan, compte de résultat, flux de trésorerie - prêts en secondes'
+      en: 'Generate professional balance sheets, income statements, and cash flow reports. Export to PDF, Excel, or share directly.',
+      fr: 'Générez bilans, comptes de résultat et flux de trésorerie professionnels. Export PDF, Excel ou partage direct.'
     },
+    stat: { value: '2.3s', label: { en: 'Generation time', fr: 'Temps génération' } },
+    highlights: [
+      { en: 'GAAP/IFRS ready', fr: 'GAAP/IFRS prêt' },
+      { en: 'Multi-format export', fr: 'Export multi-format' },
+      { en: 'Board-ready', fr: 'Prêt pour CA' },
+    ],
+    color: 'info',
   },
   {
     icon: Database,
-    title: { en: 'Connect Anything', fr: 'Connectez tout' },
+    title: { en: 'Universal Integrations', fr: 'Intégrations universelles' },
     description: { 
-      en: 'QuickBooks, Xero, Sage, FreshBooks, Wave, and CSV imports',
-      fr: 'QuickBooks, Xero, Sage, FreshBooks, Wave, et imports CSV'
+      en: 'Connect QuickBooks, Xero, Sage, FreshBooks, Wave in minutes. Import CSV/Excel for any system. Read-only for security.',
+      fr: 'Connectez QuickBooks, Xero, Sage, FreshBooks, Wave en minutes. Import CSV/Excel. Lecture seule pour la sécurité.'
     },
+    stat: { value: '6+', label: { en: 'Integrations', fr: 'Intégrations' } },
+    highlights: [
+      { en: 'One-click connect', fr: 'Connexion 1-clic' },
+      { en: 'Auto-sync', fr: 'Synchro auto' },
+      { en: 'Read-only secure', fr: 'Lecture seule' },
+    ],
+    color: 'success',
   },
   {
     icon: Shield,
-    title: { en: 'Bank-Level Security', fr: 'Sécurité bancaire' },
+    title: { en: 'Quebec-First Security', fr: 'Sécurité québécoise' },
     description: { 
-      en: 'Bank-level AES-256 encryption, data stored in Quebec, built by CPAs',
-      fr: 'Chiffrement bancaire AES-256, données au Québec, conçu par des CPA'
+      en: 'Bank-level AES-256 encryption. Data stored exclusively in Quebec. Built by CPAs, for CPAs. SOC 2 compliant.',
+      fr: 'Chiffrement bancaire AES-256. Données exclusivement au Québec. Conçu par des CPA, pour des CPA. Conforme SOC 2.'
     },
+    stat: { value: '100%', label: { en: 'Quebec hosted', fr: 'Hébergé au Québec' } },
+    highlights: [
+      { en: 'AES-256 encrypted', fr: 'Chiffré AES-256' },
+      { en: 'SOC 2 compliant', fr: 'Conforme SOC 2' },
+      { en: 'No write access', fr: 'Aucun accès écriture' },
+    ],
+    color: 'warning',
   },
   {
     icon: Users,
     title: { en: 'Team Collaboration', fr: 'Collaboration d\'équipe' },
     description: { 
-      en: 'Invite your accountant, CFO, or team with role-based access',
-      fr: 'Invitez votre comptable, CFO ou équipe avec accès par rôle'
+      en: 'Invite accountants, CFOs, and team members with granular role-based permissions. Comment, share, and collaborate in real-time.',
+      fr: 'Invitez comptables, CFO et équipe avec permissions granulaires par rôle. Commentez, partagez et collaborez en temps réel.'
     },
+    stat: { value: '∞', label: { en: 'Team members', fr: 'Membres équipe' } },
+    highlights: [
+      { en: 'Role-based access', fr: 'Accès par rôle' },
+      { en: 'Real-time collab', fr: 'Collab. temps réel' },
+      { en: 'Audit trail', fr: 'Piste d\'audit' },
+    ],
+    color: 'primary',
   },
 ];
 
@@ -287,12 +334,12 @@ function Header({ isEn, onLanguageToggle }: { isEn: boolean; onLanguageToggle: (
 }
 
 function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => void }) {
-  const navigate = useNavigate();
+  const { register } = useKeycloak();
   const messaging = QUEBEC_MARKET_MESSAGING;
 
   const handleCTA = () => {
     analytics.track('landing_page_cta_clicked', { location: 'hero' });
-    navigate('/signup');
+    register();
   };
 
   const handleWatchDemo = () => {
@@ -400,44 +447,146 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
 }
 
 function FeaturesSection({ isEn }: { isEn: boolean }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  
+  const getColorClasses = (color: string) => {
+    switch (color) {
+      case 'primary': return { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-500))', border: 'rgb(var(--color-primary-500) / 0.2)' };
+      case 'error': return { bg: 'rgb(var(--color-error) / 0.1)', text: 'rgb(var(--color-error))', border: 'rgb(var(--color-error) / 0.2)' };
+      case 'success': return { bg: 'rgb(var(--color-success) / 0.1)', text: 'rgb(var(--color-success))', border: 'rgb(var(--color-success) / 0.2)' };
+      case 'warning': return { bg: 'rgb(var(--color-warning) / 0.1)', text: 'rgb(var(--color-warning))', border: 'rgb(var(--color-warning) / 0.2)' };
+      case 'info': return { bg: 'rgb(var(--color-info) / 0.1)', text: 'rgb(var(--color-info))', border: 'rgb(var(--color-info) / 0.2)' };
+      default: return { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-500))', border: 'rgb(var(--color-primary-500) / 0.2)' };
+    }
+  };
+  
   return (
     <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" 
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+            <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              {isEn ? 'Purpose-built for finance teams' : 'Conçu pour les équipes finance'}
+            </span>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Everything you need, nothing you don\'t' : 'Tout ce dont vous avez besoin, rien de plus'}
           </h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn 
-              ? 'Built for accountants and CFOs who want clarity, not complexity'
-              : 'Conçu pour les comptables et CFO qui veulent de la clarté, pas de la complexité'}
+              ? 'Built for accountants and CFOs who want clarity, not complexity. Get started in minutes.'
+              : 'Conçu pour les comptables et CFO qui veulent de la clarté, pas de la complexité. Commencez en minutes.'}
           </p>
         </div>
 
+        {/* Features Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature, idx) => (
-            <div 
-              key={idx}
-              className="p-6 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: '1px solid rgb(var(--color-border))'
-              }}
-            >
+          {FEATURES.map((feature, idx) => {
+            const colors = getColorClasses(feature.color);
+            const isHovered = hoveredIdx === idx;
+            
+            return (
               <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                key={idx}
+                className={`
+                  relative p-6 rounded-2xl transition-all duration-300 cursor-pointer overflow-hidden
+                  ${isHovered ? 'shadow-xl scale-[1.02]' : 'shadow-sm hover:shadow-lg'}
+                `}
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: `1px solid ${isHovered ? colors.border : 'rgb(var(--color-border))'}`,
+                }}
+                onMouseEnter={() => setHoveredIdx(idx)}
+                onMouseLeave={() => setHoveredIdx(null)}
               >
-                <feature.icon className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                {/* Badge */}
+                {feature.badge && (
+                  <div 
+                    className="absolute top-4 right-4 px-2.5 py-1 rounded-full text-xs font-semibold"
+                    style={{ backgroundColor: colors.bg, color: colors.text }}
+                  >
+                    {isEn ? feature.badge.en : feature.badge.fr}
+                  </div>
+                )}
+                
+                {/* Header with icon and stat */}
+                <div className="flex items-start justify-between mb-4">
+                  <div 
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 ${isHovered ? 'scale-110' : ''}`}
+                    style={{ backgroundColor: colors.bg }}
+                  >
+                    <feature.icon className="w-6 h-6" style={{ color: colors.text }} />
+                  </div>
+                  
+                  {/* Stat */}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold" style={{ color: colors.text }}>
+                      {feature.stat.value}
+                    </div>
+                    <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? feature.stat.label.en : feature.stat.label.fr}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Title & Description */}
+                <h3 className="font-semibold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? feature.title.en : feature.title.fr}
+                </h3>
+                <p className="text-sm mb-4 leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? feature.description.en : feature.description.fr}
+                </p>
+                
+                {/* Highlights */}
+                <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  {feature.highlights.map((highlight, hIdx) => (
+                    <span 
+                      key={hIdx}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}
+                    >
+                      <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
+                      {isEn ? highlight.en : highlight.fr}
+                    </span>
+                  ))}
+                </div>
+                
+                {/* Hover gradient overlay */}
+                <div 
+                  className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+                  style={{ 
+                    background: `linear-gradient(135deg, ${colors.bg} 0%, transparent 50%)`,
+                  }}
+                />
               </div>
-              <h3 className="font-semibold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? feature.title.en : feature.title.fr}
-              </h3>
-              <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? feature.description.en : feature.description.fr}
-              </p>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+        
+        {/* Bottom CTA */}
+        <div className="text-center mt-12">
+          <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn 
+              ? 'Join 1,000+ Quebec businesses already using PlainLedger'
+              : 'Rejoignez 1 000+ entreprises québécoises utilisant déjà PlainLedger'}
+          </p>
+          <div className="flex flex-wrap justify-center gap-6">
+            {[
+              { icon: Clock, text: { en: 'Setup in 5 min', fr: 'Config. en 5 min' } },
+              { icon: Shield, text: { en: 'No credit card required', fr: 'Sans carte de crédit' } },
+              { icon: Zap, text: { en: '21-day free trial', fr: 'Essai gratuit 21 jours' } },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <item.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? item.text.en : item.text.fr}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -679,7 +828,7 @@ function PricingSection({ isEn }: { isEn: boolean }) {
     plan_business: 15,
     plan_enterprise: 10,
   });
-  const navigate = useNavigate();
+  const { register } = useKeycloak();
 
   const handlePlanSelect = (planId: string) => {
     const plan = PRICING_TIERS.find(p => p.id === planId);
@@ -692,7 +841,9 @@ function PricingSection({ isEn }: { isEn: boolean }) {
     if (plan?.tier === 'enterprise') {
       window.location.href = 'mailto:sales@plainledger.ca?subject=Enterprise%20Inquiry&body=Bonjour,%0A%0AJ\'aimerais en savoir plus sur le plan Entreprise.';
     } else {
-      navigate(`/signup?plan=${planId}&billing=${billingCycle}&users=${userCounts[planId] || 1}`);
+      // Start registration with plan details in redirect URI
+      const redirectUri = `${window.location.origin}/onboarding?plan=${planId}&billing=${billingCycle}&users=${userCounts[planId] || 1}`;
+      register(redirectUri);
     }
   };
 
@@ -707,10 +858,10 @@ function PricingSection({ isEn }: { isEn: boolean }) {
           <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Simple, usage-based pricing' : 'Tarification simple basée sur l\'utilisation'}
           </h2>
-          <p className="text-sm mb-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <p className="text-sm mb-1 text-center" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn ? 'Start free, pay only for what you use' : 'Commencez gratuitement, payez seulement ce que vous utilisez'}
           </p>
-          <p className="text-xs flex items-center justify-center gap-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <p className="text-xs flex items-center justify-center gap-1.5 w-full" style={{ color: 'rgb(var(--color-text-muted))' }}>
             <Info className="w-3.5 h-3.5" />
             {isEn 
               ? 'All plans include team members. No hidden fees.' 
@@ -958,9 +1109,11 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
                     <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
                       {testimonial.author}
                     </p>
-                    <p className="text-xs flex items-center gap-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? testimonial.role.en : testimonial.role.fr}
-                    </p>
+                    <Tooltip content={isEn ? testimonial.role.en : testimonial.role.fr} position="top" delay={200}>
+                      <p className="text-xs flex items-center gap-1 truncate cursor-help" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {isEn ? testimonial.role.en : testimonial.role.fr}
+                      </p>
+                    </Tooltip>
                     <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       <MapPin className="w-3 h-3" />
                       {testimonial.location}
@@ -998,7 +1151,7 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
 }
 
 function CTASection({ isEn }: { isEn: boolean }) {
-  const navigate = useNavigate();
+  const { register } = useKeycloak();
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
@@ -1024,7 +1177,7 @@ function CTASection({ isEn }: { isEn: boolean }) {
           <button
             onClick={() => {
               analytics.track('landing_page_cta_clicked', { location: 'bottom' });
-              navigate('/signup');
+              register();
             }}
             className="bg-white font-semibold px-8 py-3.5 rounded-xl hover:bg-gray-100 transition-all inline-flex items-center gap-2 group"
             style={{ color: 'rgb(var(--color-primary-700))' }}

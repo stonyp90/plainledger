@@ -194,9 +194,9 @@ export default function RatioCard({
       {/* Scale visualization */}
       <div 
         className={`
-          relative h-3 rounded-full overflow-hidden mb-2 cursor-crosshair
+          relative h-2.5 sm:h-3 rounded-full overflow-hidden mb-2 cursor-crosshair
           transition-all duration-200
-          ${isScaleHovered ? 'h-4' : ''}
+          ${isScaleHovered ? 'h-3.5 sm:h-4' : ''}
         `} 
         style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
         onMouseEnter={() => setIsScaleHovered(true)}
@@ -218,10 +218,10 @@ export default function RatioCard({
         <div 
           className={`
             absolute top-1/2 -translate-y-1/2 rounded-full border-2 transition-all duration-300
-            ${isHovered ? 'w-4 h-4' : 'w-3 h-3'}
+            ${isHovered ? 'w-3.5 h-3.5 sm:w-4 sm:h-4' : 'w-2.5 h-2.5 sm:w-3 sm:h-3'}
           `}
           style={{ 
-            left: `calc(${position}% - ${isHovered ? 8 : 6}px)`,
+            left: `calc(${position}% - ${isHovered ? 7 : 5}px)`,
             backgroundColor: colors.text,
             borderColor: 'rgb(var(--color-surface))',
             boxShadow: isHovered ? `0 0 10px ${colors.text}` : 'none',
@@ -238,7 +238,7 @@ export default function RatioCard({
         {/* Tooltip on scale hover */}
         {isScaleHovered && (
           <div 
-            className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-gray-900 text-white text-xs whitespace-nowrap"
+            className="absolute -top-7 sm:-top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded bg-gray-900 text-white text-[10px] sm:text-xs whitespace-nowrap z-20"
           >
             {formatValue(value)}
           </div>
@@ -248,31 +248,31 @@ export default function RatioCard({
       {/* Scale labels */}
       <div 
         className={`
-          flex justify-between text-[10px] transition-opacity duration-200
+          flex justify-between text-[9px] sm:text-[10px] transition-opacity duration-200
           ${isHovered ? 'opacity-100' : 'opacity-60'}
         `} 
         style={{ color: 'rgb(var(--color-text-muted))' }}
       >
         <span>{formatValue(minVal)}</span>
-        {target.ideal && <span className="text-center">{isEn ? 'Ideal' : 'Idéal'}: {formatValue(target.ideal)}</span>}
+        {target.ideal && <span className="text-center hidden sm:inline">{isEn ? 'Ideal' : 'Idéal'}: {formatValue(target.ideal)}</span>}
         <span>{formatValue(maxVal)}</span>
       </div>
 
       {/* Status message */}
       <div 
         className={`
-          relative z-10 mt-4 flex items-center justify-between gap-2 text-xs px-3 py-2 rounded-lg
+          relative z-10 mt-3 sm:mt-4 flex items-center justify-between gap-1.5 sm:gap-2 text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg
           transition-all duration-200
           ${isHovered ? 'scale-[1.02]' : ''}
         `}
         style={{ backgroundColor: colors.bg, color: colors.text }}
       >
-        <div className="flex items-center gap-1.5">
-          <Info className="w-3 h-3" />
-          <span>{isEn ? messageEn : message}</span>
+        <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+          <Info className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{isEn ? messageEn : message}</span>
         </div>
         {isHovered && onClick && (
-          <ExternalLink className="w-3 h-3 opacity-70" />
+          <ExternalLink className="w-3 h-3 opacity-70 flex-shrink-0" />
         )}
       </div>
     </div>

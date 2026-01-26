@@ -210,6 +210,45 @@ function CompanyInfoStep({
   );
 }
 
+// Provider Logo Components for Onboarding
+const ProviderLogos: Record<string, JSX.Element> = {
+  quickbooks: (
+    <svg viewBox="0 0 40 40" className="w-8 h-8">
+      <circle cx="20" cy="20" r="20" fill="#2CA01C"/>
+      <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none"/>
+      <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none"/>
+    </svg>
+  ),
+  xero: (
+    <svg viewBox="0 0 40 40" className="w-8 h-8">
+      <circle cx="20" cy="20" r="20" fill="#13B5EA"/>
+      <text x="20" y="25" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="14" letterSpacing="-0.5">xero</text>
+      <circle cx="33" cy="20" r="1.5" fill="white"/>
+    </svg>
+  ),
+  sage: (
+    <svg viewBox="0 0 40 40" className="w-8 h-8">
+      <circle cx="20" cy="20" r="20" fill="#1D1D1B"/>
+      <text x="20" y="25" textAnchor="middle" fill="#00D639" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="12">Sage</text>
+    </svg>
+  ),
+  freshbooks: (
+    <svg viewBox="0 0 40 40" className="w-8 h-8">
+      <rect width="40" height="40" rx="6" fill="#0075DD"/>
+      <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white"/>
+      <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white"/>
+    </svg>
+  ),
+  wave: (
+    <svg viewBox="0 0 40 40" className="w-8 h-8">
+      <path d="M6 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v12z" fill="#003D79"/>
+      <path d="M16 32c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v24z" fill="#2E77BC"/>
+      <path d="M26 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v16z" fill="#6AB8F7"/>
+    </svg>
+  ),
+};
+
 // Step 2: Connect Data Source
 function ConnectSourceStep({ 
   data, 
@@ -228,9 +267,9 @@ function ConnectSourceStep({
   const sources = [
     { id: 'quickbooks', name: 'QuickBooks Online', color: '#2CA01C' },
     { id: 'xero', name: 'Xero', color: '#13B5EA' },
-    { id: 'sage', name: 'Sage', color: '#00D639' },
+    { id: 'sage', name: 'Sage', color: '#1D1D1B' },
     { id: 'freshbooks', name: 'FreshBooks', color: '#0075DD' },
-    { id: 'wave', name: 'Wave', color: '#095AA6' },
+    { id: 'wave', name: 'Wave', color: '#2E77BC' },
     { id: 'csv', name: isEn ? 'Import CSV' : 'Importer CSV', color: '#6B7280' },
   ];
 
@@ -296,15 +335,17 @@ function ConnectSourceStep({
             }}
           >
             <div 
-              className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
-              style={{ backgroundColor: source.color + '20' }}
+              className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden"
             >
               {source.id === 'csv' ? (
-                <Upload className="w-6 h-6" style={{ color: source.color }} />
+                <div 
+                  className="w-full h-full flex items-center justify-center rounded-xl"
+                  style={{ backgroundColor: source.color + '20' }}
+                >
+                  <Upload className="w-6 h-6" style={{ color: source.color }} />
+                </div>
               ) : (
-                <span className="font-bold text-lg" style={{ color: source.color }}>
-                  {source.name.charAt(0)}
-                </span>
+                ProviderLogos[source.id]
               )}
             </div>
             <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>

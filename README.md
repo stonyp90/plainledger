@@ -120,7 +120,7 @@ npm run dev
 ## Project Structure
 
 ```
-financial-reporting-saas/
+plainledger/
 ├── apps/
 │   ├── api/                 # NestJS API (Clean Architecture)
 │   │   ├── src/
@@ -229,7 +229,7 @@ cd apps/api
 npm test
 
 # E2E tests (Playwright)
-cd /path/to/financial-reporting-saas
+cd /path/to/plainledger
 
 # Run all unauthenticated tests (18 tests)
 npm run test:e2e:unauthenticated

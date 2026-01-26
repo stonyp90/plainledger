@@ -205,7 +205,7 @@ module "ecs" {
 
   datalake_bucket_arns = module.datalake.datalake_bucket_arns
 
-  acm_certificate_arn    = ""  # Will be added when DNS is validated
+  acm_certificate_arn    = aws_acm_certificate.main.arn
   route53_zone_id        = module.networking.route53_zone_id
   create_route53_records = var.create_hosted_zone
 

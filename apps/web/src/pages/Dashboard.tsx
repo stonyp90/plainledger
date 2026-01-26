@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Tooltip } from '../components/Tooltip';
 import { HealthScoreGauge, TrendChart, WaterfallChart } from '../components/charts';
 import { 
   AgingWidget, 
@@ -93,6 +94,82 @@ export default function Dashboard() {
     }
     return runFullAnalysis(accountsData, revenueData, DEFAULT_THRESHOLDS);
   }, [accountsData, revenueData]);
+
+  // Calculate health metrics for the gauge
+  const healthMetrics = useMemo(() => {
+    if (!financialData) return undefined;
+
+    const { metrics, summary } = financialData;
+    
+    // Liquidity score based on current ratio (target 2.0)
+    const liquidityScore = Math.min(100, Math.round((metrics.currentRatio / 2.0) * 100));
+    const liquidityStatus = liquidityScore >= 75 ? 'good' : liquidityScore >= 50 ? 'warning' : 'critical';
+    
+    // Profitability score based on gross margin (target 40%)
+    const profitScore = Math.min(100, Math.round((metrics.grossMargin / 40) * 100));
+    const profitStatus = profitScore >= 75 ? 'good' : profitScore >= 50 ? 'warning' : 'critical';
+    
+    // Cash flow score based on whether net cash flow is positive
+    const cashFlowPositive = summary.cashFlow.net > 0;
+    const cashFlowScore = cashFlowPositive ? 80 : 30;
+    const cashFlowStatus = cashFlowScore >= 60 ? 'good' : cashFlowScore >= 40 ? 'warning' : 'critical';
+    
+    // Receivables score based on DSO (target 45 days)
+    const dsoScore = Math.min(100, Math.max(0, Math.round(100 - ((metrics.daysReceivable - 45) / 45) * 50)));
+    const dsoStatus = metrics.daysReceivable <= 45 ? 'good' : metrics.daysReceivable <= 60 ? 'warning' : 'critical';
+    
+    // Runway score based on months of runway
+    const runwayScore = Math.min(100, Math.round((summary.cash.runway / 6) * 100));
+    const runwayStatus = summary.cash.runway >= 6 ? 'good' : summary.cash.runway >= 3 ? 'warning' : 'critical';
+
+    return [
+      {
+        id: 'liquidity',
+        name: 'Liquidité',
+        nameEn: 'Liquidity',
+        value: liquidityScore,
+        status: liquidityStatus as 'good' | 'warning' | 'critical',
+        description: `Ratio de liquidité à ${metrics.currentRatio.toFixed(2)}x`,
+        descriptionEn: `Current ratio at ${metrics.currentRatio.toFixed(2)}x`,
+      },
+      {
+        id: 'profitability',
+        name: 'Rentabilité',
+        nameEn: 'Profitability',
+        value: profitScore,
+        status: profitStatus as 'good' | 'warning' | 'critical',
+        description: `Marge brute de ${metrics.grossMargin.toFixed(1)}%`,
+        descriptionEn: `Gross margin of ${metrics.grossMargin.toFixed(1)}%`,
+      },
+      {
+        id: 'cashflow',
+        name: 'Flux de trésorerie',
+        nameEn: 'Cash Flow',
+        value: cashFlowScore,
+        status: cashFlowStatus as 'good' | 'warning' | 'critical',
+        description: cashFlowPositive ? 'Flux net positif' : 'Flux net négatif',
+        descriptionEn: cashFlowPositive ? 'Positive net flow' : 'Negative net flow',
+      },
+      {
+        id: 'receivables',
+        name: 'Créances (DSO)',
+        nameEn: 'Receivables (DSO)',
+        value: dsoScore,
+        status: dsoStatus as 'good' | 'warning' | 'critical',
+        description: `DSO de ${Math.round(metrics.daysReceivable)} jours`,
+        descriptionEn: `DSO of ${Math.round(metrics.daysReceivable)} days`,
+      },
+      {
+        id: 'runway',
+        name: 'Autonomie',
+        nameEn: 'Cash Runway',
+        value: runwayScore,
+        status: runwayStatus as 'good' | 'warning' | 'critical',
+        description: `${summary.cash.runway} mois de runway`,
+        descriptionEn: `${summary.cash.runway} months runway`,
+      },
+    ];
+  }, [financialData]);
 
   const kpis = useMemo(() => {
     if (!financialData) {
@@ -340,6 +417,7 @@ export default function Dashboard() {
             size="sm"
             isEn={language === 'en'}
             onClick={() => navigate('/app/anomalies')}
+            metrics={healthMetrics}
           />
         </div>
 
@@ -542,9 +620,11 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-primary">
                     {anomaly.title}
                   </p>
-                  <p className="text-xs truncate text-muted">
-                    {anomaly.description}
-                  </p>
+                  <Tooltip content={anomaly.description} position="bottom" delay={300}>
+                    <p className="text-xs truncate text-muted cursor-help">
+                      {anomaly.description}
+                    </p>
+                  </Tooltip>
                 </div>
                 <Link
                   to="/app/anomalies"
@@ -946,15 +1026,19 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p 
-            className="font-semibold text-sm group-hover:text-primary-600 transition-colors truncate"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
-            {title}
-          </p>
-          <p className="text-xs text-muted truncate mt-0.5">
-            {subtitle}
-          </p>
+          <Tooltip content={title} position="top" delay={400}>
+            <p 
+              className="font-semibold text-sm group-hover:text-primary-600 transition-colors truncate cursor-help"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {title}
+            </p>
+          </Tooltip>
+          <Tooltip content={subtitle} position="bottom" delay={400}>
+            <p className="text-xs text-muted truncate mt-0.5 cursor-help">
+              {subtitle}
+            </p>
+          </Tooltip>
         </div>
       </div>
     </Link>

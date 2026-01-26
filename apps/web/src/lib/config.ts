@@ -112,6 +112,7 @@ export const config = {
   // Support & Help
   support: {
     email: import.meta.env.VITE_SUPPORT_EMAIL || 'support@plainledger.ca',
+    infoEmail: import.meta.env.VITE_INFO_EMAIL || 'info@plainledger.ca',
     docsUrl: import.meta.env.VITE_DOCS_URL || 'https://docs.plainledger.ca',
     statusUrl: import.meta.env.VITE_STATUS_URL || 'https://status.plainledger.ca',
   },

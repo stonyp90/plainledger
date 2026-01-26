@@ -10,6 +10,7 @@
  */
 
 import { useState, useRef, useEffect, ReactNode, CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { HelpCircle, Info, AlertCircle, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 
@@ -85,7 +86,8 @@ export function Tooltip({
   onOpenChange,
 }: TooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [calculatedPosition, setCalculatedPosition] = useState(position);
+  const [calculatedPosition, setCalculatedPosition] = useState<Exclude<TooltipPosition, 'auto'>>(position === 'auto' ? 'top' : position);
+  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
@@ -111,24 +113,77 @@ export function Tooltip({
     onOpenChange?.(false);
   };
 
-  // Calculate position on open
+  // Calculate position and coordinates when open
   useEffect(() => {
-    if (!isOpen || position !== 'auto' || !triggerRef.current) return;
+    if (!isOpen || !triggerRef.current) return;
     
-    const rect = triggerRef.current.getBoundingClientRect();
-    const spaceTop = rect.top;
-    const spaceBottom = window.innerHeight - rect.bottom;
-    const spaceLeft = rect.left;
-    const spaceRight = window.innerWidth - rect.right;
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      
+      const rect = triggerRef.current.getBoundingClientRect();
+      const tooltipHeight = tooltipRef.current?.offsetHeight || 40;
+      const tooltipWidth = tooltipRef.current?.offsetWidth || maxWidth;
+      
+      // Calculate best position if auto
+      let bestPosition: Exclude<TooltipPosition, 'auto'> = position === 'auto' ? 'top' : position;
+      if (position === 'auto') {
+        const spaceTop = rect.top;
+        const spaceBottom = window.innerHeight - rect.bottom;
+        const spaceLeft = rect.left;
+        const spaceRight = window.innerWidth - rect.right;
+        
+        if (spaceBottom > spaceTop && spaceBottom > tooltipHeight + 20) bestPosition = 'bottom';
+        else if (spaceTop > tooltipHeight + 20) bestPosition = 'top';
+        else if (spaceRight > spaceLeft && spaceRight > tooltipWidth + 20) bestPosition = 'right';
+        else if (spaceLeft > tooltipWidth + 20) bestPosition = 'left';
+        else bestPosition = 'bottom';
+      }
+      
+      setCalculatedPosition(bestPosition);
+      
+      // Calculate coordinates based on position
+      let top = 0;
+      let left = 0;
+      const gap = 8;
+      
+      switch (bestPosition) {
+        case 'top':
+          top = rect.top - tooltipHeight - gap + window.scrollY;
+          left = rect.left + rect.width / 2 - tooltipWidth / 2 + window.scrollX;
+          break;
+        case 'bottom':
+          top = rect.bottom + gap + window.scrollY;
+          left = rect.left + rect.width / 2 - tooltipWidth / 2 + window.scrollX;
+          break;
+        case 'left':
+          top = rect.top + rect.height / 2 - tooltipHeight / 2 + window.scrollY;
+          left = rect.left - tooltipWidth - gap + window.scrollX;
+          break;
+        case 'right':
+          top = rect.top + rect.height / 2 - tooltipHeight / 2 + window.scrollY;
+          left = rect.right + gap + window.scrollX;
+          break;
+      }
+      
+      // Ensure tooltip stays within viewport
+      const padding = 8;
+      left = Math.max(padding, Math.min(left, window.innerWidth - tooltipWidth - padding + window.scrollX));
+      top = Math.max(padding + window.scrollY, top);
+      
+      setTooltipCoords({ top, left });
+    };
     
-    let best: TooltipPosition = 'top';
-    if (spaceBottom > spaceTop && spaceBottom > 100) best = 'bottom';
-    else if (spaceTop > 100) best = 'top';
-    else if (spaceRight > spaceLeft) best = 'right';
-    else best = 'left';
+    updatePosition();
     
-    setCalculatedPosition(best);
-  }, [isOpen, position]);
+    // Recalculate on scroll or resize
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen, position, maxWidth]);
 
   // Close on click outside for click trigger
   useEffect(() => {
@@ -183,28 +238,11 @@ export function Tooltip({
     },
   };
 
-  const basePositionStyles: Record<Exclude<TooltipPosition, 'auto'>, CSSProperties> = {
-    top: { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '8px' },
-    bottom: { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '8px' },
-    left: { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '8px' },
-    right: { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '8px' },
-  };
-
-  const positionStyles: Record<TooltipPosition, CSSProperties> = {
-    ...basePositionStyles,
-    auto: basePositionStyles[calculatedPosition as Exclude<TooltipPosition, 'auto'>] || basePositionStyles.top,
-  };
-
-  const baseArrowStyles: Record<Exclude<TooltipPosition, 'auto'>, CSSProperties> = {
+  const arrowStyles: Record<Exclude<TooltipPosition, 'auto'>, CSSProperties> = {
     top: { bottom: '-4px', left: '50%', transform: 'translateX(-50%) rotate(45deg)' },
     bottom: { top: '-4px', left: '50%', transform: 'translateX(-50%) rotate(45deg)' },
     left: { right: '-4px', top: '50%', transform: 'translateY(-50%) rotate(45deg)' },
     right: { left: '-4px', top: '50%', transform: 'translateY(-50%) rotate(45deg)' },
-  };
-
-  const arrowStyles: Record<TooltipPosition, CSSProperties> = {
-    ...baseArrowStyles,
-    auto: baseArrowStyles[calculatedPosition as Exclude<TooltipPosition, 'auto'>] || baseArrowStyles.top,
   };
 
   const triggerEvents = {
@@ -222,7 +260,41 @@ export function Tooltip({
     manual: {},
   };
 
-  const actualPosition = position === 'auto' ? calculatedPosition : position;
+  // Render tooltip in a portal to avoid overflow clipping
+  const tooltipContent = isOpen && createPortal(
+    <div
+      ref={tooltipRef}
+      className="animate-in fade-in duration-150"
+      style={{
+        position: 'absolute',
+        top: tooltipCoords.top,
+        left: tooltipCoords.left,
+        maxWidth,
+        ...variantStyles[variant],
+        borderRadius: '8px',
+        padding: variant === 'rich' ? '0' : '8px 12px',
+        fontSize: '13px',
+        lineHeight: '1.4',
+        whiteSpace: 'normal',
+        pointerEvents: interactive ? 'auto' : 'none',
+        zIndex: 99999,
+      }}
+      onMouseEnter={interactive && trigger === 'hover' ? handleOpen : undefined}
+      onMouseLeave={interactive && trigger === 'hover' ? handleClose : undefined}
+    >
+      {showArrow && variant !== 'rich' && (
+        <div
+          className="absolute w-2 h-2"
+          style={{
+            ...arrowStyles[calculatedPosition],
+            backgroundColor: variantStyles[variant].backgroundColor as string,
+          }}
+        />
+      )}
+      {content}
+    </div>,
+    document.body
+  );
 
   return (
     <div 
@@ -231,38 +303,7 @@ export function Tooltip({
       {...triggerEvents[trigger]}
     >
       {children}
-      
-      {isOpen && (
-        <div
-          ref={tooltipRef}
-          className="absolute animate-in fade-in duration-150"
-          style={{
-            ...positionStyles[actualPosition],
-            maxWidth,
-            ...variantStyles[variant],
-            borderRadius: '8px',
-            padding: variant === 'rich' ? '0' : '8px 12px',
-            fontSize: '13px',
-            lineHeight: '1.4',
-            whiteSpace: variant === 'rich' ? 'normal' : 'normal',
-            pointerEvents: interactive ? 'auto' : 'none',
-            zIndex: 9999,
-          }}
-          onMouseEnter={interactive && trigger === 'hover' ? handleOpen : undefined}
-          onMouseLeave={interactive && trigger === 'hover' ? handleClose : undefined}
-        >
-          {showArrow && variant !== 'rich' && (
-            <div
-              className="absolute w-2 h-2"
-              style={{
-                ...arrowStyles[actualPosition],
-                backgroundColor: variantStyles[variant].backgroundColor,
-              }}
-            />
-          )}
-          {content}
-        </div>
-      )}
+      {tooltipContent}
     </div>
   );
 }

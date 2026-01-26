@@ -1303,13 +1303,23 @@ export default function BoardMeeting() {
             className="flex-1 overflow-hidden relative"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
+            {/* Blur overlay when sidebars are open */}
+            {(showAgenda || showParticipants || showNotes) && (
+              <div 
+                className="absolute inset-0 z-10 pointer-events-none transition-all duration-300"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg) / 0.3)',
+                  backdropFilter: 'blur(2px)',
+                }}
+              />
+            )}
             {renderSlide(currentSlide)}
             
             {/* Navigation arrows */}
             <button
               onClick={() => setCurrentSlideIndex(prev => Math.max(0, prev - 1))}
               disabled={currentSlideIndex === 0}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full disabled:opacity-30 transition-all hover:scale-110"
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full disabled:opacity-30 transition-all hover:scale-110 z-20"
               style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
             >
               <ChevronLeft className="w-6 h-6" style={{ color: 'rgb(var(--color-text))' }} />
@@ -1317,7 +1327,7 @@ export default function BoardMeeting() {
             <button
               onClick={() => setCurrentSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
               disabled={currentSlideIndex === slides.length - 1}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full disabled:opacity-30 transition-all hover:scale-110"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full disabled:opacity-30 transition-all hover:scale-110 z-20"
               style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
             >
               <ChevronRight className="w-6 h-6" style={{ color: 'rgb(var(--color-text))' }} />
@@ -1326,10 +1336,20 @@ export default function BoardMeeting() {
           
           {/* Slide thumbnails */}
           <div 
-            className="p-3 border-t overflow-x-auto"
+            className="p-3 border-t overflow-x-auto relative"
             style={{ borderColor: 'rgb(var(--color-border))' }}
           >
-            <div className="flex gap-2">
+            {/* Blur overlay when sidebars are open */}
+            {(showAgenda || showParticipants || showNotes) && (
+              <div 
+                className="absolute inset-0 z-10 pointer-events-none transition-all duration-300"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg) / 0.3)',
+                  backdropFilter: 'blur(2px)',
+                }}
+              />
+            )}
+            <div className="flex gap-2 relative z-20">
               {slides.map((slide, idx) => (
                 <button
                   key={slide.id}

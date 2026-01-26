@@ -590,9 +590,9 @@ export default function Landing() {
             <Link to="/newsletter" className="hover:underline">
               <span style={{ color: 'rgb(var(--color-text-muted))' }}>Off</span>Balance
             </Link>
-            <a href="#" className="hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</a>
-            <a href="#" className="hover:underline">{isEn ? 'Terms' : 'Conditions'}</a>
-            <a href="#" className="hover:underline">Contact</a>
+            <a href="/privacy" className="hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</a>
+            <a href="/terms" className="hover:underline">{isEn ? 'Terms' : 'Conditions'}</a>
+            <a href="mailto:info@plainledger.ca" className="hover:underline">Contact</a>
           </div>
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             © 2026 PlainLedger

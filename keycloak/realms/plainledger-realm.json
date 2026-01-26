@@ -4,14 +4,22 @@
   "displayName": "PlainLedger",
   "displayNameHtml": "<div class=\"kc-logo-text\"><span>PlainLedger</span></div>",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
-  "verifyEmail": false,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "verifyEmail": true,
   "loginTheme": "plainledger",
   "accountTheme": "keycloak.v2",
   "emailTheme": "plainledger",
@@ -19,23 +27,80 @@
   "supportedLocales": ["en", "fr"],
   "defaultLocale": "en",
   "smtpServer": {
-    "host": "mailhog",
-    "port": "1025",
-    "from": "noreply@plainledger.com",
+    "host": "${SMTP_HOST:email-smtp.us-east-1.amazonaws.com}",
+    "port": "${SMTP_PORT:587}",
+    "from": "${SMTP_FROM:noreply@plainledger.ca}",
     "fromDisplayName": "PlainLedger",
-    "replyTo": "support@plainledger.com",
-    "ssl": "false",
-    "starttls": "false",
-    "auth": "false"
+    "replyTo": "${SMTP_REPLY_TO:support@plainledger.ca}",
+    "envelopeFrom": "${SMTP_ENVELOPE_FROM:}",
+    "ssl": "${SMTP_SSL:false}",
+    "starttls": "${SMTP_STARTTLS:true}",
+    "auth": "${SMTP_AUTH:true}",
+    "user": "${SMTP_USER:}",
+    "password": "${SMTP_PASSWORD:}"
   },
   "accessTokenLifespan": 300,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
   "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespan": 5184000,
   "accessCodeLifespan": 60,
   "accessCodeLifespanUserAction": 300,
   "accessCodeLifespanLogin": 1800,
-  "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1)",
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and notEmail and passwordHistory(3)",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 40,
+      "config": {}
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50,
+      "config": {}
+    },
+    {
+      "alias": "terms_and_conditions",
+      "name": "Terms and Conditions",
+      "providerId": "terms_and_conditions",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 20,
+      "config": {}
+    }
+  ],
   "clients": [
     {
       "clientId": "plainledger-web",
@@ -47,7 +112,7 @@
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "protocol": "openid-connect",
-      "rootUrl": "http://localhost:5173",
+      "rootUrl": "${FRONTEND_URL:http://localhost:5173}",
       "baseUrl": "/",
       "redirectUris": [
         "http://localhost:5173/*",
@@ -58,19 +123,11 @@
         "http://localhost:5178/*",
         "http://localhost:5179/*",
         "http://localhost:5180/*",
-        "http://localhost:5181/*",
-        "http://localhost:5182/*",
-        "http://localhost:5183/*",
-        "http://localhost:5184/*",
-        "http://localhost:5185/*",
-        "http://localhost:5186/*",
-        "http://localhost:5187/*",
-        "http://localhost:5188/*",
-        "http://localhost:5189/*",
-        "http://localhost:5190/*",
         "http://localhost:3000/*",
         "http://127.0.0.1:5173/*",
         "http://127.0.0.1:5176/*",
+        "https://plainledger.ca/*",
+        "https://www.plainledger.ca/*",
         "https://app.plainledger.ca/*"
       ],
       "webOrigins": [
@@ -82,25 +139,17 @@
         "http://localhost:5178",
         "http://localhost:5179",
         "http://localhost:5180",
-        "http://localhost:5181",
-        "http://localhost:5182",
-        "http://localhost:5183",
-        "http://localhost:5184",
-        "http://localhost:5185",
-        "http://localhost:5186",
-        "http://localhost:5187",
-        "http://localhost:5188",
-        "http://localhost:5189",
-        "http://localhost:5190",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5176",
+        "https://plainledger.ca",
+        "https://www.plainledger.ca",
         "https://app.plainledger.ca",
         "+"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5176/*##https://app.plainledger.ca/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5176/*##https://plainledger.ca/*##https://www.plainledger.ca/*##https://app.plainledger.ca/*"
       }
     },
     {
@@ -113,14 +162,16 @@
       "standardFlowEnabled": true,
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
-      "secret": "change-me-in-production",
+      "secret": "${API_CLIENT_SECRET:change-me-in-production}",
       "redirectUris": [
         "http://localhost:3000/*",
-        "https://api.plainledger.com/*"
+        "http://localhost:3001/*",
+        "https://api.plainledger.ca/*"
       ],
       "webOrigins": [
         "http://localhost:3000",
-        "https://api.plainledger.com",
+        "http://localhost:3001",
+        "https://api.plainledger.ca",
         "+"
       ]
     }
@@ -171,7 +222,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Admin123!",
+          "value": "Admin123!@#",
           "temporary": false
         }
       ],
@@ -192,7 +243,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Accountant123!",
+          "value": "Accountant123!@#",
           "temporary": false
         }
       ],
@@ -213,7 +264,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Demo123!",
+          "value": "Demo123!@#",
           "temporary": false
         }
       ],
@@ -256,10 +307,10 @@
       "alias": "google",
       "displayName": "Google",
       "providerId": "google",
-      "enabled": false,
+      "enabled": true,
       "updateProfileFirstLoginMode": "on",
       "trustEmail": true,
-      "storeToken": true,
+      "storeToken": false,
       "addReadTokenRoleOnCreate": false,
       "authenticateByDefault": false,
       "linkOnly": false,
@@ -276,10 +327,10 @@
       "alias": "microsoft",
       "displayName": "Microsoft",
       "providerId": "microsoft",
-      "enabled": false,
+      "enabled": true,
       "updateProfileFirstLoginMode": "on",
       "trustEmail": true,
-      "storeToken": true,
+      "storeToken": false,
       "addReadTokenRoleOnCreate": false,
       "authenticateByDefault": false,
       "linkOnly": false,
@@ -314,12 +365,32 @@
   ],
   "identityProviderMappers": [
     {
+      "name": "google-email-verified-mapper",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "hardcoded-user-session-attribute-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "email_verified",
+        "attribute.value": "true"
+      }
+    },
+    {
       "name": "google-picture-mapper",
       "identityProviderAlias": "google",
       "identityProviderMapper": "hardcoded-attribute-idp-mapper",
       "config": {
         "syncMode": "INHERIT",
         "attribute": "picture"
+      }
+    },
+    {
+      "name": "microsoft-email-verified-mapper",
+      "identityProviderAlias": "microsoft",
+      "identityProviderMapper": "hardcoded-user-session-attribute-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "email_verified",
+        "attribute.value": "true"
       }
     },
     {
@@ -340,5 +411,11 @@
         "attribute": "avatar_url"
       }
     }
-  ]
+  ],
+  "browserFlow": "browser",
+  "registrationFlow": "registration",
+  "directGrantFlow": "direct grant",
+  "resetCredentialsFlow": "reset credentials",
+  "clientAuthenticationFlow": "clients",
+  "dockerAuthenticationFlow": "docker auth"
 }

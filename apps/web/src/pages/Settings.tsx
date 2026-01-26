@@ -647,8 +647,8 @@ function SecurityCard({ icon: Icon, title, description, action, color, onClick }
       className="card hover:shadow-md transition-all cursor-pointer group hover:scale-[1.01]"
       onClick={onClick}
     >
-      {/* Desktop/Tablet Layout */}
-      <div className="hidden sm:flex items-center gap-4">
+      {/* Stacked layout for better readability */}
+      <div className="flex items-start gap-4">
         <div 
           className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
           style={{ backgroundColor: colors[color].bg }}
@@ -656,33 +656,15 @@ function SecurityCard({ icon: Icon, title, description, action, color, onClick }
           <Icon className="w-6 h-6" style={{ color: colors[color].fg }} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-base" style={{ color: 'rgb(var(--color-text))' }}>{title}</h4>
-          <p className="text-sm mt-1 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>{description}</p>
-        </div>
-        <button className="btn-secondary btn-sm flex items-center gap-2 flex-shrink-0 whitespace-nowrap">
-          {action}
-          <ExternalLink className="w-4 h-4" />
-        </button>
-      </div>
-      
-      {/* Mobile Layout - Stacked */}
-      <div className="sm:hidden">
-        <div className="flex items-start gap-3">
-          <div 
-            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: colors[color].bg }}
-          >
-            <Icon className="w-5 h-5" style={{ color: colors[color].fg }} />
+          <div className="flex items-start justify-between gap-3">
+            <h4 className="font-semibold text-base leading-tight" style={{ color: 'rgb(var(--color-text))' }}>{title}</h4>
+            <button className="btn-secondary btn-sm flex items-center gap-1.5 flex-shrink-0">
+              {action}
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>{title}</h4>
-            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>{description}</p>
-          </div>
+          <p className="text-sm mt-2 leading-relaxed" style={{ color: 'rgb(var(--color-text-muted))' }}>{description}</p>
         </div>
-        <button className="btn-secondary btn-sm w-full mt-3 flex items-center justify-center gap-2">
-          {action}
-          <ExternalLink className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
