@@ -60,11 +60,13 @@ export default defineConfig({
     },
   ],
 
-  // Web server configuration
-  webServer: {
-    command: 'cd apps/web && npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // Web server configuration - only start in CI, locally assume dev server is running
+  webServer: process.env.CI
+    ? {
+        command: 'cd apps/web && npm run dev',
+        url: 'http://localhost:5173',
+        reuseExistingServer: false,
+        timeout: 120 * 1000,
+      }
+    : undefined,
 });

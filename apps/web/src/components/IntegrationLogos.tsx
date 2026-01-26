@@ -1,66 +1,57 @@
 /**
- * Integration Logos Carousel Component
- * Interactive carousel displaying accounting software company logos
+ * Integration Logos Section Component
+ * Professional display of accounting software integrations
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Zap, RefreshCw, Shield, ArrowRight } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 
 interface Integration {
   name: string;
   logo: React.ReactNode;
-  url: string;
   color: string;
-  description: string;
-  descriptionFr: string;
+  bgColor: string;
+  features: { en: string; fr: string }[];
 }
 
-// Improved SVG Logos with better brand recognition
-const QuickBooksLogo = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* QuickBooks brand colors */}
-    <rect x="4" y="8" width="24" height="24" rx="3" fill="#2CA01C"/>
-    <path d="M10 16h14M10 20h14M10 24h10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-    <text x="34" y="26" fontSize="16" fontWeight="700" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif">QuickBooks</text>
+// Professional brand-accurate logos
+const QuickBooksLogo = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
+    <rect width="40" height="40" rx="8" fill="#2CA01C"/>
+    <path d="M10 14h8v2h-8v-2zm0 4h12v2H10v-2zm0 4h8v2h-8v-2zm14-6h6v2h-6v-2zm0 4h6v2h-6v-2z" fill="white"/>
   </svg>
 );
 
-const XeroLogo = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Xero's three circles */}
-    <circle cx="14" cy="20" r="8" fill="#13B5EA"/>
-    <circle cx="30" cy="20" r="8" fill="#13B5EA"/>
-    <circle cx="46" cy="20" r="8" fill="#13B5EA"/>
-    <text x="60" y="26" fontSize="22" fontWeight="800" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif">Xero</text>
+const XeroLogo = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
+    <rect width="40" height="40" rx="8" fill="#13B5EA"/>
+    <path d="M12 14l8 12m0-12l-8 12" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+    <circle cx="28" cy="20" r="4" fill="white"/>
   </svg>
 );
 
-const SageLogo = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Sage's stacked bars */}
-    <rect x="4" y="10" width="16" height="20" rx="2" fill="#00A651"/>
-    <rect x="24" y="6" width="16" height="28" rx="2" fill="#00A651"/>
-    <rect x="44" y="14" width="16" height="20" rx="2" fill="#00A651"/>
-    <text x="66" y="26" fontSize="18" fontWeight="700" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif">Sage</text>
+const SageLogo = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
+    <rect width="40" height="40" rx="8" fill="#00D632"/>
+    <rect x="8" y="12" width="6" height="16" rx="1" fill="white"/>
+    <rect x="17" y="8" width="6" height="24" rx="1" fill="white"/>
+    <rect x="26" y="14" width="6" height="18" rx="1" fill="white"/>
   </svg>
 );
 
-const FreshBooksLogo = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* FreshBooks book icon */}
-    <rect x="4" y="10" width="20" height="22" rx="2" fill="#0077C5"/>
-    <path d="M10 16h12M10 20h12M10 24h10" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-    <text x="30" y="26" fontSize="14" fontWeight="600" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif">FreshBooks</text>
+const FreshBooksLogo = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
+    <rect width="40" height="40" rx="8" fill="#0077C5"/>
+    <rect x="10" y="8" width="20" height="24" rx="2" fill="white"/>
+    <path d="M14 14h12M14 18h12M14 22h8" stroke="#0077C5" strokeWidth="2" strokeLinecap="round"/>
   </svg>
 );
 
-const WaveLogo = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Wave symbol */}
-    <path d="M8 18c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5v6c0 3-2.5 5.5-5.5 5.5S8 27 8 24v-6z" fill="#FF6B35"/>
-    <path d="M22 14c-3 0-5.5 2.5-5.5 5.5v6c0 3 2.5 5.5 5.5 5.5s5.5-2.5 5.5-5.5v-6c0-3-2.5-5.5-5.5-5.5z" fill="#FF6B35"/>
-    <text x="38" y="26" fontSize="20" fontWeight="700" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif">Wave</text>
+const WaveLogo = () => (
+  <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
+    <rect width="40" height="40" rx="8" fill="#FF6B35"/>
+    <path d="M8 20c4-8 8 8 12 0s8 8 12 0" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none"/>
   </svg>
 );
 
@@ -68,216 +59,202 @@ const INTEGRATIONS: Integration[] = [
   {
     name: 'QuickBooks',
     logo: <QuickBooksLogo />,
-    url: 'https://quickbooks.intuit.com',
     color: '#2CA01C',
-    description: 'Seamless QuickBooks Online integration',
-    descriptionFr: 'Intégration transparente avec QuickBooks Online',
+    bgColor: 'rgba(44, 160, 28, 0.1)',
+    features: [
+      { en: 'Real-time sync', fr: 'Synchronisation en temps réel' },
+      { en: 'Auto-categorization', fr: 'Catégorisation automatique' },
+      { en: 'Bank feeds', fr: 'Flux bancaires' },
+    ],
   },
   {
     name: 'Xero',
     logo: <XeroLogo />,
-    url: 'https://www.xero.com',
     color: '#13B5EA',
-    description: 'Connect your Xero account in seconds',
-    descriptionFr: 'Connectez votre compte Xero en quelques secondes',
+    bgColor: 'rgba(19, 181, 234, 0.1)',
+    features: [
+      { en: 'Multi-currency', fr: 'Multi-devises' },
+      { en: 'Invoice tracking', fr: 'Suivi des factures' },
+      { en: 'Payroll data', fr: 'Données de paie' },
+    ],
   },
   {
     name: 'Sage',
     logo: <SageLogo />,
-    url: 'https://www.sage.com',
-    color: '#00A651',
-    description: 'Full Sage Business Cloud support',
-    descriptionFr: 'Support complet pour Sage Business Cloud',
+    color: '#00D632',
+    bgColor: 'rgba(0, 214, 50, 0.1)',
+    features: [
+      { en: 'Enterprise ready', fr: 'Prêt pour entreprise' },
+      { en: 'Custom fields', fr: 'Champs personnalisés' },
+      { en: 'Advanced reports', fr: 'Rapports avancés' },
+    ],
   },
   {
     name: 'FreshBooks',
     logo: <FreshBooksLogo />,
-    url: 'https://www.freshbooks.com',
     color: '#0077C5',
-    description: 'Sync invoices and expenses automatically',
-    descriptionFr: 'Synchronisez factures et dépenses automatiquement',
+    bgColor: 'rgba(0, 119, 197, 0.1)',
+    features: [
+      { en: 'Invoice import', fr: 'Import de factures' },
+      { en: 'Expense tracking', fr: 'Suivi des dépenses' },
+      { en: 'Time entries', fr: 'Entrées de temps' },
+    ],
   },
   {
     name: 'Wave',
     logo: <WaveLogo />,
-    url: 'https://www.waveapps.com',
     color: '#FF6B35',
-    description: 'Perfect for small businesses',
-    descriptionFr: 'Parfait pour les petites entreprises',
+    bgColor: 'rgba(255, 107, 53, 0.1)',
+    features: [
+      { en: 'Free accounts', fr: 'Comptes gratuits' },
+      { en: 'Receipt scanning', fr: 'Numérisation de reçus' },
+      { en: 'GST/QST ready', fr: 'Compatible TPS/TVQ' },
+    ],
+  },
+];
+
+const SYNC_FEATURES = [
+  {
+    icon: Zap,
+    title: { en: 'Instant sync', fr: 'Synchro instantanée' },
+    desc: { en: 'Data updates in real-time', fr: 'Données à jour en temps réel' },
+  },
+  {
+    icon: RefreshCw,
+    title: { en: 'Two-way sync', fr: 'Synchro bidirectionnelle' },
+    desc: { en: 'Changes reflect everywhere', fr: 'Modifications partout' },
+  },
+  {
+    icon: Shield,
+    title: { en: 'Bank-level security', fr: 'Sécurité bancaire' },
+    desc: { en: 'AES-256 encryption', fr: 'Chiffrement AES-256' },
   },
 ];
 
 export default function IntegrationLogos() {
   const { language } = useI18n();
   const isEn = language === 'en';
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Auto-play carousel
-  useEffect(() => {
-    if (!isPaused) {
-      intervalRef.current = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % INTEGRATIONS.length);
-      }, 3000); // Change slide every 3 seconds
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isPaused]);
-
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 5000); // Resume after 5 seconds
-  };
-
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + INTEGRATIONS.length) % INTEGRATIONS.length);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 5000);
-  };
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % INTEGRATIONS.length);
-    setIsPaused(true);
-    setTimeout(() => setIsPaused(false), 5000);
-  };
-
-  const currentIntegration = INTEGRATIONS[currentIndex];
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-      <div className="max-w-5xl mx-auto">
-        <p className="text-sm mb-8 text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn ? 'Works with your existing accounting software' : 'Fonctionne avec votre logiciel comptable existant'}
-        </p>
-        
-        {/* Carousel Container */}
-        <div 
-          className="relative rounded-2xl overflow-hidden"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-surface))',
-            border: '2px solid rgb(var(--color-border))',
-          }}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          {/* Main Logo Display */}
-          <div className="relative px-12 py-10 sm:py-12">
-            <a
-              href={currentIntegration.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block"
-            >
-              <div className="flex flex-col items-center justify-center gap-6">
-                {/* Logo */}
-                <div 
-                  className="transition-all duration-500 group-hover:scale-110"
-                  style={{ color: currentIntegration.color }}
-                >
-                  <div className="w-full max-w-[280px] h-16 flex items-center justify-center">
-                    {currentIntegration.logo}
-                  </div>
-                </div>
-                
-                {/* Description */}
-                <p 
-                  className="text-sm text-center transition-opacity duration-300"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn ? currentIntegration.description : currentIntegration.descriptionFr}
-                </p>
-                
-                {/* External Link Icon */}
-                <ExternalLink 
-                  className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ color: currentIntegration.color }}
-                />
-              </div>
-            </a>
-
-            {/* Navigation Arrows */}
-            <button
-              onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-bg))',
-                border: '1px solid rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-              }}
-              aria-label={isEn ? 'Previous logo' : 'Logo précédent'}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            <button
-              onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-bg))',
-                border: '1px solid rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-              }}
-              aria-label={isEn ? 'Next logo' : 'Logo suivant'}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Dot Indicators */}
-          <div className="flex items-center justify-center gap-2 pb-6">
-            {INTEGRATIONS.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`transition-all duration-300 rounded-full ${
-                  index === currentIndex ? 'w-8' : 'w-2'
-                } h-2`}
-                style={{
-                  backgroundColor: index === currentIndex 
-                    ? currentIntegration.color 
-                    : 'rgb(var(--color-border))',
-                }}
-                aria-label={`${isEn ? 'Go to' : 'Aller à'} ${INTEGRATIONS[index].name}`}
-              />
-            ))}
-          </div>
+    <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
+          </h2>
+          <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn 
+              ? 'Seamless integration with the tools you already use. Set up in minutes, not hours.'
+              : 'Intégration transparente avec les outils que vous utilisez déjà. Configuration en minutes.'}
+          </p>
         </div>
 
-        {/* All Logos Grid (below carousel) */}
-        <div className="mt-8 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
+        {/* Integration Cards Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
           {INTEGRATIONS.map((integration, index) => (
-            <button
+            <div
               key={integration.name}
-              onClick={() => goToSlide(index)}
-              className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300 ${
-                index === currentIndex ? 'scale-105 shadow-lg' : 'hover:scale-105'
-              }`}
+              className="group relative p-5 rounded-xl transition-all duration-300 cursor-pointer"
               style={{ 
-                backgroundColor: index === currentIndex 
-                  ? `${integration.color}15` 
-                  : 'rgb(var(--color-surface))',
-                border: `2px solid ${index === currentIndex ? integration.color : 'rgb(var(--color-border))'}`,
-                color: index === currentIndex 
-                  ? integration.color 
-                  : 'rgb(var(--color-text-secondary))',
+                backgroundColor: hoveredIndex === index ? integration.bgColor : 'rgb(var(--color-surface))',
+                border: `2px solid ${hoveredIndex === index ? integration.color : 'rgb(var(--color-border))'}`,
+                transform: hoveredIndex === index ? 'translateY(-4px)' : 'none',
+                boxShadow: hoveredIndex === index ? `0 12px 24px ${integration.color}20` : 'none',
               }}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
             >
-              {integration.name}
-            </button>
+              {/* Logo */}
+              <div className="flex justify-center mb-3">
+                {integration.logo}
+              </div>
+              
+              {/* Name */}
+              <p 
+                className="text-sm font-semibold text-center mb-3"
+                style={{ color: hoveredIndex === index ? integration.color : 'rgb(var(--color-text))' }}
+              >
+                {integration.name}
+              </p>
+
+              {/* Features (shown on hover) */}
+              <div 
+                className={`space-y-1.5 transition-all duration-300 overflow-hidden ${
+                  hoveredIndex === index ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
+                {integration.features.map((feature, fIdx) => (
+                  <div key={fIdx} className="flex items-center gap-1.5">
+                    <Check className="w-3 h-3 flex-shrink-0" style={{ color: integration.color }} />
+                    <span className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn ? feature.en : feature.fr}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Connected indicator */}
+              <div 
+                className={`absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full transition-all duration-300 ${
+                  hoveredIndex === index ? 'scale-100' : 'scale-0'
+                }`}
+                style={{ backgroundColor: integration.color }}
+              />
+            </div>
           ))}
         </div>
-        
-        <p className="text-xs text-center mt-6" style={{ color: 'rgb(var(--color-text-muted))' }}>
+
+        {/* Sync Features */}
+        <div 
+          className="rounded-2xl p-6 sm:p-8"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          <div className="grid sm:grid-cols-3 gap-6">
+            {SYNC_FEATURES.map((feature, index) => (
+              <div key={index} className="flex items-start gap-4">
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <feature.icon className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? feature.title.en : feature.title.fr}
+                  </h3>
+                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? feature.desc.en : feature.desc.fr}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="mt-8 pt-6 flex flex-col sm:flex-row items-center justify-center gap-4" style={{ borderTop: '1px solid rgb(var(--color-border))' }}>
+            <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              {isEn ? "Don't see your software?" : "Vous ne voyez pas votre logiciel ?"}
+            </p>
+            <button 
+              className="flex items-center gap-2 text-sm font-medium transition-colors hover:underline"
+              style={{ color: 'rgb(var(--color-primary-500))' }}
+            >
+              {isEn ? 'Request an integration' : 'Demander une intégration'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* CSV Import Note */}
+        <p className="text-center text-xs mt-6" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {isEn 
-            ? 'Click any logo to learn more • Auto-rotates every 3 seconds'
-            : 'Cliquez sur n\'importe quel logo pour en savoir plus • Rotation automatique toutes les 3 secondes'
-          }
+            ? '+ CSV import available for any accounting software'
+            : '+ Import CSV disponible pour tout logiciel comptable'}
         </p>
       </div>
     </section>

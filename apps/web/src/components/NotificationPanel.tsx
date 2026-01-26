@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { 
   Bell, 
   Check, 
@@ -196,7 +196,6 @@ interface NotificationItemProps {
 }
 
 function NotificationItem({ notification, onRead, onArchive, onClose }: NotificationItemProps) {
-  const navigate = useNavigate();
   const Icon = categoryIcons[notification.category];
   const styles = categoryStyles[notification.category];
 
@@ -206,19 +205,21 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
     }
   };
 
-  const handleLinkClick = (e: React.MouseEvent) => {
+  const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    if (notification.actionUrl) {
-      // Navigate first, then close the panel
-      navigate(notification.actionUrl);
-      onClose();
+    // Mark as read when clicking the action
+    if (!notification.read) {
+      onRead();
     }
+    // Close panel after a brief delay to ensure navigation starts
+    setTimeout(() => {
+      onClose();
+    }, 50);
   };
 
   return (
     <div
-      className={`notification-item ${!notification.read ? 'unread' : ''}`}
+      className={`notification-item group ${!notification.read ? 'unread' : ''}`}
       onClick={handleClick}
     >
       {/* Icon */}
@@ -230,20 +231,22 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
       </div>
 
       {/* Content */}
-      <div className="notification-content">
+      <div className="flex-1 min-w-0">
         <p className="notification-title">{notification.title}</p>
         <p className="notification-message">{notification.message}</p>
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex items-center gap-2 mt-2">
           <span className="notification-time">
             {getRelativeTime(notification.createdAt)}
           </span>
           {notification.actionUrl && (
-            <button
-              onClick={handleLinkClick}
-              className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+            <Link
+              to={notification.actionUrl}
+              onClick={handleActionClick}
+              className="text-xs font-medium px-2 py-1 rounded-md cursor-pointer transition-all hover:bg-primary-500/10 active:scale-95"
+              style={{ color: 'rgb(var(--color-primary-500))' }}
             >
               {notification.actionLabel || 'Voir'}
-            </button>
+            </Link>
           )}
         </div>
       </div>

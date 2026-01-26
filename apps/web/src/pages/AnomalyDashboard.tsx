@@ -34,7 +34,7 @@ import {
 } from '../components/charts';
 import { InfoBanner } from '../components/HelpTooltip';
 import { InfoTooltip, AnomalyTooltip, MetricTooltip } from '../components/Tooltip';
-import Toggle from '../components/Toggle';
+import Toggle, { ToggleGroup } from '../components/Toggle';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -383,27 +383,32 @@ export default function AnomalyDashboard() {
         
         {/* Controls Row */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* AI Toggle - Compact on mobile */}
-          <div 
-            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border"
-            style={{ borderColor: 'rgb(var(--color-border))' }}
-          >
-            <Brain className="w-4 h-4" style={{ color: useAIDetection ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }} />
-            <span className="text-xs sm:text-sm hidden xs:inline" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'AI' : 'IA'}
-            </span>
-            <Toggle
-              checked={useAIDetection}
-              onChange={setUseAIDetection}
+          {/* Analysis Mode Selector - Clear UX */}
+          <div className="flex items-center gap-2">
+            <ToggleGroup
+              options={[
+                { 
+                  value: 'standard', 
+                  label: isEn ? 'Standard' : 'Standard',
+                  icon: <Zap className="w-3.5 h-3.5" />,
+                },
+                { 
+                  value: 'ai', 
+                  label: isEn ? 'AI Analysis' : 'Analyse IA',
+                  icon: <Sparkles className="w-3.5 h-3.5" />,
+                },
+              ]}
+              value={useAIDetection ? 'ai' : 'standard'}
+              onChange={(val) => setUseAIDetection(val === 'ai')}
               size="sm"
             />
             <InfoTooltip
-              title="Détection IA avancée"
-              titleEn="Advanced AI Detection"
-              content="Active des algorithmes d'apprentissage automatique pour détecter des patterns complexes: saisonnalité, corrélations brisées, loi de Benford, et plus."
-              contentEn="Enables machine learning algorithms to detect complex patterns: seasonality, broken correlations, Benford's Law, and more."
-              impact="Améliore significativement la précision de détection mais utilise plus de ressources."
-              impactEn="Significantly improves detection accuracy but uses more resources."
+              title="Mode d'analyse"
+              titleEn="Analysis Mode"
+              content="Standard: Détection basée sur des seuils configurables. IA: Algorithmes avancés incluant saisonnalité, corrélations, loi de Benford, et plus."
+              contentEn="Standard: Threshold-based detection. AI: Advanced algorithms including seasonality, correlations, Benford's Law, and more."
+              impact="Le mode IA offre une meilleure précision mais utilise plus de ressources."
+              impactEn="AI mode offers better accuracy but uses more resources."
               size="sm"
             />
           </div>

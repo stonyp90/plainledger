@@ -51,7 +51,7 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 resource "aws_cloudwatch_log_group" "ecs_exec" {
   name              = "/aws/ecs/${var.project}-${var.environment}/exec"
   retention_in_days = 30
-  kms_key_id        = var.kms_key_arn
+  # Note: KMS encryption disabled for exec logs due to key policy conflicts
 
   tags = {
     Name        = "${var.project}-${var.environment}-ecs-exec"
@@ -140,7 +140,9 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
         ]
         Resource = [
           var.db_credentials_secret_arn,
-          var.redis_auth_secret_arn
+          var.redis_auth_secret_arn,
+          var.stripe_secret_arn,
+          var.novu_secret_arn
         ]
       },
       {
@@ -523,16 +525,54 @@ resource "aws_ecs_task_definition" "api" {
       environment = [
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3000" },
+        { name = "DB_PORT", value = "5432" },
         { name = "KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "KEYCLOAK_REALM", value = "plainledger" },
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
-        { name = "CORS_ORIGIN", value = "https://${var.domain_name}" }
+        { name = "CORS_ORIGIN", value = "https://${var.domain_name}" },
+        { name = "APP_URL", value = "https://${var.domain_name}" }
       ]
 
       secrets = [
         {
-          name      = "DATABASE_URL"
+          name      = "DB_HOST"
           valueFrom = "${var.db_credentials_secret_arn}:host::"
+        },
+        {
+          name      = "DB_USERNAME"
+          valueFrom = "${var.db_credentials_secret_arn}:username::"
+        },
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "${var.db_credentials_secret_arn}:password::"
+        },
+        {
+          name      = "DB_NAME"
+          valueFrom = "${var.db_credentials_secret_arn}:dbname::"
+        },
+        {
+          name      = "REDIS_HOST"
+          valueFrom = "${var.redis_auth_secret_arn}:host::"
+        },
+        {
+          name      = "REDIS_AUTH_TOKEN"
+          valueFrom = "${var.redis_auth_secret_arn}:auth_token::"
+        },
+        {
+          name      = "NOVU_API_KEY"
+          valueFrom = "${var.novu_secret_arn}:api_key::"
+        },
+        {
+          name      = "NOVU_APP_ID"
+          valueFrom = "${var.novu_secret_arn}:app_id::"
+        },
+        {
+          name      = "STRIPE_SECRET_KEY"
+          valueFrom = "${var.stripe_secret_arn}:secret_key::"
+        },
+        {
+          name      = "STRIPE_PUBLISHABLE_KEY"
+          valueFrom = "${var.stripe_secret_arn}:publishable_key::"
         }
       ]
 

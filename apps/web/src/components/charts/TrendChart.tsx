@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { AlertTriangle, TrendingUp, TrendingDown, Eye, EyeOff, Settings2 } from 'lucide-react';
 import { 
   DEFAULT_THRESHOLDS, 
@@ -7,6 +7,7 @@ import {
   detectOutliers,
   FinancialDataPoint,
 } from '../../lib/anomalyDetection';
+import { ChartTooltip, DataPointTooltip } from './ChartTooltip';
 
 interface TrendChartProps {
   data: FinancialDataPoint[];
@@ -43,6 +44,9 @@ export default function TrendChart({
 }: TrendChartProps) {
   const [showBands, setShowBands] = useState(showThresholdBands);
   const [showMA, setShowMA] = useState(showMovingAverage);
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const { 
     processedData, 
@@ -327,60 +331,62 @@ export default function TrendChart({
       </div>
 
       {/* Chart */}
-      <div className="relative" style={{ height: `${height}px` }}>
+      <div ref={chartRef} className="relative" style={{ height: `${height}px` }}>
         <svg 
           viewBox={`0 0 100 ${height}`} 
           preserveAspectRatio="none"
           className="w-full h-full"
         >
-          {/* Threshold bands */}
+          {/* Threshold bands - subtle background indicators */}
           {showBands && (
             <>
-              {/* Critical zone (outside warning) */}
+              {/* Warning zone (outside normal) - very subtle */}
               <rect
                 x="0"
                 y={getYPosition(criticalBand.high)}
                 width="100"
                 height={getYPosition(warningBand.high) - getYPosition(criticalBand.high)}
-                fill="rgb(var(--color-warning) / 0.15)"
+                fill="rgb(var(--color-warning) / 0.08)"
               />
               <rect
                 x="0"
                 y={getYPosition(warningBand.low)}
                 width="100"
                 height={getYPosition(criticalBand.low) - getYPosition(warningBand.low)}
-                fill="rgb(var(--color-warning) / 0.15)"
+                fill="rgb(var(--color-warning) / 0.08)"
               />
               
-              {/* Normal zone */}
+              {/* Normal zone - very subtle */}
               <rect
                 x="0"
                 y={getYPosition(warningBand.high)}
                 width="100"
                 height={getYPosition(warningBand.low) - getYPosition(warningBand.high)}
-                fill="rgb(var(--color-success) / 0.1)"
+                fill="rgb(var(--color-success) / 0.05)"
               />
               
-              {/* Baseline */}
+              {/* Baseline - subtle dashed line */}
               <line
                 x1="0"
                 y1={getYPosition(avgValue)}
                 x2="100"
                 y2={getYPosition(avgValue)}
-                stroke="rgb(var(--color-text-muted))"
-                strokeWidth="0.3"
-                strokeDasharray="2,2"
+                stroke="rgb(var(--color-border))"
+                strokeWidth="0.2"
+                strokeDasharray="2,3"
+                opacity="0.5"
               />
               
-              {/* Warning lines */}
+              {/* Warning threshold lines - subtle */}
               <line
                 x1="0"
                 y1={getYPosition(warningBand.high)}
                 x2="100"
                 y2={getYPosition(warningBand.high)}
                 stroke="rgb(var(--color-warning))"
-                strokeWidth="0.3"
-                strokeDasharray="2,2"
+                strokeWidth="0.2"
+                strokeDasharray="1,2"
+                opacity="0.4"
               />
               <line
                 x1="0"
@@ -388,16 +394,24 @@ export default function TrendChart({
                 x2="100"
                 y2={getYPosition(warningBand.low)}
                 stroke="rgb(var(--color-warning))"
-                strokeWidth="0.3"
-                strokeDasharray="2,2"
+                strokeWidth="0.2"
+                strokeDasharray="1,2"
+                opacity="0.4"
               />
             </>
           )}
 
-          {/* Area fill */}
+          {/* Area fill with gradient */}
+          <defs>
+            <linearGradient id={`areaGradient-${title.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+              <stop offset="50%" stopColor={color} stopOpacity="0.15" />
+              <stop offset="100%" stopColor={color} stopOpacity="0.03" />
+            </linearGradient>
+          </defs>
           <path
             d={areaPath}
-            fill={`${color.replace(')', ' / 0.08)')}`}
+            fill={`url(#areaGradient-${title.replace(/\s/g, '')})`}
           />
 
           {/* Budget line if provided */}
@@ -428,36 +442,152 @@ export default function TrendChart({
             d={linePath}
             fill="none"
             stroke={color}
-            strokeWidth="0.6"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
 
-          {/* Data points */}
-          {processedData.map((point, i) => (
-            <g key={point.period}>
+          {/* Hover vertical line */}
+          {hoveredPointIndex !== null && (
+            <line
+              x1={getXPosition(hoveredPointIndex)}
+              y1="0"
+              x2={getXPosition(hoveredPointIndex)}
+              y2={height}
+              stroke="rgb(var(--color-text-muted))"
+              strokeWidth="0.3"
+              strokeDasharray="3,3"
+              opacity="0.6"
+            />
+          )}
+
+        </svg>
+
+        {/* Data points - rendered as HTML elements to avoid SVG stretching */}
+        {processedData.map((point, i) => {
+          const xPercent = getXPosition(i);
+          const yPercent = (getYPosition(point.value) / height) * 100;
+          const isAnomaly = point.status !== 'normal';
+          const pointColor = getPointColor(point.status);
+          const isHovered = hoveredPointIndex === i;
+          const previousValue = i > 0 ? processedData[i - 1].value : undefined;
+          
+          return (
+            <div
+              key={point.period}
+              className="absolute cursor-pointer group"
+              style={{
+                left: `${xPercent}%`,
+                top: `${yPercent}%`,
+                transform: 'translate(-50%, -50%)',
+                zIndex: isHovered ? 20 : isAnomaly ? 10 : 1,
+              }}
+              onMouseEnter={(e) => {
+                setHoveredPointIndex(i);
+                setTooltipPosition({ x: e.clientX, y: e.clientY });
+              }}
+              onMouseMove={(e) => {
+                setTooltipPosition({ x: e.clientX, y: e.clientY });
+              }}
+              onMouseLeave={() => setHoveredPointIndex(null)}
+            >
+              {/* Hover hit area - larger for easier interaction */}
+              <div 
+                className="absolute rounded-full"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              />
+              
               {/* Outer ring for anomalies */}
-              {point.status !== 'normal' && (
-                <circle
-                  cx={getXPosition(i)}
-                  cy={getYPosition(point.value)}
-                  r="3"
-                  fill="none"
-                  stroke={getPointColor(point.status)}
-                  strokeWidth="0.5"
-                  className="animate-ping"
-                  style={{ transformOrigin: `${getXPosition(i)}px ${getYPosition(point.value)}px` }}
+              {isAnomaly && !isHovered && (
+                <div
+                  className="absolute inset-0 animate-ping rounded-full"
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    margin: '-3px',
+                    border: `2px solid ${pointColor}`,
+                    opacity: 0.6,
+                  }}
+                />
+              )}
+              
+              {/* Hover ring */}
+              {isHovered && (
+                <div
+                  className="absolute rounded-full transition-all duration-150"
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    border: `2px solid ${pointColor}`,
+                    backgroundColor: `${pointColor}20`,
+                  }}
                 />
               )}
               
               {/* Main point */}
-              <circle
-                cx={getXPosition(i)}
-                cy={getYPosition(point.value)}
-                r={point.status !== 'normal' ? 2 : 1.5}
-                fill={getPointColor(point.status)}
+              <div
+                className="rounded-full transition-all duration-150"
+                style={{
+                  width: isHovered ? '10px' : isAnomaly ? '8px' : '6px',
+                  height: isHovered ? '10px' : isAnomaly ? '8px' : '6px',
+                  backgroundColor: pointColor,
+                  boxShadow: isHovered ? `0 0 12px ${pointColor}` : undefined,
+                }}
               />
-            </g>
-          ))}
-        </svg>
+            </div>
+          );
+        })}
+        
+        {/* Tooltip */}
+        {hoveredPointIndex !== null && processedData[hoveredPointIndex] && (
+          <ChartTooltip visible={true} position={tooltipPosition}>
+            <DataPointTooltip
+              label={processedData[hoveredPointIndex].period}
+              value={processedData[hoveredPointIndex].value}
+              previousValue={hoveredPointIndex > 0 ? processedData[hoveredPointIndex - 1].value : undefined}
+              format="currency"
+              trend={
+                hoveredPointIndex > 0 
+                  ? processedData[hoveredPointIndex].value > processedData[hoveredPointIndex - 1].value 
+                    ? 'up' 
+                    : processedData[hoveredPointIndex].value < processedData[hoveredPointIndex - 1].value 
+                      ? 'down' 
+                      : 'stable'
+                  : undefined
+              }
+              status={
+                processedData[hoveredPointIndex].status === 'critical' || processedData[hoveredPointIndex].status === 'outlier'
+                  ? 'critical'
+                  : processedData[hoveredPointIndex].status === 'warning'
+                    ? 'warning'
+                    : 'normal'
+              }
+              additionalInfo={[
+                { 
+                  label: isEn ? 'Moving Avg' : 'Moy. mobile', 
+                  value: formatCurrency(movingAverage[hoveredPointIndex]) 
+                },
+                ...(processedData[hoveredPointIndex].deviation > 0 ? [{
+                  label: isEn ? 'Deviation' : 'Écart',
+                  value: `${processedData[hoveredPointIndex].deviation.toFixed(1)}%`
+                }] : []),
+                ...(budget && budget[hoveredPointIndex] ? [{
+                  label: 'Budget',
+                  value: formatCurrency(budget[hoveredPointIndex])
+                }] : []),
+              ]}
+            />
+          </ChartTooltip>
+        )}
 
         {/* Y-axis labels */}
         <div 

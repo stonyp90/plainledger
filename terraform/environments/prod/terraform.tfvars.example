@@ -1,0 +1,21 @@
+# ==============================================================================
+# PlainLedger - Production Terraform Variables
+# Copy this file to terraform.tfvars and fill in values
+# ==============================================================================
+
+# GitHub (required)
+github_org = "stonyp90"
+
+# Stripe API Keys (required for payment processing)
+stripe_secret_key      = "sk_live_..."
+stripe_publishable_key = "pk_live_..."
+
+# Novu API Keys (required for notifications)
+novu_api_key = "..."
+novu_app_id  = "..."
+
+# Optional overrides
+# domain_name          = "plainledger.ca"
+# create_hosted_zone   = true
+# db_instance_class    = "db.t3.medium"
+# redis_node_type      = "cache.t3.micro"

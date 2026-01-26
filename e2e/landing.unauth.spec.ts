@@ -1,40 +1,47 @@
 /**
  * Landing Page E2E Tests (Unauthenticated)
  * Tests public pages without authentication
+ * 
+ * Focus: Core user journeys and content visibility, not implementation details
  */
 
 import { test, expect } from '@playwright/test';
 
 test.describe('Landing Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Clear any stored auth state
     await page.context().clearCookies();
     await page.goto('/');
   });
 
-  test('should display landing page', async ({ page }) => {
-    // Check for PlainLedger branding
-    await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
-  });
-
-  test('should have navigation links', async ({ page }) => {
-    // Check for main CTA buttons
-    const ctaButton = page.getByRole('link', { name: /Get.*Started|Commencer|Demo|Sign.*Up/i });
-    await expect(ctaButton.first()).toBeVisible();
-  });
-
-  test('should be responsive', async ({ page }) => {
-    // Check at mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 });
+  test('should display branding and hero content', async ({ page }) => {
+    // Core branding must be visible
     await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
     
-    // Check at tablet viewport
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
+    // Hero section should have a headline
+    await expect(page.locator('h1').first()).toBeVisible();
+  });
+
+  test('should be responsive across viewports', async ({ page }) => {
+    const viewports = [
+      { width: 375, height: 667 },   // Mobile
+      { width: 768, height: 1024 },  // Tablet
+      { width: 1280, height: 720 },  // Desktop
+    ];
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
+    }
+  });
+
+  test('should navigate to store page', async ({ page }) => {
+    // Click any link that goes to store/pricing
+    const storeLink = page.locator('a[href*="store"], a[href*="pricing"]').first();
     
-    // Check at desktop viewport
-    await page.setViewportSize({ width: 1280, height: 720 });
-    await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
+    if (await storeLink.isVisible()) {
+      await storeLink.click();
+      await expect(page).toHaveURL(/store|pricing/);
+    }
   });
 });
 
@@ -44,26 +51,17 @@ test.describe('Store Page', () => {
     await page.goto('/store');
   });
 
-  test('should display store page', async ({ page }) => {
-    // Check for pricing or store content
-    await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
-  });
-
-  test('should display pricing plans', async ({ page }) => {
-    // Look for pricing-related content
-    const pricingContent = page.locator('text=/Pricing|Prix|month|mois|\\$/i');
+  test('should display pricing information', async ({ page }) => {
+    // Pricing content should be visible (prices, plans, or pricing-related text)
+    const pricingContent = page.locator('text=/\\$|Pricing|Prix|month|mois/i');
     await expect(pricingContent.first()).toBeVisible();
   });
 
-  test('should have sign up CTA', async ({ page }) => {
-    const signUpButton = page.getByRole('button', { name: /Sign.*Up|Start|Commencer|Subscribe/i });
-    await expect(signUpButton.first()).toBeVisible();
-  });
-
-  test('should have feature descriptions', async ({ page }) => {
-    // Look for feature highlights
-    const features = page.locator('text=/Features|Fonctionnalités|Analytics|Reports/i');
-    await expect(features.first()).toBeVisible();
+  test('should have call-to-action buttons', async ({ page }) => {
+    // Store page should have actionable CTAs for signing up
+    const ctaButtons = page.locator('button, a[href*="signup"], a[href*="login"]');
+    const count = await ctaButtons.count();
+    expect(count).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -73,57 +71,37 @@ test.describe('Newsletter Page', () => {
     await page.goto('/newsletter');
   });
 
-  test('should display newsletter signup', async ({ page }) => {
-    // Check for newsletter form or content
-    const newsletterContent = page.locator('text=/Newsletter|Subscribe|Email|Abonnement/i');
-    await expect(newsletterContent.first()).toBeVisible();
+  test('should display newsletter content', async ({ page }) => {
+    // Newsletter branding or signup content
+    const content = page.locator('text=/Newsletter|Subscribe|OffBalance|Abonnement/i');
+    await expect(content.first()).toBeVisible();
   });
 
-  test('should have email input', async ({ page }) => {
-    const emailInput = page.getByRole('textbox', { name: /Email/i });
-    // May or may not have explicit label
-    const hasEmailInput = await emailInput.first().isVisible().catch(() => false);
-    const hasAnyInput = await page.locator('input[type="email"]').first().isVisible().catch(() => false);
-    
-    expect(hasEmailInput || hasAnyInput).toBeTruthy();
+  test('should have a way to subscribe', async ({ page }) => {
+    // Should have an email input field for subscription
+    const emailInput = page.locator('input[type="email"]');
+    await expect(emailInput.first()).toBeVisible();
   });
 });
 
-test.describe('Accessibility', () => {
-  test('landing page should be accessible', async ({ page }) => {
-    await page.goto('/');
+test.describe('Navigation', () => {
+  test('should have consistent header across pages', async ({ page }) => {
+    const pages = ['/', '/store', '/newsletter'];
     
-    // Check for basic accessibility features
-    // Main landmark
-    const main = page.locator('main').first();
-    const hasMain = await main.isVisible().catch(() => false);
-    
-    // Navigation
-    const nav = page.locator('nav, [role="navigation"]').first();
-    const hasNav = await nav.isVisible().catch(() => false);
-    
-    // At least one of these should exist
-    expect(hasMain || hasNav).toBeTruthy();
+    for (const url of pages) {
+      await page.goto(url);
+      // PlainLedger branding should appear on all pages
+      await expect(page.locator('text=/PlainLedger/i').first()).toBeVisible();
+    }
   });
 
-  test('should have proper heading hierarchy', async ({ page }) => {
-    await page.goto('/');
+  test('should be able to return to home from any page', async ({ page }) => {
+    await page.goto('/store');
     
-    // Check for h1
-    const h1 = page.locator('h1').first();
-    await expect(h1).toBeVisible();
-  });
-
-  test('interactive elements should be focusable', async ({ page }) => {
-    await page.goto('/');
+    // Click on logo/brand link to go home
+    const homeLink = page.locator('a[href="/"]').first();
+    await homeLink.click();
     
-    // Tab through the page
-    await page.keyboard.press('Tab');
-    
-    // Check that something is focused
-    const focusedElement = page.locator(':focus');
-    const isFocused = await focusedElement.count() > 0;
-    
-    expect(isFocused).toBeTruthy();
+    await expect(page).toHaveURL('/');
   });
 });

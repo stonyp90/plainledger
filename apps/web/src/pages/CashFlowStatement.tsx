@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, AlertTriangle, TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import { ChartTooltip } from '../components/charts/ChartTooltip';
 
 // Period presets type
 type PeriodPreset = 'mtd' | 'qtd' | 'ytd' | 'last_month' | 'last_quarter' | 'last_year' | 'custom';
@@ -94,6 +95,8 @@ export default function CashFlowStatement() {
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -220,14 +223,35 @@ export default function CashFlowStatement() {
     );
   }
 
-  const renderRow = (item: { code: string; name: string; nameEn?: string; current: number; prior: number }) => {
+  const renderRow = (item: { code: string; name: string; nameEn?: string; current: number; prior: number }, section: string) => {
     const variance = calculateVariance(item.current, item.prior);
     const displayName = isEn && item.nameEn ? item.nameEn : item.name;
     const isPositive = item.current >= 0;
+    const isHovered = hoveredRow === item.code;
+    const absoluteChange = item.current - item.prior;
+    
+    // Determine if this is a significant change (>20%)
+    const isSignificant = Math.abs(variance) > 20;
     
     return (
-      <tr key={item.code} className="hover:bg-[rgb(var(--color-bg-muted))]">
-        <td className="py-2 px-4" style={{ color: 'rgb(var(--color-text))' }}>
+      <tr 
+        key={item.code} 
+        className="transition-colors cursor-pointer relative"
+        style={{ 
+          backgroundColor: isHovered 
+            ? 'rgb(var(--color-primary-500) / 0.08)' 
+            : 'transparent' 
+        }}
+        onMouseEnter={(e) => {
+          setHoveredRow(item.code);
+          setTooltipPosition({ x: e.clientX, y: e.clientY });
+        }}
+        onMouseMove={(e) => {
+          setTooltipPosition({ x: e.clientX, y: e.clientY });
+        }}
+        onMouseLeave={() => setHoveredRow(null)}
+      >
+        <td className="py-2 px-4" style={{ color: isHovered ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text))' }}>
           <div className="flex items-center gap-2">
             {isPositive ? (
               <TrendingUp className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
@@ -235,6 +259,12 @@ export default function CashFlowStatement() {
               <TrendingDown className="w-3 h-3" style={{ color: 'rgb(var(--color-error))' }} />
             )}
             {displayName}
+            {isSignificant && (
+              <span 
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}
+              />
+            )}
           </div>
         </td>
         <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: isPositive ? 'rgb(var(--color-text))' : 'rgb(var(--color-error))' }}>
@@ -249,6 +279,69 @@ export default function CashFlowStatement() {
               {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
             </td>
           </>
+        )}
+        
+        {/* Tooltip */}
+        {isHovered && (
+          <ChartTooltip visible={true} position={tooltipPosition}>
+            <div className="min-w-[220px]">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+                  {section}
+                </span>
+                {isSignificant && (
+                  <AlertTriangle className={`w-4 h-4 ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`} />
+                )}
+              </div>
+              
+              {/* Name */}
+              <p className="text-white font-medium mb-3">{displayName}</p>
+              
+              {/* Values */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-400 text-sm">{isEn ? 'Current Period' : 'Période actuelle'}</span>
+                  <span className={`font-bold ${isPositive ? 'text-white' : 'text-red-400'}`}>
+                    {formatCurrency(item.current)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 text-sm">{isEn ? 'Prior Period' : 'Période précédente'}</span>
+                  <span className="text-gray-300">{formatCurrency(item.prior)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-gray-700">
+                  <span className="text-gray-400 text-sm">{isEn ? 'Change' : 'Variation'}</span>
+                  <span className={`font-medium flex items-center gap-1 ${absoluteChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {absoluteChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    {formatCurrency(absoluteChange)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 text-sm">{isEn ? 'Variance' : 'Écart'}</span>
+                  <span className={`font-mono ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              
+              {/* Insight */}
+              {isSignificant && (
+                <div className={`mt-3 pt-2 border-t border-gray-700 text-xs ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {variance >= 0 
+                    ? (isEn ? '↑ Significant increase vs prior period' : '↑ Augmentation significative vs période précédente')
+                    : (isEn ? '↓ Significant decrease vs prior period' : '↓ Diminution significative vs période précédente')}
+                </div>
+              )}
+              
+              {/* Cash flow impact */}
+              <div className="mt-3 pt-2 border-t border-gray-700 text-xs text-gray-500">
+                {isPositive 
+                  ? (isEn ? 'Cash inflow (positive impact)' : 'Entrée de fonds (impact positif)')
+                  : (isEn ? 'Cash outflow (negative impact)' : 'Sortie de fonds (impact négatif)')}
+              </div>
+            </div>
+          </ChartTooltip>
         )}
       </tr>
     );
@@ -471,7 +564,7 @@ export default function CashFlowStatement() {
                   {isEn ? 'OPERATING ACTIVITIES' : 'ACTIVITÉS D\'EXPLOITATION'}
                 </td>
               </tr>
-              {cashFlowData.operating.map(renderRow)}
+              {cashFlowData.operating.map(item => renderRow(item, isEn ? 'Operations' : 'Exploitation'))}
               {renderTotalRow('Flux net - Exploitation', 'Net Cash from Operations', totals.operatingTotal, true)}
 
               {/* Investing Activities */}
@@ -480,7 +573,7 @@ export default function CashFlowStatement() {
                   {isEn ? 'INVESTING ACTIVITIES' : 'ACTIVITÉS D\'INVESTISSEMENT'}
                 </td>
               </tr>
-              {cashFlowData.investing.map(renderRow)}
+              {cashFlowData.investing.map(item => renderRow(item, isEn ? 'Investing' : 'Investissement'))}
               {renderTotalRow('Flux net - Investissement', 'Net Cash from Investing', totals.investingTotal, true)}
 
               {/* Financing Activities */}
@@ -489,7 +582,7 @@ export default function CashFlowStatement() {
                   {isEn ? 'FINANCING ACTIVITIES' : 'ACTIVITÉS DE FINANCEMENT'}
                 </td>
               </tr>
-              {cashFlowData.financing.map(renderRow)}
+              {cashFlowData.financing.map(item => renderRow(item, isEn ? 'Financing' : 'Financement'))}
               {renderTotalRow('Flux net - Financement', 'Net Cash from Financing', totals.financingTotal, true)}
 
               {/* Summary */}
@@ -515,30 +608,116 @@ export default function CashFlowStatement() {
 
         {/* Cash Flow Summary Cards */}
         <div className="p-4 grid grid-cols-3 gap-4" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-          <div className="text-center p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
-            <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'From Operations' : 'Exploitation'}
-            </p>
-            <p className="text-lg font-bold" style={{ color: totals.operatingTotal.current >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {formatCurrency(totals.operatingTotal.current)}
-            </p>
-          </div>
-          <div className="text-center p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
-            <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'From Investing' : 'Investissement'}
-            </p>
-            <p className="text-lg font-bold" style={{ color: totals.investingTotal.current >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {formatCurrency(totals.investingTotal.current)}
-            </p>
-          </div>
-          <div className="text-center p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
-            <p className="text-xs uppercase tracking-wide mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'From Financing' : 'Financement'}
-            </p>
-            <p className="text-lg font-bold" style={{ color: totals.financingTotal.current >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {formatCurrency(totals.financingTotal.current)}
-            </p>
-          </div>
+          {[
+            { 
+              key: 'operating',
+              label: isEn ? 'From Operations' : 'Exploitation',
+              labelFull: isEn ? 'Cash from Operating Activities' : 'Flux de trésorerie d\'exploitation',
+              value: totals.operatingTotal,
+              description: isEn 
+                ? 'Cash generated from core business operations including net income and working capital changes.'
+                : 'Liquidités générées par les opérations principales incluant le résultat net et les variations du fonds de roulement.'
+            },
+            { 
+              key: 'investing',
+              label: isEn ? 'From Investing' : 'Investissement',
+              labelFull: isEn ? 'Cash from Investing Activities' : 'Flux de trésorerie d\'investissement',
+              value: totals.investingTotal,
+              description: isEn 
+                ? 'Cash used for or generated from investments in assets, equipment, and acquisitions.'
+                : 'Liquidités utilisées ou générées par les investissements en actifs, équipements et acquisitions.'
+            },
+            { 
+              key: 'financing',
+              label: isEn ? 'From Financing' : 'Financement',
+              labelFull: isEn ? 'Cash from Financing Activities' : 'Flux de trésorerie de financement',
+              value: totals.financingTotal,
+              description: isEn 
+                ? 'Cash from debt, equity financing, and dividend payments to shareholders.'
+                : 'Liquidités provenant de la dette, du financement par actions et des dividendes versés aux actionnaires.'
+            },
+          ].map(item => {
+            const isHovered = hoveredRow === item.key;
+            const variance = calculateVariance(item.value.current, item.value.prior);
+            
+            return (
+              <div 
+                key={item.key}
+                className="text-center p-3 rounded-lg cursor-pointer transition-all relative"
+                style={{ 
+                  backgroundColor: isHovered ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-surface))',
+                  boxShadow: isHovered ? '0 0 20px rgb(var(--color-primary-500) / 0.2)' : undefined,
+                }}
+                onMouseEnter={(e) => {
+                  setHoveredRow(item.key);
+                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseMove={(e) => {
+                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
+                <p className="text-xs uppercase tracking-wide mb-1" style={{ color: isHovered ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }}>
+                  {item.label}
+                </p>
+                <p className="text-lg font-bold transition-transform" style={{ 
+                  color: item.value.current >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))',
+                  transform: isHovered ? 'scale(1.05)' : undefined,
+                }}>
+                  {formatCurrency(item.value.current)}
+                </p>
+                
+                {/* Tooltip */}
+                {isHovered && (
+                  <ChartTooltip visible={true} position={tooltipPosition}>
+                    <div className="min-w-[240px]">
+                      {/* Header */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Info className="w-4 h-4 text-gray-400" />
+                        <span className="text-white font-medium">{item.labelFull}</span>
+                      </div>
+                      
+                      {/* Description */}
+                      <p className="text-gray-400 text-xs mb-3">{item.description}</p>
+                      
+                      {/* Values */}
+                      <div className="space-y-2 border-t border-gray-700 pt-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400 text-sm">{isEn ? 'Current' : 'Actuel'}</span>
+                          <span className={`font-bold ${item.value.current >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {formatCurrency(item.value.current)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400 text-sm">{isEn ? 'Prior Year' : 'Année préc.'}</span>
+                          <span className="text-gray-300">{formatCurrency(item.value.prior)}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t border-gray-700">
+                          <span className="text-gray-400 text-sm">{isEn ? 'YoY Change' : 'Var. annuelle'}</span>
+                          <span className={`font-medium flex items-center gap-1 ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {variance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Net change contribution */}
+                      {totals.netChange.current !== 0 && (
+                        <div className="mt-3 pt-2 border-t border-gray-700">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">{isEn ? '% of Net Cash Change' : '% du flux net'}</span>
+                            <span className="text-gray-300">
+                              {Math.abs((item.value.current / totals.netChange.current) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </ChartTooltip>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

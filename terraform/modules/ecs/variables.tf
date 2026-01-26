@@ -62,6 +62,16 @@ variable "redis_auth_secret_arn" {
   type        = string
 }
 
+variable "stripe_secret_arn" {
+  description = "ARN of Stripe API keys secret"
+  type        = string
+}
+
+variable "novu_secret_arn" {
+  description = "ARN of Novu API keys secret"
+  type        = string
+}
+
 variable "kms_key_arn" {
   description = "KMS key ARN"
   type        = string

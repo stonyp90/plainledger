@@ -72,7 +72,7 @@ import {
 // CHART TYPE ICONS
 // =====================================================
 
-const ChartTypeIcon: Record<ChartType, LucideIcon> = {
+export const ChartTypeIcon: Record<ChartType, LucideIcon> = {
   line: LineChart,
   bar: BarChart3,
   area: AreaChart,

@@ -961,8 +961,20 @@
   color: rgb(var(--color-text-muted));
 }
 .notification-time {
-  @apply text-xs mt-1;
+  @apply text-xs;
   color: rgb(var(--color-text-subtle));
+}
+
+/* Notification action button */
+.notification-action {
+  @apply text-xs font-medium px-2 py-1 rounded-md cursor-pointer transition-all;
+  color: rgb(var(--color-primary-500));
+}
+.notification-action:hover {
+  background-color: rgb(var(--color-primary-500) / 0.1);
+}
+.notification-action:active {
+  transform: scale(0.95);
 }
 
 /* Modal */

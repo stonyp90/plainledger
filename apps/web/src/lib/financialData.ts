@@ -472,19 +472,19 @@ export function generateMockFinancialData(
     value: rev.value - expenseData[i].value,
   }));
 
-  // Cash flow waterfall
+  // Cash flow waterfall - using short, clear labels
   const cashFlowWaterfall: WaterfallDataPoint[] = [
-    { label: 'Ouverture', labelEn: 'Opening Balance', value: 198000, type: 'start' },
-    { label: 'Ventes encaissées', labelEn: 'Cash from Sales', value: 195000, type: 'increase', category: 'operations' },
-    { label: 'Recouvrement créances', labelEn: 'Collections', value: 156000, type: 'increase', category: 'operations' },
-    { label: 'Salaires et avantages', labelEn: 'Payroll & Benefits', value: -112000, type: 'decrease', category: 'operations' },
-    { label: 'Fournisseurs', labelEn: 'Supplier Payments', value: -78000, type: 'decrease', category: 'operations' },
-    { label: 'Loyer et charges', labelEn: 'Rent & Utilities', value: -35000, type: 'decrease', category: 'operations' },
-    { label: 'Sous-total opérations', labelEn: 'Operations Subtotal', value: 324000, type: 'subtotal' },
-    { label: 'Achat équipements', labelEn: 'Equipment Purchase', value: -45000, type: 'decrease', category: 'investing' },
-    { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: -25000, type: 'decrease', category: 'financing' },
-    { label: 'Dividendes versés', labelEn: 'Dividends Paid', value: -9000, type: 'decrease', category: 'financing' },
-    { label: 'Clôture', labelEn: 'Closing Balance', value: 245000, type: 'end' },
+    { label: 'Ouverture', labelEn: 'Opening', value: 198000, type: 'start' },
+    { label: 'Ventes', labelEn: 'Sales', value: 195000, type: 'increase', category: 'operations' },
+    { label: 'Recouvrements', labelEn: 'Collections', value: 156000, type: 'increase', category: 'operations' },
+    { label: 'Salaires', labelEn: 'Payroll', value: -112000, type: 'decrease', category: 'operations' },
+    { label: 'Fournisseurs', labelEn: 'Suppliers', value: -78000, type: 'decrease', category: 'operations' },
+    { label: 'Loyer', labelEn: 'Rent', value: -35000, type: 'decrease', category: 'operations' },
+    { label: 'Op. Total', labelEn: 'Op. Total', value: 324000, type: 'subtotal' },
+    { label: 'Équipement', labelEn: 'CapEx', value: -45000, type: 'decrease', category: 'investing' },
+    { label: 'Dette', labelEn: 'Debt', value: -25000, type: 'decrease', category: 'financing' },
+    { label: 'Dividendes', labelEn: 'Dividends', value: -9000, type: 'decrease', category: 'financing' },
+    { label: 'Clôture', labelEn: 'Closing', value: 245000, type: 'end' },
   ];
 
   // Calculate financial metrics

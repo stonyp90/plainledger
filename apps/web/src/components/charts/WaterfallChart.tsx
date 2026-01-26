@@ -4,8 +4,9 @@
  * Perfect for understanding cash flow movements, profit/loss composition
  */
 
-import { useMemo } from 'react';
-import { ArrowUp, ArrowDown, Equal, AlertTriangle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowUp, ArrowDown, Equal, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChartTooltip } from './ChartTooltip';
 
 interface WaterfallItem {
   label: string;
@@ -38,6 +39,9 @@ export default function WaterfallChart({
   height = 280,
   isEn = false,
 }: WaterfallChartProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
   const {
     processedData,
     maxCumulative,
@@ -98,8 +102,9 @@ export default function WaterfallChart({
     return ((maxCumulative - value) / range) * 100;
   };
 
-  const barWidth = Math.min(60, 600 / data.length);
-  const gap = barWidth * 0.3;
+  // Calculate bar width to ensure all columns fit in view
+  const barWidth = Math.min(55, 550 / data.length);
+  const gap = barWidth * 0.35;
 
   return (
     <div 
@@ -156,9 +161,9 @@ export default function WaterfallChart({
       </div>
 
       {/* Chart */}
-      <div className="relative overflow-x-auto" style={{ height: `${height}px` }}>
+      <div className="relative overflow-x-auto" style={{ height: `${height + 30}px` }}>
         <svg 
-          viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${height}`}
+          viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${height + 30}`}
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full"
         >
@@ -205,6 +210,7 @@ export default function WaterfallChart({
             const isPositive = item.type === 'increase' || 
               (item.type !== 'decrease' && item.value >= 0);
             const isSignificant = significantItems.includes(item);
+            const isHovered = hoveredIndex === index;
             
             let barTop, barHeight, fillColor;
             
@@ -230,7 +236,29 @@ export default function WaterfallChart({
             }
 
             return (
-              <g key={item.label}>
+              <g 
+                key={item.label}
+                className="cursor-pointer"
+                onMouseEnter={(e) => {
+                  setHoveredIndex(index);
+                  const rect = (e.target as SVGElement).getBoundingClientRect();
+                  setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.top });
+                }}
+                onMouseMove={(e) => {
+                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                {/* Hover background */}
+                <rect
+                  x={x - 4}
+                  y={0}
+                  width={barWidth + 8}
+                  height={height}
+                  fill={isHovered ? 'rgb(var(--color-primary-500) / 0.05)' : 'transparent'}
+                  rx="4"
+                />
+                
                 {/* Bar */}
                 <rect
                   x={x}
@@ -239,7 +267,13 @@ export default function WaterfallChart({
                   height={Math.max(2, barHeight * height / 100)}
                   fill={fillColor}
                   rx="2"
-                  opacity={isSignificant ? 1 : 0.8}
+                  opacity={isHovered ? 1 : isSignificant ? 1 : 0.8}
+                  style={{
+                    filter: isHovered ? `drop-shadow(0 0 8px ${fillColor})` : undefined,
+                    transform: isHovered ? 'scaleY(1.02)' : undefined,
+                    transformOrigin: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
                 />
                 
                 {/* Significant item indicator */}
@@ -257,14 +291,34 @@ export default function WaterfallChart({
                   x={x + barWidth / 2}
                   y={
                     item.value >= 0 
-                      ? barTop * height / 100 - 4 
-                      : (barTop + barHeight) * height / 100 + 12
+                      ? barTop * height / 100 - 6 
+                      : (barTop + barHeight) * height / 100 + 14
                   }
                   textAnchor="middle"
-                  className="text-[9px] font-mono tabular-nums"
-                  fill="rgb(var(--color-text-secondary))"
+                  className="text-[10px] font-mono tabular-nums"
+                  fill={isHovered ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-secondary))'}
+                  style={{ fontWeight: isHovered ? 600 : 400 }}
                 >
                   {formatValue(item.value)}
+                </text>
+
+                {/* Column label - directly below the bar */}
+                <text
+                  x={x + barWidth / 2}
+                  y={height + 18}
+                  textAnchor="middle"
+                  className="text-[11px] font-medium"
+                  fill={
+                    isHovered 
+                      ? 'rgb(var(--color-primary-500))'
+                      : item.type === 'start' || item.type === 'end' 
+                        ? 'rgb(var(--color-text))' 
+                        : item.type === 'subtotal'
+                        ? 'rgb(var(--color-text-secondary))'
+                        : 'rgb(var(--color-text-muted))'
+                  }
+                >
+                  {isEn && item.labelEn ? item.labelEn : item.label}
                 </text>
               </g>
             );
@@ -272,30 +326,91 @@ export default function WaterfallChart({
         </svg>
       </div>
 
-      {/* X-axis labels */}
-      <div 
-        className="flex mt-2 overflow-x-auto"
-        style={{ paddingLeft: '20px' }}
-      >
-        {processedData.map((item, index) => (
-          <div
-            key={item.label}
-            className="text-center flex-shrink-0"
-            style={{ width: `${barWidth + gap}px` }}
-          >
-            <span 
-              className="text-[10px] leading-tight block truncate"
-              style={{ 
-                color: item.type === 'start' || item.type === 'end' 
-                  ? 'rgb(var(--color-text))' 
-                  : 'rgb(var(--color-text-muted))'
-              }}
-            >
-              {isEn && item.labelEn ? item.labelEn : item.label}
-            </span>
+      {/* Tooltip */}
+      {hoveredIndex !== null && processedData[hoveredIndex] && (
+        <ChartTooltip visible={true} position={tooltipPosition}>
+          <div className="min-w-[200px]">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+                {processedData[hoveredIndex].type === 'start' 
+                  ? (isEn ? 'Starting Balance' : 'Solde initial')
+                  : processedData[hoveredIndex].type === 'end'
+                    ? (isEn ? 'Ending Balance' : 'Solde final')
+                    : processedData[hoveredIndex].type === 'subtotal'
+                      ? (isEn ? 'Subtotal' : 'Sous-total')
+                      : processedData[hoveredIndex].value >= 0
+                        ? (isEn ? 'Inflow' : 'Entrée')
+                        : (isEn ? 'Outflow' : 'Sortie')
+                }
+              </span>
+              {significantItems.includes(processedData[hoveredIndex]) && (
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+              )}
+            </div>
+            
+            {/* Label */}
+            <p className="text-white font-medium mb-3">
+              {isEn && processedData[hoveredIndex].labelEn 
+                ? processedData[hoveredIndex].labelEn 
+                : processedData[hoveredIndex].label}
+            </p>
+            
+            {/* Values */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-400 text-sm">{isEn ? 'Amount' : 'Montant'}</span>
+                <span className={`font-bold flex items-center gap-1 ${
+                  processedData[hoveredIndex].value >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {processedData[hoveredIndex].value >= 0 
+                    ? <TrendingUp className="w-3 h-3" /> 
+                    : <TrendingDown className="w-3 h-3" />}
+                  {formatValue(processedData[hoveredIndex].value)}
+                </span>
+              </div>
+              
+              {processedData[hoveredIndex].type !== 'start' && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 text-sm">{isEn ? 'Running Total' : 'Total cumulé'}</span>
+                    <span className="text-white font-mono">
+                      {formatValue(processedData[hoveredIndex].cumulative)}
+                    </span>
+                  </div>
+                  
+                  {/* Percentage of total change */}
+                  {totalChange !== 0 && processedData[hoveredIndex].type !== 'end' && processedData[hoveredIndex].type !== 'subtotal' && (
+                    <div className="flex justify-between pt-2 border-t border-gray-700">
+                      <span className="text-gray-400 text-sm">{isEn ? '% of Net Change' : '% du changement net'}</span>
+                      <span className="text-gray-300 font-mono">
+                        {Math.abs((processedData[hoveredIndex].value / totalChange) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Category if available */}
+              {processedData[hoveredIndex].category && (
+                <div className="flex justify-between pt-2 border-t border-gray-700">
+                  <span className="text-gray-400 text-sm">{isEn ? 'Category' : 'Catégorie'}</span>
+                  <span className="text-gray-300">{processedData[hoveredIndex].category}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Significant indicator */}
+            {significantItems.includes(processedData[hoveredIndex]) && (
+              <div className="mt-3 pt-2 border-t border-gray-700 text-xs text-amber-400">
+                ⚠️ {isEn 
+                  ? `Significant: >${showVarianceThreshold}% of net change`
+                  : `Significatif: >${showVarianceThreshold}% du changement net`}
+              </div>
+            )}
           </div>
-        ))}
-      </div>
+        </ChartTooltip>
+      )}
 
       {/* Legend */}
       <div 

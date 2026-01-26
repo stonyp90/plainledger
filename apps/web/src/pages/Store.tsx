@@ -512,28 +512,30 @@ function PricingCard({
       </div>
 
       {/* Price */}
-      <div className="mb-4">
+      <div className="mb-4 min-h-[60px]">
         {isEnterprise ? (
           <div>
             <span className="text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Custom' : 'Sur mesure'}
             </span>
-            <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn ? 'Contact us for pricing' : 'Contactez-nous pour les tarifs'}
             </p>
           </div>
         ) : isFree ? (
           <div>
-            <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Free' : 'Gratuit'}
-            </span>
-            <span className="text-xs ml-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'forever' : 'pour toujours'}
-            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Free' : 'Gratuit'}
+              </span>
+              <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'forever' : 'pour toujours'}
+              </span>
+            </div>
           </div>
         ) : (
           <div>
-            <div className="flex items-baseline gap-0.5">
+            <div className="flex items-baseline gap-1">
               <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                 ${Math.round(displayPrice)}
               </span>
@@ -544,13 +546,13 @@ function PricingCard({
             
             {/* Price breakdown */}
             {pricing.additionalUsersCost > 0 && (
-              <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 ${plan.basePrice} {isEn ? 'base' : 'de base'} + ${pricing.additionalUsersCost} ({users - includedUsers} {isEn ? 'extra users' : 'utilisateurs supp.'})
               </p>
             )}
             
             {billingCycle === 'yearly' && pricing.savings > 0 && (
-              <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-success))' }}>
+              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
                 {isEn ? `Save $${Math.round(pricing.savings)}/year` : `Économisez ${Math.round(pricing.savings)}$/an`}
               </p>
             )}

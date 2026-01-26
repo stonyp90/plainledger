@@ -145,6 +145,37 @@ module "datalake" {
 }
 
 # ------------------------------------------------------------------------------
+# Application Secrets (Stripe, Novu)
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "stripe" {
+  name        = "${var.project}/${var.environment}/stripe"
+  description = "Stripe API keys for ${var.project}"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "stripe" {
+  secret_id = aws_secretsmanager_secret.stripe.id
+  secret_string = jsonencode({
+    secret_key      = var.stripe_secret_key
+    publishable_key = var.stripe_publishable_key
+  })
+}
+
+resource "aws_secretsmanager_secret" "novu" {
+  name        = "${var.project}/${var.environment}/novu"
+  description = "Novu API keys for ${var.project}"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "novu" {
+  secret_id = aws_secretsmanager_secret.novu.id
+  secret_string = jsonencode({
+    api_key = var.novu_api_key
+    app_id  = var.novu_app_id
+  })
+}
+
+# ------------------------------------------------------------------------------
 # ECS Module
 # ------------------------------------------------------------------------------
 module "ecs" {
@@ -164,6 +195,8 @@ module "ecs" {
 
   db_credentials_secret_arn = module.database.db_credentials_secret_arn
   redis_auth_secret_arn     = module.database.redis_auth_secret_arn
+  stripe_secret_arn         = aws_secretsmanager_secret.stripe.arn
+  novu_secret_arn           = aws_secretsmanager_secret.novu.arn
   kms_key_arn               = module.database.kms_key_arn
 
   ecr_web_repository_url      = aws_ecr_repository.web.repository_url

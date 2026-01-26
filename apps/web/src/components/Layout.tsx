@@ -207,35 +207,74 @@ export default function Layout({ children }: LayoutProps) {
         {/* Mobile User Menu */}
         <div className="p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
           <div className="flex items-center gap-3 mb-4">
+            {/* User Avatar */}
             <div 
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all"
+              style={{ 
+                backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
+                borderColor: 'rgb(var(--color-border))'
+              }}
             >
-              <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
+              {user?.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      const fallback = document.createElement('span');
+                      fallback.className = 'font-semibold text-sm';
+                      fallback.style.color = 'rgb(var(--color-text-secondary))';
+                      const initials = (user?.firstName?.[0] || '') + (user?.lastName?.[0] || '');
+                      fallback.textContent = initials || user?.name?.[0] || 'U';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
+              ) : (
+                <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {(user?.firstName?.[0] || '') + (user?.lastName?.[0] || '') || 'U'}
+                </span>
+              )}
             </div>
+            
+            {/* User Details */}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                {user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
+                {user?.name || user?.firstName || (language === 'en' ? 'User' : 'Utilisateur')}
               </p>
               <p className="text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {user?.email}
+                {user?.email || ''}
               </p>
             </div>
           </div>
           
+          {/* Controls Row */}
           <div className="flex items-center gap-2 mb-4">
             <LanguageToggle />
             <ThemeToggle />
           </div>
 
+          {/* Logout Button */}
           <button
             onClick={logout}
-            className="w-full btn-ghost justify-start text-error"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all"
+            style={{ 
+              color: 'rgb(var(--color-error))',
+              backgroundColor: 'rgb(var(--color-error) / 0.05)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.05)';
+            }}
           >
             <LogOut className="w-4 h-4" />
-            <span>{t('nav.logout')}</span>
+            <span className="font-medium">{t('nav.logout')}</span>
           </button>
         </div>
       </aside>
@@ -329,33 +368,86 @@ export default function Layout({ children }: LayoutProps) {
           ))}
         </nav>
 
-        {/* User Menu */}
-        <div className="p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
-          <div className="flex items-center gap-3 mb-3">
+        {/* User Menu - Bottom Left */}
+        <div className="p-3 sm:p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          {/* User Info */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-3">
+            {/* User Avatar */}
             <div 
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105"
+              style={{ 
+                backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
+                borderColor: 'rgb(var(--color-border))'
+              }}
             >
-              <span className="font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
-              </span>
+              {user?.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to initials if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      const fallback = document.createElement('span');
+                      fallback.className = 'font-semibold text-xs sm:text-sm';
+                      fallback.style.color = 'rgb(var(--color-text-secondary))';
+                      const initials = (user?.firstName?.[0] || '') + (user?.lastName?.[0] || '');
+                      fallback.textContent = initials || user?.name?.[0] || 'U';
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
+              ) : (
+                <span className="font-semibold text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
+                </span>
+              )}
             </div>
+            
+            {/* User Details */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                {user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
+              <p className="text-xs sm:text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                {user?.name || user?.firstName || (language === 'en' ? 'User' : 'Utilisateur')}
               </p>
-              <p className="text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {user?.email}
+              <p className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {user?.email || ''}
               </p>
             </div>
           </div>
+          
+          {/* Controls Row */}
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-3 flex-wrap">
+            {/* Language Toggle */}
+            <div className="flex-shrink-0">
+              <LanguageToggle />
+            </div>
+            
+            {/* Theme Toggle */}
+            <div className="flex-shrink-0">
+              <ThemeToggle />
+            </div>
+          </div>
+          
+          {/* Logout Button */}
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
-            style={{ color: 'rgb(var(--color-text-secondary))' }}
+            className="w-full flex items-center justify-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{ 
+              color: 'rgb(var(--color-error))',
+              backgroundColor: 'rgb(var(--color-error) / 0.05)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.05)';
+            }}
           >
-            <LogOut className="w-4 h-4" />
-            <span>{t('nav.logout')}</span>
+            <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="font-medium">{t('nav.logout')}</span>
           </button>
         </div>
       </aside>

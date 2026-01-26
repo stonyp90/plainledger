@@ -14,6 +14,7 @@ import {
   ChevronUp,
   Target,
 } from 'lucide-react';
+import { ChartTooltip } from './ChartTooltip';
 
 interface BudgetItem {
   category: string;
@@ -45,6 +46,8 @@ export default function BudgetVsActualChart({
 }: BudgetVsActualChartProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'category' | 'variance'>('variance');
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const {
     processedData,
@@ -213,18 +216,31 @@ export default function BudgetVsActualChart({
 
       {/* Data Rows */}
       <div className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
-        {processedData.map((item) => (
-          <div key={item.category}>
-            {/* Main Row */}
-            <div 
-              className="grid grid-cols-12 gap-2 px-4 py-3 items-center cursor-pointer hover:bg-opacity-50 transition-colors"
-              style={{ 
-                backgroundColor: item.isSignificant && !item.isFavorable 
-                  ? 'rgb(var(--color-error) / 0.05)' 
-                  : 'transparent'
-              }}
-              onClick={() => toggleRow(item.category)}
-            >
+        {processedData.map((item) => {
+          const isHovered = hoveredRow === item.category;
+          
+          return (
+            <div key={item.category} className="relative">
+              {/* Main Row */}
+              <div 
+                className="grid grid-cols-12 gap-2 px-4 py-3 items-center cursor-pointer transition-all"
+                style={{ 
+                  backgroundColor: item.isSignificant && !item.isFavorable 
+                    ? 'rgb(var(--color-error) / 0.05)' 
+                    : isHovered 
+                      ? 'rgb(var(--color-primary-500) / 0.05)'
+                      : 'transparent'
+                }}
+                onClick={() => toggleRow(item.category)}
+                onMouseEnter={(e) => {
+                  setHoveredRow(item.category);
+                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseMove={(e) => {
+                  setTooltipPosition({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
               {/* Category */}
               <div className="col-span-4 flex items-center gap-2">
                 {expandedRows.has(item.category) 
@@ -377,8 +393,95 @@ export default function BudgetVsActualChart({
                 )}
               </div>
             )}
+            
+            {/* Hover tooltip */}
+            {isHovered && !expandedRows.has(item.category) && (
+              <ChartTooltip visible={true} position={tooltipPosition}>
+                <div className="min-w-[220px]">
+                  {/* Header */}
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+                      {isEn && item.categoryEn ? item.categoryEn : item.category}
+                    </span>
+                    {item.isSignificant && (
+                      item.isFavorable 
+                        ? <CheckCircle className="w-4 h-4 text-green-400" />
+                        : <AlertTriangle className="w-4 h-4 text-red-400" />
+                    )}
+                  </div>
+                  
+                  {/* Budget performance */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-300">
+                        {isEn ? 'Budget Performance' : 'Performance budget'}
+                      </span>
+                    </div>
+                    <div 
+                      className="h-2 rounded-full overflow-hidden"
+                      style={{ backgroundColor: 'rgb(59 130 246 / 0.2)' }}
+                    >
+                      <div 
+                        className="h-full rounded-full transition-all"
+                        style={{ 
+                          width: `${Math.min(100, Math.max(0, (item.actual / item.budget) * 100))}%`,
+                          backgroundColor: item.isFavorable ? '#22c55e' : '#ef4444'
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1 text-xs">
+                      <span className="text-gray-500">0%</span>
+                      <span className={item.isFavorable ? 'text-green-400' : 'text-red-400'}>
+                        {((item.actual / item.budget) * 100).toFixed(0)}%
+                      </span>
+                      <span className="text-gray-500">100%</span>
+                    </div>
+                  </div>
+                  
+                  {/* Values */}
+                  <div className="space-y-2 border-t border-gray-700 pt-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 text-sm">{isEn ? 'Actual' : 'Réel'}</span>
+                      <span className="text-white font-bold">{formatValue(item.actual)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 text-sm">Budget</span>
+                      <span className="text-gray-300">{formatValue(item.budget)}</span>
+                    </div>
+                    {showPriorYear && item.priorYear !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">{isEn ? 'Prior Year' : 'Année préc.'}</span>
+                        <span className="text-gray-400">{formatValue(item.priorYear)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-gray-700">
+                      <span className="text-gray-400 text-sm">{isEn ? 'Variance' : 'Écart'}</span>
+                      <span className={`font-medium flex items-center gap-1 ${item.isFavorable ? 'text-green-400' : 'text-red-400'}`}>
+                        {item.variance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                        {item.variancePct >= 0 ? '+' : ''}{item.variancePct.toFixed(1)}%
+                      </span>
+                    </div>
+                    {item.yoyChange !== null && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">{isEn ? 'YoY Change' : 'Var. annuelle'}</span>
+                        <span className={`font-medium ${item.yoyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {item.yoyChange >= 0 ? '+' : ''}{item.yoyChange.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Click hint */}
+                  <div className="mt-3 pt-2 border-t border-gray-700 text-xs text-gray-500 text-center">
+                    {isEn ? 'Click for details' : 'Cliquez pour les détails'}
+                  </div>
+                </div>
+              </ChartTooltip>
+            )}
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Totals Row */}

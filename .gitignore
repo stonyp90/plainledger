@@ -14,6 +14,7 @@ coverage/
 *.lcov
 .nyc_output/
 playwright-report/
+playwright/.auth/
 test-results/
 
 # Environment files
@@ -47,6 +48,9 @@ pnpm-debug.log*
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+tfplan
+*.tfplan
+crash.log
 
 # Docker
 .docker/

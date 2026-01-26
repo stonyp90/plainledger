@@ -80,7 +80,31 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub repository"
   type        = string
-  default     = "financial-reporting-saas"
+  default     = "plainledger"
+}
+
+# Stripe
+variable "stripe_secret_key" {
+  description = "Stripe secret API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "stripe_publishable_key" {
+  description = "Stripe publishable API key"
+  type        = string
+}
+
+# Novu
+variable "novu_api_key" {
+  description = "Novu API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "novu_app_id" {
+  description = "Novu App ID"
+  type        = string
 }
 
 # Terraform Backend

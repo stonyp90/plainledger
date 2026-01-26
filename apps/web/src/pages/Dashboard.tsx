@@ -417,7 +417,7 @@ export default function Dashboard() {
           subtitle={t('dashboard.charts.last12Months')}
           subtitleEn="Last 12 months - vs budget"
           budget={revenueBudget}
-          color="rgb(var(--color-text))"
+          color="#3B82F6"
           height={200}
           isEn={language === 'en'}
         />
@@ -427,7 +427,7 @@ export default function Dashboard() {
           titleEn="Net Cash Flow"
           subtitle={t('dashboard.charts.operational')}
           subtitleEn="Operational - monthly"
-          color="rgb(var(--color-text))"
+          color="#8B5CF6"
           height={200}
           isEn={language === 'en'}
         />
