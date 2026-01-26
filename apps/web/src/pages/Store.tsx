@@ -429,7 +429,7 @@ function PricingCard({
   return (
     <div 
       className={`
-        p-6 rounded-2xl relative transition-all duration-300
+        p-5 rounded-2xl relative transition-all duration-300 flex flex-col
         ${plan.popular ? 'ring-2' : 'hover:ring-1'}
       `}
       style={{ 
@@ -444,7 +444,7 @@ function PricingCard({
       {/* Badge */}
       {(plan.badge || plan.badgeFr) && (
         <div 
-          className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap"
+          className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap"
           style={{ backgroundColor: plan.popular ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-secondary))' }}
         >
           {isEn ? plan.badge : plan.badgeFr}
@@ -452,55 +452,55 @@ function PricingCard({
       )}
 
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="font-bold text-xl mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+      <div className="mb-4">
+        <h3 className="font-bold text-lg mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
           {isEn ? plan.name : plan.nameFr}
         </h3>
-        <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {isEn ? plan.tagline : plan.taglineFr}
         </p>
       </div>
 
       {/* Price */}
-      <div className="mb-6">
+      <div className="mb-4">
         {isEnterprise ? (
           <div>
-            <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+            <span className="text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Custom' : 'Sur mesure'}
             </span>
-            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn ? 'Contact us for pricing' : 'Contactez-nous pour les tarifs'}
             </p>
           </div>
         ) : isFree ? (
           <div>
-            <span className="text-4xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+            <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Free' : 'Gratuit'}
             </span>
-            <span className="text-sm ml-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <span className="text-xs ml-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn ? 'forever' : 'pour toujours'}
             </span>
           </div>
         ) : (
           <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                 ${Math.round(displayPrice)}
               </span>
-              <span style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 /{isEn ? 'mo' : 'mois'}
               </span>
             </div>
             
             {/* Price breakdown */}
             {pricing.additionalUsersCost > 0 && (
-              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 ${plan.basePrice} {isEn ? 'base' : 'de base'} + ${pricing.additionalUsersCost} ({users - includedUsers} {isEn ? 'extra users' : 'utilisateurs supp.'})
               </p>
             )}
             
             {billingCycle === 'yearly' && pricing.savings > 0 && (
-              <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-success))' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-success))' }}>
                 {isEn ? `Save $${Math.round(pricing.savings)}/year` : `Économisez ${Math.round(pricing.savings)}$/an`}
               </p>
             )}
@@ -511,27 +511,27 @@ function PricingCard({
       {/* User selector (only show when additional users can be added) */}
       {!isFree && !isEnterprise && additionalUserPrice > 0 && (
         <div 
-          className="mb-6 p-4 rounded-xl"
+          className="mb-4 p-3 rounded-lg"
           style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Team members' : 'Membres d\'équipe'}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => canRemoveUsers && onUsersChange(users - 1)}
                 disabled={!canRemoveUsers}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors disabled:opacity-30"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-surface))',
                   border: '1px solid rgb(var(--color-border))'
                 }}
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-3 h-3" />
               </button>
               <span 
-                className="w-12 text-center font-bold text-lg"
+                className="w-8 text-center font-bold text-sm"
                 style={{ color: 'rgb(var(--color-text))' }}
               >
                 {users}
@@ -539,17 +539,17 @@ function PricingCard({
               <button
                 onClick={() => canAddUsers && onUsersChange(users + 1)}
                 disabled={!canAddUsers}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors disabled:opacity-30"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-surface))',
                   border: '1px solid rgb(var(--color-border))'
                 }}
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3 h-3" />
               </button>
             </div>
           </div>
-          <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <p className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {includedUsers} {isEn ? 'included' : 'inclus'}
             {additionalUserPrice > 0 && `, +$${additionalUserPrice}/${isEn ? 'user after' : 'utilisateur après'}`}
           </p>
@@ -557,21 +557,21 @@ function PricingCard({
       )}
 
       {/* Features */}
-      <ul className="space-y-3 mb-6">
+      <ul className="space-y-2 mb-4 flex-1">
         {plan.features.slice(0, showDetails ? undefined : 5).map((feature, idx) => (
           <li 
             key={idx} 
-            className={`flex items-start gap-2 text-sm ${!feature.included ? 'opacity-50' : ''}`}
+            className={`flex items-start gap-1.5 text-xs ${!feature.included ? 'opacity-50' : ''}`}
           >
             {feature.included ? (
-              <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+              <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
             ) : (
-              <X className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <X className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
             )}
             <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {isEn ? feature.name : feature.nameFr}
               {feature.limit && (
-                <span className="text-xs ml-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <span className="text-[10px] ml-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   ({isEn ? feature.limit : feature.limitFr})
                 </span>
               )}
@@ -584,18 +584,18 @@ function PricingCard({
       {plan.features.length > 5 && (
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="flex items-center gap-1 text-sm mb-6 hover:underline"
+          className="flex items-center gap-1 text-xs mb-4 hover:underline"
           style={{ color: 'rgb(var(--color-primary-500))' }}
         >
           {showDetails ? (
             <>
               {isEn ? 'Show less' : 'Voir moins'}
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-3 h-3" />
             </>
           ) : (
             <>
               {isEn ? `Show all ${plan.features.length} features` : `Voir les ${plan.features.length} fonctionnalités`}
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-3 h-3" />
             </>
           )}
         </button>
@@ -604,14 +604,14 @@ function PricingCard({
       {/* CTA */}
       <button
         onClick={() => onSelect(plan.id)}
-        className={`w-full py-3 rounded-xl font-semibold transition-all ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
+        className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
       >
         {isEn ? plan.ctaText : plan.ctaTextFr}
       </button>
 
       {/* Per-user cost (only show when per-user pricing applies) */}
       {!isFree && !isEnterprise && additionalUserPrice > 0 && (
-        <p className="text-center text-xs mt-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
+        <p className="text-center text-[10px] mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
           ${pricing.perUserCost.toFixed(2)}/{isEn ? 'user/month' : 'utilisateur/mois'}
         </p>
       )}
@@ -649,17 +649,17 @@ function PricingSection({ isEn }: { isEn: boolean }) {
   };
 
   return (
-    <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+    <section id="pricing" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Simple, usage-based pricing' : 'Tarification simple basée sur l\'utilisation'}
           </h2>
-          <p className="text-lg mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <p className="text-sm mb-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn ? 'Start free, pay only for what you use' : 'Commencez gratuitement, payez seulement ce que vous utilisez'}
           </p>
-          <p className="text-sm flex items-center justify-center gap-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Info className="w-4 h-4" />
+          <p className="text-xs flex items-center justify-center gap-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <Info className="w-3.5 h-3.5" />
             {isEn 
               ? 'All plans include team members. No hidden fees.' 
               : 'Tous les plans incluent des membres d\'équipe. Aucun frais caché.'}
@@ -667,14 +667,14 @@ function PricingSection({ isEn }: { isEn: boolean }) {
         </div>
 
         {/* Billing toggle */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-6">
           <div 
-            className="inline-flex items-center gap-2 p-1.5 rounded-xl"
+            className="inline-flex items-center gap-1 p-1 rounded-lg"
             style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
           >
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all`}
               style={{
                 backgroundColor: billingCycle === 'monthly' ? 'rgb(var(--color-surface))' : 'transparent',
                 color: billingCycle === 'monthly' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
@@ -685,7 +685,7 @@ function PricingSection({ isEn }: { isEn: boolean }) {
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2`}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5`}
               style={{
                 backgroundColor: billingCycle === 'yearly' ? 'rgb(var(--color-surface))' : 'transparent',
                 color: billingCycle === 'yearly' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
@@ -694,7 +694,7 @@ function PricingSection({ isEn }: { isEn: boolean }) {
             >
               {isEn ? 'Yearly' : 'Annuel'}
               <span 
-                className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
                 style={{ backgroundColor: 'rgb(var(--color-success) / 0.15)', color: 'rgb(var(--color-success))' }}
               >
                 -20%
@@ -704,7 +704,7 @@ function PricingSection({ isEn }: { isEn: boolean }) {
         </div>
 
         {/* Pricing cards - Main 4 plans */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
           {PRICING_TIERS.filter(plan => plan.tier !== 'enterprise').map((plan) => (
             <PricingCard
               key={plan.id}
@@ -718,11 +718,11 @@ function PricingSection({ isEn }: { isEn: boolean }) {
           ))}
         </div>
 
-        {/* Enterprise - Full width */}
+        {/* Enterprise - Compact Full Width */}
         {PRICING_TIERS.filter(plan => plan.tier === 'enterprise').map((plan) => (
-          <div key={plan.id} className="mt-6 max-w-7xl mx-auto">
+          <div key={plan.id} className="mt-5 max-w-7xl mx-auto">
             <div 
-              className="p-6 sm:p-8 rounded-2xl relative"
+              className="p-4 sm:p-5 rounded-xl relative"
               style={{ 
                 backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))',
@@ -731,46 +731,46 @@ function PricingSection({ isEn }: { isEn: boolean }) {
               {/* Badge */}
               {(plan.badge || plan.badgeFr) && (
                 <div 
-                  className="absolute -top-3 left-6 px-4 py-1 rounded-full text-xs font-semibold text-white"
+                  className="absolute -top-2.5 left-4 px-3 py-0.5 rounded-full text-xs font-semibold text-white"
                   style={{ backgroundColor: 'rgb(var(--color-text-secondary))' }}
                 >
                   {isEn ? plan.badge : plan.badgeFr}
                 </div>
               )}
 
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                {/* Left side - Info */}
-                <div>
-                  <h3 className="font-bold text-2xl mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
+                {/* Left side - Info (compact) */}
+                <div className="flex-shrink-0 lg:w-48">
+                  <h3 className="font-bold text-lg mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
                     {isEn ? plan.name : plan.nameFr}
                   </h3>
-                  <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <p className="text-xs mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? plan.tagline : plan.taglineFr}
                   </p>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                  <div className="mb-3">
+                    <span className="text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn ? 'Custom' : 'Sur mesure'}
                     </span>
-                    <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       {isEn ? 'Contact us for pricing' : 'Contactez-nous pour les tarifs'}
                     </p>
                   </div>
                   <button
                     onClick={() => handlePlanSelect(plan.id)}
-                    className="btn-secondary px-8 py-3"
+                    className="btn-secondary px-5 py-2 text-sm"
                   >
                     {isEn ? plan.ctaText : plan.ctaTextFr}
                   </button>
                 </div>
 
-                {/* Right side - Features grid */}
-                <div className="grid sm:grid-cols-2 gap-3">
+                {/* Right side - Features in 4-column grid */}
+                <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1.5">
                   {plan.features.map((feature, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-start gap-2 text-sm"
+                      className="flex items-center gap-1.5 text-xs"
                     >
-                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+                      <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
                       <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
                         {isEn ? feature.name : feature.nameFr}
                       </span>
@@ -783,9 +783,9 @@ function PricingSection({ isEn }: { isEn: boolean }) {
         ))}
 
         {/* Price calculator hint */}
-        <div className="mt-8 text-center">
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Calculator className="w-4 h-4 inline mr-1" />
+        <div className="mt-4 text-center">
+          <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <Calculator className="w-3.5 h-3.5 inline mr-1" />
             {isEn 
               ? 'Use the + / - buttons to see how pricing changes with team size' 
               : 'Utilisez les boutons + / - pour voir comment le prix change selon la taille de l\'équipe'}
