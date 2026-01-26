@@ -5,15 +5,15 @@
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
+COPY apps/web/package*.json ./
 RUN npm ci && npm cache clean --force
 
 # Stage 2: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
+COPY apps/web/package*.json ./
 RUN npm ci
-COPY . .
+COPY apps/web/ ./
 
 # Build arguments for Vite environment variables
 ARG VITE_API_URL=http://localhost:3000
@@ -32,7 +32,7 @@ RUN npm run build
 FROM nginx:alpine AS runner
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html

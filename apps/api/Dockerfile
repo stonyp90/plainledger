@@ -5,15 +5,15 @@
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
+COPY apps/api/package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Stage 2: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
+COPY apps/api/package*.json ./
 RUN npm ci
-COPY . .
+COPY apps/api/ ./
 RUN npm run build
 
 # Stage 3: Production
