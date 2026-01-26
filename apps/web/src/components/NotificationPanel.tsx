@@ -4,7 +4,7 @@ import {
   Bell, 
   Check, 
   CheckCheck, 
-  X, 
+  X,
   Settings, 
   Trash2,
   Link2,
@@ -90,18 +90,30 @@ export default function NotificationPanel() {
     };
   }, [isPanelOpen, closePanel]);
 
+  // Prevent body scroll when panel is open on mobile
+  useEffect(() => {
+    if (isPanelOpen && window.innerWidth < 640) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isPanelOpen]);
+
   return (
     <div className="relative" ref={panelRef}>
-      {/* Bell Icon Button */}
+      {/* Bell Icon Button - Touch-friendly */}
       <button
         onClick={togglePanel}
         className="icon-btn relative"
         aria-label="Notifications"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
         {unreadCount > 0 && (
           <span 
-            className="absolute top-0 right-0 w-5 h-5 text-xs font-medium rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1"
+            className="absolute -top-0.5 -right-0.5 sm:top-0 sm:right-0 w-4 h-4 sm:w-5 sm:h-5 text-[10px] sm:text-xs font-medium rounded-full flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-error))', color: 'white' }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -109,20 +121,41 @@ export default function NotificationPanel() {
         )}
       </button>
 
-      {/* Notification Panel */}
+      {/* Mobile overlay backdrop */}
       {isPanelOpen && (
-        <div className="notification-panel">
+        <div 
+          className="fixed inset-0 bg-black/40 z-40 sm:hidden"
+          onClick={closePanel}
+        />
+      )}
+
+      {/* Notification Panel - Mobile optimized */}
+      {isPanelOpen && (
+        <div className="notification-panel z-50">
           {/* Header */}
           <div 
-            className="flex items-center justify-between px-4 py-3 border-b"
-            style={{ borderColor: 'rgb(var(--color-border))' }}
+            className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b sticky top-0"
+            style={{ 
+              borderColor: 'rgb(var(--color-border))',
+              backgroundColor: 'rgb(var(--color-surface))',
+            }}
           >
-            <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>Notifications</h3>
-            <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm sm:text-base" style={{ color: 'rgb(var(--color-text))' }}>
+              Notifications
+              {unreadCount > 0 && (
+                <span 
+                  className="ml-2 px-1.5 py-0.5 text-[10px] sm:text-xs rounded-full"
+                  style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)', color: 'rgb(var(--color-error))' }}
+                >
+                  {unreadCount}
+                </span>
+              )}
+            </h3>
+            <div className="flex items-center gap-1 sm:gap-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-xs flex items-center gap-1 icon-btn p-1"
+                  className="text-xs flex items-center gap-1 icon-btn p-1.5 sm:p-2"
                   title="Tout marquer comme lu"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -131,20 +164,31 @@ export default function NotificationPanel() {
               <Link
                 to="/app/settings"
                 onClick={closePanel}
-                className="icon-btn p-1"
+                className="icon-btn p-1.5 sm:p-2"
                 title="Paramètres"
               >
                 <Settings className="w-4 h-4" />
               </Link>
+              {/* Close button on mobile */}
+              <button
+                onClick={closePanel}
+                className="sm:hidden icon-btn p-1.5"
+                title="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Notification List */}
-          <div className="max-h-[400px] overflow-y-auto">
+          {/* Notification List - Touch-optimized scroll */}
+          <div 
+            className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             {notifications.length === 0 ? (
-              <div className="py-12 text-center">
-                <Bell className="w-12 h-12 mx-auto mb-3" style={{ color: 'rgb(var(--color-text-subtle))' }} />
-                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>Aucune notification</p>
+              <div className="py-10 sm:py-12 text-center">
+                <Bell className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3" style={{ color: 'rgb(var(--color-text-subtle))' }} />
+                <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>Aucune notification</p>
               </div>
             ) : (
               notifications.map((notification) => (
@@ -162,7 +206,7 @@ export default function NotificationPanel() {
           {/* Footer */}
           {notifications.length > 0 && (
             <div 
-              className="px-4 py-3 border-t"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 border-t"
               style={{ 
                 borderColor: 'rgb(var(--color-border))',
                 backgroundColor: 'rgb(var(--color-bg-subtle))',
@@ -171,7 +215,7 @@ export default function NotificationPanel() {
               <Link
                 to="/app/settings"
                 onClick={closePanel}
-                className="text-sm font-medium"
+                className="text-xs sm:text-sm font-medium block text-center sm:text-left"
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
                 Voir toutes les notifications
@@ -221,28 +265,34 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
     <div
       className={`notification-item group ${!notification.read ? 'unread' : ''}`}
       onClick={handleClick}
+      style={{ padding: '0.75rem' }}
     >
-      {/* Icon */}
+      {/* Icon - Smaller on mobile */}
       <div 
-        className="notification-icon"
-        style={{ backgroundColor: styles.bg, color: styles.color }}
+        className="notification-icon flex-shrink-0"
+        style={{ 
+          backgroundColor: styles.bg, 
+          color: styles.color,
+          width: '36px',
+          height: '36px',
+        }}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="notification-title">{notification.title}</p>
-        <p className="notification-message">{notification.message}</p>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="notification-time">
+        <p className="notification-title text-xs sm:text-sm">{notification.title}</p>
+        <p className="notification-message text-xs line-clamp-2">{notification.message}</p>
+        <div className="flex items-center gap-2 mt-1.5 sm:mt-2 flex-wrap">
+          <span className="notification-time text-[10px] sm:text-xs">
             {getRelativeTime(notification.createdAt)}
           </span>
           {notification.actionUrl && (
             <Link
               to={notification.actionUrl}
               onClick={handleActionClick}
-              className="text-xs font-medium px-2 py-1 rounded-md cursor-pointer transition-all hover:bg-primary-500/10 active:scale-95"
+              className="text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md cursor-pointer transition-all hover:bg-primary-500/10 active:scale-95"
               style={{ color: 'rgb(var(--color-primary-500))' }}
             >
               {notification.actionLabel || 'Voir'}
@@ -251,18 +301,18 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Actions - Always visible on mobile for touch */}
+      <div className="flex items-center gap-0.5 sm:gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
         {!notification.read && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRead();
             }}
-            className="icon-btn p-1"
+            className="icon-btn-sm p-1.5"
             title="Marquer comme lu"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         )}
         <button
@@ -270,13 +320,11 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
             e.stopPropagation();
             onArchive();
           }}
-          className="p-1 rounded transition-colors"
+          className="icon-btn-sm p-1.5 transition-colors"
           style={{ color: 'rgb(var(--color-text-muted))' }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(var(--color-error))'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'rgb(var(--color-text-muted))'}
           title="Supprimer"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
         </button>
       </div>
     </div>

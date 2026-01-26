@@ -192,10 +192,10 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Trigger button */}
+      {/* Trigger button - Touch-friendly */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors hover:opacity-90"
+        className="w-full flex items-center justify-between px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg transition-colors hover:opacity-90 active:scale-[0.98]"
         style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
         title={currentTenant?.name || 'Sélectionner une organisation'}
       >
@@ -203,7 +203,7 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
           <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
           {!compact && (
             <span 
-              className="text-sm font-medium truncate"
+              className="text-xs sm:text-sm font-medium truncate"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {currentTenant?.name || 'Sélectionner...'}
@@ -216,34 +216,38 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
         />
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown - Mobile optimized */}
       {isOpen && (
         <div 
-          className="absolute left-0 right-0 mt-2 rounded-lg shadow-xl z-50 overflow-hidden"
+          className="absolute left-0 right-0 mt-1.5 sm:mt-2 rounded-lg shadow-xl z-50 overflow-hidden max-h-[70vh] sm:max-h-[60vh] overflow-y-auto"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
-            border: '1px solid rgb(var(--color-border))'
+            border: '1px solid rgb(var(--color-border))',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
           {/* Header */}
           <div 
-            className="px-3 py-2 border-b"
-            style={{ borderColor: 'rgb(var(--color-border))' }}
+            className="px-3 py-2 border-b sticky top-0"
+            style={{ 
+              borderColor: 'rgb(var(--color-border))',
+              backgroundColor: 'rgb(var(--color-surface))',
+            }}
           >
-            <p className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-[10px] sm:text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
               Vos organisations ({tenants.length})
             </p>
           </div>
 
-          {/* Tenant list */}
-          <div className="max-h-64 overflow-y-auto">
+          {/* Tenant list - Touch-optimized */}
+          <div className="max-h-52 sm:max-h-64 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             {tenants.length === 0 ? (
               <div className="px-3 py-6 text-center">
                 <Building2 
-                  className="w-8 h-8 mx-auto mb-2"
+                  className="w-7 h-7 sm:w-8 sm:h-8 mx-auto mb-2"
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 />
-                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   Aucune organisation
                 </p>
               </div>
@@ -256,7 +260,7 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                   <button
                     key={tenant.id}
                     onClick={() => handleSwitchTenant(tenant)}
-                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors"
+                    className="w-full flex items-start gap-2.5 sm:gap-3 px-3 py-2.5 sm:py-3 text-left transition-colors active:scale-[0.98]"
                     style={{
                       backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : undefined,
                     }}
@@ -266,7 +270,7 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                   >
                     {/* Avatar */}
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-semibold text-sm"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-semibold text-xs sm:text-sm"
                       style={{ 
                         backgroundColor: isSelected 
                           ? 'rgb(var(--color-primary-600))'
@@ -281,9 +285,9 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                     
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <span 
-                          className="font-medium text-sm truncate"
+                          className="font-medium text-xs sm:text-sm truncate"
                           style={{ 
                             color: tenant.status === 'suspended' 
                               ? 'rgb(var(--color-text-muted))'
@@ -293,15 +297,15 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                           {tenant.name}
                         </span>
                         {isSelected && (
-                          <Check className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
                         <div 
-                          className="flex items-center gap-1 text-[10px]"
+                          className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px]"
                           style={{ color: 'rgb(var(--color-text-muted))' }}
                         >
-                          <RoleIcon className="w-3 h-3" />
+                          <RoleIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           <span>{getRoleLabel(tenant.role)}</span>
                         </div>
                         {getPlanBadge(tenant.plan)}
@@ -314,9 +318,9 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
             )}
           </div>
 
-          {/* Footer actions */}
+          {/* Footer actions - Touch-friendly */}
           <div 
-            className="border-t p-2"
+            className="border-t p-1.5 sm:p-2"
             style={{ borderColor: 'rgb(var(--color-border))' }}
           >
             <button
@@ -324,19 +328,19 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                 setShowCreateModal(true);
                 setIsOpen(false);
               }}
-              className="dropdown-item w-full rounded-lg"
+              className="dropdown-item w-full rounded-lg text-xs sm:text-sm py-2.5 sm:py-2 active:scale-[0.98]"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 flex-shrink-0" />
               <span>Créer une organisation</span>
             </button>
             
             {currentTenant && (
               <a
                 href="/app/settings"
-                className="dropdown-item w-full rounded-lg"
+                className="dropdown-item w-full rounded-lg text-xs sm:text-sm py-2.5 sm:py-2 active:scale-[0.98]"
                 onClick={() => setIsOpen(false)}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-4 h-4 flex-shrink-0" />
                 <span>Paramètres de l'organisation</span>
               </a>
             )}
@@ -344,31 +348,31 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
         </div>
       )}
 
-      {/* Create Organization Modal */}
+      {/* Create Organization Modal - Mobile-first */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
           <div 
-            className="w-full max-w-md rounded-xl shadow-2xl overflow-hidden"
+            className="w-full sm:max-w-md rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
             <div 
-              className="px-6 py-4 border-b"
+              className="px-4 sm:px-6 py-3 sm:py-4 border-b flex-shrink-0"
               style={{ borderColor: 'rgb(var(--color-border))' }}
             >
-              <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                 Créer une organisation
               </h3>
-              <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 Une organisation regroupe vos données comptables et vos collaborateurs
               </p>
             </div>
             
-            <div className="p-6">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
               <div className="mb-4">
-                <label className="label">Nom de l'organisation</label>
+                <label className="label text-xs sm:text-sm">Nom de l'organisation</label>
                 <input
                   type="text"
-                  className="input"
+                  className="input text-sm sm:text-base"
                   placeholder="Ex: Ma Compagnie Inc."
                   value={newOrgName}
                   onChange={(e) => setNewOrgName(e.target.value)}
@@ -380,8 +384,8 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                 className="p-3 rounded-lg flex items-start gap-2"
                 style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
               >
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-info))' }} />
-                <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-info))' }} />
+                <p className="text-[10px] sm:text-xs leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   Vous serez automatiquement le propriétaire de cette organisation. 
                   Vous pourrez inviter des membres après la création.
                 </p>
@@ -389,7 +393,7 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
             </div>
             
             <div 
-              className="px-6 py-4 border-t flex justify-end gap-3"
+              className="px-4 sm:px-6 py-3 sm:py-4 border-t flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 flex-shrink-0 safe-area-bottom"
               style={{ 
                 borderColor: 'rgb(var(--color-border))',
                 backgroundColor: 'rgb(var(--color-bg-subtle))'
@@ -400,14 +404,14 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
                   setShowCreateModal(false);
                   setNewOrgName('');
                 }}
-                className="btn-secondary"
+                className="btn-secondary w-full sm:w-auto justify-center text-sm"
                 disabled={isCreating}
               >
                 Annuler
               </button>
               <button
                 onClick={handleCreateOrg}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto text-sm"
                 disabled={!newOrgName.trim() || isCreating}
               >
                 {isCreating ? (

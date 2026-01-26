@@ -113,9 +113,9 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
-      {/* Mobile Header */}
+      {/* Mobile Header - Optimized for touch */}
       <header 
-        className="lg:hidden sticky top-0 z-50 flex items-center justify-between h-16 px-4 border-b"
+        className="lg:hidden sticky top-0 z-50 flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b safe-area-top"
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
           borderColor: 'rgb(var(--color-border))'
@@ -123,23 +123,24 @@ export default function Layout({ children }: LayoutProps) {
       >
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="icon-btn"
+          className="icon-btn flex-shrink-0"
           aria-label={language === 'en' ? 'Open menu' : 'Ouvrir le menu'}
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <Link to="/app/dashboard" className="flex items-center gap-2">
+        <Link to="/app/dashboard" className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <div 
-            className="w-7 h-7 rounded flex items-center justify-center"
+            className="w-6 h-6 sm:w-7 sm:h-7 rounded flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
           >
-            <span className="text-sm font-bold">PL</span>
+            <span className="text-xs sm:text-sm font-bold">PL</span>
           </div>
-          <span className="font-semibold text-sm tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
+          <span className="font-semibold text-xs sm:text-sm tracking-tight truncate" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+          <ThemeToggle />
           <NotificationPanel />
         </div>
       </header>
@@ -152,21 +153,21 @@ export default function Layout({ children }: LayoutProps) {
         />
       )}
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar - Full height, optimized for touch */}
       <aside 
         className={`
-          lg:hidden fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col
-          transform transition-transform duration-300 ease-out
+          lg:hidden fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[320px] flex flex-col
+          transform transition-transform duration-300 ease-out safe-area-top safe-area-bottom
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
       >
         {/* Mobile Sidebar Header */}
         <div 
-          className="h-16 flex items-center justify-between px-4 border-b flex-shrink-0"
+          className="h-14 sm:h-16 flex items-center justify-between px-3 sm:px-4 border-b flex-shrink-0"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Link to="/app/dashboard" className="flex items-center gap-2">
+          <Link to="/app/dashboard" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
             <div 
               className="w-7 h-7 rounded flex items-center justify-center"
               style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
@@ -185,28 +186,29 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Mobile Organization Selector */}
-        <div className="p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+        <div className="p-3 sm:p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
           <OrganizationSwitcher />
         </div>
 
-        {/* Mobile Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        {/* Mobile Navigation - Scrollable */}
+        <nav className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1" style={{ WebkitOverflowScrolling: 'touch' }}>
           {filteredNavigation.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
+              onClick={() => setIsMobileMenuOpen(false)}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="flex-1">{item.name}</span>
-              <ChevronRight className="w-4 h-4 opacity-50" />
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <span className="flex-1 truncate">{item.name}</span>
+              <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
             </Link>
           ))}
         </nav>
 
-        {/* Mobile User Menu */}
-        <div className="p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
-          <div className="flex items-center gap-3 mb-4">
+        {/* Mobile User Menu - Fixed at bottom */}
+        <div className="p-3 sm:p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <div className="flex items-center gap-3 mb-3">
             {/* User Avatar */}
             <div 
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all"
@@ -252,25 +254,19 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
           
-          {/* Controls Row */}
-          <div className="flex items-center gap-2 mb-4">
+          {/* Controls Row - Language toggle only since theme is in header */}
+          <div className="flex items-center gap-2 mb-3">
             <LanguageToggle />
-            <ThemeToggle />
           </div>
 
-          {/* Logout Button */}
+          {/* Logout Button - Full width, touch-friendly */}
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm rounded-lg transition-all active:scale-98"
             style={{ 
               color: 'rgb(var(--color-error))',
-              backgroundColor: 'rgb(var(--color-error) / 0.05)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.05)';
+              backgroundColor: 'rgb(var(--color-error) / 0.08)',
+              minHeight: '48px',
             }}
           >
             <LogOut className="w-4 h-4" />
@@ -531,8 +527,8 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 p-4 sm:p-6 overflow-auto">
+        {/* Page Content - Responsive padding */}
+        <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {children}
         </div>
       </main>

@@ -435,11 +435,11 @@ export default function CustomDashboard() {
         </div>
       )}
       
-      {/* Enhanced Header Card */}
+      {/* Enhanced Header Card - Mobile-first responsive */}
       <div 
-        className="relative overflow-hidden rounded-2xl p-6"
+        className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6"
         style={{ 
-          background: 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)',
+          background: 'linear-gradient(135deg, rgb(var(--color-primary-700)) 0%, rgb(var(--color-primary-800)) 100%)',
           boxShadow: '0 10px 40px -10px rgba(30, 64, 175, 0.4)',
         }}
       >
@@ -451,92 +451,90 @@ export default function CustomDashboard() {
           }}
         />
         
-        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Left: Title & Info */}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-                <LayoutGrid className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">
-                  {currentReportName || (isEn ? 'Custom Dashboard' : 'Tableau de bord')}
-                </h1>
-                <p className="text-sm text-white/80">
-                  {isEn 
-                    ? `${pinnedCharts.length} charts • Last updated just now`
-                    : `${pinnedCharts.length} graphiques • Mis à jour à l'instant`}
-                </p>
-              </div>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">
+                {currentReportName || (isEn ? 'Dashboard' : 'Tableau de bord')}
+              </h1>
+              <p className="text-[10px] sm:text-xs text-white/80 flex items-center gap-1.5 flex-wrap">
+                <span>{pinnedCharts.length} {isEn ? (pinnedCharts.length !== 1 ? 'charts' : 'chart') : (pinnedCharts.length !== 1 ? 'graphiques' : 'graphique')}</span>
+                {hasUnsavedChanges && (
+                  <span className="text-yellow-300 flex items-center gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-300"></span>
+                    {isEn ? 'Unsaved' : 'Non enregistré'}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
           
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {hasUnsavedChanges && (
-              <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur">
-                {isEn ? '● Unsaved changes' : '● Modifications non enregistrées'}
-              </span>
-            )}
+          {/* Right: Actions - Responsive button group */}
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
             <button
               onClick={handleNewDashboard}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white/10 hover:bg-white/20 text-white backdrop-blur flex items-center gap-2"
-              title={isEn ? 'Clear and start new dashboard' : 'Effacer et créer nouveau'}
+              className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white/10 hover:bg-white/20 active:scale-95 text-white backdrop-blur flex items-center gap-1.5"
+              title={isEn ? 'New dashboard' : 'Nouveau tableau'}
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{isEn ? 'New' : 'Nouveau'}</span>
             </button>
             <button
               onClick={() => setShowLoadModal(true)}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white/10 hover:bg-white/20 text-white backdrop-blur flex items-center gap-2"
+              className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white/10 hover:bg-white/20 active:scale-95 text-white backdrop-blur flex items-center gap-1.5"
               title={isEn ? 'Open saved report' : 'Ouvrir un rapport'}
             >
-              <FolderOpen className="w-4 h-4" />
+              <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{isEn ? 'Open' : 'Ouvrir'}</span>
             </button>
             <button
               onClick={() => setShowSaveModal(true)}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white hover:bg-white/90 text-primary-600 flex items-center gap-2"
+              className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white hover:bg-white/90 active:scale-95 flex items-center gap-1.5"
               style={{ color: 'rgb(var(--color-primary-600))' }}
               title={isEn ? 'Save dashboard' : 'Enregistrer'}
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{isEn ? 'Save' : 'Enregistrer'}</span>
             </button>
           </div>
         </div>
       </div>
       
-      {/* Tab Navigation - Enhanced */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Tab Navigation - Mobile-first responsive */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        {/* Tab switcher */}
         <div 
-          className="flex items-center gap-1 p-1.5 rounded-xl w-fit"
+          className="flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 rounded-lg sm:rounded-xl w-full sm:w-fit overflow-x-auto"
           style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
         >
           <button
             onClick={() => setActiveTab('dashboard')}
-            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
             style={{
               backgroundColor: activeTab === 'dashboard' ? 'rgb(var(--color-surface))' : 'transparent',
               color: activeTab === 'dashboard' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-              boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+              boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
             }}
           >
             {isEn ? 'Dashboard' : 'Tableau de bord'}
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 whitespace-nowrap"
             style={{
               backgroundColor: activeTab === 'reports' ? 'rgb(var(--color-surface))' : 'transparent',
               color: activeTab === 'reports' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-              boxShadow: activeTab === 'reports' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+              boxShadow: activeTab === 'reports' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
             }}
           >
-            {isEn ? 'Saved Reports' : 'Rapports'}
+            {isEn ? 'Reports' : 'Rapports'}
             {savedReports.length > 0 && (
               <span 
-                className="px-2 py-0.5 rounded-full text-xs font-bold"
+                className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
@@ -548,109 +546,115 @@ export default function CustomDashboard() {
           </button>
         </div>
         
-        {/* Quick Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Search - hidden on mobile */}
-          <div 
-            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            <Search className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isEn ? 'Search...' : 'Rechercher...'}
-              className="bg-transparent border-none outline-none text-sm w-24 lg:w-32"
-              style={{ color: 'rgb(var(--color-text))' }}
-            />
+        {/* Quick Actions - Two rows on mobile */}
+        <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 flex-wrap">
+          {/* Left group - utilities */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Search - hidden on mobile */}
+            <div 
+              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            >
+              <Search className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={isEn ? 'Search...' : 'Rechercher...'}
+                className="bg-transparent border-none outline-none text-sm w-28"
+                style={{ color: 'rgb(var(--color-text))' }}
+              />
+            </div>
+            
+            {/* View toggle */}
+            <div 
+              className="flex rounded-lg overflow-hidden"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            >
+              <button
+                onClick={() => setViewMode('grid')}
+                className="p-2 transition-colors"
+                style={{
+                  backgroundColor: viewMode === 'grid' ? 'rgb(var(--color-primary-500))' : 'transparent',
+                  color: viewMode === 'grid' ? 'white' : 'rgb(var(--color-text-muted))',
+                }}
+                title={isEn ? 'Grid view' : 'Vue grille'}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className="p-2 transition-colors"
+                style={{
+                  backgroundColor: viewMode === 'list' ? 'rgb(var(--color-primary-500))' : 'transparent',
+                  color: viewMode === 'list' ? 'white' : 'rgb(var(--color-text-muted))',
+                }}
+                title={isEn ? 'List view' : 'Vue liste'}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* Edit mode */}
+            <button
+              onClick={() => setEditMode(!editMode)}
+              className="p-2 rounded-lg transition-all"
+              style={{
+                backgroundColor: editMode ? 'rgb(var(--color-warning) / 0.15)' : 'rgb(var(--color-bg-muted))',
+                color: editMode ? 'rgb(var(--color-warning))' : 'rgb(var(--color-text-muted))',
+              }}
+              title={isEn ? 'Edit mode' : 'Mode édition'}
+            >
+              <Settings2 className="w-4 h-4" />
+            </button>
+            
+            {/* Refresh */}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 rounded-lg transition-colors hidden sm:flex"
+              style={{
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                color: 'rgb(var(--color-text-muted))',
+              }}
+              title={isEn ? 'Refresh' : 'Actualiser'}
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
           
-          {/* View toggle - hidden on small mobile */}
-          <div 
-            className="hidden sm:flex rounded-xl overflow-hidden"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
+          {/* Right group - primary actions */}
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Build button */}
             <button
-              onClick={() => setViewMode('grid')}
-              className="p-2 sm:p-2.5 transition-colors"
+              onClick={() => setShowChartBuilder(true)}
+              className="p-2 px-2.5 sm:px-3 rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all hover:shadow-md active:scale-95"
               style={{
-                backgroundColor: viewMode === 'grid' ? 'rgb(var(--color-primary-500))' : 'transparent',
-                color: viewMode === 'grid' ? 'white' : 'rgb(var(--color-text-muted))',
+                backgroundColor: 'rgb(var(--color-success))',
+                color: 'white',
+                boxShadow: '0 2px 10px -2px rgb(var(--color-success) / 0.4)',
               }}
-              title={isEn ? 'Grid view' : 'Vue grille'}
+              title={isEn ? 'Build custom chart' : 'Créer un graphique'}
             >
-              <LayoutGrid className="w-4 h-4" />
+              <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{isEn ? 'Create' : 'Créer'}</span>
             </button>
+            
+            {/* Prebuilt button */}
             <button
-              onClick={() => setViewMode('list')}
-              className="p-2 sm:p-2.5 transition-colors"
+              onClick={() => setShowGallery(true)}
+              className="p-2 px-2.5 sm:px-3 rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all hover:shadow-md active:scale-95"
               style={{
-                backgroundColor: viewMode === 'list' ? 'rgb(var(--color-primary-500))' : 'transparent',
-                color: viewMode === 'list' ? 'white' : 'rgb(var(--color-text-muted))',
+                backgroundColor: 'rgb(var(--color-primary-500))',
+                color: 'white',
+                boxShadow: '0 2px 10px -2px rgb(var(--color-primary-500) / 0.4)',
               }}
-              title={isEn ? 'List view' : 'Vue liste'}
+              title={isEn ? 'Add prebuilt chart' : 'Ajouter un graphique prédéfini'}
             >
-              <List className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{isEn ? 'Prebuilt' : 'Prédéfini'}</span>
             </button>
           </div>
-          
-          {/* Edit mode */}
-          <button
-            onClick={() => setEditMode(!editMode)}
-            className="p-2 sm:p-2.5 rounded-xl transition-all"
-            style={{
-              backgroundColor: editMode ? 'rgb(var(--color-warning) / 0.1)' : 'rgb(var(--color-bg-muted))',
-              color: editMode ? 'rgb(var(--color-warning))' : 'rgb(var(--color-text-muted))',
-            }}
-            title={isEn ? 'Edit mode' : 'Mode édition'}
-          >
-            <Settings2 className="w-4 h-4" />
-          </button>
-          
-          {/* Refresh - hidden on small mobile */}
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="hidden sm:flex p-2 sm:p-2.5 rounded-xl transition-colors"
-            style={{
-              backgroundColor: 'rgb(var(--color-bg-muted))',
-              color: 'rgb(var(--color-text-muted))',
-            }}
-            title={isEn ? 'Refresh' : 'Actualiser'}
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
-          
-          {/* Build button */}
-          <button
-            onClick={() => setShowChartBuilder(true)}
-            className="p-2 sm:p-2.5 sm:px-3 lg:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-sm font-semibold transition-all hover:shadow-lg active:scale-95"
-            style={{
-              backgroundColor: 'rgb(var(--color-success))',
-              color: 'white',
-              boxShadow: '0 4px 14px -4px rgb(var(--color-success) / 0.5)',
-            }}
-            title={isEn ? 'Build custom chart' : 'Créer un graphique'}
-          >
-            <Wand2 className="w-4 h-4" />
-            <span className="hidden lg:inline">{isEn ? 'Build' : 'Créer'}</span>
-          </button>
-          
-          {/* Prebuilt button */}
-          <button
-            onClick={() => setShowGallery(true)}
-            className="p-2 sm:p-2.5 sm:px-3 lg:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-sm font-semibold transition-all hover:shadow-lg active:scale-95"
-            style={{
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white',
-              boxShadow: '0 4px 14px -4px rgb(var(--color-primary-500) / 0.5)',
-            }}
-            title={isEn ? 'Add prebuilt chart' : 'Ajouter un graphique prédéfini'}
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden lg:inline">{isEn ? 'Prebuilt' : 'Prédéfini'}</span>
-          </button>
         </div>
       </div>
       
@@ -664,78 +668,79 @@ export default function CustomDashboard() {
       {/* Dashboard Tab */}
       {activeTab === 'dashboard' && (
         <>
-      {/* Enhanced Empty State */}
+      {/* Enhanced Empty State - Mobile-first */}
       {pinnedCharts.length === 0 && (
         <div 
-          className="relative overflow-hidden rounded-2xl p-8 sm:p-12 text-center"
+          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 text-center"
           style={{ 
             background: 'linear-gradient(135deg, rgb(var(--color-bg-muted)) 0%, rgb(var(--color-surface)) 100%)',
             border: '2px dashed rgb(var(--color-border))',
           }}
         >
-          {/* Decorative Elements */}
-          <div className="absolute top-4 left-4 w-20 h-20 rounded-full opacity-20" 
+          {/* Decorative Elements - Hidden on mobile for cleaner look */}
+          <div className="hidden sm:block absolute top-4 left-4 w-20 h-20 rounded-full opacity-20" 
             style={{ background: 'radial-gradient(circle, rgb(var(--color-primary-500)) 0%, transparent 70%)' }} 
           />
-          <div className="absolute bottom-4 right-4 w-32 h-32 rounded-full opacity-10" 
+          <div className="hidden sm:block absolute bottom-4 right-4 w-32 h-32 rounded-full opacity-10" 
             style={{ background: 'radial-gradient(circle, rgb(var(--color-primary-500)) 0%, transparent 70%)' }} 
           />
           
           <div className="relative">
             {/* Animated Icon */}
             <div 
-              className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center animate-pulse"
+              className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl flex items-center justify-center animate-pulse"
               style={{ 
                 backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                 boxShadow: '0 10px 40px -10px rgb(var(--color-primary-500) / 0.3)',
               }}
             >
-              <Sparkles className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             
-            <h3 className="text-xl sm:text-2xl font-bold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 sm:mb-3" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Create Your Perfect Dashboard' : 'Créez votre tableau de bord idéal'}
             </h3>
-            <p className="text-sm sm:text-base mb-8 max-w-lg mx-auto leading-relaxed" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-xs sm:text-sm lg:text-base mb-5 sm:mb-8 max-w-lg mx-auto leading-relaxed px-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn 
                 ? 'Pin your favorite charts, customize layouts, and build the exact view you need for financial insights.'
                 : 'Épinglez vos graphiques préférés, personnalisez la mise en page et créez la vue exacte dont vous avez besoin.'}
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {/* Action buttons - Stack on mobile, row on desktop */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <button
                 onClick={() => setShowChartBuilder(true)}
-                className="px-8 py-4 rounded-xl flex items-center gap-3 text-base font-semibold transition-all hover:scale-105"
+                className="w-full sm:w-auto px-5 sm:px-6 lg:px-8 py-3 sm:py-3.5 lg:py-4 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-semibold transition-all hover:scale-[1.02] active:scale-95"
                 style={{
                   backgroundColor: 'rgb(var(--color-success))',
                   color: 'white',
-                  boxShadow: '0 10px 40px -10px rgb(var(--color-success) / 0.5)',
+                  boxShadow: '0 8px 30px -8px rgb(var(--color-success) / 0.5)',
                 }}
               >
-                <Wand2 className="w-5 h-5" />
-                {isEn ? 'Build Custom Chart' : 'Créer un graphique'}
+                <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                {isEn ? 'Create Custom Chart' : 'Créer un graphique'}
               </button>
-              <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'or' : 'ou'}</span>
+              <span className="text-xs sm:text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'or' : 'ou'}</span>
               <button
                 onClick={() => setShowGallery(true)}
-                className="px-8 py-4 rounded-xl flex items-center gap-3 text-base font-semibold transition-all hover:scale-105"
+                className="w-full sm:w-auto px-5 sm:px-6 lg:px-8 py-3 sm:py-3.5 lg:py-4 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-semibold transition-all hover:scale-[1.02] active:scale-95"
                 style={{
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
-                  boxShadow: '0 10px 40px -10px rgb(var(--color-primary-500) / 0.5)',
+                  boxShadow: '0 8px 30px -8px rgb(var(--color-primary-500) / 0.5)',
                 }}
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 {isEn ? 'Browse Gallery' : 'Parcourir la galerie'}
               </button>
             </div>
             
-            {/* Quick Add Suggestions */}
-            <div className="mt-10 pt-8 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-              <p className="text-sm font-semibold mb-5" style={{ color: 'rgb(var(--color-text))' }}>
+            {/* Quick Add Suggestions - Responsive grid */}
+            <div className="mt-6 sm:mt-8 lg:mt-10 pt-5 sm:pt-6 lg:pt-8 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <p className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 lg:mb-5" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? '⚡ Quick add popular charts' : '⚡ Ajout rapide de graphiques populaires'}
               </p>
-              <div className="flex flex-wrap justify-center gap-3">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-3">
                 {suggestedCharts.map((chart) => {
                   const Icon = ChartTypeIcon[chart.chartType];
                   return (
@@ -748,7 +753,7 @@ export default function CustomDashboard() {
                       onDragLeave={handleSuggestionDragLeave}
                       onDrop={() => handleSuggestionDrop(chart.id)}
                       onDragEnd={handleSuggestionDragEnd}
-                      className={`group px-4 py-3 rounded-xl text-sm flex items-center gap-3 transition-all hover:scale-105 hover:shadow-lg cursor-grab active:cursor-grabbing ${
+                      className={`group px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm flex items-center gap-2 sm:gap-3 transition-all hover:scale-[1.02] hover:shadow-md active:scale-95 cursor-grab active:cursor-grabbing ${
                         draggedSuggestionId === chart.id ? 'opacity-50 scale-95' : ''
                       } ${
                         dragOverSuggestionId === chart.id ? 'ring-2 ring-primary-500 scale-105' : ''
@@ -760,13 +765,13 @@ export default function CustomDashboard() {
                       }}
                     >
                       <div
-                        className="p-2 rounded-lg"
+                        className="p-1.5 sm:p-2 rounded-md sm:rounded-lg flex-shrink-0"
                         style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                       >
-                        <Icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       </div>
-                      <span className="font-medium">{isEn ? chart.nameEn : chart.name}</span>
-                      <Plus className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" 
+                      <span className="font-medium truncate">{isEn ? chart.nameEn : chart.name}</span>
+                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block flex-shrink-0" 
                         style={{ color: 'rgb(var(--color-primary-500))' }} 
                       />
                     </button>
