@@ -31,6 +31,7 @@ import RunwayTimeline from '../components/strategic/RunwayTimeline';
 import ScenarioComparison from '../components/strategic/ScenarioComparison';
 import BurnRateChart from '../components/strategic/BurnRateChart';
 import CashForecastChart from '../components/strategic/CashForecastChart';
+import MultiScenarioChart from '../components/strategic/MultiScenarioChart';
 import InitiativeEditor from '../components/strategic/InitiativeEditor';
 import AssumptionPanel from '../components/strategic/AssumptionPanel';
 import AISuggestions from '../components/strategic/AISuggestions';
@@ -693,7 +694,19 @@ export default function StrategicPlanning() {
         )}
       </div>
 
-      {/* Scenario Comparison */}
+      {/* Multi-Scenario Chart - All scenarios on one chart */}
+      {scenarios.length > 1 && (
+        <MultiScenarioChart
+          scenarios={scenarios}
+          currentCash={currentCash}
+          currentDate={currentDate}
+          months={24}
+          activeScenarioId={activeScenarioId}
+          onScenarioSelect={(scenario) => setActiveScenarioId(scenario.id)}
+        />
+      )}
+
+      {/* Detailed Scenario Comparison Table */}
       {scenarioComparisonData && scenarioComparisonData.length > 1 && (
         <div className={isFullscreen ? 'mb-6' : ''}>
           <ScenarioComparison
