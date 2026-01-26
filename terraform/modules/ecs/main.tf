@@ -3,6 +3,8 @@
 # ECS Fargate + ALB + Auto Scaling
 # ==============================================================================
 
+data "aws_caller_identity" "current" {}
+
 # ------------------------------------------------------------------------------
 # ECS Cluster
 # ------------------------------------------------------------------------------
@@ -51,7 +53,8 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 resource "aws_cloudwatch_log_group" "ecs_exec" {
   name              = "/aws/ecs/${var.project}-${var.environment}/exec"
   retention_in_days = 30
-  kms_key_id        = var.kms_key_arn
+  # Note: KMS encryption removed due to policy requirements for CloudWatch Logs
+  # kms_key_id        = var.kms_key_arn
 
   tags = {
     Name        = "${var.project}-${var.environment}-ecs-exec"
@@ -140,7 +143,8 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
         ]
         Resource = [
           var.db_credentials_secret_arn,
-          var.redis_auth_secret_arn
+          var.redis_auth_secret_arn,
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project}/${var.environment}/*"
         ]
       },
       {
@@ -476,7 +480,9 @@ resource "aws_ecs_task_definition" "web" {
         { name = "VITE_API_URL", value = "https://${var.domain_name}/api" },
         { name = "VITE_KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "VITE_KEYCLOAK_REALM", value = "plainledger" },
-        { name = "VITE_KEYCLOAK_CLIENT_ID", value = "plainledger-web" }
+        { name = "VITE_KEYCLOAK_CLIENT_ID", value = "plainledger-web" },
+        { name = "VITE_NOVU_APP_ID", value = "FNfEAbhmW05j" },
+        { name = "VITE_STRIPE_PUBLISHABLE_KEY", value = "pk_live_vvnFU7D7nv59fLWYOsVG8BQV" }
       ]
 
       logConfiguration = {
@@ -526,13 +532,51 @@ resource "aws_ecs_task_definition" "api" {
         { name = "KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "KEYCLOAK_REALM", value = "plainledger" },
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
-        { name = "CORS_ORIGIN", value = "https://${var.domain_name}" }
+        { name = "CORS_ORIGIN", value = "https://${var.domain_name}" },
+        { name = "DB_PORT", value = "5432" },
+        { name = "REDIS_PORT", value = "6379" }
       ]
 
       secrets = [
         {
-          name      = "DATABASE_URL"
+          name      = "DB_HOST"
           valueFrom = "${var.db_credentials_secret_arn}:host::"
+        },
+        {
+          name      = "DB_USERNAME"
+          valueFrom = "${var.db_credentials_secret_arn}:username::"
+        },
+        {
+          name      = "DB_PASSWORD"
+          valueFrom = "${var.db_credentials_secret_arn}:password::"
+        },
+        {
+          name      = "DB_NAME"
+          valueFrom = "${var.db_credentials_secret_arn}:dbname::"
+        },
+        {
+          name      = "REDIS_HOST"
+          valueFrom = "${var.redis_auth_secret_arn}:host::"
+        },
+        {
+          name      = "REDIS_AUTH_TOKEN"
+          valueFrom = "${var.redis_auth_secret_arn}:auth_token::"
+        },
+        {
+          name      = "STRIPE_SECRET_KEY"
+          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/stripe:secret_key::"
+        },
+        {
+          name      = "STRIPE_PUBLISHABLE_KEY"
+          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/stripe:publishable_key::"
+        },
+        {
+          name      = "NOVU_APP_ID"
+          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/novu:app_id::"
+        },
+        {
+          name      = "NOVU_SECRET_KEY"
+          valueFrom = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/${var.environment}/novu:secret_key::"
         }
       ]
 
