@@ -3,6 +3,8 @@
 # ECS Fargate + ALB + Auto Scaling
 # ==============================================================================
 
+data "aws_caller_identity" "current" {}
+
 # ------------------------------------------------------------------------------
 # ECS Cluster
 # ------------------------------------------------------------------------------
@@ -261,8 +263,9 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# HTTP Listener - forwards directly when no HTTPS, redirects when HTTPS available
+# HTTP Listener - forwards to web when no certificate available
 resource "aws_lb_listener" "http" {
+  count             = var.acm_certificate_arn == "" ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
@@ -279,9 +282,34 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# HTTP Listener Rules for API
+# HTTP Listener - redirects to HTTPS when certificate is available
+resource "aws_lb_listener" "http_redirect" {
+  count             = var.acm_certificate_arn != "" ? 1 : 0
+  load_balancer_arn = aws_lb.main.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-http-redirect"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+# HTTP Listener Rules for API (only when no HTTPS)
 resource "aws_lb_listener_rule" "api_http" {
-  listener_arn = aws_lb_listener.http.arn
+  count        = var.acm_certificate_arn == "" ? 1 : 0
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 100
 
   action {
@@ -302,9 +330,10 @@ resource "aws_lb_listener_rule" "api_http" {
   }
 }
 
-# HTTP Listener Rules for Keycloak
+# HTTP Listener Rules for Keycloak (only when no HTTPS)
 resource "aws_lb_listener_rule" "keycloak_http" {
-  listener_arn = aws_lb_listener.http.arn
+  count        = var.acm_certificate_arn == "" ? 1 : 0
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 200
 
   action {
@@ -478,7 +507,9 @@ resource "aws_ecs_task_definition" "web" {
         { name = "VITE_API_URL", value = "https://${var.domain_name}/api" },
         { name = "VITE_KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "VITE_KEYCLOAK_REALM", value = "plainledger" },
-        { name = "VITE_KEYCLOAK_CLIENT_ID", value = "plainledger-web" }
+        { name = "VITE_KEYCLOAK_CLIENT_ID", value = "plainledger-web" },
+        { name = "VITE_NOVU_APP_ID", value = "FNfEAbhmW05j" },
+        { name = "VITE_STRIPE_PUBLISHABLE_KEY", value = "pk_live_vvnFU7D7nv59fLWYOsVG8BQV" }
       ]
 
       logConfiguration = {
@@ -526,6 +557,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3000" },
         { name = "DB_PORT", value = "5432" },
+        { name = "REDIS_PORT", value = "6379" },
         { name = "KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "KEYCLOAK_REALM", value = "plainledger" },
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
