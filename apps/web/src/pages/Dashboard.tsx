@@ -1,18 +1,14 @@
 import { useState, useMemo } from 'react';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   ArrowRight, 
   AlertTriangle, 
   CheckCircle,
   RefreshCw,
   ChevronRight,
-  Eye,
   ArrowUpRight,
   ArrowDownRight,
   FileText,
   Link2,
-  BarChart2,
   Loader2,
   Sparkles,
 } from 'lucide-react';

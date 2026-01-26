@@ -533,7 +533,7 @@ export class QueryEngine {
     const limit = query.entities.limit || 10;
     const sortOrder = query.entities.sortOrder || 'desc';
 
-    let accounts = this.financialData!.accounts
+    const accounts = this.financialData!.accounts
       .filter(a => this.matchesMetricType(a, metric))
       .sort((a, b) => sortOrder === 'desc' ? b.current - a.current : a.current - b.current)
       .slice(0, limit);

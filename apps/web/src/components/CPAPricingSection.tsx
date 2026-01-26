@@ -4,9 +4,9 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Check, Award, Crown, TrendingDown, Users, ArrowRight } from 'lucide-react';
+import { Check, Award, Crown, Users, TrendingDown } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { CPA_PARTNER_TIERS, PricingCalculator, type CPAPartnerPricing } from '../lib/pricing';
+import { CPA_PARTNER_TIERS, PricingCalculator } from '../lib/pricing';
 import { analytics } from '../lib/analytics';
 
 interface CPAPricingSectionProps {
@@ -209,7 +209,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12 pt-4">
           {tierCalculations.map((calc) => {
             const { tier, monthlyPrice, yearlyPrice, volumeDiscountPercent, isRecommended } = calc;
             const displayPrice = billingInterval === 'yearly' 
@@ -222,22 +222,22 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
             return (
               <div 
                 key={tier.id}
-                className={`p-6 rounded-xl transition-all duration-300 relative pt-8 ${
-                  isRecommended ? 'ring-2' : ''
+                className={`p-6 rounded-xl transition-all duration-300 relative overflow-visible ${
+                  isRecommended && qualifies ? 'ring-2 mt-0' : ''
                 } ${
                   qualifies ? 'opacity-100' : 'opacity-60'
                 }`}
                 style={{ 
                   backgroundColor: 'rgb(var(--color-surface))',
                   border: '1px solid rgb(var(--color-border))',
-                  ringColor: isRecommended ? 'rgb(var(--color-primary-600))' : undefined,
+                  ringColor: isRecommended && qualifies ? 'rgb(var(--color-primary-600))' : undefined,
                 }}
               >
-                {/* Recommended Badge - positioned at top center, with spacing */}
+                {/* Recommended Badge - positioned at top center, centered on border */}
                 {isRecommended && qualifies && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-0 z-10">
                     <span 
-                      className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                      className="px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg whitespace-nowrap"
                       style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
                     >
                       {isEn ? 'RECOMMENDED' : 'RECOMMANDÉ'}
@@ -245,14 +245,14 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
                   </div>
                 )}
 
-                {/* Volume Discount Badge (vs base tier) - positioned at top right, only if not recommended */}
+                {/* Volume Discount Badge (vs base tier) - positioned at top right, centered on border */}
                 {volumeDiscountPercent > 0 && qualifies && !isRecommended && (
-                  <div className="absolute -top-3 right-4 z-10">
+                  <div className="absolute right-4 -translate-y-1/2 top-0 z-10">
                     <span 
-                      className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
+                      className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 whitespace-nowrap"
                       style={{ 
-                        backgroundColor: 'rgb(var(--color-success) / 0.1)',
-                        color: 'rgb(var(--color-success))'
+                        backgroundColor: 'rgb(var(--color-success))',
+                        color: 'white'
                       }}
                     >
                       <TrendingDown className="w-3 h-3" />

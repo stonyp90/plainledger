@@ -17,24 +17,23 @@ import {
   Copy,
   Star,
   StarOff,
-  Download,
-  Upload,
   Search,
-  Filter,
   MoreVertical,
   FileText,
   Calendar,
-  Clock,
-  Users,
-  Edit3,
   Eye,
   X,
-  Check,
   ChevronRight,
   FolderOpen,
-  Tag,
-  Share2,
   AlertCircle,
+  BarChart3,
+  TrendingUp,
+  Coins,
+  ClipboardList,
+  Target,
+  PieChart,
+  Wallet,
+  type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import {
@@ -240,6 +239,74 @@ interface TemplateSelectorProps {
   onSelect: (template: ReportTemplate) => void;
 }
 
+// Template type to icon mapping with colors
+const templateTypeIcons: Record<ReportType, { icon: LucideIcon; color: string; bgColor: string }> = {
+  'financial-overview': { 
+    icon: BarChart3, 
+    color: 'rgb(var(--color-primary-500))',
+    bgColor: 'rgb(var(--color-primary-500) / 0.1)'
+  },
+  'income-statement': { 
+    icon: TrendingUp, 
+    color: 'rgb(var(--color-success))',
+    bgColor: 'rgb(var(--color-success) / 0.1)'
+  },
+  'balance-sheet': { 
+    icon: PieChart, 
+    color: 'rgb(var(--color-info))',
+    bgColor: 'rgb(var(--color-info) / 0.1)'
+  },
+  'cash-flow': { 
+    icon: Coins, 
+    color: 'rgb(var(--color-warning))',
+    bgColor: 'rgb(var(--color-warning) / 0.1)'
+  },
+  'budget-variance': { 
+    icon: Target, 
+    color: 'rgb(var(--color-error))',
+    bgColor: 'rgb(var(--color-error) / 0.1)'
+  },
+  'ar-aging': { 
+    icon: ClipboardList, 
+    color: 'rgb(var(--color-primary-400))',
+    bgColor: 'rgb(var(--color-primary-400) / 0.1)'
+  },
+  'ap-aging': { 
+    icon: Wallet, 
+    color: 'rgb(var(--color-primary-600))',
+    bgColor: 'rgb(var(--color-primary-600) / 0.1)'
+  },
+  'custom': { 
+    icon: FileText, 
+    color: 'rgb(var(--color-text-muted))',
+    bgColor: 'rgb(var(--color-bg-muted))'
+  },
+};
+
+// Template Icon Component
+function TemplateIcon({ type, size = 'md' }: { type: ReportType; size?: 'sm' | 'md' | 'lg' }) {
+  const { icon: IconComponent, color, bgColor } = templateTypeIcons[type] || templateTypeIcons['custom'];
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-12 h-12',
+  };
+  const iconSizes = {
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-6 h-6',
+  };
+  
+  return (
+    <div 
+      className={`${sizeClasses[size]} rounded-xl flex items-center justify-center flex-shrink-0`}
+      style={{ backgroundColor: bgColor }}
+    >
+      <IconComponent className={iconSizes[size]} style={{ color }} />
+    </div>
+  );
+}
+
 export function TemplateSelector({ isOpen, onClose, onSelect }: TemplateSelectorProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -333,7 +400,7 @@ export function TemplateSelector({ isOpen, onClose, onSelect }: TemplateSelector
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">{template.icon}</span>
+                  <TemplateIcon type={template.type} size="lg" />
                   <div className="flex-1 min-w-0">
                     <h3 
                       className="font-semibold group-hover:text-primary-500 transition-colors"
@@ -522,17 +589,6 @@ function ReportCard({
   isEn,
 }: ReportCardProps) {
   const [showMenu, setShowMenu] = useState(false);
-  
-  const typeIcons: Record<ReportType, string> = {
-    'financial-overview': '📊',
-    'income-statement': '📈',
-    'balance-sheet': '📋',
-    'cash-flow': '💰',
-    'budget-variance': '🎯',
-    'ar-aging': '📋',
-    'ap-aging': '📋',
-    'custom': '📄',
-  };
 
   const typeColors: Record<ReportType, string> = {
     'financial-overview': 'rgb(var(--color-primary-500))',
@@ -563,12 +619,7 @@ function ReportCard({
       <div className="p-4">
         {/* Header with icon and favorite */}
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div 
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            {typeIcons[report.type]}
-          </div>
+          <TemplateIcon type={report.type} size="lg" />
           <div className="flex items-center gap-2">
             {report.isFavorite && (
               <Star className="w-5 h-5 fill-warning text-warning" />
@@ -1033,12 +1084,7 @@ export function ReportManager({ onOpenReport, onCreateReport }: ReportManagerPro
                   className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left group"
                   style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                 >
-                  <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-                  >
-                    {template.icon}
-                  </div>
+                  <TemplateIcon type={template.type} size="md" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn ? template.nameEn : template.name}

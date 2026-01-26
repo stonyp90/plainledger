@@ -8,39 +8,22 @@
  * - Configuration options
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  Plus,
-  Minus,
   X,
   ChevronDown,
   ChevronRight,
   Check,
   Eye,
-  EyeOff,
   Trash2,
-  Copy,
-  MoveUp,
-  MoveDown,
   Settings2,
-  Palette,
   BarChart3,
-  LineChart,
-  PieChart,
-  TrendingUp,
-  TrendingDown,
   Info,
-  HelpCircle,
   Sparkles,
   Save,
-  RotateCcw,
-  Play,
-  Layers,
   Database,
-  Filter,
   ArrowRight,
   GripVertical,
-  type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { ChartTooltip } from './charts/ChartTooltip';

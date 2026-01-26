@@ -41,12 +41,8 @@ function hasCompletedOnboarding(): boolean {
   return localStorage.getItem('pl_onboarding_completed') === 'true';
 }
 
-// Check if onboarding should be required (disabled by default - users go straight to dashboard)
-function shouldRequireOnboarding(): boolean {
-  // Onboarding is now optional - users can access dashboard directly
-  // They can still start onboarding by navigating to /onboarding
-  return false;
-}
+// Note: shouldRequireOnboarding was removed as onboarding is now optional
+// Users can access dashboard directly and start onboarding from settings
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {

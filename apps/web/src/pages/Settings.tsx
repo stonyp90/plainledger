@@ -8,7 +8,6 @@ import {
   Save,
   CreditCard,
   BarChart3,
-  Check,
   Zap,
   ExternalLink,
   Key,
@@ -27,7 +26,6 @@ import Avatar, { IDPBadge } from '../components/Avatar';
 import { useTenant } from '../contexts/TenantContext';
 import { 
   getEntitlements, 
-  formatLimit, 
   type SubscriptionTier, 
 } from '../lib/entitlements';
 import config from '../lib/config';
@@ -77,26 +75,6 @@ export default function Settings() {
   ];
 
   const tabs = allTabs.filter(tab => tab.show);
-
-  const formatTierName = (tier: string) => {
-    const names: Record<string, string> = {
-      free: 'Gratuit',
-      starter: 'Starter',
-      professional: 'Professional',
-      enterprise: 'Enterprise',
-    };
-    return names[tier] || tier;
-  };
-
-  const formatPrice = (tier: string) => {
-    const prices: Record<string, string> = {
-      free: 'Gratuit',
-      starter: '49$/mois',
-      professional: '149$/mois',
-      enterprise: 'Sur mesure',
-    };
-    return prices[tier] || '';
-  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -671,41 +649,6 @@ function SecurityCard({ icon: Icon, title, description, action, color, onClick }
 }
 
 // Helper Components
-function UsageBar({ label, current, max }: { label: string; current: number; max: number }) {
-  const percentage = max === -1 ? 10 : (current / max) * 100;
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-2">
-        <span style={{ color: 'rgb(var(--color-text-secondary))' }}>{label}</span>
-        <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-          {current} / {formatLimit(max)}
-        </span>
-      </div>
-      <div className="progress-bar">
-        <div className="progress-bar-fill" style={{ width: `${percentage}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function EntitlementItem({ label, enabled }: { label: string; enabled: boolean }) {
-  return (
-    <div 
-      className="flex items-center gap-3 p-3 rounded-lg"
-      style={{ 
-        backgroundColor: enabled ? 'rgb(var(--color-success) / 0.1)' : 'rgb(var(--color-bg-muted))' 
-      }}
-    >
-      {enabled ? (
-        <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-      ) : (
-        <div className="w-5 h-5 rounded-full border-2" style={{ borderColor: 'rgb(var(--color-border))' }} />
-      )}
-      <span style={{ color: enabled ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))' }}>{label}</span>
-    </div>
-  );
-}
-
 function IntegrationItem({ name, enabled, connected }: { name: string; enabled: boolean; connected: boolean }) {
   return (
     <div 
@@ -735,23 +678,6 @@ function IntegrationItem({ name, enabled, connected }: { name: string; enabled: 
       ) : (
         <button className="btn-secondary btn-sm" disabled>Upgrade</button>
       )}
-    </div>
-  );
-}
-
-function IconBox({ icon: Icon, color }: { icon: React.ElementType; color: 'default' | 'success' | 'info' | 'accent' }) {
-  const colors = {
-    default: { bg: 'rgb(var(--color-bg-muted))', fg: 'rgb(var(--color-text-secondary))' },
-    success: { bg: 'rgb(var(--color-success) / 0.1)', fg: 'rgb(var(--color-success))' },
-    info: { bg: 'rgb(var(--color-info) / 0.1)', fg: 'rgb(var(--color-info))' },
-    accent: { bg: 'rgb(var(--color-accent) / 0.15)', fg: 'rgb(var(--color-accent-dark))' },
-  };
-  return (
-    <div 
-      className="w-12 h-12 rounded-xl flex items-center justify-center"
-      style={{ backgroundColor: colors[color].bg }}
-    >
-      <Icon className="w-6 h-6" style={{ color: colors[color].fg }} />
     </div>
   );
 }

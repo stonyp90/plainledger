@@ -5,12 +5,9 @@
 
 import { useState } from 'react';
 import {
-  Clock,
   AlertTriangle,
   CheckCircle,
   Calendar,
-  TrendingUp,
-  TrendingDown,
   ArrowRight,
   ChevronDown,
   ChevronUp,
@@ -20,13 +17,11 @@ import {
   FileText,
   DollarSign,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import type { 
   AgingBucket, 
   BankReconciliation, 
   BudgetComparison, 
   AccountingDeadline,
-  TrialBalanceEntry 
 } from '../lib/financialData';
 
 // =====================================================

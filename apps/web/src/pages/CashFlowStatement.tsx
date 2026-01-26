@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, AlertTriangle, TrendingUp, TrendingDown, Info } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -35,20 +35,22 @@ function getDateRange(preset: PeriodPreset, customStart?: string, customEnd?: st
         start: formatDate(new Date(year, 0, 1)),
         end: formatDate(now),
       };
-    case 'last_month':
+    case 'last_month': {
       const lastMonth = month === 0 ? 11 : month - 1;
       const lastMonthYear = month === 0 ? year - 1 : year;
       return {
         start: formatDate(new Date(lastMonthYear, lastMonth, 1)),
         end: formatDate(new Date(lastMonthYear, lastMonth + 1, 0)),
       };
-    case 'last_quarter':
+    }
+    case 'last_quarter': {
       const lastQuarter = quarter === 0 ? 3 : quarter - 1;
       const lastQuarterYear = quarter === 0 ? year - 1 : year;
       return {
         start: formatDate(new Date(lastQuarterYear, lastQuarter * 3, 1)),
         end: formatDate(new Date(lastQuarterYear, lastQuarter * 3 + 3, 0)),
       };
+    }
     case 'last_year':
       return {
         start: formatDate(new Date(year - 1, 0, 1)),

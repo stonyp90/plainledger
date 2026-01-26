@@ -7,7 +7,7 @@
 // Notification Types
 // ============================================================================
 
-export type NotificationChannel = 'in_app' | 'email' | 'push' | 'sms';
+export type NotificationChannel = 'in_app' | 'email' | 'push' | 'sms' | 'slack' | 'teams';
 
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -699,7 +699,15 @@ export interface NotificationPreferences {
       email: boolean;
       push: boolean;
       sms: boolean;
+      slack: boolean;
+      teams: boolean;
     };
+  };
+  
+  // Messaging integrations
+  integrations: {
+    slack: SlackIntegration | null;
+    teams: TeamsIntegration | null;
   };
   
   // Type-specific overrides
@@ -711,6 +719,40 @@ export interface NotificationPreferences {
   };
 }
 
+// Slack Integration Configuration
+export interface SlackIntegration {
+  connected: boolean;
+  workspaceName: string;
+  workspaceId: string;
+  channelId: string;
+  channelName: string;
+  webhookUrl?: string;
+  connectedAt: string;
+  connectedBy: string;
+  dailySummary: boolean;
+  dailySummaryTime: string; // HH:mm
+  alertsEnabled: boolean;
+  alertPriorities: NotificationPriority[];
+}
+
+// Microsoft Teams Integration Configuration
+export interface TeamsIntegration {
+  connected: boolean;
+  tenantName: string;
+  tenantId: string;
+  teamId: string;
+  teamName: string;
+  channelId: string;
+  channelName: string;
+  webhookUrl?: string;
+  connectedAt: string;
+  connectedBy: string;
+  dailySummary: boolean;
+  dailySummaryTime: string; // HH:mm
+  alertsEnabled: boolean;
+  alertPriorities: NotificationPriority[];
+}
+
 export const defaultNotificationPreferences: NotificationPreferences = {
   enabled: true,
   emailDigest: 'none',
@@ -719,14 +761,19 @@ export const defaultNotificationPreferences: NotificationPreferences = {
   quietHoursEnd: '08:00',
   
   channels: {
-    account: { in_app: true, email: true, push: false, sms: false },
-    security: { in_app: true, email: true, push: true, sms: true },
-    billing: { in_app: true, email: true, push: false, sms: false },
-    data_sync: { in_app: true, email: false, push: false, sms: false },
-    reports: { in_app: true, email: true, push: false, sms: false },
-    connections: { in_app: true, email: true, push: false, sms: false },
-    system: { in_app: true, email: true, push: false, sms: false },
-    marketing: { in_app: true, email: false, push: false, sms: false },
+    account: { in_app: true, email: true, push: false, sms: false, slack: false, teams: false },
+    security: { in_app: true, email: true, push: true, sms: true, slack: true, teams: true },
+    billing: { in_app: true, email: true, push: false, sms: false, slack: false, teams: false },
+    data_sync: { in_app: true, email: false, push: false, sms: false, slack: true, teams: true },
+    reports: { in_app: true, email: true, push: false, sms: false, slack: true, teams: true },
+    connections: { in_app: true, email: true, push: false, sms: false, slack: true, teams: true },
+    system: { in_app: true, email: true, push: false, sms: false, slack: false, teams: false },
+    marketing: { in_app: true, email: false, push: false, sms: false, slack: false, teams: false },
+  },
+  
+  integrations: {
+    slack: null,
+    teams: null,
   },
   
   typeOverrides: {},

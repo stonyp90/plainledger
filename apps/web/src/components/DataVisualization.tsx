@@ -8,7 +8,7 @@
  * - Export capabilities
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Pin,
   PinOff,
@@ -20,30 +20,23 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  RefreshCw,
   Copy,
-  ExternalLink,
   ChevronDown,
   Check,
-  Grid3X3,
   Table,
   BarChart3,
   LineChart,
   PieChart,
   Activity,
-  Target,
   Share2,
   Link,
   Mail,
-  Users,
   Eye,
-  EyeOff,
   Bookmark,
   BookmarkCheck,
   Layers,
   X,
   CheckCircle,
-  Clock,
   AreaChart,
   Radar,
   Gauge,
@@ -55,16 +48,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { InfoTooltip } from './Tooltip';
 import {
   chartFavoritesService,
   ChartConfig,
   ChartType,
   CHART_TYPE_INFO,
   METRIC_INFO,
-  TIME_RANGE_INFO,
   TimeRange,
-  DataMetric,
   PRESET_CHARTS,
 } from '../lib/chartFavorites';
 

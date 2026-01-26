@@ -5,7 +5,7 @@ import { useI18n } from '../lib/i18n';
 
 export default function EmailConfirmation() {
   const { user, logout } = useKeycloak();
-  const { t, language } = useI18n();
+  const { language } = useI18n();
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [countdown, setCountdown] = useState(0);

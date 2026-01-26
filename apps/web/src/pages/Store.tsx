@@ -18,12 +18,10 @@ import {
   Users,
   Database,
   FileText,
-  Globe,
   Star,
   Play,
   Menu,
   X,
-  Building2,
   MapPin,
   Calculator,
   ChevronDown,
@@ -31,7 +29,6 @@ import {
   Minus,
   Plus,
   Info,
-  Award,
   Sparkles,
   Clock,
 } from 'lucide-react';
@@ -41,7 +38,6 @@ import { analytics } from '../lib/analytics';
 import DemoModal from '../components/DemoModal';
 import { 
   PRICING_TIERS, 
-  CPA_PARTNER_TIERS,
   PricingCalculator, 
   QUEBEC_MARKET_MESSAGING,
   type PricingTierConfig,

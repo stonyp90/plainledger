@@ -27,11 +27,11 @@ import {
   Cog,
   ChevronRight,
 } from 'lucide-react';
-import { useTenant, Tenant, TenantInvitation } from '../contexts/TenantContext';
+import { useTenant, type Tenant, type TenantInvitation } from '../contexts/TenantContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { RoleSelector, ROLE_DEFINITIONS } from './RolesPermissions';
+import { RoleSelector } from './RolesPermissions';
 import { useI18n } from '../lib/i18n';
-import { generateInvitationEmail, generateInvitationEmailText, SectionAccess } from '../lib/emailTemplates';
+import { generateInvitationEmail, generateInvitationEmailText, type SectionAccess } from '../lib/emailTemplates';
 
 interface OrganizationSwitcherProps {
   compact?: boolean;

@@ -20,8 +20,6 @@ import {
   Sparkles,
   Brain,
   Zap,
-  Info,
-  ExternalLink,
   HelpCircle,
 } from 'lucide-react';
 import { 
@@ -33,8 +31,8 @@ import {
   DebtToEquityCard,
 } from '../components/charts';
 import { InfoBanner } from '../components/HelpTooltip';
-import { InfoTooltip, AnomalyTooltip, MetricTooltip, Tooltip } from '../components/Tooltip';
-import Toggle, { ToggleGroup } from '../components/Toggle';
+import { AnomalyTooltip, Tooltip } from '../components/Tooltip';
+import Toggle from '../components/Toggle';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';

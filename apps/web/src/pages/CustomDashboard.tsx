@@ -17,7 +17,6 @@ import {
   Settings2,
   RefreshCw,
   Search,
-  Filter,
   X,
   GripVertical,
   Sparkles,
@@ -28,10 +27,8 @@ import {
   FileText,
   Star,
   StarOff,
-  MoreHorizontal,
   Check,
   Wand2,
-  Info,
   TrendingUp,
   TrendingDown,
   Edit3,
@@ -109,6 +106,7 @@ export default function CustomDashboard() {
   // Hover tooltip state
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [tooltipTimeout, setTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // Load pinned charts and saved reports on mount
   useEffect(() => {
@@ -116,6 +114,32 @@ export default function CustomDashboard() {
     setPinnedCharts(pinned);
     setSavedReports(reportManagementService.getAllReports());
   }, []);
+  
+  // Cleanup tooltip timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeout) {
+        clearTimeout(tooltipTimeout);
+      }
+    };
+  }, [tooltipTimeout]);
+  
+  // Delayed hover handlers for suggested charts (prevents blocking clicks)
+  const handleSuggestionMouseEnter = (chartId: string, e: React.MouseEvent) => {
+    const timeout = setTimeout(() => {
+      setHoveredElement(`suggest-${chartId}`);
+      setTooltipPosition({ x: e.clientX, y: e.clientY });
+    }, 400); // 400ms delay before showing tooltip
+    setTooltipTimeout(timeout);
+  };
+  
+  const handleSuggestionMouseLeave = () => {
+    if (tooltipTimeout) {
+      clearTimeout(tooltipTimeout);
+      setTooltipTimeout(null);
+    }
+    setHoveredElement(null);
+  };
   
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -746,7 +770,11 @@ export default function CustomDashboard() {
                   return (
                     <button
                       key={chart.id}
-                      onClick={() => handlePinChart(chart)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePinChart(chart);
+                      }}
                       draggable
                       onDragStart={() => handleSuggestionDragStart(chart.id)}
                       onDragOver={(e) => handleSuggestionDragOver(e, chart.id)}
@@ -927,18 +955,28 @@ export default function CustomDashboard() {
               return (
                 <button
                   key={chart.id}
-                  onClick={() => handlePinChart(chart)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Clear any pending tooltip
+                    if (tooltipTimeout) {
+                      clearTimeout(tooltipTimeout);
+                      setTooltipTimeout(null);
+                    }
+                    setHoveredElement(null);
+                    handlePinChart(chart);
+                  }}
                   draggable
-                  onDragStart={() => handleSuggestionDragStart(chart.id)}
+                  onDragStart={() => {
+                    handleSuggestionMouseLeave();
+                    handleSuggestionDragStart(chart.id);
+                  }}
                   onDragOver={(e) => handleSuggestionDragOver(e, chart.id)}
                   onDragLeave={handleSuggestionDragLeave}
                   onDrop={() => handleSuggestionDrop(chart.id)}
                   onDragEnd={handleSuggestionDragEnd}
-                  onMouseEnter={(e) => {
-                    setHoveredElement(`suggest-${chart.id}`);
-                    setTooltipPosition({ x: e.clientX, y: e.clientY });
-                  }}
-                  onMouseLeave={() => setHoveredElement(null)}
+                  onMouseEnter={(e) => handleSuggestionMouseEnter(chart.id, e)}
+                  onMouseLeave={handleSuggestionMouseLeave}
                   className={`p-4 rounded-xl text-left transition-all hover:shadow-md cursor-grab active:cursor-grabbing relative ${
                     draggedSuggestionId === chart.id ? 'opacity-50 scale-95' : ''
                   } ${

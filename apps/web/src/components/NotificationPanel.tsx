@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
   Check, 
@@ -55,21 +55,40 @@ export default function NotificationPanel() {
   } = useNotifications();
   
   const panelRef = useRef<HTMLDivElement>(null);
+  const isClickInsideRef = useRef(false);
+  const navigate = useNavigate();
+
+  // Track clicks inside the panel
+  const handlePanelMouseDown = useCallback(() => {
+    isClickInsideRef.current = true;
+  }, []);
 
   // Close panel when clicking outside
   useEffect(() => {
+    if (!isPanelOpen) return;
+
     function handleClickOutside(event: MouseEvent) {
+      // Skip if click was inside the panel
+      if (isClickInsideRef.current) {
+        isClickInsideRef.current = false;
+        return;
+      }
+      
+      // Check if click is outside the panel ref
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
         closePanel();
       }
     }
     
-    if (isPanelOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+    // Add listener after a short delay to avoid the opening click
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
     
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+      isClickInsideRef.current = false;
     };
   }, [isPanelOpen, closePanel]);
 
@@ -103,7 +122,7 @@ export default function NotificationPanel() {
   }, [isPanelOpen]);
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative" ref={panelRef} onMouseDown={handlePanelMouseDown}>
       {/* Bell Icon Button - Touch-friendly */}
       <button
         onClick={togglePanel}
@@ -125,7 +144,10 @@ export default function NotificationPanel() {
       {isPanelOpen && (
         <div 
           className="fixed inset-0 bg-black/40 z-40 sm:hidden"
-          onClick={closePanel}
+          onClick={(e) => {
+            e.stopPropagation();
+            closePanel();
+          }}
         />
       )}
 
@@ -154,24 +176,36 @@ export default function NotificationPanel() {
             <div className="flex items-center gap-1 sm:gap-2">
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllAsRead}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    markAllAsRead();
+                  }}
                   className="text-xs flex items-center gap-1 icon-btn p-1.5 sm:p-2"
                   title="Tout marquer comme lu"
                 >
                   <CheckCheck className="w-4 h-4" />
                 </button>
               )}
-              <Link
-                to="/app/settings"
-                onClick={closePanel}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  closePanel();
+                  setTimeout(() => navigate('/app/settings'), 0);
+                }}
                 className="icon-btn p-1.5 sm:p-2"
                 title="Paramètres"
               >
                 <Settings className="w-4 h-4" />
-              </Link>
+              </button>
               {/* Close button on mobile */}
               <button
-                onClick={closePanel}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  closePanel();
+                }}
                 className="sm:hidden icon-btn p-1.5"
                 title="Fermer"
               >
@@ -198,6 +232,7 @@ export default function NotificationPanel() {
                   onRead={() => markAsRead(notification.id)}
                   onArchive={() => archiveNotification(notification.id)}
                   onClose={closePanel}
+                  onNavigate={navigate}
                 />
               ))
             )}
@@ -212,14 +247,18 @@ export default function NotificationPanel() {
                 backgroundColor: 'rgb(var(--color-bg-subtle))',
               }}
             >
-              <Link
-                to="/app/settings"
-                onClick={closePanel}
-                className="text-xs sm:text-sm font-medium block text-center sm:text-left"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  closePanel();
+                  setTimeout(() => navigate('/app/settings'), 0);
+                }}
+                className="text-xs sm:text-sm font-medium block text-center sm:text-left w-full"
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
                 Voir toutes les notifications
-              </Link>
+              </button>
             </div>
           )}
         </div>
@@ -237,34 +276,60 @@ interface NotificationItemProps {
   onRead: () => void;
   onArchive: () => void;
   onClose: () => void;
+  onNavigate: (url: string) => void;
 }
 
-function NotificationItem({ notification, onRead, onArchive, onClose }: NotificationItemProps) {
+function NotificationItem({ notification, onRead, onArchive, onClose, onNavigate }: NotificationItemProps) {
   const Icon = categoryIcons[notification.category];
   const styles = categoryStyles[notification.category];
 
-  const handleClick = () => {
+  const handleItemClick = (e: React.MouseEvent) => {
+    // Don't mark as read if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
     if (!notification.read) {
       onRead();
     }
   };
 
-  const handleActionClick = (e: React.MouseEvent) => {
+  const handleActionLinkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    
     // Mark as read when clicking the action
     if (!notification.read) {
       onRead();
     }
-    // Close panel after a brief delay to ensure navigation starts
-    setTimeout(() => {
+    
+    // Get the URL and navigate after closing the panel
+    const url = notification.actionUrl;
+    if (url) {
       onClose();
-    }, 50);
+      // Use setTimeout to ensure state updates before navigation
+      setTimeout(() => {
+        onNavigate(url);
+      }, 0);
+    }
+  };
+
+  const handleMarkAsRead = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onRead();
+  };
+
+  const handleArchive = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onArchive();
   };
 
   return (
     <div
       className={`notification-item group ${!notification.read ? 'unread' : ''}`}
-      onClick={handleClick}
+      onClick={handleItemClick}
       style={{ padding: '0.75rem' }}
     >
       {/* Icon - Smaller on mobile */}
@@ -289,14 +354,13 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
             {getRelativeTime(notification.createdAt)}
           </span>
           {notification.actionUrl && (
-            <Link
-              to={notification.actionUrl}
-              onClick={handleActionClick}
+            <button
+              onClick={handleActionLinkClick}
               className="text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md cursor-pointer transition-all hover:bg-primary-500/10 active:scale-95"
               style={{ color: 'rgb(var(--color-primary-500))' }}
             >
               {notification.actionLabel || 'Voir'}
-            </Link>
+            </button>
           )}
         </div>
       </div>
@@ -305,10 +369,7 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
       <div className="flex items-center gap-0.5 sm:gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
         {!notification.read && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRead();
-            }}
+            onClick={handleMarkAsRead}
             className="icon-btn-sm p-1.5"
             title="Marquer comme lu"
           >
@@ -316,10 +377,7 @@ function NotificationItem({ notification, onRead, onArchive, onClose }: Notifica
           </button>
         )}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onArchive();
-          }}
+          onClick={handleArchive}
           className="icon-btn-sm p-1.5 transition-colors"
           style={{ color: 'rgb(var(--color-text-muted))' }}
           title="Supprimer"

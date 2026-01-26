@@ -8,23 +8,22 @@
  * - Contact options
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   HelpCircle, 
   MessageCircle, 
   Book, 
   Mail, 
   Phone, 
-  ExternalLink,
   Search,
   ChevronRight,
   X,
   Sparkles,
   FileText,
-  Settings,
   BarChart3,
   Link2,
   AlertTriangle,
+  Settings,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { crispUtils } from './CrispChat';

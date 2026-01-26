@@ -540,7 +540,7 @@ export class PricingCalculator {
     }
 
     // Base cost
-    let baseCost = tierConfig.basePrice;
+    const baseCost = tierConfig.basePrice;
 
     // Additional users cost
     const { includedUsers, additionalUserPrice, maxUsers } = tierConfig.userPricing;

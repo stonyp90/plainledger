@@ -20,7 +20,6 @@ import {
 import { InfoBanner } from '../components/HelpTooltip';
 import { useTenant, useCanPerform } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
-import { ROLE_DEFINITIONS } from '../components/RolesPermissions';
 
 // Provider types
 interface Provider {

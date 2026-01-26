@@ -5,10 +5,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Building2,
-  Users,
   ChevronRight,
   ChevronLeft,
   Check,
@@ -16,15 +15,12 @@ import {
   ArrowRight,
   Shield,
   BarChart3,
-  AlertTriangle,
   Upload,
   UserPlus,
   Mail,
   PartyPopper,
   Menu,
-  ExternalLink,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import { useI18n, LanguageToggle } from '../lib/i18n';
 import ThemeToggle from './ThemeToggle';

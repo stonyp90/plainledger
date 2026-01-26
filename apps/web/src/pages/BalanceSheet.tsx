@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { InfoBanner } from '../components/HelpTooltip';
 import { useBalanceSheet } from '../hooks/useFinancialData';
@@ -29,10 +29,11 @@ function getPresetDate(preset: DatePreset, customDate?: string): string {
       return formatDate(new Date(year, 11, 31));
     case 'last_month_end':
       return formatDate(new Date(year, month, 0));
-    case 'last_quarter_end':
+    case 'last_quarter_end': {
       const lastQuarter = quarter === 0 ? 3 : quarter - 1;
       const lastQuarterYear = quarter === 0 ? year - 1 : year;
       return formatDate(new Date(lastQuarterYear, (lastQuarter + 1) * 3, 0));
+    }
     case 'last_year_end':
       return formatDate(new Date(year - 1, 11, 31));
     case 'custom':

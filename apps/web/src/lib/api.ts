@@ -116,7 +116,7 @@ async function baseFetch<T>(
   const { params, timeout = config.api.timeout, ...fetchOptions } = options;
   
   // Build URL
-  let url = buildUrl(path, params);
+  const url = buildUrl(path, params);
   
   // Prepare headers
   const headers = new Headers(fetchOptions.headers);
