@@ -1,0 +1,598 @@
+/**
+ * ChartTooltip - Reusable tooltip component for charts
+ * Provides beautiful hover effects and data display
+ */
+
+import { useState, useRef, useEffect, ReactNode } from 'react';
+import { TrendingUp, TrendingDown, Minus, Info, AlertTriangle, CheckCircle } from 'lucide-react';
+
+// =====================================================
+// TOOLTIP COMPONENT
+// =====================================================
+
+interface TooltipPosition {
+  x: number;
+  y: number;
+}
+
+interface ChartTooltipProps {
+  visible: boolean;
+  position: TooltipPosition;
+  children: ReactNode;
+  className?: string;
+}
+
+export function ChartTooltip({ visible, position, children, className = '' }: ChartTooltipProps) {
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [adjustedPosition, setAdjustedPosition] = useState(position);
+
+  useEffect(() => {
+    if (tooltipRef.current && visible) {
+      const tooltip = tooltipRef.current;
+      const rect = tooltip.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      let newX = position.x;
+      let newY = position.y;
+
+      // Adjust horizontal position
+      if (position.x + rect.width > viewportWidth - 20) {
+        newX = position.x - rect.width - 10;
+      }
+
+      // Adjust vertical position
+      if (position.y + rect.height > viewportHeight - 20) {
+        newY = position.y - rect.height - 10;
+      }
+
+      setAdjustedPosition({ x: newX, y: newY });
+    }
+  }, [position, visible]);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      ref={tooltipRef}
+      className={`
+        fixed z-50 pointer-events-none
+        bg-gray-900 dark:bg-gray-800 text-white
+        rounded-xl shadow-2xl
+        px-4 py-3
+        text-sm
+        animate-in fade-in zoom-in-95 duration-150
+        ${className}
+      `}
+      style={{
+        left: adjustedPosition.x,
+        top: adjustedPosition.y,
+        transform: 'translate(10px, -50%)',
+      }}
+    >
+      {/* Arrow */}
+      <div 
+        className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2
+          border-8 border-transparent border-r-gray-900 dark:border-r-gray-800"
+      />
+      {children}
+    </div>
+  );
+}
+
+// =====================================================
+// TOOLTIP CONTENT COMPONENTS
+// =====================================================
+
+interface DataPointTooltipProps {
+  label: string;
+  value: number | string;
+  previousValue?: number;
+  format?: 'currency' | 'percent' | 'number';
+  currency?: string;
+  trend?: 'up' | 'down' | 'stable';
+  status?: 'normal' | 'warning' | 'critical' | 'success';
+  additionalInfo?: { label: string; value: string }[];
+}
+
+export function DataPointTooltip({
+  label,
+  value,
+  previousValue,
+  format = 'currency',
+  currency = 'CAD',
+  trend,
+  status,
+  additionalInfo,
+}: DataPointTooltipProps) {
+  const formatValue = (val: number | string) => {
+    if (typeof val === 'string') return val;
+    
+    switch (format) {
+      case 'currency':
+        return new Intl.NumberFormat('fr-CA', {
+          style: 'currency',
+          currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(val);
+      case 'percent':
+        return `${val.toFixed(1)}%`;
+      case 'number':
+        return val.toLocaleString();
+      default:
+        return String(val);
+    }
+  };
+
+  const percentChange = previousValue && typeof value === 'number'
+    ? ((value - previousValue) / previousValue) * 100
+    : null;
+
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  const trendColor = trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-gray-400';
+
+  const statusConfig = {
+    normal: { color: 'text-gray-400', icon: null },
+    warning: { color: 'text-amber-400', icon: AlertTriangle },
+    critical: { color: 'text-red-400', icon: AlertTriangle },
+    success: { color: 'text-green-400', icon: CheckCircle },
+  };
+
+  const StatusIcon = status ? statusConfig[status].icon : null;
+
+  return (
+    <div className="min-w-[180px]">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+          {label}
+        </span>
+        {StatusIcon && (
+          <StatusIcon className={`w-4 h-4 ${statusConfig[status!].color}`} />
+        )}
+      </div>
+
+      {/* Value */}
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-bold text-white">
+          {formatValue(value)}
+        </span>
+        {trend && (
+          <TrendIcon className={`w-4 h-4 ${trendColor}`} />
+        )}
+      </div>
+
+      {/* Change from previous */}
+      {percentChange !== null && (
+        <div className={`flex items-center gap-1 mt-1 text-xs ${percentChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          {percentChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+          <span>{percentChange >= 0 ? '+' : ''}{percentChange.toFixed(1)}% vs précédent</span>
+        </div>
+      )}
+
+      {/* Additional info */}
+      {additionalInfo && additionalInfo.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-700 space-y-1.5">
+          {additionalInfo.map((info, i) => (
+            <div key={i} className="flex justify-between text-xs">
+              <span className="text-gray-400">{info.label}</span>
+              <span className="text-gray-200 font-medium">{info.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================
+// HOVER CARD WRAPPER
+// =====================================================
+
+interface HoverCardProps {
+  children: ReactNode;
+  tooltip: ReactNode;
+  className?: string;
+  disabled?: boolean;
+}
+
+export function HoverCard({ children, tooltip, className = '', disabled = false }: HoverCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [position, setPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (disabled) return;
+    setPosition({ x: e.clientX, y: e.clientY });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className={`relative ${className}`}
+      onMouseEnter={() => !disabled && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
+    >
+      {children}
+      <ChartTooltip visible={isHovered && !disabled} position={position}>
+        {tooltip}
+      </ChartTooltip>
+    </div>
+  );
+}
+
+// =====================================================
+// INTERACTIVE CHART WRAPPER
+// =====================================================
+
+interface InteractiveChartWrapperProps {
+  title: string;
+  titleEn?: string;
+  subtitle?: string;
+  subtitleEn?: string;
+  children: ReactNode;
+  onExpand?: () => void;
+  onRefresh?: () => void;
+  isEn?: boolean;
+  className?: string;
+  actions?: ReactNode;
+  loading?: boolean;
+}
+
+export function InteractiveChartWrapper({
+  title,
+  titleEn,
+  subtitle,
+  subtitleEn,
+  children,
+  onExpand,
+  onRefresh,
+  isEn = false,
+  className = '',
+  actions,
+  loading = false,
+}: InteractiveChartWrapperProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      className={`
+        card relative overflow-hidden transition-all duration-300
+        ${isHovered ? 'shadow-lg ring-2 ring-primary/20' : 'shadow-sm'}
+        ${className}
+      `}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Gradient border effect on hover */}
+      <div 
+        className="absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 pointer-events-none"
+        style={{ 
+          opacity: isHovered ? 0.5 : 0,
+          background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1), transparent)',
+        }}
+      />
+
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4 relative z-10">
+        <div>
+          <h3 className="font-semibold text-primary">
+            {isEn && titleEn ? titleEn : title}
+          </h3>
+          {(subtitle || subtitleEn) && (
+            <p className="text-sm text-muted mt-0.5">
+              {isEn && subtitleEn ? subtitleEn : subtitle}
+            </p>
+          )}
+        </div>
+
+        {/* Actions (visible on hover) */}
+        <div 
+          className={`
+            flex items-center gap-2 transition-opacity duration-200
+            ${isHovered ? 'opacity-100' : 'opacity-0'}
+          `}
+        >
+          {actions}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              title={isEn ? 'Refresh' : 'Actualiser'}
+            >
+              <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          )}
+          {onExpand && (
+            <button
+              onClick={onExpand}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              title={isEn ? 'Expand' : 'Agrandir'}
+            >
+              <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-surface/80 flex items-center justify-center z-20 rounded-xl">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Chart content */}
+      <div className="relative z-10">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// STAT CARD WITH HOVER
+// =====================================================
+
+interface StatCardProps {
+  label: string;
+  labelEn?: string;
+  value: number | string;
+  previousValue?: number;
+  format?: 'currency' | 'percent' | 'number';
+  currency?: string;
+  icon?: ReactNode;
+  trend?: 'up' | 'down' | 'stable';
+  trendIsGood?: boolean;
+  description?: string;
+  descriptionEn?: string;
+  isEn?: boolean;
+  onClick?: () => void;
+  className?: string;
+}
+
+export function StatCard({
+  label,
+  labelEn,
+  value,
+  previousValue,
+  format = 'currency',
+  currency = 'CAD',
+  icon,
+  trend,
+  trendIsGood = true,
+  description,
+  descriptionEn,
+  isEn = false,
+  onClick,
+  className = '',
+}: StatCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const formatValue = (val: number | string) => {
+    if (typeof val === 'string') return val;
+    
+    switch (format) {
+      case 'currency':
+        return new Intl.NumberFormat('fr-CA', {
+          style: 'currency',
+          currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(val);
+      case 'percent':
+        return `${val.toFixed(1)}%`;
+      case 'number':
+        return val.toLocaleString();
+      default:
+        return String(val);
+    }
+  };
+
+  const percentChange = previousValue && typeof value === 'number'
+    ? ((value - previousValue) / previousValue) * 100
+    : null;
+
+  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : null;
+  
+  // Determine if trend is positive based on context
+  const isTrendPositive = trend === 'up' ? trendIsGood : trend === 'down' ? !trendIsGood : null;
+  const trendColor = isTrendPositive === true 
+    ? 'text-green-500' 
+    : isTrendPositive === false 
+      ? 'text-red-500' 
+      : 'text-gray-400';
+
+  return (
+    <div
+      className={`
+        card p-4 transition-all duration-300 cursor-pointer
+        ${isHovered ? 'shadow-lg scale-[1.02] ring-2 ring-primary/20' : 'shadow-sm'}
+        ${className}
+      `}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-muted">
+          {isEn && labelEn ? labelEn : label}
+        </span>
+        {icon && (
+          <div 
+            className={`
+              p-2 rounded-lg transition-all duration-300
+              ${isHovered ? 'bg-primary/10 scale-110' : 'bg-muted/50'}
+            `}
+          >
+            {icon}
+          </div>
+        )}
+      </div>
+
+      {/* Value */}
+      <div className="flex items-baseline gap-3">
+        <span 
+          className={`
+            text-2xl font-bold text-primary transition-transform duration-300
+            ${isHovered ? 'scale-105' : ''}
+          `}
+        >
+          {formatValue(value)}
+        </span>
+        
+        {TrendIcon && (
+          <div className={`flex items-center gap-1 ${trendColor}`}>
+            <TrendIcon className="w-4 h-4" />
+            {percentChange !== null && (
+              <span className="text-sm font-medium">
+                {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Description */}
+      {(description || descriptionEn) && (
+        <p 
+          className={`
+            text-xs text-muted mt-2 transition-opacity duration-300
+            ${isHovered ? 'opacity-100' : 'opacity-70'}
+          `}
+        >
+          {isEn && descriptionEn ? descriptionEn : description}
+        </p>
+      )}
+
+      {/* Hover indicator */}
+      <div 
+        className={`
+          absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/50
+          transition-transform duration-300 rounded-b-xl
+          ${isHovered ? 'scale-x-100' : 'scale-x-0'}
+        `}
+        style={{ transformOrigin: 'left' }}
+      />
+    </div>
+  );
+}
+
+// =====================================================
+// MINI SPARKLINE WITH HOVER
+// =====================================================
+
+interface MiniSparklineProps {
+  data: number[];
+  width?: number;
+  height?: number;
+  color?: string;
+  showTooltip?: boolean;
+  labels?: string[];
+}
+
+export function MiniSparkline({
+  data,
+  width = 100,
+  height = 30,
+  color = 'rgb(var(--color-primary-500))',
+  showTooltip = true,
+  labels,
+}: MiniSparklineProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<TooltipPosition>({ x: 0, y: 0 });
+
+  if (data.length < 2) return null;
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const padding = 2;
+
+  const points = data.map((value, i) => {
+    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
+    const y = height - padding - ((value - min) / range) * (height - padding * 2);
+    return { x, y, value };
+  });
+
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const index = Math.round((x / width) * (data.length - 1));
+    const clampedIndex = Math.max(0, Math.min(data.length - 1, index));
+    setHoveredIndex(clampedIndex);
+    setTooltipPos({ x: e.clientX, y: e.clientY });
+  };
+
+  return (
+    <div className="relative inline-block">
+      <svg
+        width={width}
+        height={height}
+        className="cursor-crosshair"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoveredIndex(null)}
+      >
+        {/* Gradient fill */}
+        <defs>
+          <linearGradient id="sparkline-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* Fill area */}
+        <path
+          d={`${pathD} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`}
+          fill="url(#sparkline-gradient)"
+        />
+
+        {/* Line */}
+        <path
+          d={pathD}
+          fill="none"
+          stroke={color}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Hover point */}
+        {hoveredIndex !== null && (
+          <circle
+            cx={points[hoveredIndex].x}
+            cy={points[hoveredIndex].y}
+            r={4}
+            fill={color}
+            stroke="white"
+            strokeWidth={2}
+            className="drop-shadow-lg"
+          />
+        )}
+      </svg>
+
+      {/* Tooltip */}
+      {showTooltip && hoveredIndex !== null && (
+        <ChartTooltip visible={true} position={tooltipPos}>
+          <div className="text-center">
+            {labels && labels[hoveredIndex] && (
+              <div className="text-xs text-gray-400 mb-1">{labels[hoveredIndex]}</div>
+            )}
+            <div className="text-lg font-bold">{data[hoveredIndex].toLocaleString()}</div>
+          </div>
+        </ChartTooltip>
+      )}
+    </div>
+  );
+}
+
+export default ChartTooltip;

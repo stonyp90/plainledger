@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{{subject}}</title>
+  <style>
+    /* Reset styles */
+    body, table, td, p, a, li, blockquote {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    table, td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+    }
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      background-color: #f7f7f7;
+    }
+    
+    /* Typography */
+    .email-body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #333333;
+    }
+    
+    /* Container */
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    
+    /* Header */
+    .email-header {
+      padding: 32px 40px;
+      text-align: center;
+      background-color: #1a1a1a;
+    }
+    .email-logo {
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    
+    /* Content */
+    .email-content {
+      padding: 40px;
+    }
+    .email-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin: 0 0 24px 0;
+    }
+    .email-text {
+      font-size: 16px;
+      color: #4a4a4a;
+      margin: 0 0 16px 0;
+    }
+    
+    /* Button */
+    .email-button {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #1a1a1a;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    .email-button:hover {
+      background-color: #333333;
+    }
+    
+    /* Info Box */
+    .info-box {
+      background-color: #f0f7ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      margin: 24px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .info-box.warning {
+      background-color: #fffbeb;
+      border-left-color: #f59e0b;
+    }
+    .info-box.danger {
+      background-color: #fef2f2;
+      border-left-color: #ef4444;
+    }
+    .info-box.success {
+      background-color: #f0fdf4;
+      border-left-color: #22c55e;
+    }
+    
+    /* Divider */
+    .email-divider {
+      border: none;
+      border-top: 1px solid #e5e5e5;
+      margin: 32px 0;
+    }
+    
+    /* Footer */
+    .email-footer {
+      padding: 32px 40px;
+      text-align: center;
+      background-color: #f7f7f7;
+    }
+    .email-footer p {
+      font-size: 13px;
+      color: #888888;
+      margin: 0 0 8px 0;
+    }
+    .email-footer a {
+      color: #666666;
+      text-decoration: none;
+    }
+    .email-footer a:hover {
+      text-decoration: underline;
+    }
+    .footer-links {
+      margin: 16px 0;
+    }
+    .footer-links a {
+      margin: 0 12px;
+      font-size: 13px;
+    }
+    
+    /* Social icons */
+    .social-links {
+      margin: 16px 0;
+    }
+    .social-links a {
+      display: inline-block;
+      margin: 0 8px;
+    }
+    
+    /* Responsive */
+    @media only screen and (max-width: 620px) {
+      .email-container {
+        width: 100% !important;
+      }
+      .email-content, .email-header, .email-footer {
+        padding: 24px !important;
+      }
+      .email-title {
+        font-size: 20px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f7f7f7;">
+    <tr>
+      <td style="padding: 24px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container" align="center">
+          <!-- Header -->
+          <tr>
+            <td class="email-header">
+              <a href="{{baseUrl}}" class="email-logo">▢ PlainLedger</a>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td class="email-content email-body">
+              {{content}}
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td class="email-footer">
+              <div class="footer-links">
+                <a href="{{baseUrl}}/help">Centre d'aide</a>
+                <a href="{{baseUrl}}/settings">Paramètres</a>
+                <a href="{{baseUrl}}/privacy">Confidentialité</a>
+              </div>
+              <p>
+                Vous recevez cet email car vous avez un compte PlainLedger.<br>
+                <a href="{{baseUrl}}/settings/notifications">Gérer vos préférences email</a>
+              </p>
+              <p style="margin-top: 16px;">
+                © {{year}} PlainLedger. Tous droits réservés.<br>
+                Montréal, Québec, Canada
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

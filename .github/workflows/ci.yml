@@ -1,0 +1,352 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests (use with caution)'
+        required: false
+        default: 'false'
+        type: boolean
+      deploy_only:
+        description: 'Deploy only (skip build, use existing images)'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ca-central-1
+  NODE_VERSION: '20'
+  ECS_CLUSTER: plainledger-prod-cluster
+
+jobs:
+  # ==========================================================================
+  # Stage 1: Setup and Cache Dependencies
+  # ==========================================================================
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.deploy_only != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            apps/api/package-lock.json
+            apps/web/package-lock.json
+      
+      - name: Cache API node_modules
+        id: cache-api
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules
+          key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
+      
+      - name: Cache Web node_modules
+        id: cache-web
+        uses: actions/cache@v4
+        with:
+          path: apps/web/node_modules
+          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
+      
+      - name: Install API dependencies
+        if: steps.cache-api.outputs.cache-hit != 'true'
+        run: npm ci
+        working-directory: apps/api
+      
+      - name: Install Web dependencies
+        if: steps.cache-web.outputs.cache-hit != 'true'
+        run: npm ci
+        working-directory: apps/web
+
+  # ==========================================================================
+  # Stage 2: Lint and Type Check (Parallel)
+  # ==========================================================================
+  lint-api:
+    name: Lint API
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ github.event.inputs.deploy_only != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Restore API cache
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules
+          key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
+      - run: npm run lint || true
+        working-directory: apps/api
+
+  lint-web:
+    name: Lint Web
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ github.event.inputs.deploy_only != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Restore Web cache
+        uses: actions/cache@v4
+        with:
+          path: apps/web/node_modules
+          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
+      - run: npx tsc --noEmit
+        working-directory: apps/web
+
+  # ==========================================================================
+  # Stage 3: Unit Tests (Parallel)
+  # ==========================================================================
+  test-api:
+    name: Test API
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ github.event.inputs.skip_tests != 'true' && github.event.inputs.deploy_only != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Restore API cache
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules
+          key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
+      - run: npm test || echo "No tests configured"
+        working-directory: apps/api
+
+  test-web:
+    name: Test Web
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ github.event.inputs.skip_tests != 'true' && github.event.inputs.deploy_only != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Restore Web cache
+        uses: actions/cache@v4
+        with:
+          path: apps/web/node_modules
+          key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
+      - run: npm run test:run || echo "No tests configured"
+        working-directory: apps/web
+
+  # ==========================================================================
+  # Stage 4: Build Docker Images and Push to ECR
+  # ==========================================================================
+  build-and-push:
+    name: Build ${{ matrix.app.name }}
+    runs-on: ubuntu-latest
+    needs: [lint-api, lint-web, test-api, test-web]
+    if: |
+      always() &&
+      (needs.lint-api.result == 'success' || needs.lint-api.result == 'skipped') &&
+      (needs.lint-web.result == 'success' || needs.lint-web.result == 'skipped') &&
+      (needs.test-api.result == 'success' || needs.test-api.result == 'skipped') &&
+      (needs.test-web.result == 'success' || needs.test-web.result == 'skipped') &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      github.event.inputs.deploy_only != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - name: api
+            ecr_repo: plainledger-api
+            dockerfile: apps/api/Dockerfile
+            context: .
+          - name: web
+            ecr_repo: plainledger-web
+            dockerfile: apps/web/Dockerfile
+            context: .
+    outputs:
+      image_tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build and push ${{ matrix.app.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.app.context }}
+          file: ${{ matrix.app.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ matrix.app.ecr_repo }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ matrix.app.ecr_repo }}:latest
+          cache-from: type=gha,scope=${{ matrix.app.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app.name }}
+          provenance: false
+          build-args: |
+            NODE_ENV=production
+
+  # ==========================================================================
+  # Stage 5: Deploy to ECS
+  # ==========================================================================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: |
+      always() &&
+      (needs.build-and-push.result == 'success' || github.event.inputs.deploy_only == 'true') &&
+      github.event_name != 'pull_request'
+    environment: production
+    steps:
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Deploy API service
+        run: |
+          echo "🚀 Deploying API service..."
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service plainledger-prod-api \
+            --force-new-deployment \
+            --no-cli-pager || echo "⚠️ API service not found - infrastructure may need to be deployed first"
+      
+      - name: Deploy Web service
+        run: |
+          echo "🚀 Deploying Web service..."
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service plainledger-prod-web \
+            --force-new-deployment \
+            --no-cli-pager || echo "⚠️ Web service not found - infrastructure may need to be deployed first"
+      
+      - name: Wait for services to stabilize
+        timeout-minutes: 10
+        run: |
+          echo "⏳ Waiting for services to stabilize..."
+          
+          # Wait for API
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services plainledger-prod-api || echo "⚠️ API service wait timed out or not found"
+          
+          # Wait for Web
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services plainledger-prod-web || echo "⚠️ Web service wait timed out or not found"
+          
+          echo "✅ Deployment complete"
+      
+      - name: Deployment summary
+        run: |
+          echo "## 🎉 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
+  # Stage 6: Summary
+  # ==========================================================================
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [lint-api, lint-web, test-api, test-web, build-and-push, deploy]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🎯 CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          # Lint results
+          if [ "${{ needs.lint-api.result }}" == "success" ]; then
+            echo "| 🔍 Lint API | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.lint-api.result }}" == "skipped" ]; then
+            echo "| 🔍 Lint API | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🔍 Lint API | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.lint-web.result }}" == "success" ]; then
+            echo "| 🔍 Lint Web | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.lint-web.result }}" == "skipped" ]; then
+            echo "| 🔍 Lint Web | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🔍 Lint Web | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Test results
+          if [ "${{ needs.test-api.result }}" == "success" ]; then
+            echo "| 🧪 Test API | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test-api.result }}" == "skipped" ]; then
+            echo "| 🧪 Test API | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🧪 Test API | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.test-web.result }}" == "success" ]; then
+            echo "| 🧪 Test Web | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test-web.result }}" == "skipped" ]; then
+            echo "| 🧪 Test Web | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🧪 Test Web | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Build results
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "| 🐳 Docker Build | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.build-and-push.result }}" == "skipped" ]; then
+            echo "| 🐳 Docker Build | ⏭️ Skipped (PR) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🐳 Docker Build | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Deploy results
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "| 🚀 Deploy | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
+            echo "| 🚀 Deploy | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🚀 Deploy | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY

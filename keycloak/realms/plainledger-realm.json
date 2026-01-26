@@ -1,0 +1,320 @@
+{
+  "id": "plainledger",
+  "realm": "plainledger",
+  "displayName": "PlainLedger",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>PlainLedger</span></div>",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "verifyEmail": false,
+  "loginTheme": "plainledger",
+  "accountTheme": "keycloak.v2",
+  "emailTheme": "plainledger",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "fr"],
+  "defaultLocale": "en",
+  "smtpServer": {
+    "host": "mailhog",
+    "port": "1025",
+    "from": "noreply@plainledger.com",
+    "fromDisplayName": "PlainLedger",
+    "replyTo": "support@plainledger.com",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "accessCodeLifespanLogin": 1800,
+  "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1)",
+  "clients": [
+    {
+      "clientId": "plainledger-web",
+      "name": "PlainLedger Web Application",
+      "description": "Frontend React application for PlainLedger financial reporting",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "protocol": "openid-connect",
+      "rootUrl": "http://localhost:5173",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:5174/*",
+        "http://localhost:5175/*",
+        "http://localhost:5176/*",
+        "http://localhost:5177/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:5173/*",
+        "http://127.0.0.1:5176/*",
+        "https://app.plainledger.com/*",
+        "https://app.plainledger.ca/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5176",
+        "https://app.plainledger.com",
+        "https://app.plainledger.ca",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5176/*##https://app.plainledger.com/*##https://app.plainledger.ca/*"
+      }
+    },
+    {
+      "clientId": "plainledger-api",
+      "name": "PlainLedger API Backend",
+      "description": "NestJS API backend service",
+      "enabled": true,
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "secret": "change-me-in-production",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "https://api.plainledger.com/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "https://api.plainledger.com",
+        "+"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator with full access"
+      },
+      {
+        "name": "accountant",
+        "description": "Accountant with access to financial reports"
+      },
+      {
+        "name": "viewer",
+        "description": "Read-only access to reports"
+      },
+      {
+        "name": "owner",
+        "description": "Organization owner with billing access"
+      }
+    ]
+  },
+  "defaultRoles": ["viewer"],
+  "groups": [
+    {
+      "name": "Administrators",
+      "realmRoles": ["admin"]
+    },
+    {
+      "name": "Accountants",
+      "realmRoles": ["accountant"]
+    },
+    {
+      "name": "Viewers",
+      "realmRoles": ["viewer"]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@plainledger.com",
+      "email": "admin@plainledger.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin", "owner"],
+      "groups": ["Administrators"],
+      "attributes": {
+        "organization": ["demo-org"],
+        "locale": ["en"]
+      }
+    },
+    {
+      "username": "accountant@plainledger.com",
+      "email": "accountant@plainledger.com",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Accountant123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["accountant"],
+      "groups": ["Accountants"],
+      "attributes": {
+        "organization": ["demo-org"],
+        "locale": ["en"]
+      }
+    },
+    {
+      "username": "demo@plainledger.com",
+      "email": "demo@plainledger.com",
+      "firstName": "Demo",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["viewer"],
+      "groups": ["Viewers"],
+      "attributes": {
+        "organization": ["demo-org"],
+        "locale": ["en"]
+      }
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "organization",
+      "description": "Organization scope for multi-tenancy",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "organization-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "organization",
+            "claim.name": "organization",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": true,
+      "storeToken": true,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID:}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET:}",
+        "defaultScope": "openid profile email",
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true"
+      }
+    },
+    {
+      "alias": "microsoft",
+      "displayName": "Microsoft",
+      "providerId": "microsoft",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": true,
+      "storeToken": true,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${MICROSOFT_CLIENT_ID:}",
+        "clientSecret": "${MICROSOFT_CLIENT_SECRET:}",
+        "defaultScope": "openid profile email User.Read",
+        "syncMode": "IMPORT",
+        "useJwksUrl": "true"
+      }
+    },
+    {
+      "alias": "github",
+      "displayName": "GitHub",
+      "providerId": "github",
+      "enabled": false,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": true,
+      "storeToken": true,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${GITHUB_CLIENT_ID:}",
+        "clientSecret": "${GITHUB_CLIENT_SECRET:}",
+        "defaultScope": "user:email read:user",
+        "syncMode": "IMPORT"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "google-picture-mapper",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "hardcoded-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "picture"
+      }
+    },
+    {
+      "name": "microsoft-picture-mapper",
+      "identityProviderAlias": "microsoft",
+      "identityProviderMapper": "hardcoded-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "picture"
+      }
+    },
+    {
+      "name": "github-avatar-mapper",
+      "identityProviderAlias": "github",
+      "identityProviderMapper": "hardcoded-attribute-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "attribute": "avatar_url"
+      }
+    }
+  ]
+}

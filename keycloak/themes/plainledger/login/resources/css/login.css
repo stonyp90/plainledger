@@ -1,0 +1,636 @@
+/* ============================================
+   PlainLedger - Keycloak Login Theme
+   No surprises. Just numbers.
+   ============================================ */
+
+/* CSS Variables */
+:root {
+  --pl-charcoal: #1a1a1a;
+  --pl-charcoal-light: #2d2d2d;
+  --pl-gray-100: #f7f7f7;
+  --pl-gray-200: #e5e5e5;
+  --pl-gray-300: #d4d4d4;
+  --pl-gray-400: #a3a3a3;
+  --pl-gray-500: #737373;
+  --pl-gray-600: #525252;
+  --pl-white: #ffffff;
+  --pl-blue: #2563eb;
+  --pl-blue-hover: #1d4ed8;
+  --pl-red: #dc2626;
+  --pl-green: #16a34a;
+  --pl-radius: 8px;
+  --pl-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --pl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Login Container */
+.login-pf {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  min-height: 100vh;
+}
+
+.login-pf body {
+  background: transparent;
+}
+
+/* Card Container */
+#kc-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+#kc-container-wrapper {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Header */
+#kc-header {
+  text-align: center;
+  margin-bottom: 0;
+  padding: 0;
+}
+
+#kc-header-wrapper {
+  padding: 40px 40px 0;
+  background: var(--pl-white);
+  border-radius: var(--pl-radius) var(--pl-radius) 0 0;
+}
+
+/* Logo */
+.kc-logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.kc-logo-text::before {
+  content: "▢";
+  font-size: 48px;
+  color: var(--pl-gray-600);
+  line-height: 1;
+}
+
+.kc-logo-text span {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--pl-charcoal);
+  letter-spacing: -0.02em;
+}
+
+/* Hide default header text */
+#kc-page-title {
+  display: none;
+}
+
+/* Content Card */
+#kc-content {
+  background: var(--pl-white);
+  padding: 0;
+}
+
+#kc-content-wrapper {
+  padding: 24px 40px 40px;
+}
+
+/* Form Card */
+#kc-form {
+  background: var(--pl-white);
+}
+
+#kc-form-wrapper {
+  padding: 0;
+}
+
+/* Form Header */
+#kc-form-login h1,
+.card-pf .card-pf-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pl-gray-500);
+  text-align: center;
+  margin: 0 0 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Tagline */
+#kc-header-wrapper::after {
+  content: "No surprises. Just numbers.";
+  display: block;
+  font-size: 14px;
+  color: var(--pl-gray-500);
+  margin-top: 8px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--pl-gray-200);
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 20px;
+}
+
+/* Labels */
+label.pf-c-form__label,
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pl-gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+/* Input Fields */
+input.pf-c-form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: var(--pl-charcoal);
+  background: var(--pl-white);
+  border: 1px solid var(--pl-gray-300);
+  border-radius: var(--pl-radius);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+input.pf-c-form-control:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+  border-color: var(--pl-charcoal);
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+}
+
+input.pf-c-form-control:hover,
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="email"]:hover {
+  border-color: var(--pl-gray-400);
+}
+
+/* Error State */
+input.pf-c-form-control[aria-invalid="true"],
+.has-error input {
+  border-color: var(--pl-red);
+  background-color: #fef2f2;
+}
+
+input.pf-c-form-control[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Error Messages */
+.pf-c-form__helper-text.pf-m-error,
+.kc-feedback-text,
+span.kc-feedback-text,
+.alert-error {
+  color: var(--pl-red);
+  font-size: 13px;
+  margin-top: 6px;
+  display: block;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--pl-radius);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--pl-red);
+}
+
+.alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: var(--pl-green);
+}
+
+.alert-warning {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+}
+
+.alert-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: var(--pl-blue);
+}
+
+/* Primary Button */
+input[type="submit"],
+button[type="submit"],
+.btn-primary,
+.pf-c-button.pf-m-primary {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--pl-white);
+  background: var(--pl-charcoal);
+  border: none;
+  border-radius: var(--pl-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover,
+.btn-primary:hover,
+.pf-c-button.pf-m-primary:hover {
+  background: var(--pl-charcoal-light);
+  transform: translateY(-1px);
+  box-shadow: var(--pl-shadow);
+}
+
+input[type="submit"]:active,
+button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+/* Secondary/Link Buttons */
+.btn-default,
+.pf-c-button.pf-m-secondary {
+  background: var(--pl-white);
+  color: var(--pl-charcoal);
+  border: 1px solid var(--pl-gray-300);
+}
+
+.btn-default:hover,
+.pf-c-button.pf-m-secondary:hover {
+  background: var(--pl-gray-100);
+  border-color: var(--pl-gray-400);
+}
+
+/* Links */
+a {
+  color: var(--pl-charcoal);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--pl-gray-600);
+  text-decoration: underline;
+}
+
+/* Forgot Password Link */
+#kc-form-options {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+#kc-form-options span a {
+  font-size: 13px;
+  color: var(--pl-gray-500);
+}
+
+#kc-form-options span a:hover {
+  color: var(--pl-charcoal);
+}
+
+/* Registration Link */
+#kc-registration {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pl-gray-200);
+}
+
+#kc-registration span {
+  font-size: 14px;
+  color: var(--pl-gray-500);
+}
+
+#kc-registration span a {
+  color: var(--pl-charcoal);
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* Social Login */
+#kc-social-providers {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--pl-gray-200);
+}
+
+#kc-social-providers h4 {
+  text-align: center;
+  font-size: 12px;
+  color: var(--pl-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+}
+
+#kc-social-providers ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#kc-social-providers li a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--pl-white);
+  border: 1px solid var(--pl-gray-300);
+  border-radius: var(--pl-radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pl-charcoal);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+#kc-social-providers li a:hover {
+  background: var(--pl-gray-100);
+  border-color: var(--pl-gray-400);
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  accent-color: var(--pl-charcoal);
+}
+
+.checkbox label,
+.pf-c-check__label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--pl-gray-600);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Password Toggle */
+.pf-c-button.pf-m-control {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--pl-gray-500);
+  padding: 8px;
+  cursor: pointer;
+}
+
+.pf-c-button.pf-m-control:hover {
+  color: var(--pl-charcoal);
+}
+
+/* Input Group for Password */
+.pf-c-input-group {
+  position: relative;
+}
+
+.pf-c-input-group input {
+  padding-right: 48px;
+}
+
+/* Footer */
+#kc-info {
+  text-align: center;
+  padding: 16px;
+  color: var(--pl-gray-500);
+  font-size: 12px;
+}
+
+#kc-info-wrapper {
+  background: var(--pl-white);
+  border-radius: 0 0 var(--pl-radius) var(--pl-radius);
+  padding: 16px 40px;
+  border-top: 1px solid var(--pl-gray-200);
+}
+
+/* Locale Dropdown */
+#kc-locale {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+#kc-locale-dropdown {
+  background: var(--pl-white);
+  border: 1px solid var(--pl-gray-200);
+  border-radius: var(--pl-radius);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--pl-gray-600);
+  cursor: pointer;
+}
+
+#kc-locale ul {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--pl-white);
+  border: 1px solid var(--pl-gray-200);
+  border-radius: var(--pl-radius);
+  box-shadow: var(--pl-shadow-lg);
+  list-style: none;
+  padding: 8px 0;
+  margin: 4px 0 0;
+  min-width: 120px;
+}
+
+#kc-locale:hover ul,
+#kc-locale ul.show {
+  display: block;
+}
+
+#kc-locale ul li a {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--pl-gray-600);
+}
+
+#kc-locale ul li a:hover {
+  background: var(--pl-gray-100);
+  text-decoration: none;
+}
+
+/* Instructions */
+#kc-form-login .instruction,
+.instruction {
+  font-size: 14px;
+  color: var(--pl-gray-500);
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* OTP/2FA */
+#kc-otp-login-form .form-group {
+  text-align: center;
+}
+
+.otp-input {
+  font-size: 24px;
+  letter-spacing: 8px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  #kc-header-wrapper,
+  #kc-content-wrapper,
+  #kc-info-wrapper {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  
+  .kc-logo-text::before {
+    font-size: 40px;
+  }
+  
+  .kc-logo-text span {
+    font-size: 24px;
+  }
+}
+
+/* Card Shadow */
+#kc-container-wrapper {
+  box-shadow: var(--pl-shadow-lg);
+  border-radius: var(--pl-radius);
+  overflow: hidden;
+}
+
+/* Hide unnecessary elements */
+.login-pf-page .login-pf-brand,
+.login-pf-header,
+.pf-c-background-image {
+  display: none !important;
+}
+
+/* Required Field Indicator */
+.required::after {
+  content: " *";
+  color: var(--pl-red);
+}
+
+/* Loading State */
+.pf-c-button.pf-m-in-progress {
+  position: relative;
+  color: transparent;
+}
+
+.pf-c-button.pf-m-in-progress::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--pl-white);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Terms of Service */
+#kc-terms-text {
+  font-size: 13px;
+  color: var(--pl-gray-500);
+  line-height: 1.6;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--pl-gray-100);
+  border-radius: var(--pl-radius);
+  margin-bottom: 20px;
+}
+
+/* Update Profile / Register */
+#kc-update-profile-form .form-group,
+#kc-register-form .form-group {
+  margin-bottom: 16px;
+}
+
+/* Info/Warning boxes */
+.pf-c-alert {
+  padding: 12px 16px;
+  border-radius: var(--pl-radius);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pf-c-alert__icon {
+  flex-shrink: 0;
+}
+
+.pf-c-alert__title {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+/* Back Button */
+.pf-c-button.pf-m-link {
+  background: none;
+  border: none;
+  color: var(--pl-gray-500);
+  padding: 0;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-c-button.pf-m-link:hover {
+  color: var(--pl-charcoal);
+}
+
+/* Try Another Way */
+#kc-form-buttons + * a,
+.kc-login-tooltip-text {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--pl-gray-500);
+}

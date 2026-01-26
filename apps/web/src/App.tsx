@@ -1,0 +1,356 @@
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useKeycloak } from './lib/keycloak';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Reports from './pages/Reports';
+import BalanceSheet from './pages/BalanceSheet';
+import IncomeStatement from './pages/IncomeStatement';
+import CashFlowStatement from './pages/CashFlowStatement';
+import TrialBalance from './pages/TrialBalance';
+import Connections from './pages/Connections';
+import Settings from './pages/Settings';
+import Landing from './pages/Landing';
+import NewsletterPage from './pages/NewsletterPage';
+import AnomalyDashboard from './pages/AnomalyDashboard';
+import CustomDashboard from './pages/CustomDashboard';
+import BoardMeeting from './pages/BoardMeeting';
+import Store from './pages/Store';
+import Onboarding from './components/Onboarding';
+import CrispChat from './components/CrispChat';
+import config from './lib/config';
+import { analytics } from './lib/analytics';
+import { useEffect } from 'react';
+
+// Check if user has completed onboarding
+function hasCompletedOnboarding(): boolean {
+  // Allow skipping onboarding via URL parameter for development/testing
+  if (window.location.search.includes('skipOnboarding=true')) {
+    localStorage.setItem('pl_onboarding_completed', 'true');
+    return true;
+  }
+  // Allow resetting onboarding for testing
+  if (window.location.search.includes('resetOnboarding=true')) {
+    localStorage.removeItem('pl_onboarding_completed');
+    return false;
+  }
+  return localStorage.getItem('pl_onboarding_completed') === 'true';
+}
+
+// Protected Route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { authenticated, initialized, login } = useKeycloak();
+  const location = useLocation();
+
+  if (!initialized) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    // Store the intended destination and redirect to login
+    login();
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if onboarding is needed (skip for onboarding route itself)
+  if (!hasCompletedOnboarding() && !location.pathname.includes('/onboarding')) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Login redirect - triggers Keycloak login
+function LoginRedirect() {
+  const { login, authenticated } = useKeycloak();
+  
+  useEffect(() => {
+    if (!authenticated) {
+      login();
+    }
+  }, [authenticated, login]);
+
+  if (authenticated) {
+    return <Navigate to="/app" replace />;
+  }
+
+  return (
+    <div 
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+    >
+      <div className="text-center">
+        <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
+      </div>
+    </div>
+  );
+}
+
+// Protected route for onboarding (doesn't redirect to onboarding again)
+function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { authenticated, initialized, login } = useKeycloak();
+
+  if (!initialized) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    login();
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If onboarding already completed, go to dashboard
+  if (hasCompletedOnboarding()) {
+    return <Navigate to="/app/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// App Layout wrapper for authenticated routes
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Layout>
+      {children}
+    </Layout>
+  );
+}
+
+function App() {
+  const { initialized, authenticated } = useKeycloak();
+
+  // Track page views - must be called before any conditional returns
+  useEffect(() => {
+    if (initialized) {
+      analytics.page();
+    }
+  }, [initialized]);
+
+  // Show loading while Keycloak initializes (only for initial load)
+  if (!initialized) {
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Crisp Live Chat */}
+      {config.crisp.enabled && config.crisp.websiteId && (
+        <CrispChat websiteId={config.crisp.websiteId} />
+      )}
+      
+      <Routes>
+        {/* Public routes - Store is the main landing page */}
+        <Route 
+          path="/" 
+          element={authenticated ? <Navigate to="/app" replace /> : <Store />} 
+        />
+        
+        {/* Store alias for direct access */}
+        <Route 
+          path="/store" 
+          element={<Store />} 
+        />
+        
+        {/* Legacy landing page redirect */}
+        <Route 
+          path="/landing" 
+          element={<Landing />} 
+        />
+        
+        {/* Signup - redirects to onboarding if authenticated */}
+        <Route 
+          path="/signup" 
+          element={authenticated ? <Navigate to="/onboarding" replace /> : <Store />} 
+        />
+        
+        {/* Login - handled by Keycloak */}
+        <Route 
+          path="/login" 
+          element={<LoginRedirect />} 
+        />
+        
+        <Route 
+          path="/newsletter" 
+          element={<NewsletterPage />} 
+        />
+        
+        {/* Onboarding - protected but separate from main app */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedOnboardingRoute>
+              <Onboarding />
+            </ProtectedOnboardingRoute>
+          }
+        />
+      
+      {/* Protected app routes */}
+      <Route
+        path="/app"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/connections"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Connections />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/reports"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Reports />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/reports/balance-sheet"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <BalanceSheet />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/reports/income-statement"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <IncomeStatement />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/reports/cash-flow"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CashFlowStatement />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/reports/trial-balance"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <TrialBalance />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/settings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Settings />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/anomalies"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AnomalyDashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/visualizations"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CustomDashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/board-meeting"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <BoardMeeting />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  );
+}
+
+export default App;

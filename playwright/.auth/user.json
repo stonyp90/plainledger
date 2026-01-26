@@ -1,0 +1,75 @@
+{
+  "cookies": [
+    {
+      "name": "AUTH_SESSION_ID",
+      "value": "f5dfe3c5-a5f9-4ffa-b478-ab333545178b",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "AUTH_SESSION_ID_LEGACY",
+      "value": "f5dfe3c5-a5f9-4ffa-b478-ab333545178b",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "KEYCLOAK_LOCALE",
+      "value": "en",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "KEYCLOAK_IDENTITY",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1Yjg3MmM2Zi1jOGI4LTQ5NjQtYjRlZi1iMWNlNDExNjNjYjQifQ.eyJleHAiOjE3Njk0MjkyMDIsImlhdCI6MTc2OTM5MzIwMiwianRpIjoiZWEyZWNkMGItOTc2Yi00ZTM0LTk2YTMtNTU1ZGY2MDNlOWNmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9wbGFpbmxlZGdlciIsInN1YiI6IjE1YzAwNjE2LTk4MGMtNGNjNi04ZTg1LWUxNTU3ZDJhYmQ4MSIsInR5cCI6IlNlcmlhbGl6ZWQtSUQiLCJzZXNzaW9uX3N0YXRlIjoiZjVkZmUzYzUtYTVmOS00ZmZhLWI0NzgtYWIzMzM1NDUxNzhiIiwic2lkIjoiZjVkZmUzYzUtYTVmOS00ZmZhLWI0NzgtYWIzMzM1NDUxNzhiIiwic3RhdGVfY2hlY2tlciI6IjJMMTgzVjBnWFBLcjBrTjZaSkY1T2w1eTVKQ3RsY1N0RWFuTDBSb2ZkMFUifQ.CU2GK28yQGDlxhWpCSg0yXiH-Z078zLcNhZKso_7uAE",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "KEYCLOAK_IDENTITY_LEGACY",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1Yjg3MmM2Zi1jOGI4LTQ5NjQtYjRlZi1iMWNlNDExNjNjYjQifQ.eyJleHAiOjE3Njk0MjkyMDIsImlhdCI6MTc2OTM5MzIwMiwianRpIjoiZWEyZWNkMGItOTc2Yi00ZTM0LTk2YTMtNTU1ZGY2MDNlOWNmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9wbGFpbmxlZGdlciIsInN1YiI6IjE1YzAwNjE2LTk4MGMtNGNjNi04ZTg1LWUxNTU3ZDJhYmQ4MSIsInR5cCI6IlNlcmlhbGl6ZWQtSUQiLCJzZXNzaW9uX3N0YXRlIjoiZjVkZmUzYzUtYTVmOS00ZmZhLWI0NzgtYWIzMzM1NDUxNzhiIiwic2lkIjoiZjVkZmUzYzUtYTVmOS00ZmZhLWI0NzgtYWIzMzM1NDUxNzhiIiwic3RhdGVfY2hlY2tlciI6IjJMMTgzVjBnWFBLcjBrTjZaSkY1T2w1eTVKQ3RsY1N0RWFuTDBSb2ZkMFUifQ.CU2GK28yQGDlxhWpCSg0yXiH-Z078zLcNhZKso_7uAE",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "KEYCLOAK_SESSION",
+      "value": "plainledger/15c00616-980c-4cc6-8e85-e1557d2abd81/f5dfe3c5-a5f9-4ffa-b478-ab333545178b",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": 1769429202.298651,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "KEYCLOAK_SESSION_LEGACY",
+      "value": "plainledger/15c00616-980c-4cc6-8e85-e1557d2abd81/f5dfe3c5-a5f9-4ffa-b478-ab333545178b",
+      "domain": "localhost",
+      "path": "/realms/plainledger/",
+      "expires": 1769429202.298658,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

@@ -1,0 +1,62 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_API_URL: string;
+  readonly VITE_APP_VERSION: string;
+  readonly VITE_KEYCLOAK_URL: string;
+  readonly VITE_KEYCLOAK_REALM: string;
+  readonly VITE_KEYCLOAK_CLIENT_ID: string;
+  readonly VITE_STRIPE_PUBLISHABLE_KEY: string;
+  readonly VITE_STRIPE_PORTAL_URL: string;
+  readonly VITE_POWERBI_ENABLED: string;
+  readonly VITE_POWERBI_EMBED_URL: string;
+  readonly VITE_POWERBI_REPORT_ID: string;
+  readonly VITE_POWERBI_GROUP_ID: string;
+  readonly VITE_POWERBI_CLIENT_ID: string;
+  readonly VITE_POWERBI_TENANT_ID: string;
+  readonly VITE_POWERBI_EMBED_MODE: string;
+  readonly VITE_POWERBI_HIDE_NAV: string;
+  readonly VITE_POWERBI_HIDE_FILTERS: string;
+  readonly VITE_POWERBI_CUSTOM_THEME: string;
+  readonly VITE_QUICKBOOKS_ENABLED: string;
+  readonly VITE_QUICKBOOKS_CLIENT_ID: string;
+  readonly VITE_QUICKBOOKS_ENV: string;
+  readonly VITE_XERO_ENABLED: string;
+  readonly VITE_XERO_CLIENT_ID: string;
+  readonly VITE_SAGE_ENABLED: string;
+  readonly VITE_SAGE_CLIENT_ID: string;
+  readonly VITE_SAGE_COUNTRY: string;
+  readonly VITE_FRESHBOOKS_ENABLED: string;
+  readonly VITE_FRESHBOOKS_CLIENT_ID: string;
+  readonly VITE_WAVE_ENABLED: string;
+  readonly VITE_DATALAKE_ENABLED: string;
+  readonly VITE_DATALAKE_PROVIDER: string;
+  readonly VITE_DATALAKE_BUCKET: string;
+  readonly VITE_DATALAKE_REGION: string;
+  readonly VITE_FEATURE_ANOMALY_DETECTION: string;
+  readonly VITE_FEATURE_AI: string;
+  readonly VITE_FEATURE_CUSTOM_REPORTS: string;
+  readonly VITE_FEATURE_MULTI_TENANT: string;
+  readonly VITE_FEATURE_AUDIT_LOGS: string;
+  readonly VITE_FEATURE_WEBHOOKS: string;
+  readonly VITE_BRANDING_LOGO: string;
+  readonly VITE_BRANDING_PRIMARY: string;
+  readonly VITE_BRANDING_ACCENT: string;
+  readonly VITE_BRANDING_FAVICON: string;
+  readonly VITE_ANALYTICS_ENABLED: string;
+  readonly VITE_ANALYTICS_PROVIDER: string;
+  readonly VITE_ANALYTICS_ID: string;
+  readonly VITE_SUPPORT_EMAIL: string;
+  readonly VITE_DOCS_URL: string;
+  readonly VITE_STATUS_URL: string;
+  readonly VITE_CRISP_ENABLED: string;
+  readonly VITE_CRISP_WEBSITE_ID: string;
+  readonly VITE_SEGMENT_WRITE_KEY: string;
+  readonly VITE_GA_MEASUREMENT_ID: string;
+  readonly VITE_MIXPANEL_TOKEN: string;
+  readonly VITE_HOTJAR_ID: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

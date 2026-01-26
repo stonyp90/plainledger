@@ -1,0 +1,52 @@
+<!-- Payment Failed Email Template -->
+<h1 class="email-title">Échec de paiement</h1>
+
+<p class="email-text">
+  Bonjour {{firstName}},
+</p>
+
+<p class="email-text">
+  Nous n'avons pas pu traiter votre paiement pour votre abonnement PlainLedger {{plan}}.
+</p>
+
+<div class="info-box danger">
+  <strong style="color: #991b1b;">Détails du paiement:</strong>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
+    <tr>
+      <td style="padding: 4px 0; color: #666; width: 140px;">Montant:</td>
+      <td style="padding: 4px 0; color: #1a1a1a; font-weight: 600;">{{amount}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #666;">Carte:</td>
+      <td style="padding: 4px 0; color: #1a1a1a;">•••• {{lastFour}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #666;">Raison:</td>
+      <td style="padding: 4px 0; color: #dc2626;">{{failureReason}}</td>
+    </tr>
+  </table>
+</div>
+
+<p class="email-text">
+  Pour éviter toute interruption de service, veuillez mettre à jour vos informations de paiement.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/settings?tab=billing" class="email-button">
+    Mettre à jour ma méthode de paiement
+  </a>
+</div>
+
+<div class="info-box warning">
+  <strong style="color: #92400e;">Important:</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+    Si votre paiement échoue à nouveau, votre compte sera rétrogradé au plan gratuit le {{downgradeDate}}.
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #888;">
+  Questions sur la facturation?<br>
+  <a href="mailto:billing@plainledger.ca" style="color: #1a1a1a;">billing@plainledger.ca</a>
+</p>
