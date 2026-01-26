@@ -222,7 +222,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Admin123!@#",
+          "value": "AdminPass123!@#",
           "temporary": false
         }
       ],
@@ -264,7 +264,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Demo123!@#",
+          "value": "DemoPass123!@#",
           "temporary": false
         }
       ],
