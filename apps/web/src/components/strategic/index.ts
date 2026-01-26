@@ -4,6 +4,7 @@
  * Export all strategic planning components
  */
 
+// Legacy components (kept for backward compatibility)
 export { default as GanttChart } from './GanttChart';
 export { default as RunwayTimeline } from './RunwayTimeline';
 export { default as ScenarioComparison } from './ScenarioComparison';
@@ -17,3 +18,10 @@ export { default as OKRPanel } from './OKRPanel';
 export { default as MultiScenarioChart } from './MultiScenarioChart';
 export { default as OpExCapExChart } from './OpExCapExChart';
 export { default as SmartSpreadsheet } from './SmartSpreadsheet';
+
+// New expense-focused components
+export { default as QuickMetrics } from './QuickMetrics';
+export { default as ExpenseTimeline } from './ExpenseTimeline';
+export { default as ExpenseCard } from './ExpenseCard';
+export { default as LiveCashChart } from './LiveCashChart';
+export { default as ExpenseDrawer } from './ExpenseDrawer';

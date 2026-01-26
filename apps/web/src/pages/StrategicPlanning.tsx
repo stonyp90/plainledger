@@ -1,45 +1,31 @@
 /**
- * Strategic Planning Page
+ * Strategic Planning Page (Strategix)
  * 
- * Executive-focused cashflow strategic planning dashboard
+ * Executive-focused expense planning tool for cash runway forecasting
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Settings, Save, Download, RefreshCw, Loader2, AlertTriangle, Maximize2, Minimize2, ChevronLeft, ChevronRight, X, LayoutGrid } from 'lucide-react';
+import { Plus, Save, Loader2, MessageSquare } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
-import { useTenant } from '../contexts/TenantContext';
 import {
   Scenario,
-  Initiative,
-  Assumption,
-  RunwayAnalysis,
-  CashForecast,
-  calculateRunwayAnalysis,
-  calculateCashForecast,
+  PlannedExpense,
+  calculateRunwayFromExpenses,
+  initiativeToExpense,
+  expenseToInitiative,
   createBaseScenario,
-  generatePlanningId,
 } from '../lib/strategicPlanning';
 import {
-  compareScenarios,
   createOptimisticScenario,
   createPessimisticScenario,
   cloneScenario,
 } from '../lib/scenarioEngine';
-import GanttChart from '../components/strategic/GanttChart';
-import RunwayTimeline from '../components/strategic/RunwayTimeline';
-import ScenarioComparison from '../components/strategic/ScenarioComparison';
-import BurnRateChart from '../components/strategic/BurnRateChart';
-import CashForecastChart from '../components/strategic/CashForecastChart';
-import MultiScenarioChart from '../components/strategic/MultiScenarioChart';
-import OpExCapExChart from '../components/strategic/OpExCapExChart';
-import SmartSpreadsheet from '../components/strategic/SmartSpreadsheet';
-import InitiativeEditor from '../components/strategic/InitiativeEditor';
-import AssumptionPanel from '../components/strategic/AssumptionPanel';
-import AISuggestions from '../components/strategic/AISuggestions';
+import QuickMetrics from '../components/strategic/QuickMetrics';
+import ExpenseTimeline from '../components/strategic/ExpenseTimeline';
+import LiveCashChart from '../components/strategic/LiveCashChart';
+import ExpenseDrawer from '../components/strategic/ExpenseDrawer';
 import JamesChatbot from '../components/strategic/JamesChatbot';
-import OKRPanel from '../components/strategic/OKRPanel';
-import { OKR } from '../lib/okrTypes';
 import { FinancialContext } from '../lib/jamesPrompts';
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
@@ -47,19 +33,23 @@ const STORAGE_KEY = 'plainledger-strategic-planning';
 export default function StrategicPlanning() {
   const { language } = useI18n();
   const isEn = language === 'en';
-  const { currentTenant } = useTenant();
-  const { data: financialData, isLoading: dataLoading, refresh } = useFinancialData();
+  const { data: financialData, isLoading: dataLoading } = useFinancialData();
+  
 
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
-  const [showInitiativeEditor, setShowInitiativeEditor] = useState(false);
-  const [editingInitiative, setEditingInitiative] = useState<Initiative | null>(null);
+  const [expenses, setExpenses] = useState<PlannedExpense[]>([]);
+  const [showExpenseDrawer, setShowExpenseDrawer] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<PlannedExpense | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [compactMode, setCompactMode] = useState(false);
   const [jamesOpen, setJamesOpen] = useState(false);
-  const [okrs, setOKRs] = useState<OKR[]>([]);
+
+  // Demo financial data for when no real data is available
+  const DEMO_FINANCIAL = {
+    currentCash: 850000,
+    monthlyRevenue: 120000,
+    monthlyExpenses: 145000,
+  };
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -69,24 +59,22 @@ export default function StrategicPlanning() {
         const data = JSON.parse(stored);
         setScenarios(data.scenarios || []);
         setActiveScenarioId(data.activeScenarioId || null);
-        setOKRs(data.okrs || []);
+        
+        // Convert initiatives to expenses
+        const activeScenario = data.scenarios?.find((s: Scenario) => s.id === data.activeScenarioId);
+        if (activeScenario?.initiatives) {
+          const convertedExpenses = activeScenario.initiatives.map(initiativeToExpense);
+          setExpenses(convertedExpenses);
+        }
       }
     } catch (error) {
       console.error('Failed to load strategic planning data:', error);
     }
   }, []);
 
-  // Demo financial data for when no real data is available
-  const DEMO_FINANCIAL = {
-    currentCash: 850000,
-    monthlyRevenue: 120000,
-    monthlyExpenses: 145000,
-  };
-
   // Initialize with base scenario if none exists
   useEffect(() => {
     if (scenarios.length === 0 && !dataLoading) {
-      // Use real data if available, otherwise use demo data
       const hasRealData = financialData && (
         financialData.summary?.cashBalance > 0 ||
         financialData.metrics?.revenue > 0 ||
@@ -104,21 +92,45 @@ export default function StrategicPlanning() {
       const newScenarios = [base, optimistic, pessimistic];
       setScenarios(newScenarios);
       setActiveScenarioId(base.id);
-      saveToStorage(newScenarios, base.id);
+      setExpenses([]);
+      saveToStorage(newScenarios, base.id, []);
     }
   }, [scenarios.length, financialData, dataLoading]);
 
-  const saveToStorage = useCallback((scenariosToSave: Scenario[], activeId: string | null, okrsToSave?: OKR[]) => {
+  // Sync expenses when active scenario changes
+  useEffect(() => {
+    if (activeScenarioId && activeScenario) {
+      const convertedExpenses = activeScenario.initiatives.map(initiativeToExpense);
+      setExpenses(convertedExpenses);
+    }
+  }, [activeScenarioId, activeScenario]);
+
+  const saveToStorage = useCallback((scenariosToSave: Scenario[], activeId: string | null, expensesToSave: PlannedExpense[]) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        scenarios: scenariosToSave,
-        activeScenarioId: activeId,
-        okrs: okrsToSave !== undefined ? okrsToSave : okrs,
-      }));
+      // Convert expenses back to initiatives for storage
+      const activeScenario = scenariosToSave.find(s => s.id === activeId);
+      if (activeScenario) {
+        const updatedScenario = {
+          ...activeScenario,
+          initiatives: expensesToSave.map(expenseToInitiative),
+          updatedAt: new Date().toISOString(),
+        };
+        const updatedScenarios = scenariosToSave.map(s => s.id === activeId ? updatedScenario : s);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          scenarios: updatedScenarios,
+          activeScenarioId: activeId,
+        }));
+      } else {
+        // If no active scenario found, just save scenarios as-is
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          scenarios: scenariosToSave,
+          activeScenarioId: activeId,
+        }));
+      }
     } catch (error) {
       console.error('Failed to save strategic planning data:', error);
     }
-  }, [okrs]);
+  }, []);
 
   const activeScenario = scenarios.find(s => s.id === activeScenarioId) || scenarios[0];
   const hasRealData = financialData && (
@@ -127,224 +139,124 @@ export default function StrategicPlanning() {
   );
   const currentCash = hasRealData ? (financialData.summary?.cashBalance || 0) : DEMO_FINANCIAL.currentCash;
   const currentDate = new Date();
-
-  // Calculate runway and forecast for active scenario
-  const runwayAnalysis = useMemo(() => {
-    if (!activeScenario) return null;
-    
-    const historicalCash = financialData?.trends?.cashBalance?.map((point: any) => ({
-      date: point.date,
-      cash: point.value,
-    })) || [];
-
-    return calculateRunwayAnalysis(
-      currentCash,
-      currentDate,
-      activeScenario.initiatives,
-      activeScenario.assumptions,
-      historicalCash
+  
+  // Get base revenue from assumptions
+  const baseRevenue = useMemo(() => {
+    if (!activeScenario || !activeScenario.assumptions) return 0;
+    const revenueAssumption = activeScenario.assumptions.find(a => 
+      a.category === 'revenue' && (a.nameEn === 'Monthly Revenue' || a.name === 'Revenus mensuels')
     );
-  }, [activeScenario, currentCash, currentDate, financialData]);
+    return revenueAssumption?.scenarioValue || 0;
+  }, [activeScenario]);
 
-  const cashForecast = useMemo(() => {
-    if (!activeScenario) return null;
-    
-    return calculateCashForecast(
-      currentCash,
-      currentDate,
-      activeScenario.initiatives,
-      activeScenario.assumptions,
-      24
-    );
-  }, [activeScenario, currentCash, currentDate]);
-
-  // Prepare scenario comparison data
-  const scenarioComparisonData = useMemo(() => {
-    if (scenarios.length === 0) return null;
-    
-    const historicalCash = financialData?.trends?.cashBalance?.map((point: any) => ({
-      date: point.date,
-      cash: point.value,
-    })) || [];
-
-    return scenarios.map(scenario => ({
-      scenario,
-      runway: calculateRunwayAnalysis(
-        currentCash,
-        currentDate,
-        scenario.initiatives,
-        scenario.assumptions,
-        historicalCash
-      ),
-      forecast: calculateCashForecast(
-        currentCash,
-        currentDate,
-        scenario.initiatives,
-        scenario.assumptions,
-        24
-      ),
-    }));
-  }, [scenarios, currentCash, currentDate, financialData]);
-
-  // Prepare burn rate data
-  const burnRateData = useMemo(() => {
-    const historical = financialData?.trends?.cashBalance?.map((point: any, index: number, arr: any[]) => {
-      const prevPoint = arr[index - 1];
-      const monthlyBurn = prevPoint ? prevPoint.value - point.value : 0;
+  // Calculate runway from expenses (or base assumptions if no expenses)
+  const runwayData = useMemo(() => {
+    if (!activeScenario) {
+      // Default values if no scenario
       return {
-        date: point.date,
-        grossBurn: financialData.metrics?.expenses || 0,
-        netBurn: monthlyBurn,
-        revenue: financialData.metrics?.revenue || 0,
-        expenses: financialData.metrics?.expenses || 0,
+        runwayMonths: Infinity,
+        zeroDate: new Date(currentDate.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        monthlyBurnRate: 0,
+        projectedCashByMonth: [],
       };
-    }) || [];
-
-    const projected = cashForecast?.projected.map(point => ({
-      date: point.date,
-      grossBurn: point.expenses,
-      netBurn: point.expenses - point.revenue,
-      revenue: point.revenue,
-      expenses: point.expenses,
-      isProjected: true,
-    })) || [];
-
-    return { historical, projected };
-  }, [financialData, cashForecast]);
-
-  // Fullscreen toggle - MUST be before any early returns
-  const toggleFullscreen = useCallback(() => {
-    if (!isFullscreen) {
-      document.documentElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
     }
-  }, [isFullscreen]);
 
-  // Handle fullscreen change events and keyboard shortcuts - MUST be before any early returns
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    if (expenses.length > 0) {
+      return calculateRunwayFromExpenses(currentCash, currentDate, expenses, baseRevenue, 24);
+    }
     
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // F11 for fullscreen
-      if (e.key === 'F11') {
-        e.preventDefault();
-        toggleFullscreen();
-      }
-      // Escape to exit fullscreen
-      if (e.key === 'Escape' && document.fullscreenElement) {
-        document.exitFullscreen?.();
-      }
-    };
+    // If no expenses, calculate from base assumptions
+    const baseExpenses = activeScenario.assumptions?.find(a => 
+      a.category === 'expense' && (a.nameEn === 'Monthly Expenses' || a.name === 'Dépenses mensuelles')
+    )?.scenarioValue || 0;
     
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('keydown', handleKeyDown);
+    const monthlyBurnRate = baseExpenses - baseRevenue;
+    const runwayMonths = monthlyBurnRate > 0 ? currentCash / monthlyBurnRate : Infinity;
+    const zeroDate = monthlyBurnRate > 0 
+      ? new Date(currentDate.getTime() + runwayMonths * 30 * 24 * 60 * 60 * 1000).toISOString()
+      : new Date(currentDate.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
     
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('keydown', handleKeyDown);
+    // Generate projected cash by month
+    const projectedCashByMonth = [];
+    let runningCash = currentCash;
+    for (let i = 0; i < 24; i++) {
+      const monthDate = new Date(currentDate);
+      monthDate.setMonth(monthDate.getMonth() + i);
+      runningCash += baseRevenue - baseExpenses;
+      projectedCashByMonth.push({
+        date: monthDate.toISOString(),
+        cash: Math.max(0, runningCash),
+        burn: baseExpenses - baseRevenue,
+      });
+      if (runningCash <= 0 && i > 0) break;
+    }
+    
+    return {
+      runwayMonths,
+      zeroDate,
+      monthlyBurnRate: Math.abs(monthlyBurnRate),
+      projectedCashByMonth,
     };
-  }, [toggleFullscreen]);
+  }, [currentCash, currentDate, expenses, baseRevenue, activeScenario]);
+
+  // Handle expense updates
+  const handleExpenseUpdate = useCallback((expense: PlannedExpense) => {
+    const updated = expenses.map(e => e.id === expense.id ? expense : e);
+    setExpenses(updated);
+    saveToStorage(scenarios, activeScenarioId, updated);
+  }, [expenses, scenarios, activeScenarioId, saveToStorage]);
+
+  const handleExpenseAdd = useCallback((expense: PlannedExpense) => {
+    const updated = [...expenses, expense];
+    setExpenses(updated);
+    saveToStorage(scenarios, activeScenarioId, updated);
+    setEditingExpense(expense);
+    setShowExpenseDrawer(true);
+  }, [expenses, scenarios, activeScenarioId, saveToStorage]);
+
+  const handleExpenseDelete = useCallback((expenseId: string) => {
+    const updated = expenses.filter(e => e.id !== expenseId);
+    setExpenses(updated);
+    saveToStorage(scenarios, activeScenarioId, updated);
+    setShowExpenseDrawer(false);
+    setEditingExpense(null);
+  }, [expenses, scenarios, activeScenarioId, saveToStorage]);
+
+  const handleExpenseDuplicate = useCallback((expense: PlannedExpense) => {
+    const duplicated = {
+      ...expense,
+      id: `expense-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: `${expense.name} (copie)`,
+      nameEn: `${expense.nameEn} (copy)`,
+    };
+    handleExpenseAdd(duplicated);
+  }, [handleExpenseAdd]);
 
   const handleSaveScenario = () => {
     setIsSaving(true);
     setTimeout(() => {
-      saveToStorage(scenarios, activeScenarioId);
+      saveToStorage(scenarios, activeScenarioId, expenses);
       setIsSaving(false);
     }, 500);
   };
 
-  const handleInitiativeSave = (initiative: Initiative) => {
-    const updatedScenarios = scenarios.map(scenario => {
-      if (scenario.id === activeScenarioId) {
-        const existingIndex = scenario.initiatives.findIndex(i => i.id === initiative.id);
-        const updatedInitiatives = existingIndex >= 0
-          ? scenario.initiatives.map((i, idx) => idx === existingIndex ? initiative : i)
-          : [...scenario.initiatives, initiative];
-        
-        return {
-          ...scenario,
-          initiatives: updatedInitiatives,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return scenario;
-    });
-    
-    setScenarios(updatedScenarios);
-    setShowInitiativeEditor(false);
-    setEditingInitiative(null);
-    saveToStorage(updatedScenarios, activeScenarioId);
-  };
-
-  const handleInitiativeDelete = (initiativeId: string) => {
-    const updatedScenarios = scenarios.map(scenario => {
-      if (scenario.id === activeScenarioId) {
-        return {
-          ...scenario,
-          initiatives: scenario.initiatives.filter(i => i.id !== initiativeId),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return scenario;
-    });
-    
-    setScenarios(updatedScenarios);
-    setShowInitiativeEditor(false);
-    setEditingInitiative(null);
-    saveToStorage(updatedScenarios, activeScenarioId);
-  };
-
-  const handleAssumptionsUpdate = (assumptions: Assumption[]) => {
-    const updatedScenarios = scenarios.map(scenario => {
-      if (scenario.id === activeScenarioId) {
-        return {
-          ...scenario,
-          assumptions,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return scenario;
-    });
-    
-    setScenarios(updatedScenarios);
-    saveToStorage(updatedScenarios, activeScenarioId);
-  };
-
-  const handleScenarioReorder = (scenarioIds: string[]) => {
-    const reordered = scenarioIds
-      .map(id => scenarios.find(s => s.id === id))
-      .filter(Boolean) as Scenario[];
-    
-    setScenarios(reordered);
-    saveToStorage(reordered, activeScenarioId);
-  };
-
-  const handleSetBaseScenario = (scenarioId: string) => {
-    setActiveScenarioId(scenarioId);
-    saveToStorage(scenarios, scenarioId);
-  };
-
-  const handleDuplicateScenario = (scenarioId: string) => {
-    const scenario = scenarios.find(s => s.id === scenarioId);
-    if (!scenario) return;
-    
-    const duplicated = cloneScenario(scenario, {
-      name: `${scenario.name} (copie)`,
-      nameEn: `${scenario.nameEn} (copy)`,
-    });
-    
-    const updated = [...scenarios, duplicated];
-    setScenarios(updated);
-    saveToStorage(updated, activeScenarioId);
-  };
-
   const handleCreateScenario = () => {
-    if (!activeScenario) return;
+    const baseScenario = activeScenario || scenarios[0];
+    if (!baseScenario) {
+      // Create a new base scenario if none exists
+      const cashToUse = currentCash;
+      const revenueToUse = baseRevenue;
+      const expensesToUse = runwayData.monthlyBurnRate + revenueToUse;
+      const newBase = createBaseScenario(cashToUse, revenueToUse, expensesToUse);
+      const updated = [newBase];
+      setScenarios(updated);
+      setActiveScenarioId(newBase.id);
+      setExpenses([]);
+      saveToStorage(updated, newBase.id, []);
+      return;
+    }
     
-    const newScenario = cloneScenario(activeScenario, {
+    const newScenario = cloneScenario(baseScenario, {
       name: 'Nouveau scénario',
       nameEn: 'New Scenario',
       type: 'custom',
@@ -353,88 +265,26 @@ export default function StrategicPlanning() {
     const updated = [...scenarios, newScenario];
     setScenarios(updated);
     setActiveScenarioId(newScenario.id);
-    saveToStorage(updated, newScenario.id);
+    setExpenses([]);
+    saveToStorage(updated, newScenario.id, []);
   };
-
-  // Handle initiatives generated by James AI
-  const handleInitiativesGenerated = (initiatives: Initiative[]) => {
-    if (!activeScenario) return;
-    
-    const updatedScenarios = scenarios.map(scenario => {
-      if (scenario.id === activeScenarioId) {
-        return {
-          ...scenario,
-          initiatives: [...scenario.initiatives, ...initiatives],
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return scenario;
-    });
-    
-    setScenarios(updatedScenarios);
-    saveToStorage(updatedScenarios, activeScenarioId);
-    
-    // Show initiative editor for the first generated initiative
-    if (initiatives.length > 0) {
-      setEditingInitiative(initiatives[0]);
-      setShowInitiativeEditor(true);
-    }
-  };
-
-  // Handle OKR generated by James AI
-  const handleOKRGenerated = useCallback((okr: OKR) => {
-    const newOKRs = [...okrs, okr];
-    setOKRs(newOKRs);
-    // Save to localStorage
-    saveToStorage(scenarios, activeScenarioId, newOKRs);
-  }, [okrs, scenarios, activeScenarioId, saveToStorage]);
 
   // Build financial context for James AI
-  // Use demo data when no real financial data is available
   const financialContext: FinancialContext = useMemo(() => {
-    // Demo data for development/testing
-    const DEMO_DATA = {
-      currentCash: 850000,
-      monthlyRevenue: 120000,
-      monthlyExpenses: 145000,
-      runwayMonths: 34,
-      burnRate: 25000,
-    };
-
-    const actualCash = runwayAnalysis?.currentCash || currentCash;
-    const actualRevenue = financialData?.metrics?.revenue || 0;
-    const actualExpenses = financialData?.metrics?.expenses || 0;
-    const actualBurn = runwayAnalysis?.monthlyBurnRate || 0;
-
-    // Use demo data if all values are 0 (no real data loaded)
-    const useDemo = actualCash === 0 && actualRevenue === 0 && actualExpenses === 0;
-
-    if (useDemo) {
-      return {
-        ...DEMO_DATA,
-        zeroDate: new Date(Date.now() + DEMO_DATA.runwayMonths * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      };
-    }
-
-    if (!runwayAnalysis) {
-      return {
-        currentCash: actualCash,
-        monthlyRevenue: actualRevenue,
-        monthlyExpenses: actualExpenses,
-        runwayMonths: Infinity,
-        burnRate: 0,
-      };
-    }
+    const actualCash = currentCash;
+    const actualRevenue = baseRevenue;
+    const actualBurn = runwayData?.monthlyBurnRate || 0;
+    const runwayMonths = runwayData?.runwayMonths || Infinity;
 
     return {
-      currentCash: runwayAnalysis.currentCash,
+      currentCash: actualCash,
       monthlyRevenue: actualRevenue,
-      monthlyExpenses: actualExpenses,
-      runwayMonths: runwayAnalysis.runwayMonths,
-      zeroDate: runwayAnalysis.zeroDate,
-      burnRate: runwayAnalysis.monthlyBurnRate,
+      monthlyExpenses: actualBurn + actualRevenue,
+      runwayMonths,
+      zeroDate: runwayData?.zeroDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      burnRate: actualBurn,
     };
-  }, [runwayAnalysis, currentCash, financialData]);
+  }, [currentCash, baseRevenue, runwayData]);
 
   if (dataLoading) {
     return (
@@ -447,336 +297,173 @@ export default function StrategicPlanning() {
     );
   }
 
-  if (!activeScenario || !runwayAnalysis || !cashForecast) {
+
+  // Show loading while scenarios are being initialized
+  if (dataLoading || (!activeScenario && scenarios.length === 0)) {
     return (
-      <div className="card p-8 text-center">
+      <div className="card p-8 text-center" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-        <h3 className="font-semibold text-lg mb-2">{isEn ? 'Initializing...' : 'Initialisation...'}</h3>
-        <p className="text-muted mb-4">
-          {isEn ? 'Setting up strategic planning workspace.' : 'Configuration de l\'espace de planification stratégique.'}
+        <h3 className="font-semibold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Initializing...' : 'Initialisation...'}</h3>
+        <p className="text-muted mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? 'Setting up expense planning workspace.' : 'Configuration de l\'espace de planification des dépenses.'}
         </p>
       </div>
     );
   }
 
-  return (
-    <div 
-      className={`transition-all duration-300 ${
-        isFullscreen ? 'fixed inset-0 z-50 overflow-auto' : ''
-      } ${
-        compactMode ? 'space-y-3 sm:space-y-4' : 'space-y-4 sm:space-y-6'
-      }`}
-      style={{
-        backgroundColor: isFullscreen ? 'rgb(var(--color-bg-subtle))' : 'transparent',
-        padding: isFullscreen ? (compactMode ? '1rem' : '1.5rem') : undefined,
-      }}
-    >
-      {/* Enhanced Header with Logo and Controls */}
-      <div 
-        className={`card p-3 sm:p-4 md:p-6 transition-all ${
-          isFullscreen ? 'sticky top-0 z-10 shadow-xl mb-4 sm:mb-6' : ''
-        }`}
-        style={{
-          background: isFullscreen 
-            ? 'linear-gradient(135deg, rgb(var(--color-primary-700)) 0%, rgb(var(--color-primary-800)) 100%)'
-            : undefined,
-          border: isFullscreen ? 'none' : undefined,
-        }}
-      >
-        <div className="flex flex-col gap-3 sm:gap-4">
-          {/* Top Row: Logo + Title */}
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-            {/* Logo */}
-            <div 
-              className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 transition-transform active:scale-95"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 4px 12px rgb(var(--color-primary-500) / 0.4)'
-              }}
-            >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h1 
-                className="text-lg sm:text-xl md:text-2xl font-bold truncate" 
-                style={{ color: isFullscreen ? 'white' : 'rgb(var(--color-text))' }}
-              >
-                {isEn ? 'Strategic Planning' : 'Planification stratégique'}
-              </h1>
-              <p 
-                className="text-xs sm:text-sm mt-0.5 line-clamp-1" 
-                style={{ color: isFullscreen ? 'rgba(255,255,255,0.8)' : 'rgb(var(--color-text-muted))' }}
-              >
-                {isEn ? 'Cashflow strategy and runway analysis' : 'Stratégie de trésorerie et analyse de l\'autonomie'}
-              </p>
-            </div>
-          </div>
-          
-          {/* Bottom Row: Controls - Stack on mobile */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
-            {/* Scenario Selector - Full width on mobile */}
-            <select
-              value={activeScenarioId || ''}
-              onChange={(e) => {
-                setActiveScenarioId(e.target.value);
-                saveToStorage(scenarios, e.target.value);
-              }}
-              className="w-full sm:w-auto px-3 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-all min-h-[44px] touch-manipulation"
-              style={{
-                backgroundColor: isFullscreen ? 'rgba(255,255,255,0.15)' : 'rgb(var(--color-bg-muted))',
-                color: isFullscreen ? 'white' : 'rgb(var(--color-text))',
-                border: isFullscreen ? '1px solid rgba(255,255,255,0.2)' : 'none',
-              }}
-            >
-              {scenarios.map(scenario => (
-                <option key={scenario.id} value={scenario.id} style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? scenario.nameEn : scenario.name}
-                </option>
-              ))}
-            </select>
-            
-            {/* Action Buttons - Flex row on mobile, wrap */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={handleCreateScenario}
-                className="flex-1 sm:flex-none px-3 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-95 min-h-[44px] touch-manipulation"
-                style={{
-                  backgroundColor: isFullscreen ? 'rgba(255,255,255,0.2)' : 'rgb(var(--color-primary-500))',
-                  color: 'white',
-                  boxShadow: isFullscreen ? 'none' : '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
-                }}
-              >
-                <Plus className="w-4 h-4 flex-shrink-0" />
-                <span>{isEn ? 'New' : 'Nouveau'}</span>
-              </button>
-              
-              <button
-                onClick={handleSaveScenario}
-                disabled={isSaving}
-                className="flex-1 sm:flex-none px-3 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-95 disabled:opacity-50 min-h-[44px] touch-manipulation"
-                style={{
-                  backgroundColor: isFullscreen ? 'rgba(16, 185, 129, 0.3)' : 'rgb(var(--color-success))',
-                  color: 'white',
-                  boxShadow: isFullscreen ? 'none' : '0 2px 8px rgb(var(--color-success) / 0.3)',
-                }}
-              >
-                <Save className={`w-4 h-4 flex-shrink-0 ${isSaving ? 'animate-spin' : ''}`} />
-                <span>{isEn ? 'Save' : 'Enregistrer'}</span>
-              </button>
-
-              {/* Compact Mode Toggle - Hide text on mobile */}
-              <button
-                onClick={() => setCompactMode(!compactMode)}
-                className={`px-3 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-95 min-h-[44px] touch-manipulation ${
-                  compactMode ? '' : ''
-                }`}
-                style={{
-                  backgroundColor: compactMode 
-                    ? (isFullscreen ? 'rgba(255,255,255,0.2)' : 'rgb(var(--color-primary-500) / 0.1)')
-                    : (isFullscreen ? 'rgba(255,255,255,0.1)' : 'rgb(var(--color-bg-muted))'),
-                  color: isFullscreen ? 'white' : 'rgb(var(--color-text))',
-                }}
-                title={isEn ? (compactMode ? 'Normal spacing' : 'Compact spacing') : (compactMode ? 'Espacement normal' : 'Espacement compact')}
-              >
-                <LayoutGrid className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden md:inline">{isEn ? 'Compact' : 'Compact'}</span>
-              </button>
-
-              {/* Fullscreen Toggle - Hide text on mobile */}
-              <button
-                onClick={toggleFullscreen}
-                className="px-3 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-95 min-h-[44px] touch-manipulation"
-                style={{
-                  backgroundColor: isFullscreen ? 'rgba(255,255,255,0.2)' : 'rgb(var(--color-bg-muted))',
-                  color: isFullscreen ? 'white' : 'rgb(var(--color-text))',
-                }}
-                title={isEn ? (isFullscreen ? 'Exit Fullscreen (Esc)' : 'Enter Fullscreen (F11)') : (isFullscreen ? 'Quitter plein écran (Esc)' : 'Plein écran (F11)')}
-              >
-                {isFullscreen ? <Minimize2 className="w-4 h-4 flex-shrink-0" /> : <Maximize2 className="w-4 h-4 flex-shrink-0" />}
-                <span className="hidden md:inline">{isEn ? (isFullscreen ? 'Exit' : 'Fullscreen') : (isFullscreen ? 'Quitter' : 'Plein écran')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+  // If still no activeScenario but we have scenarios, use the first one
+  const displayScenario = activeScenario || scenarios[0];
+  if (!displayScenario) {
+    return (
+      <div className="card p-8 text-center" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <p className="text-muted" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'No scenario available' : 'Aucun scénario disponible'}</p>
       </div>
+    );
+  }
 
-      {/* AI Suggestions */}
-      {runwayAnalysis && (
-        <AISuggestions
-          scenarios={scenarios}
-          activeScenarioId={activeScenarioId}
-          runwayAnalysis={runwayAnalysis}
-        />
-      )}
+  // Ensure we have runwayData
+  if (!runwayData) {
+    return (
+      <div className="card p-8 text-center">
+        <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <h3 className="font-semibold text-lg mb-2">{isEn ? 'Calculating...' : 'Calcul en cours...'}</h3>
+      </div>
+    );
+  }
 
-      {/* Runway Summary */}
-      {runwayAnalysis && (
-        <div className={isFullscreen ? 'mb-6' : ''}>
-          <RunwayTimeline
-            runway={runwayAnalysis}
-            milestones={activeScenario.initiatives.flatMap(i => i.milestones)}
-            currentDate={currentDate}
-          />
-        </div>
-      )}
-
-      {/* Strategic Initiatives Gantt */}
-      <div className={`card transition-all ${
-        compactMode 
-          ? (isFullscreen ? 'p-4' : 'p-3 sm:p-4')
-          : (isFullscreen ? 'p-8' : 'p-3 sm:p-4 md:p-6')
-      }`}>
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-base sm:text-lg md:text-xl font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Strategic Initiatives' : 'Initiatives stratégiques'}
-            </h2>
-            <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Drag bars to adjust timelines • Tap to edit' : 'Glisser les barres pour ajuster • Appuyer pour modifier'}
+  return (
+    <div className="space-y-4 sm:space-y-6" style={{ minHeight: '100vh', padding: '1rem' }}>
+      {/* Header */}
+      <div className="card p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Strategix' : 'Strategix'}
+            </h1>
+            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Executive Expense Planning' : 'Planification des dépenses exécutives'}
             </p>
           </div>
-          <button
-            onClick={() => {
-              setEditingInitiative(null);
-              setShowInitiativeEditor(true);
-            }}
-            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-95 min-h-[44px] touch-manipulation"
-            style={{
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white',
-              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
-            }}
-          >
-            <Plus className="w-4 h-4 flex-shrink-0" />
-            <span>{isEn ? 'Add Initiative' : 'Ajouter initiative'}</span>
-          </button>
-        </div>
-        
-        <div className={isFullscreen ? 'p-4' : ''}>
-          <GanttChart
-            initiatives={activeScenario.initiatives}
-            startDate={new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1)}
-            endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 18, 0)}
-            onInitiativeUpdate={handleInitiativeSave}
-            onInitiativeAdd={handleInitiativeSave}
-            onInitiativeDelete={handleInitiativeDelete}
-            onInitiativeClick={(initiative) => {
-              setEditingInitiative(initiative);
-              setShowInitiativeEditor(true);
-            }}
-            viewMode="month"
-          />
-        </div>
-      </div>
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            {scenarios.length > 0 && (
+              <select
+                value={activeScenarioId || scenarios[0]?.id || ''}
+                onChange={(e) => {
+                  setActiveScenarioId(e.target.value);
+                  const scenario = scenarios.find(s => s.id === e.target.value);
+                  if (scenario) {
+                    setExpenses((scenario.initiatives || []).map(initiativeToExpense));
+                  }
+                  saveToStorage(scenarios, e.target.value, expenses);
+                }}
+                className="px-3 py-2 rounded-lg text-sm font-medium"
+                style={{
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text))',
+                }}
+              >
+                {scenarios.map(scenario => (
+                  <option key={scenario.id} value={scenario.id}>
+                    {isEn ? scenario.nameEn : scenario.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            
+            <button
+              onClick={handleCreateScenario}
+              className="px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
+              style={{
+                backgroundColor: 'rgb(var(--color-primary-500))',
+                color: 'white',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              <span>{isEn ? 'New' : 'Nouveau'}</span>
+            </button>
+            
+            <button
+              onClick={handleSaveScenario}
+              disabled={isSaving}
+              className="px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+              style={{
+                backgroundColor: 'rgb(var(--color-success))',
+                color: 'white',
+              }}
+            >
+              <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+              <span>{isEn ? 'Save' : 'Enregistrer'}</span>
+            </button>
 
-      {/* Charts Row */}
-      <div className={`grid grid-cols-1 ${isFullscreen ? 'xl:grid-cols-2' : 'lg:grid-cols-2'} gap-4 sm:gap-6`}>
-        {/* Burn Rate Chart */}
-        {burnRateData && (
-          <div className={isFullscreen ? (compactMode ? 'card p-4' : 'card p-6') : ''}>
-            <BurnRateChart
-              historical={burnRateData.historical}
-              projected={burnRateData.projected}
-            />
+            <button
+              onClick={() => setJamesOpen(!jamesOpen)}
+              className="px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
+              style={{
+                backgroundColor: jamesOpen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
+                color: jamesOpen ? 'white' : 'rgb(var(--color-text))',
+              }}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">{isEn ? 'AI Assistant' : 'Assistant IA'}</span>
+            </button>
           </div>
-        )}
-
-        {/* Cash Forecast Chart */}
-        {cashForecast && (
-          <div className={isFullscreen ? (compactMode ? 'card p-4' : 'card p-6') : ''}>
-            <CashForecastChart
-              forecast={cashForecast}
-              currentCash={currentCash}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Multi-Scenario Chart - All scenarios on one chart */}
-      {scenarios.length > 1 && (
-        <MultiScenarioChart
-          scenarios={scenarios}
-          currentCash={currentCash}
-          currentDate={currentDate}
-          months={24}
-          activeScenarioId={activeScenarioId}
-          onScenarioSelect={(scenario) => setActiveScenarioId(scenario.id)}
-        />
-      )}
-
-      {/* Detailed Scenario Comparison Table */}
-      {scenarioComparisonData && scenarioComparisonData.length > 1 && (
-        <div className={isFullscreen ? 'mb-6' : ''}>
-          <ScenarioComparison
-            scenarios={scenarioComparisonData}
-            baseScenarioId={activeScenarioId || ''}
-            onSetBase={handleSetBaseScenario}
-            onReorder={handleScenarioReorder}
-            onDuplicate={handleDuplicateScenario}
-            maxScenarios={4}
-          />
         </div>
-      )}
-
-      {/* OpEx/CapEx Projection Chart */}
-      <OpExCapExChart />
-
-      {/* Smart Spreadsheet for Custom Calculations */}
-      <div className="mt-6">
-        <SmartSpreadsheet />
       </div>
 
-      {/* Assumptions Panel */}
-      <div className={`card transition-all ${
-        compactMode 
-          ? (isFullscreen ? 'p-4' : 'p-3 sm:p-4')
-          : (isFullscreen ? 'p-8' : 'p-4 sm:p-6')
-      }`}>
-        <AssumptionPanel
-          assumptions={activeScenario.assumptions}
-          onUpdate={handleAssumptionsUpdate}
-        />
-      </div>
+      {/* Quick Metrics */}
+      <QuickMetrics
+        cash={currentCash}
+        burnRate={runwayData.monthlyBurnRate}
+        runwayMonths={runwayData.runwayMonths}
+        zeroDate={runwayData.zeroDate}
+      />
 
-      {/* OKR Panel */}
-      {okrs.length > 0 && (
-        <div className={`card transition-all ${
-          compactMode 
-            ? (isFullscreen ? 'p-4' : 'p-3 sm:p-4')
-            : (isFullscreen ? 'p-8' : 'p-4 sm:p-6')
-        }`}>
-          <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'OKRs' : 'OKR'}
-          </h2>
-          <OKRPanel
-            okrs={okrs}
-            initiatives={activeScenario.initiatives}
-            onUpdate={(okr) => {
-              setOKRs(okrs.map(o => o.id === okr.id ? okr : o));
-            }}
-            onDelete={(okrId) => {
-              setOKRs(okrs.filter(o => o.id !== okrId));
-            }}
-          />
-        </div>
-      )}
-
-      {/* Initiative Editor Modal */}
-      {showInitiativeEditor && (
-        <InitiativeEditor
-          initiative={editingInitiative || undefined}
-          onSave={handleInitiativeSave}
-          onCancel={() => {
-            setShowInitiativeEditor(false);
-            setEditingInitiative(null);
+      {/* Expense Timeline */}
+      <div className="card p-4 sm:p-6">
+        <ExpenseTimeline
+          expenses={expenses}
+          startDate={new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1)}
+          endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 18, 0)}
+          onExpenseUpdate={handleExpenseUpdate}
+          onExpenseClick={(expense) => {
+            setEditingExpense(expense);
+            setShowExpenseDrawer(true);
           }}
-          onDelete={editingInitiative ? handleInitiativeDelete : undefined}
+          onExpenseAdd={handleExpenseAdd}
+          viewMode="month"
         />
-      )}
+      </div>
+
+      {/* Live Cash Chart */}
+      <LiveCashChart
+        currentCash={currentCash}
+        currentDate={currentDate}
+        expenses={expenses}
+        baseRevenue={baseRevenue}
+        months={24}
+      />
+
+      {/* Expense Drawer */}
+      <ExpenseDrawer
+        expense={editingExpense || undefined}
+        isOpen={showExpenseDrawer}
+        onSave={(expense) => {
+          if (editingExpense) {
+            handleExpenseUpdate(expense);
+          } else {
+            handleExpenseAdd(expense);
+          }
+          setShowExpenseDrawer(false);
+          setEditingExpense(null);
+        }}
+        onCancel={() => {
+          setShowExpenseDrawer(false);
+          setEditingExpense(null);
+        }}
+        onDelete={editingExpense ? handleExpenseDelete : undefined}
+        onDuplicate={handleExpenseDuplicate}
+      />
 
       {/* James AI Chatbot */}
       <JamesChatbot
@@ -786,9 +473,26 @@ export default function StrategicPlanning() {
         financialContext={financialContext}
         scenarios={scenarios}
         activeScenarioId={activeScenarioId}
-        runwayAnalysis={runwayAnalysis}
-        onInitiativesGenerated={handleInitiativesGenerated}
-        onOKRGenerated={handleOKRGenerated}
+        runwayAnalysis={runwayData ? {
+          currentCash,
+          monthlyBurnRate: runwayData.monthlyBurnRate,
+          netBurnRate: runwayData.monthlyBurnRate,
+          grossBurnRate: runwayData.monthlyBurnRate + baseRevenue,
+          runwayMonths: runwayData.runwayMonths,
+          zeroDate: runwayData.zeroDate,
+          confidenceLevel: 85,
+          projectedCashByMonth: runwayData.projectedCashByMonth,
+        } : undefined}
+        onInitiativesGenerated={(initiatives) => {
+          const newExpenses = initiatives.map(initiativeToExpense);
+          const updated = [...expenses, ...newExpenses];
+          setExpenses(updated);
+          saveToStorage(scenarios, activeScenarioId, updated);
+          if (newExpenses.length > 0) {
+            setEditingExpense(newExpenses[0]);
+            setShowExpenseDrawer(true);
+          }
+        }}
       />
     </div>
   );

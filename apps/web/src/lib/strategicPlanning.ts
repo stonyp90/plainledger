@@ -95,6 +95,210 @@ export interface CashForecast {
   breakEvenDate?: string;
 }
 
+/**
+ * Planned Expense - Focused expense planning type
+ * Used for executive expense planning with drag-and-drop timeline
+ */
+export interface PlannedExpense {
+  id: string;
+  name: string;
+  nameEn: string;
+  type: 'opex' | 'capex';
+  category: string; // 'salaries' | 'marketing' | 'rent' | 'equipment' | 'property' | etc.
+  startDate: string;
+  endDate: string;
+  amount: number; // For OPEX: monthly amount, For CAPEX: total amount
+  frequency: 'one_time' | 'monthly' | 'quarterly' | 'annual';
+  isLocked: boolean; // Committed expenses can't be moved
+  confidence: number; // 0-100%
+  notes?: string;
+}
+
+// =====================================================
+// CONVERSION UTILITIES
+// =====================================================
+
+/**
+ * Convert Initiative to PlannedExpense
+ */
+export function initiativeToExpense(initiative: Initiative): PlannedExpense {
+  const isOPEX = initiative.cashImpact.type === 'recurring';
+  const categoryMap: Record<Initiative['category'], string> = {
+    growth: 'marketing',
+    operations: 'operations',
+    product: 'product',
+    people: 'salaries',
+    infrastructure: 'infrastructure',
+  };
+
+  return {
+    id: initiative.id,
+    name: initiative.name,
+    nameEn: initiative.nameEn,
+    type: isOPEX ? 'opex' : 'capex',
+    category: categoryMap[initiative.category] || 'other',
+    startDate: initiative.startDate,
+    endDate: initiative.endDate,
+    amount: Math.abs(initiative.cashImpact.amount),
+    frequency: initiative.cashImpact.type === 'recurring' 
+      ? (initiative.cashImpact.frequency || 'monthly')
+      : 'one_time',
+    isLocked: initiative.status === 'in_progress' || initiative.status === 'completed',
+    confidence: initiative.confidence,
+    notes: initiative.description,
+  };
+}
+
+/**
+ * Convert PlannedExpense to Initiative
+ */
+export function expenseToInitiative(expense: PlannedExpense): Initiative {
+  const categoryMap: Record<string, Initiative['category']> = {
+    marketing: 'growth',
+    salaries: 'people',
+    operations: 'operations',
+    product: 'product',
+    infrastructure: 'infrastructure',
+    equipment: 'infrastructure',
+    property: 'infrastructure',
+    other: 'operations',
+  };
+
+  return {
+    id: expense.id,
+    name: expense.name,
+    nameEn: expense.nameEn,
+    category: categoryMap[expense.category] || 'operations',
+    startDate: expense.startDate,
+    endDate: expense.endDate,
+    status: expense.isLocked ? 'in_progress' : 'planned',
+    cashImpact: {
+      type: expense.frequency === 'one_time' ? 'one_time' : 'recurring',
+      amount: expense.type === 'opex' ? -expense.amount : -expense.amount,
+      frequency: expense.frequency !== 'one_time' ? expense.frequency : undefined,
+    },
+    milestones: [],
+    dependencies: [],
+    confidence: expense.confidence,
+    description: expense.notes,
+  };
+}
+
+/**
+ * Calculate cash impact of a planned expense for a given month
+ */
+export function getExpenseCashImpact(
+  expense: PlannedExpense,
+  monthDate: Date
+): number {
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const expStart = new Date(expense.startDate);
+  const expEnd = new Date(expense.endDate);
+  
+  // Check if expense is active in this month
+  if (expStart > monthEnd || expEnd < monthStart) {
+    return 0;
+  }
+  
+  if (expense.frequency === 'one_time') {
+    // One-time impact only in the first month
+    if (expStart >= monthStart && expStart <= monthEnd) {
+      return -expense.amount; // Negative = outflow
+    }
+    return 0;
+  }
+  
+  // Recurring impact
+  const frequencyMonths = {
+    monthly: 1,
+    quarterly: 3,
+    annual: 12,
+  };
+  
+  const monthsSinceStart = 
+    (monthDate.getFullYear() - expStart.getFullYear()) * 12 +
+    (monthDate.getMonth() - expStart.getMonth());
+  
+  if (monthsSinceStart < 0) return 0;
+  
+  const frequency = frequencyMonths[expense.frequency];
+  if (monthsSinceStart % frequency === 0) {
+    return -expense.amount; // Negative = outflow
+  }
+  
+  return 0;
+}
+
+/**
+ * Calculate runway from planned expenses
+ */
+export function calculateRunwayFromExpenses(
+  currentCash: number,
+  currentDate: Date,
+  expenses: PlannedExpense[],
+  baseRevenue: number = 0,
+  months: number = 24
+): {
+  runwayMonths: number;
+  zeroDate: string;
+  monthlyBurnRate: number;
+  projectedCashByMonth: Array<{ date: string; cash: number; burn: number }>;
+} {
+  let runningCash = currentCash;
+  const projected: Array<{ date: string; cash: number; burn: number }> = [];
+  
+  let totalMonthlyExpenses = 0;
+  
+  for (let i = 0; i < months; i++) {
+    const monthDate = new Date(currentDate);
+    monthDate.setMonth(monthDate.getMonth() + i);
+    
+    let monthExpenses = 0;
+    
+    // Calculate expense impact for this month
+    expenses.forEach(expense => {
+      monthExpenses += Math.abs(getExpenseCashImpact(expense, monthDate));
+    });
+    
+    // Track average monthly expenses
+    if (i < 12) {
+      totalMonthlyExpenses += monthExpenses;
+    }
+    
+    const netBurn = monthExpenses - baseRevenue;
+    runningCash += baseRevenue - monthExpenses;
+    
+    projected.push({
+      date: monthDate.toISOString(),
+      cash: Math.max(0, runningCash),
+      burn: netBurn,
+    });
+    
+    // Stop if we hit zero
+    if (runningCash <= 0 && i > 0) {
+      break;
+    }
+  }
+  
+  const avgMonthlyBurn = totalMonthlyExpenses / Math.min(12, months);
+  const monthlyBurnRate = avgMonthlyBurn - baseRevenue;
+  const runwayMonths = monthlyBurnRate > 0 ? currentCash / monthlyBurnRate : Infinity;
+  
+  // Find zero date
+  const zeroIndex = projected.findIndex(p => p.cash <= 0);
+  const zeroDate = zeroIndex >= 0 
+    ? projected[zeroIndex].date 
+    : new Date(currentDate.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  
+  return {
+    runwayMonths,
+    zeroDate,
+    monthlyBurnRate: Math.abs(monthlyBurnRate),
+    projectedCashByMonth: projected,
+  };
+}
+
 // =====================================================
 // CALCULATION ENGINE
 // =====================================================
