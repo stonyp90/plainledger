@@ -352,10 +352,27 @@ export default function OpExCapExChart({
     }
   };
   
+  // Get visible categories sorted
+  const getVisibleCategories = useCallback(() => {
+    return [...categories]
+      .filter(cat => {
+        if (!visibleCategories.has(cat.id)) return false;
+        if (cat.type === 'opex' && !config.showOpex) return false;
+        if (cat.type === 'capex' && !config.showCapex) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.type === 'opex' && b.type === 'capex') return -1;
+        if (a.type === 'capex' && b.type === 'opex') return 1;
+        return 0;
+      });
+  }, [categories, visibleCategories, config.showOpex, config.showCapex]);
+
   // Render stacked bar chart
   const renderStackedBars = () => {
     const barWidth = 100 / filteredData.length - 2;
     const historicalMonths = new Set(historical.map(d => d.month));
+    const visibleCats = getVisibleCategories();
     
     return filteredData.map((data, index) => {
       const isProjected = !historicalMonths.has(data.month);
@@ -364,18 +381,7 @@ export default function OpExCapExChart({
       
       const bars: JSX.Element[] = [];
       
-      // Sort categories by type (opex first, then capex)
-      const sortedCategories = [...categories].sort((a, b) => {
-        if (a.type === 'opex' && b.type === 'capex') return -1;
-        if (a.type === 'capex' && b.type === 'opex') return 1;
-        return 0;
-      });
-      
-      sortedCategories.forEach(cat => {
-        if (!visibleCategories.has(cat.id)) return;
-        if (cat.type === 'opex' && !config.showOpex) return;
-        if (cat.type === 'capex' && !config.showCapex) return;
-        
+      visibleCats.forEach(cat => {
         const value = data.categories[cat.id] || 0;
         const height = (value / maxValue) * 100;
         const y = 100 - yOffset - height;
@@ -414,6 +420,162 @@ export default function OpExCapExChart({
         </g>
       );
     });
+  };
+
+  // Render grouped bar chart (side by side bars)
+  const renderGroupedBars = () => {
+    const historicalMonths = new Set(historical.map(d => d.month));
+    const visibleCats = getVisibleCategories();
+    const numCategories = visibleCats.length;
+    if (numCategories === 0) return null;
+    
+    const groupWidth = 100 / filteredData.length - 1;
+    const barWidth = groupWidth / numCategories - 0.5;
+    
+    return filteredData.map((data, index) => {
+      const isProjected = !historicalMonths.has(data.month);
+      const groupX = (index / filteredData.length) * 100 + 0.5;
+      
+      return (
+        <g 
+          key={data.month}
+          onMouseEnter={(e) => setHoveredPoint({ month: data.month, x: e.clientX, y: e.clientY })}
+          onMouseLeave={() => setHoveredPoint(null)}
+          className="cursor-pointer"
+        >
+          {visibleCats.map((cat, catIndex) => {
+            const value = data.categories[cat.id] || 0;
+            const height = (value / maxValue) * 100;
+            const x = groupX + catIndex * (barWidth + 0.5);
+            const y = 100 - height;
+            
+            return (
+              <rect
+                key={`${data.month}-${cat.id}`}
+                x={`${x}%`}
+                y={`${y}%`}
+                width={`${barWidth}%`}
+                height={`${height}%`}
+                fill={cat.color}
+                opacity={isProjected ? 0.6 : 1}
+                rx="1"
+                className="transition-all duration-200"
+                style={{ 
+                  filter: hoveredPoint?.month === data.month ? 'brightness(1.1)' : undefined,
+                }}
+              />
+            );
+          })}
+        </g>
+      );
+    });
+  };
+
+  // Render line chart
+  const renderLineChart = () => {
+    const historicalMonths = new Set(historical.map(d => d.month));
+    const visibleCats = getVisibleCategories();
+    
+    return visibleCats.map(cat => {
+      // Build path for this category
+      const points = filteredData.map((data, index) => {
+        const value = data.categories[cat.id] || 0;
+        const x = (index / (filteredData.length - 1)) * 100;
+        const y = 100 - (value / maxValue) * 100;
+        return { x, y, isProjected: !historicalMonths.has(data.month) };
+      });
+      
+      // Separate historical and projected points
+      const historicalPoints = points.filter(p => !p.isProjected);
+      const projectedPoints = points.filter(p => p.isProjected);
+      
+      // Create path strings
+      const historicalPath = historicalPoints.length > 1 
+        ? `M ${historicalPoints.map(p => `${p.x},${p.y}`).join(' L ')}`
+        : '';
+      
+      // Connect last historical to first projected
+      const connectionPath = historicalPoints.length > 0 && projectedPoints.length > 0
+        ? `M ${historicalPoints[historicalPoints.length - 1].x},${historicalPoints[historicalPoints.length - 1].y} L ${projectedPoints[0].x},${projectedPoints[0].y}`
+        : '';
+      
+      const projectedPath = projectedPoints.length > 1
+        ? `M ${projectedPoints.map(p => `${p.x},${p.y}`).join(' L ')}`
+        : '';
+      
+      return (
+        <g key={cat.id}>
+          {/* Historical line */}
+          {historicalPath && (
+            <path
+              d={historicalPath}
+              fill="none"
+              stroke={cat.color}
+              strokeWidth="2"
+              className="transition-all duration-200"
+            />
+          )}
+          
+          {/* Connection line (dashed) */}
+          {connectionPath && (
+            <path
+              d={connectionPath}
+              fill="none"
+              stroke={cat.color}
+              strokeWidth="1.5"
+              strokeDasharray="4,2"
+              opacity="0.6"
+            />
+          )}
+          
+          {/* Projected line (dashed) */}
+          {projectedPath && (
+            <path
+              d={projectedPath}
+              fill="none"
+              stroke={cat.color}
+              strokeWidth="2"
+              strokeDasharray="4,2"
+              opacity="0.6"
+            />
+          )}
+          
+          {/* Data points */}
+          {points.map((point, i) => (
+            <circle
+              key={i}
+              cx={`${point.x}%`}
+              cy={`${point.y}%`}
+              r={hoveredPoint?.month === filteredData[i]?.month ? 5 : 3}
+              fill={cat.color}
+              opacity={point.isProjected ? 0.6 : 1}
+              className="transition-all duration-200"
+              onMouseEnter={(e) => {
+                if (filteredData[i]) {
+                  setHoveredPoint({ month: filteredData[i].month, x: e.clientX, y: e.clientY });
+                }
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
+              style={{ cursor: 'pointer' }}
+            />
+          ))}
+        </g>
+      );
+    });
+  };
+
+  // Render chart based on type
+  const renderChart = () => {
+    switch (config.chartType) {
+      case 'stacked':
+        return renderStackedBars();
+      case 'bar':
+        return renderGroupedBars();
+      case 'line':
+        return renderLineChart();
+      default:
+        return renderStackedBars();
+    }
   };
   
   return (
@@ -743,8 +905,8 @@ export default function OpExCapExChart({
               return null;
             })()}
             
-            {/* Bars */}
-            {renderStackedBars()}
+            {/* Chart content based on type */}
+            {renderChart()}
           </svg>
           
           {/* Y-axis labels */}
