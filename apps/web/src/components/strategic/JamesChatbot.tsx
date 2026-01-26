@@ -563,7 +563,7 @@ export default function JamesChatbot({
     return (
       <button
         onClick={onToggle}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 active:scale-95 group"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl transition-all active:scale-95"
         style={{
           background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
         }}
@@ -823,7 +823,7 @@ export default function JamesChatbot({
                   <div className="text-sm leading-relaxed">{renderMessageContent(message.content)}</div>
                   
                   {message.metadata?.initiatives && message.metadata.initiatives.length > 0 && (
-                    <div className="mt-3 pt-3 border-t flex items-center gap-2 cursor-pointer hover:opacity-80" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                    <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
                       <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
                         <Zap className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
                       </div>
@@ -835,7 +835,7 @@ export default function JamesChatbot({
                   )}
                   
                   {message.metadata?.okrs && message.metadata.okrs.length > 0 && (
-                    <div className="mt-3 pt-3 border-t flex items-center gap-2 cursor-pointer hover:opacity-80" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                    <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
                       <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}>
                         <Target className="w-3 h-3" style={{ color: 'rgb(var(--color-info))' }} />
                       </div>
@@ -849,7 +849,7 @@ export default function JamesChatbot({
                   {message.role === 'assistant' && message.id !== 'welcome' && (
                     <button
                       onClick={() => handleCopyMessage(message.id, message.content)}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 p-1.5 rounded-lg opacity-50 sm:opacity-30 hover:opacity-100 transition-opacity"
                       style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                     >
                       {copiedMessageId === message.id ? (
@@ -893,7 +893,7 @@ export default function JamesChatbot({
                   <button
                     key={prompt.id}
                     onClick={() => handleSend(isEn ? prompt.en : prompt.fr)}
-                    className="w-full text-left p-3 rounded-xl text-sm transition-all hover:translate-x-1"
+                    className="w-full text-left p-3 rounded-xl text-sm transition-colors active:opacity-80"
                     style={{ backgroundColor: 'rgb(var(--color-bg))', border: '1px solid rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
                   >
                     <div className="flex items-center justify-between">
@@ -921,7 +921,7 @@ export default function JamesChatbot({
                 <button
                   key={template.id}
                   onClick={() => handleTemplateClick(template)}
-                  className="p-4 rounded-xl text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="p-4 rounded-xl text-left transition-colors active:opacity-80"
                   style={{
                     backgroundColor: `rgb(var(--color-${template.color}) / 0.05)`,
                     border: `1px solid rgb(var(--color-${template.color}) / 0.15)`,
@@ -983,7 +983,7 @@ export default function JamesChatbot({
                 <button
                   key={template.id}
                   onClick={() => handleTemplateClick(template)}
-                  className="w-full p-4 rounded-xl text-left transition-all hover:translate-x-1"
+                  className="w-full p-4 rounded-xl text-left transition-colors active:opacity-80"
                   style={{
                     backgroundColor: 'rgb(var(--color-bg))',
                     border: '1px solid rgb(var(--color-border))',
@@ -1044,11 +1044,11 @@ export default function JamesChatbot({
                               {conv.messages.length} messages • {new Date(conv.updatedAt).toLocaleDateString()}
                             </p>
                           </button>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleToggleStar(conv.id)} className="p-1 rounded hover:bg-black/5" style={{ color: 'rgb(var(--color-warning))' }}>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleToggleStar(conv.id)} className="p-1.5 rounded-lg" style={{ color: 'rgb(var(--color-warning))' }}>
                               <Star className="w-4 h-4 fill-current" />
                             </button>
-                            <button onClick={() => handleDeleteConversation(conv.id)} className="p-1 rounded hover:bg-black/5" style={{ color: 'rgb(var(--color-error))' }}>
+                            <button onClick={() => handleDeleteConversation(conv.id)} className="p-1.5 rounded-lg" style={{ color: 'rgb(var(--color-text-muted))' }}>
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -1080,11 +1080,11 @@ export default function JamesChatbot({
                               {conv.messages.length} messages • {new Date(conv.updatedAt).toLocaleDateString()}
                             </p>
                           </button>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleToggleStar(conv.id)} className="p-1 rounded hover:bg-black/5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleToggleStar(conv.id)} className="p-1.5 rounded-lg" style={{ color: 'rgb(var(--color-text-muted))' }}>
                               <StarOff className="w-4 h-4" />
                             </button>
-                            <button onClick={() => handleDeleteConversation(conv.id)} className="p-1 rounded hover:bg-black/5" style={{ color: 'rgb(var(--color-error))' }}>
+                            <button onClick={() => handleDeleteConversation(conv.id)} className="p-1.5 rounded-lg" style={{ color: 'rgb(var(--color-text-muted))' }}>
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -1129,7 +1129,7 @@ export default function JamesChatbot({
             <button
               onClick={() => handleSend()}
               disabled={!input.trim() || isLoading}
-              className="p-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+              className="p-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
               style={{
                 background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
                 boxShadow: '0 4px 12px rgb(var(--color-primary-500) / 0.3)',

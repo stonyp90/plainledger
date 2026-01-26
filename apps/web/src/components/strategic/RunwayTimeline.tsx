@@ -1,14 +1,13 @@
 /**
  * Runway Timeline Component
  * 
- * Visual countdown showing cash runway with milestones
+ * Clean, professional cash runway visualization
  */
 
 import { useMemo } from 'react';
-import { AlertTriangle, TrendingDown, Calendar, Target } from 'lucide-react';
+import { AlertTriangle, TrendingDown, Calendar, Target, DollarSign, Clock, ArrowRight } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { RunwayAnalysis, Milestone } from '../../lib/strategicPlanning';
-import { ChartTooltip } from '../charts/ChartTooltip';
 
 interface RunwayTimelineProps {
   runway: RunwayAnalysis;
@@ -29,292 +28,327 @@ export default function RunwayTimeline({
   const zeroDate = new Date(runway.zeroDate);
   const daysUntilZero = Math.ceil((zeroDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Calculate progress percentage (0-100%)
-  const maxRunwayMonths = 24; // Show up to 24 months
+  const maxRunwayMonths = 24;
   const progressPercent = Math.min(100, (runway.runwayMonths / maxRunwayMonths) * 100);
   
-  // Determine urgency color
-  const getUrgencyColor = () => {
-    if (runway.runwayMonths < 3) return 'rgb(var(--color-error))';
-    if (runway.runwayMonths < 6) return 'rgb(var(--color-warning))';
-    if (runway.runwayMonths < 12) return '#F59E0B';
-    return 'rgb(var(--color-success))';
+  const getUrgencyLevel = () => {
+    if (runway.runwayMonths < 3) return { color: '#EF4444', bg: '#FEF2F2', label: isEn ? 'Critical' : 'Critique' };
+    if (runway.runwayMonths < 6) return { color: '#F59E0B', bg: '#FFFBEB', label: isEn ? 'Warning' : 'Attention' };
+    if (runway.runwayMonths < 12) return { color: '#F59E0B', bg: '#FFFBEB', label: isEn ? 'Monitor' : 'Surveiller' };
+    return { color: '#10B981', bg: '#F0FDF4', label: isEn ? 'Healthy' : 'Sain' };
   };
   
+  const urgency = getUrgencyLevel();
+  
   const formatCurrency = (value: number) => {
+    if (Math.abs(value) >= 1000000) {
+      return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
+        style: 'currency',
+        currency: 'CAD',
+        maximumFractionDigits: 1,
+        notation: 'compact',
+      }).format(value);
+    }
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
       style: 'currency',
       currency: 'CAD',
-      minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
   };
-  
+
+  // Generate month markers for timeline
+  const monthMarkers = useMemo(() => {
+    const markers: Array<{ month: number; label: string; position: number }> = [];
+    for (let i = 0; i <= maxRunwayMonths; i += 3) {
+      const date = new Date(currentDate);
+      date.setMonth(date.getMonth() + i);
+      markers.push({
+        month: i,
+        label: i === 0 ? (isEn ? 'Now' : 'Maint.') : `${i}mo`,
+        position: (i / maxRunwayMonths) * 100,
+      });
+    }
+    return markers;
+  }, [currentDate, isEn]);
+
   // Position milestones on timeline
   const positionedMilestones = useMemo(() => {
-    const startDate = currentDate;
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + maxRunwayMonths);
-    
     return milestones
       .filter(m => {
-        const milestoneDate = new Date(m.date);
-        return milestoneDate >= startDate && milestoneDate <= endDate;
+        const mDate = new Date(m.date);
+        const endDate = new Date(currentDate);
+        endDate.setMonth(endDate.getMonth() + maxRunwayMonths);
+        return mDate >= currentDate && mDate <= endDate;
       })
       .map(milestone => {
-        const milestoneDate = new Date(milestone.date);
-        const monthsFromStart = 
-          (milestoneDate.getFullYear() - startDate.getFullYear()) * 12 +
-          (milestoneDate.getMonth() - startDate.getMonth());
-        const positionPercent = (monthsFromStart / maxRunwayMonths) * 100;
-        
+        const mDate = new Date(milestone.date);
+        const monthsFromNow = (mDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
         return {
           ...milestone,
-          positionPercent: Math.min(100, Math.max(0, positionPercent)),
+          position: Math.min(100, (monthsFromNow / maxRunwayMonths) * 100),
         };
-      });
+      })
+      .slice(0, 5); // Max 5 milestones to avoid clutter
   }, [milestones, currentDate]);
   
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Cash Position */}
-        <div 
-          className="card p-4 sm:p-5 transition-all active:scale-[0.98] touch-manipulation"
-          style={{
-            background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, rgb(var(--color-primary-600) / 0.05) 100%)',
-            border: '1px solid rgb(var(--color-primary-500) / 0.2)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Cash Position' : 'Position de trésorerie'}
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <DollarSign className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            </div>
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Cash' : 'Trésorerie'}
             </span>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold break-words" style={{ color: 'rgb(var(--color-primary-500))' }}>
+          <p className="text-2xl font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
             {formatCurrency(runway.currentCash)}
           </p>
         </div>
         
         {/* Monthly Burn */}
-        <div 
-          className="card p-4 sm:p-5 transition-all active:scale-[0.98] touch-manipulation"
-          style={{
-            background: 'linear-gradient(135deg, rgb(var(--color-error) / 0.1) 0%, rgb(var(--color-error) / 0.05) 100%)',
-            border: '1px solid rgb(var(--color-error) / 0.2)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Monthly Burn' : 'Brûlage mensuel'}
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
+            >
+              <TrendingDown className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+            </div>
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Burn Rate' : 'Burn Rate'}
             </span>
-            <TrendingDown className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-error))' }} />
           </div>
-          <p className="text-2xl sm:text-3xl font-bold break-words" style={{ color: 'rgb(var(--color-error))' }}>
+          <p className="text-2xl font-bold" style={{ color: 'rgb(var(--color-error))' }}>
             {formatCurrency(runway.monthlyBurnRate)}
+            <span className="text-sm font-normal">/mo</span>
           </p>
         </div>
         
         {/* Runway */}
-        <div 
-          className="card p-4 sm:p-5 transition-all active:scale-[0.98] touch-manipulation sm:col-span-2 md:col-span-1"
-          style={{
-            background: `linear-gradient(135deg, ${getUrgencyColor()}20 0%, ${getUrgencyColor()}10 100%)`,
-            border: `1px solid ${getUrgencyColor()}30`,
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: `${urgency.color}15` }}
+            >
+              <Clock className="w-4 h-4" style={{ color: urgency.color }} />
+            </div>
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn ? 'Runway' : 'Autonomie'}
             </span>
             {runway.runwayMonths < 6 && (
-              <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-warning))' }} />
+              <AlertTriangle className="w-3.5 h-3.5 ml-auto" style={{ color: urgency.color }} />
             )}
           </div>
-          <p className="text-2xl sm:text-3xl font-bold" style={{ color: getUrgencyColor() }}>
-            {runway.runwayMonths.toFixed(1)} {isEn ? 'months' : 'mois'}
+          <p className="text-2xl font-bold" style={{ color: urgency.color }}>
+            {runway.runwayMonths === Infinity ? '∞' : runway.runwayMonths.toFixed(1)}
+            <span className="text-sm font-normal ml-1">{isEn ? 'months' : 'mois'}</span>
           </p>
-          <p className="text-xs mt-1 font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {daysUntilZero > 0 ? `${daysUntilZero} ${isEn ? 'days' : 'jours'}` : isEn ? 'Past due' : 'Dépassé'}
+        </div>
+        
+        {/* Zero Date */}
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            >
+              <Calendar className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            </div>
+            <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Zero Date' : 'Date zéro'}
+            </span>
+          </div>
+          <p className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {runway.runwayMonths === Infinity ? (
+              <span className="text-sm">{isEn ? 'Sustainable' : 'Durable'}</span>
+            ) : (
+              zeroDate.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })
+            )}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {daysUntilZero > 0 ? `${daysUntilZero} ${isEn ? 'days' : 'jours'}` : ''}
           </p>
         </div>
       </div>
       
       {/* Timeline Visualization */}
-      <div className="card p-4 sm:p-6" style={{
-        background: 'linear-gradient(135deg, rgb(var(--color-surface)) 0%, rgb(var(--color-bg-muted)) 100%)',
-      }}>
-        <div className="space-y-3 sm:space-y-4">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-            <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Runway Timeline' : 'Chronologie de l\'autonomie'}
-            </h3>
-            <div className="flex items-center gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 rounded-lg w-fit" style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-              color: 'rgb(var(--color-primary-500))',
-            }}>
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="font-medium whitespace-nowrap">
-                {zeroDate.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  year: 'numeric' 
-                })}
-              </span>
-            </div>
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Runway Timeline' : 'Chronologie du runway'}
+          </h3>
+          <span 
+            className="text-xs font-medium px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: `${urgency.color}15`, color: urgency.color }}
+          >
+            {urgency.label}
+          </span>
+        </div>
+        
+        {/* Timeline Track */}
+        <div className="relative mt-8 mb-6">
+          {/* Background track with gradient */}
+          <div 
+            className="h-3 rounded-full relative overflow-hidden"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
+            {/* Gradient fill */}
+            <div 
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(to right, #10B981 0%, #10B981 25%, #F59E0B 50%, #EF4444 100%)',
+                opacity: 0.2,
+              }}
+            />
+            
+            {/* Current position indicator */}
+            <div 
+              className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+              style={{
+                width: `${progressPercent}%`,
+                backgroundColor: urgency.color,
+              }}
+            />
           </div>
           
-          {/* Progress Bar */}
-          <div className="relative">
-            {/* Background Track */}
-            <div
-              className="h-12 sm:h-14 rounded-lg sm:rounded-xl relative overflow-hidden shadow-inner touch-none"
-              style={{
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                background: 'linear-gradient(90deg, rgb(var(--color-success)) 0%, #F59E0B 50%, rgb(var(--color-error)) 100%)',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+          {/* Current position marker */}
+          <div 
+            className="absolute top-1/2 -translate-y-1/2 transition-all duration-500"
+            style={{ left: `${progressPercent}%` }}
+          >
+            <div 
+              className="w-5 h-5 rounded-full border-3 bg-white -ml-2.5 shadow-lg"
+              style={{ 
+                borderColor: urgency.color,
+                boxShadow: `0 0 0 4px ${urgency.color}20`,
               }}
-            >
-              {/* Current Position Indicator */}
-              <div
-                className="absolute top-0 bottom-0 w-1 z-20 transition-all"
-                style={{
-                  left: `${progressPercent}%`,
-                  backgroundColor: 'white',
-                  boxShadow: '0 0 12px rgba(0,0,0,0.4), 0 0 24px ' + getUrgencyColor() + '40',
+            />
+          </div>
+          
+          {/* Month markers */}
+          <div className="absolute -bottom-6 left-0 right-0 flex justify-between">
+            {monthMarkers.map((marker) => (
+              <div 
+                key={marker.month}
+                className="text-[10px] text-center"
+                style={{ 
+                  color: marker.position <= progressPercent ? urgency.color : 'rgb(var(--color-text-muted))',
+                  fontWeight: marker.month === 0 ? 600 : 400,
                 }}
               >
-                <div 
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white border-3 flex items-center justify-center shadow-lg transition-all hover:scale-110"
-                  style={{ 
-                    borderColor: getUrgencyColor(),
-                    boxShadow: `0 4px 12px ${getUrgencyColor()}60`,
-                  }}
-                >
-                  <div 
-                    className="w-2.5 h-2.5 rounded-full animate-pulse" 
-                    style={{ backgroundColor: getUrgencyColor() }} 
-                  />
-                </div>
+                {marker.label}
               </div>
-              
-              {/* Zero Date Marker */}
-              <div
-                className="absolute top-0 bottom-0 w-0.5 z-10"
-                style={{
-                  left: `${progressPercent}%`,
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                }}
-              />
-              
-              {/* Milestones */}
-              {positionedMilestones.map((milestone, index) => {
-                const milestoneDate = new Date(milestone.date);
-                const isPast = milestoneDate < currentDate;
-                const isCritical = milestoneDate <= zeroDate && milestoneDate > currentDate;
+            ))}
+          </div>
+          
+          {/* Zero cash marker */}
+          {runway.runwayMonths < maxRunwayMonths && (
+            <div 
+              className="absolute -top-7 text-center"
+              style={{ left: `${progressPercent}%`, transform: 'translateX(-50%)' }}
+            >
+              <span 
+                className="text-[10px] font-semibold px-2 py-0.5 rounded whitespace-nowrap"
+                style={{ backgroundColor: `${urgency.color}15`, color: urgency.color }}
+              >
+                {isEn ? 'Zero Cash' : 'Tréso. zéro'}
+              </span>
+            </div>
+          )}
+        </div>
+        
+        {/* Milestones */}
+        {positionedMilestones.length > 0 && (
+          <div className="mt-10 pt-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            <h4 className="text-xs font-semibold mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Key Milestones' : 'Jalons clés'}
+            </h4>
+            <div className="space-y-2">
+              {positionedMilestones.map((milestone) => {
+                const mDate = new Date(milestone.date);
+                const isPast = mDate < currentDate;
+                const isCritical = mDate <= zeroDate && mDate > currentDate;
                 
                 return (
-                  <div
+                  <button
                     key={milestone.id}
-                    className="absolute top-full mt-2 cursor-pointer group"
-                    style={{
-                      left: `${milestone.positionPercent}%`,
-                      transform: 'translateX(-50%)',
-                    }}
                     onClick={() => onMilestoneClick?.(milestone)}
+                    className="w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
                   >
-                    {/* Flag */}
-                    <div
-                      className="relative"
-                      style={{
-                        transform: milestone.positionPercent > 50 ? 'translateX(-100%)' : 'none',
+                    <div 
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ 
+                        backgroundColor: isCritical ? '#EF4444' : isPast ? '#10B981' : 'rgb(var(--color-primary-500))',
                       }}
-                    >
-                      <div
-                        className="w-0 h-0 border-l-8 border-r-8 border-b-8"
-                        style={{
-                          borderLeftColor: 'transparent',
-                          borderRightColor: 'transparent',
-                          borderBottomColor: isCritical 
-                            ? 'rgb(var(--color-error))' 
-                            : isPast 
-                            ? 'rgb(var(--color-success))' 
-                            : 'rgb(var(--color-primary-500))',
-                        }}
-                      />
-                      <div
-                        className="absolute top-2 left-1/2 -translate-x-1/2 px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
-                        style={{
-                          backgroundColor: isCritical 
-                            ? 'rgb(var(--color-error))' 
-                            : isPast 
-                            ? 'rgb(var(--color-success))' 
-                            : 'rgb(var(--color-primary-500))',
-                          color: 'white',
-                        }}
-                      >
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
                         {isEn ? milestone.nameEn : milestone.name}
-                      </div>
+                      </p>
                     </div>
-                    
-                    {/* Date Label */}
-                    <div className="text-xs text-center mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {milestoneDate.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short', day: 'numeric' })}
-                    </div>
-                  </div>
+                    <span className="text-xs flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {mDate.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short', day: 'numeric' })}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  </button>
                 );
               })}
             </div>
-            
-            {/* Labels */}
-            <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              <span>{currentDate.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short', year: 'numeric' })}</span>
-              <span className="font-medium" style={{ color: getUrgencyColor() }}>
-                {isEn ? 'Zero Cash' : 'Trésorerie zéro'}
-              </span>
-              <span>
-                {new Date(currentDate.getFullYear(), currentDate.getMonth() + maxRunwayMonths, 1)
-                  .toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short', year: 'numeric' })}
-              </span>
-            </div>
           </div>
-          
-          {/* Confidence Indicator */}
-          <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Confidence Level' : 'Niveau de confiance'}:
-            </span>
-            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <div
-                className="h-full transition-all"
-                style={{
-                  width: `${runway.confidenceLevel}%`,
-                  backgroundColor: runway.confidenceLevel > 70 
-                    ? 'rgb(var(--color-success))' 
-                    : runway.confidenceLevel > 50 
-                    ? '#F59E0B' 
-                    : 'rgb(var(--color-error))',
-                }}
-              />
-            </div>
-            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-              {runway.confidenceLevel.toFixed(0)}%
-            </span>
+        )}
+        
+        {/* Confidence */}
+        <div className="mt-4 pt-4 border-t flex items-center gap-3" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'Forecast Confidence' : 'Confiance prévision'}
+          </span>
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${runway.confidenceLevel}%`,
+                backgroundColor: runway.confidenceLevel > 70 ? '#10B981' : runway.confidenceLevel > 50 ? '#F59E0B' : '#EF4444',
+              }}
+            />
           </div>
+          <span className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {runway.confidenceLevel.toFixed(0)}%
+          </span>
         </div>
       </div>
       
       {/* Break-even Indicator */}
       {runway.breakEvenDate && (
-        <div className="card p-4 flex items-center gap-3" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
-          <Target className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+        <div 
+          className="card p-4 flex items-center gap-3"
+          style={{ backgroundColor: 'rgb(var(--color-success) / 0.05)', border: '1px solid rgb(var(--color-success) / 0.2)' }}
+        >
+          <div 
+            className="w-10 h-10 rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+          >
+            <Target className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+          </div>
           <div>
-            <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+            <p className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Break-even Projected' : 'Point d\'équilibre prévu'}
             </p>
-            <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-xs" style={{ color: 'rgb(var(--color-success))' }}>
               {new Date(runway.breakEvenDate).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', {
                 month: 'long',
                 day: 'numeric',
