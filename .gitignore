@@ -47,6 +47,13 @@ pnpm-debug.log*
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+tfplan
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 
 # Docker
 .docker/

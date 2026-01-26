@@ -1,95 +1,134 @@
-# PlainLedger - Infrastructure Terraform
+# PlainLedger Infrastructure
 
-## Prérequis
+Enterprise-grade AWS infrastructure using Terraform.
 
-- Terraform >= 1.5.0
-- AWS CLI configuré
-- Domaine plainledger.ca enregistré
-
-## Structure
+## Architecture
 
 ```
-terraform/
-├── environments/
-│   └── prod/           # Configuration production
-├── modules/
-│   ├── networking/     # VPC, subnets, security groups
-│   ├── database/       # RDS PostgreSQL, ElastiCache Redis
-│   ├── ecs/           # ECS Fargate, ALB, Auto Scaling
-│   ├── datalake/      # S3 Bronze/Silver/Gold, Glue, Athena
-│   └── cicd/          # ECR, GitHub OIDC
-└── README.md
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              PlainLedger Infrastructure                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ┌─────────────┐     ┌─────────────────────────────────────────────────┐    │
+│  │   Route53   │────▶│              Application Load Balancer           │    │
+│  │ plainledger │     │         (HTTP/HTTPS with ACM Certificate)        │    │
+│  │    .ca      │     └─────────────────────────────────────────────────┘    │
+│  └─────────────┘                          │                                  │
+│                                           ▼                                  │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         ECS Fargate Cluster                          │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │    │
+│  │  │  Web App    │  │  NestJS API │  │  Keycloak   │                  │    │
+│  │  │  (React)    │  │  (Node.js)  │  │  (Auth)     │                  │    │
+│  │  │  Port 80    │  │  Port 3000  │  │  Port 8080  │                  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘                  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                           │                                  │
+│                    ┌──────────────────────┼──────────────────────┐          │
+│                    ▼                      ▼                      ▼          │
+│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐  │
+│  │   RDS PostgreSQL    │  │   ElastiCache Redis │  │   S3 Data Lake      │  │
+│  │   (Multi-AZ, KMS)   │  │   (Encrypted, Auth) │  │   (Bronze/Silver/   │  │
+│  │                     │  │                     │  │    Gold layers)     │  │
+│  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘  │
+│                                                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Déploiement Initial
+## Environments
 
-### 1. Créer le bucket S3 pour le state (une seule fois)
+| Environment | Purpose | Estimated Cost |
+|-------------|---------|----------------|
+| **prod** | Production workloads | ~$200-400/month |
+| **dev** | Development/testing | ~$50-80/month |
+
+## Modules
+
+| Module | Description |
+|--------|-------------|
+| `networking` | VPC, subnets, NAT, security groups, VPC endpoints |
+| `database` | RDS PostgreSQL, ElastiCache Redis, Secrets Manager |
+| `datalake` | S3 buckets for Bronze/Silver/Gold data layers |
+| `ecs` | ECS Fargate cluster, ALB, auto-scaling |
+| `cicd` | GitHub OIDC, IAM roles for CI/CD |
+
+## Prerequisites
+
+1. **AWS CLI** configured with appropriate credentials
+2. **Terraform** >= 1.5.0
+3. **S3 bucket** for Terraform state: `plainledger-terraform-state`
+4. **DynamoDB table** for state locking: `plainledger-terraform-lock`
+
+## Usage
+
+### Deploy Production
 
 ```bash
-aws s3 mb s3://plainledger-terraform-state --region ca-central-1
-aws s3api put-bucket-versioning --bucket plainledger-terraform-state --versioning-configuration Status=Enabled
+cd environments/prod
 
-aws dynamodb create-table \
-  --table-name plainledger-terraform-lock \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --billing-mode PAY_PER_REQUEST \
-  --region ca-central-1
-```
+# Create terraform.tfvars
+cat > terraform.tfvars << EOF
+project     = "plainledger"
+environment = "prod"
+github_org  = "stonyp90"
+github_repo = "plainledger"
+EOF
 
-### 2. Initialiser et appliquer
-
-```bash
-cd terraform/environments/prod
-
-# Initialiser
+# Initialize and apply
 terraform init
-
-# Voir le plan
-terraform plan
-
-# Appliquer
-terraform apply
+terraform plan -out=tfplan
+terraform apply tfplan
 ```
 
-## Après le déploiement
+### Deploy Development (optional)
 
-### Configurer les NS chez le registrar
+```bash
+cd environments/dev
 
-Après `terraform apply`, récupérez les name servers:
+# Create terraform.tfvars
+cat > terraform.tfvars << EOF
+project     = "plainledger"
+environment = "dev"
+github_org  = "stonyp90"
+github_repo = "plainledger"
+EOF
+
+# Initialize and apply
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+## Production Configuration
+
+### Database
+- **RDS PostgreSQL 16**: db.t3.medium, Multi-AZ, encrypted
+- **ElastiCache Redis 7**: cache.t3.micro, 2 nodes, encrypted
+
+### Compute
+- **ECS Fargate**: Auto-scaling (2-10 instances)
+- **ALB**: Application Load Balancer with TLS 1.3
+
+### Security
+- **KMS**: Customer-managed encryption keys
+- **Secrets Manager**: Database credentials, Redis auth
+- **VPC Endpoints**: Private access to AWS services
+- **WAF**: Web Application Firewall (optional)
+
+## DNS Configuration
+
+After deployment, update your domain registrar with the Route53 nameservers:
 
 ```bash
 terraform output route53_name_servers
 ```
 
-Configurez ces NS chez votre registrar de domaine (ex: GoDaddy, Namecheap).
+## Outputs
 
-### Pousser les images Docker
-
-```bash
-# Login ECR
-aws ecr get-login-password --region ca-central-1 | docker login --username AWS --password-stdin $(terraform output -raw ecr_web_repository | cut -d'/' -f1)
-
-# Build et push
-docker build -t $(terraform output -raw ecr_web_repository):latest ./apps/web
-docker push $(terraform output -raw ecr_web_repository):latest
-```
-
-## Coûts Estimés
-
-| Service | Coût mensuel |
-|---------|--------------|
-| ECS Fargate | ~$150 |
-| RDS PostgreSQL | ~$100 |
-| ElastiCache | ~$25 |
-| ALB + NAT | ~$50 |
-| S3 + Glue | ~$20 |
-| **Total** | **~$350** |
-
-## Destroy
-
-```bash
-terraform destroy
-```
-
-⚠️ Cela supprimera TOUTES les ressources, y compris les données.
+| Output | Description |
+|--------|-------------|
+| `app_url` | Application URL |
+| `alb_dns_name` | Load balancer DNS |
+| `route53_name_servers` | NS records for domain |
+| `github_actions_role_arn` | IAM role for CI/CD |
+| `ecs_cluster_name` | ECS cluster name |

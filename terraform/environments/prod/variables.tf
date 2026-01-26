@@ -80,7 +80,7 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub repository"
   type        = string
-  default     = "financial-reporting-saas"
+  default     = "plainledger"
 }
 
 # Terraform Backend
