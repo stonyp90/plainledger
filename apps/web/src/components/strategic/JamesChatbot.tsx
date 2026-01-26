@@ -1,14 +1,12 @@
 /**
- * James AI Chatbot Component - Full-Featured Executive Tool
+ * James AI Chatbot Component - Premium Executive Experience
  * 
- * A comprehensive AI assistant for executive strategic planning with:
- * - Multiple workspace modes (Chat, Actions, Templates, History)
- * - Conversation management and export
- * - Quick action buttons with direct impact
- * - Keyboard shortcuts
- * - Resizable panel
- * - Voice input support
- * - Rich interactive responses
+ * A beautifully designed AI assistant with:
+ * - Rich markdown rendering with code blocks, headers, and tables
+ * - Smooth animations and transitions
+ * - Context-aware suggestions
+ * - Beautiful message bubbles with proper formatting
+ * - Premium visual design following the theme
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -35,34 +33,32 @@ import {
   Check,
   Trash2,
   Download,
-  RefreshCw,
-  Settings,
-  Mic,
-  MicOff,
   FileText,
   History,
   Layout,
   PlusCircle,
-  Play,
-  Pause,
-  RotateCcw,
-  BookOpen,
   Briefcase,
-  TrendingUp as Growth,
   Users,
-  Building,
   Cog,
   ArrowRight,
-  ExternalLink,
   Maximize2,
   Minimize2,
-  GripVertical,
-  Command,
   Keyboard,
   Star,
   StarOff,
-  Pin,
   ChevronUp,
+  BarChart3,
+  Wallet,
+  PiggyBank,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
+  ThumbsUp,
+  ThumbsDown,
+  Share2,
+  BookOpen,
+  Cpu,
+  CircleDot,
 } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { jamesAI, ChatMessage } from '../../lib/jamesAI';
@@ -84,7 +80,7 @@ interface JamesChatbotProps {
   onOKRGenerated?: (okr: OKR) => void;
 }
 
-type WorkspaceTab = 'chat' | 'actions' | 'templates' | 'history';
+type WorkspaceTab = 'chat' | 'actions' | 'history';
 
 interface ConversationHistory {
   id: string;
@@ -103,6 +99,7 @@ interface ActionTemplate {
   prompt: { en: string; fr: string };
   category: 'runway' | 'initiatives' | 'okrs' | 'analysis' | 'planning';
   color: string;
+  gradient?: string;
 }
 
 const ACTION_TEMPLATES: ActionTemplate[] = [
@@ -110,107 +107,114 @@ const ACTION_TEMPLATES: ActionTemplate[] = [
     id: 'extend-runway',
     icon: TrendingUp,
     title: { en: 'Extend Runway', fr: 'Prolonger le runway' },
-    description: { en: 'Get strategies to extend your cash runway', fr: 'Obtenir des stratégies pour prolonger votre runway' },
+    description: { en: 'Strategic options to extend cash runway', fr: 'Options stratégiques pour prolonger le runway' },
     prompt: { 
       en: 'Analyze my current financial position and provide 3-5 specific, actionable strategies to extend my cash runway. Include estimated impact for each strategy.',
-      fr: 'Analysez ma position financière actuelle et fournissez 3-5 stratégies spécifiques et actionnables pour prolonger mon runway de trésorerie. Incluez l\'impact estimé pour chaque stratégie.'
+      fr: 'Analysez ma position financière actuelle et fournissez 3-5 stratégies spécifiques et actionnables pour prolonger mon runway de trésorerie.'
     },
     category: 'runway',
     color: 'success',
+    gradient: 'from-emerald-500 to-teal-600',
   },
   {
     id: 'reduce-burn',
     icon: TrendingDown,
     title: { en: 'Reduce Burn Rate', fr: 'Réduire le burn rate' },
-    description: { en: 'Find ways to decrease monthly burn', fr: 'Trouver des moyens de réduire le burn mensuel' },
+    description: { en: 'Identify cost reduction opportunities', fr: 'Identifier les opportunités de réduction des coûts' },
     prompt: {
-      en: 'Analyze my expenses and suggest 3-5 ways to reduce my monthly burn rate while maintaining growth potential. Be specific about amounts and trade-offs.',
-      fr: 'Analysez mes dépenses et suggérez 3-5 façons de réduire mon burn rate mensuel tout en maintenant le potentiel de croissance. Soyez précis sur les montants et les compromis.'
+      en: 'Analyze my expenses and suggest 3-5 ways to reduce my monthly burn rate while maintaining growth potential.',
+      fr: 'Analysez mes dépenses et suggérez 3-5 façons de réduire mon burn rate mensuel.'
     },
     category: 'runway',
     color: 'warning',
+    gradient: 'from-amber-500 to-orange-600',
   },
   {
-    id: 'generate-q-initiatives',
+    id: 'generate-initiatives',
     icon: Zap,
-    title: { en: 'Q1 Initiatives', fr: 'Initiatives Q1' },
-    description: { en: 'Generate strategic initiatives for this quarter', fr: 'Générer des initiatives stratégiques pour ce trimestre' },
+    title: { en: 'Generate Initiatives', fr: 'Générer des initiatives' },
+    description: { en: 'Create strategic initiatives for growth', fr: 'Créer des initiatives stratégiques' },
     prompt: {
-      en: 'Generate 3-5 strategic initiatives for Q1 2026 that will improve our financial position. For each, include: name, category, timeline, expected cash impact, and confidence level.',
-      fr: 'Générez 3-5 initiatives stratégiques pour le T1 2026 qui amélioreront notre position financière. Pour chacune, incluez: nom, catégorie, calendrier, impact de trésorerie attendu et niveau de confiance.'
+      en: 'Generate 3-5 strategic initiatives for Q1 2026 that will improve our financial position. Include name, timeline, and expected cash impact.',
+      fr: 'Générez 3-5 initiatives stratégiques pour le T1 2026 qui amélioreront notre position financière.'
     },
     category: 'initiatives',
     color: 'primary',
+    gradient: 'from-blue-500 to-indigo-600',
   },
   {
-    id: 'revenue-initiatives',
-    icon: Growth,
-    title: { en: 'Revenue Growth', fr: 'Croissance des revenus' },
-    description: { en: 'Initiatives to increase revenue', fr: 'Initiatives pour augmenter les revenus' },
+    id: 'revenue-growth',
+    icon: BarChart3,
+    title: { en: 'Revenue Growth Plan', fr: 'Plan de croissance' },
+    description: { en: 'Strategies to increase monthly revenue', fr: 'Stratégies pour augmenter les revenus' },
     prompt: {
-      en: 'Suggest 3 revenue-focused initiatives that could increase our monthly revenue within 3-6 months. Include implementation timeline and expected revenue impact.',
-      fr: 'Suggérez 3 initiatives axées sur les revenus qui pourraient augmenter nos revenus mensuels dans les 3-6 mois. Incluez le calendrier de mise en œuvre et l\'impact de revenus attendu.'
+      en: 'Suggest 3 revenue-focused initiatives that could increase our monthly revenue within 3-6 months. Include implementation steps.',
+      fr: 'Suggérez 3 initiatives axées sur les revenus qui pourraient augmenter nos revenus mensuels.'
     },
     category: 'initiatives',
     color: 'success',
+    gradient: 'from-green-500 to-emerald-600',
   },
   {
     id: 'create-okrs',
     icon: Target,
     title: { en: 'Create OKRs', fr: 'Créer des OKR' },
-    description: { en: 'Generate quarterly OKRs', fr: 'Générer des OKR trimestriels' },
+    description: { en: 'Generate quarterly objectives & key results', fr: 'Générer des OKR trimestriels' },
     prompt: {
-      en: 'Create OKRs for Q1 2026 focused on financial health. Generate 2-3 objectives, each with 3-4 measurable key results tied to cashflow and growth metrics.',
-      fr: 'Créez des OKR pour le T1 2026 axés sur la santé financière. Générez 2-3 objectifs, chacun avec 3-4 résultats clés mesurables liés aux métriques de trésorerie et de croissance.'
+      en: 'Create OKRs for Q1 2026 focused on financial health. Generate 2-3 objectives with 3-4 measurable key results each.',
+      fr: 'Créez des OKR pour le T1 2026 axés sur la santé financière.'
     },
     category: 'okrs',
     color: 'info',
+    gradient: 'from-cyan-500 to-blue-600',
   },
   {
-    id: 'scenario-analysis',
-    icon: Layout,
-    title: { en: 'Scenario Analysis', fr: 'Analyse de scénarios' },
-    description: { en: 'Compare and optimize scenarios', fr: 'Comparer et optimiser les scénarios' },
+    id: 'hiring-analysis',
+    icon: Users,
+    title: { en: 'Hiring Analysis', fr: 'Analyse d\'embauche' },
+    description: { en: 'Evaluate if you can afford new hires', fr: 'Évaluer si vous pouvez embaucher' },
     prompt: {
-      en: 'Analyze my current scenario and suggest optimizations. What assumptions should I adjust? What initiatives would have the biggest impact on runway?',
-      fr: 'Analysez mon scénario actuel et suggérez des optimisations. Quelles hypothèses devrais-je ajuster? Quelles initiatives auraient le plus grand impact sur le runway?'
+      en: 'Can we afford to hire a new team member? Analyze our financial position and provide recommendations on hiring timing and budget.',
+      fr: 'Pouvons-nous nous permettre d\'embaucher? Analysez notre position financière et fournissez des recommandations.'
     },
     category: 'analysis',
     color: 'primary',
+    gradient: 'from-violet-500 to-purple-600',
   },
   {
     id: 'funding-strategy',
     icon: Briefcase,
     title: { en: 'Funding Strategy', fr: 'Stratégie de financement' },
-    description: { en: 'Evaluate funding options', fr: 'Évaluer les options de financement' },
+    description: { en: 'Evaluate fundraising options', fr: 'Évaluer les options de financement' },
     prompt: {
-      en: 'Based on my current runway and burn rate, what funding strategy should I consider? Evaluate timing, amount to raise, and type of funding (equity, debt, grants).',
-      fr: 'Basé sur mon runway actuel et mon burn rate, quelle stratégie de financement devrais-je envisager? Évaluez le timing, le montant à lever et le type de financement (equity, dette, subventions).'
+      en: 'Based on my runway and burn rate, what funding strategy should I consider? Evaluate timing, amount, and type of funding.',
+      fr: 'Basé sur mon runway et burn rate, quelle stratégie de financement devrais-je envisager?'
     },
     category: 'planning',
     color: 'info',
+    gradient: 'from-sky-500 to-blue-600',
   },
   {
-    id: 'cost-optimization',
-    icon: Cog,
-    title: { en: 'Cost Optimization', fr: 'Optimisation des coûts' },
-    description: { en: 'Identify cost savings opportunities', fr: 'Identifier les opportunités d\'économies' },
+    id: 'scenario-compare',
+    icon: Layout,
+    title: { en: 'Compare Scenarios', fr: 'Comparer les scénarios' },
+    description: { en: 'Analyze and optimize your scenarios', fr: 'Analyser et optimiser vos scénarios' },
     prompt: {
-      en: 'Perform a cost optimization analysis. Identify the top 5 areas where we could reduce expenses without significantly impacting growth or operations.',
-      fr: 'Effectuez une analyse d\'optimisation des coûts. Identifiez les 5 principaux domaines où nous pourrions réduire les dépenses sans impact significatif sur la croissance ou les opérations.'
+      en: 'Compare my current scenarios (base, optimistic, pessimistic) and suggest which assumptions I should adjust for better outcomes.',
+      fr: 'Comparez mes scénarios actuels et suggérez les hypothèses à ajuster.'
     },
     category: 'analysis',
     color: 'warning',
+    gradient: 'from-orange-500 to-red-600',
   },
 ];
 
-const CATEGORY_INFO = {
-  runway: { en: 'Runway & Cash', fr: 'Runway & Trésorerie', icon: Clock },
-  initiatives: { en: 'Initiatives', fr: 'Initiatives', icon: Zap },
-  okrs: { en: 'OKRs & Goals', fr: 'OKR & Objectifs', icon: Target },
-  analysis: { en: 'Analysis', fr: 'Analyse', icon: Layout },
-  planning: { en: 'Planning', fr: 'Planification', icon: Calendar },
-};
+const QUICK_ACTIONS = [
+  { id: 'runway', label: { en: 'What\'s my runway?', fr: 'Quel est mon runway?' }, icon: Clock },
+  { id: 'hiring', label: { en: 'Can I afford to hire?', fr: 'Puis-je embaucher?' }, icon: Users },
+  { id: 'costs', label: { en: 'How to cut costs?', fr: 'Comment réduire les coûts?' }, icon: TrendingDown },
+  { id: 'revenue', label: { en: 'Grow revenue', fr: 'Augmenter les revenus' }, icon: TrendingUp },
+];
 
 export default function JamesChatbot({
   isOpen,
@@ -235,9 +239,7 @@ export default function JamesChatbot({
   const [conversationHistories, setConversationHistories] = useState<ConversationHistory[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showContextPanel, setShowContextPanel] = useState(true);
+  const [feedbackGiven, setFeedbackGiven] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -276,7 +278,7 @@ export default function JamesChatbot({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input when opened or tab changes
+  // Focus input when opened
   useEffect(() => {
     if (isOpen && activeTab === 'chat' && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -286,16 +288,13 @@ export default function JamesChatbot({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + K to toggle James
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         onToggle();
       }
-      // Escape to close
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
-      // Cmd/Ctrl + N for new conversation
       if ((e.metaKey || e.ctrlKey) && e.key === 'n' && isOpen) {
         e.preventDefault();
         handleNewConversation();
@@ -313,8 +312,8 @@ export default function JamesChatbot({
         id: 'welcome',
         role: 'assistant',
         content: isEn
-          ? "Hi! I'm James, your AI strategic advisor. I can help you:\n\n• **Extend runway** and reduce burn rate\n• **Generate initiatives** and OKRs\n• **Analyze scenarios** and optimize planning\n\nUse the **Actions** tab for quick tasks, or ask me anything!"
-          : "Bonjour! Je suis James, votre conseiller stratégique IA. Je peux vous aider à:\n\n• **Prolonger le runway** et réduire le burn rate\n• **Générer des initiatives** et des OKR\n• **Analyser des scénarios** et optimiser la planification\n\nUtilisez l'onglet **Actions** pour des tâches rapides, ou posez-moi n'importe quelle question!",
+          ? `## Welcome! 👋\n\nI'm **James**, your AI strategic advisor. I'm here to help you make smarter financial decisions.\n\n### What I can help with:\n- **Runway Analysis** - Understand how long your cash will last\n- **Cost Optimization** - Find ways to reduce expenses\n- **Growth Strategy** - Plan initiatives to increase revenue\n- **Hiring Decisions** - Evaluate if you can afford new team members\n\nTry one of the quick actions below, or ask me anything!`
+          : `## Bienvenue! 👋\n\nJe suis **James**, votre conseiller stratégique IA. Je suis là pour vous aider à prendre de meilleures décisions financières.\n\n### Comment je peux vous aider:\n- **Analyse du runway** - Comprendre combien de temps durera votre trésorerie\n- **Optimisation des coûts** - Trouver des moyens de réduire les dépenses\n- **Stratégie de croissance** - Planifier des initiatives pour augmenter les revenus\n- **Décisions d'embauche** - Évaluer si vous pouvez embaucher\n\nEssayez une action rapide ci-dessous, ou posez-moi n'importe quelle question!`,
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -322,7 +321,6 @@ export default function JamesChatbot({
   }, [isOpen, messages.length, isEn]);
 
   const handleNewConversation = useCallback(() => {
-    // Save current conversation if it has messages
     if (messages.length > 1 && currentConversationId) {
       const updatedHistories = conversationHistories.map(c => 
         c.id === currentConversationId 
@@ -332,8 +330,6 @@ export default function JamesChatbot({
       setConversationHistories(updatedHistories);
       saveConversations(updatedHistories);
     }
-
-    // Start new conversation
     setMessages([]);
     setCurrentConversationId(null);
     setActiveTab('chat');
@@ -393,6 +389,11 @@ export default function JamesChatbot({
     setTimeout(() => setCopiedMessageId(null), 2000);
   }, []);
 
+  const handleFeedback = useCallback((messageId: string, positive: boolean) => {
+    setFeedbackGiven(prev => new Set([...prev, messageId]));
+    jamesAnalytics.trackFeedback(messageId, positive);
+  }, []);
+
   const handleSend = useCallback(
     async (content?: string) => {
       const userMessage = content || input.trim();
@@ -420,9 +421,9 @@ export default function JamesChatbot({
         const lowerMessage = userMessage.toLowerCase();
         if (lowerMessage.includes('initiative') || lowerMessage.includes('generate')) {
           type = 'initiative';
-        } else if (lowerMessage.includes('okr') || lowerMessage.includes('objective') || lowerMessage.includes('key result')) {
+        } else if (lowerMessage.includes('okr') || lowerMessage.includes('objective')) {
           type = 'okr';
-        } else if (lowerMessage.includes('strategy') || lowerMessage.includes('extend') || lowerMessage.includes('reduce') || lowerMessage.includes('optimize')) {
+        } else if (lowerMessage.includes('strategy') || lowerMessage.includes('extend') || lowerMessage.includes('reduce')) {
           type = 'strategy';
         }
 
@@ -481,9 +482,9 @@ export default function JamesChatbot({
           : "Désolé, j'ai rencontré une erreur. Veuillez réessayer.";
 
         if (errorMessage.includes('timeout')) {
-          userFriendlyMessage = isEn ? "Request timed out. Try a shorter message." : "Requête expirée. Essayez un message plus court.";
+          userFriendlyMessage = isEn ? "Request timed out. Try a shorter message." : "Requête expirée.";
         } else if (errorMessage.includes('rate limit')) {
-          userFriendlyMessage = isEn ? "Too many requests. Please wait a moment." : "Trop de requêtes. Attendez un moment.";
+          userFriendlyMessage = isEn ? "Too many requests. Please wait." : "Trop de requêtes. Attendez.";
         }
 
         jamesAnalytics.trackError(error instanceof Error ? error.name : 'UnknownError', errorMessage);
@@ -491,7 +492,7 @@ export default function JamesChatbot({
         const errorMsg: ChatMessage = {
           id: `error-${Date.now()}`,
           role: 'assistant',
-          content: userFriendlyMessage,
+          content: `⚠️ ${userFriendlyMessage}`,
           timestamp: new Date(),
           metadata: { error: errorMessage },
         };
@@ -511,6 +512,10 @@ export default function JamesChatbot({
     handleSend(prompt);
   }, [handleSend, isEn]);
 
+  const handleQuickAction = useCallback((action: typeof QUICK_ACTIONS[0]) => {
+    handleSend(isEn ? action.label.en : action.label.fr);
+  }, [handleSend, isEn]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -519,51 +524,154 @@ export default function JamesChatbot({
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (Math.abs(value) >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    if (Math.abs(value) >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+    return `$${value.toFixed(0)}`;
   };
 
   const formatRunway = (months: number) => {
-    if (!isFinite(months)) return isEn ? '∞' : '∞';
+    if (!isFinite(months) || months > 100) return '∞';
     if (months < 0) return isEn ? 'Critical' : 'Critique';
-    return `${Math.round(months)}mo`;
+    return `${Math.round(months)} ${isEn ? 'months' : 'mois'}`;
   };
 
-  const getRunwayColor = (months: number) => {
-    if (months < 6) return 'error';
-    if (months < 12) return 'warning';
-    return 'success';
+  const getRunwayStatus = (months: number) => {
+    if (months < 6) return { color: 'error', label: isEn ? 'Critical' : 'Critique', icon: AlertCircle };
+    if (months < 12) return { color: 'warning', label: isEn ? 'Warning' : 'Attention', icon: AlertCircle };
+    return { color: 'success', label: isEn ? 'Healthy' : 'Sain', icon: Check };
   };
 
+  // Enhanced markdown rendering
   const renderMessageContent = (content: string) => {
     const lines = content.split('\n');
-    return lines.map((line, i) => {
-      let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
-      if (formattedLine.startsWith('• ') || formattedLine.startsWith('- ')) {
-        return (
-          <div key={i} className="flex gap-2 pl-1">
-            <span style={{ color: 'rgb(var(--color-primary-500))' }}>•</span>
-            <span dangerouslySetInnerHTML={{ __html: formattedLine.slice(2) }} />
+    const elements: JSX.Element[] = [];
+    let inCodeBlock = false;
+    let codeContent = '';
+    let codeLanguage = '';
+
+    lines.forEach((line, i) => {
+      // Code block handling
+      if (line.startsWith('```')) {
+        if (!inCodeBlock) {
+          inCodeBlock = true;
+          codeLanguage = line.slice(3);
+          codeContent = '';
+        } else {
+          inCodeBlock = false;
+          elements.push(
+            <div key={`code-${i}`} className="my-3 rounded-lg overflow-hidden" style={{ backgroundColor: 'rgb(30, 30, 30)' }}>
+              {codeLanguage && (
+                <div className="px-3 py-1.5 text-xs font-mono border-b border-gray-700" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {codeLanguage}
+                </div>
+              )}
+              <pre className="p-3 text-sm font-mono overflow-x-auto" style={{ color: '#e5e5e5' }}>
+                <code>{codeContent.trim()}</code>
+              </pre>
+            </div>
+          );
+        }
+        return;
+      }
+
+      if (inCodeBlock) {
+        codeContent += line + '\n';
+        return;
+      }
+
+      // Headers
+      if (line.startsWith('### ')) {
+        elements.push(
+          <h4 key={i} className="text-sm font-bold mt-4 mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+            <CircleDot className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            {line.slice(4)}
+          </h4>
+        );
+        return;
+      }
+      if (line.startsWith('## ')) {
+        elements.push(
+          <h3 key={i} className="text-base font-bold mt-3 mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+            {line.slice(3)}
+          </h3>
+        );
+        return;
+      }
+      if (line.startsWith('# ')) {
+        elements.push(
+          <h2 key={i} className="text-lg font-bold mt-2 mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+            {line.slice(2)}
+          </h2>
+        );
+        return;
+      }
+
+      // Horizontal rule
+      if (line.match(/^-{3,}$/) || line.match(/^_{3,}$/)) {
+        elements.push(
+          <hr key={i} className="my-3" style={{ borderColor: 'rgb(var(--color-border))' }} />
+        );
+        return;
+      }
+
+      // Format inline elements
+      let formattedLine = line
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold" style="color: rgb(var(--color-text))">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded text-xs font-mono" style="background: rgb(var(--color-bg-muted)); color: rgb(var(--color-primary-500))">$1</code>')
+        .replace(/✅/g, '<span style="color: rgb(var(--color-success))">✅</span>')
+        .replace(/⚠️/g, '<span style="color: rgb(var(--color-warning))">⚠️</span>')
+        .replace(/❌/g, '<span style="color: rgb(var(--color-error))">❌</span>')
+        .replace(/💡/g, '<span style="color: rgb(var(--color-warning))">💡</span>')
+        .replace(/📊/g, '<span style="color: rgb(var(--color-info))">📊</span>')
+        .replace(/🎯/g, '<span style="color: rgb(var(--color-primary-500))">🎯</span>');
+
+      // Numbered lists
+      const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
+      if (numberedMatch) {
+        elements.push(
+          <div key={i} className="flex gap-3 my-1.5 pl-1">
+            <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)', color: 'rgb(var(--color-primary-600))' }}>
+              {numberedMatch[1]}
+            </span>
+            <span className="flex-1" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^\d+\.\s+/, '') }} />
           </div>
         );
+        return;
       }
-      return <span key={i} dangerouslySetInnerHTML={{ __html: formattedLine }} className={line === '' ? 'block h-3' : 'block'} />;
+
+      // Bullet lists
+      if (line.startsWith('- ') || line.startsWith('• ') || line.startsWith('* ')) {
+        elements.push(
+          <div key={i} className="flex gap-2 my-1 pl-1">
+            <span className="mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }} />
+            <span className="flex-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine.slice(2) }} />
+          </div>
+        );
+        return;
+      }
+
+      // Regular paragraph
+      if (line.trim()) {
+        elements.push(
+          <p key={i} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />
+        );
+      } else {
+        elements.push(<div key={i} className="h-2" />);
+      }
     });
+
+    return <div className="space-y-1">{elements}</div>;
   };
 
-  const filteredTemplates = selectedCategory
-    ? ACTION_TEMPLATES.filter(t => t.category === selectedCategory)
-    : ACTION_TEMPLATES;
+  const runwayStatus = getRunwayStatus(financialContext.runwayMonths);
 
   // Floating button when closed
   if (!isOpen) {
     return (
       <button
         onClick={onToggle}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl transition-all active:scale-95"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl transition-all active:scale-95 group"
         style={{
           background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
         }}
@@ -571,7 +679,7 @@ export default function JamesChatbot({
       >
         <div className="relative">
           <Bot className="w-6 h-6 text-white" />
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white" />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />
         </div>
         <div className="text-left hidden sm:block">
           <span className="text-white font-semibold text-sm block">James AI</span>
@@ -611,7 +719,7 @@ export default function JamesChatbot({
           <div>
             <h3 className="font-semibold text-sm text-white flex items-center gap-2">
               James AI
-              <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
             </h3>
             <p className="text-xs text-white/60">
               {isEn ? 'Strategic Advisor' : 'Conseiller stratégique'}
@@ -630,14 +738,13 @@ export default function JamesChatbot({
           <button
             onClick={handleExportConversation}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-            title={isEn ? 'Export conversation' : 'Exporter la conversation'}
+            title={isEn ? 'Export' : 'Exporter'}
           >
             <Download className="w-4 h-4" />
           </button>
           <button
             onClick={() => setShowShortcuts(!showShortcuts)}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white"
-            title={isEn ? 'Keyboard shortcuts' : 'Raccourcis clavier'}
           >
             <Keyboard className="w-4 h-4" />
           </button>
@@ -656,7 +763,7 @@ export default function JamesChatbot({
         </div>
       </div>
 
-      {/* Keyboard shortcuts tooltip */}
+      {/* Shortcuts tooltip */}
       {showShortcuts && (
         <div
           className="absolute top-16 right-4 p-4 rounded-xl shadow-xl z-10 text-sm"
@@ -666,24 +773,67 @@ export default function JamesChatbot({
           }}
         >
           <h4 className="font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Shortcuts' : 'Raccourcis'}
+            {isEn ? 'Keyboard Shortcuts' : 'Raccourcis'}
           </h4>
-          <div className="space-y-1 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <div className="flex justify-between gap-4">
-              <span>⌘K</span>
+          <div className="space-y-1.5 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <div className="flex justify-between gap-6">
+              <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">⌘K</kbd>
               <span>{isEn ? 'Toggle James' : 'Basculer James'}</span>
             </div>
-            <div className="flex justify-between gap-4">
-              <span>⌘N</span>
+            <div className="flex justify-between gap-6">
+              <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">⌘N</kbd>
               <span>{isEn ? 'New chat' : 'Nouveau chat'}</span>
             </div>
-            <div className="flex justify-between gap-4">
-              <span>Esc</span>
+            <div className="flex justify-between gap-6">
+              <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">Esc</kbd>
               <span>{isEn ? 'Close' : 'Fermer'}</span>
             </div>
-            <div className="flex justify-between gap-4">
-              <span>Enter</span>
-              <span>{isEn ? 'Send' : 'Envoyer'}</span>
+            <div className="flex justify-between gap-6">
+              <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">Enter</kbd>
+              <span>{isEn ? 'Send message' : 'Envoyer'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Context Bar */}
+      {activeTab === 'chat' && (
+        <div
+          className="px-4 py-3 flex-shrink-0 border-b"
+          style={{
+            backgroundColor: 'rgb(var(--color-bg-subtle))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <div className="grid grid-cols-3 gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+                <Wallet className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>Cash</p>
+                <p className="text-sm font-bold" style={{ color: 'rgb(var(--color-text))' }}>{formatCurrency(financialContext.currentCash)}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `rgb(var(--color-${runwayStatus.color}) / 0.1)` }}>
+                <Clock className="w-4 h-4" style={{ color: `rgb(var(--color-${runwayStatus.color}))` }} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>Runway</p>
+                <p className="text-sm font-bold" style={{ color: `rgb(var(--color-${runwayStatus.color}))` }}>{formatRunway(financialContext.runwayMonths)}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}>
+                <ArrowDownRight className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>Burn</p>
+                <p className="text-sm font-bold" style={{ color: 'rgb(var(--color-text))' }}>{formatCurrency(financialContext.burnRate)}/mo</p>
+              </div>
             </div>
           </div>
         </div>
@@ -696,21 +846,20 @@ export default function JamesChatbot({
       >
         {[
           { id: 'chat' as WorkspaceTab, icon: MessageCircle, label: { en: 'Chat', fr: 'Chat' } },
-          { id: 'actions' as WorkspaceTab, icon: Zap, label: { en: 'Actions', fr: 'Actions' } },
-          { id: 'templates' as WorkspaceTab, icon: FileText, label: { en: 'Templates', fr: 'Modèles' } },
+          { id: 'actions' as WorkspaceTab, icon: Zap, label: { en: 'Quick Actions', fr: 'Actions' } },
           { id: 'history' as WorkspaceTab, icon: History, label: { en: 'History', fr: 'Historique' } },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-all relative`}
+            className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-all relative"
             style={{
               color: activeTab === tab.id ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
               backgroundColor: activeTab === tab.id ? 'rgb(var(--color-primary-500) / 0.05)' : 'transparent',
             }}
           >
             <tab.icon className="w-4 h-4" />
-            <span className="hidden sm:inline">{isEn ? tab.label.en : tab.label.fr}</span>
+            <span>{isEn ? tab.label.en : tab.label.fr}</span>
             {activeTab === tab.id && (
               <div
                 className="absolute bottom-0 left-0 right-0 h-0.5"
@@ -720,68 +869,6 @@ export default function JamesChatbot({
           </button>
         ))}
       </div>
-
-      {/* Financial Context Bar */}
-      {showContextPanel && activeTab === 'chat' && (
-        <div
-          className="px-4 py-2.5 flex-shrink-0 border-b flex items-center gap-3 overflow-x-auto"
-          style={{
-            backgroundColor: 'rgb(var(--color-bg-subtle))',
-            borderColor: 'rgb(var(--color-border))',
-          }}
-        >
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <DollarSign className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>Cash</p>
-              <p className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>{formatCurrency(financialContext.currentCash)}</p>
-            </div>
-          </div>
-          
-          <div className="w-px h-8" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Clock className="w-4 h-4" style={{ color: `rgb(var(--color-${getRunwayColor(financialContext.runwayMonths)}))` }} />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>Runway</p>
-              <p className="text-sm font-semibold" style={{ color: `rgb(var(--color-${getRunwayColor(financialContext.runwayMonths)}))` }}>{formatRunway(financialContext.runwayMonths)}</p>
-            </div>
-          </div>
-          
-          <div className="w-px h-8" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <TrendingDown className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>Burn</p>
-              <p className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>{formatCurrency(financialContext.burnRate)}</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setShowContextPanel(false)}
-            className="ml-auto p-1 rounded hover:bg-black/5"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            <ChevronUp className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
-      {!showContextPanel && activeTab === 'chat' && (
-        <button
-          onClick={() => setShowContextPanel(true)}
-          className="px-4 py-1.5 text-xs flex items-center justify-center gap-2 border-b"
-          style={{
-            borderColor: 'rgb(var(--color-border))',
-            color: 'rgb(var(--color-text-muted))',
-            backgroundColor: 'rgb(var(--color-bg-subtle))',
-          }}
-        >
-          <ChevronDown className="w-3 h-3" />
-          {isEn ? 'Show context' : 'Afficher contexte'}
-        </button>
-      )}
 
       {/* Error Banner */}
       {error && (
@@ -813,51 +900,79 @@ export default function JamesChatbot({
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                 )}
-                <div
-                  className={`relative max-w-[85%] rounded-2xl px-4 py-3 group ${message.role === 'user' ? 'rounded-br-md' : 'rounded-bl-md'}`}
-                  style={message.role === 'user'
-                    ? { background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)', color: 'white' }
-                    : { backgroundColor: 'rgb(var(--color-bg))', border: '1px solid rgb(var(--color-border))', color: 'rgb(var(--color-text))' }
-                  }
-                >
-                  <div className="text-sm leading-relaxed">{renderMessageContent(message.content)}</div>
-                  
-                  {message.metadata?.initiatives && message.metadata.initiatives.length > 0 && (
-                    <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
-                        <Zap className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
+                <div className={`relative max-w-[85%] ${message.role === 'user' ? '' : ''}`}>
+                  <div
+                    className={`rounded-2xl px-4 py-3 ${message.role === 'user' ? 'rounded-br-md' : 'rounded-bl-md'}`}
+                    style={message.role === 'user'
+                      ? { background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)', color: 'white' }
+                      : { backgroundColor: 'rgb(var(--color-bg))', border: '1px solid rgb(var(--color-border))', color: 'rgb(var(--color-text))' }
+                    }
+                  >
+                    <div className="text-sm">{renderMessageContent(message.content)}</div>
+                    
+                    {message.metadata?.initiatives && message.metadata.initiatives.length > 0 && (
+                      <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
+                          <Zap className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
+                        </div>
+                        <p className="text-xs font-medium flex-1" style={{ color: 'rgb(var(--color-success))' }}>
+                          {message.metadata.initiatives.length} {isEn ? 'initiative(s) created' : 'initiative(s) créée(s)'}
+                        </p>
+                        <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
                       </div>
-                      <p className="text-xs font-medium flex-1" style={{ color: 'rgb(var(--color-success))' }}>
-                        {message.metadata.initiatives.length} {isEn ? 'initiative(s) added' : 'initiative(s) ajoutée(s)'}
-                      </p>
-                      <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-                    </div>
-                  )}
-                  
-                  {message.metadata?.okrs && message.metadata.okrs.length > 0 && (
-                    <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}>
-                        <Target className="w-3 h-3" style={{ color: 'rgb(var(--color-info))' }} />
+                    )}
+                    
+                    {message.metadata?.okrs && message.metadata.okrs.length > 0 && (
+                      <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}>
+                          <Target className="w-3 h-3" style={{ color: 'rgb(var(--color-info))' }} />
+                        </div>
+                        <p className="text-xs font-medium flex-1" style={{ color: 'rgb(var(--color-info))' }}>
+                          {isEn ? 'OKR created' : 'OKR créé'}
+                        </p>
+                        <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
                       </div>
-                      <p className="text-xs font-medium flex-1" style={{ color: 'rgb(var(--color-info))' }}>
-                        {isEn ? 'OKR created' : 'OKR créé'}
-                      </p>
-                      <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
-                    </div>
-                  )}
+                    )}
+                  </div>
 
+                  {/* Message actions */}
                   {message.role === 'assistant' && message.id !== 'welcome' && (
-                    <button
-                      onClick={() => handleCopyMessage(message.id, message.content)}
-                      className="absolute top-2 right-2 p-1.5 rounded-lg opacity-50 sm:opacity-30 hover:opacity-100 transition-opacity"
-                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                    >
-                      {copiedMessageId === message.id ? (
-                        <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
-                      ) : (
-                        <Copy className="w-3 h-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <div className="flex items-center gap-1 mt-1.5 pl-1">
+                      <button
+                        onClick={() => handleCopyMessage(message.id, message.content)}
+                        className="p-1.5 rounded-lg transition-colors"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
+                        {copiedMessageId === message.id ? (
+                          <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      {!feedbackGiven.has(message.id) && (
+                        <>
+                          <button
+                            onClick={() => handleFeedback(message.id, true)}
+                            className="p-1.5 rounded-lg transition-colors hover:bg-green-500/10"
+                            style={{ color: 'rgb(var(--color-text-muted))' }}
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleFeedback(message.id, false)}
+                            className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
+                            style={{ color: 'rgb(var(--color-text-muted))' }}
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                          </button>
+                        </>
                       )}
-                    </button>
+                      {feedbackGiven.has(message.id) && (
+                        <span className="text-xs px-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          {isEn ? 'Thanks for feedback!' : 'Merci!'}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 {message.role === 'user' && (
@@ -868,40 +983,51 @@ export default function JamesChatbot({
               </div>
             ))}
 
+            {/* Loading state */}
             {isLoading && (
               <div className="flex gap-3 justify-start">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)' }}>
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div className="rounded-2xl rounded-bl-md px-4 py-3" style={{ backgroundColor: 'rgb(var(--color-bg))', border: '1px solid rgb(var(--color-border))' }}>
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                    <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Thinking...' : 'Réflexion...'}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: 'rgb(var(--color-primary-500))', animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: 'rgb(var(--color-primary-500))', animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: 'rgb(var(--color-primary-500))', animationDelay: '300ms' }} />
+                    </div>
+                    <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? 'James is thinking...' : 'James réfléchit...'}
+                    </span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Quick suggestions for empty/welcome state */}
+            {/* Quick actions for welcome state */}
             {messages.length <= 1 && (
-              <div className="space-y-2 pt-2">
-                <p className="text-xs font-medium px-1 flex items-center gap-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-semibold px-1 flex items-center gap-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   <Lightbulb className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-warning))' }} />
-                  {isEn ? 'Try asking:' : 'Essayez:'}
+                  {isEn ? 'Quick questions:' : 'Questions rapides:'}
                 </p>
-                {SUGGESTED_PROMPTS.slice(0, 3).map((prompt) => (
-                  <button
-                    key={prompt.id}
-                    onClick={() => handleSend(isEn ? prompt.en : prompt.fr)}
-                    className="w-full text-left p-3 rounded-xl text-sm transition-colors active:opacity-80"
-                    style={{ backgroundColor: 'rgb(var(--color-bg))', border: '1px solid rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>{isEn ? prompt.en : prompt.fr}</span>
-                      <ArrowRight className="w-4 h-4 opacity-50" />
-                    </div>
-                  </button>
-                ))}
+                <div className="grid grid-cols-2 gap-2">
+                  {QUICK_ACTIONS.map((action) => (
+                    <button
+                      key={action.id}
+                      onClick={() => handleQuickAction(action)}
+                      className="flex items-center gap-2 p-3 rounded-xl text-sm text-left transition-all active:scale-98"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-bg))', 
+                        border: '1px solid rgb(var(--color-border))', 
+                        color: 'rgb(var(--color-text))' 
+                      }}
+                    >
+                      <action.icon className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                      <span className="line-clamp-1">{isEn ? action.label.en : action.label.fr}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -912,97 +1038,43 @@ export default function JamesChatbot({
         {/* Actions Tab */}
         {activeTab === 'actions' && (
           <div className="p-4 space-y-4">
-            <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Quick actions to help you plan strategically' : 'Actions rapides pour vous aider à planifier stratégiquement'}
-            </p>
+            <div className="text-center py-2">
+              <h3 className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'What would you like to do?' : 'Que souhaitez-vous faire?'}
+              </h3>
+              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Select an action to get instant strategic advice' : 'Sélectionnez une action pour obtenir des conseils'}
+              </p>
+            </div>
             
             <div className="grid grid-cols-2 gap-3">
-              {ACTION_TEMPLATES.slice(0, 6).map((template) => (
+              {ACTION_TEMPLATES.map((template) => (
                 <button
                   key={template.id}
                   onClick={() => handleTemplateClick(template)}
-                  className="p-4 rounded-xl text-left transition-colors active:opacity-80"
-                  style={{
-                    backgroundColor: `rgb(var(--color-${template.color}) / 0.05)`,
-                    border: `1px solid rgb(var(--color-${template.color}) / 0.15)`,
-                  }}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ backgroundColor: `rgb(var(--color-${template.color}) / 0.1)` }}>
-                    <template.icon className="w-4 h-4" style={{ color: `rgb(var(--color-${template.color}))` }} />
-                  </div>
-                  <h4 className="text-sm font-medium mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? template.title.en : template.title.fr}
-                  </h4>
-                  <p className="text-xs line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? template.description.en : template.description.fr}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Templates Tab */}
-        {activeTab === 'templates' && (
-          <div className="p-4 space-y-4">
-            {/* Category filters */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${!selectedCategory ? 'ring-2 ring-offset-1' : ''}`}
-                style={{
-                  backgroundColor: !selectedCategory ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg))',
-                  color: !selectedCategory ? 'white' : 'rgb(var(--color-text))',
-                  border: '1px solid rgb(var(--color-border))',
-                  ringColor: 'rgb(var(--color-primary-500))',
-                }}
-              >
-                {isEn ? 'All' : 'Tous'}
-              </button>
-              {Object.entries(CATEGORY_INFO).map(([key, info]) => (
-                <button
-                  key={key}
-                  onClick={() => setSelectedCategory(key)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1.5 transition-all ${selectedCategory === key ? 'ring-2 ring-offset-1' : ''}`}
-                  style={{
-                    backgroundColor: selectedCategory === key ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg))',
-                    color: selectedCategory === key ? 'white' : 'rgb(var(--color-text))',
-                    border: '1px solid rgb(var(--color-border))',
-                    ringColor: 'rgb(var(--color-primary-500))',
-                  }}
-                >
-                  <info.icon className="w-3 h-3" />
-                  {isEn ? info.en : info.fr}
-                </button>
-              ))}
-            </div>
-
-            {/* Template list */}
-            <div className="space-y-2">
-              {filteredTemplates.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => handleTemplateClick(template)}
-                  className="w-full p-4 rounded-xl text-left transition-colors active:opacity-80"
+                  className="p-4 rounded-xl text-left transition-all active:scale-98 group relative overflow-hidden"
                   style={{
                     backgroundColor: 'rgb(var(--color-bg))',
                     border: '1px solid rgb(var(--color-border))',
                   }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `rgb(var(--color-${template.color}) / 0.1)` }}>
-                      <template.icon className="w-5 h-5" style={{ color: `rgb(var(--color-${template.color}))` }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                        {isEn ? template.title.en : template.title.fr}
-                      </h4>
-                      <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                        {isEn ? template.description.en : template.description.fr}
-                      </p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${template.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+                    style={{ backgroundColor: `rgb(var(--color-${template.color}) / 0.1)` }}
+                  >
+                    <template.icon className="w-5 h-5" style={{ color: `rgb(var(--color-${template.color}))` }} />
                   </div>
+                  <h4 className="text-sm font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? template.title.en : template.title.fr}
+                  </h4>
+                  <p className="text-xs line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? template.description.en : template.description.fr}
+                  </p>
+                  <ArrowRight 
+                    className="absolute bottom-3 right-3 w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" 
+                    style={{ color: `rgb(var(--color-${template.color}))` }}
+                  />
                 </button>
               ))}
             </div>
@@ -1013,25 +1085,30 @@ export default function JamesChatbot({
         {activeTab === 'history' && (
           <div className="p-4 space-y-4">
             {conversationHistories.length === 0 ? (
-              <div className="text-center py-8">
-                <History className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? 'No conversation history yet' : 'Pas d\'historique de conversation'}
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                  <History className="w-8 h-8" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                </div>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'No conversations yet' : 'Pas encore de conversations'}
+                </h3>
+                <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Your chat history will appear here' : 'Votre historique apparaîtra ici'}
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {/* Starred conversations first */}
+                {/* Starred */}
                 {conversationHistories.filter(c => c.starred).length > 0 && (
                   <>
-                    <p className="text-xs font-medium px-1 flex items-center gap-2" style={{ color: 'rgb(var(--color-warning))' }}>
+                    <p className="text-xs font-semibold px-1 flex items-center gap-2" style={{ color: 'rgb(var(--color-warning))' }}>
                       <Star className="w-3 h-3" />
                       {isEn ? 'Starred' : 'Favoris'}
                     </p>
                     {conversationHistories.filter(c => c.starred).map((conv) => (
                       <div
                         key={conv.id}
-                        className="p-3 rounded-xl group"
+                        className="p-3 rounded-xl"
                         style={{
                           backgroundColor: 'rgb(var(--color-bg))',
                           border: '1px solid rgb(var(--color-border))',
@@ -1041,7 +1118,7 @@ export default function JamesChatbot({
                           <button onClick={() => handleLoadConversation(conv)} className="flex-1 text-left">
                             <h4 className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>{conv.title}</h4>
                             <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                              {conv.messages.length} messages • {new Date(conv.updatedAt).toLocaleDateString()}
+                              {conv.messages.length} {isEn ? 'messages' : 'messages'} • {new Date(conv.updatedAt).toLocaleDateString()}
                             </p>
                           </button>
                           <div className="flex items-center gap-1">
@@ -1058,16 +1135,16 @@ export default function JamesChatbot({
                   </>
                 )}
 
-                {/* Regular conversations */}
+                {/* Recent */}
                 {conversationHistories.filter(c => !c.starred).length > 0 && (
                   <>
-                    <p className="text-xs font-medium px-1 mt-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    <p className="text-xs font-semibold px-1 mt-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       {isEn ? 'Recent' : 'Récents'}
                     </p>
                     {conversationHistories.filter(c => !c.starred).slice(0, 10).map((conv) => (
                       <div
                         key={conv.id}
-                        className="p-3 rounded-xl group"
+                        className="p-3 rounded-xl"
                         style={{
                           backgroundColor: 'rgb(var(--color-bg))',
                           border: '1px solid rgb(var(--color-border))',
@@ -1077,7 +1154,7 @@ export default function JamesChatbot({
                           <button onClick={() => handleLoadConversation(conv)} className="flex-1 text-left">
                             <h4 className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>{conv.title}</h4>
                             <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                              {conv.messages.length} messages • {new Date(conv.updatedAt).toLocaleDateString()}
+                              {conv.messages.length} {isEn ? 'messages' : 'messages'} • {new Date(conv.updatedAt).toLocaleDateString()}
                             </p>
                           </button>
                           <div className="flex items-center gap-1">
@@ -1099,7 +1176,7 @@ export default function JamesChatbot({
         )}
       </div>
 
-      {/* Input Area - Only show on chat tab */}
+      {/* Input Area */}
       {activeTab === 'chat' && (
         <div
           className="p-4 flex-shrink-0 border-t"
@@ -1110,7 +1187,7 @@ export default function JamesChatbot({
               className="flex-1 relative rounded-xl overflow-hidden"
               style={{
                 backgroundColor: 'rgb(var(--color-bg-muted))',
-                border: error ? '1px solid rgb(var(--color-error))' : '1px solid rgb(var(--color-border))',
+                border: '1px solid rgb(var(--color-border))',
               }}
             >
               <textarea
@@ -1118,7 +1195,7 @@ export default function JamesChatbot({
                 value={input}
                 onChange={(e) => { setInput(e.target.value); setError(null); }}
                 onKeyDown={handleKeyDown}
-                placeholder={isEn ? 'Ask James anything... (Enter to send)' : 'Demandez à James... (Entrée pour envoyer)'}
+                placeholder={isEn ? 'Ask James anything...' : 'Demandez à James...'}
                 className="w-full min-h-[48px] max-h-32 px-4 py-3 resize-none text-sm bg-transparent focus:outline-none"
                 style={{ color: 'rgb(var(--color-text))' }}
                 rows={1}
@@ -1132,17 +1209,22 @@ export default function JamesChatbot({
               className="p-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
               style={{
                 background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                boxShadow: '0 4px 12px rgb(var(--color-primary-500) / 0.3)',
+                boxShadow: input.trim() ? '0 4px 12px rgb(var(--color-primary-500) / 0.3)' : 'none',
               }}
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Send className="w-5 h-5 text-white" />}
             </button>
           </div>
-          {input.length > 9000 && (
-            <p className="text-xs mt-2 text-right" style={{ color: 'rgb(var(--color-warning))' }}>
-              {input.length.toLocaleString()}/10,000
+          <div className="flex items-center justify-between mt-2 px-1">
+            <p className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Press Enter to send • Shift+Enter for new line' : 'Entrée pour envoyer • Shift+Entrée nouvelle ligne'}
             </p>
-          )}
+            {input.length > 9000 && (
+              <p className="text-xs" style={{ color: 'rgb(var(--color-warning))' }}>
+                {input.length.toLocaleString()}/10,000
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
