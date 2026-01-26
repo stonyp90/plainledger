@@ -45,6 +45,10 @@ import {
   CircleDot,
   LayoutGrid,
   Sparkles,
+  Calendar,
+  Clock,
+  GitBranch,
+  TrendingDown as TrendingDownIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
@@ -76,6 +80,11 @@ export const ChartTypeIcon: Record<ChartType, LucideIcon> = {
   gauge: Gauge,
   sparkline: Sparkles,
   table: Table,
+  gantt: Calendar,
+  runway: Clock,
+  scenario: GitBranch,
+  burnRate: TrendingDownIcon,
+  cashForecast: Activity,
 };
 
 // =====================================================

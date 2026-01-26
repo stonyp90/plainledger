@@ -120,7 +120,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
           category: 'security',
           priority: 'high',
           title: 'Connexion depuis un nouvel appareil',
-          message: 'Une connexion a été détectée depuis MacBook Pro - Montréal, QC',
+          message: 'Une connexion a été détectée depuis MacBook Pro - Toronto, ON',
           read: true,
           archived: false,
           createdAt: new Date(Date.now() - 3 * 24 * 3600000).toISOString(),

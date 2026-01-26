@@ -413,7 +413,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
                 50+
               </p>
               <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Quebec CPA firms' : 'Cabinets CPA du Québec'}
+                {isEn ? 'Canadian CPA firms' : 'Cabinets CPA canadiens'}
               </p>
             </div>
             <div>

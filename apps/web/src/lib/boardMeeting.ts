@@ -349,7 +349,7 @@ export function generateExecutiveSummarySlides(
             heading: isEn ? 'Q1 2026 Priorities' : 'Priorités Q1 2026',
             points: [
               isEn ? 'Launch new product line' : 'Lancement nouvelle gamme de produits',
-              isEn ? 'Expand Quebec market presence' : 'Expansion présence marché québécois',
+              isEn ? 'Expand Canadian market presence' : 'Expansion présence marché canadien',
               isEn ? 'Implement cost optimization program' : 'Implanter programme d\'optimisation des coûts',
             ],
           },

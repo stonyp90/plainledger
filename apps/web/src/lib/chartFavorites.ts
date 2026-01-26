@@ -22,7 +22,12 @@ export type ChartType =
   | 'waterfall'
   | 'gauge'
   | 'sparkline'
-  | 'table';
+  | 'table'
+  | 'gantt'
+  | 'runway'
+  | 'scenario'
+  | 'burnRate'
+  | 'cashForecast';
 
 export type DataMetric = 
   | 'revenue'
@@ -225,6 +230,46 @@ export const CHART_TYPE_INFO: Record<ChartType, {
     description: 'Données détaillées en format tabulaire',
     descriptionEn: 'Detailed data in tabular format',
     bestFor: ['accountsReceivable', 'accountsPayable', 'inventory'],
+  },
+  gantt: {
+    label: 'Gantt',
+    labelEn: 'Gantt',
+    icon: '📅',
+    description: 'Timeline des initiatives stratégiques',
+    descriptionEn: 'Strategic initiative timeline',
+    bestFor: ['cashFlow'],
+  },
+  runway: {
+    label: 'Autonomie',
+    labelEn: 'Runway',
+    icon: '⏱️',
+    description: 'Visualisation du compte à rebours de trésorerie',
+    descriptionEn: 'Cash runway countdown visualization',
+    bestFor: ['cashFlow'],
+  },
+  scenario: {
+    label: 'Scénario',
+    labelEn: 'Scenario',
+    icon: '🔮',
+    description: 'Comparaison de scénarios multiples',
+    descriptionEn: 'Multiple scenario comparison',
+    bestFor: ['cashFlow'],
+  },
+  burnRate: {
+    label: 'Taux de brûlage',
+    labelEn: 'Burn Rate',
+    icon: '📉',
+    description: 'Tendances du taux de brûlage avec projections',
+    descriptionEn: 'Burn rate trends with projections',
+    bestFor: ['cashFlow', 'expenses'],
+  },
+  cashForecast: {
+    label: 'Prévision de trésorerie',
+    labelEn: 'Cash Forecast',
+    icon: '🔮',
+    description: 'Projection de trésorerie prospective',
+    descriptionEn: 'Forward-looking cash projection',
+    bestFor: ['cashFlow'],
   },
 };
 

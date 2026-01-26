@@ -311,8 +311,8 @@ function ConnectSourceStep({
           </span>
           <br />
           {isEn 
-            ? 'Read-only access • Bank-level encryption (AES-256) • Data stored in Quebec'
-            : 'Accès lecture seule • Chiffrement bancaire (AES-256) • Données au Québec'}
+            ? 'Read-only access • Bank-level encryption (AES-256) • Data stored in Canada'
+            : 'Accès lecture seule • Chiffrement bancaire (AES-256) • Données au Canada'}
         </div>
       </div>
 

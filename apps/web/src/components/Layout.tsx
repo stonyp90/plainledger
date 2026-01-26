@@ -29,6 +29,8 @@ import {
   ChevronRight,
   BarChart3,
   Presentation,
+  Target,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -61,6 +63,14 @@ export default function Layout({ children }: LayoutProps) {
   const { t, language, formatDate } = useI18n();
   const searchModal = useSearchModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    // Check localStorage for saved preference
+    try {
+      return localStorage.getItem('pl-sidebar-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -91,6 +101,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' as const },
     { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports' as const },
+    { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports' as const },
     { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' as const },
     { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' as const },
     { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' as const },
@@ -299,7 +310,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Desktop Sidebar */}
       <aside 
-        className="hidden lg:flex w-64 flex-col border-r flex-shrink-0"
+        className={`hidden lg:flex flex-col border-r flex-shrink-0 transition-all duration-300 ${
+          isSidebarCollapsed ? 'w-16' : 'w-64'
+        }`}
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
           borderColor: 'rgb(var(--color-border))'
@@ -307,12 +320,17 @@ export default function Layout({ children }: LayoutProps) {
       >
         {/* Logo */}
         <div 
-          className="h-16 flex items-center justify-between px-6 border-b flex-shrink-0"
+          className="h-16 flex items-center justify-between px-4 sm:px-6 border-b flex-shrink-0 relative"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Link to="/app/dashboard" className="flex items-center gap-2.5 group">
+          <Link 
+            to="/app/dashboard" 
+            className={`flex items-center gap-2.5 group transition-all ${
+              isSidebarCollapsed ? 'justify-center w-full' : ''
+            }`}
+          >
             <div 
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all group-hover:scale-105 group-hover:shadow-lg"
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all group-hover:scale-105 group-hover:shadow-lg flex-shrink-0"
               style={{ 
                 background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
                 boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.25)'
@@ -323,13 +341,39 @@ export default function Layout({ children }: LayoutProps) {
                 <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
-            <span 
-              className="font-semibold text-base tracking-tight"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
-            </span>
+            {!isSidebarCollapsed && (
+              <span 
+                className="font-semibold text-base tracking-tight"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
+              </span>
+            )}
           </Link>
+          
+          {/* Collapse Toggle */}
+          <button
+            onClick={() => {
+              const newState = !isSidebarCollapsed;
+              setIsSidebarCollapsed(newState);
+              try {
+                localStorage.setItem('pl-sidebar-collapsed', String(newState));
+              } catch {}
+            }}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
+            style={{
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '2px solid rgb(var(--color-border))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+            title={isSidebarCollapsed ? (language === 'en' ? 'Expand sidebar' : 'Agrandir la barre latérale') : (language === 'en' ? 'Collapse sidebar' : 'Réduire la barre latérale')}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronLeft className="w-3.5 h-3.5" />
+            )}
+          </button>
           {isInternalStaff && (
             <span 
               className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
@@ -345,70 +389,80 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Organization Selector */}
-        <div className="p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
-          <OrganizationSwitcher />
-          
-          {currentTenant && (
-            <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <span 
-                className="badge text-[10px]"
-                style={{ 
-                  backgroundColor: currentTenant.plan === 'enterprise' 
-                    ? 'rgb(var(--color-warning) / 0.2)'
-                    : currentTenant.plan === 'professional'
-                    ? 'rgb(var(--color-success) / 0.2)'
-                    : undefined,
-                  color: currentTenant.plan === 'enterprise'
-                    ? 'rgb(var(--color-warning))'
-                    : currentTenant.plan === 'professional'
-                    ? 'rgb(var(--color-success))'
-                    : undefined
-                }}
-              >
-                {currentTenant.plan}
-              </span>
-              
-              <span className="badge text-[10px] flex items-center gap-1">
-                {isOwner ? <Crown className="w-3 h-3" /> : isAdmin ? <Shield className="w-3 h-3" /> : null}
-                {getRoleLabel()}
-              </span>
-              
-              {currentTenant.status === 'trial' && currentTenant.trialEndsAt && (
-                <span className="badge badge-warning text-[10px] flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {t('organization.trial')} {Math.ceil((new Date(currentTenant.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}{language === 'en' ? 'd' : 'j'}
+        {!isSidebarCollapsed && (
+          <div className="p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            <OrganizationSwitcher />
+            
+            {currentTenant && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span 
+                  className="badge text-[10px]"
+                  style={{ 
+                    backgroundColor: currentTenant.plan === 'enterprise' 
+                      ? 'rgb(var(--color-warning) / 0.2)'
+                      : currentTenant.plan === 'professional'
+                      ? 'rgb(var(--color-success) / 0.2)'
+                      : undefined,
+                    color: currentTenant.plan === 'enterprise'
+                      ? 'rgb(var(--color-warning))'
+                      : currentTenant.plan === 'professional'
+                      ? 'rgb(var(--color-success))'
+                      : undefined
+                  }}
+                >
+                  {currentTenant.plan}
                 </span>
-              )}
-            </div>
-          )}
-        </div>
+                
+                <span className="badge text-[10px] flex items-center gap-1">
+                  {isOwner ? <Crown className="w-3 h-3" /> : isAdmin ? <Shield className="w-3 h-3" /> : null}
+                  {getRoleLabel()}
+                </span>
+                
+                {currentTenant.status === 'trial' && currentTenant.trialEndsAt && (
+                  <span className="badge badge-warning text-[10px] flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {t('organization.trial')} {Math.ceil((new Date(currentTenant.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}{language === 'en' ? 'd' : 'j'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {filteredNavigation.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.name}</span>
-            </Link>
-          ))}
+        <nav className={`flex-1 overflow-y-auto transition-all ${
+          isSidebarCollapsed ? 'p-2' : 'p-4'
+        }`}>
+          <div className={`space-y-1 ${isSidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
+            {filteredNavigation.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`nav-item ${isActive(item.href) ? 'active' : ''} ${
+                  isSidebarCollapsed ? 'justify-center px-2' : ''
+                }`}
+                title={isSidebarCollapsed ? item.name : undefined}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {!isSidebarCollapsed && <span>{item.name}</span>}
+              </Link>
+            ))}
+          </div>
         </nav>
 
         {/* User Menu - Bottom Left */}
-        <div className="p-3 sm:p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
-          {/* User Info */}
-          <div className="flex items-center gap-2 sm:gap-3 mb-3">
-            {/* User Avatar */}
-            <div 
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105"
-              style={{ 
-                backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
-                borderColor: 'rgb(var(--color-border))'
-              }}
-            >
+        {!isSidebarCollapsed && (
+          <div className="p-3 sm:p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            {/* User Info */}
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+              {/* User Avatar */}
+              <div 
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
+                  borderColor: 'rgb(var(--color-border))'
+                }}
+              >
               {user?.picture ? (
                 <img 
                   src={user.picture} 
@@ -479,6 +533,33 @@ export default function Layout({ children }: LayoutProps) {
             <span className="font-medium">{t('nav.logout')}</span>
           </button>
         </div>
+        )}
+        
+        {/* Collapsed User Avatar */}
+        {isSidebarCollapsed && (
+          <div className="p-2 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 mx-auto cursor-pointer transition-all hover:scale-110"
+              style={{ 
+                backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
+                borderColor: 'rgb(var(--color-border))'
+              }}
+              title={user?.name || user?.email || ''}
+            >
+              {user?.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user?.name || ''}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-semibold text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content */}

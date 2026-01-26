@@ -19,6 +19,8 @@ import { OrganizationController } from '@infrastructure/http/controllers/organiz
 import { ReportController } from '@infrastructure/http/controllers/report.controller';
 import { DataSourceController } from '@infrastructure/http/controllers/datasource.controller';
 import { ContactController } from '@infrastructure/http/controllers/contact.controller';
+import { AIController } from '@infrastructure/http/controllers/ai.controller';
+import { AIService } from '@infrastructure/ai/ai.service';
 
 // Application - Use Cases
 import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
@@ -75,7 +77,7 @@ import { NovuModule } from './notifications/novu.service';
     // Notifications
     NovuModule,
   ],
-  controllers: [HealthController, OrganizationController, ReportController, DataSourceController, ContactController],
+  controllers: [HealthController, OrganizationController, ReportController, DataSourceController, ContactController, AIController],
   providers: [
     // Guards
     {
@@ -95,6 +97,9 @@ import { NovuModule } from './notifications/novu.service';
     CreateOrganizationUseCase,
     GetOrganizationUseCase,
     GenerateBalanceSheetUseCase,
+
+    // Services
+    AIService,
 
     // Repositories (Adapters)
     {

@@ -2,7 +2,7 @@
  * Store Landing Page
  * store.plainledger.ca
  * 
- * Quebec Market-Focused Landing Page with Usage-Based Pricing
+ * Canadian Market-Focused Landing Page with Usage-Based Pricing
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -39,7 +39,7 @@ import DemoModal from '../components/DemoModal';
 import { 
   PRICING_TIERS, 
   PricingCalculator, 
-  QUEBEC_MARKET_MESSAGING,
+  CANADA_MARKET_MESSAGING,
   type PricingTierConfig,
   type BillingInterval,
 } from '../lib/pricing';
@@ -115,12 +115,12 @@ const FEATURES = [
   },
   {
     icon: Shield,
-    title: { en: 'Quebec-First Security', fr: 'Sécurité québécoise' },
+    title: { en: 'Canadian Data Security', fr: 'Sécurité canadienne' },
     description: { 
-      en: 'Bank-level AES-256 encryption. Data stored exclusively in Quebec. Built by CPAs, for CPAs. SOC 2 compliant.',
-      fr: 'Chiffrement bancaire AES-256. Données exclusivement au Québec. Conçu par des CPA, pour des CPA. Conforme SOC 2.'
+      en: 'Bank-level AES-256 encryption. Data stored exclusively in Canada. Built by CPAs, for CPAs. SOC 2 compliant.',
+      fr: 'Chiffrement bancaire AES-256. Données exclusivement au Canada. Conçu par des CPA, pour des CPA. Conforme SOC 2.'
     },
-    stat: { value: '100%', label: { en: 'Quebec hosted', fr: 'Hébergé au Québec' } },
+    stat: { value: '100%', label: { en: 'Canadian hosted', fr: 'Hébergé au Canada' } },
     highlights: [
       { en: 'AES-256 encrypted', fr: 'Chiffré AES-256' },
       { en: 'SOC 2 compliant', fr: 'Conforme SOC 2' },
@@ -174,13 +174,13 @@ const TESTIMONIALS = [
   },
   {
     quote: { 
-      en: "Finally, a tool that speaks accountant. Clean reports, clear insights, French interface - perfect for our Quebec clients.",
-      fr: "Enfin, un outil qui parle comptable. Rapports clairs, insights précis, interface française - parfait pour nos clients québécois."
+      en: "Finally, a tool that speaks accountant. Clean reports, clear insights, bilingual interface - perfect for our Canadian clients.",
+      fr: "Enfin, un outil qui parle comptable. Rapports clairs, insights précis, interface bilingue - parfait pour nos clients canadiens."
     },
     author: 'Marc Dubois, CPA',
     role: { en: 'Partner at Dubois & Associés', fr: 'Associé chez Dubois & Associés' },
     avatar: 'MD',
-    location: 'Québec',
+    location: 'Ottawa',
     rating: 4.5,
     verified: true,
     metrics: { en: '50+ clients managed', fr: '50+ clients gérés' },
@@ -331,7 +331,7 @@ function Header({ isEn, onLanguageToggle }: { isEn: boolean; onLanguageToggle: (
 
 function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => void }) {
   const { register } = useKeycloak();
-  const messaging = QUEBEC_MARKET_MESSAGING;
+  const messaging = CANADA_MARKET_MESSAGING;
 
   const handleCTA = () => {
     analytics.track('landing_page_cta_clicked', { location: 'hero' });
@@ -358,7 +358,7 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
       </div>
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
-        {/* Quebec badge */}
+        {/* Canada badge */}
         <div 
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6 border"
           style={{ 
@@ -369,7 +369,7 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
         >
           <MapPin className="w-4 h-4" />
           <span className="font-medium">
-            {isEn ? 'Made in Quebec 🇨🇦' : 'Fait au Québec 🇨🇦'}
+            {isEn ? 'Made in Canada 🇨🇦' : 'Fait au Canada 🇨🇦'}
           </span>
           <span style={{ color: 'rgb(var(--color-text-muted))' }}>•</span>
           <span style={{ color: 'rgb(var(--color-text-muted))' }}>
@@ -417,7 +417,7 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
           </span>
           <span className="flex items-center gap-1.5">
             <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-            {isEn ? 'GST/QST compliant' : 'Conforme TPS/TVQ'}
+            {isEn ? 'GST/HST/PST compliant' : 'Conforme TPS/TVH/TVP'}
           </span>
         </div>
 
@@ -566,8 +566,8 @@ function FeaturesSection({ isEn }: { isEn: boolean }) {
         <div className="text-center mt-12">
           <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn 
-              ? 'Join 1,000+ Quebec businesses already using PlainLedger'
-              : 'Rejoignez 1 000+ entreprises québécoises utilisant déjà PlainLedger'}
+              ? 'Join 1,000+ Canadian businesses already using PlainLedger'
+              : 'Rejoignez 1 000+ entreprises canadiennes utilisant déjà PlainLedger'}
           </p>
           <div className="flex flex-wrap justify-center gap-6">
             {[
@@ -1029,7 +1029,7 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Trusted by Quebec finance teams' : 'Approuvé par les équipes financières du Québec'}
+            {isEn ? 'Trusted by Canadian finance teams' : 'Approuvé par les équipes financières canadiennes'}
           </h2>
         </div>
 
@@ -1121,13 +1121,13 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
           })}
         </div>
 
-        {/* Quebec regions */}
+        {/* Canadian regions */}
         <div className="mt-12 text-center">
           <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Serving businesses across Quebec' : 'Au service des entreprises partout au Québec'}
+            {isEn ? 'Serving businesses across Canada' : 'Au service des entreprises partout au Canada'}
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            {QUEBEC_MARKET_MESSAGING.socialProof.regions.map((region) => (
+            {CANADA_MARKET_MESSAGING.socialProof.regions.map((region) => (
               <span 
                 key={region}
                 className="px-3 py-1 rounded-full text-sm"
@@ -1167,8 +1167,8 @@ function CTASection({ isEn }: { isEn: boolean }) {
           </h2>
           <p className="text-lg mb-8 text-white/80">
             {isEn 
-              ? 'Join 1,000+ Quebec businesses who trust PlainLedger for their financial insights.'
-              : 'Rejoignez plus de 1 000 entreprises québécoises qui font confiance à PlainLedger.'}
+              ? 'Join 1,000+ Canadian businesses who trust PlainLedger for their financial insights.'
+              : 'Rejoignez plus de 1 000 entreprises canadiennes qui font confiance à PlainLedger.'}
           </p>
           <button
             onClick={() => {
@@ -1212,12 +1212,12 @@ function Footer({ isEn }: { isEn: boolean }) {
             </div>
             <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn 
-                ? 'Financial intelligence for Quebec businesses. Made with ❤️ in Québec.'
-                : 'Intelligence financière pour les entreprises québécoises. Fait avec ❤️ à Québec.'}
+                ? 'Financial intelligence for Canadian businesses. Made with ❤️ in Canada.'
+                : 'Intelligence financière pour les entreprises canadiennes. Fait avec ❤️ au Canada.'}
             </p>
             <div className="flex items-center gap-2 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
               <MapPin className="w-4 h-4" />
-              <span>Québec, Québec, Canada 🇨🇦</span>
+              <span>Canada 🇨🇦</span>
             </div>
           </div>
           
@@ -1271,7 +1271,7 @@ function Footer({ isEn }: { isEn: boolean }) {
               {isEn ? 'Built by CPAs' : 'Conçu par des CPA'}
             </span>
             <span>•</span>
-            <span>{isEn ? 'Data stored in Quebec' : 'Données au Québec'}</span>
+            <span>{isEn ? 'Data stored in Canada' : 'Données au Canada'}</span>
           </div>
         </div>
       </div>

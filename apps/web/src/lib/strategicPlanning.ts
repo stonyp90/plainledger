@@ -1,0 +1,427 @@
+/**
+ * Strategic Planning Types and Calculation Engine
+ * 
+ * Core types and calculations for executive cashflow strategic planning
+ */
+
+// =====================================================
+// TYPES
+// =====================================================
+
+export interface Milestone {
+  id: string;
+  name: string;
+  nameEn: string;
+  date: string;
+  type: 'funding' | 'product' | 'milestone' | 'custom';
+  cashImpact?: number; // positive = inflow, negative = outflow
+  description?: string;
+}
+
+export interface Initiative {
+  id: string;
+  name: string;
+  nameEn: string;
+  category: 'growth' | 'operations' | 'product' | 'people' | 'infrastructure';
+  startDate: string;
+  endDate: string;
+  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
+  cashImpact: {
+    type: 'one_time' | 'recurring';
+    amount: number;        // positive = inflow, negative = outflow
+    frequency?: 'monthly' | 'quarterly' | 'annual';
+  };
+  milestones: Milestone[];
+  dependencies: string[];  // initiative IDs
+  owner?: string;
+  confidence: number;      // 0-100% confidence in estimates
+  description?: string;
+}
+
+export interface Assumption {
+  id: string;
+  category: 'revenue' | 'expense' | 'funding' | 'timing';
+  name: string;
+  nameEn: string;
+  baseValue: number;
+  scenarioValue: number;
+  unit: 'currency' | 'percentage' | 'months' | 'number';
+  notes?: string;
+}
+
+export interface Scenario {
+  id: string;
+  name: string;
+  nameEn: string;
+  type: 'base' | 'optimistic' | 'pessimistic' | 'custom';
+  assumptions: Assumption[];
+  initiatives: Initiative[];
+  createdAt: string;
+  updatedAt: string;
+  isLocked: boolean;
+  description?: string;
+}
+
+export interface RunwayAnalysis {
+  currentCash: number;
+  monthlyBurnRate: number;
+  netBurnRate: number;
+  grossBurnRate: number;
+  runwayMonths: number;
+  zeroDate: string;
+  breakEvenDate?: string;
+  confidenceLevel: number;
+  projectedCashByMonth: Array<{
+    date: string;
+    cash: number;
+    burn: number;
+  }>;
+}
+
+export interface CashForecast {
+  historical: Array<{
+    date: string;
+    cash: number;
+    revenue: number;
+    expenses: number;
+  }>;
+  projected: Array<{
+    date: string;
+    cash: number;
+    revenue: number;
+    expenses: number;
+    confidence: number;
+  }>;
+  breakEvenDate?: string;
+}
+
+// =====================================================
+// CALCULATION ENGINE
+// =====================================================
+
+/**
+ * Calculate monthly burn rate from historical data
+ */
+export function calculateBurnRate(
+  historicalCash: Array<{ date: string; cash: number }>,
+  months: number = 3
+): number {
+  if (historicalCash.length < 2) return 0;
+  
+  const sorted = [...historicalCash].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  const recent = sorted.slice(-Math.min(months, sorted.length));
+  if (recent.length < 2) return 0;
+  
+  const first = recent[0].cash;
+  const last = recent[recent.length - 1].cash;
+  const daysDiff = (new Date(recent[recent.length - 1].date).getTime() - 
+                   new Date(recent[0].date).getTime()) / (1000 * 60 * 60 * 24);
+  
+  if (daysDiff === 0) return 0;
+  
+  const monthlyBurn = ((first - last) / daysDiff) * 30;
+  return monthlyBurn;
+}
+
+/**
+ * Calculate net burn rate (expenses - revenue)
+ */
+export function calculateNetBurnRate(
+  monthlyRevenue: number,
+  monthlyExpenses: number
+): number {
+  return monthlyExpenses - monthlyRevenue;
+}
+
+/**
+ * Calculate runway in months
+ */
+export function calculateRunway(
+  currentCash: number,
+  monthlyBurnRate: number
+): number {
+  if (monthlyBurnRate <= 0) return Infinity;
+  return currentCash / monthlyBurnRate;
+}
+
+/**
+ * Calculate zero cash date
+ */
+export function calculateZeroDate(
+  currentCash: number,
+  monthlyBurnRate: number,
+  startDate: Date = new Date()
+): Date {
+  if (monthlyBurnRate <= 0) {
+    return new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year out
+  }
+  
+  const months = calculateRunway(currentCash, monthlyBurnRate);
+  const result = new Date(startDate);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
+/**
+ * Calculate cash impact of an initiative for a given month
+ */
+export function getInitiativeCashImpact(
+  initiative: Initiative,
+  monthDate: Date
+): number {
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const initStart = new Date(initiative.startDate);
+  const initEnd = new Date(initiative.endDate);
+  
+  // Check if initiative is active in this month
+  if (initStart > monthEnd || initEnd < monthStart) {
+    return 0;
+  }
+  
+  if (initiative.cashImpact.type === 'one_time') {
+    // One-time impact only in the first month
+    if (initStart >= monthStart && initStart <= monthEnd) {
+      return initiative.cashImpact.amount;
+    }
+    return 0;
+  }
+  
+  // Recurring impact
+  if (!initiative.cashImpact.frequency) {
+    return 0;
+  }
+  
+  const frequencyMonths = {
+    monthly: 1,
+    quarterly: 3,
+    annual: 12,
+  };
+  
+  const monthsSinceStart = 
+    (monthDate.getFullYear() - initStart.getFullYear()) * 12 +
+    (monthDate.getMonth() - initStart.getMonth());
+  
+  if (monthsSinceStart < 0) return 0;
+  
+  const frequency = frequencyMonths[initiative.cashImpact.frequency];
+  if (monthsSinceStart % frequency === 0) {
+    return initiative.cashImpact.amount;
+  }
+  
+  return 0;
+}
+
+/**
+ * Calculate projected cash position for a scenario
+ */
+export function calculateCashForecast(
+  currentCash: number,
+  currentDate: Date,
+  initiatives: Initiative[],
+  assumptions: Assumption[],
+  months: number = 24
+): CashForecast {
+  const projected: CashForecast['projected'] = [];
+  
+  // Extract base assumptions
+  const baseRevenue = assumptions.find(a => 
+    a.category === 'revenue' && a.name === 'Monthly Revenue'
+  )?.baseValue || 0;
+  
+  const baseExpenses = assumptions.find(a => 
+    a.category === 'expense' && a.name === 'Monthly Expenses'
+  )?.baseValue || 0;
+  
+  let runningCash = currentCash;
+  
+  for (let i = 0; i < months; i++) {
+    const monthDate = new Date(currentDate);
+    monthDate.setMonth(monthDate.getMonth() + i);
+    
+    // Base revenue and expenses
+    let monthRevenue = baseRevenue;
+    let monthExpenses = baseExpenses;
+    
+    // Apply scenario assumptions
+    assumptions.forEach(assumption => {
+      if (assumption.category === 'revenue') {
+        monthRevenue = assumption.scenarioValue;
+      } else if (assumption.category === 'expense') {
+        monthExpenses = assumption.scenarioValue;
+      }
+    });
+    
+    // Add initiative impacts
+    initiatives.forEach(initiative => {
+      const impact = getInitiativeCashImpact(initiative, monthDate);
+      if (impact > 0) {
+        monthRevenue += impact;
+      } else {
+        monthExpenses += Math.abs(impact);
+      }
+    });
+    
+    // Calculate net burn
+    const netBurn = monthExpenses - monthRevenue;
+    runningCash += monthRevenue - monthExpenses;
+    
+    // Calculate confidence (simplified - could be more sophisticated)
+    const confidence = initiatives.reduce((acc, init) => {
+      if (init.startDate <= monthDate.toISOString() && 
+          init.endDate >= monthDate.toISOString()) {
+        return acc * (init.confidence / 100);
+      }
+      return acc;
+    }, 0.85);
+    
+    projected.push({
+      date: monthDate.toISOString(),
+      cash: Math.max(0, runningCash),
+      revenue: monthRevenue,
+      expenses: monthExpenses,
+      confidence: Math.min(1, confidence),
+    });
+    
+    // Check for break-even
+    if (runningCash <= 0 && projected.length > 1) {
+      break;
+    }
+  }
+  
+  // Find break-even date
+  const breakEvenIndex = projected.findIndex(p => p.cash > 0 && 
+    projected[Math.max(0, p.date === projected[0].date ? 1 : 0)]?.cash <= 0);
+  
+  return {
+    historical: [],
+    projected,
+    breakEvenDate: breakEvenIndex >= 0 ? projected[breakEvenIndex].date : undefined,
+  };
+}
+
+/**
+ * Calculate runway analysis for a scenario
+ */
+export function calculateRunwayAnalysis(
+  currentCash: number,
+  currentDate: Date,
+  initiatives: Initiative[],
+  assumptions: Assumption[],
+  historicalCash?: Array<{ date: string; cash: number }>
+): RunwayAnalysis {
+  // Calculate base burn rate from historical or assumptions
+  let monthlyBurnRate = 0;
+  
+  if (historicalCash && historicalCash.length > 0) {
+    monthlyBurnRate = calculateBurnRate(historicalCash, 3);
+  } else {
+    const baseExpenses = assumptions.find(a => 
+      a.category === 'expense' && a.name === 'Monthly Expenses'
+    )?.scenarioValue || 0;
+    
+    const baseRevenue = assumptions.find(a => 
+      a.category === 'revenue' && a.name === 'Monthly Revenue'
+    )?.scenarioValue || 0;
+    
+    monthlyBurnRate = baseExpenses - baseRevenue;
+  }
+  
+  // Calculate gross burn (expenses only)
+  const grossBurn = assumptions.find(a => 
+    a.category === 'expense' && a.name === 'Monthly Expenses'
+  )?.scenarioValue || monthlyBurnRate;
+  
+  // Project forward to get more accurate burn rate
+  const forecast = calculateCashForecast(
+    currentCash,
+    currentDate,
+    initiatives,
+    assumptions,
+    12
+  );
+  
+  if (forecast.projected.length > 1) {
+    const firstMonth = forecast.projected[0];
+    const lastMonth = forecast.projected[forecast.projected.length - 1];
+    const monthsDiff = forecast.projected.length - 1;
+    
+    if (monthsDiff > 0) {
+      monthlyBurnRate = (firstMonth.cash - lastMonth.cash) / monthsDiff;
+    }
+  }
+  
+  const netBurnRate = monthlyBurnRate;
+  const runwayMonths = calculateRunway(currentCash, monthlyBurnRate);
+  const zeroDate = calculateZeroDate(currentCash, monthlyBurnRate, currentDate);
+  
+  // Calculate confidence based on initiative confidence levels
+  const avgConfidence = initiatives.length > 0
+    ? initiatives.reduce((sum, init) => sum + init.confidence, 0) / initiatives.length
+    : 85;
+  
+  return {
+    currentCash,
+    monthlyBurnRate: Math.abs(monthlyBurnRate),
+    netBurnRate: Math.abs(netBurnRate),
+    grossBurnRate: grossBurn,
+    runwayMonths,
+    zeroDate: zeroDate.toISOString(),
+    confidenceLevel: avgConfidence,
+    projectedCashByMonth: forecast.projected.map(p => ({
+      date: p.date,
+      cash: p.cash,
+      burn: p.expenses - p.revenue,
+    })),
+  };
+}
+
+/**
+ * Generate unique ID for planning entities
+ */
+export function generatePlanningId(prefix: string = 'plan'): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Default base scenario
+ */
+export function createBaseScenario(
+  currentCash: number,
+  monthlyRevenue: number = 0,
+  monthlyExpenses: number = 0
+): Scenario {
+  return {
+    id: generatePlanningId('scenario'),
+    name: 'Scénario de base',
+    nameEn: 'Base Scenario',
+    type: 'base',
+    assumptions: [
+      {
+        id: generatePlanningId('assumption'),
+        category: 'revenue',
+        name: 'Revenus mensuels',
+        nameEn: 'Monthly Revenue',
+        baseValue: monthlyRevenue,
+        scenarioValue: monthlyRevenue,
+        unit: 'currency',
+      },
+      {
+        id: generatePlanningId('assumption'),
+        category: 'expense',
+        name: 'Dépenses mensuelles',
+        nameEn: 'Monthly Expenses',
+        baseValue: monthlyExpenses,
+        scenarioValue: monthlyExpenses,
+        unit: 'currency',
+      },
+    ],
+    initiatives: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isLocked: false,
+  };
+}

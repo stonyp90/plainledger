@@ -40,8 +40,8 @@ export const CRISP_THEME_CONFIG = {
   colorDark: '#1e3a8a', // Darker for hover
   // Position
   position: 'right' as const,
-  // Default locale (Quebec market = French)
-  defaultLocale: 'fr',
+  // Default locale (Canadian market = English, with French support)
+  defaultLocale: 'en',
 };
 
 // Page-specific help topics
@@ -98,8 +98,8 @@ const WELCOME_MESSAGES = {
     fr: "Vous consultez nos tarifs? Je peux vous aider à choisir le bon forfait!",
   },
   support: {
-    en: "Our Quebec-based support team typically responds within 2 hours during business hours (9am-5pm EST).",
-    fr: "Notre équipe de support basée au Québec répond généralement en moins de 2 heures durant les heures d'affaires (9h-17h HE).",
+    en: "Our Canadian support team typically responds within 2 hours during business hours (9am-5pm EST).",
+    fr: "Notre équipe de support canadienne répond généralement en moins de 2 heures durant les heures d'affaires (9h-17h HE).",
   },
 };
 

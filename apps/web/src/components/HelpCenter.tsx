@@ -142,8 +142,8 @@ const FAQ = [
   {
     q: { en: 'Is my data secure?', fr: 'Mes données sont-elles sécurisées?' },
     a: { 
-      en: 'Absolutely! Built by CPAs who understand confidentiality requirements. We use AES-256 bank-level encryption, all data is stored in Canada (Quebec), and we only have read-only access to your accounting data.',
-      fr: 'Absolument! Conçu par des CPA qui comprennent les exigences de confidentialité. Nous utilisons le chiffrement bancaire AES-256, toutes les données sont stockées au Canada (Québec), et nous avons uniquement un accès en lecture seule.'
+      en: 'Absolutely! Built by CPAs who understand confidentiality requirements. We use AES-256 bank-level encryption, all data is stored in Canada, and we only have read-only access to your accounting data.',
+      fr: 'Absolument! Conçu par des CPA qui comprennent les exigences de confidentialité. Nous utilisons le chiffrement bancaire AES-256, toutes les données sont stockées au Canada, et nous avons uniquement un accès en lecture seule.'
     },
   },
   {
@@ -462,8 +462,8 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                   </p>
                   <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn 
-                      ? 'Chat with our Quebec-based support team' 
-                      : 'Discutez avec notre équipe de support au Québec'}
+                      ? 'Chat with our Canadian support team' 
+                      : 'Discutez avec notre équipe de support canadienne'}
                   </p>
                   <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
                     {isEn ? 'Typically responds in < 2 hours' : 'Répond généralement en < 2 heures'}

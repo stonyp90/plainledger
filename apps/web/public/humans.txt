@@ -1,7 +1,7 @@
 /* TEAM */
 Product: PlainLedger
 Site: https://plainledger.io
-Location: Quebec, Canada
+Location: Canada
 
 /* THANKS */
 Built with React, Vite, TailwindCSS

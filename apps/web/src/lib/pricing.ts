@@ -1,10 +1,10 @@
 /**
  * PlainLedger Pricing Engine
  * 
- * Usage-Based Pricing with Quebec Market Positioning
+ * Usage-Based Pricing with Canadian Market Positioning
  * ==================================================
  * 
- * MARKET ANALYSIS - QUEBEC ACCOUNTING SOFTWARE LANDSCAPE (2026)
+ * MARKET ANALYSIS - CANADIAN ACCOUNTING SOFTWARE LANDSCAPE (2026)
  * 
  * Key Competitors:
  * ┌────────────────────┬──────────────┬───────────────┬─────────────────────────────┐
@@ -21,21 +21,21 @@
  * │ Float              │ $59/mo USD   │ Flat          │ Cash flow                  │
  * └────────────────────┴──────────────┴───────────────┴─────────────────────────────┘
  * 
- * QUEBEC MARKET SPECIFICS:
+ * CANADIAN MARKET SPECIFICS:
  * - 98% of businesses are SMBs (< 100 employees)
- * - Strong preference for French-first interfaces
+ * - Bilingual support (English & French)
  * - High CPA/accountant involvement in software decisions
  * - Price sensitivity in the $50-200/mo range
- * - GST/QST compliance requirements
- * - Provincial tax credits for digital transformation
+ * - GST/HST/PST compliance requirements across provinces
+ * - Federal and provincial tax credits for digital transformation
  * 
  * PLAINLEDGER POSITIONING:
- * "L'intelligence financière pour les PME québécoises"
+ * "Financial Intelligence for Canadian Businesses"
  * - Not a replacement for accounting software (QuickBooks, Sage)
  * - A complementary analysis & reporting layer
  * - AI-powered anomaly detection (unique differentiator)
  * - Accountant-focused collaboration features
- * - Quebec-first: French interface, QST compliance, local support
+ * - Canada-first: Bilingual interface, GST/HST/PST compliance, local support
  * 
  * PRICING STRATEGY:
  * - Base tier includes X users, charge per additional user
@@ -666,64 +666,70 @@ export class PricingCalculator {
 }
 
 // =====================================================
-// QUEBEC MARKET MESSAGING
+// CANADIAN MARKET MESSAGING
 // =====================================================
 
-export const QUEBEC_MARKET_MESSAGING = {
+export const CANADA_MARKET_MESSAGING = {
   taglines: {
     main: {
-      en: 'Financial Intelligence for Quebec Businesses',
-      fr: 'L\'intelligence financière pour les entreprises québécoises',
+      en: 'Financial Intelligence for Canadian Businesses',
+      fr: 'L\'intelligence financière pour les entreprises canadiennes',
     },
     sub: {
-      en: 'Connect your accounting software. Get instant insights. Made in Quebec.',
-      fr: 'Connectez votre logiciel comptable. Obtenez des insights instantanés. Fait au Québec.',
+      en: 'Connect your accounting software. Get instant insights. Made in Canada.',
+      fr: 'Connectez votre logiciel comptable. Obtenez des insights instantanés. Fait au Canada.',
     },
   },
   
   valueProps: {
-    frenchFirst: {
-      en: 'French-first interface designed for Quebec businesses',
-      fr: 'Interface française conçue pour les entreprises québécoises',
+    bilingualFirst: {
+      en: 'Bilingual interface designed for Canadian businesses',
+      fr: 'Interface bilingue conçue pour les entreprises canadiennes',
     },
     localCompliance: {
-      en: 'GST/QST compliant reporting out of the box',
-      fr: 'Rapports conformes TPS/TVQ inclus',
+      en: 'GST/HST/PST compliant reporting out of the box',
+      fr: 'Rapports conformes TPS/TVH/TVP inclus',
     },
     localSupport: {
-      en: 'Quebec-based support team (Montreal)',
-      fr: 'Équipe de support basée au Québec (Montréal)',
+      en: 'Canadian support team',
+      fr: 'Équipe de support canadienne',
     },
     cpaNetwork: {
-      en: 'Trusted by Quebec CPAs and accounting firms',
-      fr: 'Approuvé par les CPA et cabinets comptables du Québec',
+      en: 'Trusted by Canadian CPAs and accounting firms',
+      fr: 'Approuvé par les CPA et cabinets comptables canadiens',
     },
   },
   
   socialProof: {
     stats: {
-      businesses: { value: '1,000+', label: { en: 'Quebec businesses', fr: 'entreprises québécoises' } },
+      businesses: { value: '1,000+', label: { en: 'Canadian businesses', fr: 'entreprises canadiennes' } },
       savings: { value: '40%', label: { en: 'time saved on reporting', fr: 'de temps économisé' } },
       anomalies: { value: '$2M+', label: { en: 'anomalies caught', fr: 'd\'anomalies détectées' } },
     },
     regions: [
+      // Ontario
+      'Toronto',
+      'Ottawa',
+      'Mississauga',
+      'Hamilton',
+      'London',
+      // Quebec
       'Montréal', 
-      'Québec', 
+      'Québec City', 
       'Laval', 
-      'Gatineau', 
-      'Longueuil', 
-      'Sherbrooke',
-      'Trois-Rivières',
-      'Saguenay',
-      'Lévis',
-      'Terrebonne',
-      'Saint-Jean-sur-Richelieu',
-      'Repentigny',
-      'Drummondville',
-      'Granby',
-      'Saint-Hyacinthe',
-      'Rimouski',
-      'Victoriaville',
+      // British Columbia
+      'Vancouver',
+      'Victoria',
+      'Surrey',
+      // Alberta
+      'Calgary',
+      'Edmonton',
+      // Other major cities
+      'Winnipeg',
+      'Halifax',
+      'Regina',
+      'Saskatoon',
+      'St. John\'s',
     ],
   },
   
@@ -745,12 +751,15 @@ export const QUEBEC_MARKET_MESSAGING = {
     {
       vs: 'US-based tools',
       advantage: {
-        en: 'Quebec-first: French interface, GST/QST, local support, data in Canada',
-        fr: 'Québec d\'abord: interface française, TPS/TVQ, support local, données au Canada',
+        en: 'Canada-first: Bilingual interface, GST/HST/PST, local support, data in Canada',
+        fr: 'Canada d\'abord: interface bilingue, TPS/TVH/TVP, support local, données au Canada',
       },
     },
   ],
 };
+
+// Legacy alias for backwards compatibility
+export const QUEBEC_MARKET_MESSAGING = CANADA_MARKET_MESSAGING;
 
 // =====================================================
 // EXPORTS

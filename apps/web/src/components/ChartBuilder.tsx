@@ -339,7 +339,7 @@ function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
   const [hoveredType, setHoveredType] = useState<ChartType | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  const chartTypes: ChartType[] = ['line', 'bar', 'area', 'pie', 'donut', 'waterfall', 'gauge', 'radar', 'heatmap', 'table'];
+  const chartTypes: ChartType[] = ['line', 'bar', 'area', 'pie', 'donut', 'waterfall', 'gauge', 'radar', 'heatmap', 'table', 'gantt', 'runway', 'scenario', 'burnRate', 'cashForecast'];
 
   return (
     <div className="grid grid-cols-5 gap-2">

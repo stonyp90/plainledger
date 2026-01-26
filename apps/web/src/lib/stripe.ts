@@ -82,7 +82,7 @@ export interface PricingPlan {
 // USAGE-BASED PRICING MODEL (2026)
 // =====================================================
 // 
-// Quebec Market Competitive Analysis:
+// Canadian Market Competitive Analysis:
 // - QuickBooks Online Plus: $60 CAD/mo + $11/user
 // - Xero Growing: $45 CAD/mo + $5/user
 // - Sage Business Cloud: $35 CAD/mo + $15/user
@@ -91,7 +91,7 @@ export interface PricingPlan {
 // PlainLedger Positioning:
 // - Complementary to accounting software (not replacement)
 // - AI-powered anomaly detection (unique)
-// - Quebec-first: French UI, GST/QST, local support
+// - Canada-first: Bilingual UI, GST/HST/PST, local support
 
 // Dynamic pricing plans with user-based scaling
 export const pricingPlans: PricingPlan[] = [

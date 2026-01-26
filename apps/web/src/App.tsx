@@ -14,6 +14,7 @@ import NewsletterPage from './pages/NewsletterPage';
 import AnomalyDashboard from './pages/AnomalyDashboard';
 import CustomDashboard from './pages/CustomDashboard';
 import BoardMeeting from './pages/BoardMeeting';
+import StrategicPlanning from './pages/StrategicPlanning';
 import Store from './pages/Store';
 import Onboarding from './components/Onboarding';
 import EmailConfirmation from './pages/EmailConfirmation';
@@ -414,6 +415,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <BoardMeeting />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/strategic-planning"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <StrategicPlanning />
             </AppLayout>
           </ProtectedRoute>
         }

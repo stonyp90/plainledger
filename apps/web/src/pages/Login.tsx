@@ -114,7 +114,7 @@ export default function Login() {
           className="text-center text-xs mt-6"
           style={{ color: 'rgb(var(--color-text-subtle))' }}
         >
-          Built by CPAs for CPAs · Bank-level encryption · Data in Quebec
+          Built by CPAs for CPAs · Bank-level encryption · Data in Canada
         </p>
       </div>
     </div>
