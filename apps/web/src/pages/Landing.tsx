@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
-import { NewsletterSignup, NewsletterPreview } from '../components/Newsletter';
+import IndustryKPISection from '../components/IndustryKPISection';
+import DemoModal from '../components/DemoModal';
 import { 
   ArrowRight,
   Check,
   Shield,
-  AlertTriangle,
-  BarChart3,
-  MessageSquare,
+  Play,
   Menu,
   X,
-  Coffee,
   Lock,
-  Zap,
-  TrendingUp,
+  Database,
+  Calculator,
+  Info,
+  Clock,
 } from 'lucide-react';
 
-// Integration logos
-const integrations = ['QuickBooks', 'Xero', 'Sage', 'FreshBooks', 'Wave'];
+// Supported integrations
+const integrations = ['QuickBooks', 'Xero', 'Sage', 'FreshBooks', 'Wave', 'CSV Import'];
 
 // Theme colors
 const colors = {
@@ -31,10 +31,7 @@ const colors = {
     gold: '#d4af37',
     goldDark: '#b8860b',
     goldText: '#8b7355',
-    cardBg: 'rgba(255,255,255,0.9)',
-    cardBgSolid: 'rgba(255,255,255,0.95)',
     navBg: 'rgba(254, 253, 251, 0.92)',
-    sectionBg: 'linear-gradient(180deg, rgba(16, 185, 129, 0.02) 0%, rgba(212, 175, 55, 0.02) 100%)',
   },
   dark: {
     green: '#34d399',
@@ -43,18 +40,280 @@ const colors = {
     gold: '#fbbf24',
     goldDark: '#f59e0b',
     goldText: '#fcd34d',
-    cardBg: 'rgba(30, 41, 59, 0.9)',
-    cardBgSolid: 'rgba(30, 41, 59, 0.95)',
     navBg: 'rgba(15, 23, 42, 0.92)',
-    sectionBg: 'linear-gradient(180deg, rgba(52, 211, 153, 0.03) 0%, rgba(251, 191, 36, 0.03) 100%)',
   }
 };
+
+// ROI Calculator Section Component
+function ROICalculatorSection({ 
+  isEn, 
+  isDark, 
+  theme, 
+  onScheduleCall 
+}: { 
+  isEn: boolean; 
+  isDark: boolean; 
+  theme: typeof colors.light; 
+  onScheduleCall: () => void;
+}) {
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(500000);
+  const [transactionVolume, setTransactionVolume] = useState<number>(1000);
+  
+  // ROI calculations based on industry averages
+  const estimatedSavings = useMemo(() => {
+    const anomalyRate = 0.02; // 2% error rate industry average
+    const detectionAccuracy = 0.97; // Our 97% detection rate
+    const avgErrorValue = monthlyRevenue * 0.005; // 0.5% of revenue per error
+    const errorsPerMonth = Math.floor(transactionVolume * anomalyRate);
+    const detectedErrors = Math.floor(errorsPerMonth * detectionAccuracy);
+    const monthlySavings = detectedErrors * avgErrorValue;
+    const yearlySavings = monthlySavings * 12;
+    const timeSavedHours = Math.floor(transactionVolume * 0.02); // 2 min per 100 transactions
+    
+    return {
+      monthlySavings,
+      yearlySavings,
+      detectedErrors,
+      timeSavedHours,
+    };
+  }, [monthlyRevenue, transactionVolume]);
+
+  return (
+    <section 
+      id="roi" 
+      className="py-16 sm:py-20 px-6 relative"
+      style={{ 
+        background: isDark 
+          ? 'rgba(15, 23, 42, 0.5)' 
+          : 'linear-gradient(180deg, rgba(240, 253, 244, 0.6) 0%, rgba(254, 252, 232, 0.4) 50%, rgba(255, 255, 255, 0.8) 100%)'
+      }}
+    >
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+            style={{ 
+              backgroundColor: `${theme.gold}1a`,
+              color: theme.goldDark
+            }}
+          >
+            <Calculator className="w-4 h-4" />
+            {isEn ? 'Transparent Pricing' : 'Tarification transparente'}
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Fair Value, Clear Returns' : 'Prix équitable, retours clairs'}
+          </h2>
+          <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn 
+              ? 'No hidden fees. No surprises. Enterprise-grade data intelligence at 1/3 the cost of traditional solutions.'
+              : 'Sans frais cachés. Sans surprises. Intelligence de données enterprise à 1/3 du coût des solutions traditionnelles.'}
+          </p>
+        </div>
+
+        {/* Calculator Card */}
+        <div 
+          className="rounded-2xl overflow-hidden shadow-lg"
+          style={{ 
+            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+            border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)'}`,
+          }}
+        >
+          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)' }}>
+            {/* Input Side */}
+            <div className="p-8">
+              <h3 className="font-semibold text-lg mb-6" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Your Business' : 'Votre entreprise'}
+              </h3>
+              
+              {/* Monthly Revenue Slider */}
+              <div className="mb-8">
+                <div className="flex justify-between mb-2">
+                  <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn ? 'Monthly Revenue' : 'Revenus mensuels'}
+                  </label>
+                  <span className="text-sm font-semibold" style={{ color: theme.green }}>
+                    ${monthlyRevenue.toLocaleString()}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="50000"
+                  max="5000000"
+                  step="50000"
+                  value={monthlyRevenue}
+                  onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, ${theme.green} ${((monthlyRevenue - 50000) / 4950000) * 100}%, ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'} ${((monthlyRevenue - 50000) / 4950000) * 100}%)`
+                  }}
+                />
+                <div className="flex justify-between text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>$50K</span>
+                  <span>$5M+</span>
+                </div>
+              </div>
+              
+              {/* Transaction Volume Slider */}
+              <div className="mb-6">
+                <div className="flex justify-between mb-2">
+                  <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn ? 'Monthly Transactions' : 'Transactions mensuelles'}
+                  </label>
+                  <span className="text-sm font-semibold" style={{ color: theme.green }}>
+                    {transactionVolume.toLocaleString()}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="100"
+                  max="10000"
+                  step="100"
+                  value={transactionVolume}
+                  onChange={(e) => setTransactionVolume(Number(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, ${theme.green} ${((transactionVolume - 100) / 9900) * 100}%, ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'} ${((transactionVolume - 100) / 9900) * 100}%)`
+                  }}
+                />
+                <div className="flex justify-between text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>100</span>
+                  <span>10,000+</span>
+                </div>
+              </div>
+
+              {/* Assumptions Note */}
+              <div 
+                className="p-3 rounded-lg text-xs"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+                  color: 'rgb(var(--color-text-muted))'
+                }}
+              >
+                <Info className="w-3 h-3 inline mr-1" />
+                {isEn 
+                  ? 'Based on industry average 2% error rate and our 97% detection accuracy'
+                  : 'Basé sur le taux d\'erreur moyen de 2% et notre précision de détection de 97%'}
+              </div>
+            </div>
+            
+            {/* Results Side */}
+            <div className="p-8" style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.05)' : 'rgba(16, 185, 129, 0.03)' }}>
+              <h3 className="font-semibold text-lg mb-6" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Your Potential Returns' : 'Vos retours potentiels'}
+              </h3>
+              
+              {/* Big Number - Yearly Savings */}
+              <div 
+                className="p-6 rounded-xl mb-6"
+                style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.08)' }}
+              >
+                <div className="text-4xl sm:text-5xl font-bold mb-2" style={{ color: theme.green }}>
+                  ${Math.floor(estimatedSavings.yearlySavings).toLocaleString()}
+                </div>
+                <div className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Estimated annual savings' : 'Économies annuelles estimées'}
+                </div>
+              </div>
+              
+              {/* Breakdown */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    <Shield className="w-3 h-3" style={{ color: theme.green }} />
+                    {isEn ? 'Errors detected/month' : 'Erreurs détectées/mois'}
+                  </span>
+                  <span className="font-semibold" style={{ color: theme.green }}>
+                    {estimatedSavings.detectedErrors}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    <Check className="w-3 h-3" style={{ color: theme.green }} />
+                    {isEn ? 'Monthly savings' : 'Économies mensuelles'}
+                  </span>
+                  <span className="font-semibold" style={{ color: theme.green }}>
+                    ${Math.floor(estimatedSavings.monthlySavings).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    <Clock className="w-3 h-3" style={{ color: theme.goldDark }} />
+                    {isEn ? 'Time saved/month' : 'Temps économisé/mois'}
+                  </span>
+                  <span className="font-semibold" style={{ color: theme.goldDark }}>
+                    {estimatedSavings.timeSavedHours}+ {isEn ? 'hours' : 'heures'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* CTA */}
+              <button
+                onClick={onScheduleCall}
+                className="w-full py-3 rounded-xl font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2"
+                style={{ 
+                  background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
+                  color: 'white',
+                  boxShadow: `0 4px 12px ${theme.gold}40`
+                }}
+              >
+                {isEn ? 'Get Your Free ROI Analysis' : 'Obtenez votre analyse ROI gratuite'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              
+              <p className="text-center text-xs mt-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'No commitment. No surprises.' : 'Sans engagement. Sans surprises.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Cost Comparison */}
+        <div className="mt-8 grid sm:grid-cols-3 gap-4 text-center">
+          <div 
+            className="p-4 rounded-xl"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.5)'}`
+            }}
+          >
+            <div className="text-2xl font-bold mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>$50K+/yr</div>
+            <div className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Enterprise BI tools' : 'Outils BI enterprise'}</div>
+          </div>
+          <div 
+            className="p-4 rounded-xl"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+              border: `2px solid ${theme.green}`
+            }}
+          >
+            <div className="text-2xl font-bold mb-1" style={{ color: theme.green }}>
+              1/3 {isEn ? 'the cost' : 'du coût'}
+            </div>
+            <div className="text-sm font-medium" style={{ color: theme.green }}>PlainLedger</div>
+          </div>
+          <div 
+            className="p-4 rounded-xl"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.08)',
+              border: `1px solid ${theme.gold}40`
+            }}
+          >
+            <div className="text-2xl font-bold mb-1" style={{ color: theme.goldDark }}>340%+</div>
+            <div className="text-sm" style={{ color: theme.goldDark }}>{isEn ? 'Avg first-year ROI' : 'ROI moy. an 1'}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Landing() {
   const { login, register, authenticated } = useAuth();
   const { language } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState(false);
 
   // Listen for theme changes
   useEffect(() => {
@@ -70,34 +329,46 @@ export default function Landing() {
   const isEn = language === 'en';
   const theme = isDark ? colors.dark : colors.light;
 
+  const handleScheduleCall = () => {
+    window.open('https://calendly.com/plainledger/discovery', '_blank');
+  };
+
   return (
     <div 
       className="min-h-screen relative overflow-hidden"
       style={{ 
         background: isDark 
-          ? 'linear-gradient(135deg, #0f172a 0%, #111827 25%, #0f172a 50%, #111827 75%, #0f172a 100%)'
-          : 'linear-gradient(135deg, #fefdfb 0%, #faf9f6 25%, #f8faf8 50%, #fdfcfa 75%, #fefefe 100%)'
+          ? 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)'
+          : 'linear-gradient(135deg, #fefefe 0%, #f0fdf4 25%, #f8fafc 50%, #fef3c7 75%, #fefefe 100%)'
       }}
     >
-      {/* Subtle decorative gradients */}
-      <div 
-        className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full pointer-events-none"
-        style={{ 
-          background: isDark 
-            ? 'radial-gradient(circle, rgba(251, 191, 36, 0.05) 0%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%)',
-          transform: 'translate(30%, -30%)'
-        }}
-      />
-      <div 
-        className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full pointer-events-none"
-        style={{ 
-          background: isDark
-            ? 'radial-gradient(circle, rgba(52, 211, 153, 0.05) 0%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(16, 185, 129, 0.04) 0%, transparent 70%)',
-          transform: 'translate(-30%, 30%)'
-        }}
-      />
+      {/* Decorative background gradients - Light theme */}
+      {!isDark && (
+        <>
+          <div 
+            className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full pointer-events-none"
+            style={{ 
+              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 60%)',
+              transform: 'translate(20%, -30%)'
+            }}
+          />
+          <div 
+            className="absolute top-1/3 left-0 w-[600px] h-[600px] rounded-full pointer-events-none"
+            style={{ 
+              background: 'radial-gradient(circle, rgba(251, 191, 36, 0.06) 0%, transparent 60%)',
+              transform: 'translate(-30%, 0%)'
+            }}
+          />
+          <div 
+            className="absolute bottom-1/4 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+            style={{ 
+              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 60%)',
+              transform: 'translate(30%, 20%)'
+            }}
+          />
+        </>
+      )}
+      
       {/* Navigation */}
       <nav 
         className="fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-md"
@@ -133,18 +404,15 @@ export default function Landing() {
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-6">
-              <Link to="/#features" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Features' : 'Fonctionnalités'}
-              </Link>
-              <Link to="/#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Pricing' : 'Tarifs'}
-              </Link>
-              <Link to="/#industry-kpis" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <a href="#industries" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn ? 'Industries' : 'Industries'}
-              </Link>
-              <Link to="/#testimonials" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Testimonials' : 'Témoignages'}
-              </Link>
+              </a>
+              <a href="#integrations" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Integrations' : 'Intégrations'}
+              </a>
+              <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Pricing' : 'Tarifs'}
+              </a>
             </div>
 
             {/* Desktop Actions */}
@@ -168,7 +436,7 @@ export default function Landing() {
                     {isEn ? 'Sign in' : 'Connexion'}
                   </button>
                   <button 
-                    onClick={() => login()}
+                    onClick={() => register()}
                     className="btn-primary btn-sm"
                   >
                     {isEn ? 'Start free' : 'Essai gratuit'}
@@ -197,18 +465,15 @@ export default function Landing() {
               style={{ borderColor: 'rgb(var(--color-border))' }}
             >
               <nav className="flex flex-col gap-3">
-                <Link to="/#features" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Features' : 'Fonctionnalités'}
-                </Link>
-                <Link to="/#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Pricing' : 'Tarifs'}
-                </Link>
-                <Link to="/#industry-kpis" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <a href="#industries" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Industries' : 'Industries'}
-                </Link>
-                <Link to="/#testimonials" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Testimonials' : 'Témoignages'}
-                </Link>
+                </a>
+                <a href="#integrations" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Integrations' : 'Intégrations'}
+                </a>
+                <a href="#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Pricing' : 'Tarifs'}
+                </a>
                 <button 
                   onClick={() => { login(); setIsMobileMenuOpen(false); }}
                   className="text-sm font-medium py-2 text-left"
@@ -225,166 +490,43 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero Section - Business Outcomes Focused */}
-      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-6 relative">
-        <div className="max-w-5xl mx-auto">
-          {/* Trust Badge */}
-          <div className="flex justify-center mb-8">
-            <div 
-              className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full text-sm"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green}14 0%, ${theme.gold}14 100%)`,
-                border: `1px solid ${theme.green}26`
-              }}
-            >
-              <Lock className="w-4 h-4" style={{ color: theme.green }} />
-              <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Bank-grade security' : 'Sécurité bancaire'}
-              </span>
-              <span style={{ color: 'rgb(var(--color-border-strong))' }}>•</span>
-              <span style={{ color: theme.goldDark }} className="font-semibold">SOC 2 Type II</span>
-            </div>
-          </div>
-          
-          {/* Main Headline - Centered */}
-          <div className="text-center mb-12">
-            <h1 
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
+      {/* Hero Section */}
+      <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 px-6 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Main Headline */}
+          <h1 
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            style={{ color: 'rgb(var(--color-text))' }}
+          >
             {isEn ? (
               <>
-                Connect. Analyze.<br />
-                <span style={{ 
-                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  Grow with confidence.
-                </span>
+                <span style={{ color: theme.green }}>
+                  No Surprises.
+                </span>{' '}
+                <span>Just Numbers.</span>
               </>
             ) : (
               <>
-                Connecter. Analyser.<br />
-                <span style={{ 
-                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}>
-                  Croître en confiance.
-                </span>
+                <span style={{ color: theme.green }}>
+                  Pas de surprises.
+                </span>{' '}
+                <span>Juste des chiffres.</span>
               </>
             )}
-            </h1>
+          </h1>
 
-            <p 
-              className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed"
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
-            >
-              {isEn 
-                ? 'Your accounting data, unified and protected. AI-powered insights that catch issues before they cost you money.'
-                : 'Vos données comptables, unifiées et protégées. Analyses IA qui détectent les problèmes avant qu\'ils ne vous coûtent de l\'argent.'}
-            </p>
-          </div>
-
-          {/* Integration Flow - Visual */}
-          <div 
-            className="relative p-8 sm:p-10 rounded-2xl mb-10"
-            style={{ 
-              background: isDark 
-                ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(30, 41, 59, 0.95) 100%)'
-                : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(250,250,248,0.95) 100%)',
-              border: `1px solid ${theme.green}1a`,
-              boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(0,0,0,0.04)'
-            }}
+          {/* Tagline */}
+          <p 
+            className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-8"
+            style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
-            {/* Integration logos row */}
-            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 mb-6">
-              {integrations.map((name) => (
-                <div 
-                  key={name}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
-                  style={{ 
-                    backgroundColor: isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(241, 245, 249, 0.8)',
-                    color: 'rgb(var(--color-text-secondary))',
-                    border: isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)'
-                  }}
-                >
-                  {name}
-                </div>
-              ))}
-            </div>
-            
-            {/* Arrow down */}
-            <div className="flex justify-center my-4">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${theme.green}1a` }}
-              >
-                <ArrowRight className="w-4 h-4 rotate-90" style={{ color: theme.green }} />
-              </div>
-            </div>
-
-            {/* PlainLedger Center */}
-            <div className="flex justify-center mb-6">
-              <div 
-                className="px-6 py-3 rounded-xl flex items-center gap-3"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                  boxShadow: `0 4px 16px ${theme.green}40`
-                }}
-              >
-                <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                  <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span className="font-semibold text-white">PlainLedger</span>
-              </div>
-            </div>
-
-            {/* Output Benefits */}
-            <div className="grid sm:grid-cols-3 gap-4 text-center">
-              <div className="flex flex-col items-center">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                  style={{ backgroundColor: `${theme.green}1a` }}
-                >
-                  <Zap className="w-5 h-5" style={{ color: theme.green }} />
-                </div>
-                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Instant sync' : 'Synchro instantanée'}
-                </span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                  style={{ backgroundColor: `${theme.gold}1a` }}
-                >
-                  <AlertTriangle className="w-5 h-5" style={{ color: theme.goldDark }} />
-                </div>
-                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'AI anomaly detection' : 'Détection IA d\'anomalies'}
-                </span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center mb-2"
-                  style={{ backgroundColor: `${theme.green}1a` }}
-                >
-                  <TrendingUp className="w-5 h-5" style={{ color: theme.green }} />
-                </div>
-                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Growth insights' : 'Insights croissance'}
-                </span>
-              </div>
-            </div>
-          </div>
+            {isEn 
+              ? 'Industry-specific KPIs that actually matter. Compare your performance against real Canadian benchmarks and make data-driven decisions.'
+              : 'Des KPIs spécifiques à votre industrie qui comptent vraiment. Comparez vos performances aux références canadiennes et prenez des décisions basées sur les données.'}
+          </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <button 
               onClick={() => register()}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105"
@@ -394,217 +536,166 @@ export default function Landing() {
                 boxShadow: `0 4px 16px ${theme.green}4d`
               }}
             >
-              {isEn ? 'Start Free Trial' : 'Commencer l\'essai gratuit'}
+              {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button 
-              onClick={() => window.open('https://calendly.com/plainledger/discovery', '_blank')}
+              onClick={() => setShowDemoModal(true)}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105"
               style={{ 
                 border: `2px solid ${theme.green}`,
-                color: theme.greenDark,
+                color: isDark ? theme.green : theme.greenDark,
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.8)'
               }}
             >
-              {isEn ? 'Book a Demo' : 'Réserver une démo'}
+              <Play className="w-4 h-4" />
+              {isEn ? 'Watch demo' : 'Voir la démo'}
             </button>
           </div>
 
-          {/* Trust indicators */}
-          <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {/* Trust badges */}
+          <div className="flex flex-wrap justify-center items-center gap-6 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4" style={{ color: theme.green }} />
               {isEn ? 'No credit card required' : 'Aucune carte de crédit'}
             </span>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4" style={{ color: theme.green }} />
-              {isEn ? '14-day free trial' : 'Essai gratuit 14 jours'}
+              {isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min'}
             </span>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4" style={{ color: theme.green }} />
-              {isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min'}
+              {isEn ? 'Data stays in Canada' : 'Données au Canada'} 🇨🇦
             </span>
           </div>
         </div>
       </section>
 
-      {/* Business Outcomes Section */}
+      {/* Industry KPIs Section - Prominently displayed */}
+      <section id="industries">
+        <IndustryKPISection onScheduleCall={handleScheduleCall} />
+      </section>
+
+      {/* Fair Value, Clear Returns - ROI Calculator */}
+      <ROICalculatorSection isEn={isEn} isDark={isDark} theme={theme} onScheduleCall={handleScheduleCall} />
+
+      {/* Integrations & Security Section */}
       <section 
-        id="features"
-        className="py-20 sm:py-28 px-6 relative"
-        style={{ background: theme.sectionBg }}
+        id="integrations" 
+        className="py-16 sm:py-20 px-6 relative"
+        style={{ 
+          background: isDark 
+            ? 'transparent' 
+            : 'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)'
+        }}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isEn ? 'Business outcomes, not just reports' : 'Résultats d\'affaires, pas que des rapports'}
-            </h2>
-            <p 
-              className="text-lg max-w-2xl mx-auto"
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
-            >
-              {isEn 
-                ? 'Every feature is designed to protect your bottom line and accelerate growth.'
-                : 'Chaque fonctionnalité est conçue pour protéger vos résultats et accélérer votre croissance.'}
-            </p>
-          </div>
-
-          {/* Outcome Cards */}
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            {/* Card 1: Risk Prevention */}
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Integrations */}
             <div 
               className="p-8 rounded-2xl"
               style={{ 
-                background: isDark 
-                  ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(250,250,248,0.98) 100%)',
-                border: `1px solid ${theme.green}26`,
-                boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.2)' : '0 2px 16px rgba(0,0,0,0.03)'
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)'}`
               }}
             >
               <div 
-                className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.green}1a 0%, ${theme.green}0d 100%)`
-                }}
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                style={{ backgroundColor: `${theme.green}15` }}
               >
-                <Shield className="w-7 h-7" style={{ color: theme.green }} />
+                <Database className="w-6 h-6" style={{ color: theme.green }} />
               </div>
               <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Prevent costly errors' : 'Prévenir les erreurs coûteuses'}
+                {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
               </h3>
               <p className="mb-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn 
-                  ? 'AI-powered anomaly detection catches duplicates, missing entries, and unusual patterns before they become expensive problems.'
-                  : 'La détection d\'anomalies par IA repère les doublons, entrées manquantes et patterns inhabituels avant qu\'ils ne deviennent coûteux.'}
+                  ? 'We integrate with the tools you already use. Import your data in minutes.'
+                  : 'Nous intégrons les outils que vous utilisez déjà. Importez vos données en minutes.'}
               </p>
-              <div 
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
-                style={{ 
-                  backgroundColor: `${theme.green}1a`,
-                  color: theme.greenDark
-                }}
-              >
-                <TrendingUp className="w-4 h-4" />
-                {isEn ? '$847K avg. client savings' : '847K$ économies client moy.'}
-              </div>
+              <ul className="space-y-2">
+                {integrations.map((name) => (
+                  <li 
+                    key={name}
+                    className="flex items-center gap-2 text-sm"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    <Check className="w-4 h-4" style={{ color: theme.green }} />
+                    {name}
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Card 2: Enterprise Security */}
+            {/* Security */}
             <div 
               className="p-8 rounded-2xl"
               style={{ 
-                background: isDark 
-                  ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%)'
-                  : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(250,250,248,0.98) 100%)',
-                border: `1px solid ${theme.gold}26`,
-                boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.2)' : '0 2px 16px rgba(0,0,0,0.03)'
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)'}`
               }}
             >
               <div 
-                className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.gold}1a 0%, ${theme.gold}0d 100%)`
-                }}
+                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                style={{ backgroundColor: `${theme.gold}15` }}
               >
-                <Lock className="w-7 h-7" style={{ color: theme.goldDark }} />
+                <Lock className="w-6 h-6" style={{ color: theme.goldDark }} />
               </div>
               <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Enterprise-grade security' : 'Sécurité de niveau entreprise'}
               </h3>
               <p className="mb-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn 
-                  ? 'Your financial data is protected with bank-level encryption, SOC 2 Type II compliance, and Canadian data residency.'
-                  : 'Vos données financières sont protégées par un chiffrement bancaire, conformité SOC 2 Type II et résidence des données au Canada.'}
+                  ? 'Your financial data is protected with bank-level encryption and stays in Canada.'
+                  : 'Vos données financières sont protégées par un chiffrement bancaire et restent au Canada.'}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {['SOC 2', 'AES-256', 'SSO'].map((badge) => (
-                  <span 
-                    key={badge}
-                    className="px-3 py-1 rounded-full text-xs font-medium"
-                    style={{ 
-                      backgroundColor: `${theme.gold}1a`,
-                      color: theme.goldText
-                    }}
+              <ul className="space-y-2">
+                {[
+                  { en: 'AES-256 encryption', fr: 'Chiffrement AES-256' },
+                  { en: 'Data residency in Canada', fr: 'Résidence des données au Canada' },
+                  { en: 'Role-based access control', fr: 'Contrôle d\'accès par rôle' },
+                  { en: 'Automated backups', fr: 'Sauvegardes automatiques' },
+                  { en: 'Audit logs', fr: 'Journaux d\'audit' },
+                ].map((item) => (
+                  <li 
+                    key={item.en}
+                    className="flex items-center gap-2 text-sm"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
                   >
-                    {badge}
-                  </span>
+                    <Shield className="w-4 h-4" style={{ color: theme.goldDark }} />
+                    {isEn ? item.en : item.fr}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
-          </div>
-
-          {/* Secondary Features Row */}
-          <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                icon: BarChart3,
-                titleEn: 'Board-ready reports',
-                titleFr: 'Rapports prêts pour le CA',
-                descEn: 'Professional financial statements in minutes',
-                descFr: 'États financiers professionnels en minutes',
-                useGreen: true
-              },
-              {
-                icon: MessageSquare,
-                titleEn: 'CPA expertise on-demand',
-                titleFr: 'Expertise CPA sur demande',
-                descEn: 'Real accountants to help interpret insights',
-                descFr: 'Vrais comptables pour interpréter les analyses',
-                useGreen: true
-              },
-              {
-                icon: Zap,
-                titleEn: 'Real-time sync',
-                titleFr: 'Synchronisation temps réel',
-                descEn: 'Always up-to-date financial picture',
-                descFr: 'Portrait financier toujours à jour',
-                useGreen: false
-              },
-            ].map((feature) => (
-              <div 
-                key={feature.titleEn}
-                className="p-6 rounded-xl text-center"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255,255,255,0.7)',
-                  border: isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)'
-                }}
-              >
-                <feature.icon 
-                  className="w-6 h-6 mx-auto mb-3" 
-                  style={{ color: feature.useGreen ? theme.green : theme.goldDark }} 
-                />
-                <h3 className="font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? feature.titleEn : feature.titleFr}
-                </h3>
-                <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? feature.descEn : feature.descFr}
-                </p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
 
-      {/* Section 3: Pricing - Simple */}
-      <section id="pricing" className="py-20 sm:py-28 px-6">
+      {/* Pricing Section */}
+      <section 
+        id="pricing" 
+        className="py-16 sm:py-20 px-6 relative"
+        style={{ 
+          background: isDark 
+            ? 'transparent' 
+            : 'linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, rgba(240, 253, 244, 0.3) 50%, rgba(255, 255, 255, 0.9) 100%)'
+        }}
+      >
         <div className="max-w-4xl mx-auto text-center">
           <h2 
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+            className="text-3xl sm:text-4xl font-bold mb-4"
             style={{ color: 'rgb(var(--color-text))' }}
           >
-            {isEn ? 'Plans for every stage of growth' : 'Des plans pour chaque étape de croissance'}
+            {isEn ? 'Simple, transparent pricing' : 'Tarification simple et transparente'}
           </h2>
           <p 
             className="text-lg mb-12 max-w-2xl mx-auto"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
             {isEn 
-              ? 'Get a personalized quote based on your business needs.'
-              : 'Obtenez une soumission personnalisée selon vos besoins.'}
+              ? 'Get a personalized quote based on your business needs. No hidden fees.'
+              : 'Obtenez une soumission personnalisée selon vos besoins. Sans frais cachés.'}
           </p>
 
           {/* Pricing Cards */}
@@ -614,24 +705,24 @@ export default function Landing() {
                 name: 'Essentiel',
                 descEn: 'For growing businesses',
                 descFr: 'Pour entreprises en croissance',
-                featuresEn: ['Anomaly detection', 'Monthly reports', 'CPA email support'],
-                featuresFr: ['Détection d\'anomalies', 'Rapports mensuels', 'Support CPA par courriel'],
+                featuresEn: ['Industry-specific KPIs', 'Anomaly detection', 'Monthly reports'],
+                featuresFr: ['KPIs par industrie', 'Détection d\'anomalies', 'Rapports mensuels'],
                 highlighted: false,
               },
               {
                 name: 'Professionnel',
                 descEn: 'For mid-market companies',
                 descFr: 'Pour entreprises de taille moyenne',
-                featuresEn: ['Everything in Essentiel', 'Weekly reviews', 'Priority CPA (48h)'],
-                featuresFr: ['Tout de Essentiel', 'Revues hebdomadaires', 'CPA prioritaire (48h)'],
+                featuresEn: ['Everything in Essentiel', 'Custom dashboards', 'Priority support'],
+                featuresFr: ['Tout de Essentiel', 'Tableaux de bord personnalisés', 'Support prioritaire'],
                 highlighted: true,
               },
               {
                 name: 'Premium',
                 descEn: 'For established enterprises',
                 descFr: 'Pour entreprises établies',
-                featuresEn: ['Everything in Pro', 'Dedicated CPA', 'Same-day response'],
-                featuresFr: ['Tout de Pro', 'CPA dédié', 'Réponse le jour même'],
+                featuresEn: ['Everything in Pro', 'Dedicated success manager', 'Custom integrations'],
+                featuresFr: ['Tout de Pro', 'Gestionnaire dédié', 'Intégrations personnalisées'],
                 highlighted: false,
               },
             ].map((tier) => (
@@ -674,13 +765,13 @@ export default function Landing() {
                   ))}
                 </ul>
                 <button 
-                  onClick={() => window.open('https://calendly.com/anthonypaquet1508/15min', '_blank')}
+                  onClick={handleScheduleCall}
                   className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105"
                   style={{ 
                     background: tier.highlighted 
                       ? `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`
                       : 'transparent',
-                    color: tier.highlighted ? 'white' : theme.greenDark,
+                    color: tier.highlighted ? 'white' : isDark ? theme.green : theme.greenDark,
                     border: tier.highlighted ? 'none' : `2px solid ${theme.green}`,
                   }}
                 >
@@ -692,137 +783,44 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Newsletter Section - Off Balance */}
-      <section 
-        className="py-20 sm:py-28 px-6"
-        style={{ 
-          background: isDark 
-            ? `linear-gradient(180deg, ${theme.gold}08 0%, ${theme.green}05 100%)`
-            : `linear-gradient(180deg, ${theme.gold}08 0%, ${theme.green}05 100%)`
-        }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left - Content */}
-            <div>
-              <div 
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6"
-                style={{ 
-                  backgroundColor: `${theme.gold}1a`,
-                  color: theme.goldText
-                }}
-              >
-                <Coffee className="w-4 h-4" />
-                {isEn ? 'Free weekly newsletter' : 'Infolettre hebdomadaire gratuite'}
-              </div>
-              
-              <h2 
-                className="text-3xl sm:text-4xl font-bold mb-4"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                <span style={{ color: 'rgb(var(--color-text-muted))' }}>Off</span>Balance
-              </h2>
-              
-              <p 
-                className="text-lg mb-6"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                {isEn 
-                  ? "Accounting insights that won't put you to sleep. Real anomaly catches, automation tips, and honest takes on the industry."
-                  : "Des insights comptables qui ne vous endormiront pas. Vraies anomalies détectées, astuces d'automatisation et opinions franches sur l'industrie."}
-              </p>
-
-              {/* What's inside */}
-              <ul className="space-y-3 mb-8">
-                {[
-                  { en: 'Anomaly of the Week – Real catches, real lessons', fr: 'Anomalie de la semaine – Vraies erreurs, vraies leçons', icon: '🔍' },
-                  { en: 'Tech tips that actually save time', fr: 'Astuces tech qui font vraiment gagner du temps', icon: '⚡' },
-                  { en: 'Industry trends without the buzzwords', fr: 'Tendances de l\'industrie sans les buzzwords', icon: '📊' },
-                  { en: 'CPA hot takes (we don\'t hold back)', fr: 'Opinions CPA (on ne se retient pas)', icon: '💬' },
-                ].map((item, i) => (
-                  <li 
-                    key={i} 
-                    className="text-sm flex items-center gap-2"
-                    style={{ color: 'rgb(var(--color-text-secondary))' }}
-                  >
-                    <span>{item.icon}</span>
-                    {isEn ? item.en : item.fr}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Signup inline */}
-              <NewsletterSignup variant="minimal" />
-              
-              <p className="text-xs mt-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn 
-                  ? 'Every Thursday · 5-min read · Join 500+ CPAs'
-                  : 'Chaque jeudi · 5 min de lecture · 500+ CPA abonnés'}
-              </p>
-            </div>
-
-            {/* Right - Preview */}
-            <div className="hidden lg:block">
-              <NewsletterPreview />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 sm:py-28 px-6">
+      {/* Final CTA */}
+      <section className="py-16 sm:py-20 px-6">
         <div className="max-w-3xl mx-auto">
           <div 
             className="text-center p-10 sm:p-14 rounded-3xl relative overflow-hidden"
             style={{ 
-              background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 50%, ${isDark ? '#047857' : '#047857'} 100%)`,
+              background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
               boxShadow: `0 8px 32px ${theme.green}40`
             }}
           >
-            {/* Decorative elements */}
-            <div 
-              className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"
-              style={{ 
-                background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
-                transform: 'translate(30%, -30%)'
-              }}
-            />
-            <div 
-              className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10"
-              style={{ 
-                background: 'radial-gradient(circle, white 0%, transparent 70%)',
-                transform: 'translate(-30%, 30%)'
-              }}
-            />
-            
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white relative z-10">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
               {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
             </h2>
-            <p className="text-lg mb-8 text-white/90 relative z-10">
+            <p className="text-lg mb-8 text-white/90">
               {isEn 
-                ? 'Join finance teams who are saving hours every week.'
-                : 'Rejoignez les équipes finance qui économisent des heures chaque semaine.'}
+                ? 'Join Canadian businesses who trust PlainLedger for complete financial transparency.'
+                : 'Rejoignez les entreprises canadiennes qui font confiance à PlainLedger.'}
             </p>
             <button 
               onClick={() => register()}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105 relative z-10"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
                 color: 'white',
                 boxShadow: `0 4px 16px ${theme.gold}66`
               }}
             >
-              {isEn ? 'Start Free Trial' : 'Commencer l\'essai gratuit'}
+              {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
               <ArrowRight className="w-5 h-5" />
             </button>
-            <p className="text-sm mt-4 text-white/80 relative z-10">
-              {isEn ? '14-day free trial · No credit card required' : 'Essai gratuit 14 jours · Aucune carte de crédit requise'}
+            <p className="text-sm mt-4 text-white/80">
+              {isEn ? 'No credit card required' : 'Aucune carte de crédit requise'}
             </p>
           </div>
         </div>
       </section>
 
-      {/* Footer - Minimal */}
+      {/* Footer */}
       <footer 
         className="py-8 px-6 border-t"
         style={{ borderColor: `${theme.green}1a` }}
@@ -844,18 +842,26 @@ export default function Landing() {
             <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
           </div>
           <div className="flex items-center gap-6 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Link to="/newsletter" className="transition-colors" style={{ ['--hover-color' as string]: theme.green }}>
-              <span style={{ color: 'rgb(var(--color-text-muted))' }}>Off</span>Balance
-            </Link>
             <a href="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</a>
             <a href="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</a>
             <a href="mailto:info@plainledger.ca" className="transition-colors hover:underline">Contact</a>
           </div>
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            © 2026 PlainLedger
+            © 2026 PlainLedger 🇨🇦
           </p>
         </div>
       </footer>
+
+      {/* Demo Modal */}
+      <DemoModal
+        isOpen={showDemoModal}
+        onClose={() => setShowDemoModal(false)}
+        isEn={isEn}
+        onStartTrial={() => {
+          setShowDemoModal(false);
+          register();
+        }}
+      />
     </div>
   );
 }

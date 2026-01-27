@@ -24,7 +24,7 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <I18nProvider defaultLanguage="fr">
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="light">
         <KeycloakProvider>
           <TenantProvider>
             <QueryClientProvider client={queryClient}>
