@@ -13,9 +13,10 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from "@nestjs/swagger";
-import { Roles } from "nest-keycloak-connect";
+import { Roles, Public } from "nest-keycloak-connect";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
 import { DomainError, EntityNotFoundError } from "@domain/errors/DomainError";
+import { DatalakeDataService } from "../../services/datalake-data.service";
 
 @Controller("reports")
 @ApiTags("reports")
@@ -23,6 +24,7 @@ import { DomainError, EntityNotFoundError } from "@domain/errors/DomainError";
 export class ReportController {
   constructor(
     private readonly generateBalanceSheetUseCase: GenerateBalanceSheetUseCase,
+    private readonly datalakeDataService: DatalakeDataService,
   ) {}
 
   @Get(":tenantId/balance-sheet")

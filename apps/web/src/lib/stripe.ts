@@ -21,12 +21,28 @@ export interface StripeConfig {
   checkoutCancelUrl: string;
 }
 
-const stripeConfig: StripeConfig = {
-  publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_demo',
-  portalUrl: import.meta.env.VITE_STRIPE_PORTAL_URL || '/api/stripe/portal',
-  checkoutSuccessUrl: `${window.location.origin}/app/settings?tab=subscription&status=success`,
-  checkoutCancelUrl: `${window.location.origin}/app/settings?tab=subscription&status=cancelled`,
+/**
+ * SECURITY: Stripe configuration with environment validation
+ * In production, VITE_STRIPE_PUBLISHABLE_KEY must be set
+ */
+const getStripeConfig = (): StripeConfig => {
+  const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  const isProduction = import.meta.env.PROD;
+
+  // Validate in production
+  if (isProduction && (!publishableKey || publishableKey === 'pk_test_demo')) {
+    console.error('[Security] Stripe publishable key not configured for production');
+  }
+
+  return {
+    publishableKey: publishableKey || (isProduction ? '' : 'pk_test_demo_disabled'),
+    portalUrl: import.meta.env.VITE_STRIPE_PORTAL_URL || '/api/stripe/portal',
+    checkoutSuccessUrl: `${window.location.origin}/app/settings?tab=subscription&status=success`,
+    checkoutCancelUrl: `${window.location.origin}/app/settings?tab=subscription&status=cancelled`,
+  };
 };
+
+const stripeConfig = getStripeConfig();
 
 // =====================================================
 // PRICING PLANS

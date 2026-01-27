@@ -33,16 +33,41 @@ export interface DatalakeConfig {
 /**
  * Create a DatalakeConfig from environment variables
  */
+/**
+ * Create a DatalakeConfig from environment variables
+ * SECURITY: All credentials MUST come from environment variables in production
+ */
 export function createDatalakeConfigFromEnv(): DatalakeConfig {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // In production, require all credentials to be explicitly set
+  if (isProduction) {
+    const requiredVars = [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY",
+      "S3_BUCKET_BRONZE",
+      "S3_BUCKET_SILVER",
+      "S3_BUCKET_GOLD",
+      "DB_HOST",
+      "DB_PASSWORD",
+    ];
+    const missing = requiredVars.filter((v) => !process.env[v]);
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required environment variables for production: ${missing.join(", ")}`,
+      );
+    }
+  }
+
   return {
-    s3Endpoint: process.env.S3_ENDPOINT || "http://localhost:4566",
-    s3Region: process.env.S3_REGION || "us-east-1",
-    s3AccessKey: process.env.AWS_ACCESS_KEY_ID || "test",
-    s3SecretKey: process.env.AWS_SECRET_ACCESS_KEY || "test",
+    s3Endpoint: process.env.S3_ENDPOINT || (isProduction ? "" : "http://localhost:4566"),
+    s3Region: process.env.S3_REGION || "ca-central-1",
+    s3AccessKey: process.env.AWS_ACCESS_KEY_ID || (isProduction ? "" : "localstack-test"),
+    s3SecretKey: process.env.AWS_SECRET_ACCESS_KEY || (isProduction ? "" : "localstack-test"),
     bucketName: process.env.S3_BUCKET_NAME || "plainledger-datalake",
     dbConnectionString:
       process.env.DATABASE_URL ||
-      `postgresql://${process.env.DB_USERNAME || "plainledger"}:${process.env.DB_PASSWORD || "plainledger_secret"}@${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "plainledger"}`,
+      `postgresql://${process.env.DB_USERNAME || "plainledger"}:${process.env.DB_PASSWORD || ""}@${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "plainledger"}`,
     bronzeBucket: process.env.S3_BUCKET_BRONZE || "plainledger-bronze",
     silverBucket: process.env.S3_BUCKET_SILVER || "plainledger-silver",
     goldBucket: process.env.S3_BUCKET_GOLD || "plainledger-gold",

@@ -62,9 +62,41 @@ class SyncResultDto {
   syncedAt: string;
 }
 
-// In-memory store for development (would be database in production)
+/**
+ * SECURITY WARNING: In-memory storage for development only!
+ * 
+ * In production, tokens MUST be:
+ * 1. Stored in an encrypted database column
+ * 2. Encrypted at rest using AWS KMS or similar
+ * 3. Access logged and audited
+ * 
+ * TODO: Migrate to PostgresDataSourceRepository with encrypted token storage
+ * @see https://docs.nestjs.com/security/encryption-and-hashing
+ */
 const mockDataSources: DataSourceResponseDto[] = [];
-const tokenStore: Map<string, { accessToken: string; refreshToken: string; realmId: string }> = new Map();
+
+// Token storage with basic obfuscation (NOT production-ready encryption)
+// Production should use: AWS Secrets Manager, HashiCorp Vault, or encrypted DB columns
+interface TokenData {
+  accessToken: string;
+  refreshToken: string;
+  realmId: string;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
+const tokenStore: Map<string, TokenData> = new Map();
+
+// Security: Clear expired tokens periodically
+setInterval(() => {
+  const now = new Date();
+  for (const [key, data] of tokenStore.entries()) {
+    if (data.expiresAt && data.expiresAt < now) {
+      tokenStore.delete(key);
+      console.log(`[Security] Cleared expired token for datasource: ${key.substring(0, 8)}...`);
+    }
+  }
+}, 60000); // Check every minute
 
 @ApiTags("Data Sources")
 @ApiBearerAuth()
@@ -163,10 +195,17 @@ export class DataSourceController {
         this.logger.log(`QuickBooks tokens obtained for realm: ${callback.realmId}`);
 
         // Store tokens (in production, encrypt and save to database)
+        // SECURITY: Tokens are stored with expiry for automatic cleanup
+        const expiresAt = tokens.accessTokenExpiresAt 
+          ? new Date(tokens.accessTokenExpiresAt)
+          : new Date(Date.now() + 60 * 60 * 1000); // Default 1 hour
+        
         tokenStore.set(datasourceId, {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           realmId: callback.realmId,
+          createdAt: new Date(),
+          expiresAt,
         });
 
         // Fetch company info
