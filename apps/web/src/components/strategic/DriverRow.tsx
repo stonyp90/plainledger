@@ -575,10 +575,12 @@ export default function DriverRow({
                   }
                 }}
                 onBlur={handlePrefixSave}
+                autoFocus
                 className="px-1.5 py-0.5 rounded outline-none w-20"
                 style={{
                   fontSize: '12px',
                   backgroundColor: '#FFFFFF',
+                  color: colors.text.primary,
                   border: `1px solid ${colors.border.focus}`,
                   boxShadow: `0 0 0 2px ${colors.border.focus}20`,
                 }}
