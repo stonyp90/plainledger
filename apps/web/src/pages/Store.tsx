@@ -44,7 +44,6 @@ import {
   type PricingTierConfig,
   type BillingInterval,
 } from '../lib/pricing';
-import IntegrationLogos from '../components/IntegrationLogos';
 import { Tooltip } from '../components/Tooltip';
 
 // =====================================================
@@ -324,18 +323,18 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decoration - Green and Gold gradient */}
+      {/* Background decoration - Subtle gradient, no flash */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div 
-          className="absolute -top-1/2 -right-1/4 w-96 h-96 rounded-full blur-3xl opacity-15"
+          className="absolute -top-1/2 -right-1/4 w-96 h-96 rounded-full blur-3xl opacity-[0.06]"
           style={{ backgroundColor: 'rgb(var(--store-hero-gradient-1))' }}
         />
         <div 
-          className="absolute -bottom-1/2 -left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10"
+          className="absolute -bottom-1/2 -left-1/4 w-96 h-96 rounded-full blur-3xl opacity-[0.04]"
           style={{ backgroundColor: 'rgb(var(--store-hero-gradient-2))' }}
         />
         <div 
-          className="absolute top-1/4 left-1/2 w-64 h-64 rounded-full blur-3xl opacity-8"
+          className="absolute top-1/4 left-1/2 w-64 h-64 rounded-full blur-3xl opacity-[0.03]"
           style={{ backgroundColor: 'rgb(var(--store-hero-gradient-3))' }}
         />
       </div>
@@ -399,6 +398,28 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
             <Check className="w-4 h-4 store-check-icon" />
             {isEn ? 'Data stays in Canada' : 'Données au Canada'}
           </span>
+        </div>
+
+        {/* Supported platforms */}
+        <div className="mt-8 flex flex-col items-center">
+          <p className="text-xs text-muted mb-3">
+            {isEn ? 'Works with your favorite accounting software' : 'Compatible avec vos logiciels comptables préférés'}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+            {['QuickBooks', 'Xero', 'Sage', 'FreshBooks', 'Wave', '+ CSV'].map((name) => (
+              <span 
+                key={name}
+                className="px-3 py-1.5 rounded-full text-xs font-medium"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-secondary))',
+                  border: '1px solid rgb(var(--color-border))'
+                }}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Stats - Green and Gold accents */}
@@ -901,10 +922,6 @@ function PricingSection({ isEn }: { isEn: boolean }) {
   );
 }
 
-function IntegrationsSection() {
-  return <IntegrationLogos />;
-}
-
 function TestimonialsSection({ isEn }: { isEn: boolean }) {
   // Show first 3 testimonials, with CPA-focused ones prioritized
   const displayedTestimonials = TESTIMONIALS.slice(0, 3);
@@ -1213,7 +1230,6 @@ export default function Store() {
         <FeaturesSection isEn={isEn} />
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
         <PricingSection isEn={isEn} />
-        <IntegrationsSection />
         <TestimonialsSection isEn={isEn} />
         <CTASection isEn={isEn} />
       </main>

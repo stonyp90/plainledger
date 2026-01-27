@@ -57,3 +57,16 @@ variable "allowed_ip_ranges" {
   type        = list(string)
   default     = []
 }
+
+# AWS Athena Configuration
+variable "aws_region" {
+  description = "AWS region for Athena"
+  type        = string
+  default     = "ca-central-1"
+}
+
+variable "api_role_arn" {
+  description = "ARN of the API service IAM role for Athena access"
+  type        = string
+  default     = ""
+}

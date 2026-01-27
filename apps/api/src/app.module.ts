@@ -21,9 +21,11 @@ import { DataSourceController } from "@infrastructure/http/controllers/datasourc
 import { ContactController } from "@infrastructure/http/controllers/contact.controller";
 import { AIController } from "@infrastructure/http/controllers/ai.controller";
 import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
+import { PowerBIDataController } from "@infrastructure/http/controllers/powerbi-data.controller";
 import { AIService } from "@infrastructure/ai/ai.service";
 import { PowerBIService } from "@infrastructure/services/powerbi.service";
 import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
+import { PowerBIDatalakeService } from "@infrastructure/services/powerbi-datalake.service";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 
 // Infrastructure - GraphQL
@@ -107,6 +109,7 @@ import { NovuModule } from "./notifications/novu.service";
     ContactController,
     AIController,
     AnalyticsController,
+    PowerBIDataController,
   ],
   providers: [
     // Guards
@@ -136,6 +139,7 @@ import { NovuModule } from "./notifications/novu.service";
     AIService,
     PowerBIService,
     PowerBIThemeService,
+    PowerBIDatalakeService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,

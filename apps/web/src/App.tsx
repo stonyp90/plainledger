@@ -17,7 +17,7 @@ import BoardMeeting from './pages/BoardMeeting';
 import StrategicPlanning from './pages/StrategicPlanning';
 import FinancialModel from './pages/FinancialModel';
 import MontageFinancier from './pages/MontageFinancier';
-import Store from './pages/Store';
+// Store removed - using Landing as main website
 import Onboarding from './components/Onboarding';
 import EmailConfirmation from './pages/EmailConfirmation';
 import PowerBIAnalytics from './pages/PowerBIAnalytics';
@@ -253,7 +253,7 @@ function App() {
         {/* Public routes - Main marketing website at root */}
         <Route 
           path="/" 
-          element={authenticated ? <Navigate to="/app" replace /> : <Store />} 
+          element={authenticated ? <Navigate to="/app" replace /> : <Landing />} 
         />
         
         {/* Legacy routes redirect to root */}
@@ -269,7 +269,7 @@ function App() {
         {/* Signup - redirects to onboarding if authenticated */}
         <Route 
           path="/signup" 
-          element={authenticated ? <Navigate to="/onboarding" replace /> : <Store />} 
+          element={authenticated ? <Navigate to="/onboarding" replace /> : <Landing />} 
         />
         
         {/* Login - handled by Keycloak */}
