@@ -13,6 +13,8 @@ export interface FormulaPart {
   type: FormulaPartType;
   value: string;
   driverId?: string;
+  driverPrefix?: string;
+  driverIcon?: string;
 }
 
 // Known formula functions
@@ -35,11 +37,21 @@ export function parseFormulaForDisplay(
   const parts: FormulaPart[] = [];
   
   // Build a map of driver names (case-insensitive)
-  const driverMap = new Map<string, { id: string; name: string }>();
+  const driverMap = new Map<string, { id: string; name: string; prefix?: string; icon?: string }>();
   Object.values(drivers).forEach(d => {
-    driverMap.set(d.name.toUpperCase(), { id: d.id, name: d.name });
+    driverMap.set(d.name.toUpperCase(), { 
+      id: d.id, 
+      name: d.name,
+      prefix: d.prefix,
+      icon: d.icon,
+    });
     if (d.nameEn) {
-      driverMap.set(d.nameEn.toUpperCase(), { id: d.id, name: d.nameEn });
+      driverMap.set(d.nameEn.toUpperCase(), { 
+        id: d.id, 
+        name: d.nameEn,
+        prefix: d.prefix,
+        icon: d.icon,
+      });
     }
   });
   
@@ -102,6 +114,8 @@ export function parseFormulaForDisplay(
               type: 'driver',
               value: driverInfo.name,
               driverId: driverInfo.id,
+              driverPrefix: driverInfo.prefix,
+              driverIcon: driverInfo.icon,
             });
             i += driverName.length;
             foundDriver = true;
@@ -145,6 +159,8 @@ export function parseFormulaForDisplay(
         type: 'driver',
         value: driverInfo.name,
         driverId: driverInfo.id,
+        driverPrefix: driverInfo.prefix,
+        driverIcon: driverInfo.icon,
       });
     } else {
       parts.push({ type: 'text', value: text });

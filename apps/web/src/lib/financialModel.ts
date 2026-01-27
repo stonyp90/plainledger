@@ -16,6 +16,8 @@ export interface Driver {
   id: string;
   name: string;
   nameEn?: string;
+  prefix?: string; // Category prefix (e.g., "Revenue", "Expense")
+  icon?: string; // Icon type identifier (e.g., 'dollar', 'trending-up')
   formula?: string; // Formula referencing other drivers (e.g., "Bank Accounts / OPERATING ACTIVITIES")
   values: Record<string, number>; // Map of period key -> value (manual entries)
   dataSource: DataSource;
@@ -44,6 +46,11 @@ export interface FinancialModel {
   timelineStart: string; // ISO date string
   timelineEnd: string; // ISO date string
   viewMode: ViewMode;
+  columnWidths?: {
+    driver?: number;
+    formula?: number;
+    period?: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

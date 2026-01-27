@@ -7,7 +7,7 @@
  * - Clean visual design
  */
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { type ViewMode } from '../../lib/financialModel';
 import { useI18n } from '../../lib/i18n';
 
@@ -37,6 +37,9 @@ interface TimelineHeaderProps {
   onViewModeChange: (mode: ViewMode) => void;
   onStartDateChange?: (date: Date) => void;
   onEndDateChange?: (date: Date) => void;
+  onAddPeriod?: () => void;
+  onRemovePeriod?: () => void;
+  canRemovePeriod?: boolean;
 }
 
 export default function TimelineHeader({
@@ -46,6 +49,9 @@ export default function TimelineHeader({
   onViewModeChange,
   onStartDateChange,
   onEndDateChange,
+  onAddPeriod,
+  onRemovePeriod,
+  canRemovePeriod = false,
 }: TimelineHeaderProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -86,7 +92,8 @@ export default function TimelineHeader({
     <div
       className="flex items-center gap-3"
       style={{
-        padding: '8px 16px',
+        height: '40px',
+        padding: '0 16px',
         borderBottom: `1px solid ${colors.border.default}`,
         backgroundColor: colors.bg.base,
       }}
@@ -124,6 +131,26 @@ export default function TimelineHeader({
           </NavButton>
         </div>
       )}
+      
+      {/* Column Management */}
+      <div className="flex items-center gap-1 ml-auto">
+        {onAddPeriod && (
+          <NavButton 
+            onClick={onAddPeriod} 
+            title={isEn ? 'Add period column' : 'Ajouter une colonne'}
+          >
+            <Plus className="w-4 h-4" />
+          </NavButton>
+        )}
+        {onRemovePeriod && canRemovePeriod && (
+          <NavButton 
+            onClick={onRemovePeriod} 
+            title={isEn ? 'Remove last period column' : 'Supprimer la dernière colonne'}
+          >
+            <X className="w-4 h-4" />
+          </NavButton>
+        )}
+      </div>
     </div>
   );
 }
@@ -141,10 +168,11 @@ function ToggleButton({
   return (
     <button
       onClick={onClick}
-      className="text-xs font-medium transition-all duration-150"
+      className="font-medium transition-all duration-150"
       style={{
         padding: '6px 12px',
         borderRadius: '6px',
+        fontSize: '13px', // Increased from 12px
         backgroundColor: active ? colors.bg.active : 'transparent',
         color: active ? colors.text.active : colors.text.secondary,
       }}

@@ -7,6 +7,8 @@
 import { useState } from 'react';
 import { Check, Zap, RefreshCw, Shield, ArrowRight } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import { crispUtils } from './CrispChat';
+import config from '../lib/config';
 
 interface Integration {
   name: string;
@@ -73,8 +75,8 @@ const SYNC_FEATURES = [
   },
   {
     icon: RefreshCw,
-    title: { en: 'Two-way sync', fr: 'Synchro bidirectionnelle' },
-    desc: { en: 'Changes reflect everywhere', fr: 'Modifications partout' },
+    title: { en: 'Auto-import', fr: 'Import automatique' },
+    desc: { en: 'Your data, always up to date', fr: 'Vos données, toujours à jour' },
   },
   {
     icon: Shield,
@@ -268,6 +270,20 @@ export default function IntegrationLogos() {
               {isEn ? "Don't see your software?" : "Vous ne voyez pas votre logiciel ?"}
             </p>
             <button 
+              onClick={() => {
+                if (config.crisp.enabled) {
+                  crispUtils.showMessage(
+                    isEn 
+                      ? "I'd like to request an integration with my accounting software."
+                      : "J'aimerais demander une intégration avec mon logiciel comptable."
+                  );
+                  crispUtils.open();
+                } else {
+                  window.location.href = `mailto:${config.support?.email || 'support@plainledger.ca'}?subject=${encodeURIComponent(
+                    isEn ? 'Integration Request' : 'Demande d\'intégration'
+                  )}`;
+                }
+              }}
               className="flex items-center gap-2 text-sm font-medium transition-colors hover:underline active:scale-95"
               style={{ color: 'rgb(var(--color-primary-500))' }}
             >
