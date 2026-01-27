@@ -679,7 +679,7 @@ export function detectVelocityChanges(
       
       if (Math.abs(velocityChange) > config.velocityThreshold) {
         anomalies.push({
-          id: `ai-velocity-${data[i + 1].period}`,
+          id: `ai-velocity-${accountName}-${data[i + 1].period}-${i}`,
           category: 'trend',
           aiType: 'velocity_change',
           severity: Math.abs(velocityChange) > config.velocityThreshold * 2 ? 'critical' : 'warning',

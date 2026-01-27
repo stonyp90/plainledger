@@ -362,7 +362,6 @@ export default function FormulaEditor({
             <span className="text-gray-400 font-mono text-sm">=</span>
             {formulaParts.map((part, i) => {
               if (part.type === 'driver') {
-                const IconComponent = part.driverIcon && ICON_MAP[part.driverIcon];
                 return (
                   <span
                     key={i}
@@ -372,7 +371,6 @@ export default function FormulaEditor({
                       color: '#1E40AF',
                     }}
                   >
-                    {IconComponent && <IconComponent size={12} />}
                     {part.driverName}
                     <button
                       onClick={() => removeDriverChip(part.value)}
@@ -411,7 +409,7 @@ export default function FormulaEditor({
         )}
 
         {/* Input row */}
-        <div className="flex items-center gap-2 px-3 py-2">
+        <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: '#FFFFFF' }}>
           <span className="text-gray-400 font-mono text-sm">=</span>
           <input
             ref={inputRef}
@@ -422,7 +420,11 @@ export default function FormulaEditor({
             onClick={(e) => setCursorPosition((e.target as HTMLInputElement).selectionStart || 0)}
             placeholder={isEn ? 'Type formula, @ for drivers, / for functions...' : 'Formule, @ pour pilotes, / pour fonctions...'}
             className="flex-1 outline-none text-sm font-mono"
-            style={{ color: '#111827' }}
+            style={{ 
+              color: '#111827',
+              backgroundColor: 'transparent',
+              caretColor: '#3B82F6',
+            }}
             autoComplete="off"
             spellCheck={false}
           />
@@ -558,8 +560,8 @@ export default function FormulaEditor({
             maxHeight: '320px',
           }}
         >
-          <div className="sticky top-0 p-2 border-b bg-gray-50" style={{ borderColor: '#E5E7EB' }}>
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white border" style={{ borderColor: '#E5E7EB' }}>
+          <div className="sticky top-0 p-2 border-b" style={{ borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' }}>
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border" style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' }}>
               <Search size={14} className="text-gray-400" />
               <input
                 type="text"
@@ -570,6 +572,7 @@ export default function FormulaEditor({
                 }}
                 placeholder={isEn ? 'Search functions...' : 'Rechercher fonctions...'}
                 className="flex-1 text-sm outline-none"
+                style={{ color: '#111827', backgroundColor: 'transparent' }}
                 autoFocus
               />
             </div>
@@ -747,14 +750,12 @@ export function FormulaDisplay({
       <div className="flex items-center gap-0.5 overflow-hidden">
         {parts.map((part, i) => {
           if (part.type === 'driver') {
-            const IconComponent = part.icon && ICON_MAP[part.icon];
             return (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium truncate"
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium truncate"
                 style={{ backgroundColor: '#DBEAFE', color: '#1E40AF' }}
               >
-                {IconComponent && <IconComponent size={10} />}
                 <span className="truncate">{part.value}</span>
               </span>
             );

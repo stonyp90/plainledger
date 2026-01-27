@@ -48,6 +48,7 @@ import {
   Copy,
   Loader2,
   Shield,
+  Users,
   FileDown,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';

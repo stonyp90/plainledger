@@ -1063,10 +1063,6 @@ function FormulaPartDisplay({ part }: { part: FormulaPart }) {
   const bg = getFormulaPartBg(part.type);
   
   if (part.type === 'driver') {
-      const DriverIconComponent = part.driverIcon && part.driverIcon !== 'none' 
-        ? ICON_MAP[part.driverIcon as IconType] 
-        : null;
-      
       return (
         <span
           className="inline-flex items-center gap-1 rounded font-medium"
@@ -1075,15 +1071,12 @@ function FormulaPartDisplay({ part }: { part: FormulaPart }) {
             color: color,
             padding: '2px 8px',
             margin: '0 2px',
-            fontSize: '13px', // Increased from 12px
+            fontSize: '13px',
             lineHeight: '18px',
             fontWeight: 500,
             borderRadius: '4px',
           }}
         >
-          {DriverIconComponent && (
-            <DriverIconComponent size={12} style={{ color: color }} />
-          )}
           {part.driverPrefix && (
             <span
               style={{

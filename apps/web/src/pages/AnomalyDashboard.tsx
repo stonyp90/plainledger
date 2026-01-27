@@ -779,7 +779,7 @@ export default function AnomalyDashboard() {
               return (
                 <div
                   key={anomaly.id}
-                  className="border rounded-lg overflow-hidden transition-all"
+                  className="border rounded-lg overflow-hidden transition-all relative"
                   style={{ borderColor: style.borderColor }}
                 >
                   <button
@@ -854,19 +854,23 @@ export default function AnomalyDashboard() {
                           </span>
                         </div>
                       )}
-                      {isAIAnomaly && aiAnomaly && ANOMALY_TOOLTIPS[aiAnomaly.aiType] && (
-                        <AnomalyTooltip
-                          type={aiAnomaly.aiType}
-                          confidence={aiAnomaly.confidence}
-                          explanation={aiAnomaly.explanation}
-                          explanationEn={aiAnomaly.explanationEn}
-                          technicalDetails={aiAnomaly.technicalDetails}
-                          suggestedActions={aiAnomaly.suggestedActions}
-                          impactScore={aiAnomaly.impactScore}
-                        />
-                      )}
                     </div>
                   </button>
+                  
+                  {/* AI Tooltip - placed outside button to avoid nesting violation */}
+                  {isAIAnomaly && aiAnomaly && ANOMALY_TOOLTIPS[aiAnomaly.aiType] && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <AnomalyTooltip
+                        type={aiAnomaly.aiType}
+                        confidence={aiAnomaly.confidence}
+                        explanation={aiAnomaly.explanation}
+                        explanationEn={aiAnomaly.explanationEn}
+                        technicalDetails={aiAnomaly.technicalDetails}
+                        suggestedActions={aiAnomaly.suggestedActions}
+                        impactScore={aiAnomaly.impactScore}
+                      />
+                    </div>
+                  )}
                   
                   {isExpanded && (
                     <div 

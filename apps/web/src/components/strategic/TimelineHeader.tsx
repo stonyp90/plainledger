@@ -133,22 +133,46 @@ export default function TimelineHeader({
       )}
       
       {/* Column Management */}
-      <div className="flex items-center gap-1 ml-auto">
+      <div className="flex items-center gap-2 ml-auto">
         {onAddPeriod && (
-          <NavButton 
-            onClick={onAddPeriod} 
-            title={isEn ? 'Add period column' : 'Ajouter une colonne'}
+          <button 
+            onClick={onAddPeriod}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors"
+            style={{
+              backgroundColor: '#F0FDF4',
+              color: '#166534',
+              border: '1px solid #BBF7D0',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#DCFCE7';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#F0FDF4';
+            }}
           >
-            <Plus className="w-4 h-4" />
-          </NavButton>
+            <Plus className="w-3.5 h-3.5" />
+            <span>{isEn ? 'Add Column' : 'Ajouter'}</span>
+          </button>
         )}
         {onRemovePeriod && canRemovePeriod && (
-          <NavButton 
-            onClick={onRemovePeriod} 
-            title={isEn ? 'Remove last period column' : 'Supprimer la dernière colonne'}
+          <button 
+            onClick={onRemovePeriod}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors"
+            style={{
+              backgroundColor: '#FEF2F2',
+              color: '#991B1B',
+              border: '1px solid #FECACA',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#FEE2E2';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FEF2F2';
+            }}
           >
-            <X className="w-4 h-4" />
-          </NavButton>
+            <X className="w-3.5 h-3.5" />
+            <span>{isEn ? 'Remove' : 'Retirer'}</span>
+          </button>
         )}
       </div>
     </div>

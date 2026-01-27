@@ -220,7 +220,7 @@ export default function ScenarioManager({ model, onModelUpdate, isEn }: Scenario
                   onMouseLeave={() => setHoveredId(null)}
                 >
                   {editingId === scenario.id ? (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50">
+                    <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: '#EFF6FF' }}>
                       <div 
                         className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: scenario.color }}
@@ -239,11 +239,15 @@ export default function ScenarioManager({ model, onModelUpdate, isEn }: Scenario
                         }}
                         onBlur={() => handleRename(scenario.id)}
                         className="flex-1 px-2 py-1 text-sm rounded border border-blue-300 outline-none focus:ring-2 focus:ring-blue-200"
-                        style={{ color: '#111827' }}
+                        style={{ 
+                          color: '#111827',
+                          backgroundColor: '#FFFFFF',
+                        }}
                       />
                       <button
                         onClick={() => handleRename(scenario.id)}
                         className="p-1 rounded hover:bg-blue-100"
+                        title={isEn ? 'Save' : 'Enregistrer'}
                       >
                         <Check className="w-4 h-4 text-blue-600" />
                       </button>
@@ -253,6 +257,7 @@ export default function ScenarioManager({ model, onModelUpdate, isEn }: Scenario
                           setEditingName('');
                         }}
                         className="p-1 rounded hover:bg-gray-200"
+                        title={isEn ? 'Cancel' : 'Annuler'}
                       >
                         <X className="w-4 h-4 text-gray-500" />
                       </button>
