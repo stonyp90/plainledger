@@ -988,64 +988,36 @@ export default function DriverRow({
               }}
               onBlur={() => handlePeriodSave(periodKey)}
               onClick={(e) => e.stopPropagation()}
-              className="w-full h-full text-right outline-none bg-transparent"
+              className="text-right outline-none"
               style={{
                 fontSize: '15px',
                 color: colors.text.primary,
                 fontVariantNumeric: 'tabular-nums',
-                position: 'absolute',
-                inset: 0,
-                padding: '6px 12px',
-                backgroundColor: '#EFF6FF',
-                border: `2px solid ${colors.accent.primary}`,
-                borderRadius: '2px',
+                width: '100%',
+                backgroundColor: 'transparent',
+                border: 'none',
               }}
               autoFocus
             />
           ) : (
-            <div className="relative group">
-              <CellTooltip 
-                content={formatted || (driver.formula ? '' : '-')}
-                showOnlyIfTruncated={true}
-              >
-                <span
-                  className={`${!driver.formula ? 'cursor-cell' : ''} truncate truncate-check`}
-                  style={{
-                    fontSize: '15px',
-                    fontVariantNumeric: 'tabular-nums',
-                    lineHeight: '24px',
-                    display: 'inline-block',
-                    maxWidth: '100%',
-                  }}
-                  onDoubleClick={() => !driver.formula && startEditingPeriod(periodKey, value)}
-                >
-                  {formatted || (driver.formula ? '' : '-')}
-                </span>
-              </CellTooltip>
-              {/* Quick edit hint on hover */}
-              {!driver.formula && !editingPeriod && (
-                <div 
-                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                  style={{ backgroundColor: 'rgba(59, 130, 246, 0.03)' }}
-                >
-                  <span className="text-[10px] text-blue-400 bg-white/80 px-1.5 py-0.5 rounded shadow-sm">
-                    {isEn ? 'Double-click to edit' : 'Double-clic pour éditer'}
-                  </span>
-                </div>
-              )}
-              {/* AI Insights on hover */}
-              {!editingPeriod && value !== null && value !== undefined && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <AIInsights
-                    driver={driver}
-                    value={typeof value === 'number' ? value : parseFloat(String(value)) || 0}
-                    periodKey={periodKey}
-                    allDrivers={allDrivers}
-                    isEn={isEn}
-                  />
-                </div>
-              )}
-            </div>
+            <span
+              className={`${!driver.formula ? 'cursor-text hover:bg-blue-50 rounded px-1 -mx-1' : ''} truncate`}
+              style={{
+                fontSize: '15px',
+                fontVariantNumeric: 'tabular-nums',
+                lineHeight: '24px',
+                display: 'block',
+                transition: 'background-color 0.1s',
+              }}
+              onClick={(e) => {
+                if (!driver.formula) {
+                  e.stopPropagation();
+                  startEditingPeriod(periodKey, value);
+                }
+              }}
+            >
+              {formatted || (driver.formula ? '' : '-')}
+            </span>
           )}
         </td>
         );
