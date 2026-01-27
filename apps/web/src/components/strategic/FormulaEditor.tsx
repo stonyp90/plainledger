@@ -20,19 +20,49 @@ import {
   ArrowRight,
   CornerDownLeft,
   Search,
+  Lightbulb,
+  Copy,
+  Check as CheckIcon,
 } from 'lucide-react';
 import { type Driver } from '../../lib/financialModel';
 import { ICON_MAP, type IconType } from './IconPicker';
 
 // Quick formulas for command palette
 const QUICK_FORMULAS = [
-  { id: 'sum', label: 'Sum', formula: 'SUM()', icon: Plus, description: 'Add values together' },
-  { id: 'avg', label: 'Average', formula: 'AVERAGE()', icon: TrendingUp, description: 'Calculate mean value' },
-  { id: 'growth', label: 'Growth Rate', formula: 'GROWTH()', icon: Percent, description: 'Period-over-period change' },
-  { id: 'round', label: 'Round', formula: 'ROUND()', icon: Hash, description: 'Round to decimals' },
-  { id: 'if', label: 'If Condition', formula: 'IF()', icon: ArrowRight, description: 'Conditional logic' },
-  { id: 'min', label: 'Minimum', formula: 'MIN()', icon: TrendingUp, description: 'Find lowest value' },
-  { id: 'max', label: 'Maximum', formula: 'MAX()', icon: TrendingUp, description: 'Find highest value' },
+  { id: 'sum', label: 'Sum', formula: 'SUM()', icon: Plus, description: 'Add values together', example: 'SUM(Revenue, Expenses)' },
+  { id: 'avg', label: 'Average', formula: 'AVERAGE()', icon: TrendingUp, description: 'Calculate mean value', example: 'AVERAGE(Q1, Q2, Q3, Q4)' },
+  { id: 'growth', label: 'Growth Rate', formula: 'GROWTH()', icon: Percent, description: 'Period-over-period change', example: 'GROWTH(Revenue)' },
+  { id: 'round', label: 'Round', formula: 'ROUND()', icon: Hash, description: 'Round to decimals', example: 'ROUND(Price, 2)' },
+  { id: 'if', label: 'If Condition', formula: 'IF()', icon: ArrowRight, description: 'Conditional logic', example: 'IF(Revenue > 0, Revenue * 0.1, 0)' },
+  { id: 'min', label: 'Minimum', formula: 'MIN()', icon: TrendingUp, description: 'Find lowest value', example: 'MIN(Budget, Actual)' },
+  { id: 'max', label: 'Maximum', formula: 'MAX()', icon: TrendingUp, description: 'Find highest value', example: 'MAX(Forecast, Target)' },
+];
+
+// Formula examples for guidance
+const FORMULA_EXAMPLES = [
+  { 
+    category: 'Basic Math',
+    examples: [
+      { formula: 'Revenue - Expenses', description: 'Subtract drivers' },
+      { formula: 'Price * Units', description: 'Multiply drivers' },
+      { formula: 'Total / 12', description: 'Divide by number' },
+    ]
+  },
+  {
+    category: 'References',
+    examples: [
+      { formula: '@Revenue', description: 'Reference another driver' },
+      { formula: 'Revenue * 1.1', description: 'Growth calculation' },
+    ]
+  },
+  {
+    category: 'Functions',
+    examples: [
+      { formula: 'ROUND(Revenue / Units, 2)', description: 'Round to 2 decimals' },
+      { formula: 'IF(Revenue > 0, Revenue * 0.3, 0)', description: 'Conditional tax' },
+      { formula: 'SUM(Q1, Q2, Q3, Q4)', description: 'Sum multiple values' },
+    ]
+  },
 ];
 
 interface FormulaEditorProps {
@@ -70,9 +100,19 @@ export default function FormulaEditor({
   const [showDriverSuggestions, setShowDriverSuggestions] = useState(false);
   const [driverSearch, setDriverSearch] = useState('');
   const [cursorPosition, setCursorPosition] = useState(value.length);
+  const [showHelp, setShowHelp] = useState(false);
+  const [copiedExample, setCopiedExample] = useState<string | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Copy example to input
+  const copyExample = (formula: string) => {
+    onChange(formula);
+    setCopiedExample(formula);
+    setTimeout(() => setCopiedExample(null), 1500);
+    inputRef.current?.focus();
+  };
 
   // Parse formula into visual parts
   const formulaParts = useMemo((): FormulaPart[] => {
@@ -390,6 +430,13 @@ export default function FormulaEditor({
           {/* Action buttons */}
           <div className="flex items-center gap-1">
             <button
+              onClick={() => setShowHelp(!showHelp)}
+              className={`p-1.5 rounded transition-colors ${showHelp ? 'bg-amber-100' : 'hover:bg-gray-100'}`}
+              title={isEn ? 'Show examples & help' : 'Exemples et aide'}
+            >
+              <Lightbulb size={16} className={showHelp ? 'text-amber-600' : 'text-gray-400'} />
+            </button>
+            <button
               onClick={() => setShowCommandPalette(!showCommandPalette)}
               className="p-1.5 rounded hover:bg-gray-100 transition-colors"
               title={isEn ? 'Insert function (/)' : 'Insérer fonction (/)'}
@@ -420,6 +467,58 @@ export default function FormulaEditor({
             </button>
           </div>
         </div>
+
+        {/* Help Panel - Formula Examples */}
+        {showHelp && (
+          <div 
+            className="border-t px-3 py-3 max-h-48 overflow-y-auto"
+            style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFBEB' }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Lightbulb size={14} className="text-amber-600" />
+              <span className="text-xs font-semibold text-amber-800">
+                {isEn ? 'Formula Examples' : 'Exemples de formules'}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {FORMULA_EXAMPLES.map((cat) => (
+                <div key={cat.category}>
+                  <div className="text-[10px] font-medium text-amber-700 uppercase tracking-wide mb-1">
+                    {cat.category}
+                  </div>
+                  <div className="space-y-1">
+                    {cat.examples.map((ex) => (
+                      <button
+                        key={ex.formula}
+                        onClick={() => copyExample(ex.formula)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-amber-100 transition-colors group text-left"
+                      >
+                        <code className="flex-1 text-xs font-mono text-amber-900">
+                          = {ex.formula}
+                        </code>
+                        <span className="text-[10px] text-amber-600 hidden group-hover:inline">
+                          {ex.description}
+                        </span>
+                        {copiedExample === ex.formula ? (
+                          <CheckIcon size={12} className="text-green-600" />
+                        ) : (
+                          <Copy size={12} className="text-amber-400 opacity-0 group-hover:opacity-100" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-2 border-t border-amber-200">
+              <p className="text-[10px] text-amber-700">
+                {isEn 
+                  ? '💡 Tip: Use @ to reference other drivers, / to insert functions'
+                  : '💡 Astuce: Utilisez @ pour référencer des pilotes, / pour insérer des fonctions'}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Keyboard hints */}
         <div 
@@ -492,7 +591,7 @@ export default function FormulaEditor({
                   onMouseEnter={() => setSelectedIndex(i)}
                 >
                   <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: i === selectedIndex ? '#DBEAFE' : '#F3F4F6' }}
                   >
                     <Icon size={16} className={i === selectedIndex ? 'text-blue-600' : 'text-gray-500'} />
@@ -502,10 +601,15 @@ export default function FormulaEditor({
                       <span className="font-medium text-sm text-gray-900">{formula.label}</span>
                       <code className="text-xs text-gray-500 font-mono">{formula.formula}</code>
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{formula.description}</p>
+                    <p className="text-xs text-gray-500">{formula.description}</p>
+                    {i === selectedIndex && formula.example && (
+                      <p className="text-[10px] text-blue-600 font-mono mt-0.5">
+                        {isEn ? 'Example:' : 'Ex:'} {formula.example}
+                      </p>
+                    )}
                   </div>
                   {i === selectedIndex && (
-                    <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 font-mono text-[10px]">↵</kbd>
+                    <kbd className="px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 font-mono text-[10px] flex-shrink-0">↵</kbd>
                   )}
                 </button>
               );

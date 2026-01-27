@@ -960,56 +960,48 @@ export default function DriverRow({
               />
             )}
           {editingPeriod === periodKey ? (
-            <div 
-              className="absolute right-0 top-0 z-[100] bg-white rounded-lg shadow-xl border-2"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: `${Math.max(columnWidths?.period ?? 110, 200)}px`,
-                borderColor: colors.border.focus,
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.1)',
-                padding: '6px',
-                marginTop: '-2px',
+            <input
+              ref={periodInputRef}
+              type="text"
+              value={periodInput}
+              onChange={(e) => setPeriodInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handlePeriodSave(periodKey);
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setEditingPeriod(null);
+                }
+                if (e.key === 'Tab') {
+                  e.preventDefault();
+                  handlePeriodSave(periodKey);
+                  // Move to next cell
+                  const currentIdx = periods.indexOf(periodKey);
+                  if (e.shiftKey && currentIdx > 0) {
+                    startEditingPeriod(periods[currentIdx - 1], driver.values[periods[currentIdx - 1]] ?? null);
+                  } else if (!e.shiftKey && currentIdx < periods.length - 1) {
+                    startEditingPeriod(periods[currentIdx + 1], driver.values[periods[currentIdx + 1]] ?? null);
+                  }
+                }
               }}
-            >
-              <div className="flex items-center gap-1">
-                <input
-                  ref={periodInputRef}
-                  type="text"
-                  value={periodInput}
-                  onChange={(e) => setPeriodInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handlePeriodSave(periodKey);
-                    if (e.key === 'Escape') setEditingPeriod(null);
-                  }}
-                  onBlur={() => handlePeriodSave(periodKey)}
-                  className="flex-1 px-3 py-2 text-right rounded outline-none"
-                  style={{
-                    fontSize: '15px',
-                    backgroundColor: 'transparent',
-                    color: colors.text.primary,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                  autoFocus
-                />
-                <button
-                  onClick={() => handlePeriodSave(periodKey)}
-                  className="p-1.5 rounded transition-colors"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: '#FFFFFF',
-                  }}
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setEditingPeriod(null)}
-                  className="p-1.5 rounded hover:bg-gray-100 transition-colors"
-                  style={{ color: colors.text.muted }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+              onBlur={() => handlePeriodSave(periodKey)}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full h-full text-right outline-none bg-transparent"
+              style={{
+                fontSize: '15px',
+                color: colors.text.primary,
+                fontVariantNumeric: 'tabular-nums',
+                position: 'absolute',
+                inset: 0,
+                padding: '6px 12px',
+                backgroundColor: '#EFF6FF',
+                border: `2px solid ${colors.accent.primary}`,
+                borderRadius: '2px',
+              }}
+              autoFocus
+            />
           ) : (
             <div className="relative group">
               <CellTooltip 
@@ -1017,19 +1009,30 @@ export default function DriverRow({
                 showOnlyIfTruncated={true}
               >
                 <span
-                  className={`${!driver.formula ? 'cursor-pointer hover:bg-gray-100 px-1 -mx-1 rounded transition-colors' : ''} truncate truncate-check`}
+                  className={`${!driver.formula ? 'cursor-cell' : ''} truncate truncate-check`}
                   style={{
-                    fontSize: '15px', // Increased from 14px
+                    fontSize: '15px',
                     fontVariantNumeric: 'tabular-nums',
                     lineHeight: '24px',
                     display: 'inline-block',
                     maxWidth: '100%',
                   }}
-                  onClick={() => startEditingPeriod(periodKey, value)}
+                  onDoubleClick={() => !driver.formula && startEditingPeriod(periodKey, value)}
                 >
                   {formatted || (driver.formula ? '' : '-')}
                 </span>
               </CellTooltip>
+              {/* Quick edit hint on hover */}
+              {!driver.formula && !editingPeriod && (
+                <div 
+                  className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                  style={{ backgroundColor: 'rgba(59, 130, 246, 0.03)' }}
+                >
+                  <span className="text-[10px] text-blue-400 bg-white/80 px-1.5 py-0.5 rounded shadow-sm">
+                    {isEn ? 'Double-click to edit' : 'Double-clic pour éditer'}
+                  </span>
+                </div>
+              )}
               {/* AI Insights on hover */}
               {!editingPeriod && value !== null && value !== undefined && (
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
