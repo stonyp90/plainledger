@@ -67,8 +67,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#4f46e5" />
-    <meta name="msapplication-TileColor" content="#4f46e5" />
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta name="msapplication-TileColor" content="#0f172a" />
     
     <!-- Favicons & Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -258,8 +259,25 @@
     }
     </script>
   </head>
-  <body>
+  <body style="margin: 0;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Initial background script - sets background based on saved theme preference before CSS loads -->
+    <script>
+      (function() {
+        try {
+          var storedTheme = localStorage.getItem('plainledger-theme') || 'dark';
+          var isDark = storedTheme === 'dark' || 
+            (storedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.body.style.backgroundColor = isDark ? '#0f172a' : '#f8fafc';
+          document.documentElement.style.backgroundColor = isDark ? '#0f172a' : '#f8fafc';
+          if (isDark) document.documentElement.classList.add('dark');
+        } catch (e) {
+          // Fallback to dark mode if localStorage fails
+          document.body.style.backgroundColor = '#0f172a';
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </body>
 </html>

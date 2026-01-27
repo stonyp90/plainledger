@@ -7,8 +7,8 @@
  * - Smooth interactions
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Plus, ChevronDown, ChevronRight, Pencil, Trash2, Building2, ShoppingCart, Briefcase, HeartPulse, Factory, Code, GraduationCap, Utensils, X, Check } from 'lucide-react';
 import {
   type FinancialModel,
   type Driver,
@@ -47,6 +47,103 @@ const colors = {
   },
 };
 
+// Industry-based group templates
+const GROUP_TEMPLATES = {
+  saas: {
+    icon: Code,
+    nameEn: 'SaaS / Technology',
+    name: 'SaaS / Technologie',
+    groups: [
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['MRR', 'ARR', 'New MRR', 'Churned MRR', 'Expansion MRR'] },
+      { nameEn: 'Customers', name: 'Clients', drivers: ['Total Customers', 'New Customers', 'Churned Customers', 'ARPU'] },
+      { nameEn: 'Sales & Marketing', name: 'Ventes & Marketing', drivers: ['CAC', 'Marketing Spend', 'Sales Headcount', 'Lead Generation'] },
+      { nameEn: 'Product & Engineering', name: 'Produit & Ingénierie', drivers: ['Engineering Headcount', 'Server Costs', 'Third-party APIs'] },
+      { nameEn: 'Operating Expenses', name: 'Dépenses opérationnelles', drivers: ['Payroll', 'Office', 'Software & Tools', 'Travel'] },
+    ],
+  },
+  retail: {
+    icon: ShoppingCart,
+    nameEn: 'Retail / E-commerce',
+    name: 'Commerce de détail',
+    groups: [
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['Gross Sales', 'Returns', 'Discounts', 'Net Sales'] },
+      { nameEn: 'Cost of Goods', name: 'Coût des marchandises', drivers: ['Inventory Purchases', 'Shipping Costs', 'Fulfillment'] },
+      { nameEn: 'Store Operations', name: 'Opérations magasin', drivers: ['Rent', 'Utilities', 'Store Staff', 'POS Systems'] },
+      { nameEn: 'Marketing', name: 'Marketing', drivers: ['Digital Ads', 'Promotions', 'Influencer Partnerships'] },
+      { nameEn: 'Overhead', name: 'Frais généraux', drivers: ['HQ Staff', 'Insurance', 'Professional Services'] },
+    ],
+  },
+  consulting: {
+    icon: Briefcase,
+    nameEn: 'Professional Services',
+    name: 'Services professionnels',
+    groups: [
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['Billable Hours', 'Average Rate', 'Project Revenue', 'Retainer Revenue'] },
+      { nameEn: 'Delivery', name: 'Livraison', drivers: ['Consultant Salaries', 'Subcontractors', 'Travel & Expenses'] },
+      { nameEn: 'Business Development', name: 'Développement commercial', drivers: ['BD Headcount', 'Marketing', 'Events & Conferences'] },
+      { nameEn: 'Operations', name: 'Opérations', drivers: ['Admin Staff', 'Office Space', 'Technology', 'Training'] },
+    ],
+  },
+  healthcare: {
+    icon: HeartPulse,
+    nameEn: 'Healthcare',
+    name: 'Santé',
+    groups: [
+      { nameEn: 'Patient Revenue', name: 'Revenus patients', drivers: ['Patient Visits', 'Insurance Reimbursements', 'Self-Pay', 'Lab Services'] },
+      { nameEn: 'Clinical Staff', name: 'Personnel clinique', drivers: ['Physicians', 'Nurses', 'Medical Assistants', 'Specialists'] },
+      { nameEn: 'Facilities', name: 'Installations', drivers: ['Rent', 'Medical Equipment', 'Supplies', 'Utilities'] },
+      { nameEn: 'Administrative', name: 'Administratif', drivers: ['Billing Staff', 'Reception', 'IT', 'Compliance'] },
+    ],
+  },
+  manufacturing: {
+    icon: Factory,
+    nameEn: 'Manufacturing',
+    name: 'Fabrication',
+    groups: [
+      { nameEn: 'Sales', name: 'Ventes', drivers: ['Units Sold', 'Average Price', 'Gross Revenue'] },
+      { nameEn: 'Production Costs', name: 'Coûts de production', drivers: ['Raw Materials', 'Direct Labor', 'Manufacturing Overhead'] },
+      { nameEn: 'Operations', name: 'Opérations', drivers: ['Facility Costs', 'Equipment Maintenance', 'Quality Control'] },
+      { nameEn: 'Supply Chain', name: 'Chaîne d\'approvisionnement', drivers: ['Logistics', 'Warehousing', 'Procurement'] },
+      { nameEn: 'G&A', name: 'Frais généraux', drivers: ['Management', 'HR', 'Finance', 'Legal'] },
+    ],
+  },
+  restaurant: {
+    icon: Utensils,
+    nameEn: 'Restaurant / Food Service',
+    name: 'Restaurant / Restauration',
+    groups: [
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['Dine-in Sales', 'Takeout', 'Delivery', 'Catering'] },
+      { nameEn: 'Food Costs', name: 'Coûts alimentaires', drivers: ['Food Purchases', 'Beverage Costs', 'Waste'] },
+      { nameEn: 'Labor', name: 'Main d\'œuvre', drivers: ['Kitchen Staff', 'Front of House', 'Management'] },
+      { nameEn: 'Occupancy', name: 'Occupation', drivers: ['Rent', 'Utilities', 'Maintenance', 'Insurance'] },
+      { nameEn: 'Marketing', name: 'Marketing', drivers: ['Digital Marketing', 'Loyalty Programs', 'Local Advertising'] },
+    ],
+  },
+  education: {
+    icon: GraduationCap,
+    nameEn: 'Education',
+    name: 'Éducation',
+    groups: [
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['Tuition', 'Enrollment Fees', 'Grants', 'Other Income'] },
+      { nameEn: 'Instruction', name: 'Enseignement', drivers: ['Faculty Salaries', 'Teaching Materials', 'Technology'] },
+      { nameEn: 'Student Services', name: 'Services étudiants', drivers: ['Counseling', 'Career Services', 'Activities'] },
+      { nameEn: 'Facilities', name: 'Installations', drivers: ['Buildings', 'Maintenance', 'Security', 'Utilities'] },
+      { nameEn: 'Administration', name: 'Administration', drivers: ['Admin Staff', 'Marketing', 'IT', 'Finance'] },
+    ],
+  },
+  general: {
+    icon: Building2,
+    nameEn: 'General Business',
+    name: 'Entreprise générale',
+    groups: [
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['Product Sales', 'Service Revenue', 'Other Income'] },
+      { nameEn: 'Cost of Sales', name: 'Coût des ventes', drivers: ['Direct Costs', 'Materials', 'Labor'] },
+      { nameEn: 'Operating Expenses', name: 'Dépenses opérationnelles', drivers: ['Salaries', 'Rent', 'Marketing', 'Utilities'] },
+      { nameEn: 'G&A', name: 'Frais généraux', drivers: ['Management', 'Professional Services', 'Insurance', 'Office'] },
+    ],
+  },
+};
+
 interface ModelSpreadsheetProps {
   model: FinancialModel;
   onModelUpdate: (model: FinancialModel) => void;
@@ -67,6 +164,8 @@ export default function ModelSpreadsheet({
   const [showOperationsMenu, setShowOperationsMenu] = useState(false);
   const [operationsMenuPos, setOperationsMenuPos] = useState({ x: 0, y: 0 });
   const [clipboard, setClipboard] = useState<Record<string, number> | null>(null);
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
+  const [customGroupName, setCustomGroupName] = useState('');
   
   // Column widths with defaults
   const columnWidths = useMemo(() => ({
@@ -516,23 +615,127 @@ export default function ModelSpreadsheet({
     });
   }, [model, onModelUpdate, isEn]);
   
-  const handleAddGroup = useCallback(() => {
+  const handleAddGroup = useCallback((name?: string, nameEn?: string, driverNames?: string[]) => {
     const groupId = generateModelId('group');
+    
+    // Create drivers if provided
+    const newDrivers: Record<string, Driver> = {};
+    const driverIds: string[] = [];
+    
+    if (driverNames && driverNames.length > 0) {
+      driverNames.forEach(driverName => {
+        const driverId = generateModelId('driver');
+        driverIds.push(driverId);
+        newDrivers[driverId] = {
+          id: driverId,
+          name: driverName,
+          nameEn: driverName,
+          values: {},
+          dataSource: 'manual',
+          format: 'currency',
+          decimals: 0,
+        };
+      });
+    }
+    
     const newGroup: DriverGroup = {
       id: groupId,
-      name: isEn ? 'New Group' : 'Nouveau groupe',
-      nameEn: 'New Group',
-      driverIds: [],
+      name: name || (isEn ? 'New Group' : 'Nouveau groupe'),
+      nameEn: nameEn || 'New Group',
+      driverIds,
       collapsed: false,
       order: model.groups.length,
     };
     
     onModelUpdate({
       ...model,
+      drivers: { ...model.drivers, ...newDrivers },
       groups: [...model.groups, newGroup],
       updatedAt: new Date().toISOString(),
     });
   }, [model, onModelUpdate, isEn]);
+  
+  const handleAddGroupFromTemplate = useCallback((templateKey: keyof typeof GROUP_TEMPLATES) => {
+    const template = GROUP_TEMPLATES[templateKey];
+    let updatedModel = { ...model };
+    
+    template.groups.forEach((groupTemplate, index) => {
+      const groupId = generateModelId('group');
+      
+      // Create drivers for this group
+      const newDrivers: Record<string, Driver> = {};
+      const driverIds: string[] = [];
+      
+      groupTemplate.drivers.forEach(driverName => {
+        const driverId = generateModelId('driver');
+        driverIds.push(driverId);
+        newDrivers[driverId] = {
+          id: driverId,
+          name: isEn ? driverName : driverName,
+          nameEn: driverName,
+          values: {},
+          dataSource: 'manual',
+          format: 'currency',
+          decimals: 0,
+        };
+      });
+      
+      const newGroup: DriverGroup = {
+        id: groupId,
+        name: isEn ? groupTemplate.nameEn : groupTemplate.name,
+        nameEn: groupTemplate.nameEn,
+        driverIds,
+        collapsed: false,
+        order: updatedModel.groups.length,
+      };
+      
+      updatedModel = {
+        ...updatedModel,
+        drivers: { ...updatedModel.drivers, ...newDrivers },
+        groups: [...updatedModel.groups, newGroup],
+      };
+    });
+    
+    onModelUpdate({
+      ...updatedModel,
+      updatedAt: new Date().toISOString(),
+    });
+    setShowGroupDialog(false);
+  }, [model, onModelUpdate, isEn]);
+  
+  const handleRenameGroup = useCallback((groupId: string, newName: string) => {
+    const updatedGroups = model.groups.map(group =>
+      group.id === groupId 
+        ? { ...group, name: newName, nameEn: newName }
+        : group
+    );
+    
+    onModelUpdate({
+      ...model,
+      groups: updatedGroups,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [model, onModelUpdate]);
+  
+  const handleDeleteGroup = useCallback((groupId: string) => {
+    const group = model.groups.find(g => g.id === groupId);
+    if (!group) return;
+    
+    // Remove drivers from the group
+    const updatedDrivers = { ...model.drivers };
+    group.driverIds.forEach(driverId => {
+      delete updatedDrivers[driverId];
+    });
+    
+    const updatedGroups = model.groups.filter(g => g.id !== groupId);
+    
+    onModelUpdate({
+      ...model,
+      drivers: updatedDrivers,
+      groups: updatedGroups,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [model, onModelUpdate]);
   
   const handleGroupToggle = useCallback((groupId: string) => {
     const updatedGroups = model.groups.map(group =>
@@ -777,11 +980,36 @@ export default function ModelSpreadsheet({
                   onModelUpdate={onModelUpdate}
                   columnWidths={columnWidths}
                   onGroupToggle={handleGroupToggle}
-                  onAddDriver={handleAddDriver}
+                  onAddDriver={(groupId) => {
+                    // Add a driver to the specified group
+                    const driverId = generateModelId('driver');
+                    const newDriver: Driver = {
+                      id: driverId,
+                      name: isEn ? 'New Driver' : 'Nouveau pilote',
+                      nameEn: 'New Driver',
+                      values: {},
+                      dataSource: 'manual',
+                      format: 'currency',
+                      decimals: 0,
+                    };
+                    const updatedGroups = model.groups.map(g =>
+                      g.id === groupId
+                        ? { ...g, driverIds: [...g.driverIds, driverId] }
+                        : g
+                    );
+                    onModelUpdate({
+                      ...model,
+                      drivers: { ...model.drivers, [driverId]: newDriver },
+                      groups: updatedGroups,
+                      updatedAt: new Date().toISOString(),
+                    });
+                  }}
                   onDriverUpdate={handleDriverUpdate}
                   onDriverDelete={handleDriverDelete}
                   onDriverDuplicate={handleDriverDuplicate}
                   onDriverMove={handleDriverMove}
+                  onRenameGroup={handleRenameGroup}
+                  onDeleteGroup={handleDeleteGroup}
                   getAccountValue={getAccountValue}
                   currency={currency}
                   isEn={isEn}
@@ -802,7 +1030,7 @@ export default function ModelSpreadsheet({
         }}
       >
         <button
-          onClick={handleAddGroup}
+          onClick={() => setShowGroupDialog(true)}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors"
           style={{
             backgroundColor: colors.accent.primary,
@@ -819,6 +1047,110 @@ export default function ModelSpreadsheet({
           {isEn ? 'Create Group' : 'Créer un groupe'}
         </button>
       </div>
+      
+      {/* Create Group Dialog */}
+      {showGroupDialog && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setShowGroupDialog(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {isEn ? 'Create Group' : 'Créer un groupe'}
+              </h2>
+              <button 
+                onClick={() => setShowGroupDialog(false)}
+                className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Custom Group */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  {isEn ? 'Custom Group' : 'Groupe personnalisé'}
+                </h3>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customGroupName}
+                    onChange={(e) => setCustomGroupName(e.target.value)}
+                    placeholder={isEn ? 'Enter group name...' : 'Nom du groupe...'}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ color: colors.text.primary }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && customGroupName.trim()) {
+                        handleAddGroup(customGroupName.trim(), customGroupName.trim());
+                        setCustomGroupName('');
+                        setShowGroupDialog(false);
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (customGroupName.trim()) {
+                        handleAddGroup(customGroupName.trim(), customGroupName.trim());
+                        setCustomGroupName('');
+                        setShowGroupDialog(false);
+                      }
+                    }}
+                    disabled={!customGroupName.trim()}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isEn ? 'Create' : 'Créer'}
+                  </button>
+                </div>
+              </div>
+              
+              {/* Industry Templates */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  {isEn ? 'Industry Templates' : 'Modèles par industrie'}
+                </h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  {isEn 
+                    ? 'Select a template to add pre-configured groups with common financial drivers'
+                    : 'Sélectionnez un modèle pour ajouter des groupes préconfigurés avec des pilotes financiers courants'
+                  }
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(GROUP_TEMPLATES).map(([key, template]) => {
+                    const IconComponent = template.icon;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => handleAddGroupFromTemplate(key as keyof typeof GROUP_TEMPLATES)}
+                        className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left group"
+                      >
+                        <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-blue-100 transition-colors">
+                          <IconComponent className="w-5 h-5 text-gray-600 group-hover:text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm text-gray-900 group-hover:text-blue-700">
+                            {isEn ? template.nameEn : template.name}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {template.groups.length} {isEn ? 'groups' : 'groupes'} • {template.groups.reduce((acc, g) => acc + g.drivers.length, 0)} {isEn ? 'drivers' : 'pilotes'}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Selection Operations Menu */}
       {showOperationsMenu && selection && (
@@ -864,6 +1196,8 @@ interface GroupSectionProps {
   onDriverDelete: (driverId: string) => void;
   onDriverDuplicate: (driver: Driver, groupId: string) => void;
   onDriverMove: (driverId: string, groupId: string, direction: 'up' | 'down') => void;
+  onRenameGroup: (groupId: string, newName: string) => void;
+  onDeleteGroup: (groupId: string) => void;
   getAccountValue?: (accountId: string, periodKey: string) => number | null;
   currency: string;
   isEn: boolean;
@@ -884,11 +1218,30 @@ function GroupSection({
   onDriverDelete,
   onDriverDuplicate,
   onDriverMove,
+  onRenameGroup,
+  onDeleteGroup,
   getAccountValue,
   currency,
   isEn,
 }: GroupSectionProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(isEn ? group.nameEn || group.name : group.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+  
+  const handleSaveRename = () => {
+    if (editName.trim() && editName.trim() !== (isEn ? group.nameEn || group.name : group.name)) {
+      onRenameGroup(group.id, editName.trim());
+    }
+    setIsEditing(false);
+  };
   
   return (
     <>
@@ -896,7 +1249,7 @@ function GroupSection({
       <tr
         className="cursor-pointer select-none"
         style={{ backgroundColor: colors.bg.muted }}
-        onClick={() => onGroupToggle(group.id)}
+        onClick={() => !isEditing && onGroupToggle(group.id)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -917,47 +1270,102 @@ function GroupSection({
               }}>
                 <ChevronDown className="w-4 h-4" style={{ color: colors.text.muted }} />
               </span>
-              <span
-                className="font-semibold"
-                style={{ 
-                  color: '#374151',
-                  fontSize: '14px', // Increased from 13px
-                  fontWeight: 600,
-                }}
-              >
-                {isEn ? group.nameEn || group.name : group.name}
-              </span>
-              <span
-                className="text-xs"
-                style={{ 
-                  color: colors.text.muted,
-                  fontSize: '13px', // Increased from 12px
-                }}
-              >
-                {drivers.length} {isEn ? 'drivers' : 'pilotes'}
-              </span>
+              
+              {isEditing ? (
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveRename();
+                      } else if (e.key === 'Escape') {
+                        setEditName(isEn ? group.nameEn || group.name : group.name);
+                        setIsEditing(false);
+                      }
+                    }}
+                    onBlur={handleSaveRename}
+                    className="px-2 py-0.5 border border-blue-400 rounded text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ 
+                      color: colors.text.primary,
+                      width: '200px',
+                    }}
+                  />
+                </div>
+              ) : (
+                <>
+                  <span
+                    className="font-semibold"
+                    style={{ 
+                      color: '#374151',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {isEn ? group.nameEn || group.name : group.name}
+                  </span>
+                  <span
+                    className="text-xs"
+                    style={{ 
+                      color: colors.text.muted,
+                      fontSize: '13px',
+                    }}
+                  >
+                    {drivers.length} {isEn ? 'drivers' : 'pilotes'}
+                  </span>
+                </>
+              )}
             </div>
             
-            {/* Add driver button - visible on hover */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddDriver(group.id);
-              }}
-              className="p-1 rounded transition-all"
-              style={{
-                opacity: isHovered ? 1 : 0,
-                backgroundColor: 'transparent',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.bg.header;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+            {/* Action buttons - visible on hover */}
+            <div 
+              className="flex items-center gap-1 transition-opacity"
+              style={{ opacity: isHovered ? 1 : 0 }}
             >
-              <Plus className="w-4 h-4" style={{ color: colors.accent.primary }} />
-            </button>
+              {/* Rename button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditName(isEn ? group.nameEn || group.name : group.name);
+                  setIsEditing(true);
+                }}
+                className="p-1.5 rounded transition-all hover:bg-gray-200"
+                title={isEn ? 'Rename group' : 'Renommer le groupe'}
+              >
+                <Pencil className="w-3.5 h-3.5" style={{ color: colors.text.muted }} />
+              </button>
+              
+              {/* Add driver button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddDriver(group.id);
+                }}
+                className="p-1.5 rounded transition-all hover:bg-blue-100"
+                title={isEn ? 'Add driver' : 'Ajouter un pilote'}
+              >
+                <Plus className="w-3.5 h-3.5" style={{ color: colors.accent.primary }} />
+              </button>
+              
+              {/* Delete button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(isEn 
+                    ? `Delete "${group.nameEn || group.name}" group and all its drivers?` 
+                    : `Supprimer le groupe "${group.name}" et tous ses pilotes ?`
+                  )) {
+                    onDeleteGroup(group.id);
+                  }
+                }}
+                className="p-1.5 rounded transition-all hover:bg-red-100"
+                title={isEn ? 'Delete group' : 'Supprimer le groupe'}
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              </button>
+            </div>
           </div>
         </td>
       </tr>

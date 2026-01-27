@@ -171,13 +171,15 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 z-50 bg-black/50 animate-fade-in"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {/* Mobile Menu Overlay - Always rendered but visibility controlled via opacity for smooth transitions */}
+      <div 
+        className={`
+          lg:hidden fixed inset-0 z-40 transition-all duration-300 ease-out
+          ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
+        `}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
 
       {/* Mobile Sidebar - Full height, optimized for touch */}
       <aside 
@@ -186,7 +188,10 @@ export default function Layout({ children }: LayoutProps) {
           transform transition-transform duration-300 ease-out safe-area-top safe-area-bottom
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
-        style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          boxShadow: isMobileMenuOpen ? '4px 0 24px rgba(0, 0, 0, 0.15)' : 'none'
+        }}
       >
         {/* Mobile Sidebar Header */}
         <div 
@@ -594,7 +599,10 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main 
+        className="flex-1 flex flex-col min-w-0"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      >
         {/* Desktop Header */}
         <header 
           className="hidden lg:flex h-16 items-center justify-between px-6 sticky top-0 z-40 border-b flex-shrink-0"

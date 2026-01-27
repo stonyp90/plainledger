@@ -195,6 +195,15 @@
     overflow-x: hidden;
     letter-spacing: -0.006em;
   }
+  
+  /* Fallback backgrounds to prevent flash during CSS variable resolution */
+  html {
+    background: #f8fafc; /* Light mode fallback (gray-50) */
+  }
+  
+  html.dark {
+    background: #0f172a; /* Dark mode fallback (gray-900) */
+  }
 
   /* Corporate typography scale */
   h1 {
@@ -975,8 +984,11 @@
   @apply flex items-center gap-3 px-3 py-2.5 sm:py-2 font-medium text-sm;
   border-radius: var(--radius-md);
   color: rgb(var(--color-text-muted));
-  transition: all var(--transition-fast);
+  /* Use specific transitions instead of 'all' to prevent flash issues */
+  transition: background-color var(--transition-normal), color var(--transition-fast), transform var(--transition-fast);
   min-height: 44px;
+  /* Ensure nav items always have a proper background to prevent flash-through */
+  background-color: transparent;
 }
 @media (min-width: 640px) {
   .nav-item {
