@@ -335,7 +335,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
         {/* More Industries Note + CTA */}
         <div className="mt-8 text-center">
           <p 
-            className="text-sm mb-6"
+            className="text-sm mb-6 max-w-2xl mx-auto"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
             <Sparkles className="w-4 h-4 inline mr-1" style={{ color: 'rgb(var(--color-primary-500))' }} />

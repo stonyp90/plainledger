@@ -556,7 +556,7 @@ class StripeService {
    * Schedule a meeting for enterprise plan
    */
   openScheduleMeeting(): void {
-    window.open('https://calendly.com/anthonypaquet1508/15min', '_blank');
+    window.open('https://calendly.com/anthonypaquet1508', '_blank');
   }
 }
 

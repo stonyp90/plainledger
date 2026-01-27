@@ -17,6 +17,14 @@ import {
   Calculator,
   Info,
   Clock,
+  Sparkles,
+  Cpu,
+  FileCheck,
+  Layers,
+  Zap,
+  TrendingUp,
+  Eye,
+  RefreshCw,
 } from 'lucide-react';
 
 // Supported integrations
@@ -99,15 +107,15 @@ function ROICalculatorSection({
             }}
           >
             <Calculator className="w-4 h-4" />
-            {isEn ? 'Transparent Pricing' : 'Tarification transparente'}
+            {isEn ? 'ROI Calculator' : 'Calculateur ROI'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Fair Value, Clear Returns' : 'Prix équitable, retours clairs'}
+            {isEn ? 'Calculate Your Potential Savings' : 'Calculez vos économies potentielles'}
           </h2>
           <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn 
-              ? 'No hidden fees. No surprises. Enterprise-grade data intelligence at 1/3 the cost of traditional solutions.'
-              : 'Sans frais cachés. Sans surprises. Intelligence de données enterprise à 1/3 du coût des solutions traditionnelles.'}
+              ? 'See how much you could save with automated anomaly detection and industry benchmarking.'
+              : 'Découvrez combien vous pourriez économiser avec la détection automatisée d\'anomalies et le benchmarking sectoriel.'}
           </p>
         </div>
 
@@ -268,41 +276,6 @@ function ROICalculatorSection({
           </div>
         </div>
 
-        {/* Cost Comparison */}
-        <div className="mt-8 grid sm:grid-cols-3 gap-4 text-center">
-          <div 
-            className="p-4 rounded-xl"
-            style={{ 
-              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
-              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.5)'}`
-            }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>$50K+/yr</div>
-            <div className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Enterprise BI tools' : 'Outils BI enterprise'}</div>
-          </div>
-          <div 
-            className="p-4 rounded-xl"
-            style={{ 
-              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
-              border: `2px solid ${theme.green}`
-            }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: theme.green }}>
-              1/3 {isEn ? 'the cost' : 'du coût'}
-            </div>
-            <div className="text-sm font-medium" style={{ color: theme.green }}>PlainLedger</div>
-          </div>
-          <div 
-            className="p-4 rounded-xl"
-            style={{ 
-              backgroundColor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.08)',
-              border: `1px solid ${theme.gold}40`
-            }}
-          >
-            <div className="text-2xl font-bold mb-1" style={{ color: theme.goldDark }}>340%+</div>
-            <div className="text-sm" style={{ color: theme.goldDark }}>{isEn ? 'Avg first-year ROI' : 'ROI moy. an 1'}</div>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -330,7 +303,7 @@ export default function Landing() {
   const theme = isDark ? colors.dark : colors.light;
 
   const handleScheduleCall = () => {
-    window.open('https://calendly.com/plainledger/discovery', '_blank');
+    window.open('https://calendly.com/anthonypaquet1508', '_blank');
   };
 
   return (
@@ -491,11 +464,11 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 px-6 relative z-10">
+      <section className="pt-20 sm:pt-24 lg:pt-28 pb-8 sm:pb-12 px-4 sm:px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Main Headline */}
           <h1 
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {isEn ? (
@@ -517,19 +490,19 @@ export default function Landing() {
 
           {/* Tagline */}
           <p 
-            className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-8"
+            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-8 px-2"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
             {isEn 
-              ? 'Industry-specific KPIs that actually matter. Compare your performance against real Canadian benchmarks and make data-driven decisions.'
-              : 'Des KPIs spécifiques à votre industrie qui comptent vraiment. Comparez vos performances aux références canadiennes et prenez des décisions basées sur les données.'}
+              ? 'Exec-ready dashboards with industry KPIs, OKRs, strategic projections, and AI-optimized financial modeling. Built for Canadian businesses.'
+              : 'Tableaux de bord prêts pour la direction avec KPIs sectoriels, OKRs, projections stratégiques et modélisation financière optimisée par IA. Conçu pour les entreprises canadiennes.'}
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8">
             <button 
               onClick={() => register()}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105"
+              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all hover:scale-105 text-sm sm:text-base"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 color: 'white',
@@ -541,7 +514,7 @@ export default function Landing() {
             </button>
             <button 
               onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105"
+              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all hover:scale-105 text-sm sm:text-base"
               style={{ 
                 border: `2px solid ${theme.green}`,
                 color: isDark ? theme.green : theme.greenDark,
@@ -554,119 +527,621 @@ export default function Landing() {
           </div>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap justify-center items-center gap-6 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <span className="flex items-center gap-2">
-              <Check className="w-4 h-4" style={{ color: theme.green }} />
-              {isEn ? 'No credit card required' : 'Aucune carte de crédit'}
+          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+              {isEn ? 'No credit card' : 'Sans carte de crédit'}
             </span>
-            <span className="flex items-center gap-2">
-              <Check className="w-4 h-4" style={{ color: theme.green }} />
-              {isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min'}
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+              {isEn ? '5 min setup' : '5 min config'}
             </span>
-            <span className="flex items-center gap-2">
-              <Check className="w-4 h-4" style={{ color: theme.green }} />
-              {isEn ? 'Data stays in Canada' : 'Données au Canada'} 🇨🇦
+            <span className="flex items-center gap-1.5 sm:gap-2">
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+              {isEn ? 'Data in Canada' : 'Données au Canada'} 🇨🇦
             </span>
           </div>
         </div>
       </section>
 
-      {/* Industry KPIs Section - Prominently displayed */}
-      <section id="industries">
+      {/* Industry KPIs Section */}
+      <section id="industries" className="py-8 sm:py-12 lg:py-16">
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
       {/* Fair Value, Clear Returns - ROI Calculator */}
       <ROICalculatorSection isEn={isEn} isDark={isDark} theme={theme} onScheduleCall={handleScheduleCall} />
 
-      {/* Integrations & Security Section */}
+      {/* How It Works - Interactive Timeline Pipeline */}
+      <section 
+        id="pipeline" 
+        className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 relative overflow-hidden"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
+            : 'linear-gradient(180deg, #fafafa 0%, #f0fdf4 30%, #fefce8 70%, #fafafa 100%)'
+        }}
+      >
+        <style>{`
+          @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.8); opacity: 0; }
+          }
+          @keyframes data-flow {
+            0% { transform: translateY(0); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(100px); opacity: 0; }
+          }
+          @keyframes connector-pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+          }
+          @keyframes float-particle {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-10px) translateX(5px); }
+            50% { transform: translateY(-5px) translateX(-5px); }
+            75% { transform: translateY(-15px) translateX(3px); }
+          }
+          .timeline-step {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          .timeline-step.visible {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          .timeline-step:nth-child(even) {
+            transform: translateX(30px);
+          }
+          .timeline-step:nth-child(even).visible {
+            transform: translateX(0);
+          }
+          .timeline-connector {
+            transition: all 0.6s ease;
+          }
+          .timeline-connector.active {
+            height: 100%;
+          }
+          .step-node {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          .step-node:hover {
+            transform: scale(1.1);
+          }
+          .step-card {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+          }
+          .step-card:hover {
+            transform: translateY(-8px) scale(1.02);
+          }
+          .data-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: float-particle 3s ease-in-out infinite;
+          }
+        `}</style>
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          {/* Section Header */}
+          <div className="text-center mb-10 sm:mb-14 lg:mb-16">
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-4"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green}20 0%, ${theme.green}10 100%)`,
+                border: `1px solid ${theme.green}30`,
+                color: theme.greenDark
+              }}
+            >
+              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {isEn ? 'How It Works' : 'Comment ça fonctionne'}
+            </div>
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Your Data Journey' : 'Le parcours de vos données'}
+            </h2>
+            <p 
+              className="text-sm sm:text-base lg:text-lg max-w-xl mx-auto px-2"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'Watch your data transform through our intelligent pipeline'
+                : 'Suivez la transformation de vos données dans notre pipeline intelligent'}
+            </p>
+          </div>
+
+          {/* Interactive Timeline */}
+          <div className="relative">
+            {/* Central Timeline Line */}
+            <div 
+              className="absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 hidden md:block"
+              style={{ 
+                background: `linear-gradient(180deg, ${theme.green} 0%, ${theme.green} 50%, ${theme.gold} 100%)`,
+                borderRadius: '4px'
+              }}
+            >
+              {/* Animated particles flowing down */}
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div 
+                  key={i}
+                  className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
+                  style={{ 
+                    background: i < 2 ? theme.green : theme.gold,
+                    boxShadow: `0 0 10px ${i < 2 ? theme.green : theme.gold}`,
+                    animation: `data-flow 4s linear infinite ${i * 0.8}s`
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Timeline Steps */}
+            <div className="space-y-6 md:space-y-0">
+              
+              {/* Step 1 - Connect */}
+              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center pb-6 md:pb-12 lg:pb-16">
+                <div className="md:text-right md:pr-8 lg:pr-12 order-1">
+                  <div 
+                    className="step-card inline-block p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl text-left md:text-right w-full"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `2px solid ${theme.green}30`,
+                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.green}15`
+                    }}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 md:justify-end">
+                      <div 
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${theme.green}25 0%, ${theme.green}10 100%)`,
+                          border: `2px solid ${theme.green}30`
+                        }}
+                      >
+                        <Database className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.green }} />
+                      </div>
+                      <span 
+                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
+                        style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
+                      >
+                        {isEn ? 'Step 1' : 'Étape 1'}
+                      </span>
+                    </div>
+                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Connect Your Software' : 'Connectez votre logiciel'}
+                    </h4>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn 
+                        ? 'Securely link your accounting software with bank-level encryption.'
+                        : 'Liez votre logiciel comptable avec un chiffrement bancaire.'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 md:justify-end">
+                      {['QuickBooks', 'Xero', 'Sage', 'Wave'].map((name) => (
+                        <span 
+                          key={name} 
+                          className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium"
+                          style={{ 
+                            backgroundColor: `${theme.green}10`,
+                            color: theme.greenDark,
+                            border: `1px solid ${theme.green}20`
+                          }}
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {/* Node */}
+                <div className="hidden md:flex items-center justify-start order-2 relative">
+                  <div 
+                    className="step-node absolute -left-6 w-12 h-12 rounded-full flex items-center justify-center z-10"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                      boxShadow: `0 0 20px ${theme.green}60`
+                    }}
+                  >
+                    <span className="text-white font-bold text-lg">1</span>
+                    {/* Pulse ring */}
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{ 
+                        border: `2px solid ${theme.green}`,
+                        animation: 'pulse-ring 2s ease-out infinite'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 - Sanitize */}
+              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center pb-6 md:pb-12 lg:pb-16">
+                {/* Node */}
+                <div className="hidden md:flex items-center justify-end order-1 relative">
+                  <div 
+                    className="step-node absolute -right-5 lg:-right-6 w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center z-10"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                      boxShadow: `0 0 20px ${theme.green}60`
+                    }}
+                  >
+                    <span className="text-white font-bold text-base lg:text-lg">2</span>
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{ 
+                        border: `2px solid ${theme.green}`,
+                        animation: 'pulse-ring 2s ease-out infinite 0.5s'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="md:pl-8 lg:pl-12 order-2">
+                  <div 
+                    className="step-card p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `2px solid ${theme.green}40`,
+                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.green}20`
+                    }}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                      <div 
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${theme.green}30 0%, ${theme.green}15 100%)`,
+                          border: `2px solid ${theme.green}40`
+                        }}
+                      >
+                        <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.green }} />
+                      </div>
+                      <span 
+                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
+                        style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
+                      >
+                        {isEn ? 'Step 2' : 'Étape 2'}
+                      </span>
+                    </div>
+                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Data Lake & Sanitization' : 'Lac de données & Nettoyage'}
+                    </h4>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn 
+                        ? 'Data cleaned, normalized, and stored in our secure Canadian data lake.'
+                        : 'Données nettoyées, normalisées et stockées dans notre lac de données canadien.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                      {[
+                        { icon: FileCheck, en: 'Duplicate removal', fr: 'Suppression doublons' },
+                        { icon: Layers, en: 'Normalization', fr: 'Normalisation' },
+                        { icon: Shield, en: 'Validation', fr: 'Validation' },
+                        { icon: Lock, en: 'Encrypted', fr: 'Chiffré' },
+                      ].map((item) => (
+                        <div 
+                          key={item.en} 
+                          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-md sm:rounded-lg"
+                          style={{ backgroundColor: `${theme.green}08` }}
+                        >
+                          <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" style={{ color: theme.green }} />
+                          <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? item.en : item.fr}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 - AI Analysis */}
+              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center pb-6 md:pb-12 lg:pb-16">
+                <div className="md:text-right md:pr-8 lg:pr-12 order-1">
+                  <div 
+                    className="step-card inline-block p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl text-left md:text-right w-full"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `2px solid ${theme.gold}40`,
+                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.gold}20`
+                    }}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 md:justify-end">
+                      <div 
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${theme.gold}30 0%, ${theme.gold}15 100%)`,
+                          border: `2px solid ${theme.gold}40`
+                        }}
+                      >
+                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.goldDark }} />
+                      </div>
+                      <span 
+                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
+                        style={{ backgroundColor: `${theme.gold}15`, color: theme.goldDark }}
+                      >
+                        {isEn ? 'Step 3' : 'Étape 3'}
+                      </span>
+                    </div>
+                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'AI-Powered Analysis' : 'Analyse propulsée par l\'IA'}
+                    </h4>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn 
+                        ? 'ML models analyze your data to detect anomalies and predict trends.'
+                        : 'Modèles ML analysent vos données pour détecter anomalies et prédire tendances.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:justify-items-end">
+                      {[
+                        { icon: Zap, en: '97% accuracy', fr: 'Précision 97%' },
+                        { icon: TrendingUp, en: 'Predictions', fr: 'Prédictions' },
+                        { icon: Cpu, en: 'Industry AI', fr: 'IA sectorielle' },
+                        { icon: Eye, en: 'Patterns', fr: 'Motifs' },
+                      ].map((item) => (
+                        <div 
+                          key={item.en} 
+                          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-md sm:rounded-lg"
+                          style={{ backgroundColor: `${theme.gold}08` }}
+                        >
+                          <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" style={{ color: theme.goldDark }} />
+                          <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? item.en : item.fr}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {/* Node */}
+                <div className="hidden md:flex items-center justify-start order-2 relative">
+                  <div 
+                    className="step-node absolute -left-6 w-12 h-12 rounded-full flex items-center justify-center z-10"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
+                      boxShadow: `0 0 20px ${theme.gold}60`
+                    }}
+                  >
+                    <span className="text-white font-bold text-lg">3</span>
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{ 
+                        border: `2px solid ${theme.gold}`,
+                        animation: 'pulse-ring 2s ease-out infinite 1s'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 4 - Dashboard */}
+              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center">
+                {/* Node */}
+                <div className="hidden md:flex items-center justify-end order-1 relative">
+                  <div 
+                    className="step-node absolute -right-5 lg:-right-6 w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center z-10"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
+                      boxShadow: `0 0 20px ${theme.gold}60`
+                    }}
+                  >
+                    <span className="text-white font-bold text-base lg:text-lg">4</span>
+                    <div 
+                      className="absolute inset-0 rounded-full"
+                      style={{ 
+                        border: `2px solid ${theme.gold}`,
+                        animation: 'pulse-ring 2s ease-out infinite 1.5s'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="md:pl-8 lg:pl-12 order-2">
+                  <div 
+                    className="step-card p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `2px solid ${theme.gold}50`,
+                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.gold}25`
+                    }}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                      <div 
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${theme.gold}35 0%, ${theme.gold}20 100%)`,
+                          border: `2px solid ${theme.gold}50`
+                        }}
+                      >
+                        <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.goldDark }} />
+                      </div>
+                      <span 
+                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
+                        style={{ backgroundColor: `${theme.gold}20`, color: theme.goldDark }}
+                      >
+                        {isEn ? 'Step 4' : 'Étape 4'}
+                      </span>
+                    </div>
+                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Exec-Ready Dashboard' : 'Tableau de bord exécutif'}
+                    </h4>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn 
+                        ? 'KPIs, OKRs, and strategic projections ready for leadership.'
+                        : 'KPIs, OKRs et projections stratégiques prêts pour la direction.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                      {[
+                        { icon: Eye, en: 'KPIs & OKRs', fr: 'KPIs & OKRs' },
+                        { icon: TrendingUp, en: 'Strategic', fr: 'Stratégie' },
+                        { icon: Calculator, en: 'Montage fin.', fr: 'Montage fin.' },
+                        { icon: Sparkles, en: 'AI insights', fr: 'Insights IA' },
+                      ].map((item) => (
+                        <div 
+                          key={item.en} 
+                          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-md sm:rounded-lg"
+                          style={{ backgroundColor: `${theme.gold}10` }}
+                        >
+                          <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" style={{ color: theme.goldDark }} />
+                          <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? item.en : item.fr}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div className="text-center mt-8 sm:mt-12">
+            <button 
+              onClick={() => setShowDemoModal(true)}
+              className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-white transition-all hover:scale-105 text-sm sm:text-base"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 8px 24px ${theme.green}40`
+              }}
+            >
+              <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+              {isEn ? 'See it in action' : 'Voir en action'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* AI & Security Features Section */}
       <section 
         id="integrations" 
-        className="py-16 sm:py-20 px-6 relative"
+        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
         style={{ 
           background: isDark 
             ? 'transparent' 
-            : 'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%)'
+            : 'linear-gradient(180deg, rgba(248, 250, 252, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)'
         }}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Integrations */}
+          {/* AI & Security Features */}
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            {/* AI-Powered Intelligence */}
             <div 
-              className="p-8 rounded-2xl"
+              className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl"
               style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)'}`
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(251, 191, 36, 0.3)'}`,
+                boxShadow: isDark ? 'none' : '0 4px 24px rgba(251, 191, 36, 0.08)'
               }}
             >
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                style={{ backgroundColor: `${theme.green}15` }}
-              >
-                <Database className="w-6 h-6" style={{ color: theme.green }} />
+              <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div 
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${theme.gold}25 0%, ${theme.gold}10 100%)`,
+                  }}
+                >
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.goldDark }} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'AI-Optimized for Your Industry' : 'IA optimisée pour votre industrie'}
+                  </h3>
+                  <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn 
+                      ? 'Industry-specific models for accurate insights'
+                      : 'Modèles spécifiques pour des insights précis'}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
-              </h3>
-              <p className="mb-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn 
-                  ? 'We integrate with the tools you already use. Import your data in minutes.'
-                  : 'Nous intégrons les outils que vous utilisez déjà. Importez vos données en minutes.'}
-              </p>
-              <ul className="space-y-2">
-                {integrations.map((name) => (
-                  <li 
-                    key={name}
-                    className="flex items-center gap-2 text-sm"
-                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                {[
+                  { icon: TrendingUp, en: 'Strategic projections', fr: 'Projections' },
+                  { icon: Zap, en: 'Montage financier', fr: 'Montage fin.' },
+                  { icon: Eye, en: 'KPIs & OKRs', fr: 'KPIs & OKRs' },
+                  { icon: Cpu, en: 'Benchmarks', fr: 'Références' },
+                ].map((item) => (
+                  <div 
+                    key={item.en}
+                    className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-md sm:rounded-lg"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(251, 191, 36, 0.08)' : 'rgba(251, 191, 36, 0.06)',
+                    }}
                   >
-                    <Check className="w-4 h-4" style={{ color: theme.green }} />
-                    {name}
-                  </li>
+                    <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: theme.goldDark }} />
+                    <span className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn ? item.en : item.fr}
+                    </span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
-            {/* Security */}
+            {/* Security & Compliance */}
             <div 
-              className="p-8 rounded-2xl"
+              className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl"
               style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)'}`
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(16, 185, 129, 0.3)'}`,
+                boxShadow: isDark ? 'none' : '0 4px 24px rgba(16, 185, 129, 0.08)'
               }}
             >
-              <div 
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                style={{ backgroundColor: `${theme.gold}15` }}
-              >
-                <Lock className="w-6 h-6" style={{ color: theme.goldDark }} />
+              <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div 
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${theme.green}25 0%, ${theme.green}10 100%)`,
+                  }}
+                >
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.green }} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Enterprise Security' : 'Sécurité Enterprise'}
+                  </h3>
+                  <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn 
+                      ? 'Bank-level protection for your data'
+                      : 'Protection bancaire pour vos données'}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Enterprise-grade security' : 'Sécurité de niveau entreprise'}
-              </h3>
-              <p className="mb-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn 
-                  ? 'Your financial data is protected with bank-level encryption and stays in Canada.'
-                  : 'Vos données financières sont protégées par un chiffrement bancaire et restent au Canada.'}
-              </p>
-              <ul className="space-y-2">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {[
-                  { en: 'AES-256 encryption', fr: 'Chiffrement AES-256' },
-                  { en: 'Data residency in Canada', fr: 'Résidence des données au Canada' },
-                  { en: 'Role-based access control', fr: 'Contrôle d\'accès par rôle' },
-                  { en: 'Automated backups', fr: 'Sauvegardes automatiques' },
-                  { en: 'Audit logs', fr: 'Journaux d\'audit' },
+                  { icon: Lock, en: 'AES-256', fr: 'AES-256' },
+                  { icon: Database, en: 'Canada 🇨🇦', fr: 'Canada 🇨🇦' },
+                  { icon: Shield, en: 'RBAC', fr: 'RBAC' },
+                  { icon: FileCheck, en: 'Audit trail', fr: 'Audit' },
                 ].map((item) => (
-                  <li 
+                  <div 
                     key={item.en}
-                    className="flex items-center gap-2 text-sm"
-                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                    className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-md sm:rounded-lg"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)',
+                    }}
                   >
-                    <Shield className="w-4 h-4" style={{ color: theme.goldDark }} />
-                    {isEn ? item.en : item.fr}
-                  </li>
+                    <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: theme.green }} />
+                    <span className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn ? item.en : item.fr}
+                    </span>
+                  </div>
                 ))}
-              </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Supported Integrations Bar */}
+          <div className="mt-8 sm:mt-10 lg:mt-12 text-center max-w-2xl mx-auto">
+            <p className="text-xs sm:text-sm font-medium mb-3 sm:mb-4 mx-auto" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Seamless integrations with your favorite tools' : 'Intégrations fluides avec vos outils préférés'}
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+              {integrations.map((name) => (
+                <div 
+                  key={name}
+                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                    border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.6)'}`,
+                    color: 'rgb(var(--color-text-secondary))'
+                  }}
+                >
+                  <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" style={{ color: theme.green }} />
+                  {name}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -675,7 +1150,7 @@ export default function Landing() {
       {/* Pricing Section */}
       <section 
         id="pricing" 
-        className="py-16 sm:py-20 px-6 relative"
+        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
         style={{ 
           background: isDark 
             ? 'transparent' 
@@ -684,51 +1159,51 @@ export default function Landing() {
       >
         <div className="max-w-4xl mx-auto text-center">
           <h2 
-            className="text-3xl sm:text-4xl font-bold mb-4"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {isEn ? 'Simple, transparent pricing' : 'Tarification simple et transparente'}
           </h2>
           <p 
-            className="text-lg mb-12 max-w-2xl mx-auto"
+            className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-xl mx-auto px-2"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
             {isEn 
-              ? 'Get a personalized quote based on your business needs. No hidden fees.'
-              : 'Obtenez une soumission personnalisée selon vos besoins. Sans frais cachés.'}
+              ? 'Get a personalized quote based on your business needs.'
+              : 'Obtenez une soumission selon vos besoins.'}
           </p>
 
           {/* Pricing Cards */}
-          <div className="grid sm:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {[
               {
                 name: 'Essentiel',
-                descEn: 'For growing businesses',
-                descFr: 'Pour entreprises en croissance',
-                featuresEn: ['Industry-specific KPIs', 'Anomaly detection', 'Monthly reports'],
-                featuresFr: ['KPIs par industrie', 'Détection d\'anomalies', 'Rapports mensuels'],
+                descEn: 'Growing businesses',
+                descFr: 'Entreprises en croissance',
+                featuresEn: ['Industry KPIs', 'Anomaly detection', 'Monthly reports'],
+                featuresFr: ['KPIs sectoriels', 'Détection anomalies', 'Rapports mensuels'],
                 highlighted: false,
               },
               {
-                name: 'Professionnel',
-                descEn: 'For mid-market companies',
-                descFr: 'Pour entreprises de taille moyenne',
-                featuresEn: ['Everything in Essentiel', 'Custom dashboards', 'Priority support'],
-                featuresFr: ['Tout de Essentiel', 'Tableaux de bord personnalisés', 'Support prioritaire'],
+                name: 'Pro',
+                descEn: 'Mid-market companies',
+                descFr: 'Entreprises moyennes',
+                featuresEn: ['All Essentiel +', 'Custom dashboards', 'Priority support'],
+                featuresFr: ['Tout Essentiel +', 'Dashboards custom', 'Support prioritaire'],
                 highlighted: true,
               },
               {
                 name: 'Premium',
-                descEn: 'For established enterprises',
-                descFr: 'Pour entreprises établies',
-                featuresEn: ['Everything in Pro', 'Dedicated success manager', 'Custom integrations'],
-                featuresFr: ['Tout de Pro', 'Gestionnaire dédié', 'Intégrations personnalisées'],
+                descEn: 'Established enterprises',
+                descFr: 'Entreprises établies',
+                featuresEn: ['All Pro +', 'Dedicated manager', 'Custom integrations'],
+                featuresFr: ['Tout Pro +', 'Gestionnaire dédié', 'Intégrations custom'],
                 highlighted: false,
               },
             ].map((tier) => (
               <div 
                 key={tier.name}
-                className="p-6 rounded-2xl text-left relative overflow-hidden"
+                className="p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl text-left relative overflow-hidden"
                 style={{ 
                   background: tier.highlighted 
                     ? `linear-gradient(135deg, ${theme.green}0d 0%, ${theme.gold}0d 100%)`
@@ -740,33 +1215,33 @@ export default function Landing() {
               >
                 {tier.highlighted && (
                   <div 
-                    className="absolute top-0 right-0 px-3 py-1 text-xs font-semibold"
+                    className="absolute top-0 right-0 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold"
                     style={{ 
                       backgroundColor: theme.green,
                       color: 'white',
-                      borderBottomLeftRadius: '8px'
+                      borderBottomLeftRadius: '6px'
                     }}
                   >
                     {isEn ? 'Popular' : 'Populaire'}
                   </div>
                 )}
-                <h3 className="font-semibold text-lg mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                <h3 className="font-semibold text-base sm:text-lg mb-0.5 sm:mb-1" style={{ color: 'rgb(var(--color-text))' }}>
                   {tier.name}
                 </h3>
-                <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   {isEn ? tier.descEn : tier.descFr}
                 </p>
-                <ul className="space-y-2 mb-6">
+                <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6">
                   {(isEn ? tier.featuresEn : tier.featuresFr).map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      <Check className="w-4 h-4" style={{ color: theme.green }} />
+                    <li key={feature} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
                       {feature}
                     </li>
                   ))}
                 </ul>
                 <button 
                   onClick={handleScheduleCall}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+                  className="w-full py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all hover:scale-105"
                   style={{ 
                     background: tier.highlighted 
                       ? `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`
@@ -775,7 +1250,7 @@ export default function Landing() {
                     border: tier.highlighted ? 'none' : `2px solid ${theme.green}`,
                   }}
                 >
-                  {isEn ? 'Get a quote' : 'Demander une soumission'}
+                  {isEn ? 'Get quote' : 'Soumission'}
                 </button>
               </div>
             ))}
@@ -784,37 +1259,37 @@ export default function Landing() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-16 sm:py-20 px-6">
+      <section className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <div 
-            className="text-center p-10 sm:p-14 rounded-3xl relative overflow-hidden"
+            className="text-center p-6 sm:p-10 lg:p-12 rounded-2xl sm:rounded-3xl relative overflow-hidden"
             style={{ 
               background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
               boxShadow: `0 8px 32px ${theme.green}40`
             }}
           >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4 text-white">
               {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
             </h2>
-            <p className="text-lg mb-8 text-white/90">
+            <p className="text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 text-white/90 max-w-lg mx-auto">
               {isEn 
-                ? 'Join Canadian businesses who trust PlainLedger for complete financial transparency.'
+                ? 'Join Canadian businesses who trust PlainLedger.'
                 : 'Rejoignez les entreprises canadiennes qui font confiance à PlainLedger.'}
             </p>
             <button 
               onClick={() => register()}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base lg:text-lg transition-all hover:scale-105"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
                 color: 'white',
                 boxShadow: `0 4px 16px ${theme.gold}66`
               }}
             >
-              {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
-              <ArrowRight className="w-5 h-5" />
+              {isEn ? 'Start free trial' : 'Essai gratuit'}
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <p className="text-sm mt-4 text-white/80">
-              {isEn ? 'No credit card required' : 'Aucune carte de crédit requise'}
+            <p className="text-xs sm:text-sm mt-3 sm:mt-4 text-white/80">
+              {isEn ? 'No credit card required' : 'Sans carte de crédit'}
             </p>
           </div>
         </div>
@@ -822,26 +1297,26 @@ export default function Landing() {
 
       {/* Footer */}
       <footer 
-        className="py-8 px-6 border-t"
+        className="py-6 sm:py-8 px-4 sm:px-6 border-t"
         style={{ borderColor: `${theme.green}1a` }}
       >
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2">
             <div 
-              className="w-6 h-6 rounded-md flex items-center justify-center"
+              className="w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`
               }}
             >
-              <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-3 h-3 sm:w-4 sm:h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
                 <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
                 <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
+            <span className="font-medium text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
           </div>
-          <div className="flex items-center gap-6 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             <a href="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</a>
             <a href="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</a>
             <a href="mailto:info@plainledger.ca" className="transition-colors hover:underline">Contact</a>

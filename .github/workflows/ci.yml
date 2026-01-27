@@ -392,6 +392,56 @@ jobs:
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ Web service not found - infrastructure may need to be deployed first"
       
+      - name: Clear CloudFront Cache (if exists)
+        run: |
+          echo "🧹 Checking for CloudFront distributions..."
+          # Find CloudFront distribution for plainledger.ca
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions \
+            --query 'DistributionList.Items[?contains(Aliases.Items, `plainledger.ca`)].Id' \
+            --output text 2>/dev/null || echo "")
+          
+          if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            echo "Found CloudFront distribution: $DISTRIBUTION_ID"
+            echo "Creating invalidation..."
+            aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/*" \
+              --no-cli-pager
+            echo "✅ CloudFront cache invalidation initiated"
+          else
+            echo "ℹ️ No CloudFront distribution found for plainledger.ca - skipping cache clear"
+          fi
+      
+      - name: Verify ALB Routing Rules
+        run: |
+          echo "🔍 Verifying ALB routing includes /graphql..."
+          
+          # Get the ALB ARN
+          ALB_ARN=$(aws elbv2 describe-load-balancers \
+            --names plainledger-prod-alb \
+            --query 'LoadBalancers[0].LoadBalancerArn' \
+            --output text 2>/dev/null || echo "")
+          
+          if [ -n "$ALB_ARN" ]; then
+            # Get HTTPS listener
+            LISTENER_ARN=$(aws elbv2 describe-listeners \
+              --load-balancer-arn "$ALB_ARN" \
+              --query 'Listeners[?Port==`443`].ListenerArn' \
+              --output text)
+            
+            # Check if /graphql is in the rules
+            RULES=$(aws elbv2 describe-rules \
+              --listener-arn "$LISTENER_ARN" \
+              --query 'Rules[*].Conditions[*].Values[]' \
+              --output text)
+            
+            if echo "$RULES" | grep -q "graphql"; then
+              echo "✅ GraphQL route configured in ALB"
+            else
+              echo "⚠️ GraphQL route not found - may need Terraform apply"
+            fi
+          fi
+      
       - name: Wait for services to stabilize
         timeout-minutes: 10
         run: |

@@ -729,7 +729,7 @@ function PricingSection({ isEn }: { isEn: boolean }) {
       transactionVolume,
       estimatedYearlySavings: estimatedSavings.yearlySavings 
     });
-    window.open('https://calendly.com/plainledger/discovery', '_blank');
+    window.open('https://calendly.com/anthonypaquet1508', '_blank');
   };
 
   return (
@@ -1219,7 +1219,7 @@ export default function Store() {
   const handleScheduleCall = () => {
     analytics.track('schedule_call_clicked', { location: 'industry_kpi_section' });
     // Open calendar or contact form - for now, navigate to contact
-    window.open('https://calendly.com/plainledger/discovery', '_blank');
+    window.open('https://calendly.com/anthonypaquet1508', '_blank');
   };
 
   return (
