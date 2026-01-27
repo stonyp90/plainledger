@@ -179,6 +179,10 @@
   "roles": {
     "realm": [
       {
+        "name": "plainledger_cpa_admin",
+        "description": "PlainLedger CPA Admin - Can configure organization analytics features"
+      },
+      {
         "name": "admin",
         "description": "Administrator with full access"
       },

@@ -1,5 +1,5 @@
-import { Organization } from '@domain/entities/Organization';
-import { TenantId } from '@domain/value-objects/TenantId';
+import { Organization } from "@domain/entities/Organization";
+import { TenantId } from "@domain/value-objects/TenantId";
 
 /**
  * Port (Interface) for Organization Repository

@@ -83,7 +83,7 @@ export default function EnterpriseTimelineHeader({
           current.setDate(current.getDate() + 1);
           break;
 
-        case 'week':
+        case 'week': {
           periodEnd = new Date(current);
           periodEnd.setDate(periodEnd.getDate() + 6);
           const weekNum = Math.ceil(((current.getTime() - new Date(current.getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24) + 1) / 7);
@@ -91,6 +91,7 @@ export default function EnterpriseTimelineHeader({
           sublabel = current.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short' });
           current.setDate(current.getDate() + 7);
           break;
+        }
 
         case 'month':
           periodEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
@@ -101,13 +102,14 @@ export default function EnterpriseTimelineHeader({
           current.setMonth(current.getMonth() + 1);
           break;
 
-        case 'quarter':
+        case 'quarter': {
           const quarter = Math.floor(current.getMonth() / 3);
           periodEnd = new Date(current.getFullYear(), (quarter + 1) * 3, 0);
           label = `Q${quarter + 1}`;
           sublabel = current.getFullYear().toString();
           current.setMonth((quarter + 1) * 3);
           break;
+        }
 
         case 'year':
           periodEnd = new Date(current.getFullYear(), 11, 31);

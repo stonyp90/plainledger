@@ -7,43 +7,43 @@ import {
   DeleteDateColumn,
   Index,
   OneToMany,
-} from 'typeorm';
-import { AccountEntity } from './account.entity';
+} from "typeorm";
+import { AccountEntity } from "./account.entity";
 
-@Entity({ name: 'organizations', schema: 'accounting' })
+@Entity({ name: "organizations", schema: "accounting" })
 export class OrganizationEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ name: 'tenant_id', unique: true, length: 100 })
+  @Column({ name: "tenant_id", unique: true, length: 100 })
   @Index()
   tenantId: string;
 
   @Column({ length: 255 })
   name: string;
 
-  @Column({ name: 'legal_name', length: 255, nullable: true })
+  @Column({ name: "legal_name", length: 255, nullable: true })
   legalName?: string;
 
-  @Column({ name: 'tax_number', length: 50, nullable: true })
+  @Column({ name: "tax_number", length: 50, nullable: true })
   taxNumber?: string;
 
-  @Column({ name: 'fiscal_year_end_month', type: 'int', default: 12 })
+  @Column({ name: "fiscal_year_end_month", type: "int", default: 12 })
   fiscalYearEndMonth: number;
 
-  @Column({ length: 3, default: 'CAD' })
+  @Column({ length: 3, default: "CAD" })
   currency: string;
 
   @Column({ length: 100, nullable: true })
   industry?: string;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt: Date;
 
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  @DeleteDateColumn({ name: "deleted_at", type: "timestamptz", nullable: true })
   deletedAt?: Date;
 
   @OneToMany(() => AccountEntity, (account) => account.organization)

@@ -30,6 +30,7 @@ import {
   Unlock,
   Search,
   Filter,
+  BarChart2,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useTenant } from '../contexts/TenantContext';
@@ -87,6 +88,19 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       { id: 'manage:connections', nameEn: 'Connect/disconnect systems', nameFr: 'Connecter/déconnecter systèmes', critical: true },
       { id: 'sync:data', nameEn: 'Sync data', nameFr: 'Synchroniser données' },
       { id: 'delete:data', nameEn: 'Delete data', nameFr: 'Supprimer données', critical: true },
+    ],
+  },
+  {
+    id: 'analytics',
+    nameEn: 'Analytics',
+    nameFr: 'Analytique',
+    descEn: 'PlainLedger native analytics and Power BI embedded reports',
+    descFr: 'Analytique native PlainLedger et rapports Power BI intégrés',
+    icon: BarChart2,
+    permissions: [
+      { id: 'view:plainledger_analytics', nameEn: 'View PlainLedger Analytics', nameFr: 'Voir analytique PlainLedger' },
+      { id: 'view:powerbi_analytics', nameEn: 'View Power BI Analytics', nameFr: 'Voir analytique Power BI' },
+      { id: 'manage:org_features', nameEn: 'Configure Organization Features', nameFr: 'Configurer fonctionnalités organisation', critical: true },
     ],
   },
   {

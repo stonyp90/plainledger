@@ -210,7 +210,7 @@ function DraggableElement({
           </div>
         );
       
-      case 'icon':
+      case 'icon': {
         const IconComponent = getIconComponent(element.content.icon);
         return (
           <div className="w-full h-full flex items-center justify-center">
@@ -220,6 +220,7 @@ function DraggableElement({
             />
           </div>
         );
+      }
       
       case 'shape':
         return (

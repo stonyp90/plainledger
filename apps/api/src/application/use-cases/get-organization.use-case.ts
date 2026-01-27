@@ -1,7 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { IOrganizationRepository } from '@application/ports/outbound/IOrganizationRepository';
-import { TenantId } from '@domain/value-objects/TenantId';
-import { EntityNotFoundError } from '@domain/errors/DomainError';
+import { Injectable, Inject } from "@nestjs/common";
+import { IOrganizationRepository } from "@application/ports/outbound/IOrganizationRepository";
+import { TenantId } from "@domain/value-objects/TenantId";
+import { EntityNotFoundError } from "@domain/errors/DomainError";
 
 export interface GetOrganizationRequest {
   tenantId: string;
@@ -26,16 +26,19 @@ export interface GetOrganizationResponse {
 @Injectable()
 export class GetOrganizationUseCase {
   constructor(
-    @Inject('IOrganizationRepository')
+    @Inject("IOrganizationRepository")
     private readonly organizationRepository: IOrganizationRepository,
   ) {}
 
-  async execute(request: GetOrganizationRequest): Promise<GetOrganizationResponse> {
+  async execute(
+    request: GetOrganizationRequest,
+  ): Promise<GetOrganizationResponse> {
     const tenantId = TenantId.create(request.tenantId);
-    const organization = await this.organizationRepository.findByTenantId(tenantId);
+    const organization =
+      await this.organizationRepository.findByTenantId(tenantId);
 
     if (!organization) {
-      throw new EntityNotFoundError('Organization', request.tenantId);
+      throw new EntityNotFoundError("Organization", request.tenantId);
     }
 
     return {

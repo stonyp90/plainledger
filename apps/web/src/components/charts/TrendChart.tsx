@@ -48,32 +48,6 @@ export default function TrendChart({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // Early return for empty or insufficient data
-  if (!data || data.length === 0) {
-    return (
-      <div 
-        className="rounded-xl p-4 sm:p-5"
-        style={{ 
-          backgroundColor: 'rgb(var(--color-surface))',
-          border: '1px solid rgb(var(--color-border))'
-        }}
-      >
-        <h3 
-          className="font-semibold mb-2"
-          style={{ color: 'rgb(var(--color-text))' }}
-        >
-          {isEn && titleEn ? titleEn : title}
-        </h3>
-        <div 
-          className="flex items-center justify-center"
-          style={{ height: `${height}px`, color: 'rgb(var(--color-text-muted))' }}
-        >
-          {isEn ? 'No data available' : 'Aucune donnée disponible'}
-        </div>
-      </div>
-    );
-  }
-
   const { 
     processedData, 
     minValue, 
@@ -192,6 +166,32 @@ export default function TrendChart({
       volatility: volatilityPct,
     };
   }, [data, baseline, budget, thresholds, title, movingAveragePeriod]);
+
+  // Early return for empty or insufficient data - must be after all hooks
+  if (!data || data.length === 0) {
+    return (
+      <div 
+        className="rounded-xl p-4 sm:p-5"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))'
+        }}
+      >
+        <h3 
+          className="font-semibold mb-2"
+          style={{ color: 'rgb(var(--color-text))' }}
+        >
+          {isEn && titleEn ? titleEn : title}
+        </h3>
+        <div 
+          className="flex items-center justify-center"
+          style={{ height: `${height}px`, color: 'rgb(var(--color-text-muted))' }}
+        >
+          {isEn ? 'No data available' : 'Aucune donnée disponible'}
+        </div>
+      </div>
+    );
+  }
 
   const getYPosition = (value: number) => {
     const range = maxValue - minValue;

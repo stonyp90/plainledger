@@ -1,31 +1,31 @@
-import { AccountCode } from '@domain/value-objects/AccountCode';
-import { Money } from '@domain/value-objects/Money';
-import { DomainError } from '@domain/errors/DomainError';
+import { AccountCode } from "@domain/value-objects/AccountCode";
+import { Money } from "@domain/value-objects/Money";
+import { DomainError } from "@domain/errors/DomainError";
 
 export enum AccountType {
-  ASSET = 'ASSET',
-  LIABILITY = 'LIABILITY',
-  EQUITY = 'EQUITY',
-  REVENUE = 'REVENUE',
-  EXPENSE = 'EXPENSE',
+  ASSET = "ASSET",
+  LIABILITY = "LIABILITY",
+  EQUITY = "EQUITY",
+  REVENUE = "REVENUE",
+  EXPENSE = "EXPENSE",
 }
 
 export enum AccountSubtype {
   // Assets
-  CURRENT = 'CURRENT',
-  FIXED = 'FIXED',
-  INTANGIBLE = 'INTANGIBLE',
+  CURRENT = "CURRENT",
+  FIXED = "FIXED",
+  INTANGIBLE = "INTANGIBLE",
   // Liabilities
-  LONG_TERM = 'LONG_TERM',
+  LONG_TERM = "LONG_TERM",
   // Equity
-  CAPITAL = 'CAPITAL',
-  RETAINED = 'RETAINED',
+  CAPITAL = "CAPITAL",
+  RETAINED = "RETAINED",
   // Revenue
-  OPERATING = 'OPERATING',
-  OTHER = 'OTHER',
+  OPERATING = "OPERATING",
+  OTHER = "OTHER",
   // Expenses
-  COGS = 'COGS',
-  TAX = 'TAX',
+  COGS = "COGS",
+  TAX = "TAX",
 }
 
 export interface AccountProps {
@@ -91,7 +91,7 @@ export class Account {
    */
   static create(input: CreateAccountInput): Account {
     if (!input.name || input.name.trim().length < 2) {
-      throw new DomainError('Account name must be at least 2 characters');
+      throw new DomainError("Account name must be at least 2 characters");
     }
 
     if (!Object.values(AccountType).includes(input.accountType)) {
@@ -222,7 +222,7 @@ export class Account {
 
   updateName(name: string, nameFr?: string): void {
     if (!name || name.trim().length < 2) {
-      throw new DomainError('Account name must be at least 2 characters');
+      throw new DomainError("Account name must be at least 2 characters");
     }
     this._name = name.trim();
     this._nameFr = nameFr?.trim();
@@ -231,7 +231,7 @@ export class Account {
 
   deactivate(): void {
     if (this._isSystem) {
-      throw new DomainError('Cannot deactivate system accounts');
+      throw new DomainError("Cannot deactivate system accounts");
     }
     this._isActive = false;
     this._updatedAt = new Date();
@@ -244,7 +244,7 @@ export class Account {
 
   setParent(parentAccountId: string | undefined): void {
     if (parentAccountId === this._id) {
-      throw new DomainError('Account cannot be its own parent');
+      throw new DomainError("Account cannot be its own parent");
     }
     this._parentAccountId = parentAccountId;
     this._updatedAt = new Date();
@@ -253,8 +253,8 @@ export class Account {
   /**
    * Get display name based on locale
    */
-  getDisplayName(locale: string = 'en'): string {
-    if (locale === 'fr' && this._nameFr) {
+  getDisplayName(locale: string = "en"): string {
+    if (locale === "fr" && this._nameFr) {
       return this._nameFr;
     }
     return this._name;

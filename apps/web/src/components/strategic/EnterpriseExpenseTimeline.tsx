@@ -106,13 +106,14 @@ export default function EnterpriseExpenseTimeline({
           current.setMonth(current.getMonth() + 1);
           break;
 
-        case 'quarter':
+        case 'quarter': {
           const quarter = Math.floor(current.getMonth() / 3);
           periodEnd = new Date(current.getFullYear(), (quarter + 1) * 3, 0);
           label = `Q${quarter + 1}`;
           sublabel = current.getFullYear().toString();
           current.setMonth((quarter + 1) * 3);
           break;
+        }
 
         case 'year':
           periodEnd = new Date(current.getFullYear(), 11, 31);

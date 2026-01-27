@@ -323,7 +323,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Desktop Sidebar */}
       <aside 
-        className={`hidden lg:flex flex-col border-r flex-shrink-0 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col border-r flex-shrink-0 transition-all duration-300 sticky top-0 h-screen ${
           isSidebarCollapsed ? 'w-16' : 'w-64'
         }`}
         style={{ 

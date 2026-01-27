@@ -4,7 +4,7 @@
 export class DomainError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'DomainError';
+    this.name = "DomainError";
     Object.setPrototypeOf(this, DomainError.prototype);
   }
 }
@@ -15,7 +15,7 @@ export class DomainError extends Error {
 export class EntityNotFoundError extends DomainError {
   constructor(entityName: string, id: string) {
     super(`${entityName} with id '${id}' not found`);
-    this.name = 'EntityNotFoundError';
+    this.name = "EntityNotFoundError";
     Object.setPrototypeOf(this, EntityNotFoundError.prototype);
   }
 }
@@ -26,7 +26,7 @@ export class EntityNotFoundError extends DomainError {
 export class DuplicateEntityError extends DomainError {
   constructor(entityName: string, field: string, value: string) {
     super(`${entityName} with ${field} '${value}' already exists`);
-    this.name = 'DuplicateEntityError';
+    this.name = "DuplicateEntityError";
     Object.setPrototypeOf(this, DuplicateEntityError.prototype);
   }
 }
@@ -37,7 +37,7 @@ export class DuplicateEntityError extends DomainError {
 export class InvalidOperationError extends DomainError {
   constructor(message: string) {
     super(message);
-    this.name = 'InvalidOperationError';
+    this.name = "InvalidOperationError";
     Object.setPrototypeOf(this, InvalidOperationError.prototype);
   }
 }
@@ -46,9 +46,9 @@ export class InvalidOperationError extends DomainError {
  * Authorization error
  */
 export class UnauthorizedError extends DomainError {
-  constructor(message: string = 'Unauthorized access') {
+  constructor(message: string = "Unauthorized access") {
     super(message);
-    this.name = 'UnauthorizedError';
+    this.name = "UnauthorizedError";
     Object.setPrototypeOf(this, UnauthorizedError.prototype);
   }
 }
@@ -61,7 +61,7 @@ export class ValidationError extends DomainError {
 
   constructor(message: string, fields: Record<string, string> = {}) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
     this.fields = fields;
     Object.setPrototypeOf(this, ValidationError.prototype);
   }

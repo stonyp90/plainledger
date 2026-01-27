@@ -1,4 +1,4 @@
-import { DomainError } from '@domain/errors/DomainError';
+import { DomainError } from "@domain/errors/DomainError";
 
 /**
  * Money Value Object
@@ -17,13 +17,13 @@ export class Money {
   /**
    * Create Money from a decimal amount
    */
-  static fromDecimal(amount: number, currency: string = 'CAD'): Money {
+  static fromDecimal(amount: number, currency: string = "CAD"): Money {
     if (!Number.isFinite(amount)) {
-      throw new DomainError('Amount must be a finite number');
+      throw new DomainError("Amount must be a finite number");
     }
 
     if (!/^[A-Z]{3}$/.test(currency)) {
-      throw new DomainError('Currency must be a valid 3-letter ISO code');
+      throw new DomainError("Currency must be a valid 3-letter ISO code");
     }
 
     // Round to nearest cent to avoid floating point issues
@@ -34,13 +34,13 @@ export class Money {
   /**
    * Create Money from cents
    */
-  static fromCents(cents: number, currency: string = 'CAD'): Money {
+  static fromCents(cents: number, currency: string = "CAD"): Money {
     if (!Number.isInteger(cents)) {
-      throw new DomainError('Cents must be an integer');
+      throw new DomainError("Cents must be an integer");
     }
 
     if (!/^[A-Z]{3}$/.test(currency)) {
-      throw new DomainError('Currency must be a valid 3-letter ISO code');
+      throw new DomainError("Currency must be a valid 3-letter ISO code");
     }
 
     return new Money(cents, currency);
@@ -49,7 +49,7 @@ export class Money {
   /**
    * Create zero money
    */
-  static zero(currency: string = 'CAD'): Money {
+  static zero(currency: string = "CAD"): Money {
     return new Money(0, currency);
   }
 
@@ -141,9 +141,9 @@ export class Money {
   /**
    * Format for display
    */
-  format(locale: string = 'fr-CA'): string {
+  format(locale: string = "fr-CA"): string {
     return new Intl.NumberFormat(locale, {
-      style: 'currency',
+      style: "currency",
       currency: this._currency,
     }).format(this.toDecimal());
   }

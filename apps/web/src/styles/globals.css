@@ -31,17 +31,29 @@
   --color-gray-900: 15 23 42;
   --color-gray-950: 8 15 30;
 
-  /* === BRAND COLORS - Corporate blue === */
-  --color-primary-50: 239 246 255;
-  --color-primary-100: 219 234 254;
-  --color-primary-200: 191 219 254;
-  --color-primary-300: 147 197 253;
-  --color-primary-400: 96 165 250;
-  --color-primary-500: 59 130 246;
-  --color-primary-600: 37 99 235;
-  --color-primary-700: 29 78 216;
-  --color-primary-800: 30 64 175;
-  --color-primary-900: 30 58 138;
+  /* === BRAND COLORS - Finance Green (Emerald) === */
+  --color-primary-50: 236 253 245;
+  --color-primary-100: 209 250 229;
+  --color-primary-200: 167 243 208;
+  --color-primary-300: 110 231 183;
+  --color-primary-400: 52 211 153;
+  --color-primary-500: 16 185 129;
+  --color-primary-600: 5 150 105;
+  --color-primary-700: 4 120 87;
+  --color-primary-800: 6 95 70;
+  --color-primary-900: 6 78 59;
+  
+  /* === ACCENT COLORS - Gold/Yellow (Premium CTAs) === */
+  --color-accent-50: 255 251 235;
+  --color-accent-100: 254 243 199;
+  --color-accent-200: 253 230 138;
+  --color-accent-300: 252 211 77;
+  --color-accent-400: 251 191 36;
+  --color-accent-500: 245 158 11;
+  --color-accent-600: 217 119 6;
+  --color-accent-700: 180 83 9;
+  --color-accent-800: 146 64 14;
+  --color-accent-900: 120 53 15;
 
   /* === SEMANTIC COLORS - Muted corporate tones === */
   /* Success - Professional green */
@@ -117,6 +129,83 @@
   --transition-fast: 100ms ease-out;
   --transition-normal: 150ms ease-out;
   --transition-slow: 200ms ease-out;
+
+  /* ===================================================================
+     STORE/MARKETING PAGE - Trust Theme (Green & Gold)
+     These colors inspire trust and prosperity in the finance industry.
+     Update these to change all Store page colors at once.
+     =================================================================== */
+  
+  /* Trust Green - Primary trust color (using emerald green) */
+  --store-trust-primary: var(--color-primary-600);
+  --store-trust-primary-light: var(--color-primary-500);
+  --store-trust-primary-dark: var(--color-primary-700);
+  --store-trust-primary-bg: var(--color-primary-500) / 0.1;
+  --store-trust-primary-border: var(--color-primary-500) / 0.2;
+  
+  /* Prosperity Gold - Secondary accent color (using amber/gold) */
+  --store-prosperity-accent: var(--color-accent-600);
+  --store-prosperity-accent-light: var(--color-accent-500);
+  --store-prosperity-accent-dark: var(--color-accent-700);
+  --store-prosperity-accent-bg: var(--color-accent-500) / 0.1;
+  --store-prosperity-accent-border: var(--color-accent-500) / 0.2;
+  
+  /* Trust Badge colors */
+  --store-badge-trust-bg: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, rgb(var(--color-accent-500) / 0.1) 100%);
+  --store-badge-trust-border: var(--color-primary-500) / 0.2;
+  
+  /* CTA button colors */
+  --store-cta-primary-bg: var(--color-primary-600);
+  --store-cta-primary-hover: var(--color-primary-700);
+  --store-cta-accent-bg: var(--color-accent-500);
+  --store-cta-accent-hover: var(--color-accent-600);
+  
+  /* Hero section gradient */
+  --store-hero-gradient-1: var(--color-primary-500);
+  --store-hero-gradient-2: var(--color-accent-500);
+  --store-hero-gradient-3: var(--color-primary-400);
+  
+  /* Stats/metrics colors */
+  --store-stat-savings: var(--color-primary-600);
+  --store-stat-accuracy: var(--color-accent-600);
+  --store-stat-cost: var(--color-primary-600);
+  
+  /* Feature card colors */
+  --store-feature-success: var(--color-success);
+  --store-feature-success-bg: var(--color-success) / 0.1;
+  --store-feature-primary: var(--color-primary-600);
+  --store-feature-primary-bg: var(--color-primary-500) / 0.1;
+  --store-feature-accent: var(--color-accent-600);
+  --store-feature-accent-bg: var(--color-accent-500) / 0.1;
+  
+  /* Bottom CTA section */
+  --store-cta-section-bg: linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-700)) 100%);
+  --store-cta-button-bg: linear-gradient(135deg, rgb(var(--color-accent-400)) 0%, rgb(var(--color-accent-500)) 100%);
+
+  /* ===================================================================
+     LANDING PAGE - Warm Green & Gold Theme
+     Light, elegant background with harmonious green and gold accents
+     =================================================================== */
+  
+  /* Landing page background */
+  --landing-bg: linear-gradient(135deg, #fefdfb 0%, #faf9f6 25%, #f8faf8 50%, #fdfcfa 75%, #fefefe 100%);
+  --landing-bg-subtle: rgba(16, 185, 129, 0.02);
+  --landing-bg-gold-subtle: rgba(212, 175, 55, 0.02);
+  
+  /* Green accent colors */
+  --landing-green: 16 185 129;
+  --landing-green-dark: 5 150 105;
+  --landing-green-light: 52 211 153;
+  
+  /* Gold accent colors */
+  --landing-gold: 212 175 55;
+  --landing-gold-dark: 184 134 11;
+  --landing-gold-light: 218 165 32;
+  
+  /* Card backgrounds */
+  --landing-card-bg: rgba(255, 255, 255, 0.9);
+  --landing-card-border-green: rgba(16, 185, 129, 0.15);
+  --landing-card-border-gold: rgba(212, 175, 55, 0.15);
 }
 
 /* === DARK MODE - Corporate Navy === */
@@ -170,6 +259,33 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.35), 0 4px 6px -4px rgb(0 0 0 / 0.35);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+
+  /* Store/Marketing - Dark mode adjustments */
+  --store-trust-primary: var(--color-primary-400);
+  --store-trust-primary-light: var(--color-primary-300);
+  --store-trust-primary-dark: var(--color-primary-500);
+  --store-prosperity-accent: var(--color-accent-400);
+  --store-prosperity-accent-light: var(--color-accent-300);
+  --store-prosperity-accent-dark: var(--color-accent-500);
+  --store-stat-savings: var(--color-primary-400);
+  --store-stat-accuracy: var(--color-accent-400);
+  --store-stat-cost: var(--color-primary-400);
+  --store-feature-primary: var(--color-primary-400);
+  --store-feature-accent: var(--color-accent-400);
+
+  /* Landing page - Dark mode adjustments */
+  --landing-bg: linear-gradient(135deg, #0f172a 0%, #111827 25%, #0f172a 50%, #111827 75%, #0f172a 100%);
+  --landing-bg-subtle: rgba(52, 211, 153, 0.03);
+  --landing-bg-gold-subtle: rgba(251, 191, 36, 0.03);
+  --landing-green: 52 211 153;
+  --landing-green-dark: 16 185 129;
+  --landing-green-light: 110 231 183;
+  --landing-gold: 251 191 36;
+  --landing-gold-dark: 245 158 11;
+  --landing-gold-light: 253 224 71;
+  --landing-card-bg: rgba(30, 41, 59, 0.9);
+  --landing-card-border-green: rgba(52, 211, 153, 0.2);
+  --landing-card-border-gold: rgba(251, 191, 36, 0.2);
 }
 
 /* ============================================================================
@@ -355,24 +471,36 @@
 
   .btn-primary {
     @apply btn;
-    background-color: rgb(var(--color-gray-900));
+    background-color: rgb(var(--color-primary-600));
     color: rgb(var(--color-white));
     box-shadow: var(--shadow-xs);
   }
   .dark .btn-primary {
-    background-color: rgb(var(--color-white));
-    color: rgb(var(--color-gray-900));
+    background-color: rgb(var(--color-primary-500));
+    color: rgb(var(--color-white));
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: rgb(var(--color-gray-800));
+    background-color: rgb(var(--color-primary-700));
     box-shadow: var(--shadow-sm);
     color: rgb(var(--color-white));
     text-decoration: none;
   }
   .dark .btn-primary:hover:not(:disabled) {
-    background-color: rgb(var(--color-gray-100));
-    color: rgb(var(--color-gray-900));
+    background-color: rgb(var(--color-primary-400));
+    color: rgb(var(--color-white));
     text-decoration: none;
+  }
+  
+  /* Gold accent button for premium CTAs */
+  .btn-accent {
+    @apply btn;
+    background-color: rgb(var(--color-accent-500));
+    color: rgb(var(--color-white));
+    box-shadow: var(--shadow-xs);
+  }
+  .btn-accent:hover:not(:disabled) {
+    background-color: rgb(var(--color-accent-600));
+    box-shadow: var(--shadow-sm);
   }
 
   .btn-secondary {
@@ -831,6 +959,10 @@
   .text-warning { color: rgb(var(--color-warning)); }
   .text-error { color: rgb(var(--color-error)); }
   .text-info { color: rgb(var(--color-info)); }
+  
+  /* Store trust theme text colors */
+  .text-trust { color: rgb(var(--store-trust-primary)); }
+  .text-prosperity { color: rgb(var(--store-prosperity-accent)); }
 
   /* Background colors */
   .bg-surface { background-color: rgb(var(--color-surface)); }
@@ -1431,4 +1563,161 @@ kbd {
   border: 1px solid rgb(var(--color-border));
   color: rgb(var(--color-text-secondary));
   box-shadow: 0 1px 0 rgb(var(--color-border-strong));
+}
+
+/* ============================================================================
+   STORE/MARKETING PAGE COMPONENTS
+   Trust-themed styles using green (trust) and gold (prosperity) colors
+   ============================================================================ */
+
+/* Store Trust Badge - Green/Gold gradient badge */
+.store-trust-badge {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium;
+  background: linear-gradient(135deg, rgb(var(--store-trust-primary-bg)) 0%, rgb(var(--store-prosperity-accent-bg)) 100%);
+  border: 1px solid rgb(var(--store-trust-primary-border));
+  color: rgb(var(--store-trust-primary-dark));
+}
+.dark .store-trust-badge {
+  color: rgb(var(--store-trust-primary-light));
+}
+
+/* Store Hero Headline - Trust green accent */
+.store-headline-accent {
+  color: rgb(var(--store-trust-primary));
+}
+.dark .store-headline-accent {
+  color: rgb(var(--store-trust-primary-light));
+}
+
+/* Store Stats - Green and Gold */
+.store-stat-primary {
+  color: rgb(var(--store-stat-savings));
+}
+.store-stat-accent {
+  color: rgb(var(--store-stat-accuracy));
+}
+.dark .store-stat-primary {
+  color: rgb(var(--color-primary-400));
+}
+.dark .store-stat-accent {
+  color: rgb(var(--color-accent-400));
+}
+
+/* Store Feature Card */
+.store-feature-card {
+  @apply p-6 rounded-2xl transition-all duration-300;
+  background-color: rgb(var(--color-surface));
+  border: 1px solid rgb(var(--color-border));
+}
+.store-feature-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: scale(1.02);
+}
+
+/* Store Feature Icon Container */
+.store-feature-icon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300;
+}
+.store-feature-icon-success {
+  background-color: rgb(var(--store-feature-success-bg));
+  color: rgb(var(--store-feature-success));
+}
+.store-feature-icon-primary {
+  background-color: rgb(var(--store-feature-primary-bg));
+  color: rgb(var(--store-feature-primary));
+}
+.store-feature-icon-accent {
+  background-color: rgb(var(--store-feature-accent-bg));
+  color: rgb(var(--store-feature-accent));
+}
+
+/* Store CTA Section - Green gradient background */
+.store-cta-section {
+  @apply text-center p-8 sm:p-12 rounded-3xl relative overflow-hidden;
+  background: linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-700)) 100%);
+}
+
+/* Store CTA Button - Gold accent */
+.store-cta-button {
+  @apply font-semibold px-8 py-3.5 rounded-xl transition-all inline-flex items-center gap-2;
+  background: linear-gradient(135deg, rgb(var(--color-accent-400)) 0%, rgb(var(--color-accent-500)) 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgb(var(--color-accent-500) / 0.4);
+}
+.store-cta-button:hover {
+  transform: scale(1.05);
+}
+
+/* Store Pricing Card Highlight */
+.store-pricing-highlight {
+  @apply p-4 rounded-xl relative overflow-hidden;
+  background: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, rgb(var(--color-accent-500) / 0.1) 100%);
+  border: 2px solid rgb(var(--color-primary-500));
+}
+
+/* Store ROI Calculator Results */
+.store-roi-results {
+  @apply p-8;
+  background: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.03) 0%, rgb(var(--color-accent-500) / 0.03) 100%);
+}
+
+.store-roi-highlight {
+  @apply text-center p-6 rounded-xl;
+  background: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, rgb(var(--color-accent-500) / 0.1) 100%);
+  border: 1px solid rgb(var(--color-primary-500) / 0.2);
+}
+
+/* Store Testimonial Metrics */
+.store-testimonial-metric {
+  @apply p-2 rounded-lg text-xs font-semibold flex items-center gap-1;
+  background: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.08) 0%, rgb(var(--color-accent-500) / 0.08) 100%);
+  border: 1px solid rgb(var(--color-primary-500) / 0.15);
+  color: rgb(var(--store-trust-primary));
+}
+
+/* Store Region Badge */
+.store-region-badge {
+  @apply px-3 py-1 rounded-full text-sm;
+  background-color: rgb(var(--color-primary-500) / 0.08);
+  color: rgb(var(--store-trust-primary-dark));
+  border: 1px solid rgb(var(--color-primary-500) / 0.15);
+}
+.dark .store-region-badge {
+  color: rgb(var(--store-trust-primary-light));
+}
+
+/* Store Check/Verified Icon */
+.store-check-icon {
+  color: rgb(var(--store-trust-primary));
+}
+.store-check-icon-success {
+  color: rgb(var(--color-success));
+}
+.store-check-icon-accent {
+  color: rgb(var(--store-prosperity-accent));
+}
+
+/* Store Avatar */
+.store-avatar {
+  @apply w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white flex-shrink-0;
+  background: linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%);
+}
+
+/* Store Cost Comparison Cards */
+.store-cost-card {
+  @apply p-4 rounded-xl;
+  background-color: rgb(var(--color-surface));
+  border: 1px solid rgb(var(--color-border));
+}
+
+.store-cost-card-highlight {
+  @apply p-4 rounded-xl relative overflow-hidden;
+  background: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, rgb(var(--color-accent-500) / 0.1) 100%);
+  border: 2px solid rgb(var(--color-primary-500));
+}
+
+.store-cost-card-accent {
+  @apply p-4 rounded-xl;
+  background-color: rgb(var(--color-accent-500) / 0.1);
+  border: 1px solid rgb(var(--color-accent-500) / 0.3);
 }

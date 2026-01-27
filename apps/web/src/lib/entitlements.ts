@@ -315,7 +315,6 @@ export function hasFeature(tier: SubscriptionTier, feature: string): boolean {
   const entitlements = getEntitlements(tier);
   const parts = feature.split('.');
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let current: any = entitlements;
   for (const part of parts) {
     if (current === undefined) return false;
@@ -332,7 +331,6 @@ export function isWithinLimit(tier: SubscriptionTier, limitKey: string, currentU
   const entitlements = getEntitlements(tier);
   const parts = limitKey.split('.');
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let current: any = entitlements;
   for (const part of parts) {
     if (current === undefined) return false;
@@ -349,7 +347,6 @@ export function getRemainingQuota(tier: SubscriptionTier, limitKey: string, curr
   const entitlements = getEntitlements(tier);
   const parts = limitKey.split('.');
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let current: any = entitlements;
   for (const part of parts) {
     if (current === undefined) return 0;

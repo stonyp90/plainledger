@@ -46,46 +46,59 @@ interface DemoModalProps {
 // DEMO SLIDES DATA
 // =====================================================
 
+// ROI-focused demo slides for executive appeal
 const DEMO_SLIDES = [
+  {
+    id: 'roi-summary',
+    icon: DollarSign,
+    title: { en: 'Your ROI at a Glance', fr: 'Votre ROI en un coup d\'oeil' },
+    subtitle: { 
+      en: 'See how PlainLedger clients save $847K on average', 
+      fr: 'Découvrez comment les clients PlainLedger économisent 847 000$ en moyenne' 
+    },
+    stat: { value: '$847K', label: { en: 'Avg. annual savings', fr: 'Économies moy. annuelles' } },
+    isROISlide: true,
+  },
   {
     id: 'dashboard',
     icon: BarChart3,
-    title: { en: 'Real-Time Dashboard', fr: 'Tableau de bord temps réel' },
+    title: { en: 'Real-Time Financial Visibility', fr: 'Visibilité financière temps réel' },
     subtitle: { 
-      en: 'Complete financial visibility in one view', 
-      fr: 'Visibilité financière complète en une vue' 
+      en: 'Know your position now, not last month — accelerate decisions', 
+      fr: 'Connaissez votre position maintenant, pas le mois dernier — accélérez les décisions' 
     },
-    stat: { value: '10x', label: { en: 'Faster insights', fr: 'Plus rapide' } },
+    stat: { value: '60%', label: { en: 'Faster month-end close', fr: 'Clôture plus rapide' } },
   },
   {
     id: 'anomalies',
     icon: Shield,
-    title: { en: 'Intelligent Detection', fr: 'Détection intelligente' },
+    title: { en: 'Prevent Financial Leakage', fr: 'Prévenez les fuites financières' },
     subtitle: { 
-      en: '97% accuracy in fraud & error detection', 
-      fr: '97% de précision dans la détection' 
+      en: 'AI catches duplicate payments, fraud patterns, and billing errors before they cost you', 
+      fr: 'L\'IA détecte paiements en double, fraudes et erreurs avant qu\'ils ne vous coûtent' 
     },
-    stat: { value: '$847K', label: { en: 'Saved per client', fr: 'Économisé / client' } },
+    stat: { value: '97%', label: { en: 'Detection accuracy', fr: 'Précision de détection' } },
   },
   {
-    id: 'reports',
-    icon: FileText,
-    title: { en: 'Instant Reports', fr: 'Rapports instantanés' },
-    subtitle: { 
-      en: 'Professional reports in seconds, not hours', 
-      fr: 'Rapports professionnels en secondes' 
-    },
-    stat: { value: '85%', label: { en: 'Time saved', fr: 'Temps économisé' } },
-  },
-  {
-    id: 'ai',
+    id: 'industry-ai',
     icon: Brain,
-    title: { en: 'James Financial Assistant', fr: 'Assistant financier James' },
+    title: { en: 'Industry-Optimized AI', fr: 'IA optimisée par industrie' },
     subtitle: { 
-      en: 'Natural language queries for instant answers', 
-      fr: 'Questions en langage naturel' 
+      en: 'KPIs tailored to your sector: Real Estate, Restaurant, Retail, Construction & more', 
+      fr: 'KPIs adaptés à votre secteur: Immobilier, Restauration, Commerce, Construction et plus' 
     },
-    stat: { value: '24/7', label: { en: 'Availability', fr: 'Disponibilité' } },
+    stat: { value: '15+', label: { en: 'Industries supported', fr: 'Industries supportées' } },
+  },
+  {
+    id: 'cost-savings',
+    icon: TrendingUp,
+    title: { en: '1/3 the Cost of Enterprise BI', fr: '1/3 du coût du BI Enterprise' },
+    subtitle: { 
+      en: 'Same data lake capabilities as $50K+ tools, designed for growing businesses', 
+      fr: 'Mêmes capacités que les outils à 50 000$+, conçu pour les entreprises en croissance' 
+    },
+    stat: { value: '340%', label: { en: 'First-year ROI', fr: 'ROI première année' } },
+    isROISlide: true,
   },
 ];
 
@@ -1335,6 +1348,274 @@ function AIMockup({ isEn }: { isEn: boolean }) {
 }
 
 // =====================================================
+// ROI SUMMARY MOCKUP - Executive first-view
+// =====================================================
+
+function ROISummaryMockup({ isEn }: { isEn: boolean }) {
+  const savings = useAnimatedCounter(847000, 2000, 300);
+  const accuracy = useAnimatedCounter(97, 1500, 500);
+  const roi = useAnimatedCounter(340, 1800, 700);
+  
+  return (
+    <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div 
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4"
+          style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+        >
+          <CheckCircle className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+          <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-success))' }}>
+            {isEn ? 'Verified Results' : 'Résultats vérifiés'}
+          </span>
+        </div>
+        <h3 className="text-lg font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'What Our Clients Achieve' : 'Ce que nos clients accomplissent'}
+        </h3>
+      </div>
+      
+      {/* Big Stats Grid */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+          <DollarSign className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+            ${Math.floor(savings / 1000)}K
+          </div>
+          <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'Avg. Annual Savings' : 'Économies moy.'}
+          </div>
+        </div>
+        <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
+          <Shield className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
+          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-success))' }}>
+            {accuracy}%
+          </div>
+          <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'Detection Accuracy' : 'Précision détection'}
+          </div>
+        </div>
+        <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}>
+          <TrendingUp className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgb(var(--color-warning))' }} />
+          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-warning))' }}>
+            {roi}%
+          </div>
+          <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'First-Year ROI' : 'ROI An 1'}
+          </div>
+        </div>
+      </div>
+      
+      {/* Sample Testimonial */}
+      <div 
+        className="p-4 rounded-xl"
+        style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+      >
+        <p className="text-xs italic mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          "{isEn 
+            ? 'PlainLedger caught a $45K duplicate payment in our first week. The platform paid for itself before our trial ended.'
+            : 'PlainLedger a détecté un paiement en double de 45 000$ la première semaine. La plateforme s\'est rentabilisée avant la fin de l\'essai.'}"
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>MD</div>
+          <div>
+            <div className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>Marie-Claire Dubois</div>
+            <div className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>CFO, Gestion Immobilière MTL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// INDUSTRY AI MOCKUP - Show industry-specific capabilities
+// =====================================================
+
+function IndustryAIMockup({ isEn }: { isEn: boolean }) {
+  const [selectedIndustry, setSelectedIndustry] = useState(0);
+  
+  const industries = [
+    { 
+      name: { en: 'Real Estate', fr: 'Immobilier' }, 
+      icon: '🏢',
+      kpis: ['Occupancy Rate', 'Cap Rate', 'NOI', 'Cash-on-Cash'],
+      detected: { en: 'Late rent patterns identified', fr: 'Retards de loyer identifiés' }
+    },
+    { 
+      name: { en: 'Restaurant', fr: 'Restauration' }, 
+      icon: '🍽️',
+      kpis: ['Food Cost %', 'Labor Cost %', 'Prime Cost', 'Avg Check'],
+      detected: { en: 'Inventory variance flagged', fr: 'Écart d\'inventaire signalé' }
+    },
+    { 
+      name: { en: 'Retail', fr: 'Commerce' }, 
+      icon: '🛍️',
+      kpis: ['GMROI', 'Inventory Turnover', 'Shrinkage %', 'Sales/Sq Ft'],
+      detected: { en: 'Markdown timing optimized', fr: 'Timing des soldes optimisé' }
+    },
+  ];
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSelectedIndustry(prev => (prev + 1) % industries.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  const current = industries[selectedIndustry];
+  
+  return (
+    <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+      {/* Industry Tabs */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {industries.map((ind, i) => (
+          <button
+            key={i}
+            onClick={() => setSelectedIndustry(i)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all`}
+            style={{ 
+              backgroundColor: i === selectedIndustry ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
+              color: i === selectedIndustry ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
+              border: i === selectedIndustry ? '1px solid rgb(var(--color-primary-500) / 0.3)' : '1px solid transparent'
+            }}
+          >
+            <span>{ind.icon}</span>
+            {isEn ? ind.name.en : ind.name.fr}
+          </button>
+        ))}
+      </div>
+      
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {current.kpis.map((kpi, i) => (
+          <div 
+            key={i}
+            className="p-3 rounded-lg text-center"
+            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+          >
+            <div className="text-lg font-bold mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              {['85%', '7.2%', '$1.2M', '9.4%'][i]}
+            </div>
+            <div className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>{kpi}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* AI Detection Alert */}
+      <div 
+        className="p-4 rounded-xl flex items-start gap-3"
+        style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)', border: '1px solid rgb(var(--color-warning) / 0.3)' }}
+      >
+        <Brain className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-warning))' }} />
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: 'rgb(var(--color-warning))' }}>
+            {isEn ? 'AI Industry Insight' : 'Insight IA industrie'}
+          </div>
+          <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn ? current.detected.en : current.detected.fr}
+          </p>
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <div className="mt-4 text-center">
+        <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? '15+ industries with tailored AI models' : '15+ industries avec modèles IA adaptés'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// COST SAVINGS MOCKUP - ROI comparison
+// =====================================================
+
+function CostSavingsMockup({ isEn }: { isEn: boolean }) {
+  const [showSavings, setShowSavings] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSavings(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return (
+    <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+      {/* Comparison Header */}
+      <div className="text-center mb-6">
+        <h3 className="text-lg font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'Enterprise BI vs PlainLedger' : 'BI Enterprise vs PlainLedger'}
+        </h3>
+        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? 'Same capabilities, fraction of the cost' : 'Mêmes capacités, fraction du coût'}
+        </p>
+      </div>
+      
+      {/* Comparison Bars */}
+      <div className="space-y-4 mb-6">
+        {/* Enterprise */}
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              {isEn ? 'Enterprise BI Tools' : 'Outils BI Enterprise'}
+            </span>
+            <span className="text-xs font-bold" style={{ color: 'rgb(var(--color-text-muted))' }}>$50,000+/yr</span>
+          </div>
+          <div className="h-8 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-border))', width: '100%' }} />
+        </div>
+        
+        {/* PlainLedger */}
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-primary-600))' }}>PlainLedger</span>
+            <span className="text-xs font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>~$15,000/yr</span>
+          </div>
+          <div 
+            className="h-8 rounded-lg transition-all duration-1000"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-500))', 
+              width: showSavings ? '30%' : '0%'
+            }} 
+          />
+        </div>
+      </div>
+      
+      {/* Savings Callout */}
+      <div 
+        className={`p-4 rounded-xl text-center transition-all duration-500 ${showSavings ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+        style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)', border: '1px solid rgb(var(--color-success) / 0.3)' }}
+      >
+        <DollarSign className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
+        <div className="text-2xl font-bold mb-1" style={{ color: 'rgb(var(--color-success))' }}>
+          {isEn ? 'Save $35,000+/year' : 'Économisez 35 000$+/an'}
+        </div>
+        <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? 'With the same data intelligence capabilities' : 'Avec les mêmes capacités d\'intelligence'}
+        </div>
+      </div>
+      
+      {/* Features Check */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {[
+          { en: 'Data Lake Architecture', fr: 'Architecture Data Lake' },
+          { en: 'AI Anomaly Detection', fr: 'Détection IA anomalies' },
+          { en: 'Industry-Specific KPIs', fr: 'KPIs par industrie' },
+          { en: 'Real-Time Dashboards', fr: 'Tableaux temps réel' },
+        ].map((feature, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+            <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              {isEn ? feature.en : feature.fr}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
 // MAIN DEMO MODAL COMPONENT
 // =====================================================
 
@@ -1342,13 +1623,13 @@ export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoM
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   
-  // Auto-advance slides
+  // Auto-advance slides - 8s for busy executives
   useEffect(() => {
     if (!isOpen || !isAutoPlaying) return;
     
     const timer = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % DEMO_SLIDES.length);
-    }, 10000);
+    }, 8000);
     
     return () => clearInterval(timer);
   }, [isOpen, isAutoPlaying]);
@@ -1395,12 +1676,21 @@ export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoM
   const slide = DEMO_SLIDES[currentSlide];
   const SlideIcon = slide.icon;
   
+  // Find the last ROI slide index for "Skip to ROI" button
+  const lastROISlideIndex = DEMO_SLIDES.findIndex(s => s.id === 'cost-savings');
+  
+  const skipToROI = useCallback(() => {
+    setCurrentSlide(lastROISlideIndex);
+    setIsAutoPlaying(false);
+  }, [lastROISlideIndex]);
+  
   const renderMockup = () => {
     switch (slide.id) {
+      case 'roi-summary': return <ROISummaryMockup isEn={isEn} />;
       case 'dashboard': return <FullDashboardMockup isEn={isEn} />;
       case 'anomalies': return <AnomalyMockup isEn={isEn} />;
-      case 'reports': return <ReportsMockup isEn={isEn} />;
-      case 'ai': return <AIMockup isEn={isEn} />;
+      case 'industry-ai': return <IndustryAIMockup isEn={isEn} />;
+      case 'cost-savings': return <CostSavingsMockup isEn={isEn} />;
       default: return <FullDashboardMockup isEn={isEn} />;
     }
   };
@@ -1478,6 +1768,21 @@ export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoM
                 <span className="hidden sm:inline">{isEn ? s.title.en : s.title.fr}</span>
               </button>
             ))}
+            
+            {/* Skip to ROI Button - for busy executives */}
+            {currentSlide < lastROISlideIndex && (
+              <button
+                onClick={skipToROI}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap ml-auto"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-accent-500) / 0.1)',
+                  color: 'rgb(var(--color-accent-600))',
+                }}
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Skip to ROI' : 'Voir le ROI'}</span>
+              </button>
+            )}
           </div>
           
           {/* Mockup Display */}

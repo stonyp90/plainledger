@@ -1,6 +1,6 @@
 /**
  * AI Guardrails Service
- * 
+ *
  * Prevents hallucinations by:
  * - Validating responses against provided context
  * - Detecting invented numbers or facts
@@ -9,7 +9,7 @@
  * - Flagging potentially hallucinated content
  */
 
-import { Logger } from '@nestjs/common';
+import { Logger } from "@nestjs/common";
 
 export interface GuardrailResult {
   passed: boolean;
@@ -42,7 +42,7 @@ export class AIGuardrailsService {
   validateResponse(
     response: string,
     context: FinancialContext,
-    originalPrompt: string
+    originalPrompt: string,
   ): GuardrailResult {
     const warnings: string[] = [];
     const errors: string[] = [];
@@ -54,12 +54,12 @@ export class AIGuardrailsService {
 
     // Check for unsupported claims
     const unsupportedMetrics = claimedMetrics.filter(
-      metric => !supportedMetrics.includes(metric)
+      (metric) => !supportedMetrics.includes(metric),
     );
 
     if (unsupportedMetrics.length > 0) {
       warnings.push(
-        `Response mentions metrics not in provided context: ${unsupportedMetrics.join(', ')}`
+        `Response mentions metrics not in provided context: ${unsupportedMetrics.join(", ")}`,
       );
       confidence -= unsupportedMetrics.length * 10;
     }
@@ -68,7 +68,7 @@ export class AIGuardrailsService {
     const inventedNumbers = this.detectInventedNumbers(response, context);
     if (inventedNumbers.length > 0) {
       errors.push(
-        `Response contains numbers not supported by context: ${inventedNumbers.join(', ')}`
+        `Response contains numbers not supported by context: ${inventedNumbers.join(", ")}`,
       );
       confidence -= inventedNumbers.length * 20;
     }
@@ -81,7 +81,10 @@ export class AIGuardrailsService {
     }
 
     // Check for hallucinated facts
-    const hallucinatedFacts = this.detectHallucinatedFacts(response, originalPrompt);
+    const hallucinatedFacts = this.detectHallucinatedFacts(
+      response,
+      originalPrompt,
+    );
     if (hallucinatedFacts.length > 0) {
       warnings.push(...hallucinatedFacts);
       confidence -= hallucinatedFacts.length * 15;
@@ -90,7 +93,9 @@ export class AIGuardrailsService {
     // Check for confidence statements without basis
     const falseConfidence = this.detectFalseConfidence(response, context);
     if (falseConfidence) {
-      warnings.push('Response expresses confidence without sufficient data basis');
+      warnings.push(
+        "Response expresses confidence without sufficient data basis",
+      );
       confidence -= 10;
     }
 
@@ -101,7 +106,11 @@ export class AIGuardrailsService {
 
     // Add disclaimer if confidence is low
     let validatedResponse = response;
-    if (confidence < 70 && !response.includes('⚠️') && !response.includes('Note:')) {
+    if (
+      confidence < 70 &&
+      !response.includes("⚠️") &&
+      !response.includes("Note:")
+    ) {
       validatedResponse = this.addConfidenceDisclaimer(response, confidence);
     }
 
@@ -128,8 +137,16 @@ export class AIGuardrailsService {
 
     const metricPatterns: Record<string, RegExp[]> = {
       cash: [/\$[\d,]+.*cash/i, /cash.*\$[\d,]+/i, /cash.*balance/i],
-      revenue: [/\$[\d,]+.*revenue/i, /revenue.*\$[\d,]+/i, /monthly.*revenue/i],
-      expenses: [/\$[\d,]+.*expense/i, /expense.*\$[\d,]+/i, /monthly.*expense/i],
+      revenue: [
+        /\$[\d,]+.*revenue/i,
+        /revenue.*\$[\d,]+/i,
+        /monthly.*revenue/i,
+      ],
+      expenses: [
+        /\$[\d,]+.*expense/i,
+        /expense.*\$[\d,]+/i,
+        /monthly.*expense/i,
+      ],
       burnRate: [/\$[\d,]+.*burn/i, /burn.*rate/i, /burn.*\$[\d,]+/i],
       runway: [/runway.*\d+/i, /\d+.*months.*runway/i, /runway.*months/i],
       profit: [/\$[\d,]+.*profit/i, /profit.*\$[\d,]+/i, /net.*income/i],
@@ -137,7 +154,7 @@ export class AIGuardrailsService {
     };
 
     for (const [metric, patterns] of Object.entries(metricPatterns)) {
-      if (patterns.some(pattern => pattern.test(lowerResponse))) {
+      if (patterns.some((pattern) => pattern.test(lowerResponse))) {
         metrics.push(metric);
       }
     }
@@ -151,11 +168,11 @@ export class AIGuardrailsService {
   private extractSupportedMetrics(context: FinancialContext): string[] {
     const supported: string[] = [];
 
-    if (context.currentCash !== undefined) supported.push('cash');
-    if (context.monthlyRevenue !== undefined) supported.push('revenue');
-    if (context.monthlyExpenses !== undefined) supported.push('expenses');
-    if (context.burnRate !== undefined) supported.push('burnRate');
-    if (context.runwayMonths !== undefined) supported.push('runway');
+    if (context.currentCash !== undefined) supported.push("cash");
+    if (context.monthlyRevenue !== undefined) supported.push("revenue");
+    if (context.monthlyExpenses !== undefined) supported.push("expenses");
+    if (context.burnRate !== undefined) supported.push("burnRate");
+    if (context.runwayMonths !== undefined) supported.push("runway");
 
     return supported;
   }
@@ -163,27 +180,41 @@ export class AIGuardrailsService {
   /**
    * Detect invented numbers that don't match context
    */
-  private detectInventedNumbers(response: string, context: FinancialContext): string[] {
+  private detectInventedNumbers(
+    response: string,
+    context: FinancialContext,
+  ): string[] {
     const issues: string[] = [];
     const lowerResponse = response.toLowerCase();
 
     // Extract all dollar amounts from response
     const dollarMatches = response.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
-    
+
     // Check if any claimed amounts are significantly different from context
-    dollarMatches.forEach(match => {
-      const amount = parseFloat(match.replace(/[$,]/g, ''));
-      
+    dollarMatches.forEach((match) => {
+      const amount = parseFloat(match.replace(/[$,]/g, ""));
+
       // Check against context values (allow 5% variance for rounding)
-      if (context.currentCash && Math.abs(amount - context.currentCash) / context.currentCash > 0.05) {
+      if (
+        context.currentCash &&
+        Math.abs(amount - context.currentCash) / context.currentCash > 0.05
+      ) {
         // Check if it's near cash amount (might be legitimate reference)
-        if (Math.abs(amount - context.currentCash) / context.currentCash > 0.1) {
+        if (
+          Math.abs(amount - context.currentCash) / context.currentCash >
+          0.1
+        ) {
           // Check other metrics
-          const isCloseToRevenue = context.monthlyRevenue && 
-            Math.abs(amount - context.monthlyRevenue) / context.monthlyRevenue < 0.05;
-          const isCloseToExpenses = context.monthlyExpenses && 
-            Math.abs(amount - context.monthlyExpenses) / context.monthlyExpenses < 0.05;
-          
+          const isCloseToRevenue =
+            context.monthlyRevenue &&
+            Math.abs(amount - context.monthlyRevenue) / context.monthlyRevenue <
+              0.05;
+          const isCloseToExpenses =
+            context.monthlyExpenses &&
+            Math.abs(amount - context.monthlyExpenses) /
+              context.monthlyExpenses <
+              0.05;
+
           if (!isCloseToRevenue && !isCloseToExpenses && amount > 1000) {
             // This might be an invented number
             issues.push(`${match} (not matching context values)`);
@@ -198,46 +229,64 @@ export class AIGuardrailsService {
   /**
    * Validate calculations mentioned in response
    */
-  private validateCalculations(response: string, context: FinancialContext): string[] {
+  private validateCalculations(
+    response: string,
+    context: FinancialContext,
+  ): string[] {
     const issues: string[] = [];
     const lowerResponse = response.toLowerCase();
 
     // Check runway calculations
-    if (lowerResponse.includes('runway') && context.burnRate && context.currentCash) {
-      const expectedRunway = context.burnRate > 0 
-        ? context.currentCash / context.burnRate 
-        : Infinity;
-      
+    if (
+      lowerResponse.includes("runway") &&
+      context.burnRate &&
+      context.currentCash
+    ) {
+      const expectedRunway =
+        context.burnRate > 0
+          ? context.currentCash / context.burnRate
+          : Infinity;
+
       // Extract claimed runway from response
-      const runwayMatch = response.match(/(\d+(?:\.\d+)?)\s*months?.*runway/i) ||
-                          response.match(/runway.*(\d+(?:\.\d+)?)\s*months?/i);
-      
+      const runwayMatch =
+        response.match(/(\d+(?:\.\d+)?)\s*months?.*runway/i) ||
+        response.match(/runway.*(\d+(?:\.\d+)?)\s*months?/i);
+
       if (runwayMatch) {
         const claimedRunway = parseFloat(runwayMatch[1]);
-        const variance = Math.abs(claimedRunway - expectedRunway) / expectedRunway;
-        
-        if (variance > 0.1) { // More than 10% difference
+        const variance =
+          Math.abs(claimedRunway - expectedRunway) / expectedRunway;
+
+        if (variance > 0.1) {
+          // More than 10% difference
           issues.push(
-            `Runway calculation mismatch: claimed ${claimedRunway}mo, expected ${expectedRunway.toFixed(1)}mo`
+            `Runway calculation mismatch: claimed ${claimedRunway}mo, expected ${expectedRunway.toFixed(1)}mo`,
           );
         }
       }
     }
 
     // Check burn rate calculations
-    if (lowerResponse.includes('burn') && context.monthlyRevenue && context.monthlyExpenses) {
+    if (
+      lowerResponse.includes("burn") &&
+      context.monthlyRevenue &&
+      context.monthlyExpenses
+    ) {
       const expectedBurnRate = context.monthlyExpenses - context.monthlyRevenue;
-      
-      const burnMatch = response.match(/\$[\d,]+.*burn/i) || response.match(/burn.*\$[\d,]+/i);
+
+      const burnMatch =
+        response.match(/\$[\d,]+.*burn/i) || response.match(/burn.*\$[\d,]+/i);
       if (burnMatch) {
         const amountStr = burnMatch[0].match(/\$[\d,]+/)?.[0];
         if (amountStr) {
-          const claimedBurn = parseFloat(amountStr.replace(/[$,]/g, ''));
-          const variance = Math.abs(claimedBurn - expectedBurnRate) / Math.abs(expectedBurnRate || 1);
-          
+          const claimedBurn = parseFloat(amountStr.replace(/[$,]/g, ""));
+          const variance =
+            Math.abs(claimedBurn - expectedBurnRate) /
+            Math.abs(expectedBurnRate || 1);
+
           if (variance > 0.1) {
             issues.push(
-              `Burn rate calculation mismatch: claimed $${claimedBurn.toLocaleString()}, expected $${expectedBurnRate.toLocaleString()}`
+              `Burn rate calculation mismatch: claimed $${claimedBurn.toLocaleString()}, expected $${expectedBurnRate.toLocaleString()}`,
             );
           }
         }
@@ -250,7 +299,10 @@ export class AIGuardrailsService {
   /**
    * Detect hallucinated facts not grounded in prompt
    */
-  private detectHallucinatedFacts(response: string, originalPrompt: string): string[] {
+  private detectHallucinatedFacts(
+    response: string,
+    originalPrompt: string,
+  ): string[] {
     const issues: string[] = [];
     const lowerResponse = response.toLowerCase();
     const lowerPrompt = originalPrompt.toLowerCase();
@@ -259,18 +311,22 @@ export class AIGuardrailsService {
     const hallucinationPatterns = [
       {
         pattern: /industry.*average|benchmark.*industry|typical.*industry/i,
-        check: () => !lowerPrompt.includes('industry') && !lowerPrompt.includes('benchmark'),
-        message: 'Response mentions industry benchmarks without context',
+        check: () =>
+          !lowerPrompt.includes("industry") &&
+          !lowerPrompt.includes("benchmark"),
+        message: "Response mentions industry benchmarks without context",
       },
       {
         pattern: /according to|research shows|studies indicate/i,
-        check: () => !lowerPrompt.includes('research') && !lowerPrompt.includes('study'),
-        message: 'Response cites research/studies not in context',
+        check: () =>
+          !lowerPrompt.includes("research") && !lowerPrompt.includes("study"),
+        message: "Response cites research/studies not in context",
       },
       {
         pattern: /recommended.*ratio|standard.*ratio|optimal.*ratio/i,
-        check: () => !lowerPrompt.includes('ratio') && !lowerPrompt.includes('standard'),
-        message: 'Response provides ratio recommendations without context',
+        check: () =>
+          !lowerPrompt.includes("ratio") && !lowerPrompt.includes("standard"),
+        message: "Response provides ratio recommendations without context",
       },
     ];
 
@@ -286,9 +342,12 @@ export class AIGuardrailsService {
   /**
    * Detect false confidence statements
    */
-  private detectFalseConfidence(response: string, context: FinancialContext): boolean {
+  private detectFalseConfidence(
+    response: string,
+    context: FinancialContext,
+  ): boolean {
     const lowerResponse = response.toLowerCase();
-    
+
     // High confidence phrases
     const confidencePhrases = [
       /definitely/i,
@@ -298,10 +357,12 @@ export class AIGuardrailsService {
       /without a doubt/i,
     ];
 
-    const hasHighConfidence = confidencePhrases.some(phrase => phrase.test(lowerResponse));
-    
+    const hasHighConfidence = confidencePhrases.some((phrase) =>
+      phrase.test(lowerResponse),
+    );
+
     // Check if context has sufficient data
-    const hasSufficientData = 
+    const hasSufficientData =
       context.currentCash !== undefined &&
       context.monthlyRevenue !== undefined &&
       context.monthlyExpenses !== undefined;
@@ -313,11 +374,14 @@ export class AIGuardrailsService {
   /**
    * Add confidence disclaimer to response
    */
-  private addConfidenceDisclaimer(response: string, confidence: number): string {
+  private addConfidenceDisclaimer(
+    response: string,
+    confidence: number,
+  ): string {
     const disclaimer = `\n\n⚠️ **Note:** This analysis is based on limited data. Please verify all numbers and calculations.`;
-    
+
     // Don't add if already present
-    if (response.includes('⚠️') || response.includes('Note:')) {
+    if (response.includes("⚠️") || response.includes("Note:")) {
       return response;
     }
 
@@ -331,14 +395,19 @@ export class AIGuardrailsService {
     let sanitized = response;
 
     // Remove any script tags or dangerous patterns
-    sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-    sanitized = sanitized.replace(/javascript:/gi, '');
-    sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+    sanitized = sanitized.replace(
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      "",
+    );
+    sanitized = sanitized.replace(/javascript:/gi, "");
+    sanitized = sanitized.replace(/on\w+\s*=/gi, "");
 
     // Limit response length
     const MAX_RESPONSE_LENGTH = 10000;
     if (sanitized.length > MAX_RESPONSE_LENGTH) {
-      sanitized = sanitized.substring(0, MAX_RESPONSE_LENGTH) + '\n\n[Response truncated]';
+      sanitized =
+        sanitized.substring(0, MAX_RESPONSE_LENGTH) +
+        "\n\n[Response truncated]";
     }
 
     return sanitized;
@@ -351,30 +420,33 @@ export class AIGuardrailsService {
     const context: FinancialContext = {};
 
     // Extract cash
-    const cashMatch = prompt.match(/cash[:\s]*\$?([\d,]+)/i) || 
-                     prompt.match(/\$?([\d,]+).*cash/i);
+    const cashMatch =
+      prompt.match(/cash[:\s]*\$?([\d,]+)/i) ||
+      prompt.match(/\$?([\d,]+).*cash/i);
     if (cashMatch) {
-      context.currentCash = parseFloat(cashMatch[1].replace(/,/g, ''));
+      context.currentCash = parseFloat(cashMatch[1].replace(/,/g, ""));
     }
 
     // Extract revenue
-    const revenueMatch = prompt.match(/revenue[:\s]*\$?([\d,]+)/i) ||
-                          prompt.match(/monthly.*revenue[:\s]*\$?([\d,]+)/i);
+    const revenueMatch =
+      prompt.match(/revenue[:\s]*\$?([\d,]+)/i) ||
+      prompt.match(/monthly.*revenue[:\s]*\$?([\d,]+)/i);
     if (revenueMatch) {
-      context.monthlyRevenue = parseFloat(revenueMatch[1].replace(/,/g, ''));
+      context.monthlyRevenue = parseFloat(revenueMatch[1].replace(/,/g, ""));
     }
 
     // Extract expenses
-    const expenseMatch = prompt.match(/expense[:\s]*\$?([\d,]+)/i) ||
-                         prompt.match(/monthly.*expense[:\s]*\$?([\d,]+)/i);
+    const expenseMatch =
+      prompt.match(/expense[:\s]*\$?([\d,]+)/i) ||
+      prompt.match(/monthly.*expense[:\s]*\$?([\d,]+)/i);
     if (expenseMatch) {
-      context.monthlyExpenses = parseFloat(expenseMatch[1].replace(/,/g, ''));
+      context.monthlyExpenses = parseFloat(expenseMatch[1].replace(/,/g, ""));
     }
 
     // Extract burn rate
     const burnMatch = prompt.match(/burn[:\s]*\$?([\d,]+)/i);
     if (burnMatch) {
-      context.burnRate = parseFloat(burnMatch[1].replace(/,/g, ''));
+      context.burnRate = parseFloat(burnMatch[1].replace(/,/g, ""));
     }
 
     // Extract runway

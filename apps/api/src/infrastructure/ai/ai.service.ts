@@ -1,6 +1,6 @@
 /**
  * AI Service - Enterprise Grade Multi-Provider
- * 
+ *
  * Handles LLM integration for James AI strategic advisor with:
  * - Support for all major AI providers (OpenAI, Anthropic, Google, Mistral, Cohere, Azure, Ollama)
  * - Automatic fallback between providers
@@ -12,11 +12,21 @@
  * - Circuit breaker pattern
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { AIGuardrailsService, FinancialContext as GuardrailContext } from './ai-guardrails.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import {
+  AIGuardrailsService,
+  FinancialContext as GuardrailContext,
+} from "./ai-guardrails.service";
 
-export type AIProvider = 'openai' | 'anthropic' | 'google' | 'mistral' | 'cohere' | 'azure' | 'ollama';
+export type AIProvider =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "mistral"
+  | "cohere"
+  | "azure"
+  | "ollama";
 
 export interface AIProviderConfig {
   provider: AIProvider;
@@ -36,7 +46,7 @@ export interface AIGenerationOptions {
   retries?: number;
   preferredProvider?: AIProvider;
   forceProvider?: boolean;
-  modelTier?: 'lite' | 'full'; // Model tier selection for cost optimization
+  modelTier?: "lite" | "full"; // Model tier selection for cost optimization
 }
 
 export interface AIResponse {
@@ -62,7 +72,7 @@ export interface RateLimitInfo {
 interface CircuitBreakerState {
   failures: number;
   lastFailureTime: number;
-  state: 'closed' | 'open' | 'half-open';
+  state: "closed" | "open" | "half-open";
 }
 
 @Injectable()
@@ -73,61 +83,79 @@ export class AIService {
   private readonly requestTimeout: number;
   private readonly maxTokensPerRequest: number;
   private readonly rateLimitPerTenant: Map<string, RateLimitInfo> = new Map();
-  private readonly circuitBreakers: Map<string, CircuitBreakerState> = new Map();
-  private readonly requestCache: Map<string, { response: AIResponse; expiresAt: number }> = new Map();
-  private readonly tokenUsage: Map<string, { total: number; lastReset: Date }> = new Map();
+  private readonly circuitBreakers: Map<string, CircuitBreakerState> =
+    new Map();
+  private readonly requestCache: Map<
+    string,
+    { response: AIResponse; expiresAt: number }
+  > = new Map();
+  private readonly tokenUsage: Map<string, { total: number; lastReset: Date }> =
+    new Map();
   private readonly guardrails: AIGuardrailsService = new AIGuardrailsService();
 
   // Rate limits: requests per minute per tenant
   private readonly RATE_LIMIT_REQUESTS = 30;
   private readonly RATE_LIMIT_WINDOW_MS = 60 * 1000;
-  
+
   // Circuit breaker thresholds
   private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5;
   private readonly CIRCUIT_BREAKER_RESET_TIMEOUT = 60 * 1000; // 1 minute
-  
+
   // Cache TTL: 5 minutes
   private readonly CACHE_TTL_MS = 5 * 60 * 1000;
 
   // Default models per provider (full tier)
   private readonly DEFAULT_MODELS: Record<AIProvider, string> = {
-    openai: 'gpt-4-turbo-preview',
-    anthropic: 'claude-3-opus-20240229',
-    google: 'gemini-1.5-pro',
-    mistral: 'mistral-large-latest',
-    cohere: 'command-r-plus',
-    azure: 'gpt-4',
-    ollama: 'llama2',
+    openai: "gpt-4-turbo-preview",
+    anthropic: "claude-3-opus-20240229",
+    google: "gemini-1.5-pro",
+    mistral: "mistral-large-latest",
+    cohere: "command-r-plus",
+    azure: "gpt-4",
+    ollama: "llama2",
   };
 
   // Lite models per provider (cheaper, faster)
   private readonly LITE_MODELS: Record<AIProvider, string> = {
-    openai: 'gpt-3.5-turbo',
-    anthropic: 'claude-3-haiku-20240307',
-    google: 'gemini-1.5-flash',
-    mistral: 'mistral-small-latest',
-    cohere: 'command',
-    azure: 'gpt-35-turbo',
-    ollama: 'llama2',
+    openai: "gpt-3.5-turbo",
+    anthropic: "claude-3-haiku-20240307",
+    google: "gemini-1.5-flash",
+    mistral: "mistral-small-latest",
+    cohere: "command",
+    azure: "gpt-35-turbo",
+    ollama: "llama2",
   };
 
   constructor(private readonly configService: ConfigService) {
-    this.maxRetries = parseInt(this.configService.get<string>('AI_MAX_RETRIES') || '3', 10);
-    this.requestTimeout = parseInt(this.configService.get<string>('AI_REQUEST_TIMEOUT') || '30000', 10);
-    this.maxTokensPerRequest = parseInt(this.configService.get<string>('AI_MAX_TOKENS') || '4000', 10);
-    
+    this.maxRetries = parseInt(
+      this.configService.get<string>("AI_MAX_RETRIES") || "3",
+      10,
+    );
+    this.requestTimeout = parseInt(
+      this.configService.get<string>("AI_REQUEST_TIMEOUT") || "30000",
+      10,
+    );
+    this.maxTokensPerRequest = parseInt(
+      this.configService.get<string>("AI_MAX_TOKENS") || "4000",
+      10,
+    );
+
     // Initialize all providers
     this.initializeProviders();
-    
+
     // Log available providers
     const availableProviders = Array.from(this.providers.entries())
       .filter(([_, config]) => config.enabled)
       .map(([name]) => name);
-    
+
     if (availableProviders.length > 0) {
-      this.logger.log(`AI providers initialized: ${availableProviders.join(', ')}`);
+      this.logger.log(
+        `AI providers initialized: ${availableProviders.join(", ")}`,
+      );
     } else {
-      this.logger.warn('No AI providers configured. Using simulated responses.');
+      this.logger.warn(
+        "No AI providers configured. Using simulated responses.",
+      );
     }
   }
 
@@ -136,74 +164,90 @@ export class AIService {
    */
   private initializeProviders(): void {
     // OpenAI
-    const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
-    this.providers.set('openai', {
-      provider: 'openai',
+    const openaiKey = this.configService.get<string>("OPENAI_API_KEY");
+    this.providers.set("openai", {
+      provider: "openai",
       apiKey: openaiKey,
-      model: this.configService.get<string>('OPENAI_MODEL') || this.DEFAULT_MODELS.openai,
+      model:
+        this.configService.get<string>("OPENAI_MODEL") ||
+        this.DEFAULT_MODELS.openai,
       enabled: !!openaiKey,
       priority: 1,
     });
 
     // Anthropic
-    const anthropicKey = this.configService.get<string>('ANTHROPIC_API_KEY');
-    this.providers.set('anthropic', {
-      provider: 'anthropic',
+    const anthropicKey = this.configService.get<string>("ANTHROPIC_API_KEY");
+    this.providers.set("anthropic", {
+      provider: "anthropic",
       apiKey: anthropicKey,
-      model: this.configService.get<string>('ANTHROPIC_MODEL') || this.DEFAULT_MODELS.anthropic,
+      model:
+        this.configService.get<string>("ANTHROPIC_MODEL") ||
+        this.DEFAULT_MODELS.anthropic,
       enabled: !!anthropicKey,
       priority: 2,
     });
 
     // Google Gemini
-    const googleKey = this.configService.get<string>('GOOGLE_AI_API_KEY');
-    this.providers.set('google', {
-      provider: 'google',
+    const googleKey = this.configService.get<string>("GOOGLE_AI_API_KEY");
+    this.providers.set("google", {
+      provider: "google",
       apiKey: googleKey,
-      model: this.configService.get<string>('GOOGLE_AI_MODEL') || this.DEFAULT_MODELS.google,
+      model:
+        this.configService.get<string>("GOOGLE_AI_MODEL") ||
+        this.DEFAULT_MODELS.google,
       enabled: !!googleKey,
       priority: 3,
     });
 
     // Mistral
-    const mistralKey = this.configService.get<string>('MISTRAL_API_KEY');
-    this.providers.set('mistral', {
-      provider: 'mistral',
+    const mistralKey = this.configService.get<string>("MISTRAL_API_KEY");
+    this.providers.set("mistral", {
+      provider: "mistral",
       apiKey: mistralKey,
-      model: this.configService.get<string>('MISTRAL_MODEL') || this.DEFAULT_MODELS.mistral,
+      model:
+        this.configService.get<string>("MISTRAL_MODEL") ||
+        this.DEFAULT_MODELS.mistral,
       enabled: !!mistralKey,
       priority: 4,
     });
 
     // Cohere
-    const cohereKey = this.configService.get<string>('COHERE_API_KEY');
-    this.providers.set('cohere', {
-      provider: 'cohere',
+    const cohereKey = this.configService.get<string>("COHERE_API_KEY");
+    this.providers.set("cohere", {
+      provider: "cohere",
       apiKey: cohereKey,
-      model: this.configService.get<string>('COHERE_MODEL') || this.DEFAULT_MODELS.cohere,
+      model:
+        this.configService.get<string>("COHERE_MODEL") ||
+        this.DEFAULT_MODELS.cohere,
       enabled: !!cohereKey,
       priority: 5,
     });
 
     // Azure OpenAI
-    const azureKey = this.configService.get<string>('AZURE_OPENAI_API_KEY');
-    const azureEndpoint = this.configService.get<string>('AZURE_OPENAI_ENDPOINT');
-    this.providers.set('azure', {
-      provider: 'azure',
+    const azureKey = this.configService.get<string>("AZURE_OPENAI_API_KEY");
+    const azureEndpoint = this.configService.get<string>(
+      "AZURE_OPENAI_ENDPOINT",
+    );
+    this.providers.set("azure", {
+      provider: "azure",
       apiKey: azureKey,
       endpoint: azureEndpoint,
-      model: this.configService.get<string>('AZURE_OPENAI_DEPLOYMENT') || this.DEFAULT_MODELS.azure,
+      model:
+        this.configService.get<string>("AZURE_OPENAI_DEPLOYMENT") ||
+        this.DEFAULT_MODELS.azure,
       enabled: !!(azureKey && azureEndpoint),
       priority: 6,
     });
 
     // Ollama (local)
-    const ollamaEndpoint = this.configService.get<string>('OLLAMA_ENDPOINT');
-    this.providers.set('ollama', {
-      provider: 'ollama',
-      endpoint: ollamaEndpoint || 'http://localhost:11434',
-      model: this.configService.get<string>('OLLAMA_MODEL') || this.DEFAULT_MODELS.ollama,
-      enabled: !!this.configService.get<string>('OLLAMA_ENABLED'),
+    const ollamaEndpoint = this.configService.get<string>("OLLAMA_ENDPOINT");
+    this.providers.set("ollama", {
+      provider: "ollama",
+      endpoint: ollamaEndpoint || "http://localhost:11434",
+      model:
+        this.configService.get<string>("OLLAMA_MODEL") ||
+        this.DEFAULT_MODELS.ollama,
+      enabled: !!this.configService.get<string>("OLLAMA_ENABLED"),
       priority: 7,
     });
   }
@@ -213,7 +257,7 @@ export class AIService {
    */
   getAvailableProviders(): AIProviderConfig[] {
     return Array.from(this.providers.values())
-      .filter(p => p.enabled)
+      .filter((p) => p.enabled)
       .sort((a, b) => a.priority - b.priority);
   }
 
@@ -225,7 +269,7 @@ export class AIService {
       const pref = this.providers.get(preferred);
       if (pref?.enabled) return pref;
     }
-    
+
     const available = this.getAvailableProviders();
     return available.length > 0 ? available[0] : null;
   }
@@ -233,10 +277,13 @@ export class AIService {
   /**
    * Generate AI response with enterprise-grade error handling
    */
-  async generateResponse(prompt: string, options: AIGenerationOptions = {}): Promise<AIResponse> {
+  async generateResponse(
+    prompt: string,
+    options: AIGenerationOptions = {},
+  ): Promise<AIResponse> {
     const startTime = Date.now();
-    const tenantId = options.tenantId || 'default';
-    
+    const tenantId = options.tenantId || "default";
+
     try {
       // Input validation
       this.validateInput(prompt, options);
@@ -244,12 +291,12 @@ export class AIService {
       // Rate limiting check
       if (!this.checkRateLimit(tenantId)) {
         this.logger.warn(`Rate limit exceeded for tenant: ${tenantId}`);
-        throw new Error('Rate limit exceeded. Please try again later.');
+        throw new Error("Rate limit exceeded. Please try again later.");
       }
 
       // Check circuit breaker
-      if (!this.checkCircuitBreaker('ai-service')) {
-        this.logger.warn('Circuit breaker is open, using fallback');
+      if (!this.checkCircuitBreaker("ai-service")) {
+        this.logger.warn("Circuit breaker is open, using fallback");
         return this.generateSimulatedResponse(prompt);
       }
 
@@ -257,23 +304,31 @@ export class AIService {
       const cacheKey = this.generateCacheKey(prompt, options);
       const cached = this.requestCache.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) {
-        this.logger.debug(`Cache hit for prompt: ${prompt.substring(0, 50)}...`);
+        this.logger.debug(
+          `Cache hit for prompt: ${prompt.substring(0, 50)}...`,
+        );
         return cached.response;
       }
 
       // Get providers to try (preferred first, then by priority)
-      const providersToTry = this.getProvidersToTry(options.preferredProvider, options.forceProvider);
-      
+      const providersToTry = this.getProvidersToTry(
+        options.preferredProvider,
+        options.forceProvider,
+      );
+
       if (providersToTry.length === 0) {
-        this.logger.warn('No AI providers available, using simulated response');
+        this.logger.warn("No AI providers available, using simulated response");
         return this.generateSimulatedResponse(prompt);
       }
 
       // Select model based on tier
-      const modelTier = options.modelTier || 'full';
-      const providersWithModels = providersToTry.map(p => ({
+      const modelTier = options.modelTier || "full";
+      const providersWithModels = providersToTry.map((p) => ({
         ...p,
-        model: modelTier === 'lite' ? (this.LITE_MODELS[p.provider] || p.model) : (p.model || this.DEFAULT_MODELS[p.provider]),
+        model:
+          modelTier === "lite"
+            ? this.LITE_MODELS[p.provider] || p.model
+            : p.model || this.DEFAULT_MODELS[p.provider],
       }));
 
       // Generate response with retry logic and provider fallback
@@ -286,26 +341,54 @@ export class AIService {
             let response: AIResponse;
 
             switch (provider.provider) {
-              case 'openai':
-                response = await this.generateWithOpenAI(prompt, options, provider);
+              case "openai":
+                response = await this.generateWithOpenAI(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
-              case 'anthropic':
-                response = await this.generateWithAnthropic(prompt, options, provider);
+              case "anthropic":
+                response = await this.generateWithAnthropic(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
-              case 'google':
-                response = await this.generateWithGoogle(prompt, options, provider);
+              case "google":
+                response = await this.generateWithGoogle(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
-              case 'mistral':
-                response = await this.generateWithMistral(prompt, options, provider);
+              case "mistral":
+                response = await this.generateWithMistral(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
-              case 'cohere':
-                response = await this.generateWithCohere(prompt, options, provider);
+              case "cohere":
+                response = await this.generateWithCohere(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
-              case 'azure':
-                response = await this.generateWithAzure(prompt, options, provider);
+              case "azure":
+                response = await this.generateWithAzure(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
-              case 'ollama':
-                response = await this.generateWithOllama(prompt, options, provider);
+              case "ollama":
+                response = await this.generateWithOllama(
+                  prompt,
+                  options,
+                  provider,
+                );
                 break;
               default:
                 throw new Error(`Unsupported provider: ${provider.provider}`);
@@ -316,11 +399,13 @@ export class AIService {
             const guardrailResult = this.guardrails.validateResponse(
               response.message,
               context,
-              prompt
+              prompt,
             );
 
             // Sanitize response
-            response.message = this.guardrails.sanitizeResponse(response.message);
+            response.message = this.guardrails.sanitizeResponse(
+              response.message,
+            );
 
             // Use validated response if available
             if (guardrailResult.validatedResponse) {
@@ -328,30 +413,37 @@ export class AIService {
             }
 
             // Log guardrail results
-            if (guardrailResult.warnings.length > 0 || guardrailResult.errors.length > 0) {
+            if (
+              guardrailResult.warnings.length > 0 ||
+              guardrailResult.errors.length > 0
+            ) {
               this.logger.warn(
                 `Guardrail issues detected for tenant ${tenantId}: ` +
-                `Confidence: ${guardrailResult.confidence}%, ` +
-                `Warnings: ${guardrailResult.warnings.length}, ` +
-                `Errors: ${guardrailResult.errors.length}`
+                  `Confidence: ${guardrailResult.confidence}%, ` +
+                  `Warnings: ${guardrailResult.warnings.length}, ` +
+                  `Errors: ${guardrailResult.errors.length}`,
               );
-              
+
               if (guardrailResult.errors.length > 0) {
-                this.logger.error(`Guardrail errors: ${guardrailResult.errors.join('; ')}`);
+                this.logger.error(
+                  `Guardrail errors: ${guardrailResult.errors.join("; ")}`,
+                );
               }
               if (guardrailResult.warnings.length > 0) {
-                this.logger.warn(`Guardrail warnings: ${guardrailResult.warnings.join('; ')}`);
+                this.logger.warn(
+                  `Guardrail warnings: ${guardrailResult.warnings.join("; ")}`,
+                );
               }
             }
 
             // Reject response if guardrails failed
             if (!guardrailResult.passed) {
               this.logger.error(
-                `Response failed guardrails for tenant ${tenantId}. Confidence: ${guardrailResult.confidence}%`
+                `Response failed guardrails for tenant ${tenantId}. Confidence: ${guardrailResult.confidence}%`,
               );
               throw new Error(
                 `Response validation failed. Confidence: ${guardrailResult.confidence}%. ` +
-                `Errors: ${guardrailResult.errors.join('; ')}`
+                  `Errors: ${guardrailResult.errors.join("; ")}`,
               );
             }
 
@@ -375,14 +467,17 @@ export class AIService {
             // Log metrics
             this.logger.log(
               `AI response generated via ${provider.provider}/${provider.model} ` +
-              `in ${response.latency}ms for tenant: ${tenantId} ` +
-              `(Confidence: ${guardrailResult.confidence}%)`
+                `in ${response.latency}ms for tenant: ${tenantId} ` +
+                `(Confidence: ${guardrailResult.confidence}%)`,
             );
 
             return response;
           } catch (error) {
-            lastError = error instanceof Error ? error : new Error(String(error));
-            this.logger.warn(`${provider.provider} attempt ${attempt + 1}/${maxAttempts} failed: ${lastError.message}`);
+            lastError =
+              error instanceof Error ? error : new Error(String(error));
+            this.logger.warn(
+              `${provider.provider} attempt ${attempt + 1}/${maxAttempts} failed: ${lastError.message}`,
+            );
 
             if (attempt < maxAttempts - 1) {
               // Exponential backoff
@@ -391,19 +486,26 @@ export class AIService {
             }
           }
         }
-        
+
         // Record failure for this provider
         this.recordFailure(`ai-${provider.provider}`);
-        this.logger.warn(`All attempts failed for ${provider.provider}, trying next provider...`);
+        this.logger.warn(
+          `All attempts failed for ${provider.provider}, trying next provider...`,
+        );
       }
 
       // All providers and retries failed
-      this.logger.error(`All providers failed. Last error: ${lastError?.message}`);
+      this.logger.error(
+        `All providers failed. Last error: ${lastError?.message}`,
+      );
 
       // Fallback to simulated response
       return this.generateSimulatedResponse(prompt);
     } catch (error) {
-      this.logger.error(`Error generating AI response: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
+      this.logger.error(
+        `Error generating AI response: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -412,26 +514,34 @@ export class AIService {
    * Validate input parameters
    */
   private validateInput(prompt: string, options: AIGenerationOptions): void {
-    if (!prompt || typeof prompt !== 'string') {
-      throw new Error('Prompt must be a non-empty string');
+    if (!prompt || typeof prompt !== "string") {
+      throw new Error("Prompt must be a non-empty string");
     }
 
     if (prompt.length > 10000) {
-      throw new Error('Prompt exceeds maximum length of 10,000 characters');
+      throw new Error("Prompt exceeds maximum length of 10,000 characters");
     }
 
-    if (options.maxTokens && (options.maxTokens < 1 || options.maxTokens > this.maxTokensPerRequest)) {
-      throw new Error(`maxTokens must be between 1 and ${this.maxTokensPerRequest}`);
+    if (
+      options.maxTokens &&
+      (options.maxTokens < 1 || options.maxTokens > this.maxTokensPerRequest)
+    ) {
+      throw new Error(
+        `maxTokens must be between 1 and ${this.maxTokensPerRequest}`,
+      );
     }
 
-    if (options.temperature && (options.temperature < 0 || options.temperature > 2)) {
-      throw new Error('Temperature must be between 0 and 2');
+    if (
+      options.temperature &&
+      (options.temperature < 0 || options.temperature > 2)
+    ) {
+      throw new Error("Temperature must be between 0 and 2");
     }
 
     // Sanitize prompt (remove potential injection attempts)
     if (this.containsSuspiciousContent(prompt)) {
-      this.logger.warn('Suspicious content detected in prompt');
-      throw new Error('Invalid input detected');
+      this.logger.warn("Suspicious content detected in prompt");
+      throw new Error("Invalid input detected");
     }
   }
 
@@ -448,7 +558,7 @@ export class AIService {
       /exec\(/i,
     ];
 
-    return suspiciousPatterns.some(pattern => pattern.test(prompt));
+    return suspiciousPatterns.some((pattern) => pattern.test(prompt));
   }
 
   /**
@@ -483,13 +593,13 @@ export class AIService {
     const breaker = this.circuitBreakers.get(service) || {
       failures: 0,
       lastFailureTime: 0,
-      state: 'closed' as const,
+      state: "closed" as const,
     };
 
-    if (breaker.state === 'open') {
+    if (breaker.state === "open") {
       const timeSinceLastFailure = Date.now() - breaker.lastFailureTime;
       if (timeSinceLastFailure > this.CIRCUIT_BREAKER_RESET_TIMEOUT) {
-        breaker.state = 'half-open';
+        breaker.state = "half-open";
         breaker.failures = 0;
       } else {
         return false;
@@ -507,7 +617,7 @@ export class AIService {
     const breaker = this.circuitBreakers.get(service);
     if (breaker) {
       breaker.failures = 0;
-      breaker.state = 'closed';
+      breaker.state = "closed";
       this.circuitBreakers.set(service, breaker);
     }
   }
@@ -519,15 +629,17 @@ export class AIService {
     const breaker = this.circuitBreakers.get(service) || {
       failures: 0,
       lastFailureTime: 0,
-      state: 'closed' as const,
+      state: "closed" as const,
     };
 
     breaker.failures++;
     breaker.lastFailureTime = Date.now();
 
     if (breaker.failures >= this.CIRCUIT_BREAKER_FAILURE_THRESHOLD) {
-      breaker.state = 'open';
-      this.logger.warn(`Circuit breaker opened for ${service} after ${breaker.failures} failures`);
+      breaker.state = "open";
+      this.logger.warn(
+        `Circuit breaker opened for ${service} after ${breaker.failures} failures`,
+      );
     }
 
     this.circuitBreakers.set(service, breaker);
@@ -554,101 +666,123 @@ export class AIService {
 
     // Log if approaching limits (e.g., 100k tokens/day)
     if (usage.total > 80000) {
-      this.logger.warn(`High token usage for tenant ${tenantId}: ${usage.total} tokens`);
+      this.logger.warn(
+        `High token usage for tenant ${tenantId}: ${usage.total} tokens`,
+      );
     }
   }
 
   /**
    * Generate cache key
    */
-  private generateCacheKey(prompt: string, options: AIGenerationOptions): string {
+  private generateCacheKey(
+    prompt: string,
+    options: AIGenerationOptions,
+  ): string {
     const key = `${prompt.substring(0, 100)}_${options.temperature || 0.7}_${options.maxTokens || 2000}`;
-    return Buffer.from(key).toString('base64').substring(0, 50);
+    return Buffer.from(key).toString("base64").substring(0, 50);
   }
 
   /**
    * Sleep utility
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Get ordered list of providers to try
    */
-  private getProvidersToTry(preferred?: AIProvider, forceProvider?: boolean): AIProviderConfig[] {
+  private getProvidersToTry(
+    preferred?: AIProvider,
+    forceProvider?: boolean,
+  ): AIProviderConfig[] {
     const available = this.getAvailableProviders();
-    
+
     if (preferred && forceProvider) {
       const pref = this.providers.get(preferred);
       return pref?.enabled ? [pref] : [];
     }
-    
+
     if (preferred) {
       const pref = this.providers.get(preferred);
       if (pref?.enabled) {
-        return [pref, ...available.filter(p => p.provider !== preferred)];
+        return [pref, ...available.filter((p) => p.provider !== preferred)];
       }
     }
-    
+
     return available;
   }
 
   /**
    * Generate response with OpenAI
    */
-  private async generateWithOpenAI(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithOpenAI(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`,
+      const fetch = (await import("node-fetch")).default;
+
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${config.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: config.model || this.DEFAULT_MODELS.openai,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.",
+              },
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+            temperature: options.temperature || 0.7,
+            max_tokens: Math.min(
+              options.maxTokens || 2000,
+              this.maxTokensPerRequest,
+            ),
+            stream: options.stream || false,
+          }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({
-          model: config.model || this.DEFAULT_MODELS.openai,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: options.temperature || 0.7,
-          max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
-          stream: options.stream || false,
-        }),
-        signal: controller.signal,
-      });
+      );
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error?.message || response.statusText;
-        
+
         // Handle specific error codes
         if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please try again later.');
+          throw new Error("Rate limit exceeded. Please try again later.");
         } else if (response.status === 401) {
-          throw new Error('Invalid API key');
+          throw new Error("Invalid API key");
         } else if (response.status >= 500) {
-          throw new Error('AI service temporarily unavailable');
+          throw new Error("AI service temporarily unavailable");
         }
-        
+
         throw new Error(`OpenAI API error: ${errorMessage}`);
       }
 
       const data = await response.json();
-      const message = data.choices[0]?.message?.content || '';
+      const message = data.choices[0]?.message?.content || "";
       const usage = data.usage || {};
 
       // Parse structured data
@@ -665,8 +799,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -675,30 +809,41 @@ export class AIService {
   /**
    * Generate response with Anthropic
    */
-  private async generateWithAnthropic(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithAnthropic(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
-      
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
+      const fetch = (await import("node-fetch")).default;
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': config.apiKey!,
-          'anthropic-version': '2023-06-01',
+          "Content-Type": "application/json",
+          "x-api-key": config.apiKey!,
+          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
           model: config.model || this.DEFAULT_MODELS.anthropic,
-          max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+          max_tokens: Math.min(
+            options.maxTokens || 2000,
+            this.maxTokensPerRequest,
+          ),
           messages: [
             {
-              role: 'user',
+              role: "user",
               content: prompt,
             },
           ],
-          system: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+          system:
+            "You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.",
         }),
         signal: controller.signal,
       });
@@ -708,20 +853,20 @@ export class AIService {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error?.message || response.statusText;
-        
+
         if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please try again later.');
+          throw new Error("Rate limit exceeded. Please try again later.");
         } else if (response.status === 401) {
-          throw new Error('Invalid API key');
+          throw new Error("Invalid API key");
         } else if (response.status >= 500) {
-          throw new Error('AI service temporarily unavailable');
+          throw new Error("AI service temporarily unavailable");
         }
-        
+
         throw new Error(`Anthropic API error: ${errorMessage}`);
       }
 
       const data = await response.json();
-      const message = data.content[0]?.text || '';
+      const message = data.content[0]?.text || "";
       const usage = data.usage || {};
 
       const parsed = this.parseStructuredResponse(message);
@@ -737,8 +882,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -747,44 +892,60 @@ export class AIService {
   /**
    * Generate response with Google Gemini
    */
-  private async generateWithGoogle(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithGoogle(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
+      const fetch = (await import("node-fetch")).default;
       const model = config.model || this.DEFAULT_MODELS.google;
-      
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [
               {
-                role: 'user',
-                parts: [{ text: `You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.\n\n${prompt}` }],
+                role: "user",
+                parts: [
+                  {
+                    text: `You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.\n\n${prompt}`,
+                  },
+                ],
               },
             ],
             generationConfig: {
               temperature: options.temperature || 0.7,
-              maxOutputTokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+              maxOutputTokens: Math.min(
+                options.maxTokens || 2000,
+                this.maxTokensPerRequest,
+              ),
             },
           }),
           signal: controller.signal,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Google AI API error: ${errorData.error?.message || response.statusText}`);
+        throw new Error(
+          `Google AI API error: ${errorData.error?.message || response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      const message = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const message = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
       const usage = data.usageMetadata || {};
 
       const parsed = this.parseStructuredResponse(message);
@@ -800,8 +961,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -810,43 +971,59 @@ export class AIService {
   /**
    * Generate response with Mistral AI
    */
-  private async generateWithMistral(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithMistral(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
-      
-      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`,
+      const fetch = (await import("node-fetch")).default;
+
+      const response = await fetch(
+        "https://api.mistral.ai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${config.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: config.model || this.DEFAULT_MODELS.mistral,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.",
+              },
+              { role: "user", content: prompt },
+            ],
+            temperature: options.temperature || 0.7,
+            max_tokens: Math.min(
+              options.maxTokens || 2000,
+              this.maxTokensPerRequest,
+            ),
+          }),
+          signal: controller.signal,
         },
-        body: JSON.stringify({
-          model: config.model || this.DEFAULT_MODELS.mistral,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
-            },
-            { role: 'user', content: prompt },
-          ],
-          temperature: options.temperature || 0.7,
-          max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
-        }),
-        signal: controller.signal,
-      });
+      );
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Mistral API error: ${errorData.message || response.statusText}`);
+        throw new Error(
+          `Mistral API error: ${errorData.message || response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      const message = data.choices?.[0]?.message?.content || '';
+      const message = data.choices?.[0]?.message?.content || "";
       const usage = data.usage || {};
 
       const parsed = this.parseStructuredResponse(message);
@@ -862,8 +1039,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -872,25 +1049,36 @@ export class AIService {
   /**
    * Generate response with Cohere
    */
-  private async generateWithCohere(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithCohere(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
-      
-      const response = await fetch('https://api.cohere.ai/v1/chat', {
-        method: 'POST',
+      const fetch = (await import("node-fetch")).default;
+
+      const response = await fetch("https://api.cohere.ai/v1/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
           model: config.model || this.DEFAULT_MODELS.cohere,
           message: prompt,
-          preamble: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+          preamble:
+            "You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.",
           temperature: options.temperature || 0.7,
-          max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+          max_tokens: Math.min(
+            options.maxTokens || 2000,
+            this.maxTokensPerRequest,
+          ),
         }),
         signal: controller.signal,
       });
@@ -899,11 +1087,13 @@ export class AIService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Cohere API error: ${errorData.message || response.statusText}`);
+        throw new Error(
+          `Cohere API error: ${errorData.message || response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      const message = data.text || '';
+      const message = data.text || "";
       const usage = data.meta?.tokens || {};
 
       const parsed = this.parseStructuredResponse(message);
@@ -919,8 +1109,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -929,46 +1119,59 @@ export class AIService {
   /**
    * Generate response with Azure OpenAI
    */
-  private async generateWithAzure(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithAzure(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
+      const fetch = (await import("node-fetch")).default;
       const deployment = config.model || this.DEFAULT_MODELS.azure;
-      
+
       const response = await fetch(
         `${config.endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'api-key': config.apiKey!,
+            "Content-Type": "application/json",
+            "api-key": config.apiKey!,
           },
           body: JSON.stringify({
             messages: [
               {
-                role: 'system',
-                content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+                role: "system",
+                content:
+                  "You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.",
               },
-              { role: 'user', content: prompt },
+              { role: "user", content: prompt },
             ],
             temperature: options.temperature || 0.7,
-            max_tokens: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+            max_tokens: Math.min(
+              options.maxTokens || 2000,
+              this.maxTokensPerRequest,
+            ),
           }),
           signal: controller.signal,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Azure OpenAI API error: ${errorData.error?.message || response.statusText}`);
+        throw new Error(
+          `Azure OpenAI API error: ${errorData.error?.message || response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      const message = data.choices?.[0]?.message?.content || '';
+      const message = data.choices?.[0]?.message?.content || "";
       const usage = data.usage || {};
 
       const parsed = this.parseStructuredResponse(message);
@@ -984,8 +1187,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -994,30 +1197,41 @@ export class AIService {
   /**
    * Generate response with Ollama (local)
    */
-  private async generateWithOllama(prompt: string, options: AIGenerationOptions, config: AIProviderConfig): Promise<AIResponse> {
+  private async generateWithOllama(
+    prompt: string,
+    options: AIGenerationOptions,
+    config: AIProviderConfig,
+  ): Promise<AIResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.requestTimeout);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      options.timeout || this.requestTimeout,
+    );
 
     try {
-      const fetch = (await import('node-fetch')).default;
-      const endpoint = config.endpoint || 'http://localhost:11434';
-      
+      const fetch = (await import("node-fetch")).default;
+      const endpoint = config.endpoint || "http://localhost:11434";
+
       const response = await fetch(`${endpoint}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: config.model || this.DEFAULT_MODELS.ollama,
           messages: [
             {
-              role: 'system',
-              content: 'You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.',
+              role: "system",
+              content:
+                "You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning.",
             },
-            { role: 'user', content: prompt },
+            { role: "user", content: prompt },
           ],
           stream: false,
           options: {
             temperature: options.temperature || 0.7,
-            num_predict: Math.min(options.maxTokens || 2000, this.maxTokensPerRequest),
+            num_predict: Math.min(
+              options.maxTokens || 2000,
+              this.maxTokensPerRequest,
+            ),
           },
         }),
         signal: controller.signal,
@@ -1027,11 +1241,13 @@ export class AIService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Ollama API error: ${errorData.error || response.statusText}`);
+        throw new Error(
+          `Ollama API error: ${errorData.error || response.statusText}`,
+        );
       }
 
       const data = await response.json();
-      const message = data.message?.content || '';
+      const message = data.message?.content || "";
 
       const parsed = this.parseStructuredResponse(message);
 
@@ -1046,8 +1262,8 @@ export class AIService {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout");
       }
       throw error;
     }
@@ -1056,14 +1272,19 @@ export class AIService {
   /**
    * Parse structured response with validation
    */
-  private parseStructuredResponse(message: string): { initiatives?: any[]; okrs?: any[] } {
+  private parseStructuredResponse(message: string): {
+    initiatives?: any[];
+    okrs?: any[];
+  } {
     try {
       // Try to extract JSON from markdown code blocks
-      const jsonMatch = message.match(/```json\s*([\s\S]*?)\s*```/) || message.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonMatch =
+        message.match(/```json\s*([\s\S]*?)\s*```/) ||
+        message.match(/```\s*([\s\S]*?)\s*```/);
       if (jsonMatch) {
         const jsonStr = jsonMatch[1].trim();
         const parsed = JSON.parse(jsonStr);
-        
+
         // Validate and sanitize
         if (Array.isArray(parsed)) {
           if (parsed.length > 0 && parsed[0].name) {
@@ -1084,7 +1305,8 @@ export class AIService {
       const directJsonMatch = message.match(/\{[\s\S]*\}/);
       if (directJsonMatch) {
         const parsed = JSON.parse(directJsonMatch[0]);
-        if (parsed.initiatives) return { initiatives: this.validateInitiatives(parsed.initiatives) };
+        if (parsed.initiatives)
+          return { initiatives: this.validateInitiatives(parsed.initiatives) };
         if (parsed.okrs) return { okrs: this.validateOKRs(parsed.okrs) };
         if (parsed.objective) return { okrs: this.validateOKRs([parsed]) };
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].name) {
@@ -1092,7 +1314,9 @@ export class AIService {
         }
       }
     } catch (error) {
-      this.logger.warn(`Failed to parse structured response: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(
+        `Failed to parse structured response: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
 
     return {};
@@ -1103,23 +1327,41 @@ export class AIService {
    */
   private validateInitiatives(initiatives: any[]): any[] {
     return initiatives
-      .filter(init => init && typeof init === 'object')
+      .filter((init) => init && typeof init === "object")
       .slice(0, 10) // Limit to 10 initiatives
-      .map(init => ({
-        name: String(init.name || init.nameEn || 'New Initiative').substring(0, 200),
-        nameEn: String(init.nameEn || init.name || 'New Initiative').substring(0, 200),
-        category: ['growth', 'operations', 'product', 'people', 'infrastructure'].includes(init.category) 
-          ? init.category 
-          : 'operations',
-        description: String(init.description || '').substring(0, 1000),
+      .map((init) => ({
+        name: String(init.name || init.nameEn || "New Initiative").substring(
+          0,
+          200,
+        ),
+        nameEn: String(init.nameEn || init.name || "New Initiative").substring(
+          0,
+          200,
+        ),
+        category: [
+          "growth",
+          "operations",
+          "product",
+          "people",
+          "infrastructure",
+        ].includes(init.category)
+          ? init.category
+          : "operations",
+        description: String(init.description || "").substring(0, 1000),
         startDate: this.validateDate(init.startDate),
         endDate: this.validateDate(init.endDate),
         cashImpact: {
-          type: ['one_time', 'recurring'].includes(init.cashImpact?.type) 
-            ? init.cashImpact.type 
-            : 'one_time',
-          amount: this.validateNumber(init.cashImpact?.amount, -10000000, 10000000),
-          frequency: ['monthly', 'quarterly', 'annual'].includes(init.cashImpact?.frequency)
+          type: ["one_time", "recurring"].includes(init.cashImpact?.type)
+            ? init.cashImpact.type
+            : "one_time",
+          amount: this.validateNumber(
+            init.cashImpact?.amount,
+            -10000000,
+            10000000,
+          ),
+          frequency: ["monthly", "quarterly", "annual"].includes(
+            init.cashImpact?.frequency,
+          )
             ? init.cashImpact.frequency
             : undefined,
         },
@@ -1132,20 +1374,41 @@ export class AIService {
    */
   private validateOKRs(okrs: any[]): any[] {
     return okrs
-      .filter(okr => okr && typeof okr === 'object')
+      .filter((okr) => okr && typeof okr === "object")
       .slice(0, 5) // Limit to 5 OKRs
-      .map(okr => ({
-        objective: String(okr.objective || okr.objectiveEn || '').substring(0, 500),
-        objectiveEn: String(okr.objectiveEn || okr.objective || '').substring(0, 500),
-        quarter: ['Q1', 'Q2', 'Q3', 'Q4'].includes(okr.quarter) ? okr.quarter : 'Q1',
-        year: this.validateNumber(okr.year, 2020, 2100, new Date().getFullYear()),
+      .map((okr) => ({
+        objective: String(okr.objective || okr.objectiveEn || "").substring(
+          0,
+          500,
+        ),
+        objectiveEn: String(okr.objectiveEn || okr.objective || "").substring(
+          0,
+          500,
+        ),
+        quarter: ["Q1", "Q2", "Q3", "Q4"].includes(okr.quarter)
+          ? okr.quarter
+          : "Q1",
+        year: this.validateNumber(
+          okr.year,
+          2020,
+          2100,
+          new Date().getFullYear(),
+        ),
         keyResults: (okr.keyResults || [])
           .slice(0, 10) // Limit to 10 key results per OKR
           .map((kr: any) => ({
-            description: String(kr.description || kr.descriptionEn || '').substring(0, 500),
-            descriptionEn: String(kr.descriptionEn || kr.description || '').substring(0, 500),
-            targetValue: this.validateNumber(kr.targetValue, -1000000000, 1000000000),
-            unit: String(kr.unit || 'number').substring(0, 50),
+            description: String(
+              kr.description || kr.descriptionEn || "",
+            ).substring(0, 500),
+            descriptionEn: String(
+              kr.descriptionEn || kr.description || "",
+            ).substring(0, 500),
+            targetValue: this.validateNumber(
+              kr.targetValue,
+              -1000000000,
+              1000000000,
+            ),
+            unit: String(kr.unit || "number").substring(0, 50),
             dueDate: this.validateDate(kr.dueDate),
             confidence: this.validateNumber(kr.confidence, 0, 100, 75),
           })),
@@ -1158,14 +1421,24 @@ export class AIService {
   private validateDate(dateStr: any): string {
     if (!dateStr) return new Date().toISOString();
     const date = new Date(dateStr);
-    return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    return isNaN(date.getTime())
+      ? new Date().toISOString()
+      : date.toISOString();
   }
 
   /**
    * Validate number within range
    */
-  private validateNumber(value: any, min: number, max: number, defaultValue?: number): number {
-    const num = typeof value === 'number' ? value : parseFloat(String(value || defaultValue || 0));
+  private validateNumber(
+    value: any,
+    min: number,
+    max: number,
+    defaultValue?: number,
+  ): number {
+    const num =
+      typeof value === "number"
+        ? value
+        : parseFloat(String(value || defaultValue || 0));
     if (isNaN(num)) return defaultValue || 0;
     return Math.max(min, Math.min(max, num));
   }
@@ -1177,11 +1450,22 @@ export class AIService {
     const lowerPrompt = prompt.toLowerCase();
 
     // Handle hiring/budget questions
-    if (lowerPrompt.includes('hire') || lowerPrompt.includes('budget') || lowerPrompt.includes('designer') || lowerPrompt.includes('developer') || lowerPrompt.includes('employee')) {
-      const role = lowerPrompt.includes('designer') ? 'designer' : lowerPrompt.includes('developer') ? 'developer' : 'new team member';
-      const avgSalary = role === 'designer' ? 85000 : role === 'developer' ? 120000 : 95000;
+    if (
+      lowerPrompt.includes("hire") ||
+      lowerPrompt.includes("budget") ||
+      lowerPrompt.includes("designer") ||
+      lowerPrompt.includes("developer") ||
+      lowerPrompt.includes("employee")
+    ) {
+      const role = lowerPrompt.includes("designer")
+        ? "designer"
+        : lowerPrompt.includes("developer")
+          ? "developer"
+          : "new team member";
+      const avgSalary =
+        role === "designer" ? 85000 : role === "developer" ? 120000 : 95000;
       const monthlyCost = Math.round(avgSalary / 12);
-      
+
       return {
         message: `## Hiring Analysis: ${role.charAt(0).toUpperCase() + role.slice(1)}
 
@@ -1214,7 +1498,11 @@ Would you like me to create an initiative to track this hiring decision?`,
     }
 
     // Handle runway/burn rate questions
-    if (lowerPrompt.includes('runway') || lowerPrompt.includes('burn') || lowerPrompt.includes('how long')) {
+    if (
+      lowerPrompt.includes("runway") ||
+      lowerPrompt.includes("burn") ||
+      lowerPrompt.includes("how long")
+    ) {
       return {
         message: `## Runway & Burn Rate Analysis
 
@@ -1250,7 +1538,12 @@ Would you like me to generate initiatives to extend your runway or accelerate re
     }
 
     // Handle cost reduction questions
-    if (lowerPrompt.includes('reduce') || lowerPrompt.includes('cost') || lowerPrompt.includes('save') || lowerPrompt.includes('cut')) {
+    if (
+      lowerPrompt.includes("reduce") ||
+      lowerPrompt.includes("cost") ||
+      lowerPrompt.includes("save") ||
+      lowerPrompt.includes("cut")
+    ) {
       return {
         message: `## Cost Optimization Strategies
 
@@ -1277,21 +1570,28 @@ Would you like me to create initiatives for specific cost reduction areas?`,
     }
 
     // Handle initiative generation
-    if (lowerPrompt.includes('initiative') || lowerPrompt.includes('generate initiative')) {
+    if (
+      lowerPrompt.includes("initiative") ||
+      lowerPrompt.includes("generate initiative")
+    ) {
       return {
-        message: "I've generated strategic initiatives based on your goals. These initiatives are designed to improve your cash position while advancing your strategic objectives.",
+        message:
+          "I've generated strategic initiatives based on your goals. These initiatives are designed to improve your cash position while advancing your strategic objectives.",
         initiatives: [
           {
-            name: 'Revenue Optimization',
-            nameEn: 'Revenue Optimization',
-            category: 'growth',
-            description: 'Focus on optimizing existing revenue streams and identifying quick wins.',
+            name: "Revenue Optimization",
+            nameEn: "Revenue Optimization",
+            category: "growth",
+            description:
+              "Focus on optimizing existing revenue streams and identifying quick wins.",
             startDate: new Date().toISOString(),
-            endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+            endDate: new Date(
+              Date.now() + 90 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
             cashImpact: {
-              type: 'recurring',
+              type: "recurring",
               amount: 50000,
-              frequency: 'monthly',
+              frequency: "monthly",
             },
             confidence: 75,
           },
@@ -1300,22 +1600,25 @@ Would you like me to create initiatives for specific cost reduction areas?`,
     }
 
     // Handle OKR generation
-    if (lowerPrompt.includes('okr') || lowerPrompt.includes('objective')) {
+    if (lowerPrompt.includes("okr") || lowerPrompt.includes("objective")) {
       return {
-        message: "I've created OKRs aligned with your strategic initiatives. These objectives are measurable and tied to your quarterly goals.",
+        message:
+          "I've created OKRs aligned with your strategic initiatives. These objectives are measurable and tied to your quarterly goals.",
         okrs: [
           {
-            objective: 'Extend Cash Runway',
-            objectiveEn: 'Extend Cash Runway',
-            quarter: 'Q1',
+            objective: "Extend Cash Runway",
+            objectiveEn: "Extend Cash Runway",
+            quarter: "Q1",
             year: new Date().getFullYear(),
             keyResults: [
               {
-                description: 'Reduce monthly burn rate by 20%',
-                descriptionEn: 'Reduce monthly burn rate by 20%',
+                description: "Reduce monthly burn rate by 20%",
+                descriptionEn: "Reduce monthly burn rate by 20%",
                 targetValue: 20,
-                unit: 'percentage',
-                dueDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                unit: "percentage",
+                dueDate: new Date(
+                  Date.now() + 90 * 24 * 60 * 60 * 1000,
+                ).toISOString(),
                 confidence: 75,
               },
             ],
@@ -1325,7 +1628,11 @@ Would you like me to create initiatives for specific cost reduction areas?`,
     }
 
     // Handle revenue questions
-    if (lowerPrompt.includes('revenue') || lowerPrompt.includes('grow') || lowerPrompt.includes('increase')) {
+    if (
+      lowerPrompt.includes("revenue") ||
+      lowerPrompt.includes("grow") ||
+      lowerPrompt.includes("increase")
+    ) {
       return {
         message: `## Revenue Growth Strategies
 

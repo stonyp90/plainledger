@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlainLedger - Complete Platform Architecture</title>
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --success: #00d9a5;
+            --warning: #ffc93c;
+            --light: #f8f9fa;
+            --text: #333;
+            --text-muted: #6c757d;
+            --quickbooks: #2CA01C;
+            --xero: #13B5EA;
+            --sage: #00DC00;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--light);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        header .date {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        
+        .badge-draft {
+            background: var(--warning);
+            color: var(--primary);
+        }
+        
+        section {
+            padding: 60px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        section:nth-child(even) {
+            background: white;
+        }
+        
+        h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--highlight);
+            display: inline-block;
+        }
+        
+        h3 {
+            color: var(--secondary);
+            font-size: 1.3rem;
+            margin: 25px 0 15px 0;
+        }
+        
+        h4 {
+            color: var(--secondary);
+            font-size: 1.1rem;
+            margin: 20px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4edda 100%);
+            border-left: 4px solid var(--success);
+            padding: 20px 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+            border-left: 4px solid var(--warning);
+            padding: 20px 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e7f1ff 0%, #cce5ff 100%);
+            border-left: 4px solid #007bff;
+            padding: 20px 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        
+        .quickbooks-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-left: 4px solid var(--quickbooks);
+            padding: 20px 25px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .cost-highlight {
+            background: #d4edda !important;
+            font-weight: 600;
+        }
+        
+        .cost-warning {
+            background: #fff3cd !important;
+        }
+        
+        .cost-danger {
+            background: #f8d7da !important;
+        }
+        
+        .architecture-diagram {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 30px 0;
+        }
+        
+        .flow-step {
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 150px;
+        }
+        
+        .flow-step.quickbooks {
+            background: var(--quickbooks);
+        }
+        
+        .flow-step.xero {
+            background: var(--xero);
+        }
+        
+        .flow-step.aws {
+            background: #FF9900;
+        }
+        
+        .flow-step.azure {
+            background: #0078D4;
+        }
+        
+        .flow-step.powerbi {
+            background: #F2C811;
+            color: #333;
+        }
+        
+        .flow-arrow {
+            font-size: 2rem;
+            color: var(--highlight);
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .card-icon.quickbooks {
+            background: var(--quickbooks);
+        }
+        
+        .card-icon.xero {
+            background: var(--xero);
+        }
+        
+        .card-icon.sage {
+            background: var(--sage);
+        }
+        
+        .card-icon.aws {
+            background: #FF9900;
+        }
+        
+        ul {
+            margin: 15px 0 15px 25px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .check {
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .cross {
+            color: var(--highlight);
+            font-weight: bold;
+        }
+        
+        .toc {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin: 30px 0;
+        }
+        
+        .toc h3 {
+            margin-top: 0;
+        }
+        
+        .toc ol {
+            margin-left: 20px;
+        }
+        
+        .toc li {
+            margin-bottom: 10px;
+        }
+        
+        .toc a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+        
+        footer p {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .signature-block {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #333;
+            width: 300px;
+            margin: 40px 0 10px 0;
+        }
+        
+        .data-layer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .data-layer.bronze {
+            background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+        }
+        
+        .data-layer.silver {
+            background: linear-gradient(135deg, #C0C0C0 0%, #808080 100%);
+        }
+        
+        .data-layer.gold {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #333;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            border-left: 3px solid var(--accent);
+            margin: 30px 0;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 20px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -36px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+        
+        .timeline-item h4 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .timeline-item .time {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 40px 0;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        @media print {
+            header {
+                padding: 30px 0;
+            }
+            section {
+                padding: 30px 0;
+                page-break-inside: avoid;
+            }
+            .architecture-diagram {
+                font-size: 0.7rem;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>PlainLedger Complete Platform Architecture</h1>
+            <p class="subtitle">Data Source Integration + S3 Data Lake + Power BI Analytics</p>
+            <span class="badge badge-draft">Technical Review Document</span>
+            <p class="date">Prepared: January 2026</p>
+        </div>
+    </header>
+    
+    <section>
+        <div class="container">
+            <nav class="toc">
+                <h3>Table of Contents</h3>
+                <ol>
+                    <li><a href="#executive-summary">Executive Summary</a></li>
+                    <li><a href="#dual-analytics">Dual Analytics Systems &amp; Visibility Controls</a></li>
+                    <li><a href="#data-sources">Data Source Connections &amp; Integration Permissions</a></li>
+                    <li><a href="#oauth-management">OAuth Token Management Per Org/Business Unit</a></li>
+                    <li><a href="#data-lake">S3 Data Lake Architecture</a></li>
+                    <li><a href="#data-pipeline">Data Pipeline &amp; Transformations</a></li>
+                    <li><a href="#analytics">Power BI Analytics Integration</a></li>
+                    <li><a href="#security">Security Model</a></li>
+                    <li><a href="#cost-deep-dive">Detailed Cost Analysis (Egress &amp; API)</a></li>
+                    <li><a href="#industry-analytics">Industry-Specific Analytics &amp; Tax Credits</a></li>
+                    <li><a href="#implementation">Implementation Phases</a></li>
+                    <li><a href="#approval">Approval</a></li>
+                </ol>
+            </nav>
+        </div>
+    </section>
+
+    <section id="executive-summary">
+        <div class="container">
+            <h2>1. Executive Summary</h2>
+            
+            <div class="highlight-box">
+                <strong>PlainLedger Platform:</strong> A multi-tenant financial reporting platform that connects to accounting software 
+                (QuickBooks, Xero, Sage), stores data in an AWS S3 data lake, and provides embedded Power BI analytics - 
+                all secured through Keycloak SSO with organization and business unit level access control.
+            </div>
+            
+            <h3>End-to-End Data Flow</h3>
+            <div class="flow-diagram">
+                <div class="flow-step quickbooks">
+                    <strong>QuickBooks</strong><br>
+                    (Per Org/BU)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step aws">
+                    <strong>S3 Data Lake</strong><br>
+                    (Bronze/Silver/Gold)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step azure">
+                    <strong>Azure Blob</strong><br>
+                    (Delta Sync)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step powerbi">
+                    <strong>Power BI</strong><br>
+                    (Embedded)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">
+                    <strong>User</strong><br>
+                    (RLS Filtered)
+                </div>
+            </div>
+            
+            <h3>Key Architecture Decisions</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-icon quickbooks">Q</div>
+                    <h4>One OAuth Token Per Connection</h4>
+                    <p>Each QuickBooks company requires its own OAuth token. Tokens are stored securely and associated with organization + business unit.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon aws">S3</div>
+                    <h4>Tenant-Partitioned Data Lake</h4>
+                    <p>S3 data is partitioned by <code>organization_id/business_unit_id</code> for efficient querying and data isolation.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔐</div>
+                    <h4>Single Identity (Keycloak)</h4>
+                    <p>Users authenticate only via Keycloak. No Azure AD accounts. One Power BI service principal owns all content.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📈</div>
+                    <h4>Server-Side RLS</h4>
+                    <p>Power BI Row-Level Security enforced server-side. Users cannot bypass data filters even with browser dev tools.</p>
+                </div>
+            </div>
+            
+            <h3>What This Architecture Provides</h3>
+            <ul>
+                <li><span class="check">✓</span> Single sign-on via Keycloak (users don't need Microsoft accounts)</li>
+                <li><span class="check">✓</span> Flat licensing cost (scales by capacity, not users)</li>
+                <li><span class="check">✓</span> Multi-level filtering (Organization + Business Unit)</li>
+                <li><span class="check">✓</span> Server-side security (cannot be bypassed)</li>
+                <li><span class="check">✓</span> Full white-label capability</li>
+                <li><span class="check">✓</span> Flexible integration management (CPA-managed or customer self-service)</li>
+                <li><span class="check">✓</span> Granular permissions for data source connections per org/BU</li>
+            </ul>
+            
+            <h3>What This Is NOT</h3>
+            <ul>
+                <li><span class="cross">✗</span> Users do NOT need Microsoft/Azure AD accounts</li>
+                <li><span class="cross">✗</span> We do NOT pay per-user Power BI licenses</li>
+                <li><span class="cross">✗</span> Data is NOT filtered client-side (secure)</li>
+                <li><span class="cross">✗</span> No identity synchronization between Keycloak and Azure AD</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="dual-analytics">
+        <div class="container">
+            <h2>2. Dual Analytics Systems</h2>
+            
+            <div class="highlight-box">
+                <strong>Two Independent Analytics Offerings:</strong> PlainLedger provides two distinct analytics systems 
+                that can be enabled or disabled independently per organization. This allows tailored offerings based on 
+                client needs and subscription tier.
+            </div>
+            
+            <h3>Analytics Systems Comparison</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #1a1a2e, #16213e); color: white;">PL</div>
+                    <h4>PlainLedger Analytics (Native)</h4>
+                    <p><strong>Built-in financial dashboards and AI-powered insights</strong></p>
+                    <ul>
+                        <li><span class="check">✓</span> Dashboard with KPIs and charts</li>
+                        <li><span class="check">✓</span> Balance Sheet, Income Statement, Cash Flow</li>
+                        <li><span class="check">✓</span> AI-powered anomaly detection</li>
+                        <li><span class="check">✓</span> AI recommendations and insights</li>
+                        <li><span class="check">✓</span> Trial Balance and financial reports</li>
+                    </ul>
+                    <p style="margin-top: 15px; font-size: 0.9em; color: var(--text-muted);">
+                        <em>Best for: Standard financial reporting, anomaly detection, smaller clients</em>
+                    </p>
+                </div>
+                <div class="card">
+                    <div class="card-icon powerbi">BI</div>
+                    <h4>Power BI Analytics (Embedded)</h4>
+                    <p><strong>Advanced visualizations with Power BI Embedded</strong></p>
+                    <ul>
+                        <li><span class="check">✓</span> Custom interactive dashboards</li>
+                        <li><span class="check">✓</span> Drill-through and cross-filtering</li>
+                        <li><span class="check">✓</span> Advanced data modeling (DAX)</li>
+                        <li><span class="check">✓</span> White-labeled with tenant branding</li>
+                        <li><span class="check">✓</span> Server-side Row-Level Security (RLS)</li>
+                    </ul>
+                    <p style="margin-top: 15px; font-size: 0.9em; color: var(--text-muted);">
+                        <em>Best for: Advanced analytics, executive dashboards, larger enterprises</em>
+                    </p>
+                </div>
+            </div>
+            
+            <h3>Per-Organization Visibility Control</h3>
+            
+            <div class="info-box">
+                <strong>CPA Admin Exclusive:</strong> Only PlainLedger CPA Admins can configure which analytics sections 
+                are visible for each organization. This allows tailored offerings without code changes.
+            </div>
+            
+            <h4>Configuration Options per Organization</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Configuration</th>
+                        <th>PlainLedger Analytics</th>
+                        <th>Power BI Analytics</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Full Access</strong></td>
+                        <td><span class="check">✓</span> Enabled</td>
+                        <td><span class="check">✓</span> Enabled</td>
+                        <td>Enterprise clients with full subscription</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PlainLedger Only</strong></td>
+                        <td><span class="check">✓</span> Enabled</td>
+                        <td><span class="cross">✗</span> Disabled</td>
+                        <td>Standard clients, starter tier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Power BI Only</strong></td>
+                        <td><span class="cross">✗</span> Disabled</td>
+                        <td><span class="check">✓</span> Enabled</td>
+                        <td>Clients who prefer Power BI exclusively</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connections Only</strong></td>
+                        <td><span class="cross">✗</span> Disabled</td>
+                        <td><span class="cross">✗</span> Disabled</td>
+                        <td>Data sync only, external BI tools</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h4>Role-Based Visibility Within Each Section</h4>
+            <p>For each enabled section, CPA Admin can further control which user roles can see it:</p>
+            
+            <div class="architecture-diagram" style="font-size: 0.85rem;">
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                    EXAMPLE: ACME Corp Configuration                              │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   PlainLedger Analytics                                                          │
+│   ══════════════════════                                                         │
+│   Status: ✓ ENABLED                                                              │
+│   Visible to: [✓] Owner  [✓] Admin  [✓] Member  [✓] Viewer                      │
+│                                                                                  │
+│   → All users can see Dashboard, Reports, Anomaly Detection                      │
+│                                                                                  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   Power BI Analytics                                                             │
+│   ══════════════════                                                             │
+│   Status: ✓ ENABLED                                                              │
+│   Visible to: [✓] Owner  [✓] Admin  [ ] Member  [ ] Viewer                      │
+│                                                                                  │
+│   → Only executives (Owner/Admin) can see Power BI dashboards                    │
+│   → Members and Viewers still use PlainLedger Analytics                          │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+            </div>
+            
+            <h3>Who Controls What</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Can Configure Visibility?</th>
+                        <th>Can View Analytics?</th>
+                        <th>Can Manage Connections?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PlainLedger CPA Admin</strong></td>
+                        <td><span class="check">✓</span> Yes (all orgs)</td>
+                        <td><span class="check">✓</span> Yes</td>
+                        <td><span class="check">✓</span> Yes (all orgs)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Organization Integration Manager</strong></td>
+                        <td><span class="cross">✗</span> No</td>
+                        <td><span class="check">✓</span> If enabled for role</td>
+                        <td><span class="check">✓</span> Yes (their org)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BU Integration Manager</strong></td>
+                        <td><span class="cross">✗</span> No</td>
+                        <td><span class="check">✓</span> If enabled for role</td>
+                        <td><span class="check">✓</span> Yes (assigned BUs)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Member / Viewer</strong></td>
+                        <td><span class="cross">✗</span> No</td>
+                        <td><span class="check">✓</span> If enabled for role</td>
+                        <td><span class="cross">✗</span> No</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="warning-box">
+                <strong>Important:</strong> Visibility configuration is an organization-level setting, not a user permission. 
+                Users cannot override it - if Power BI is disabled for their org, they simply won't see the menu option. 
+                This provides clean control over feature rollout without per-user configuration.
+            </div>
+        </div>
+    </section>
+
+    <section id="data-sources">
+        <div class="container">
+            <h2>2. Data Source Connections</h2>
+            
+            <p>PlainLedger connects to various accounting software platforms. Each connection is tied to a specific organization and business unit.</p>
+            
+            <h3>Supported Data Sources</h3>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-icon quickbooks">Q</div>
+                    <h4>QuickBooks Online</h4>
+                    <p><strong>Status:</strong> <span class="check">✓ Primary</span></p>
+                    <ul>
+                        <li>OAuth 2.0 authentication</li>
+                        <li>Real-time webhooks</li>
+                        <li>Full API access</li>
+                        <li>Canadian/US companies</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon xero">X</div>
+                    <h4>Xero</h4>
+                    <p><strong>Status:</strong> Planned</p>
+                    <ul>
+                        <li>OAuth 2.0 authentication</li>
+                        <li>Webhook notifications</li>
+                        <li>Multi-org support</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon sage">S</div>
+                    <h4>Sage</h4>
+                    <p><strong>Status:</strong> Planned</p>
+                    <ul>
+                        <li>OAuth 2.0 authentication</li>
+                        <li>Sage 50 / Sage Business Cloud</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>Connection Architecture</h3>
+            <div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                    DATA SOURCE CONNECTION ARCHITECTURE                           │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   ORGANIZATION: ACME Corp                                                        │
+│   ═══════════════════════════════════════════════════════════════════════════   │
+│                                                                                  │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │  Business Unit: ACME Finance                                             │   │
+│   │  ─────────────────────────────                                           │   │
+│   │                                                                          │   │
+│   │  ┌─────────────────────┐    ┌─────────────────────────────────────────┐ │   │
+│   │  │  QuickBooks Company │    │  OAuth Credentials                      │ │   │
+│   │  │  "ACME Finance Ltd" │───▶│                                         │ │   │
+│   │  │  Realm ID: 12345    │    │  • Access Token (1 hour validity)       │ │   │
+│   │  └─────────────────────┘    │  • Refresh Token (100 days rolling)     │ │   │
+│   │                              │  • Realm ID: 12345                      │ │   │
+│   │                              │  • Last Sync: 2026-01-27 03:00 UTC      │ │   │
+│   │                              │  • Status: Active                       │ │   │
+│   │                              └─────────────────────────────────────────┘ │   │
+│   └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │  Business Unit: ACME Sales                                               │   │
+│   │  ─────────────────────────────                                           │   │
+│   │                                                                          │   │
+│   │  ┌─────────────────────┐    ┌─────────────────────────────────────────┐ │   │
+│   │  │  QuickBooks Company │    │  OAuth Credentials                      │ │   │
+│   │  │  "ACME Sales Inc"   │───▶│  • SEPARATE token set                   │ │   │
+│   │  │  Realm ID: 67890    │    │  • Each QBO company = own tokens        │ │   │
+│   │  └─────────────────────┘    │  • Realm ID: 67890                      │ │   │
+│   │                              └─────────────────────────────────────────┘ │   │
+│   └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│   ORGANIZATION: Beta Inc (COMPLETELY ISOLATED)                                   │
+│   ═══════════════════════════════════════════════════════════════════════════   │
+│                                                                                  │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │  Business Unit: Beta Operations                                          │   │
+│   │  ─────────────────────────────                                           │   │
+│   │                                                                          │   │
+│   │  ┌─────────────────────┐    ┌─────────────────────────────────────────┐ │   │
+│   │  │  QuickBooks Company │    │  OAuth Credentials                      │ │   │
+│   │  │  "Beta Ops Corp"    │───▶│  • Completely isolated from ACME        │ │   │
+│   │  │  Realm ID: 11111    │    │  • Own sync schedule                    │ │   │
+│   │  └─────────────────────┘    │  • Own data partition                   │ │   │
+│   │                              └─────────────────────────────────────────┘ │   │
+│   └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+            </div>
+            
+            <div class="info-box">
+                <strong>Key Point:</strong> Each QuickBooks company requires its own OAuth authorization. 
+                A user with multiple QuickBooks companies must authorize each one separately. 
+                PlainLedger stores and manages these tokens independently per organization/business unit.
+            </div>
+            
+            <h3>Integration Management Permissions</h3>
+            
+            <div class="highlight-box">
+                <strong>Flexible Onboarding Model:</strong> Initially, PlainLedger CPA team performs integrations on behalf of customers. 
+                However, organizations can grant specific users permission to manage their own integrations at the organization or business unit level.
+            </div>
+            
+            <h4>Who Can Perform Integrations</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Scope</th>
+                        <th>Permissions</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>PlainLedger CPA Admin</strong></td>
+                        <td>All Organizations</td>
+                        <td>
+                            <span class="check">✓</span> Connect any data source<br>
+                            <span class="check">✓</span> Disconnect any data source<br>
+                            <span class="check">✓</span> View all connection status<br>
+                            <span class="check">✓</span> Manage sync schedules
+                        </td>
+                        <td>Initial setup, white-glove onboarding, support</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Organization Integration Manager</strong></td>
+                        <td>Single Organization (all BUs)</td>
+                        <td>
+                            <span class="check">✓</span> Connect data sources for their org<br>
+                            <span class="check">✓</span> Disconnect data sources for their org<br>
+                            <span class="check">✓</span> View connection status for their org<br>
+                            <span class="cross">✗</span> Cannot see other orgs
+                        </td>
+                        <td>IT admin, CFO who wants self-service</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Unit Integration Manager</strong></td>
+                        <td>Specific Business Unit(s)</td>
+                        <td>
+                            <span class="check">✓</span> Connect data sources for assigned BUs<br>
+                            <span class="check">✓</span> Disconnect data sources for assigned BUs<br>
+                            <span class="check">✓</span> View connection status for assigned BUs<br>
+                            <span class="cross">✗</span> Cannot manage other BUs
+                        </td>
+                        <td>Department head, subsidiary controller</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Viewer / Analyst</strong></td>
+                        <td>N/A</td>
+                        <td>
+                            <span class="cross">✗</span> Cannot manage connections<br>
+                            <span class="check">✓</span> Can view connection status (read-only)
+                        </td>
+                        <td>Report consumers, auditors</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h4>Permission Assignment Flow</h4>
+            <div class="architecture-diagram" style="font-size: 0.9rem;">
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                    INTEGRATION PERMISSION HIERARCHY                              │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│   PLAINLEDGER CPA ADMIN (Super Admin)                                            │
+│   ════════════════════════════════════                                           │
+│   │                                                                              │
+│   │  Can manage ALL organizations and assign Integration Manager roles           │
+│   │                                                                              │
+│   ▼                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │  ORGANIZATION: ACME Corp                                                 │   │
+│   │                                                                          │   │
+│   │  Organization Integration Manager: cfo@acme.com                          │   │
+│   │  ─────────────────────────────────────────────────                       │   │
+│   │  • Can connect/disconnect QuickBooks for ALL ACME business units         │   │
+│   │  • Can assign BU Integration Manager role to other users                 │   │
+│   │  • Cannot see Beta Inc or any other organization                         │   │
+│   │                                                                          │   │
+│   │  ┌──────────────────────────────┐  ┌──────────────────────────────┐     │   │
+│   │  │  BU: ACME Finance            │  │  BU: ACME Sales              │     │   │
+│   │  │                              │  │                              │     │   │
+│   │  │  BU Integration Manager:     │  │  BU Integration Manager:     │     │   │
+│   │  │  controller@acme.com         │  │  sales-ops@acme.com          │     │   │
+│   │  │                              │  │                              │     │   │
+│   │  │  • Can manage Finance QBO    │  │  • Can manage Sales QBO      │     │   │
+│   │  │  • Cannot touch Sales BU     │  │  • Cannot touch Finance BU   │     │   │
+│   │  └──────────────────────────────┘  └──────────────────────────────┘     │   │
+│   └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│   ┌─────────────────────────────────────────────────────────────────────────┐   │
+│   │  ORGANIZATION: Beta Inc (Completely Separate)                            │   │
+│   │                                                                          │   │
+│   │  Organization Integration Manager: it@beta.com                           │   │
+│   │  • Can only manage Beta Inc connections                                  │   │
+│   │  • Cannot see ACME Corp at all                                           │   │
+│   └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+            </div>
+            
+            <h4>Permission Definitions (RBAC)</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Permission ID</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>manage:connections</code></td>
+                        <td>Manage Data Connections</td>
+                        <td>Connect and disconnect accounting systems (QuickBooks, Xero, etc.)</td>
+                        <td><span style="color: var(--highlight);">Critical</span></td>
+                    </tr>
+                    <tr>
+                        <td><code>view:connections</code></td>
+                        <td>View Connection Status</td>
+                        <td>See connection status, last sync time, errors</td>
+                        <td>Low</td>
+                    </tr>
+                    <tr>
+                        <td><code>sync:data</code></td>
+                        <td>Trigger Manual Sync</td>
+                        <td>Manually trigger a data sync outside schedule</td>
+                        <td>Medium</td>
+                    </tr>
+                    <tr>
+                        <td><code>manage:integration-users</code></td>
+                        <td>Assign Integration Managers</td>
+                        <td>Grant/revoke integration permissions to other users</td>
+                        <td><span style="color: var(--highlight);">Critical</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h4>Onboarding Scenarios</h4>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>Scenario A: Managed Service (Default)</h4>
+                    <p><strong>PlainLedger CPA performs all integrations</strong></p>
+                    <ul>
+                        <li>Customer provides QuickBooks admin credentials to CPA</li>
+                        <li>CPA team connects and configures all data sources</li>
+                        <li>Customer users only have viewer/analyst access</li>
+                        <li>Best for: Small businesses, hands-off clients</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Scenario B: Self-Service</h4>
+                    <p><strong>Customer manages their own integrations</strong></p>
+                    <ul>
+                        <li>CPA assigns "Integration Manager" role to customer IT/CFO</li>
+                        <li>Customer connects their own QuickBooks companies</li>
+                        <li>CPA provides support but doesn't need credentials</li>
+                        <li>Best for: Larger orgs, privacy-conscious clients</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong>Security Note:</strong> The <code>manage:connections</code> permission is marked as <strong>Critical</strong> because 
+                it grants access to initiate OAuth flows and store credentials. Only trusted users (IT admins, CFOs, controllers) 
+                should be assigned this permission. All connection changes are logged in the audit trail.
+            </div>
+        </div>
+    </section>
+
+    <section id="oauth-management">
+        <div class="container">
+            <h2>3. OAuth Token Management</h2>
+            
+            <h3>Connection Flow (User Perspective)</h3>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>Step 1: User Logs into PlainLedger</h4>
+                    <p class="time">Via Keycloak SSO</p>
+                    <p>User authenticates with their Keycloak credentials (email/password, Google SSO, or Microsoft SSO).</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Step 2: Navigate to Connections</h4>
+                    <p class="time">Select business unit</p>
+                    <p>User selects which business unit they want to connect (e.g., "ACME Finance").</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Step 3: Click "Connect QuickBooks"</h4>
+                    <p class="time">OAuth redirect</p>
+                    <p>User is redirected to Intuit's OAuth page. They log in with their QuickBooks credentials and select which QBO company to authorize.</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Step 4: Authorization Granted</h4>
+                    <p class="time">Token stored</p>
+                    <p>PlainLedger receives OAuth tokens and stores them encrypted in the database, associated with the organization + business unit.</p>
+                </div>
+                <div class="timeline-item">
+                    <h4>Step 5: Initial Sync</h4>
+                    <p class="time">Data pulled to S3</p>
+                    <p>PlainLedger immediately syncs all historical data from QuickBooks to the S3 data lake.</p>
+                </div>
+            </div>
+            
+            <h3>Token Lifecycle Management</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Token Type</th>
+                        <th>Validity</th>
+                        <th>Refresh Strategy</th>
+                        <th>Expiry Handling</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Access Token</strong></td>
+                        <td>1 hour</td>
+                        <td>Auto-refresh before each API call if expired</td>
+                        <td>Use refresh token to get new access token</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Refresh Token</strong></td>
+                        <td>100 days (rolling)</td>
+                        <td>Extended each time used</td>
+                        <td>Prompt user to reconnect if not used in 100 days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Refresh Token (Max)</strong></td>
+                        <td>5 years absolute</td>
+                        <td>Cannot be extended past max</td>
+                        <td>Email notification 30 days before; reconnect required</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="warning-box">
+                <strong>Important (2025 Policy Change):</strong> QuickBooks refresh tokens now have a maximum 5-year lifetime. 
+                PlainLedger must track expiration dates and prompt users to reauthorize before tokens expire. 
+                Automated email reminders are sent 30 days and 7 days before expiration.
+            </div>
+        </div>
+    </section>
+
+    <section id="data-lake">
+        <div class="container">
+            <h2>4. S3 Data Lake Architecture</h2>
+            
+            <h3>Medallion Architecture (Bronze/Silver/Gold)</h3>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="data-layer bronze">BRONZE LAYER</div>
+                    <h4>Raw Data</h4>
+                    <p>Exact copy of data from QuickBooks API responses. No transformations. JSON format.</p>
+                    <ul>
+                        <li>Immutable audit trail</li>
+                        <li>Partitioned by sync date</li>
+                        <li>90-day retention → Glacier</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="data-layer silver">SILVER LAYER</div>
+                    <h4>Cleaned Data</h4>
+                    <p>Validated, deduplicated, standardized schema. Parquet format with Snappy compression.</p>
+                    <ul>
+                        <li>Consistent data types</li>
+                        <li>Null handling</li>
+                        <li>Schema enforcement</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="data-layer gold">GOLD LAYER</div>
+                    <h4>Analytics-Ready</h4>
+                    <p>Aggregated, enriched, optimized for Power BI. Parquet format, pre-computed metrics.</p>
+                    <ul>
+                        <li>Partitioned by org/BU</li>
+                        <li>Optimized for queries</li>
+                        <li>Power BI data source</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>S3 Bucket Structure</h3>
+            <div class="architecture-diagram">
+s3://plainledger-prod-datalake-123456789/
+│
+├── bronze/                                    # Raw data from APIs
+│   ├── quickbooks/
+│   │   ├── sync_date=2026-01-27/
+│   │   │   ├── org_id=acme-corp/
+│   │   │   │   ├── bu_id=finance/
+│   │   │   │   │   ├── accounts.json
+│   │   │   │   │   ├── transactions.json
+│   │   │   │   │   └── invoices.json
+│   │   │   │   └── bu_id=sales/
+│   │   │   │       └── ...
+│   │   │   └── org_id=beta-inc/
+│   │   │       └── ...
+│
+├── silver/                                    # Cleaned, validated data
+│   ├── accounts/
+│   │   ├── organization_id=acme-corp/
+│   │   │   ├── business_unit_id=finance/
+│   │   │   │   └── data.parquet
+│   │   │   └── business_unit_id=sales/
+│   │   │       └── data.parquet
+│
+├── gold/                                      # Analytics-ready, aggregated
+│   ├── financial_summary/
+│   │   ├── organization_id=acme-corp/
+│   │   │   ├── business_unit_id=finance/
+│   │   │   │   └── summary.parquet
+│   │   │   └── business_unit_id=sales/
+│   │   │       └── summary.parquet
+│
+└── powerbi_export/                            # Optimized for Power BI
+    ├── export_date=2026-01-27/
+    │   └── financial_summary/
+    │       └── organization_id=acme-corp/
+    │           └── data.parquet
+            </div>
+            
+            <h3>Partition Strategy Benefits</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Benefit</th>
+                        <th>How Partitioning Helps</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Query Performance</strong></td>
+                        <td>Athena/Power BI only scans partitions needed (e.g., only ACME data)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cost Reduction</strong></td>
+                        <td>Pay only for data scanned; partition pruning reduces 90%+ of scan volume</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Isolation</strong></td>
+                        <td>Organization data is physically separated; reduces blast radius of bugs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parallel Processing</strong></td>
+                        <td>Sync jobs can process each org/BU independently and in parallel</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="data-pipeline">
+        <div class="container">
+            <h2>5. Data Pipeline &amp; Transformations</h2>
+            
+            <h3>Sync Schedule</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Time (UTC)</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>QuickBooks Incremental Sync</td>
+                        <td>Every 4 hours</td>
+                        <td>Pull changed records since last sync</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook Processing</td>
+                        <td>Real-time</td>
+                        <td>Immediate sync when QuickBooks sends webhook</td>
+                    </tr>
+                    <tr>
+                        <td>Bronze → Silver Glue Job</td>
+                        <td>2:00 AM</td>
+                        <td>Daily transformation and validation</td>
+                    </tr>
+                    <tr>
+                        <td>Silver → Gold Glue Job</td>
+                        <td>2:30 AM</td>
+                        <td>Daily aggregation and optimization</td>
+                    </tr>
+                    <tr>
+                        <td>S3 → Azure Blob Sync</td>
+                        <td>3:00 AM</td>
+                        <td>Delta sync (changed data only) to Azure</td>
+                    </tr>
+                    <tr>
+                        <td>Power BI Dataset Refresh</td>
+                        <td>4, 10, 16, 22</td>
+                        <td>4x daily refresh of Power BI datasets</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="info-box">
+                <strong>Data Freshness:</strong> Users see data that is at most 6 hours old during business hours. 
+                Critical transactions (invoices, payments) sync in near real-time via webhooks.
+            </div>
+        </div>
+    </section>
+
+    <section id="analytics">
+        <div class="container">
+            <h2>6. Power BI Analytics Integration</h2>
+            
+            <h3>Single Editor Architecture</h3>
+            <div class="highlight-box">
+                <strong>Key Design:</strong> One Azure AD service principal owns all Power BI content. 
+                Users authenticate via Keycloak only. Data filtering enforced server-side via RLS with embed token identity.
+            </div>
+            
+            <h3>Data Flow to Power BI</h3>
+            <div class="flow-diagram">
+                <div class="flow-step aws">
+                    <strong>S3 Gold</strong><br>
+                    (Parquet)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step azure">
+                    <strong>Azure Blob</strong><br>
+                    (Delta Sync)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step powerbi">
+                    <strong>Power BI</strong><br>
+                    (Import Mode)
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">
+                    <strong>Embed</strong><br>
+                    (RLS Filtered)
+                </div>
+            </div>
+            
+            <h3>Row-Level Security (Server-Side)</h3>
+            <p>Power BI RLS filters data based on the identity passed in the embed token. This is enforced by Power BI servers - users cannot bypass it.</p>
+            
+            <div class="architecture-diagram" style="font-size: 0.9rem;">
+// PlainLedger API generates embed token with RLS identity
+
+async generateEmbedToken(user: KeycloakUser, reportId: string) {
+    // 1. Extract from Keycloak JWT
+    const { organization_id, business_units, role } = user;
+    
+    // 2. Determine business unit access
+    const customData = role === 'admin' 
+        ? 'ALL'  // Admin sees all BUs in their org
+        : business_units.join('|');  // Others see specific BUs
+    
+    // 3. Generate token with RLS identity
+    const token = await powerBI.generateToken({
+        reportId: reportId,
+        identities: [{
+            username: organization_id,      // Used by RLS filter
+            roles: ['TenantFilter'],        // Power BI RLS role
+            datasets: [datasetId],
+            customData: customData          // Business unit filter
+        }]
+    });
+    
+    // Power BI server enforces: [organization_id] = "acme-corp"
+    // User CANNOT bypass this filter
+    return token;
+}
+            </div>
+            
+            <h3>Access Scenarios</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User Role</th>
+                        <th>Organization</th>
+                        <th>Business Unit Access</th>
+                        <th>Data Visible</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Company Admin / CEO</td>
+                        <td>ACME-Corp</td>
+                        <td>ALL</td>
+                        <td>All ACME data across all business units</td>
+                    </tr>
+                    <tr>
+                        <td>Finance Director</td>
+                        <td>ACME-Corp</td>
+                        <td>Finance, Accounting</td>
+                        <td>ACME Finance + Accounting data only</td>
+                    </tr>
+                    <tr>
+                        <td>Sales Manager</td>
+                        <td>ACME-Corp</td>
+                        <td>Sales</td>
+                        <td>ACME Sales data only</td>
+                    </tr>
+                    <tr>
+                        <td>Analyst (different company)</td>
+                        <td>Beta-Inc</td>
+                        <td>Operations</td>
+                        <td>Beta-Inc Operations only (NO ACME data visible)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="security">
+        <div class="container">
+            <h2>7. Security Model</h2>
+            
+            <h3>Security Layers</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Layer</th>
+                        <th>Technology</th>
+                        <th>What It Protects</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Authentication</strong></td>
+                        <td>Keycloak OIDC</td>
+                        <td>Verifies user identity; issues JWT with org/BU claims</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authorization (App)</strong></td>
+                        <td>PlainLedger API</td>
+                        <td>Checks entitlements (tier) and permissions (role)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authorization (Data)</strong></td>
+                        <td>Power BI RLS</td>
+                        <td>Server-side filtering by org/BU - cannot be bypassed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data at Rest</strong></td>
+                        <td>AWS KMS / S3 SSE</td>
+                        <td>All S3 data encrypted with customer-managed keys</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data in Transit</strong></td>
+                        <td>TLS 1.3</td>
+                        <td>All API calls encrypted</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Secrets</strong></td>
+                        <td>AWS Secrets Manager</td>
+                        <td>OAuth tokens, API keys encrypted and rotated</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>Security Comparison: Why Server-Side RLS</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Client-Side Filters (Rejected)</th>
+                        <th>RLS with Embed Identity (Chosen)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Where enforced</strong></td>
+                        <td>Browser JavaScript</td>
+                        <td>Power BI Server</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Can user bypass?</strong></td>
+                        <td><span class="cross">Yes</span> - via dev tools</td>
+                        <td><span class="check">No</span> - server enforced</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data export</strong></td>
+                        <td>Risk of unfiltered data</td>
+                        <td>Exports respect RLS filters</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Audit trail</strong></td>
+                        <td>Platform logs only</td>
+                        <td>Platform + Power BI audit logs</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="warning-box">
+                <strong>Security Guarantee:</strong> Even if a user modifies JavaScript or inspects network traffic, 
+                they cannot see data outside their organization. The filter is enforced by Power BI's servers 
+                before any data is sent to the browser.
+            </div>
+        </div>
+    </section>
+
+    <section id="cost-deep-dive">
+        <div class="container">
+            <h2>8. Detailed Cost Analysis</h2>
+            
+            <div class="warning-box">
+                <strong>Key Cost Risk:</strong> AWS S3 egress (data transfer out) is charged at <strong>$0.09/GB</strong> for the first 10TB. 
+                Daily syncs to Azure can become expensive at scale without optimization.
+            </div>
+            
+            <h3>A. AWS S3 Egress Pricing</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Monthly Data Volume</th>
+                        <th>AWS Rate</th>
+                        <th>Monthly Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>First 10 TB</td>
+                        <td>$0.09/GB</td>
+                        <td>Up to $921.60</td>
+                    </tr>
+                    <tr>
+                        <td>Next 40 TB (10-50 TB)</td>
+                        <td>$0.085/GB</td>
+                        <td>Up to $3,481.60</td>
+                    </tr>
+                    <tr>
+                        <td>Over 150 TB</td>
+                        <td>$0.05/GB</td>
+                        <td>Variable</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>B. Egress Cost Scenarios (Full Daily Sync vs Delta Sync)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Orgs</th>
+                        <th>Data/Org</th>
+                        <th>Full Sync Cost</th>
+                        <th>Delta Sync (~5%)</th>
+                        <th>Savings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Small</strong></td>
+                        <td>10</td>
+                        <td>100 MB</td>
+                        <td>$2.70/month</td>
+                        <td class="cost-highlight">$0.14/month</td>
+                        <td>95%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Medium</strong></td>
+                        <td>50</td>
+                        <td>200 MB</td>
+                        <td>$27/month</td>
+                        <td class="cost-highlight">$1.35/month</td>
+                        <td>95%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Growth</strong></td>
+                        <td>100</td>
+                        <td>500 MB</td>
+                        <td class="cost-warning">$138/month</td>
+                        <td class="cost-highlight">$6.75/month</td>
+                        <td>95%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scale</strong></td>
+                        <td>500</td>
+                        <td>500 MB</td>
+                        <td class="cost-danger">$690/month</td>
+                        <td class="cost-highlight">$34/month</td>
+                        <td>95%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Enterprise</strong></td>
+                        <td>1000</td>
+                        <td>1 GB</td>
+                        <td class="cost-danger">$2,619/month</td>
+                        <td class="cost-warning">$138/month</td>
+                        <td>95%</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="highlight-box">
+                <strong>Critical Optimization:</strong> Delta sync (only transfer changed data) reduces egress costs by <strong>95%</strong>. 
+                This is implemented by tracking last sync timestamp and using Change Data Capture (CDC) patterns.
+            </div>
+            
+            <hr>
+            
+            <h3>C. QuickBooks API Costs</h3>
+            
+            <div class="info-box">
+                <strong>Good News:</strong> QuickBooks Online API has <strong>no per-call charges</strong>. 
+                API access is included with QuickBooks subscriptions. However, there are rate limits.
+            </div>
+            
+            <h4>QuickBooks Rate Limits</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Limit Type</th>
+                        <th>Limit</th>
+                        <th>Scope</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Standard endpoints</td>
+                        <td>500 requests/minute</td>
+                        <td>Per company (Realm ID)</td>
+                    </tr>
+                    <tr>
+                        <td>Concurrent requests</td>
+                        <td>10 simultaneous</td>
+                        <td>Per company per app</td>
+                    </tr>
+                    <tr>
+                        <td>Report endpoints</td>
+                        <td>200 requests/minute</td>
+                        <td>Per company</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h4>Daily API Limits by QuickBooks Plan</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>QuickBooks Plan</th>
+                        <th>Daily API Limit</th>
+                        <th>Sufficient For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Simple Start</td>
+                        <td>1,000 requests/day</td>
+                        <td>Small businesses, basic sync</td>
+                    </tr>
+                    <tr>
+                        <td>Essentials</td>
+                        <td>2,500 requests/day</td>
+                        <td>Medium businesses</td>
+                    </tr>
+                    <tr>
+                        <td>Plus</td>
+                        <td>5,000 requests/day</td>
+                        <td>Most use cases</td>
+                    </tr>
+                    <tr class="cost-highlight">
+                        <td>Advanced</td>
+                        <td>10,000 requests/day</td>
+                        <td>High-volume sync, real-time</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <hr>
+            
+            <h3>D. Total Monthly Cost Summary</h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Small (10 orgs)</th>
+                        <th>Medium (50 orgs)</th>
+                        <th>Growth (100 orgs)</th>
+                        <th>Scale (500 orgs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Power BI Embedded (A1/A2)</td>
+                        <td>$950</td>
+                        <td>$950</td>
+                        <td>$950</td>
+                        <td>$1,900</td>
+                    </tr>
+                    <tr>
+                        <td>Power BI Pro (1 license)</td>
+                        <td>$13</td>
+                        <td>$13</td>
+                        <td>$13</td>
+                        <td>$13</td>
+                    </tr>
+                    <tr>
+                        <td>S3 Storage</td>
+                        <td>$5</td>
+                        <td>$15</td>
+                        <td>$30</td>
+                        <td>$75</td>
+                    </tr>
+                    <tr>
+                        <td>S3 → Azure Egress (delta)</td>
+                        <td>$1</td>
+                        <td>$4</td>
+                        <td>$7</td>
+                        <td>$34</td>
+                    </tr>
+                    <tr>
+                        <td>Azure Blob Storage</td>
+                        <td>$2</td>
+                        <td>$5</td>
+                        <td>$10</td>
+                        <td>$25</td>
+                    </tr>
+                    <tr>
+                        <td>AWS Glue Jobs</td>
+                        <td>$20</td>
+                        <td>$40</td>
+                        <td>$60</td>
+                        <td>$150</td>
+                    </tr>
+                    <tr>
+                        <td>QuickBooks API</td>
+                        <td>$0</td>
+                        <td>$0</td>
+                        <td>$0</td>
+                        <td>$0</td>
+                    </tr>
+                    <tr class="cost-highlight">
+                        <td><strong>TOTAL (CAD/month)</strong></td>
+                        <td><strong>~$991</strong></td>
+                        <td><strong>~$1,027</strong></td>
+                        <td><strong>~$1,070</strong></td>
+                        <td><strong>~$2,197</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cost Per Organization</strong></td>
+                        <td><strong>$99</strong></td>
+                        <td><strong>$21</strong></td>
+                        <td><strong>$11</strong></td>
+                        <td><strong>$4.40</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>E. Cost Optimization Recommendations</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>1. Implement Delta Sync</h4>
+                    <p>Only transfer changed data to Azure. Reduces egress costs by ~95%.</p>
+                    <p><strong>Implementation:</strong> Track last sync timestamp, use CDC patterns.</p>
+                </div>
+                <div class="card">
+                    <h4>2. Compress Data</h4>
+                    <p>Parquet with Snappy compression is 70-90% smaller than JSON.</p>
+                    <p><strong>Savings:</strong> 3-5x reduction in transfer volume.</p>
+                </div>
+                <div class="card">
+                    <h4>3. S3 Intelligent Tiering</h4>
+                    <p>Move infrequently accessed Bronze data to cheaper storage classes.</p>
+                    <p><strong>Savings:</strong> Up to 40% on storage costs.</p>
+                </div>
+                <div class="card">
+                    <h4>4. Monitor Costs</h4>
+                    <p>Set up AWS Cost Alerts for egress charges.</p>
+                    <p><strong>Action:</strong> Alert at 50%, 75%, 100% of budget.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="industry-analytics">
+        <div class="container">
+            <h2>10. Industry-Specific Analytics &amp; Tax Credits</h2>
+            
+            <h3>Industry-Specific KPIs</h3>
+            <p>PlainLedger automatically calculates industry-relevant metrics based on organization type:</p>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <h4 style="color: var(--highlight);">Restaurant / Food Service</h4>
+                    <table>
+                        <thead>
+                            <tr><th>KPI</th><th>Formula</th><th>Target</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Food Cost %</td><td>Food COGS / Food Sales</td><td>25-35%</td></tr>
+                            <tr><td>Labor Cost %</td><td>Labor / Total Revenue</td><td>20-30%</td></tr>
+                            <tr><td>Prime Cost %</td><td>Food + Labor / Revenue</td><td>55-65%</td></tr>
+                            <tr><td>Beverage Cost %</td><td>Bev COGS / Bev Sales</td><td>18-24%</td></tr>
+                            <tr><td>Average Check</td><td>Revenue / Covers</td><td>Varies</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="note" style="margin-top: 10px; font-size: 0.85rem;">
+                        <strong>Profit margins:</strong> QSR 6-9%, Full-service 3-9%, Fine dining 5-10%
+                    </p>
+                </div>
+                
+                <div class="card">
+                    <h4 style="color: var(--highlight);">Hotel / Hospitality</h4>
+                    <table>
+                        <thead>
+                            <tr><th>KPI</th><th>Formula</th><th>Benchmark</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Occupancy Rate</td><td>Rooms Sold / Available</td><td>58-75%</td></tr>
+                            <tr><td>ADR</td><td>Room Revenue / Rooms Sold</td><td>$80-600</td></tr>
+                            <tr><td>RevPAR</td><td>ADR × Occupancy</td><td>$44-450</td></tr>
+                            <tr><td>TRevPAR</td><td>Total Rev / Available Rooms</td><td>Varies</td></tr>
+                            <tr><td>CPOR</td><td>Operating Cost / Occupied</td><td>Varies</td></tr>
+                        </tbody>
+                    </table>
+                    <p class="note" style="margin-top: 10px; font-size: 0.85rem;">
+                        <strong>Occupancy targets:</strong> Luxury 70-75%, Midscale 58-64%, Economy 52-58%
+                    </p>
+                </div>
+                
+                <div class="card">
+                    <h4 style="color: var(--highlight);">Retail</h4>
+                    <table>
+                        <thead>
+                            <tr><th>KPI</th><th>Formula</th><th>Target</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Inventory Turnover</td><td>COGS / Avg Inventory</td><td>4-12x/year</td></tr>
+                            <tr><td>GMROI</td><td>Gross Profit / Avg Inventory</td><td>>2.0</td></tr>
+                            <tr><td>Gross Margin %</td><td>Gross Profit / Sales</td><td>25-55%</td></tr>
+                            <tr><td>Sales per Sq Ft</td><td>Sales / Retail Space</td><td>Varies</td></tr>
+                            <tr><td>Shrinkage %</td><td>Loss / Sales</td><td>&lt;2%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <h4 style="color: var(--highlight);">Professional Services</h4>
+                    <table>
+                        <thead>
+                            <tr><th>KPI</th><th>Formula</th><th>Target</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Utilization Rate</td><td>Billable Hrs / Total Hrs</td><td>65-85%</td></tr>
+                            <tr><td>Realization Rate</td><td>Billed / Potential Revenue</td><td>85-95%</td></tr>
+                            <tr><td>Effective Rate</td><td>Revenue / Billable Hours</td><td>Varies</td></tr>
+                            <tr><td>WIP Days</td><td>Unbilled Work Aging</td><td>&lt;30 days</td></tr>
+                            <tr><td>AR Days</td><td>Collection Period</td><td>&lt;45 days</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 40px;">Canadian Tax Credits by Industry</h3>
+            <p>PlainLedger tracks expense eligibility for tax credit claims:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tax Credit</th>
+                        <th>Rate</th>
+                        <th>Industry</th>
+                        <th>Eligibility</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SR&amp;ED</strong></td>
+                        <td>15-35%</td>
+                        <td>All (R&amp;D activities)</td>
+                        <td>Scientific/technological advancement</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Apprenticeship (AJCTC)</strong></td>
+                        <td>10% (max $2K)</td>
+                        <td>Construction, Trades</td>
+                        <td>Red Seal apprentices, first 24 months</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OIDMTC (Ontario)</strong></td>
+                        <td>35-40%</td>
+                        <td>Digital Media/Games</td>
+                        <td>Ontario labour + marketing costs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BC IDMTC</strong></td>
+                        <td>25%</td>
+                        <td>Digital Media/Games</td>
+                        <td>BC wages, minimum $100K</td>
+                    </tr>
+                    <tr>
+                        <td><strong>QC Multimedia</strong></td>
+                        <td>26-37.5%</td>
+                        <td>Digital Media/Games</td>
+                        <td>QC labour, French content bonus</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CPTC (Film)</strong></td>
+                        <td>25%</td>
+                        <td>Film/Video Production</td>
+                        <td>Labour capped at 60% of costs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Clean Technology ITC</strong></td>
+                        <td>30%</td>
+                        <td>Manufacturing, Energy</td>
+                        <td>Solar, wind, EV, storage equipment</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Clean Hydrogen ITC</strong></td>
+                        <td>15-40%</td>
+                        <td>Energy</td>
+                        <td>Based on carbon intensity</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Carbon Capture ITC</strong></td>
+                        <td>60%</td>
+                        <td>Industrial</td>
+                        <td>CO2 capture equipment</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Accelerated CCA</strong></td>
+                        <td>1.5x first year</td>
+                        <td>All</td>
+                        <td>Equipment acquired before 2030</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="highlight-box" style="margin-top: 30px;">
+                <strong>AI-Powered Insights:</strong> PlainLedger's native analytics will compare client metrics against industry 
+                benchmarks and flag potential tax credit opportunities based on expense categorization. For example, if a tech 
+                company has significant development costs, the system will suggest reviewing SR&amp;ED eligibility.
+            </div>
+            
+            <h3 style="margin-top: 40px;">Industry-Specific Account Structures</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>Construction</h4>
+                    <ul>
+                        <li>Work-in-Progress (WIP) accounts</li>
+                        <li>Retention Receivable/Payable</li>
+                        <li>Job costing by project</li>
+                        <li>Change order tracking</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Nonprofit</h4>
+                    <ul>
+                        <li>Restricted vs Unrestricted Net Assets</li>
+                        <li>Grant revenue tracking</li>
+                        <li>Fund accounting</li>
+                        <li>Donor-imposed restrictions</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Manufacturing</h4>
+                    <ul>
+                        <li>Raw Materials Inventory</li>
+                        <li>Work-in-Progress Inventory</li>
+                        <li>Finished Goods Inventory</li>
+                        <li>Multi-stage COGS</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Digital Media</h4>
+                    <ul>
+                        <li>Capitalized Development Costs</li>
+                        <li>Amortization schedules</li>
+                        <li>Tax credit eligible labour</li>
+                        <li>Marketing expenses (OIDMTC)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="implementation">
+        <div class="container">
+            <h2>9. Implementation Phases</h2>
+            
+            <h3>Phase 1: Data Source Connections</h3>
+            <ul>
+                <li>Implement QuickBooks OAuth flow</li>
+                <li>Create connection management UI</li>
+                <li>Build token storage with encryption</li>
+                <li>Implement token refresh logic</li>
+                <li>Add expiration monitoring and alerts</li>
+            </ul>
+            
+            <h3>Phase 2: Data Lake Setup</h3>
+            <ul>
+                <li>Create S3 buckets (Bronze/Silver/Gold)</li>
+                <li>Configure KMS encryption</li>
+                <li>Implement API sync service</li>
+                <li>Create Glue transformation jobs</li>
+                <li>Set up Athena for querying</li>
+            </ul>
+            
+            <h3>Phase 3: Power BI Integration</h3>
+            <ul>
+                <li>Create Azure AD service principal</li>
+                <li>Configure Power BI workspace</li>
+                <li>Design datasets with RLS rules</li>
+                <li>Build standard reports</li>
+                <li>Implement embed token generation</li>
+            </ul>
+            
+            <h3>Phase 4: Platform Integration</h3>
+            <ul>
+                <li>Add Analytics page to frontend</li>
+                <li>Integrate with entitlements system</li>
+                <li>Add dashboard permissions to RBAC</li>
+                <li>Implement audit logging</li>
+            </ul>
+            
+            <h3>Phase 5: Testing &amp; Security</h3>
+            <ul>
+                <li>Data isolation testing (org A vs org B)</li>
+                <li>Business unit filtering validation</li>
+                <li>Penetration testing</li>
+                <li>Performance testing with concurrent users</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="approval">
+        <div class="container">
+            <h2>10. Review &amp; Approval</h2>
+            
+            <div class="signature-block">
+                <h3>Technical Review Checklist</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>QuickBooks OAuth per org/BU is clear</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Integration permission model (CPA vs self-service) is clear</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Dual analytics model (PlainLedger + Power BI) is clear</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Per-org visibility control (CPA Admin only) is acceptable</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Data lake partitioning strategy is appropriate</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Multi-level filtering (org + BU) meets needs</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Security model (server-side RLS) is acceptable</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Cost estimates are acceptable</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Data freshness (4-6 hours) is acceptable</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>Egress cost mitigation (delta sync) is clear</td>
+                            <td>☐ Approved  ☐ Concerns</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Approval Signatures</h3>
+                
+                <p><strong>CPA Partner Review:</strong></p>
+                <div class="signature-line"></div>
+                <p>Name: _________________________________ Date: _____________</p>
+                
+                <p style="margin-top: 30px;"><strong>Technical Lead:</strong></p>
+                <div class="signature-line"></div>
+                <p>Name: _________________________________ Date: _____________</p>
+                
+                <h3>Questions / Comments</h3>
+                <div style="border: 1px solid #ccc; border-radius: 8px; min-height: 150px; padding: 15px; margin-top: 15px; background: white;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p><strong>PlainLedger</strong> - Complete Platform Architecture</p>
+            <p>Document Version: 1.0 | Generated: January 2026</p>
+            <p style="margin-top: 20px; font-size: 0.9rem;">
+                This document is confidential and intended for internal review purposes only.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

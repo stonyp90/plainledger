@@ -6,6 +6,9 @@ import Keycloak from 'keycloak-js';
 const MOCK_AUTH_ENABLED = import.meta.env.VITE_MOCK_AUTH === 'true' || 
   (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false');
 
+// Key for persisting mock auth logout state
+const MOCK_AUTH_LOGGED_OUT_KEY = 'plainledger_mock_auth_logged_out';
+
 // Check if Keycloak URL is properly configured (not localhost in production)
 const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || '';
 const isKeycloakConfigured = keycloakUrl && 
@@ -135,6 +138,15 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
     // Mock authentication mode for development/testing
     if (MOCK_AUTH_ENABLED) {
+      // Check if user explicitly logged out - respect that choice
+      const isLoggedOut = localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY) === 'true';
+      if (isLoggedOut) {
+        console.log('🔓 Mock authentication enabled - user logged out, staying logged out');
+        setAuthenticated(false);
+        setUser(null);
+        setInitialized(true);
+        return;
+      }
       console.log('🔓 Mock authentication enabled - bypassing Keycloak');
       setAuthenticated(true);
       setUser(MOCK_USER);
@@ -211,6 +223,15 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
   const login = (idpHint?: string) => {
     // Mock auth mode - just set authenticated
     if (MOCK_AUTH_ENABLED) {
+      // Check if user explicitly logged out - redirect to landing instead of auto-login
+      const isLoggedOut = localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY) === 'true';
+      if (isLoggedOut) {
+        // Don't auto-login, redirect to landing page
+        window.location.replace(window.location.origin);
+        return;
+      }
+      // Clear logged out state so user stays logged in on refresh
+      localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
       setAuthenticated(true);
       setUser(MOCK_USER);
       return;
@@ -241,6 +262,8 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     // Mock auth mode - just set authenticated and navigate
     if (MOCK_AUTH_ENABLED) {
       console.log('[Auth] Mock mode - navigating to onboarding');
+      // Clear logged out state so user stays logged in on refresh
+      localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
       setAuthenticated(true);
       setUser(MOCK_USER);
       // Use assign for more reliable navigation
@@ -264,9 +287,20 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
   const logout = () => {
     // Mock auth mode - just clear state
     if (MOCK_AUTH_ENABLED) {
+      // Persist logged out state so mock auth doesn't auto-login on refresh
+      localStorage.setItem(MOCK_AUTH_LOGGED_OUT_KEY, 'true');
       setAuthenticated(false);
       setUser(null);
-      window.location.href = '/';
+      // Force full page reload to landing page - use replace to avoid back button issues
+      window.location.replace(window.location.origin);
+      return;
+    }
+    
+    // If Keycloak isn't properly configured, just redirect to home
+    if (!isKeycloakConfigured) {
+      setAuthenticated(false);
+      setUser(null);
+      window.location.replace(window.location.origin);
       return;
     }
     

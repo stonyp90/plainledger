@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IOrganizationRepository } from '@application/ports/outbound/IOrganizationRepository';
-import { Organization } from '@domain/entities/Organization';
-import { TenantId } from '@domain/value-objects/TenantId';
-import { OrganizationEntity } from './entities/organization.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { IOrganizationRepository } from "@application/ports/outbound/IOrganizationRepository";
+import { Organization } from "@domain/entities/Organization";
+import { TenantId } from "@domain/value-objects/TenantId";
+import { OrganizationEntity } from "./entities/organization.entity";
 
 /**
  * PostgreSQL implementation of IOrganizationRepository
@@ -36,7 +36,7 @@ export class PostgresOrganizationRepository implements IOrganizationRepository {
     const entities = await this.repository.find({
       take: options?.limit || 100,
       skip: options?.offset || 0,
-      order: { name: 'ASC' },
+      order: { name: "ASC" },
     });
     return entities.map((e) => this.toDomain(e));
   }

@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlainLedger - Technology & Architecture</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      font-size: 1.1rem;
+    }
+
+    .architecture {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .layer {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .layer-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .layer-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .layer-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+    }
+
+    .tech-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tech-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(96, 165, 250, 0.4);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .tech-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-color, #60a5fa);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .tech-card:hover::before {
+      opacity: 1;
+    }
+
+    .tech-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tech-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .tech-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .tech-version {
+      font-size: 0.7rem;
+      color: #64748b;
+      background: rgba(148, 163, 184, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    .tech-desc {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    /* Color schemes for different layers */
+    .layer-frontend .layer-icon { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+    .layer-frontend .tech-card { --accent-color: #60a5fa; }
+
+    .layer-backend .layer-icon { background: linear-gradient(135deg, #10b981, #34d399); }
+    .layer-backend .tech-card { --accent-color: #34d399; }
+
+    .layer-data .layer-icon { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+    .layer-data .tech-card { --accent-color: #fbbf24; }
+
+    .layer-infra .layer-icon { background: linear-gradient(135deg, #ec4899, #f472b6); }
+    .layer-infra .tech-card { --accent-color: #f472b6; }
+
+    .layer-external .layer-icon { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+    .layer-external .tech-card { --accent-color: #a78bfa; }
+
+    .layer-devops .layer-icon { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+    .layer-devops .tech-card { --accent-color: #22d3ee; }
+
+    /* Connections visualization */
+    .connections {
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .connection-line {
+      width: 2px;
+      height: 30px;
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0.1));
+      position: relative;
+    }
+
+    .connection-arrow {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid rgba(148, 163, 184, 0.3);
+      position: absolute;
+      bottom: -8px;
+      left: -5px;
+    }
+
+    /* Architecture pattern badge */
+    .pattern-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      color: #a78bfa;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+
+    /* Stats section */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 40px;
+    }
+
+    .stat-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin-top: 5px;
+    }
+
+    /* Flow diagram */
+    .flow-section {
+      margin-top: 40px;
+    }
+
+    .flow-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 30px;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .flow-node {
+      background: rgba(30, 41, 59, 0.8);
+      border: 2px solid;
+      border-radius: 12px;
+      padding: 15px 20px;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .flow-node-user { border-color: #60a5fa; }
+    .flow-node-web { border-color: #3b82f6; }
+    .flow-node-api { border-color: #10b981; }
+    .flow-node-db { border-color: #f59e0b; }
+    .flow-node-auth { border-color: #ec4899; }
+
+    .flow-arrow {
+      color: #64748b;
+      font-size: 1.5rem;
+    }
+
+    .flow-node-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .flow-node-label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 { font-size: 1.8rem; }
+      .tech-grid { grid-template-columns: repeat(2, 1fr); }
+      .flow-diagram { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PlainLedger Architecture</h1>
+      <p class="subtitle">Financial Reporting SaaS Platform - Technology Stack Overview</p>
+    </header>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #60a5fa;"></div>
+        <span>Frontend</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #34d399;"></div>
+        <span>Backend</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #fbbf24;"></div>
+        <span>Data Layer</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #f472b6;"></div>
+        <span>Infrastructure</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #a78bfa;"></div>
+        <span>External Services</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #22d3ee;"></div>
+        <span>DevOps</span>
+      </div>
+    </div>
+
+    <div class="architecture">
+      <!-- Frontend Layer -->
+      <div class="layer layer-frontend">
+        <div class="layer-header">
+          <div class="layer-icon">🖥️</div>
+          <h2 class="layer-title">Presentation Layer</h2>
+          <span class="layer-badge">React SPA</span>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #61dafb20; color: #61dafb;">⚛️</div>
+              <span class="tech-name">React</span>
+              <span class="tech-version">v18.2</span>
+            </div>
+            <p class="tech-desc">Component-based UI library for building interactive interfaces</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #646cff20; color: #646cff;">⚡</div>
+              <span class="tech-name">Vite</span>
+              <span class="tech-version">v5.0</span>
+            </div>
+            <p class="tech-desc">Next-gen build tool with fast HMR and optimized bundling</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #3178c620; color: #3178c6;">TS</div>
+              <span class="tech-name">TypeScript</span>
+              <span class="tech-version">v5.3</span>
+            </div>
+            <p class="tech-desc">Type-safe JavaScript for robust application development</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #38bdf820; color: #38bdf8;">💨</div>
+              <span class="tech-name">Tailwind CSS</span>
+              <span class="tech-version">v3.4</span>
+            </div>
+            <p class="tech-desc">Utility-first CSS framework for rapid UI development</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff495020; color: #ff4950;">🔄</div>
+              <span class="tech-name">TanStack Query</span>
+              <span class="tech-version">v5.17</span>
+            </div>
+            <p class="tech-desc">Async state management and server-state caching</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ca461820; color: #ca4618;">🛤️</div>
+              <span class="tech-name">React Router</span>
+              <span class="tech-version">v6.21</span>
+            </div>
+            <p class="tech-desc">Declarative routing for single-page applications</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #8884d820; color: #8884d8;">📊</div>
+              <span class="tech-name">Recharts</span>
+              <span class="tech-version">v2.10</span>
+            </div>
+            <p class="tech-desc">Composable charting library for financial visualizations</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ffffff20; color: #fff;">✨</div>
+              <span class="tech-name">Lucide Icons</span>
+              <span class="tech-version">v0.303</span>
+            </div>
+            <p class="tech-desc">Beautiful open-source icon library</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="connections">
+        <div class="connection-line"><div class="connection-arrow"></div></div>
+      </div>
+
+      <!-- Backend Layer -->
+      <div class="layer layer-backend">
+        <div class="layer-header">
+          <div class="layer-icon">⚙️</div>
+          <h2 class="layer-title">Application Layer</h2>
+          <span class="layer-badge">Clean Architecture</span>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #e0234e20; color: #e0234e;">🦁</div>
+              <span class="tech-name">NestJS</span>
+              <span class="tech-version">v10.3</span>
+            </div>
+            <p class="tech-desc">Progressive Node.js framework for scalable applications</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff632820; color: #ff6328;">📝</div>
+              <span class="tech-name">TypeORM</span>
+              <span class="tech-version">v0.3</span>
+            </div>
+            <p class="tech-desc">ORM for TypeScript with Active Record & Data Mapper</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #85ea2d20; color: #85ea2d;">📖</div>
+              <span class="tech-name">Swagger</span>
+              <span class="tech-version">v7.2</span>
+            </div>
+            <p class="tech-desc">OpenAPI documentation and API explorer</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ffffff20; color: #fff;">✅</div>
+              <span class="tech-name">Class Validator</span>
+              <span class="tech-version">v0.14</span>
+            </div>
+            <p class="tech-desc">Decorator-based validation for DTOs</p>
+          </div>
+        </div>
+        <div class="pattern-badge">
+          <span>🏛️</span>
+          <span>Domain-Driven Design • Hexagonal Architecture • CQRS Patterns</span>
+        </div>
+      </div>
+
+      <div class="connections">
+        <div class="connection-line"><div class="connection-arrow"></div></div>
+      </div>
+
+      <!-- Data Layer -->
+      <div class="layer layer-data">
+        <div class="layer-header">
+          <div class="layer-icon">💾</div>
+          <h2 class="layer-title">Data Layer</h2>
+          <span class="layer-badge">Persistence & Caching</span>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #33679120; color: #336791;">🐘</div>
+              <span class="tech-name">PostgreSQL</span>
+              <span class="tech-version">v16</span>
+            </div>
+            <p class="tech-desc">Primary relational database for application data</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #dc382d20; color: #dc382d;">⚡</div>
+              <span class="tech-name">Redis</span>
+              <span class="tech-version">v7</span>
+            </div>
+            <p class="tech-desc">In-memory caching and session management</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #c72c4820; color: #c72c48;">📦</div>
+              <span class="tech-name">MinIO / S3</span>
+              <span class="tech-version">Latest</span>
+            </div>
+            <p class="tech-desc">S3-compatible object storage for financial data lake</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="connections">
+        <div class="connection-line"><div class="connection-arrow"></div></div>
+      </div>
+
+      <!-- Infrastructure Layer -->
+      <div class="layer layer-infra">
+        <div class="layer-header">
+          <div class="layer-icon">☁️</div>
+          <h2 class="layer-title">AWS Infrastructure</h2>
+          <span class="layer-badge">Terraform IaC</span>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">🚀</div>
+              <span class="tech-name">ECS Fargate</span>
+              <span class="tech-version">Serverless</span>
+            </div>
+            <p class="tech-desc">Serverless container orchestration with auto-scaling</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">⚖️</div>
+              <span class="tech-name">ALB</span>
+              <span class="tech-version">Application</span>
+            </div>
+            <p class="tech-desc">Application Load Balancer with HTTPS termination</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">📦</div>
+              <span class="tech-name">ECR</span>
+              <span class="tech-version">Private</span>
+            </div>
+            <p class="tech-desc">Elastic Container Registry for Docker images</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">🌐</div>
+              <span class="tech-name">Route53</span>
+              <span class="tech-version">DNS</span>
+            </div>
+            <p class="tech-desc">DNS management and health checking</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">📊</div>
+              <span class="tech-name">CloudWatch</span>
+              <span class="tech-version">Logs</span>
+            </div>
+            <p class="tech-desc">Centralized logging and monitoring</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">🔐</div>
+              <span class="tech-name">Secrets Manager</span>
+              <span class="tech-version">Encrypted</span>
+            </div>
+            <p class="tech-desc">Secure secrets and credential management</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">🪣</div>
+              <span class="tech-name">S3</span>
+              <span class="tech-version">Data Lake</span>
+            </div>
+            <p class="tech-desc">Object storage for financial data exports</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #ff990020; color: #ff9900;">🔑</div>
+              <span class="tech-name">KMS</span>
+              <span class="tech-version">Encryption</span>
+            </div>
+            <p class="tech-desc">Key management for data encryption at rest</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="connections">
+        <div class="connection-line"><div class="connection-arrow"></div></div>
+      </div>
+
+      <!-- External Services -->
+      <div class="layer layer-external">
+        <div class="layer-header">
+          <div class="layer-icon">🔗</div>
+          <h2 class="layer-title">External Integrations</h2>
+          <span class="layer-badge">Third-Party Services</span>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #00aae820; color: #00aae8;">🔐</div>
+              <span class="tech-name">Keycloak</span>
+              <span class="tech-version">v23.0</span>
+            </div>
+            <p class="tech-desc">Open-source IAM with SSO and custom themes</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #635bff20; color: #635bff;">💳</div>
+              <span class="tech-name">Stripe</span>
+              <span class="tech-version">Payments</span>
+            </div>
+            <p class="tech-desc">Subscription billing and payment processing</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #dd325a20; color: #dd325a;">🔔</div>
+              <span class="tech-name">Novu</span>
+              <span class="tech-version">Notifications</span>
+            </div>
+            <p class="tech-desc">Multi-channel notification infrastructure</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #f2c81120; color: #f2c811;">📊</div>
+              <span class="tech-name">Power BI</span>
+              <span class="tech-version">Embedded</span>
+            </div>
+            <p class="tech-desc">White-label interactive dashboards</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #2ca01c20; color: #2ca01c;">📗</div>
+              <span class="tech-name">QuickBooks</span>
+              <span class="tech-version">OAuth</span>
+            </div>
+            <p class="tech-desc">QuickBooks Online data integration</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #13b5ea20; color: #13b5ea;">📘</div>
+              <span class="tech-name">Xero</span>
+              <span class="tech-version">OAuth</span>
+            </div>
+            <p class="tech-desc">Xero accounting data connection</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #00d63920; color: #00d639;">📙</div>
+              <span class="tech-name">Sage</span>
+              <span class="tech-version">API</span>
+            </div>
+            <p class="tech-desc">Sage accounting integration</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #0075e120; color: #0075e1;">📒</div>
+              <span class="tech-name">FreshBooks</span>
+              <span class="tech-version">OAuth</span>
+            </div>
+            <p class="tech-desc">FreshBooks data synchronization</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DevOps Layer -->
+      <div class="layer layer-devops">
+        <div class="layer-header">
+          <div class="layer-icon">🔧</div>
+          <h2 class="layer-title">DevOps & Testing</h2>
+          <span class="layer-badge">CI/CD Pipeline</span>
+        </div>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #7b42bc20; color: #7b42bc;">🔷</div>
+              <span class="tech-name">Terraform</span>
+              <span class="tech-version">IaC</span>
+            </div>
+            <p class="tech-desc">Infrastructure as Code for AWS resources</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #2496ed20; color: #2496ed;">🐳</div>
+              <span class="tech-name">Docker</span>
+              <span class="tech-version">Containers</span>
+            </div>
+            <p class="tech-desc">Containerization for consistent deployments</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #238636;20; color: #238636;">🔄</div>
+              <span class="tech-name">GitHub Actions</span>
+              <span class="tech-version">CI/CD</span>
+            </div>
+            <p class="tech-desc">Automated build and deployment pipelines</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #45ba4b20; color: #45ba4b;">🎭</div>
+              <span class="tech-name">Playwright</span>
+              <span class="tech-version">v1.58</span>
+            </div>
+            <p class="tech-desc">End-to-end testing framework</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #6e9f1820; color: #6e9f18;">🧪</div>
+              <span class="tech-name">Vitest</span>
+              <span class="tech-version">v1.2</span>
+            </div>
+            <p class="tech-desc">Fast unit testing for Vite projects</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-header">
+              <div class="tech-logo" style="background: #c2185520; color: #c21855;">🃏</div>
+              <span class="tech-name">Jest</span>
+              <span class="tech-version">v29.7</span>
+            </div>
+            <p class="tech-desc">Testing framework for NestJS API</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request Flow Diagram -->
+    <div class="flow-section">
+      <h2 class="flow-title">Request Flow</h2>
+      <div class="flow-diagram">
+        <div class="flow-node flow-node-user">
+          <div class="flow-node-icon">👤</div>
+          <div class="flow-node-label">User</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node flow-node-web">
+          <div class="flow-node-icon">⚛️</div>
+          <div class="flow-node-label">React SPA</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node flow-node-auth">
+          <div class="flow-node-icon">🔐</div>
+          <div class="flow-node-label">Keycloak</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node flow-node-api">
+          <div class="flow-node-icon">🦁</div>
+          <div class="flow-node-label">NestJS API</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-node flow-node-db">
+          <div class="flow-node-icon">🐘</div>
+          <div class="flow-node-label">PostgreSQL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-value">6+</div>
+        <div class="stat-label">Provider Integrations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">4</div>
+        <div class="stat-label">Subscription Tiers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">50+</div>
+        <div class="stat-label">E2E Test Cases</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">TypeScript Coverage</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">ISO</div>
+        <div class="stat-label">IBCS Compliant</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">∞</div>
+        <div class="stat-label">Auto-Scaling</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

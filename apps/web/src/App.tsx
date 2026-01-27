@@ -20,7 +20,10 @@ import MontageFinancier from './pages/MontageFinancier';
 import Store from './pages/Store';
 import Onboarding from './components/Onboarding';
 import EmailConfirmation from './pages/EmailConfirmation';
+import PowerBIAnalytics from './pages/PowerBIAnalytics';
+import OrgFeaturesConfig from './pages/OrgFeaturesConfig';
 import CrispChat from './components/CrispChat';
+import { AnalyticsVisibilityProvider } from './contexts/AnalyticsVisibilityContext';
 import config from './lib/config';
 import { analytics } from './lib/analytics';
 import { useEffect } from 'react';
@@ -67,19 +70,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!authenticated) {
-    // Store the intended destination and redirect to login
+    // Redirect to landing page - login() will handle mock auth appropriately
+    // This prevents infinite loops when user has explicitly logged out
     login();
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-      >
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
-          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
-        </div>
-      </div>
-    );
+    // Show loading while redirect happens
+    return <Navigate to="/" replace />;
   }
 
   // Check if email verification is needed (skip for verify-email route itself)
@@ -248,29 +243,27 @@ function App() {
   }
 
   return (
-    <>
+    <AnalyticsVisibilityProvider>
       {/* Crisp Live Chat */}
       {config.crisp.enabled && config.crisp.websiteId && (
         <CrispChat websiteId={config.crisp.websiteId} />
       )}
       
       <Routes>
-        {/* Public routes - Store is the main landing page */}
+        {/* Public routes - Main marketing website at root */}
         <Route 
           path="/" 
           element={authenticated ? <Navigate to="/app" replace /> : <Store />} 
         />
         
-        {/* Store alias for direct access */}
+        {/* Legacy routes redirect to root */}
         <Route 
           path="/store" 
-          element={<Store />} 
+          element={<Navigate to="/" replace />} 
         />
-        
-        {/* Legacy landing page redirect */}
         <Route 
           path="/landing" 
-          element={<Landing />} 
+          element={<Navigate to="/" replace />} 
         />
         
         {/* Signup - redirects to onboarding if authenticated */}
@@ -392,6 +385,26 @@ function App() {
         }
       />
       <Route
+        path="/app/analytics/powerbi"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PowerBIAnalytics />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/admin/org-features"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <OrgFeaturesConfig />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/app/anomalies"
         element={
           <ProtectedRoute>
@@ -455,7 +468,7 @@ function App() {
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </AnalyticsVisibilityProvider>
   );
 }
 

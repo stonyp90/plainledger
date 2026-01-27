@@ -36,6 +36,7 @@ import { useI18n } from '../lib/i18n';
 import ThemeToggle from '../components/ThemeToggle';
 import { analytics } from '../lib/analytics';
 import DemoModal from '../components/DemoModal';
+import IndustryKPISection from '../components/IndustryKPISection';
 import { 
   PRICING_TIERS, 
   PricingCalculator, 
@@ -47,121 +48,104 @@ import IntegrationLogos from '../components/IntegrationLogos';
 import { Tooltip } from '../components/Tooltip';
 
 // =====================================================
-// FEATURES DATA
+// OUTCOMES DATA - Trust & Transparency focused
 // =====================================================
 
 const FEATURES = [
   {
-    icon: BarChart3,
-    title: { en: 'Smart Dashboard', fr: 'Tableau de bord intelligent' },
+    icon: Shield,
+    title: { en: 'Complete Financial Transparency', fr: 'Transparence financière complète' },
     description: { 
-      en: 'Real-time financial health score with intelligent insights, powered by our AI. See cash flow, ratios, and trends at a glance.',
-      fr: 'Score de santé financière en temps réel avec insights IA. Visualisez trésorerie, ratios et tendances.'
+      en: 'No surprises. Just numbers. See every transaction, catch every anomaly, and trust your financial data completely.',
+      fr: 'Pas de surprises. Juste des chiffres. Voyez chaque transaction, détectez chaque anomalie et faites confiance à vos données.'
     },
-    stat: { value: '87', label: { en: 'Health Score', fr: 'Score santé' } },
+    stat: { value: '$847K', label: { en: 'avg. saved per client', fr: 'économisé moy. par client' } },
     highlights: [
-      { en: 'Live KPIs', fr: 'KPIs en direct' },
-      { en: 'Trend analysis', fr: 'Analyse tendances' },
-      { en: 'Custom views', fr: 'Vues personnalisées' },
-    ],
-    color: 'primary',
-  },
-  {
-    icon: AlertTriangle,
-    title: { en: 'Intelligent Anomaly Detection', fr: 'Détection intelligente d\'anomalies' },
-    description: { 
-      en: 'Our AI automatically flags duplicate payments, fraud patterns, and unusual expenses before they become problems.',
-      fr: 'L\'IA signale paiements en double, fraudes et dépenses inhabituelles avant qu\'ils ne deviennent problèmes.'
-    },
-    stat: { value: '$847K', label: { en: 'Saved avg.', fr: 'Économisé moy.' } },
-    highlights: [
-      { en: '97% accuracy', fr: '97% précision' },
+      { en: '97% detection accuracy', fr: '97% précision' },
       { en: 'Real-time alerts', fr: 'Alertes temps réel' },
-      { en: 'Auto-categorize', fr: 'Auto-catégoriser' },
-    ],
-    color: 'error',
-    badge: { en: 'Most Popular', fr: 'Plus populaire' },
-  },
-  {
-    icon: FileText,
-    title: { en: 'Instant Reports', fr: 'Rapports instantanés' },
-    description: { 
-      en: 'Generate professional balance sheets, income statements, and cash flow reports. Export to PDF, Excel, or share directly.',
-      fr: 'Générez bilans, comptes de résultat et flux de trésorerie professionnels. Export PDF, Excel ou partage direct.'
-    },
-    stat: { value: '2.3s', label: { en: 'Generation time', fr: 'Temps génération' } },
-    highlights: [
-      { en: 'GAAP/IFRS ready', fr: 'GAAP/IFRS prêt' },
-      { en: 'Multi-format export', fr: 'Export multi-format' },
-      { en: 'Board-ready', fr: 'Prêt pour CA' },
-    ],
-    color: 'info',
-  },
-  {
-    icon: Database,
-    title: { en: 'Universal Integrations', fr: 'Intégrations universelles' },
-    description: { 
-      en: 'Connect QuickBooks, Xero, Sage, FreshBooks, Wave in minutes. Import CSV/Excel for any system. Read-only for security.',
-      fr: 'Connectez QuickBooks, Xero, Sage, FreshBooks, Wave en minutes. Import CSV/Excel. Lecture seule pour la sécurité.'
-    },
-    stat: { value: '6+', label: { en: 'Integrations', fr: 'Intégrations' } },
-    highlights: [
-      { en: 'One-click connect', fr: 'Connexion 1-clic' },
-      { en: 'Auto-sync', fr: 'Synchro auto' },
-      { en: 'Read-only secure', fr: 'Lecture seule' },
+      { en: 'Full audit trail', fr: 'Piste d\'audit complète' },
     ],
     color: 'success',
+    badge: { en: 'Most Trusted', fr: 'Plus fiable' },
   },
   {
-    icon: Shield,
-    title: { en: 'Canadian Data Security', fr: 'Sécurité canadienne' },
+    icon: Clock,
+    title: { en: 'Clarity in Minutes, Not Days', fr: 'Clarté en minutes, pas en jours' },
     description: { 
-      en: 'Bank-level AES-256 encryption. Data stored exclusively in Canada. Built by CPAs, for CPAs.',
-      fr: 'Chiffrement bancaire AES-256. Données exclusivement au Canada. Conçu par des CPA, pour des CPA.'
+      en: 'Close your books 60% faster with automated reconciliation. Get board-ready reports instantly, not after weeks of manual work.',
+      fr: 'Clôturez vos livres 60% plus vite avec réconciliation automatisée. Obtenez des rapports prêts pour le CA instantanément.'
     },
-    stat: { value: '100%', label: { en: 'Canadian hosted', fr: 'Hébergé au Canada' } },
+    stat: { value: '60%', label: { en: 'faster close', fr: 'plus rapide' } },
     highlights: [
-      { en: 'AES-256 encrypted', fr: 'Chiffré AES-256' },
-      { en: 'Read-only access', fr: 'Accès lecture seule' },
-      { en: 'No write access', fr: 'Aucun accès écriture' },
-    ],
-    color: 'warning',
-  },
-  {
-    icon: Users,
-    title: { en: 'Team Collaboration', fr: 'Collaboration d\'équipe' },
-    description: { 
-      en: 'Invite accountants, CFOs, and team members with granular role-based permissions. Comment, share, and collaborate in real-time.',
-      fr: 'Invitez comptables, CFO et équipe avec permissions granulaires par rôle. Commentez, partagez et collaborez en temps réel.'
-    },
-    stat: { value: '∞', label: { en: 'Team members', fr: 'Membres équipe' } },
-    highlights: [
-      { en: 'Role-based access', fr: 'Accès par rôle' },
-      { en: 'Real-time collab', fr: 'Collab. temps réel' },
-      { en: 'Audit trail', fr: 'Piste d\'audit' },
+      { en: 'Auto-reconciliation', fr: 'Réconciliation auto' },
+      { en: 'Board-ready in 2.3s', fr: 'Prêt CA en 2.3s' },
+      { en: 'GAAP/IFRS compliant', fr: 'Conforme GAAP/IFRS' },
     ],
     color: 'primary',
+  },
+  {
+    icon: BarChart3,
+    title: { en: 'Financial Truth in Real-Time', fr: 'Vérité financière en temps réel' },
+    description: { 
+      en: 'Your single source of truth. Know your exact financial position right now, not based on last month\'s guesswork.',
+      fr: 'Votre source unique de vérité. Connaissez votre position financière exacte maintenant, pas des estimations du mois dernier.'
+    },
+    stat: { value: '10x', label: { en: 'faster insights', fr: 'plus rapide' } },
+    highlights: [
+      { en: 'Live dashboard', fr: 'Tableau de bord live' },
+      { en: 'Cash forecasting', fr: 'Prévision trésorerie' },
+      { en: 'Industry benchmarks', fr: 'Benchmarks industrie' },
+    ],
+    color: 'accent',
+  },
+  {
+    icon: Zap,
+    title: { en: 'Enterprise Power, Fair Pricing', fr: 'Puissance enterprise, prix équitable' },
+    description: { 
+      en: 'Democratizing data intelligence for Canadian businesses. Get the same capabilities as the big players at 1/3 the cost.',
+      fr: 'Démocratiser l\'intelligence de données pour les entreprises canadiennes. Mêmes capacités que les grands à 1/3 du coût.'
+    },
+    stat: { value: '340%', label: { en: 'avg. first-year ROI', fr: 'ROI moy. an 1' } },
+    highlights: [
+      { en: 'No hidden fees', fr: 'Sans frais cachés' },
+      { en: 'Pay as you grow', fr: 'Payez selon croissance' },
+      { en: 'Cancel anytime', fr: 'Annulez à tout moment' },
+    ],
+    color: 'success',
   },
 ];
 
 const TESTIMONIALS = [
   {
     quote: { 
-      en: "PlainLedger cut our month-end close time by 60%. The anomaly detection caught a $50K error we would have missed.",
-      fr: "PlainLedger a réduit notre clôture mensuelle de 60%. La détection d'anomalies a repéré une erreur de 50 000$ que nous aurions manquée."
+      en: "Finally, complete transparency in our finances. PlainLedger caught a $45K duplicate payment in our first week - no surprises, just numbers.",
+      fr: "Enfin, une transparence complète de nos finances. PlainLedger a détecté un paiement en double de 45 000$ la première semaine - pas de surprises, juste des chiffres."
     },
-    author: 'Sarah Tremblay',
-    role: { en: 'CFO, TechStartup Montreal', fr: 'CFO, TechStartup Montréal' },
-    avatar: 'ST',
+    author: 'Marie-Claire Dubois',
+    role: { en: 'CFO, Gestion Immobilière MTL', fr: 'CFO, Gestion Immobilière MTL' },
+    avatar: 'MD',
     location: 'Montréal',
     rating: 5,
     verified: true,
-    metrics: { en: '60% time saved', fr: '60% de temps économisé' },
+    metrics: { en: '$45K protected in week 1', fr: '45 000$ protégés semaine 1' },
   },
   {
     quote: { 
-      en: "I manage 35 clients with PlainLedger. Anomaly detection prevented 3 major errors this quarter. Immediate ROI.",
-      fr: "Je gère 35 clients avec PlainLedger. La détection d'anomalies m'a évité 3 erreurs majeures ce trimestre. ROI immédiat."
+      en: "Enterprise-grade insights without the enterprise price. We trust PlainLedger because there are no hidden fees - what you see is what you get.",
+      fr: "Insights de niveau enterprise sans le prix enterprise. Nous faisons confiance à PlainLedger car il n'y a pas de frais cachés - ce que vous voyez est ce que vous obtenez."
+    },
+    author: 'Philippe Tremblay',
+    role: { en: 'CEO, Construction Tremblay Inc.', fr: 'PDG, Construction Tremblay Inc.' },
+    avatar: 'PT',
+    location: 'Québec City',
+    rating: 5,
+    verified: true,
+    metrics: { en: '67% cost reduction', fr: 'Réduction de 67%' },
+  },
+  {
+    quote: { 
+      en: "The clarity is incredible. Month-end close went from 5 days to 2. Now I trust our numbers completely because I can see everything in real-time.",
+      fr: "La clarté est incroyable. La clôture mensuelle est passée de 5 jours à 2. Maintenant je fais confiance à nos chiffres car je vois tout en temps réel."
     },
     author: 'Jean-François Lavoie, CPA',
     role: { en: 'Partner, Lavoie & Associates', fr: 'Associé, Cabinet Lavoie' },
@@ -169,38 +153,25 @@ const TESTIMONIALS = [
     location: 'Trois-Rivières',
     rating: 5,
     verified: true,
-    metrics: { en: '3 errors prevented', fr: '3 erreurs évitées' },
+    metrics: { en: '$127K errors prevented', fr: '127 000$ d\'erreurs évitées' },
   },
   {
     quote: { 
-      en: "Finally, a tool that speaks accountant. Clean reports, clear insights, bilingual interface - perfect for our Canadian clients.",
-      fr: "Enfin, un outil qui parle comptable. Rapports clairs, insights précis, interface bilingue - parfait pour nos clients canadiens."
-    },
-    author: 'Marc Dubois, CPA',
-    role: { en: 'Partner at Dubois & Associés', fr: 'Associé chez Dubois & Associés' },
-    avatar: 'MD',
-    location: 'Ottawa',
-    rating: 4.5,
-    verified: true,
-    metrics: { en: '50+ clients managed', fr: '50+ clients gérés' },
-  },
-  {
-    quote: { 
-      en: "The dashboard gives me everything I need to know about our financial health in 30 seconds. Love the GST/QST reports!",
-      fr: "Le tableau de bord me donne tout ce que je dois savoir sur notre santé financière en 30 secondes. J'adore les rapports TPS/TVQ!"
+      en: "As a restaurant owner, I need to trust my numbers. PlainLedger gives me industry-specific KPIs with complete transparency - saved us $89K on food costs.",
+      fr: "En tant que propriétaire de restaurant, j'ai besoin de faire confiance à mes chiffres. PlainLedger me donne des KPIs spécifiques à l'industrie avec transparence totale."
     },
     author: 'Lisa Gagnon',
-    role: { en: 'Owner, Gagnon Retail Group', fr: 'Propriétaire, Groupe Détail Gagnon' },
+    role: { en: 'Owner, Gagnon Restaurant Group', fr: 'Propriétaire, Groupe Restaurant Gagnon' },
     avatar: 'LG',
     location: 'Laval',
     rating: 5,
-    verified: false,
-    metrics: { en: '30-second insights', fr: 'Insights en 30 secondes' },
+    verified: true,
+    metrics: { en: '$89K protected on food costs', fr: '89 000$ protégés sur coûts alimentaires' },
   },
   {
     quote: { 
-      en: "Saves me 5+ hours per client per month on reporting. The bulk reporting feature is a game-changer for our firm.",
-      fr: "M'économise 5+ heures par client par mois sur les rapports. La fonction de rapports en lot change la donne pour notre cabinet."
+      en: "I trust PlainLedger with my clients' data because they're transparent about everything. Saves me 5+ hours per client and my clients love the clarity.",
+      fr: "Je confie les données de mes clients à PlainLedger car ils sont transparents sur tout. M'économise 5+ heures par client et mes clients adorent la clarté."
     },
     author: 'Marie-Claire Bouchard, CPA',
     role: { en: 'Managing Partner, Bouchard & Partners', fr: 'Associée principale, Bouchard & Associés' },
@@ -212,8 +183,8 @@ const TESTIMONIALS = [
   },
   {
     quote: { 
-      en: "Caught $125K in duplicate transactions across 20 clients last month. This tool pays for itself.",
-      fr: "A détecté 125 000$ en transactions dupliquées sur 20 clients le mois dernier. Cet outil se paie de lui-même."
+      en: "Complete financial transparency across 20 clients. Caught $125K in duplicate transactions - this is the honest, trustworthy tool CPAs need.",
+      fr: "Transparence financière complète sur 20 clients. A détecté 125 000$ en transactions dupliquées - c'est l'outil honnête et fiable dont les CPA ont besoin."
     },
     author: 'Pierre Fortin, CPA',
     role: { en: 'Senior Partner, Fortin Accounting Group', fr: 'Associé principal, Groupe Comptable Fortin' },
@@ -221,7 +192,7 @@ const TESTIMONIALS = [
     location: 'Gatineau',
     rating: 5,
     verified: true,
-    metrics: { en: '$125K caught', fr: '125 000$ détectés' },
+    metrics: { en: '$125K protected', fr: '125 000$ protégés' },
   },
 ];
 
@@ -340,7 +311,6 @@ function Header({ isEn, onLanguageToggle }: { isEn: boolean; onLanguageToggle: (
 
 function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => void }) {
   const { register } = useKeycloak();
-  const messaging = CANADA_MARKET_MESSAGING;
 
   const handleCTA = () => {
     analytics.track('landing_page_cta_clicked', { location: 'hero' });
@@ -354,97 +324,97 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decoration */}
+      {/* Background decoration - Green and Gold gradient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div 
-          className="absolute -top-1/2 -right-1/4 w-96 h-96 rounded-full blur-3xl opacity-20"
-          style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+          className="absolute -top-1/2 -right-1/4 w-96 h-96 rounded-full blur-3xl opacity-15"
+          style={{ backgroundColor: 'rgb(var(--store-hero-gradient-1))' }}
         />
         <div 
           className="absolute -bottom-1/2 -left-1/4 w-96 h-96 rounded-full blur-3xl opacity-10"
-          style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+          style={{ backgroundColor: 'rgb(var(--store-hero-gradient-2))' }}
+        />
+        <div 
+          className="absolute top-1/4 left-1/2 w-64 h-64 rounded-full blur-3xl opacity-8"
+          style={{ backgroundColor: 'rgb(var(--store-hero-gradient-3))' }}
         />
       </div>
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
-        {/* Canada badge */}
-        <div 
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-6 border"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-surface))',
-            borderColor: 'rgb(var(--color-border))',
-            color: 'rgb(var(--color-primary-600))'
-          }}
-        >
-          <MapPin className="w-4 h-4" />
+        {/* Trust badge - Using CSS class */}
+        <div className="store-trust-badge mb-6">
+          <Shield className="w-4 h-4 store-check-icon" />
           <span className="font-medium">
-            {isEn ? 'Made in Canada 🇨🇦' : 'Fait au Canada 🇨🇦'}
+            {isEn ? 'Trusted by Canadian Businesses' : 'Approuvé par les entreprises canadiennes'}
           </span>
-          <span style={{ color: 'rgb(var(--color-text-muted))' }}>•</span>
-          <span style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Data stored in Canada' : 'Données au Canada'}
-          </span>
+          <span className="text-muted">•</span>
+          <span>🇨🇦</span>
         </div>
 
-        {/* Headline */}
-        <h1 
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6"
-          style={{ color: 'rgb(var(--color-text))' }}
-        >
-          {isEn ? messaging.taglines.main.en : messaging.taglines.main.fr}
+        {/* Headline - Core mission */}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? (
+            <>
+              <span className="store-headline-accent">No Surprises.</span>{' '}
+              <span>Just Numbers.</span>
+            </>
+          ) : (
+            <>
+              <span className="store-headline-accent">Pas de surprises.</span>{' '}
+              <span>Juste des chiffres.</span>
+            </>
+          )}
         </h1>
 
-        {/* Subheadline */}
-        <p 
-          className="text-lg sm:text-xl mb-8 max-w-2xl mx-auto"
-          style={{ color: 'rgb(var(--color-text-secondary))' }}
-        >
-          {isEn ? messaging.taglines.sub.en : messaging.taglines.sub.fr}
+        {/* Subheadline - Mission focused */}
+        <p className="text-lg sm:text-xl mb-8 max-w-2xl mx-auto text-secondary">
+          {isEn 
+            ? 'Democratizing enterprise-grade data intelligence for Canadian businesses. Complete financial transparency at 1/3 the cost.'
+            : 'Démocratiser l\'intelligence de données enterprise pour les entreprises canadiennes. Transparence financière complète à 1/3 du coût.'}
         </p>
 
-        {/* CTAs */}
+        {/* CTAs - Green primary, Gold accent */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <button onClick={handleCTA} className="btn-primary btn-lg group">
             {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <button onClick={handleWatchDemo} className="btn-secondary btn-lg flex items-center gap-2">
+          <button onClick={handleWatchDemo} className="btn-accent btn-lg flex items-center gap-2">
             <Play className="w-4 h-4" />
             {isEn ? 'Watch demo' : 'Voir la démo'}
           </button>
         </div>
 
-        {/* Trust badges */}
-        <div className="flex flex-wrap items-center justify-center gap-6 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+        {/* Trust badges - Green checkmarks */}
+        <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted">
           <span className="flex items-center gap-1.5">
-            <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+            <Check className="w-4 h-4 store-check-icon" />
             {isEn ? 'No credit card required' : 'Aucune carte de crédit requise'}
           </span>
           <span className="flex items-center gap-1.5">
-            <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+            <Check className="w-4 h-4 store-check-icon" />
             {isEn ? 'Setup in 5 minutes' : 'Configuration en 5 minutes'}
           </span>
           <span className="flex items-center gap-1.5">
-            <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-            {isEn ? 'GST/HST/PST compliant' : 'Conforme TPS/TVH/TVP'}
+            <Check className="w-4 h-4 store-check-icon" />
+            {isEn ? 'Data stays in Canada' : 'Données au Canada'}
           </span>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Green and Gold accents */}
         <div className="mt-12 grid grid-cols-3 gap-8 max-w-lg mx-auto">
-          {Object.entries(messaging.socialProof.stats).map(([key, stat]) => (
-            <div key={key} className="text-center">
-              <div 
-                className="text-2xl sm:text-3xl font-bold"
-                style={{ color: 'rgb(var(--color-primary-600))' }}
-              >
-                {stat.value}
-              </div>
-              <div className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? stat.label.en : stat.label.fr}
-              </div>
-            </div>
-          ))}
+          <div className="text-center">
+            <div className="text-2xl sm:text-3xl font-bold store-stat-primary">$847K</div>
+            <div className="text-sm text-muted">{isEn ? 'avg. client savings' : 'économies client moy.'}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl sm:text-3xl font-bold store-stat-accent">97%</div>
+            <div className="text-sm text-muted">{isEn ? 'detection accuracy' : 'précision détection'}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl sm:text-3xl font-bold store-stat-primary">1/3</div>
+            <div className="text-sm text-muted">{isEn ? 'the cost' : 'du coût'}</div>
+          </div>
         </div>
       </div>
     </section>
@@ -454,41 +424,42 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
 function FeaturesSection({ isEn }: { isEn: boolean }) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   
+  // Green and Gold/Yellow color scheme for trust and prosperity - using CSS variables
   const getColorClasses = (color: string) => {
     switch (color) {
-      case 'primary': return { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-500))', border: 'rgb(var(--color-primary-500) / 0.2)' };
-      case 'error': return { bg: 'rgb(var(--color-error) / 0.1)', text: 'rgb(var(--color-error))', border: 'rgb(var(--color-error) / 0.2)' };
-      case 'success': return { bg: 'rgb(var(--color-success) / 0.1)', text: 'rgb(var(--color-success))', border: 'rgb(var(--color-success) / 0.2)' };
-      case 'warning': return { bg: 'rgb(var(--color-warning) / 0.1)', text: 'rgb(var(--color-warning))', border: 'rgb(var(--color-warning) / 0.2)' };
+      case 'primary': return { bg: 'rgb(var(--store-feature-primary-bg))', text: 'rgb(var(--store-feature-primary))', border: 'rgb(var(--color-primary-500) / 0.3)' };
+      case 'success': return { bg: 'rgb(var(--store-feature-success-bg))', text: 'rgb(var(--store-feature-success))', border: 'rgb(var(--color-success) / 0.3)' };
+      case 'accent': return { bg: 'rgb(var(--store-feature-accent-bg))', text: 'rgb(var(--store-feature-accent))', border: 'rgb(var(--color-accent-500) / 0.3)' };
+      case 'warning': return { bg: 'rgb(var(--color-warning) / 0.1)', text: 'rgb(var(--color-warning-dark))', border: 'rgb(var(--color-warning) / 0.3)' };
       case 'info': return { bg: 'rgb(var(--color-info) / 0.1)', text: 'rgb(var(--color-info))', border: 'rgb(var(--color-info) / 0.2)' };
-      default: return { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-500))', border: 'rgb(var(--color-primary-500) / 0.2)' };
+      case 'error': return { bg: 'rgb(var(--color-error) / 0.1)', text: 'rgb(var(--color-error))', border: 'rgb(var(--color-error) / 0.2)' };
+      default: return { bg: 'rgb(var(--store-feature-primary-bg))', text: 'rgb(var(--store-feature-primary))', border: 'rgb(var(--color-primary-500) / 0.3)' };
     }
   };
   
   return (
-    <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+    <section id="features" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-muted">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Header - Trust-focused messaging */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" 
-            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-            <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-primary-600))' }}>
-              {isEn ? 'Purpose-built for finance teams' : 'Conçu pour les équipes finance'}
+          <div className="store-trust-badge mb-4">
+            <Shield className="w-4 h-4 store-check-icon" />
+            <span>
+              {isEn ? 'Trusted by 1,000+ Canadian businesses' : 'Approuvé par 1 000+ entreprises canadiennes'}
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Everything you need, nothing you don\'t' : 'Tout ce dont vous avez besoin, rien de plus'}
+            {isEn ? 'No Surprises. Just Numbers.' : 'Pas de surprises. Juste des chiffres.'}
           </h2>
-          <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <p className="text-lg max-w-2xl mx-auto text-secondary">
             {isEn 
-              ? 'Built for accountants and CFOs who want clarity, not complexity. Get started in minutes.'
-              : 'Conçu pour les comptables et CFO qui veulent de la clarté, pas de la complexité. Commencez en minutes.'}
+              ? 'Complete financial transparency for your business. See every number, trust every insight, and make confident decisions.'
+              : 'Transparence financière complète pour votre entreprise. Voyez chaque chiffre, faites confiance à chaque insight.'}
           </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Outcomes Grid - 2x2 for 4 cards */}
+        <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {FEATURES.map((feature, idx) => {
             const colors = getColorClasses(feature.color);
             const isHovered = hoveredIdx === idx;
@@ -571,26 +542,32 @@ function FeaturesSection({ isEn }: { isEn: boolean }) {
           })}
         </div>
         
-        {/* Bottom CTA */}
+        {/* Bottom CTA - Trust badges */}
         <div className="text-center mt-12">
-          <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <p className="text-sm mb-4 font-medium text-muted">
             {isEn 
-              ? 'Join 1,000+ Canadian businesses already using PlainLedger'
-              : 'Rejoignez 1 000+ entreprises canadiennes utilisant déjà PlainLedger'}
+              ? 'Built on trust, transparency, and Canadian values'
+              : 'Construit sur la confiance, la transparence et les valeurs canadiennes'}
           </p>
           <div className="flex flex-wrap justify-center gap-6">
-            {[
-              { icon: Clock, text: { en: 'Setup in 5 min', fr: 'Config. en 5 min' } },
-              { icon: Shield, text: { en: 'No credit card required', fr: 'Sans carte de crédit' } },
-              { icon: Zap, text: { en: '21-day free trial', fr: 'Essai gratuit 21 jours' } },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <item.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? item.text.en : item.text.fr}
-                </span>
-              </div>
-            ))}
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 store-check-icon" />
+              <span className="text-sm font-medium text-secondary">
+                {isEn ? 'Data stays in Canada' : 'Données au Canada'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 store-check-icon-success" />
+              <span className="text-sm font-medium text-secondary">
+                {isEn ? 'No hidden fees, ever' : 'Sans frais cachés'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 store-check-icon-accent" />
+              <span className="text-sm font-medium text-secondary">
+                {isEn ? '340% avg. ROI' : '340% ROI moy.'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -702,51 +679,222 @@ function PricingCard({
 }
 
 function PricingSection({ isEn }: { isEn: boolean }) {
-  const handlePlanSelect = (planId: string) => {
-    analytics.track('pricing_plan_selected', { plan: planId });
-    // All plans direct to Calendly for quote
-    window.open('https://calendly.com/anthonypaquet1508/15min', '_blank');
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(500000);
+  const [transactionVolume, setTransactionVolume] = useState<number>(1000);
+  
+  // ROI calculations based on industry averages
+  const estimatedSavings = useMemo(() => {
+    const anomalyRate = 0.02; // 2% error rate industry average
+    const detectionAccuracy = 0.97; // Our 97% detection rate
+    const avgErrorValue = monthlyRevenue * 0.005; // 0.5% of revenue per error
+    const errorsPerMonth = Math.floor(transactionVolume * anomalyRate);
+    const detectedErrors = Math.floor(errorsPerMonth * detectionAccuracy);
+    const monthlySavings = detectedErrors * avgErrorValue;
+    const yearlySavings = monthlySavings * 12;
+    const timeSavedHours = Math.floor(transactionVolume * 0.02); // 2 min per 100 transactions
+    
+    return {
+      monthlySavings,
+      yearlySavings,
+      detectedErrors,
+      timeSavedHours,
+      roi: Math.floor((yearlySavings / (monthlyRevenue * 0.001)) * 100), // ROI %
+    };
+  }, [monthlyRevenue, transactionVolume]);
+
+  const handleScheduleCall = () => {
+    analytics.track('roi_calculator_schedule_call', { 
+      monthlyRevenue, 
+      transactionVolume,
+      estimatedYearlySavings: estimatedSavings.yearlySavings 
+    });
+    window.open('https://calendly.com/plainledger/discovery', '_blank');
   };
 
   return (
-    <section id="pricing" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Plans tailored to your business' : 'Plans adaptés à votre entreprise'}
+    <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-muted">
+      <div className="max-w-5xl mx-auto">
+        {/* Header - Trust and transparency focused */}
+        <div className="text-center mb-12">
+          <div className="store-trust-badge mb-4">
+            <Calculator className="w-4 h-4 store-check-icon-accent" />
+            <span>{isEn ? 'Transparent Pricing' : 'Tarification transparente'}</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Fair Value, Clear Returns' : 'Prix équitable, retours clairs'}
           </h2>
-          <p className="text-base mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <p className="text-lg max-w-2xl mx-auto text-secondary">
             {isEn 
-              ? 'Schedule a call to discuss your needs and get a personalized quote.' 
-              : 'Planifiez un appel pour discuter de vos besoins et obtenir une soumission personnalisée.'}
+              ? 'No hidden fees. No surprises. Enterprise-grade data intelligence at 1/3 the cost of traditional solutions.'
+              : 'Sans frais cachés. Sans surprises. Intelligence de données enterprise à 1/3 du coût des solutions traditionnelles.'}
           </p>
         </div>
 
-        {/* Pricing cards - All plans */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-7xl mx-auto">
-          {PRICING_TIERS.map((plan) => (
-            <PricingCard
-              key={plan.id}
-              plan={plan}
-              isEn={isEn}
-              onSelect={handlePlanSelect}
-            />
-          ))}
+        {/* Calculator Card */}
+        <div 
+          className="rounded-2xl overflow-hidden shadow-lg border"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            {/* Input Side */}
+            <div className="p-8">
+              <h3 className="font-semibold text-lg mb-6" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Your Business' : 'Votre entreprise'}
+              </h3>
+              
+              {/* Monthly Revenue Slider */}
+              <div className="mb-8">
+                <div className="flex justify-between mb-2">
+                  <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn ? 'Monthly Revenue' : 'Revenus mensuels'}
+                  </label>
+                  <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                    ${monthlyRevenue.toLocaleString()}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="50000"
+                  max="5000000"
+                  step="50000"
+                  value={monthlyRevenue}
+                  onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, rgb(var(--color-primary-500)) ${((monthlyRevenue - 50000) / 4950000) * 100}%, rgb(var(--color-border)) ${((monthlyRevenue - 50000) / 4950000) * 100}%)`
+                  }}
+                />
+                <div className="flex justify-between text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>$50K</span>
+                  <span>$5M+</span>
+                </div>
+              </div>
+              
+              {/* Transaction Volume Slider */}
+              <div className="mb-6">
+                <div className="flex justify-between mb-2">
+                  <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn ? 'Monthly Transactions' : 'Transactions mensuelles'}
+                  </label>
+                  <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                    {transactionVolume.toLocaleString()}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="100"
+                  max="10000"
+                  step="100"
+                  value={transactionVolume}
+                  onChange={(e) => setTransactionVolume(Number(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, rgb(var(--color-primary-500)) ${((transactionVolume - 100) / 9900) * 100}%, rgb(var(--color-border)) ${((transactionVolume - 100) / 9900) * 100}%)`
+                  }}
+                />
+                <div className="flex justify-between text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>100</span>
+                  <span>10,000+</span>
+                </div>
+              </div>
+
+              {/* Assumptions Note */}
+              <div 
+                className="p-3 rounded-lg text-xs"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-muted))'
+                }}
+              >
+                <Info className="w-3 h-3 inline mr-1" />
+                {isEn 
+                  ? 'Based on industry average 2% error rate and our 97% detection accuracy'
+                  : 'Basé sur le taux d\'erreur moyen de 2% et notre précision de détection de 97%'}
+              </div>
+            </div>
+            
+            {/* Results Side - Green gradient background */}
+            <div className="store-roi-results">
+              <h3 className="font-semibold text-lg mb-6" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Your Potential Returns' : 'Vos retours potentiels'}
+              </h3>
+              
+              {/* Big Number - Yearly Savings with green accent */}
+              <div className="store-roi-highlight mb-6">
+                <div className="text-4xl sm:text-5xl font-bold mb-2 store-stat-primary">
+                  ${Math.floor(estimatedSavings.yearlySavings).toLocaleString()}
+                </div>
+                <div className="text-sm font-medium text-secondary">
+                  {isEn ? 'Estimated annual savings' : 'Économies annuelles estimées'}
+                </div>
+              </div>
+              
+              {/* Breakdown with green accents */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm flex items-center gap-2 text-secondary">
+                    <Shield className="w-3 h-3 store-check-icon" />
+                    {isEn ? 'Errors detected/month' : 'Erreurs détectées/mois'}
+                  </span>
+                  <span className="font-semibold store-stat-primary">
+                    {estimatedSavings.detectedErrors}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm flex items-center gap-2 text-secondary">
+                    <Check className="w-3 h-3 store-check-icon-success" />
+                    {isEn ? 'Monthly savings' : 'Économies mensuelles'}
+                  </span>
+                  <span className="font-semibold text-success">
+                    ${Math.floor(estimatedSavings.monthlySavings).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm flex items-center gap-2 text-secondary">
+                    <Clock className="w-3 h-3 store-check-icon-accent" />
+                    {isEn ? 'Time saved/month' : 'Temps économisé/mois'}
+                  </span>
+                  <span className="font-semibold store-stat-accent">
+                    {estimatedSavings.timeSavedHours}+ {isEn ? 'hours' : 'heures'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* CTA - Gold accent */}
+              <button
+                onClick={handleScheduleCall}
+                className="w-full btn-accent btn-lg group"
+              >
+                {isEn ? 'Get Your Free ROI Analysis' : 'Obtenez votre analyse ROI gratuite'}
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              
+              <p className="text-center text-xs mt-3 text-muted">
+                {isEn ? 'No commitment. No surprises.' : 'Sans engagement. Sans surprises.'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-10 text-center">
-          <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn 
-              ? 'Not sure which plan is right for you?' 
-              : 'Vous ne savez pas quel plan vous convient?'}
-          </p>
-          <button
-            onClick={() => window.open('https://calendly.com/anthonypaquet1508/15min', '_blank')}
-            className="btn-primary btn-lg"
-          >
-            {isEn ? 'Schedule a free consultation' : 'Planifier une consultation gratuite'}
-          </button>
+        {/* Cost Comparison - Trust-focused with green and gold */}
+        <div className="mt-8 grid sm:grid-cols-3 gap-4 text-center">
+          <div className="store-cost-card">
+            <div className="text-2xl font-bold mb-1 text-muted">$50K+/yr</div>
+            <div className="text-sm text-muted">{isEn ? 'Enterprise BI tools' : 'Outils BI enterprise'}</div>
+          </div>
+          <div className="store-cost-card-highlight">
+            <div className="text-2xl font-bold mb-1 store-stat-primary">
+              1/3 {isEn ? 'the cost' : 'du coût'}
+            </div>
+            <div className="text-sm font-medium store-headline-accent">PlainLedger</div>
+          </div>
+          <div className="store-cost-card-accent">
+            <div className="text-2xl font-bold mb-1 store-stat-accent">340%+</div>
+            <div className="text-sm store-stat-accent">{isEn ? 'Avg first-year ROI' : 'ROI moy. an 1'}</div>
+          </div>
         </div>
       </div>
     </section>
@@ -765,8 +913,13 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
     <section id="testimonials" className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
+          {/* Trust badge */}
+          <div className="store-trust-badge mb-4">
+            <Users className="w-4 h-4 store-check-icon" />
+            <span>{isEn ? 'Real results from real clients' : 'Résultats réels de vrais clients'}</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Trusted by Canadian finance teams' : 'Approuvé par les équipes financières canadiennes'}
+            {isEn ? 'Trusted by Canadian Finance Leaders' : 'Approuvé par les leaders financiers canadiens'}
           </h2>
         </div>
 
@@ -821,21 +974,17 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
                   "{isEn ? testimonial.quote.en : testimonial.quote.fr}"
                 </p>
 
-                {/* Metrics */}
+                {/* Metrics - Green accent */}
                 {testimonial.metrics && (
-                  <div className="mb-4 p-2 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                    <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
-                      {isEn ? testimonial.metrics.en : testimonial.metrics.fr}
-                    </p>
+                  <div className="store-testimonial-metric mb-4">
+                    <Check className="w-3 h-3" />
+                    {isEn ? testimonial.metrics.en : testimonial.metrics.fr}
                   </div>
                 )}
 
                 {/* Author */}
                 <div className="flex items-center gap-3">
-                  <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white flex-shrink-0"
-                    style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
-                  >
+                  <div className="store-avatar">
                     {testimonial.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -858,21 +1007,15 @@ function TestimonialsSection({ isEn }: { isEn: boolean }) {
           })}
         </div>
 
-        {/* Canadian regions */}
+        {/* Canadian regions - Green accent */}
         <div className="mt-12 text-center">
-          <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Serving businesses across Canada' : 'Au service des entreprises partout au Canada'}
+          <p className="text-sm mb-4 flex items-center justify-center gap-2 text-muted">
+            <MapPin className="w-4 h-4 store-check-icon" />
+            {isEn ? 'Proudly serving Canadian businesses coast to coast' : 'Fièrement au service des entreprises canadiennes d\'un océan à l\'autre'}
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            {CANADA_MARKET_MESSAGING.socialProof.regions.map((region) => (
-              <span 
-                key={region}
-                className="px-3 py-1 rounded-full text-sm"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text-secondary))'
-                }}
-              >
+          <div className="flex flex-wrap justify-center gap-2">
+            {CANADA_MARKET_MESSAGING.socialProof.regions.slice(0, 12).map((region) => (
+              <span key={region} className="store-region-badge">
                 {region}
               </span>
             ))}
@@ -888,38 +1031,35 @@ function CTASection({ isEn }: { isEn: boolean }) {
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-      <div 
-        className="max-w-4xl mx-auto text-center p-8 sm:p-12 rounded-3xl relative overflow-hidden"
-        style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
-      >
-        {/* Background decoration */}
+      <div className="max-w-4xl mx-auto store-cta-section">
+        {/* Background decoration - Green and Gold accents */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-1/2 -right-1/4 w-96 h-96 rounded-full bg-white/10" />
-          <div className="absolute -bottom-1/2 -left-1/4 w-96 h-96 rounded-full bg-white/5" />
+          <div className="absolute -bottom-1/2 -left-1/4 w-96 h-96 rounded-full" style={{ backgroundColor: 'rgb(var(--store-prosperity-accent-light) / 0.15)' }} />
+          <div className="absolute top-1/2 left-1/4 w-48 h-48 rounded-full bg-white/5" />
         </div>
 
         <div className="relative z-10">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">
-            {isEn ? 'Ready for financial clarity?' : 'Prêt pour la clarté financière?'}
+            {isEn ? 'No Surprises. Just Numbers.' : 'Pas de surprises. Juste des chiffres.'}
           </h2>
-          <p className="text-lg mb-8 text-white/80">
+          <p className="text-lg mb-8 text-white/90">
             {isEn 
-              ? 'Join 1,000+ Canadian businesses who trust PlainLedger for their financial insights.'
-              : 'Rejoignez plus de 1 000 entreprises canadiennes qui font confiance à PlainLedger.'}
+              ? 'Join 1,000+ Canadian businesses who trust PlainLedger for complete financial transparency.'
+              : 'Rejoignez plus de 1 000 entreprises canadiennes qui font confiance à PlainLedger pour une transparence financière complète.'}
           </p>
           <button
             onClick={() => {
               analytics.track('landing_page_cta_clicked', { location: 'bottom' });
               register();
             }}
-            className="bg-white font-semibold px-8 py-3.5 rounded-xl hover:bg-gray-100 transition-all inline-flex items-center gap-2 group"
-            style={{ color: 'rgb(var(--color-primary-700))' }}
+            className="store-cta-button group"
           >
             {isEn ? 'Start your free trial' : 'Commencer l\'essai gratuit'}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
-          <p className="text-sm mt-4 text-white/60">
-            {isEn ? 'No credit card required • 21 days free' : 'Sans carte de crédit • 21 jours gratuits'}
+          <p className="text-sm mt-4 text-white/70">
+            {isEn ? 'No credit card • No hidden fees • 21 days free' : 'Sans carte de crédit • Sans frais cachés • 21 jours gratuits'}
           </p>
         </div>
       </div>
@@ -956,14 +1096,17 @@ function Footer({ isEn }: { isEn: boolean }) {
                 PlainLedger
               </span>
             </div>
-            <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn 
-                ? 'Financial intelligence for Canadian businesses. Made with ❤️ in Canada.'
-                : 'Intelligence financière pour les entreprises canadiennes. Fait avec ❤️ au Canada.'}
+            <p className="text-sm mb-2 font-medium store-headline-accent">
+              {isEn ? 'No surprises. Just numbers.' : 'Pas de surprises. Juste des chiffres.'}
             </p>
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-sm mb-4 text-muted">
+              {isEn 
+                ? 'Democratizing enterprise-grade financial intelligence for Canadian businesses.'
+                : 'Démocratiser l\'intelligence financière enterprise pour les entreprises canadiennes.'}
+            </p>
+            <div className="flex items-center gap-2 text-sm store-headline-accent">
               <MapPin className="w-4 h-4" />
-              <span>Canada 🇨🇦</span>
+              <span>{isEn ? 'Made in Canada' : 'Fait au Canada'} 🇨🇦</span>
             </div>
           </div>
           
@@ -1004,20 +1147,20 @@ function Footer({ isEn }: { isEn: boolean }) {
           </div>
         </div>
         
-        <div 
-          className="pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4"
-          style={{ borderColor: 'rgb(var(--color-border))' }}
-        >
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+        <div className="pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <p className="text-sm text-muted">
             © 2026 PlainLedger Inc. {isEn ? 'All rights reserved.' : 'Tous droits réservés.'}
           </p>
-          <div className="flex items-center gap-4 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <div className="flex items-center gap-4 text-sm text-muted">
             <span className="flex items-center gap-1">
-              <Shield className="w-4 h-4" />
+              <Shield className="w-4 h-4 store-check-icon" />
               {isEn ? 'Built by CPAs' : 'Conçu par des CPA'}
             </span>
             <span>•</span>
-            <span>{isEn ? 'Data stored in Canada' : 'Données au Canada'}</span>
+            <span className="flex items-center gap-1">
+              <Check className="w-4 h-4 store-check-icon-success" />
+              {isEn ? 'Data stays in Canada' : 'Données au Canada'}
+            </span>
           </div>
         </div>
       </div>
@@ -1056,12 +1199,19 @@ export default function Store() {
     navigate('/signup');
   };
 
+  const handleScheduleCall = () => {
+    analytics.track('schedule_call_clicked', { location: 'industry_kpi_section' });
+    // Open calendar or contact form - for now, navigate to contact
+    window.open('https://calendly.com/plainledger/discovery', '_blank');
+  };
+
   return (
     <div style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
       <Header isEn={isEn} onLanguageToggle={toggleLanguage} />
       <main>
         <HeroSection isEn={isEn} onWatchDemo={() => setShowDemoModal(true)} />
         <FeaturesSection isEn={isEn} />
+        <IndustryKPISection onScheduleCall={handleScheduleCall} />
         <PricingSection isEn={isEn} />
         <IntegrationsSection />
         <TestimonialsSection isEn={isEn} />

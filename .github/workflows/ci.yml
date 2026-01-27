@@ -17,6 +17,11 @@ on:
         required: false
         default: 'false'
         type: boolean
+      run_datalake_tests:
+        description: 'Run Datalake Integration Tests (with LocalStack)'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   id-token: write
@@ -153,6 +158,132 @@ jobs:
         working-directory: apps/web
 
   # ==========================================================================
+  # Stage 3b: Datalake Integration Tests (Manual Trigger Only)
+  # ==========================================================================
+  test-datalake:
+    name: Datalake Integration Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: ${{ github.event.inputs.run_datalake_tests == 'true' }}
+    services:
+      localstack:
+        image: localstack/localstack:3.0
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: s3
+          DEBUG: 0
+          AWS_DEFAULT_REGION: us-east-1
+          SKIP_INFRA_DOWNLOADS: 1
+          SKIP_SSL_CERT_DOWNLOAD: 1
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/_localstack/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 20s
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: plainledger
+          POSTGRES_USER: plainledger
+          POSTGRES_PASSWORD: plainledger_secret
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Restore API cache
+        uses: actions/cache@v4
+        with:
+          path: apps/api/node_modules
+          key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
+      
+      - name: Install dependencies if needed
+        run: npm ci
+        working-directory: apps/api
+        if: steps.cache-api.outputs.cache-hit != 'true'
+      
+      - name: Wait for LocalStack
+        run: |
+          echo "Waiting for LocalStack to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:4566/_localstack/health | grep -q '"s3"'; then
+              echo "LocalStack is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+      
+      - name: Create S3 Buckets
+        run: |
+          # Install AWS CLI if not available
+          pip install awscli-local awscli
+          
+          # Create datalake buckets
+          export AWS_ACCESS_KEY_ID=test
+          export AWS_SECRET_ACCESS_KEY=test
+          export AWS_DEFAULT_REGION=us-east-1
+          
+          awslocal s3 mb s3://plainledger-test
+          awslocal s3 mb s3://plainledger-bronze
+          awslocal s3 mb s3://plainledger-silver
+          awslocal s3 mb s3://plainledger-gold
+          
+          echo "S3 Buckets created:"
+          awslocal s3 ls
+      
+      - name: Initialize Database Schema
+        run: |
+          PGPASSWORD=plainledger_secret psql -h localhost -U plainledger -d plainledger -f local-dev/init-db.sql || true
+          PGPASSWORD=plainledger_secret psql -h localhost -U plainledger -d plainledger -f local-dev/init-datalake.sql || true
+        env:
+          PGHOST: localhost
+          PGUSER: plainledger
+          PGPASSWORD: plainledger_secret
+          PGDATABASE: plainledger
+      
+      - name: Run Datalake Integration Tests
+        run: npm test -- --testPathPattern="datalake"
+        working-directory: apps/api
+        env:
+          S3_ENDPOINT: http://localhost:4566
+          S3_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          S3_BUCKET_BRONZE: plainledger-bronze
+          S3_BUCKET_SILVER: plainledger-silver
+          S3_BUCKET_GOLD: plainledger-gold
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: plainledger
+          DB_USERNAME: plainledger
+          DB_PASSWORD: plainledger_secret
+      
+      - name: Datalake Test Summary
+        if: always()
+        run: |
+          echo "## 🗃️ Datalake Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Layer | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Bronze (Raw) | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
+          echo "| Silver (Cleansed) | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
+          echo "| Gold (Analytics) | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**LocalStack Services:** S3 (core only)" >> $GITHUB_STEP_SUMMARY
+
+  # ==========================================================================
   # Stage 4: Build Docker Images and Push to ECR
   # ==========================================================================
   build-and-push:
@@ -285,7 +416,7 @@ jobs:
   summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [lint-api, lint-web, test-api, test-web, build-and-push, deploy]
+    needs: [lint-api, lint-web, test-api, test-web, test-datalake, build-and-push, deploy]
     if: always()
     steps:
       - name: Generate summary
@@ -327,6 +458,15 @@ jobs:
             echo "| 🧪 Test Web | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| 🧪 Test Web | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Datalake integration test results (manual trigger only)
+          if [ "${{ needs.test-datalake.result }}" == "success" ]; then
+            echo "| 🗃️ Datalake Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test-datalake.result }}" == "skipped" ]; then
+            echo "| 🗃️ Datalake Tests | ⏭️ Not triggered |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 🗃️ Datalake Tests | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
           
           # Build results

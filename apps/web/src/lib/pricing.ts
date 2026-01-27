@@ -619,16 +619,56 @@ export class PricingCalculator {
 export const CANADA_MARKET_MESSAGING = {
   taglines: {
     main: {
-      en: 'Financial Intelligence for Canadian Businesses',
-      fr: 'L\'intelligence financière pour les entreprises canadiennes',
+      en: 'Enterprise Data Intelligence. Startup-Friendly Pricing.',
+      fr: 'Intelligence de données d\'entreprise. Prix accessible aux PME.',
     },
     sub: {
-      en: 'Connect your accounting software. Get instant insights. Made in Canada.',
-      fr: 'Connectez votre logiciel comptable. Obtenez des insights instantanés. Fait au Canada.',
+      en: 'Democratizing data lake access for Canadian startups and PMEs. AI-powered anomaly detection at 1/3 the cost.',
+      fr: 'Démocratiser l\'accès aux lacs de données pour les startups et PME canadiennes. Détection d\'anomalies par IA à 1/3 du coût.',
+    },
+    value: {
+      en: 'Your data. Your industry. Our AI.',
+      fr: 'Vos données. Votre industrie. Notre IA.',
+    },
+  },
+  
+  // ROI-focused metrics for executive appeal
+  roiMetrics: {
+    avgSavings: { 
+      value: '$847K', 
+      label: { en: 'avg. prevented losses per client', fr: 'pertes évitées en moyenne par client' } 
+    },
+    timeReduction: { 
+      value: '60%', 
+      label: { en: 'faster month-end close', fr: 'clôture mensuelle plus rapide' } 
+    },
+    accuracy: { 
+      value: '97%', 
+      label: { en: 'anomaly detection accuracy', fr: 'précision de détection d\'anomalies' } 
+    },
+    costAdvantage: { 
+      value: '1/3', 
+      label: { en: 'the cost of enterprise solutions', fr: 'du coût des solutions enterprise' } 
+    },
+    firstYearROI: {
+      value: '340%',
+      label: { en: 'average first-year ROI', fr: 'ROI moyen la première année' }
     },
   },
   
   valueProps: {
+    dataLakeDemocratization: {
+      en: 'Enterprise-grade data lake infrastructure accessible to growing businesses',
+      fr: 'Infrastructure de lac de données de niveau entreprise accessible aux entreprises en croissance',
+    },
+    costSavings: {
+      en: '1/3 the cost of traditional enterprise BI solutions',
+      fr: '1/3 du coût des solutions BI enterprise traditionnelles',
+    },
+    industryAI: {
+      en: 'AI optimized for your specific industry vertical',
+      fr: 'IA optimisée pour votre secteur d\'activité spécifique',
+    },
     bilingualFirst: {
       en: 'Bilingual interface designed for Canadian businesses',
       fr: 'Interface bilingue conçue pour les entreprises canadiennes',
@@ -638,20 +678,16 @@ export const CANADA_MARKET_MESSAGING = {
       fr: 'Rapports conformes TPS/TVH/TVP inclus',
     },
     localSupport: {
-      en: 'Canadian support team',
-      fr: 'Équipe de support canadienne',
-    },
-    cpaNetwork: {
-      en: 'Trusted by Canadian CPAs and accounting firms',
-      fr: 'Approuvé par les CPA et cabinets comptables canadiens',
+      en: 'Canadian support team with data hosted in Canada',
+      fr: 'Équipe de support canadienne avec données hébergées au Canada',
     },
   },
   
   socialProof: {
     stats: {
-      businesses: { value: '1,000+', label: { en: 'Canadian businesses', fr: 'entreprises canadiennes' } },
-      savings: { value: '40%', label: { en: 'time saved on reporting', fr: 'de temps économisé' } },
-      anomalies: { value: '$2M+', label: { en: 'anomalies caught', fr: 'd\'anomalies détectées' } },
+      savings: { value: '$847K', label: { en: 'avg. client savings', fr: 'économies client moy.' } },
+      accuracy: { value: '97%', label: { en: 'detection accuracy', fr: 'précision détection' } },
+      costAdvantage: { value: '1/3', label: { en: 'the cost', fr: 'du coût' } },
     },
     regions: [
       // Ontario
@@ -680,26 +716,43 @@ export const CANADA_MARKET_MESSAGING = {
     ],
   },
   
+  // Industries we optimize for
+  industries: [
+    { id: 'real_estate', name: { en: 'Real Estate', fr: 'Immobilier' }, icon: '🏢' },
+    { id: 'restaurant', name: { en: 'Restaurant', fr: 'Restauration' }, icon: '🍽️' },
+    { id: 'hospitality', name: { en: 'Hospitality', fr: 'Hôtellerie' }, icon: '🏨' },
+    { id: 'retail', name: { en: 'Retail', fr: 'Commerce de détail' }, icon: '🛍️' },
+    { id: 'construction', name: { en: 'Construction', fr: 'Construction' }, icon: '🏗️' },
+    { id: 'professional_services', name: { en: 'Professional Services', fr: 'Services professionnels' }, icon: '💼' },
+  ],
+  
   competitiveAdvantages: [
+    {
+      vs: 'Enterprise BI Tools',
+      advantage: {
+        en: 'Same capabilities at 1/3 the cost, designed for SMBs',
+        fr: 'Mêmes capacités à 1/3 du coût, conçu pour les PME',
+      },
+    },
     {
       vs: 'QuickBooks/Sage',
       advantage: {
-        en: 'PlainLedger adds intelligence on top of your existing accounting software',
-        fr: 'PlainLedger ajoute de l\'intelligence à votre logiciel comptable existant',
+        en: 'Adds AI-powered intelligence on top of your existing accounting software',
+        fr: 'Ajoute l\'intelligence IA à votre logiciel comptable existant',
       },
     },
     {
       vs: 'Excel/Spreadsheets',
       advantage: {
-        en: 'Real-time sync, intelligent anomaly detection, no manual data entry',
-        fr: 'Synchronisation en temps réel, détection IA, aucune saisie manuelle',
+        en: 'Real-time data lake, intelligent anomaly detection, no manual data entry',
+        fr: 'Lac de données temps réel, détection IA, aucune saisie manuelle',
       },
     },
     {
       vs: 'US-based tools',
       advantage: {
-        en: 'Canada-first: Bilingual interface, GST/HST/PST, local support, data in Canada',
-        fr: 'Canada d\'abord: interface bilingue, TPS/TVH/TVP, support local, données au Canada',
+        en: 'Canada-first: Bilingual, GST/HST/PST compliant, data stays in Canada',
+        fr: 'Canada d\'abord: bilingue, conforme TPS/TVH/TVP, données au Canada',
       },
     },
   ],

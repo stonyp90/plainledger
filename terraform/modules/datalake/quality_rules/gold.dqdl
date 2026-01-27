@@ -1,0 +1,39 @@
+Rules = [
+    # Dimension completeness
+    Completeness "organization_key" = 1.0,
+    Completeness "account_key" = 1.0,
+    Completeness "date_key" = 1.0,
+    
+    # Uniqueness (primary keys)
+    Uniqueness "organization_key" in dim_organization = 1.0,
+    Uniqueness "account_key" in dim_account = 1.0,
+    Uniqueness "transaction_key" in fact_transactions = 1.0,
+    
+    # Referential integrity across star schema
+    ReferentialIntegrity "account_key" "dim_account.account_key" = 1.0,
+    ReferentialIntegrity "date_key" "dim_date.date_key" = 1.0,
+    ReferentialIntegrity "contact_key" "dim_contact.contact_key" = 1.0,
+    ReferentialIntegrity "item_key" "dim_item.item_key" = 1.0,
+    ReferentialIntegrity "class_key" "dim_class.class_key" = 1.0,
+    ReferentialIntegrity "location_key" "dim_location.location_key" = 1.0,
+    ReferentialIntegrity "organization_key" "dim_organization.organization_key" = 1.0,
+    
+    # Balance validation - debits must equal credits per journal entry
+    CustomSql "SELECT COUNT(*) FROM (
+        SELECT transaction_id, ABS(SUM(debit_amount) - SUM(credit_amount)) as diff
+        FROM fact_transactions
+        GROUP BY transaction_id
+        HAVING diff > 0.01
+    )" = 0,
+    
+    # Row count consistency - Gold should have >= 95% of Silver records
+    # (allowing for filtered/quarantined records)
+    RowCountMatch "fact_transactions" >= "silver_transactions" * 0.95,
+    
+    # No negative balances for asset accounts (unless allowed)
+    CustomSql "SELECT COUNT(*) FROM fact_account_balances f
+        INNER JOIN dim_account d ON f.account_key = d.account_key
+        WHERE d.account_type = 'ASSET' 
+        AND d.is_debit_normal = true
+        AND f.closing_balance < -0.01" = 0
+]

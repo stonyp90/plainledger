@@ -1,6 +1,6 @@
-import { TenantId } from '@domain/value-objects/TenantId';
-import { Money } from '@domain/value-objects/Money';
-import { DomainError } from '@domain/errors/DomainError';
+import { TenantId } from "@domain/value-objects/TenantId";
+import { Money } from "@domain/value-objects/Money";
+import { DomainError } from "@domain/errors/DomainError";
 
 export interface OrganizationProps {
   id?: string;
@@ -57,23 +57,23 @@ export class Organization {
   static create(input: CreateOrganizationInput): Organization {
     // Validate name
     if (!input.name || input.name.trim().length < 2) {
-      throw new DomainError('Organization name must be at least 2 characters');
+      throw new DomainError("Organization name must be at least 2 characters");
     }
 
     if (input.name.length > 255) {
-      throw new DomainError('Organization name must not exceed 255 characters');
+      throw new DomainError("Organization name must not exceed 255 characters");
     }
 
     // Validate fiscal year end month
     const fiscalYearEndMonth = input.fiscalYearEndMonth ?? 12;
     if (fiscalYearEndMonth < 1 || fiscalYearEndMonth > 12) {
-      throw new DomainError('Fiscal year end month must be between 1 and 12');
+      throw new DomainError("Fiscal year end month must be between 1 and 12");
     }
 
     // Validate currency
-    const currency = input.currency ?? 'CAD';
+    const currency = input.currency ?? "CAD";
     if (!/^[A-Z]{3}$/.test(currency)) {
-      throw new DomainError('Currency must be a valid 3-letter ISO code');
+      throw new DomainError("Currency must be a valid 3-letter ISO code");
     }
 
     // Validate tax number format (Canadian format as default)
@@ -146,7 +146,7 @@ export class Organization {
   // Business Methods
   updateName(name: string): void {
     if (!name || name.trim().length < 2) {
-      throw new DomainError('Organization name must be at least 2 characters');
+      throw new DomainError("Organization name must be at least 2 characters");
     }
     this._name = name.trim();
     this._updatedAt = new Date();
@@ -160,7 +160,7 @@ export class Organization {
 
   changeFiscalYearEnd(month: number): void {
     if (month < 1 || month > 12) {
-      throw new DomainError('Fiscal year end month must be between 1 and 12');
+      throw new DomainError("Fiscal year end month must be between 1 and 12");
     }
     this._fiscalYearEndMonth = month;
     this._updatedAt = new Date();

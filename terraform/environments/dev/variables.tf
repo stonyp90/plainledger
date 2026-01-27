@@ -76,3 +76,50 @@ variable "github_repo" {
   type        = string
   default     = "plainledger"
 }
+
+# ==============================================================================
+# Integration Credentials (set via terraform.tfvars or environment)
+# ==============================================================================
+
+# QuickBooks Integration
+variable "quickbooks_client_id" {
+  description = "QuickBooks OAuth Client ID"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "quickbooks_client_secret" {
+  description = "QuickBooks OAuth Client Secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "quickbooks_environment" {
+  description = "QuickBooks environment (sandbox or production)"
+  type        = string
+  default     = "sandbox"
+}
+
+# Azure AD / Power BI Integration
+variable "azure_tenant_id" {
+  description = "Azure AD Tenant ID for Power BI"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "azure_client_id" {
+  description = "Azure AD Application (client) ID"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "azure_client_secret" {
+  description = "Azure AD Client Secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

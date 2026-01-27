@@ -729,7 +729,7 @@ function TourStep({
   );
 }
 
-// Step 7: Complete
+// Step 7: Complete - ROI-centric messaging
 function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () => void }) {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -739,64 +739,111 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
       <div className="mb-8">
         <div 
           className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-          style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
         >
-          <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-success))' }} />
+          <BarChart3 className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
         </div>
         <h1 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? "You're all set!" : "Vous êtes prêt !"}
+          {isEn ? "Your Data Intelligence Platform is Ready" : "Votre plateforme d'intelligence est prête"}
         </h1>
-        <p className="text-lg" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+        <p className="text-lg mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
           {isEn 
-            ? `${data.companyName} is ready to go. Let's explore your new dashboard.`
-            : `${data.companyName} est prêt. Explorons votre nouveau tableau de bord.`}
+            ? `${data.companyName}'s AI-powered financial insights await.`
+            : `Les insights financiers IA de ${data.companyName} vous attendent.`}
         </p>
+        <p className="text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
+          {isEn 
+            ? 'Our clients save an average of $847K/year. Start seeing your ROI today.'
+            : 'Nos clients économisent en moyenne 847 000$/an. Commencez à voir votre ROI dès aujourd\'hui.'}
+        </p>
+      </div>
+
+      {/* ROI Preview */}
+      <div 
+        className="p-6 rounded-xl text-left mb-6"
+        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.05)', border: '1px solid rgb(var(--color-primary-500) / 0.2)' }}
+      >
+        <h3 className="font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'What happens next' : 'Ce qui se passe ensuite'}
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white" 
+              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>1</div>
+            <div>
+              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'AI analyzes your data' : 'L\'IA analyse vos données'}
+              </span>
+              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Industry-specific anomaly detection starts immediately' : 'Détection d\'anomalies spécifique à l\'industrie démarre immédiatement'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white" 
+              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>2</div>
+            <div>
+              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'KPIs calculated for your industry' : 'KPIs calculés pour votre industrie'}
+              </span>
+              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Compare against benchmarks automatically' : 'Comparez automatiquement aux références'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white" 
+              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>3</div>
+            <div>
+              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'See ROI within minutes' : 'Voyez le ROI en minutes'}
+              </span>
+              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Identify savings opportunities and potential errors' : 'Identifiez les opportunités d\'économies et erreurs potentielles'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Summary */}
       <div 
-        className="p-6 rounded-xl text-left mb-8"
+        className="p-4 rounded-xl text-left mb-8"
         style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
       >
-        <h3 className="font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'Setup summary' : 'Résumé de la configuration'}
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? `Organization: ${data.companyName}` : `Organisation: ${data.companyName}`}
-            </span>
+        <h4 className="text-sm font-medium mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? 'Setup summary' : 'Résumé'}
+        </h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>{data.companyName}</span>
           </div>
-          <div className="flex items-center gap-3">
+          {data.industry && (
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+              <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? `Industry: ${data.industry}` : `Industrie: ${data.industry}`}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
             {data.primarySource && !data.skipSource ? (
-              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+              <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
             ) : (
-              <X className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <X className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
             )}
             <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {data.primarySource && !data.skipSource
-                ? (isEn ? `Connected: ${data.primarySource}` : `Connecté: ${data.primarySource}`)
-                : (isEn ? 'Data source: Not connected yet' : 'Source de données: Pas encore connecté')}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            {data.teamEmails.length > 0 && !data.skipTeam ? (
-              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-            ) : (
-              <X className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            )}
-            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {data.teamEmails.length > 0 && !data.skipTeam
-                ? (isEn ? `Team: ${data.teamEmails.length} invited` : `Équipe: ${data.teamEmails.length} invité(s)`)
-                : (isEn ? 'Team: No invites sent' : 'Équipe: Aucune invitation envoyée')}
+                ? (isEn ? `Source: ${data.primarySource}` : `Source: ${data.primarySource}`)
+                : (isEn ? 'Data source pending' : 'Source en attente')}
             </span>
           </div>
         </div>
       </div>
 
       <button onClick={onFinish} className="btn-primary btn-lg">
-        {isEn ? 'Go to Dashboard' : 'Aller au tableau de bord'}
+        {isEn ? 'Start Seeing Your ROI' : 'Commencez à voir votre ROI'}
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>
@@ -940,7 +987,7 @@ export default function Onboarding() {
             {/* Desktop Nav - opens in new tab to preserve onboarding progress */}
             <nav className="hidden md:flex items-center gap-6">
               <a 
-                href="/store#features" 
+                href="/#features" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
@@ -950,7 +997,7 @@ export default function Onboarding() {
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
               <a 
-                href="/store#pricing" 
+                href="/#pricing" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
@@ -960,17 +1007,17 @@ export default function Onboarding() {
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
               <a 
-                href="/store#cpa" 
+                href="/#industry-kpis" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
-                {isEn ? 'For CPAs' : 'Pour CPA'}
+                {isEn ? 'Industries' : 'Industries'}
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
               <a 
-                href="/store#testimonials" 
+                href="/#testimonials" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
@@ -1020,7 +1067,7 @@ export default function Onboarding() {
             <div className="md:hidden py-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
               <nav className="flex flex-col gap-3">
                 <a 
-                  href="/store#features" 
+                  href="/#features" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm font-medium py-2" 
@@ -1029,7 +1076,7 @@ export default function Onboarding() {
                   {isEn ? 'Features' : 'Fonctionnalités'}
                 </a>
                 <a 
-                  href="/store#pricing" 
+                  href="/#pricing" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm font-medium py-2" 
@@ -1038,16 +1085,16 @@ export default function Onboarding() {
                   {isEn ? 'Pricing' : 'Tarifs'}
                 </a>
                 <a 
-                  href="/store#cpa" 
+                  href="/#industry-kpis" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm font-medium py-2" 
                   style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
-                  {isEn ? 'For CPAs' : 'Pour CPA'}
+                  {isEn ? 'Industries' : 'Industries'}
                 </a>
                 <a 
-                  href="/store#testimonials" 
+                  href="/#testimonials" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-sm font-medium py-2" 

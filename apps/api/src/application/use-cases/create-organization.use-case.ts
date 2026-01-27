@@ -1,8 +1,11 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Organization, CreateOrganizationInput } from '@domain/entities/Organization';
-import { IOrganizationRepository } from '@application/ports/outbound/IOrganizationRepository';
-import { TenantId } from '@domain/value-objects/TenantId';
-import { DuplicateEntityError } from '@domain/errors/DomainError';
+import { Injectable, Inject } from "@nestjs/common";
+import {
+  Organization,
+  CreateOrganizationInput,
+} from "@domain/entities/Organization";
+import { IOrganizationRepository } from "@application/ports/outbound/IOrganizationRepository";
+import { TenantId } from "@domain/value-objects/TenantId";
+import { DuplicateEntityError } from "@domain/errors/DomainError";
 
 export interface CreateOrganizationRequest {
   tenantId: string;
@@ -28,24 +31,30 @@ export interface CreateOrganizationResponse {
 
 /**
  * Use Case: Create a new Organization
- * 
+ *
  * This use case handles the creation of a new organization (tenant)
  * in the multi-tenant financial reporting system.
  */
 @Injectable()
 export class CreateOrganizationUseCase {
   constructor(
-    @Inject('IOrganizationRepository')
+    @Inject("IOrganizationRepository")
     private readonly organizationRepository: IOrganizationRepository,
   ) {}
 
-  async execute(request: CreateOrganizationRequest): Promise<CreateOrganizationResponse> {
+  async execute(
+    request: CreateOrganizationRequest,
+  ): Promise<CreateOrganizationResponse> {
     // Check if tenant ID already exists
     const tenantId = TenantId.create(request.tenantId);
     const exists = await this.organizationRepository.existsByTenantId(tenantId);
-    
+
     if (exists) {
-      throw new DuplicateEntityError('Organization', 'tenantId', request.tenantId);
+      throw new DuplicateEntityError(
+        "Organization",
+        "tenantId",
+        request.tenantId,
+      );
     }
 
     // Create the organization entity (validates business rules)

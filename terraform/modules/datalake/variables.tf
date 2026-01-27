@@ -18,3 +18,9 @@ variable "aws_region" {
   type        = string
   default     = "ca-central-1"
 }
+
+variable "alert_email" {
+  description = "Email address for ETL alerts (optional)"
+  type        = string
+  default     = ""
+}

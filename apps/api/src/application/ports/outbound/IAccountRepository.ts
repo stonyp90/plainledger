@@ -1,5 +1,5 @@
-import { Account, AccountType } from '@domain/entities/Account';
-import { AccountCode } from '@domain/value-objects/AccountCode';
+import { Account, AccountType } from "@domain/entities/Account";
+import { AccountCode } from "@domain/value-objects/AccountCode";
 
 /**
  * Port (Interface) for Account Repository
@@ -13,7 +13,10 @@ export interface IAccountRepository {
   /**
    * Find an account by code within an organization
    */
-  findByCode(organizationId: string, code: AccountCode): Promise<Account | null>;
+  findByCode(
+    organizationId: string,
+    code: AccountCode,
+  ): Promise<Account | null>;
 
   /**
    * Find all accounts for an organization
@@ -31,10 +34,7 @@ export interface IAccountRepository {
   /**
    * Find accounts by type for balance sheet/income statement
    */
-  findByTypes(
-    organizationId: string,
-    types: AccountType[],
-  ): Promise<Account[]>;
+  findByTypes(organizationId: string, types: AccountType[]): Promise<Account[]>;
 
   /**
    * Save a new account

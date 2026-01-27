@@ -143,7 +143,7 @@ export class SelectionManager {
       case 'cell':
         if (this.selection.cell) return [this.selection.cell];
         return [];
-      case 'range':
+      case 'range': {
         if (!this.selection.startCell || !this.selection.endCell) return [];
         const cells: CellAddress[] = [];
         const startDriverIdx = driverOrder.indexOf(this.selection.startCell.driverId);
@@ -166,6 +166,7 @@ export class SelectionManager {
           }
         }
         return cells;
+      }
       default:
         return [];
     }

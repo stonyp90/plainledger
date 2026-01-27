@@ -5,7 +5,20 @@
 # Web: http://localhost:5173
 # API: http://localhost:3000
 # Keycloak: http://localhost:8080 (admin/admin)
+# LocalStack: http://localhost:4566 (AWS simulation)
 # MinIO: http://localhost:9001 (plainledger/plainledger_secret)
+# ============================================
+#
+# Datalake (Medallion Architecture):
+# - Bronze: s3://plainledger-bronze (raw data)
+# - Silver: s3://plainledger-silver (cleansed data)
+# - Gold: s3://plainledger-gold (analytics-ready)
+# ============================================
+#
+# QuickBooks Integration:
+# 1. Set QUICKBOOKS_CLIENT_ID and QUICKBOOKS_CLIENT_SECRET in .env
+# 2. Configure redirect URI in QuickBooks Developer Portal
+# 3. For local testing, use ngrok: ngrok http 3000
 # ============================================
 
 services:
@@ -81,7 +94,8 @@ services:
       - "5432:5432"
     volumes:
       - app-db-data:/var/lib/postgresql/data
-      - ./local-dev/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./local-dev/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./local-dev/init-datalake.sql:/docker-entrypoint-initdb.d/02-datalake.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U plainledger"]
       interval: 5s
@@ -110,6 +124,36 @@ services:
       - plainledger-network
 
   # ============================================
+  # LocalStack - AWS Services Simulation (S3 only - core module)
+  # ============================================
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: plainledger-localstack
+    environment:
+      # Only load S3 - core service, no extra modules
+      SERVICES: s3
+      DEBUG: ${LOCALSTACK_DEBUG:-0}
+      DATA_DIR: /var/lib/localstack/data
+      AWS_DEFAULT_REGION: us-east-1
+      EDGE_PORT: 4566
+      # Disable unnecessary features for lighter footprint
+      SKIP_INFRA_DOWNLOADS: 1
+      SKIP_SSL_CERT_DOWNLOAD: 1
+    ports:
+      - "4566:4566"  # LocalStack Edge
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./local-dev/localstack-init:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - plainledger-network
+
+  # ============================================
   # MinIO - S3-Compatible Object Storage (Data Lake)
   # ============================================
   minio:
@@ -132,6 +176,90 @@ services:
     networks:
       - plainledger-network
 
+  # ============================================
+  # PlainLedger API
+  # ============================================
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: plainledger-api
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      # Database
+      DB_HOST: app-db
+      DB_PORT: 5432
+      DB_NAME: plainledger
+      DB_USERNAME: plainledger
+      DB_PASSWORD: plainledger_secret
+      # Keycloak
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: plainledger
+      KEYCLOAK_CLIENT_ID: plainledger-api
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # S3 Storage (LocalStack or MinIO)
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://localstack:4566}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+      S3_BUCKET_BRONZE: ${S3_BUCKET_BRONZE:-plainledger-bronze}
+      S3_BUCKET_SILVER: ${S3_BUCKET_SILVER:-plainledger-silver}
+      S3_BUCKET_GOLD: ${S3_BUCKET_GOLD:-plainledger-gold}
+      # Legacy MinIO support
+      MINIO_ACCESS_KEY: plainledger
+      MINIO_SECRET_KEY: plainledger_secret
+      S3_BUCKET_NAME: plainledger-datalake
+      # QuickBooks Integration
+      QUICKBOOKS_CLIENT_ID: ${QUICKBOOKS_CLIENT_ID:-}
+      QUICKBOOKS_CLIENT_SECRET: ${QUICKBOOKS_CLIENT_SECRET:-}
+      QUICKBOOKS_REDIRECT_URI: ${QUICKBOOKS_REDIRECT_URI:-http://localhost:3000/api/v1/datasources/oauth/quickbooks/callback}
+      # App URL (for OAuth callbacks)
+      APP_URL: ${APP_URL:-http://localhost:5173}
+    ports:
+      - "3000:3000"
+    depends_on:
+      app-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - plainledger-network
+
+  # ============================================
+  # PlainLedger Web
+  # ============================================
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: plainledger-web
+    environment:
+      VITE_API_URL: ${API_URL:-http://localhost:3000}
+      VITE_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
+      VITE_KEYCLOAK_REALM: plainledger
+      VITE_KEYCLOAK_CLIENT_ID: plainledger-web
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - plainledger-network
+
 # ============================================
 # Volumes
 # ============================================
@@ -143,6 +271,8 @@ volumes:
   redis-data:
     driver: local
   minio-data:
+    driver: local
+  localstack-data:
     driver: local
 
 # ============================================

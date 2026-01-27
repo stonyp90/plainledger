@@ -1,4 +1,4 @@
-import { DomainError } from '@domain/errors/DomainError';
+import { DomainError } from "@domain/errors/DomainError";
 
 /**
  * AccountCode Value Object
@@ -16,15 +16,15 @@ export class AccountCode {
    */
   static create(value: string): AccountCode {
     if (!value || value.trim().length === 0) {
-      throw new DomainError('AccountCode cannot be empty');
+      throw new DomainError("AccountCode cannot be empty");
     }
 
     const trimmed = value.trim();
 
     // Validate format: 1-20 characters, alphanumeric with dots and hyphens
-    if (!/^[A-Za-z0-9][A-Za-z0-9.\-]{0,18}[A-Za-z0-9]?$/.test(trimmed)) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9.-]{0,18}[A-Za-z0-9]?$/.test(trimmed)) {
       throw new DomainError(
-        'AccountCode must be 1-20 alphanumeric characters with optional dots and hyphens',
+        "AccountCode must be 1-20 alphanumeric characters with optional dots and hyphens",
       );
     }
 
@@ -54,9 +54,7 @@ export class AccountCode {
    * Check if this code is a parent of another code
    */
   isParentOf(other: AccountCode): boolean {
-    return (
-      other._value.startsWith(this._value) && other._value !== this._value
-    );
+    return other._value.startsWith(this._value) && other._value !== this._value;
   }
 
   equals(other: AccountCode): boolean {
@@ -71,6 +69,8 @@ export class AccountCode {
    * Compare for sorting
    */
   compareTo(other: AccountCode): number {
-    return this._value.localeCompare(other._value, undefined, { numeric: true });
+    return this._value.localeCompare(other._value, undefined, {
+      numeric: true,
+    });
   }
 }

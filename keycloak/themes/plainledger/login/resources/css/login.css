@@ -3,21 +3,31 @@
    No surprises. Just numbers.
    ============================================ */
 
-/* CSS Variables */
+/* CSS Variables - PlainLedger Green/Gold Theme */
 :root {
-  --pl-charcoal: #1a1a1a;
-  --pl-charcoal-light: #2d2d2d;
+  /* Primary - Emerald Green (Finance) */
+  --pl-primary: #059669;
+  --pl-primary-hover: #047857;
+  --pl-primary-light: #10b981;
+  
+  /* Accent - Gold (Premium) */
+  --pl-accent: #f59e0b;
+  --pl-accent-hover: #d97706;
+  
+  /* Neutral Grays */
   --pl-gray-100: #f7f7f7;
   --pl-gray-200: #e5e5e5;
   --pl-gray-300: #d4d4d4;
   --pl-gray-400: #a3a3a3;
   --pl-gray-500: #737373;
   --pl-gray-600: #525252;
+  --pl-gray-900: #1a1a1a;
   --pl-white: #ffffff;
-  --pl-blue: #2563eb;
-  --pl-blue-hover: #1d4ed8;
+  
+  /* Semantic */
   --pl-red: #dc2626;
   --pl-green: #16a34a;
+  
   --pl-radius: 8px;
   --pl-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --pl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
@@ -30,7 +40,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -38,7 +48,7 @@ body {
 
 /* Login Container */
 .login-pf {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
   min-height: 100vh;
 }
 
@@ -91,7 +101,7 @@ body {
 .kc-logo-text span {
   font-size: 28px;
   font-weight: 600;
-  color: var(--pl-charcoal);
+  color: var(--pl-primary);
   letter-spacing: -0.02em;
 }
 
@@ -167,7 +177,7 @@ input[type="email"] {
   width: 100%;
   padding: 12px 16px;
   font-size: 15px;
-  color: var(--pl-charcoal);
+  color: var(--pl-gray-900);
   background: var(--pl-white);
   border: 1px solid var(--pl-gray-300);
   border-radius: var(--pl-radius);
@@ -179,8 +189,8 @@ input.pf-c-form-control:focus,
 input[type="text"]:focus,
 input[type="password"]:focus,
 input[type="email"]:focus {
-  border-color: var(--pl-charcoal);
-  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+  border-color: var(--pl-primary);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
 }
 
 input.pf-c-form-control:hover,
@@ -243,7 +253,7 @@ span.kc-feedback-text,
   color: var(--pl-blue);
 }
 
-/* Primary Button */
+/* Primary Button - Green */
 input[type="submit"],
 button[type="submit"],
 .btn-primary,
@@ -253,7 +263,7 @@ button[type="submit"],
   font-size: 15px;
   font-weight: 500;
   color: var(--pl-white);
-  background: var(--pl-charcoal);
+  background: var(--pl-primary);
   border: none;
   border-radius: var(--pl-radius);
   cursor: pointer;
@@ -265,7 +275,7 @@ input[type="submit"]:hover,
 button[type="submit"]:hover,
 .btn-primary:hover,
 .pf-c-button.pf-m-primary:hover {
-  background: var(--pl-charcoal-light);
+  background: var(--pl-primary-hover);
   transform: translateY(-1px);
   box-shadow: var(--pl-shadow);
 }
@@ -279,7 +289,7 @@ button[type="submit"]:active {
 .btn-default,
 .pf-c-button.pf-m-secondary {
   background: var(--pl-white);
-  color: var(--pl-charcoal);
+  color: var(--pl-gray-900);
   border: 1px solid var(--pl-gray-300);
 }
 
@@ -291,14 +301,14 @@ button[type="submit"]:active {
 
 /* Links */
 a {
-  color: var(--pl-charcoal);
+  color: var(--pl-primary);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: var(--pl-gray-600);
+  color: var(--pl-primary-hover);
   text-decoration: underline;
 }
 
@@ -314,7 +324,7 @@ a:hover {
 }
 
 #kc-form-options span a:hover {
-  color: var(--pl-charcoal);
+  color: var(--pl-primary);
 }
 
 /* Registration Link */
@@ -331,7 +341,7 @@ a:hover {
 }
 
 #kc-registration span a {
-  color: var(--pl-charcoal);
+  color: var(--pl-primary);
   font-weight: 500;
   margin-left: 4px;
 }
@@ -372,7 +382,7 @@ a:hover {
   border-radius: var(--pl-radius);
   font-size: 14px;
   font-weight: 500;
-  color: var(--pl-charcoal);
+  color: var(--pl-gray-900);
   text-decoration: none;
   transition: all 0.2s ease;
 }
@@ -387,7 +397,7 @@ input[type="checkbox"] {
   width: 18px;
   height: 18px;
   margin-right: 8px;
-  accent-color: var(--pl-charcoal);
+  accent-color: var(--pl-primary);
 }
 
 .checkbox label,
@@ -414,7 +424,7 @@ input[type="checkbox"] {
 }
 
 .pf-c-button.pf-m-control:hover {
-  color: var(--pl-charcoal);
+  color: var(--pl-primary);
 }
 
 /* Input Group for Password */
@@ -562,7 +572,7 @@ input[type="checkbox"] {
   top: 0;
   width: 32px;
   height: 32px;
-  background: var(--pl-charcoal);
+  background: var(--pl-primary);
   color: var(--pl-white);
   border-radius: 50%;
   display: flex;
@@ -616,7 +626,7 @@ input[type="checkbox"] {
 
 .totp-secret {
   font-family: 'SF Mono', Monaco, monospace;
-  background: var(--pl-charcoal);
+  background: var(--pl-primary);
   color: var(--pl-white);
   padding: 4px 8px;
   border-radius: 4px;
@@ -827,7 +837,7 @@ input[type="checkbox"] {
 }
 
 .pf-c-button.pf-m-link:hover {
-  color: var(--pl-charcoal);
+  color: var(--pl-primary);
 }
 
 /* Try Another Way */

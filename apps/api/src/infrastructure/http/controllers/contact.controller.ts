@@ -10,10 +10,16 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
-} from '@nestjs/common';
-import { Public } from 'nest-keycloak-connect';
-import { NovuService } from '../../../notifications/novu.service';
-import { IsEmail, IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+} from "@nestjs/common";
+import { Public } from "nest-keycloak-connect";
+import { NovuService } from "../../../notifications/novu.service";
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  MinLength,
+  MaxLength,
+} from "class-validator";
 
 export class ContactFormDto {
   @IsString()
@@ -39,7 +45,7 @@ export class ContactFormDto {
   source?: string;
 }
 
-@Controller('contact')
+@Controller("contact")
 @Public() // No authentication required for contact form
 export class ContactController {
   private readonly logger = new Logger(ContactController.name);
@@ -57,21 +63,21 @@ export class ContactController {
         email: dto.email,
         subject: dto.subject,
         message: dto.message,
-        source: dto.source || 'website',
+        source: dto.source || "website",
       });
 
       return {
         success: true,
-        message: 'Thank you for your message. We will get back to you soon.',
+        message: "Thank you for your message. We will get back to you soon.",
       };
     } catch (error) {
       this.logger.error(`Failed to process contact form: ${error.message}`);
-      
+
       // Still return success to user but log the error
       // This prevents exposing internal errors while ensuring user has good UX
       return {
         success: true,
-        message: 'Thank you for your message. We will get back to you soon.',
+        message: "Thank you for your message. We will get back to you soon.",
       };
     }
   }

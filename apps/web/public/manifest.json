@@ -1,7 +1,7 @@
 {
-  "name": "PlainLedger - Financial Reporting Platform",
+  "name": "PlainLedger - Data Intelligence & Industry KPIs",
   "short_name": "PlainLedger",
-  "description": "AI-powered financial reporting with anomaly detection for CPAs and business owners",
+  "description": "Data intelligence platform with industry-specific KPIs to optimize business outcomes. AI anomaly detection and CPA support included.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

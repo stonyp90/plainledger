@@ -1,4 +1,4 @@
-import { DomainError } from '@domain/errors/DomainError';
+import { DomainError } from "@domain/errors/DomainError";
 
 /**
  * TenantId Value Object
@@ -16,7 +16,7 @@ export class TenantId {
    */
   static create(value: string): TenantId {
     if (!value || value.trim().length === 0) {
-      throw new DomainError('TenantId cannot be empty');
+      throw new DomainError("TenantId cannot be empty");
     }
 
     const trimmed = value.trim().toLowerCase();
@@ -24,7 +24,7 @@ export class TenantId {
     // Validate format: alphanumeric with hyphens, 3-50 chars
     if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(trimmed)) {
       throw new DomainError(
-        'TenantId must be 3-50 characters, alphanumeric with hyphens, cannot start or end with hyphen',
+        "TenantId must be 3-50 characters, alphanumeric with hyphens, cannot start or end with hyphen",
       );
     }
 

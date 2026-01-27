@@ -76,9 +76,9 @@ const PAGE_HELP_TOPICS: Record<string, { en: string; fr: string; article?: strin
     fr: 'Besoin d\'aide avec les paramètres?',
     article: 'settings-guide',
   },
-  '/store': {
-    en: 'Have questions about pricing?',
-    fr: 'Des questions sur nos tarifs?',
+  '/': {
+    en: 'Have questions about pricing or ROI?',
+    fr: 'Des questions sur nos tarifs ou le ROI?',
     article: 'pricing-faq',
   },
 };
@@ -326,7 +326,7 @@ export function CrispProvider({ websiteId, children }: CrispProviderProps) {
     // Show contextual welcome message on first visit (only once per session)
     if (!hasShownWelcome && authenticated) {
       const helpTopic = PAGE_HELP_TOPICS[pagePath];
-      if (helpTopic && pagePath === '/store') {
+      if (helpTopic && pagePath === '/') {
         // Show pricing help after a delay
         setTimeout(() => {
           if (window.$crisp) {

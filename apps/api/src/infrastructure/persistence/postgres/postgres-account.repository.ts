@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { IAccountRepository } from '@application/ports/outbound/IAccountRepository';
-import { Account, AccountType, AccountSubtype } from '@domain/entities/Account';
-import { AccountCode } from '@domain/value-objects/AccountCode';
-import { AccountEntity } from './entities/account.entity';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, In } from "typeorm";
+import { IAccountRepository } from "@application/ports/outbound/IAccountRepository";
+import { Account, AccountType, AccountSubtype } from "@domain/entities/Account";
+import { AccountCode } from "@domain/value-objects/AccountCode";
+import { AccountEntity } from "./entities/account.entity";
 
 /**
  * PostgreSQL implementation of IAccountRepository
@@ -41,24 +41,24 @@ export class PostgresAccountRepository implements IAccountRepository {
     },
   ): Promise<Account[]> {
     const queryBuilder = this.repository
-      .createQueryBuilder('account')
-      .where('account.organization_id = :organizationId', { organizationId });
+      .createQueryBuilder("account")
+      .where("account.organization_id = :organizationId", { organizationId });
 
     if (options?.accountType) {
-      queryBuilder.andWhere('account.account_type = :accountType', {
+      queryBuilder.andWhere("account.account_type = :accountType", {
         accountType: options.accountType,
       });
     }
 
     if (options?.isActive !== undefined) {
-      queryBuilder.andWhere('account.is_active = :isActive', {
+      queryBuilder.andWhere("account.is_active = :isActive", {
         isActive: options.isActive,
       });
     }
 
     queryBuilder
-      .orderBy('account.display_order', 'ASC')
-      .addOrderBy('account.code', 'ASC')
+      .orderBy("account.display_order", "ASC")
+      .addOrderBy("account.code", "ASC")
       .take(options?.limit || 1000)
       .skip(options?.offset || 0);
 
@@ -77,8 +77,8 @@ export class PostgresAccountRepository implements IAccountRepository {
         isActive: true,
       },
       order: {
-        displayOrder: 'ASC',
-        code: 'ASC',
+        displayOrder: "ASC",
+        code: "ASC",
       },
     });
     return entities.map((e) => this.toDomain(e));

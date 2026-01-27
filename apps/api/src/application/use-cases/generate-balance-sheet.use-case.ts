@@ -1,15 +1,15 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { IOrganizationRepository } from '@application/ports/outbound/IOrganizationRepository';
-import { IAccountRepository } from '@application/ports/outbound/IAccountRepository';
-import { TenantId } from '@domain/value-objects/TenantId';
-import { AccountType } from '@domain/entities/Account';
-import { EntityNotFoundError } from '@domain/errors/DomainError';
+import { Injectable, Inject } from "@nestjs/common";
+import { IOrganizationRepository } from "@application/ports/outbound/IOrganizationRepository";
+import { IAccountRepository } from "@application/ports/outbound/IAccountRepository";
+import { TenantId } from "@domain/value-objects/TenantId";
+import { AccountType } from "@domain/entities/Account";
+import { EntityNotFoundError } from "@domain/errors/DomainError";
 
 export interface GenerateBalanceSheetRequest {
   tenantId: string;
   asOfDate: Date;
   comparisonDate?: Date;
-  locale?: 'en' | 'fr';
+  locale?: "en" | "fr";
 }
 
 export interface BalanceSheetLineItem {
@@ -60,82 +60,93 @@ export interface GenerateBalanceSheetResponse {
 
 /**
  * Use Case: Generate Balance Sheet Report
- * 
+ *
  * Generates a balance sheet report following IBCS standards
  * for clear financial visualization.
  */
 @Injectable()
 export class GenerateBalanceSheetUseCase {
   constructor(
-    @Inject('IOrganizationRepository')
+    @Inject("IOrganizationRepository")
     private readonly organizationRepository: IOrganizationRepository,
-    @Inject('IAccountRepository')
+    @Inject("IAccountRepository")
     private readonly accountRepository: IAccountRepository,
   ) {}
 
-  async execute(request: GenerateBalanceSheetRequest): Promise<GenerateBalanceSheetResponse> {
-    const locale = request.locale || 'fr';
+  async execute(
+    request: GenerateBalanceSheetRequest,
+  ): Promise<GenerateBalanceSheetResponse> {
+    const locale = request.locale || "fr";
     const tenantId = TenantId.create(request.tenantId);
-    
+
     // Get organization
-    const organization = await this.organizationRepository.findByTenantId(tenantId);
+    const organization =
+      await this.organizationRepository.findByTenantId(tenantId);
     if (!organization) {
-      throw new EntityNotFoundError('Organization', request.tenantId);
+      throw new EntityNotFoundError("Organization", request.tenantId);
     }
 
     // Get all balance sheet accounts
-    const accounts = await this.accountRepository.findByTypes(
-      organization.id,
-      [AccountType.ASSET, AccountType.LIABILITY, AccountType.EQUITY],
-    );
+    const accounts = await this.accountRepository.findByTypes(organization.id, [
+      AccountType.ASSET,
+      AccountType.LIABILITY,
+      AccountType.EQUITY,
+    ]);
 
     // Separate accounts by type
-    const assetAccounts = accounts.filter(a => a.accountType === AccountType.ASSET);
-    const liabilityAccounts = accounts.filter(a => a.accountType === AccountType.LIABILITY);
-    const equityAccounts = accounts.filter(a => a.accountType === AccountType.EQUITY);
+    const assetAccounts = accounts.filter(
+      (a) => a.accountType === AccountType.ASSET,
+    );
+    const liabilityAccounts = accounts.filter(
+      (a) => a.accountType === AccountType.LIABILITY,
+    );
+    const equityAccounts = accounts.filter(
+      (a) => a.accountType === AccountType.EQUITY,
+    );
 
     // Build sections (in real implementation, would fetch actual balances)
     const currentAssets = this.buildSection(
-      locale === 'fr' ? 'Actifs courants' : 'Current Assets',
-      assetAccounts.filter(a => a.accountSubtype === 'CURRENT'),
+      locale === "fr" ? "Actifs courants" : "Current Assets",
+      assetAccounts.filter((a) => a.accountSubtype === "CURRENT"),
       locale,
     );
 
     const fixedAssets = this.buildSection(
-      locale === 'fr' ? 'Immobilisations' : 'Fixed Assets',
-      assetAccounts.filter(a => a.accountSubtype === 'FIXED'),
+      locale === "fr" ? "Immobilisations" : "Fixed Assets",
+      assetAccounts.filter((a) => a.accountSubtype === "FIXED"),
       locale,
     );
 
     const currentLiabilities = this.buildSection(
-      locale === 'fr' ? 'Passifs courants' : 'Current Liabilities',
-      liabilityAccounts.filter(a => a.accountSubtype === 'CURRENT'),
+      locale === "fr" ? "Passifs courants" : "Current Liabilities",
+      liabilityAccounts.filter((a) => a.accountSubtype === "CURRENT"),
       locale,
     );
 
     const longTermLiabilities = this.buildSection(
-      locale === 'fr' ? 'Passifs à long terme' : 'Long-term Liabilities',
-      liabilityAccounts.filter(a => a.accountSubtype === 'LONG_TERM'),
+      locale === "fr" ? "Passifs à long terme" : "Long-term Liabilities",
+      liabilityAccounts.filter((a) => a.accountSubtype === "LONG_TERM"),
       locale,
     );
 
     const equitySection = this.buildSection(
-      locale === 'fr' ? 'Capitaux propres' : 'Equity',
+      locale === "fr" ? "Capitaux propres" : "Equity",
       equityAccounts,
       locale,
     );
 
     // Calculate totals
     const totalAssets = currentAssets.total + fixedAssets.total;
-    const totalLiabilities = currentLiabilities.total + longTermLiabilities.total;
+    const totalLiabilities =
+      currentLiabilities.total + longTermLiabilities.total;
     const totalEquity = equitySection.total;
     const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
 
     return {
       organizationName: organization.name,
-      reportTitle: locale === 'fr' ? 'Bilan' : 'Balance Sheet',
-      asOfDate: request.asOfDate.toISOString().split('T')[0],
-      comparisonDate: request.comparisonDate?.toISOString().split('T')[0],
+      reportTitle: locale === "fr" ? "Bilan" : "Balance Sheet",
+      asOfDate: request.asOfDate.toISOString().split("T")[0],
+      comparisonDate: request.comparisonDate?.toISOString().split("T")[0],
       currency: organization.currency,
       assets: {
         currentAssets,
@@ -162,7 +173,7 @@ export class GenerateBalanceSheetUseCase {
     accounts: any[],
     locale: string,
   ): BalanceSheetSection {
-    const items: BalanceSheetLineItem[] = accounts.map(account => ({
+    const items: BalanceSheetLineItem[] = accounts.map((account) => ({
       accountId: account.id,
       accountCode: account.code.value,
       accountName: account.getDisplayName(locale),

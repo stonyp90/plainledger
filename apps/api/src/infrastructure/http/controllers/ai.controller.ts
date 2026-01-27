@@ -1,6 +1,6 @@
 /**
  * AI Controller - Enterprise Grade
- * 
+ *
  * Handles AI chat requests with:
  * - Input validation
  * - Rate limiting
@@ -20,24 +20,35 @@ import {
   Headers,
   BadRequestException,
   UnauthorizedException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 
 // TooManyRequestsException doesn't exist in NestJS, create custom
 class TooManyRequestsException extends HttpException {
-  constructor(message = 'Too Many Requests') {
+  constructor(message = "Too Many Requests") {
     super(message, HttpStatus.TOO_MANY_REQUESTS);
   }
 }
-import { IsString, IsOptional, IsBoolean, IsNumber, Min, Max, MaxLength, ValidateIf } from 'class-validator';
-import { AIService } from '../../../infrastructure/ai/ai.service';
-import { Transform } from 'class-transformer';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+  Max,
+  MaxLength,
+  ValidateIf,
+} from "class-validator";
+import { AIService } from "../../../infrastructure/ai/ai.service";
+import { Transform } from "class-transformer";
 
 export class ChatRequestDto {
   @IsString()
-  @MaxLength(10000, { message: 'Prompt exceeds maximum length of 10,000 characters' })
+  @MaxLength(10000, {
+    message: "Prompt exceeds maximum length of 10,000 characters",
+  })
   @Transform(({ value }) => {
     // Trim and sanitize
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       return value.trim();
     }
     return value;
@@ -68,46 +79,55 @@ export class ChatRequestDto {
 
   @IsOptional()
   @IsString()
-  modelTier?: 'lite' | 'full';
+  modelTier?: "lite" | "full";
 }
 
-@Controller('ai')
+@Controller("ai")
 export class AIController {
   private readonly logger = new Logger(AIController.name);
-  private readonly requestCounts: Map<string, { count: number; resetAt: number }> = new Map();
+  private readonly requestCounts: Map<
+    string,
+    { count: number; resetAt: number }
+  > = new Map();
 
   constructor(private readonly aiService: AIService) {}
 
-  @Post('chat')
+  @Post("chat")
   @HttpCode(HttpStatus.OK)
   async chat(
     @Body() dto: ChatRequestDto,
-    @Headers('x-tenant-id') tenantId?: string,
-    @Headers('authorization') authHeader?: string,
+    @Headers("x-tenant-id") tenantId?: string,
+    @Headers("authorization") authHeader?: string,
   ) {
     const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
 
     try {
       // Validate authentication
-      if (!authHeader && process.env.NODE_ENV === 'production') {
+      if (!authHeader && process.env.NODE_ENV === "production") {
         this.logger.warn(`Unauthorized request attempt: ${requestId}`);
-        throw new UnauthorizedException('Authentication required');
+        throw new UnauthorizedException("Authentication required");
       }
 
       // Validate tenant ID
       if (!tenantId) {
         this.logger.warn(`Request without tenant ID: ${requestId}`);
-        throw new BadRequestException('Tenant ID is required');
+        throw new BadRequestException("Tenant ID is required");
       }
 
       // Additional rate limiting at controller level
       if (!this.checkControllerRateLimit(tenantId)) {
-        this.logger.warn(`Controller rate limit exceeded for tenant: ${tenantId}`);
-        throw new TooManyRequestsException('Too many requests. Please try again later.');
+        this.logger.warn(
+          `Controller rate limit exceeded for tenant: ${tenantId}`,
+        );
+        throw new TooManyRequestsException(
+          "Too many requests. Please try again later.",
+        );
       }
 
-      this.logger.log(`AI chat request [${requestId}] from tenant: ${tenantId}, prompt length: ${dto.prompt.length}`);
+      this.logger.log(
+        `AI chat request [${requestId}] from tenant: ${tenantId}, prompt length: ${dto.prompt.length}`,
+      );
 
       // Generate response
       const response = await this.aiService.generateResponse(dto.prompt, {
@@ -116,11 +136,13 @@ export class AIController {
         temperature: dto.temperature,
         maxTokens: dto.maxTokens,
         retries: dto.retries,
-        modelTier: dto.modelTier || 'full', // Default to full, but allow lite for cost optimization
+        modelTier: dto.modelTier || "full", // Default to full, but allow lite for cost optimization
       });
 
       const latency = Date.now() - startTime;
-      this.logger.log(`AI chat request [${requestId}] completed in ${latency}ms, tokens: ${response.tokensUsed?.total || 0}`);
+      this.logger.log(
+        `AI chat request [${requestId}] completed in ${latency}ms, tokens: ${response.tokensUsed?.total || 0}`,
+      );
 
       return {
         success: true,
@@ -135,10 +157,12 @@ export class AIController {
       };
     } catch (error) {
       const latency = Date.now() - startTime;
-      
-      if (error instanceof BadRequestException || 
-          error instanceof TooManyRequestsException || 
-          error instanceof UnauthorizedException) {
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof TooManyRequestsException ||
+        error instanceof UnauthorizedException
+      ) {
         throw error;
       }
 
@@ -150,12 +174,18 @@ export class AIController {
       // Return user-friendly error without exposing internals
       return {
         success: false,
-        message: error instanceof Error && error.message.includes('timeout')
-          ? 'Request timed out. Please try again.'
-          : error instanceof Error && error.message.includes('Rate limit')
-          ? 'Rate limit exceeded. Please try again later.'
-          : 'I apologize, but I encountered an error processing your request. Please try again.',
-        error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
+        message:
+          error instanceof Error && error.message.includes("timeout")
+            ? "Request timed out. Please try again."
+            : error instanceof Error && error.message.includes("Rate limit")
+              ? "Rate limit exceeded. Please try again later."
+              : "I apologize, but I encountered an error processing your request. Please try again.",
+        error:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
         metadata: {
           requestId,
           latency,

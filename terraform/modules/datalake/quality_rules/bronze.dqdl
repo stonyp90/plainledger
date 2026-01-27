@@ -1,0 +1,20 @@
+Rules = [
+    # Schema validation
+    ColumnCount = 15,
+    ColumnExists "organization_id",
+    ColumnExists "source_id",
+    ColumnExists "raw_data",
+    ColumnExists "ingested_at",
+    
+    # Completeness checks
+    Completeness "organization_id" = 1.0,
+    Completeness "source_id" = 1.0,
+    Completeness "raw_data" >= 0.99,
+    
+    # Freshness check - data should be ingested within 24 hours
+    Freshness "ingested_at" <= 24 hours,
+    
+    # Data type validation
+    ColumnType "organization_id" = "string",
+    ColumnType "ingested_at" = "timestamp"
+]

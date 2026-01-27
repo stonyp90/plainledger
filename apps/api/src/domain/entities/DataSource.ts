@@ -1,19 +1,19 @@
-import { TenantId } from '../value-objects/TenantId';
+import { TenantId } from "../value-objects/TenantId";
 
 export enum DataSourceProvider {
-  QUICKBOOKS = 'quickbooks',
-  XERO = 'xero',
-  SAGE = 'sage',
-  FRESHBOOKS = 'freshbooks',
-  WAVE = 'wave',
-  CSV = 'csv',
+  QUICKBOOKS = "quickbooks",
+  XERO = "xero",
+  SAGE = "sage",
+  FRESHBOOKS = "freshbooks",
+  WAVE = "wave",
+  CSV = "csv",
 }
 
 export enum DataSourceStatus {
-  CONNECTED = 'connected',
-  DISCONNECTED = 'disconnected',
-  SYNCING = 'syncing',
-  ERROR = 'error',
+  CONNECTED = "connected",
+  DISCONNECTED = "disconnected",
+  SYNCING = "syncing",
+  ERROR = "error",
 }
 
 export interface DataSourceProps {
@@ -37,7 +37,9 @@ export interface DataSourceProps {
 export class DataSource {
   private constructor(private readonly props: DataSourceProps) {}
 
-  static create(props: Omit<DataSourceProps, 'id' | 'createdAt' | 'updatedAt'>): DataSource {
+  static create(
+    props: Omit<DataSourceProps, "id" | "createdAt" | "updatedAt">,
+  ): DataSource {
     return new DataSource({
       ...props,
       id: crypto.randomUUID(),
