@@ -123,7 +123,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
+    <div className="min-h-screen w-full flex flex-col lg:flex-row overflow-x-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
       {/* Mobile Header - Optimized for touch */}
       <header 
         className="lg:hidden sticky top-0 z-50 flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b safe-area-top"
@@ -469,15 +469,14 @@ export default function Layout({ children }: LayoutProps) {
         <nav className={`flex-1 overflow-y-auto transition-all ${
           isSidebarCollapsed ? 'p-2' : 'p-4'
         }`}>
-          <div className={`space-y-1 ${isSidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
+          <div className="space-y-1">
             {filteredNavigation.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
                 className={`nav-item ${isActive(item.href) ? 'active' : ''} ${
-                  isSidebarCollapsed ? 'justify-center px-2' : ''
+                  isSidebarCollapsed ? 'justify-center px-2 w-full' : ''
                 }`}
-                title={isSidebarCollapsed ? item.name : undefined}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
                 {!isSidebarCollapsed && <span>{item.name}</span>}
@@ -600,7 +599,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main 
-        className="flex-1 flex flex-col min-w-0"
+        className="flex-1 flex flex-col min-w-0 w-full lg:w-auto"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
         {/* Desktop Header */}

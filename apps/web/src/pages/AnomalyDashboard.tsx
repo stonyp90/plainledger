@@ -506,10 +506,10 @@ export default function AnomalyDashboard() {
         />
       )}
 
-      {/* Health Score & Summary - Improved Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Health Score Card - Main Focus */}
-        <div className="lg:col-span-5 xl:col-span-4">
+      {/* Health Score & Summary - Optimized 3-column layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {/* Health Score Card */}
+        <div className="md:col-span-1">
           <HealthScoreGauge
             score={combinedAnalysis.healthScore}
             criticalCount={combinedAnalysis.summary.critical}
@@ -521,10 +521,10 @@ export default function AnomalyDashboard() {
           />
         </div>
         
-        {/* Summary Card - Expanded */}
-        <div className="lg:col-span-7 xl:col-span-8 card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+        {/* Summary Card */}
+        <div className="md:col-span-1 card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Summary' : 'Résumé'}
             </h3>
             <InfoTooltip
@@ -536,139 +536,132 @@ export default function AnomalyDashboard() {
             />
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Left: Total & Progress */}
-            <div className="min-w-0">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Total anomalies' : 'Total anomalies'}
-                </span>
-                <span className="font-bold text-2xl tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
-                  {combinedAnalysis.summary.total}
-                </span>
-              </div>
-              <div 
-                className="h-3 rounded-full overflow-hidden flex mb-4"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-              >
-                {combinedAnalysis.summary.total > 0 && (
-                  <>
-                    {combinedAnalysis.summary.critical > 0 && (
-                      <div 
-                        className="h-full transition-all duration-500"
-                        style={{ 
-                          width: `${(combinedAnalysis.summary.critical / combinedAnalysis.summary.total) * 100}%`,
-                          backgroundColor: 'rgb(var(--color-error))'
-                        }}
-                      />
-                    )}
-                    {combinedAnalysis.summary.warning > 0 && (
-                      <div 
-                        className="h-full transition-all duration-500"
-                        style={{ 
-                          width: `${(combinedAnalysis.summary.warning / combinedAnalysis.summary.total) * 100}%`,
-                          backgroundColor: 'rgb(var(--color-warning))'
-                        }}
-                      />
-                    )}
-                    {combinedAnalysis.summary.info > 0 && (
-                      <div 
-                        className="h-full transition-all duration-500"
-                        style={{ 
-                          width: `${(combinedAnalysis.summary.info / combinedAnalysis.summary.total) * 100}%`,
-                          backgroundColor: 'rgb(var(--color-info))'
-                        }}
-                      />
-                    )}
-                  </>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              {isEn ? 'Total anomalies' : 'Total anomalies'}
+            </span>
+            <span className="font-bold text-2xl tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
+              {combinedAnalysis.summary.total}
+            </span>
+          </div>
+          
+          <div 
+            className="h-2.5 rounded-full overflow-hidden flex mb-4"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
+            {combinedAnalysis.summary.total > 0 && (
+              <>
+                {combinedAnalysis.summary.critical > 0 && (
+                  <div 
+                    className="h-full transition-all duration-500"
+                    style={{ 
+                      width: `${(combinedAnalysis.summary.critical / combinedAnalysis.summary.total) * 100}%`,
+                      backgroundColor: 'rgb(var(--color-error))'
+                    }}
+                  />
                 )}
+                {combinedAnalysis.summary.warning > 0 && (
+                  <div 
+                    className="h-full transition-all duration-500"
+                    style={{ 
+                      width: `${(combinedAnalysis.summary.warning / combinedAnalysis.summary.total) * 100}%`,
+                      backgroundColor: 'rgb(var(--color-warning))'
+                    }}
+                  />
+                )}
+                {combinedAnalysis.summary.info > 0 && (
+                  <div 
+                    className="h-full transition-all duration-500"
+                    style={{ 
+                      width: `${(combinedAnalysis.summary.info / combinedAnalysis.summary.total) * 100}%`,
+                      backgroundColor: 'rgb(var(--color-info))'
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2">
+            <div 
+              className="text-center p-2 rounded-lg transition-transform hover:scale-105"
+              style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
+            >
+              <div className="font-bold text-lg" style={{ color: 'rgb(var(--color-error))' }}>
+                {combinedAnalysis.summary.critical}
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <div 
-                  className="text-center p-2 sm:p-3 rounded-xl transition-transform hover:scale-105"
-                  style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-                >
-                  <div className="font-bold text-lg sm:text-xl" style={{ color: 'rgb(var(--color-error))' }}>
-                    {combinedAnalysis.summary.critical}
-                  </div>
-                  <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Critical' : 'Critiques'}
-                  </div>
-                </div>
-                <div 
-                  className="text-center p-2 sm:p-3 rounded-xl transition-transform hover:scale-105"
-                  style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
-                >
-                  <div className="font-bold text-lg sm:text-xl" style={{ color: 'rgb(var(--color-warning))' }}>
-                    {combinedAnalysis.summary.warning}
-                  </div>
-                  <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    Attention
-                  </div>
-                </div>
-                <div 
-                  className="text-center p-2 sm:p-3 rounded-xl transition-transform hover:scale-105"
-                  style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
-                >
-                  <div className="font-bold text-lg sm:text-xl" style={{ color: 'rgb(var(--color-info))' }}>
-                    {combinedAnalysis.summary.info}
-                  </div>
-                  <div className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>Info</div>
-                </div>
+              <div className="text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Critical' : 'Critiques'}
               </div>
             </div>
-            
-            {/* Right: Top Risks */}
             <div 
-              className="sm:border-l sm:pl-4 min-w-0"
-              style={{ borderColor: 'rgb(var(--color-border))' }}
+              className="text-center p-2 rounded-lg transition-transform hover:scale-105"
+              style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
             >
-              <p className="text-sm font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Top Risks' : 'Risques principaux'}
-              </p>
-              {combinedAnalysis.summary.topRisks && combinedAnalysis.summary.topRisks.length > 0 ? (
-                <ul className="space-y-2">
-                  {combinedAnalysis.summary.topRisks.slice(0, 4).map((risk, idx) => (
-                    <Tooltip key={idx} content={risk} position="bottom" delay={300}>
-                      <li 
-                        className="text-xs sm:text-sm flex items-start gap-2 p-2 rounded-lg cursor-help transition-colors hover:brightness-95"
-                        style={{ 
-                          backgroundColor: 'rgb(var(--color-bg-muted))',
-                          color: 'rgb(var(--color-text-secondary))' 
-                        }}
-                      >
-                        <span 
-                          className="w-1.5 h-1.5 rounded-full mt-1 sm:mt-1.5 flex-shrink-0"
-                          style={{ backgroundColor: 'rgb(var(--color-error))' }}
-                        />
-                        <span className="line-clamp-1 sm:line-clamp-2 break-words min-w-0">{risk}</span>
-                      </li>
-                    </Tooltip>
-                  ))}
-                </ul>
-              ) : (
-                <div 
-                  className="flex items-center justify-center h-32 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                >
-                  <div className="text-center">
-                    <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
-                    <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? 'No critical risks' : 'Aucun risque critique'}
-                    </p>
-                  </div>
-                </div>
-              )}
+              <div className="font-bold text-lg" style={{ color: 'rgb(var(--color-warning))' }}>
+                {combinedAnalysis.summary.warning}
+              </div>
+              <div className="text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                Attention
+              </div>
+            </div>
+            <div 
+              className="text-center p-2 rounded-lg transition-transform hover:scale-105"
+              style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
+            >
+              <div className="font-bold text-lg" style={{ color: 'rgb(var(--color-info))' }}>
+                {combinedAnalysis.summary.info}
+              </div>
+              <div className="text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>Info</div>
             </div>
           </div>
         </div>
+        
+        {/* Top Risks Card */}
+        <div className="md:col-span-2 xl:col-span-1 card">
+          <p className="text-base font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Top Risks' : 'Risques principaux'}
+          </p>
+          {combinedAnalysis.summary.topRisks && combinedAnalysis.summary.topRisks.length > 0 ? (
+            <ul className="space-y-2">
+              {combinedAnalysis.summary.topRisks.slice(0, 5).map((risk, idx) => (
+                <Tooltip key={idx} content={risk} position="bottom" delay={300}>
+                  <li 
+                    className="text-sm flex items-start gap-2 p-2 rounded-lg cursor-help hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                    style={{ 
+                      color: 'rgb(var(--color-text-secondary))' 
+                    }}
+                  >
+                    <span 
+                      className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                      style={{ backgroundColor: idx < 2 ? 'rgb(var(--color-error))' : 'rgb(var(--color-warning))' }}
+                    />
+                    <span className="line-clamp-2 break-words min-w-0">{risk}</span>
+                  </li>
+                </Tooltip>
+              ))}
+            </ul>
+          ) : (
+            <div 
+              className="flex items-center justify-center h-28 rounded-xl"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            >
+              <div className="text-center">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'No critical risks' : 'Aucun risque critique'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Consolidated Grid: Ratios + Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-        {/* Left: Ratios */}
-        <div className="xl:col-span-4">
-          <h3 className="text-base sm:text-lg font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+      {/* Consolidated Grid: Ratios + Charts - Better space utilization */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Ratios - More compact */}
+        <div className="lg:col-span-1">
+          <h3 className="text-base font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Financial Ratios' : 'Ratios financiers'}
           </h3>
           <div className="space-y-3">
@@ -678,12 +671,12 @@ export default function AnomalyDashboard() {
           </div>
         </div>
 
-        {/* Right: Trend Charts */}
-        <div className="xl:col-span-8">
-          <h3 className="text-base sm:text-lg font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+        {/* Right: Trend Charts - Takes 2 columns */}
+        <div className="lg:col-span-2">
+          <h3 className="text-base font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Trend Analysis' : 'Analyse des tendances'}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <TrendChart
               data={revenueData}
               title={isEn ? "Revenue Trend" : "Évolution des revenus"}

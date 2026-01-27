@@ -8,6 +8,470 @@ export type AgendaItemType = 'presentation' | 'discussion' | 'vote' | 'break' | 
 export type VoteType = 'approve' | 'reject' | 'abstain';
 export type ParticipantRole = 'chair' | 'presenter' | 'board_member' | 'observer' | 'secretary';
 
+// ============================================================================
+// BOARD PANEL SYSTEM (Inspired by SigNoz Dashboard)
+// ============================================================================
+
+export type BoardPanelType = 
+  | 'balance_sheet'
+  | 'income_statement'
+  | 'cash_flow'
+  | 'anomaly_summary'
+  | 'anomaly_list'
+  | 'montage_financier'
+  | 'kpi_metrics'
+  | 'health_score'
+  | 'runway_chart'
+  | 'expense_breakdown'
+  | 'revenue_trend'
+  | 'ratio_analysis'
+  | 'strategic_metrics'
+  | 'cash_forecast'
+  | 'variance_analysis'
+  | 'action_items'
+  | 'custom_chart'
+  | 'text_block';
+
+export type PanelSize = 'small' | 'medium' | 'large' | 'full';
+
+export interface BoardPanel {
+  id: string;
+  type: BoardPanelType;
+  title: string;
+  titleEn: string;
+  description?: string;
+  descriptionEn?: string;
+  size: PanelSize;
+  order: number;
+  config?: Record<string, any>;
+  // For custom panels
+  customContent?: string;
+  chartConfig?: {
+    chartType: 'line' | 'bar' | 'pie' | 'area' | 'gauge';
+    dataSource: string;
+    filters?: Record<string, any>;
+  };
+  visible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BoardPanelCategory {
+  id: string;
+  name: string;
+  nameEn: string;
+  icon: string;
+  panels: BoardPanelTemplate[];
+}
+
+export interface BoardPanelTemplate {
+  type: BoardPanelType;
+  name: string;
+  nameEn: string;
+  description: string;
+  descriptionEn: string;
+  icon: string;
+  defaultSize: PanelSize;
+  category: string;
+  previewImage?: string;
+}
+
+// Available panel templates organized by category
+export const BOARD_PANEL_CATEGORIES: BoardPanelCategory[] = [
+  {
+    id: 'financial_statements',
+    name: 'États financiers',
+    nameEn: 'Financial Statements',
+    icon: 'FileText',
+    panels: [
+      {
+        type: 'balance_sheet',
+        name: 'Bilan',
+        nameEn: 'Balance Sheet',
+        description: 'État de la situation financière avec comparatif',
+        descriptionEn: 'Statement of financial position with comparison',
+        icon: 'Scale',
+        defaultSize: 'large',
+        category: 'financial_statements',
+      },
+      {
+        type: 'income_statement',
+        name: 'État des résultats',
+        nameEn: 'Income Statement',
+        description: 'Revenus, dépenses et bénéfice net',
+        descriptionEn: 'Revenue, expenses and net profit',
+        icon: 'TrendingUp',
+        defaultSize: 'large',
+        category: 'financial_statements',
+      },
+      {
+        type: 'cash_flow',
+        name: 'Flux de trésorerie',
+        nameEn: 'Cash Flow Statement',
+        description: 'Mouvements de trésorerie par activité',
+        descriptionEn: 'Cash movements by activity',
+        icon: 'ArrowRightLeft',
+        defaultSize: 'large',
+        category: 'financial_statements',
+      },
+    ],
+  },
+  {
+    id: 'analysis',
+    name: 'Analyse',
+    nameEn: 'Analysis',
+    icon: 'BarChart3',
+    panels: [
+      {
+        type: 'anomaly_summary',
+        name: 'Résumé des anomalies',
+        nameEn: 'Anomaly Summary',
+        description: 'Score de santé et anomalies détectées',
+        descriptionEn: 'Health score and detected anomalies',
+        icon: 'AlertTriangle',
+        defaultSize: 'medium',
+        category: 'analysis',
+      },
+      {
+        type: 'anomaly_list',
+        name: 'Liste des anomalies',
+        nameEn: 'Anomaly List',
+        description: 'Détail des anomalies par sévérité',
+        descriptionEn: 'Detailed anomalies by severity',
+        icon: 'List',
+        defaultSize: 'large',
+        category: 'analysis',
+      },
+      {
+        type: 'variance_analysis',
+        name: 'Analyse des variances',
+        nameEn: 'Variance Analysis',
+        description: 'Écarts budget vs réel par compte',
+        descriptionEn: 'Budget vs actual variance by account',
+        icon: 'GitCompare',
+        defaultSize: 'large',
+        category: 'analysis',
+      },
+      {
+        type: 'ratio_analysis',
+        name: 'Analyse des ratios',
+        nameEn: 'Ratio Analysis',
+        description: 'Ratios financiers clés et tendances',
+        descriptionEn: 'Key financial ratios and trends',
+        icon: 'PieChart',
+        defaultSize: 'medium',
+        category: 'analysis',
+      },
+    ],
+  },
+  {
+    id: 'strategic',
+    name: 'Stratégique',
+    nameEn: 'Strategic',
+    icon: 'Target',
+    panels: [
+      {
+        type: 'montage_financier',
+        name: 'Montage financier',
+        nameEn: 'Financial Setup',
+        description: 'Sources et utilisations du financement',
+        descriptionEn: 'Financing sources and uses',
+        icon: 'Layers',
+        defaultSize: 'large',
+        category: 'strategic',
+      },
+      {
+        type: 'strategic_metrics',
+        name: 'Métriques Strategix',
+        nameEn: 'Strategix Metrics',
+        description: 'Trésorerie, burn rate et autonomie',
+        descriptionEn: 'Cash position, burn rate and runway',
+        icon: 'Gauge',
+        defaultSize: 'medium',
+        category: 'strategic',
+      },
+      {
+        type: 'runway_chart',
+        name: 'Graphique de runway',
+        nameEn: 'Runway Chart',
+        description: 'Projection de trésorerie dans le temps',
+        descriptionEn: 'Cash projection over time',
+        icon: 'LineChart',
+        defaultSize: 'large',
+        category: 'strategic',
+      },
+      {
+        type: 'cash_forecast',
+        name: 'Prévision de trésorerie',
+        nameEn: 'Cash Forecast',
+        description: 'Projection des flux de trésorerie',
+        descriptionEn: 'Cash flow projection',
+        icon: 'TrendingUp',
+        defaultSize: 'large',
+        category: 'strategic',
+      },
+    ],
+  },
+  {
+    id: 'kpis',
+    name: 'Indicateurs',
+    nameEn: 'KPIs',
+    icon: 'Activity',
+    panels: [
+      {
+        type: 'kpi_metrics',
+        name: 'KPIs financiers',
+        nameEn: 'Financial KPIs',
+        description: 'Indicateurs clés de performance',
+        descriptionEn: 'Key performance indicators',
+        icon: 'Target',
+        defaultSize: 'medium',
+        category: 'kpis',
+      },
+      {
+        type: 'health_score',
+        name: 'Score de santé',
+        nameEn: 'Health Score',
+        description: 'Score global de santé financière',
+        descriptionEn: 'Overall financial health score',
+        icon: 'Heart',
+        defaultSize: 'small',
+        category: 'kpis',
+      },
+      {
+        type: 'revenue_trend',
+        name: 'Tendance des revenus',
+        nameEn: 'Revenue Trend',
+        description: 'Évolution des revenus sur la période',
+        descriptionEn: 'Revenue evolution over period',
+        icon: 'TrendingUp',
+        defaultSize: 'medium',
+        category: 'kpis',
+      },
+      {
+        type: 'expense_breakdown',
+        name: 'Répartition des dépenses',
+        nameEn: 'Expense Breakdown',
+        description: 'Distribution des dépenses par catégorie',
+        descriptionEn: 'Expense distribution by category',
+        icon: 'PieChart',
+        defaultSize: 'medium',
+        category: 'kpis',
+      },
+    ],
+  },
+  {
+    id: 'custom',
+    name: 'Personnalisé',
+    nameEn: 'Custom',
+    icon: 'Sparkles',
+    panels: [
+      {
+        type: 'action_items',
+        name: 'Points d\'action',
+        nameEn: 'Action Items',
+        description: 'Liste des actions à suivre',
+        descriptionEn: 'Action items to follow up',
+        icon: 'CheckSquare',
+        defaultSize: 'medium',
+        category: 'custom',
+      },
+      {
+        type: 'text_block',
+        name: 'Bloc de texte',
+        nameEn: 'Text Block',
+        description: 'Notes et commentaires personnalisés',
+        descriptionEn: 'Custom notes and comments',
+        icon: 'Type',
+        defaultSize: 'small',
+        category: 'custom',
+      },
+      {
+        type: 'custom_chart',
+        name: 'Graphique personnalisé',
+        nameEn: 'Custom Chart',
+        description: 'Créer un graphique sur mesure',
+        descriptionEn: 'Create a custom chart',
+        icon: 'BarChart2',
+        defaultSize: 'medium',
+        category: 'custom',
+      },
+    ],
+  },
+];
+
+// Helper to get all panel templates as flat array
+export function getAllPanelTemplates(): BoardPanelTemplate[] {
+  return BOARD_PANEL_CATEGORIES.flatMap(cat => cat.panels);
+}
+
+// Helper to get panel template by type
+export function getPanelTemplate(type: BoardPanelType): BoardPanelTemplate | undefined {
+  return getAllPanelTemplates().find(p => p.type === type);
+}
+
+// Create a new panel from template
+export function createBoardPanel(type: BoardPanelType, order: number): BoardPanel {
+  const template = getPanelTemplate(type);
+  if (!template) {
+    throw new Error(`Unknown panel type: ${type}`);
+  }
+  
+  return {
+    id: `panel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type,
+    title: template.name,
+    titleEn: template.nameEn,
+    description: template.description,
+    descriptionEn: template.descriptionEn,
+    size: template.defaultSize,
+    order,
+    visible: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+// Board configuration for a meeting
+export interface BoardConfig {
+  id: string;
+  name: string;
+  nameEn: string;
+  panels: BoardPanel[];
+  layout: 'grid' | 'list' | 'presentation';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================================
+// SLIDE ELEMENT SYSTEM (PowerPoint-style positioning)
+// ============================================================================
+
+export type SlideElementType = 
+  | 'text'
+  | 'title'
+  | 'subtitle'
+  | 'chart'
+  | 'kpi'
+  | 'table'
+  | 'image'
+  | 'icon'
+  | 'shape'
+  | 'metric'
+  | 'alert'
+  | 'trend';
+
+export interface SlideElementPosition {
+  x: number; // percentage from left (0-100)
+  y: number; // percentage from top (0-100)
+  width: number; // percentage (0-100)
+  height: number; // percentage (0-100)
+}
+
+export interface SlideElement {
+  id: string;
+  type: SlideElementType;
+  position: SlideElementPosition;
+  content: {
+    text?: string;
+    value?: string | number;
+    label?: string;
+    icon?: string;
+    chartType?: 'line' | 'bar' | 'pie' | 'area';
+    chartData?: any;
+    imageUrl?: string;
+    trend?: 'up' | 'down' | 'neutral';
+    trendValue?: string;
+    color?: string;
+    fontSize?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+    fontWeight?: 'normal' | 'medium' | 'semibold' | 'bold';
+    textAlign?: 'left' | 'center' | 'right';
+  };
+  style?: {
+    backgroundColor?: string;
+    borderRadius?: number;
+    padding?: number;
+    shadow?: boolean;
+  };
+  locked?: boolean;
+  zIndex: number;
+}
+
+export interface SlideWithElements {
+  id: string;
+  title: string;
+  elements: SlideElement[];
+  backgroundColor?: string;
+  backgroundImage?: string;
+}
+
+// Helper to create a new slide element
+export function createSlideElement(
+  type: SlideElementType, 
+  position: Partial<SlideElementPosition> = {},
+  content: Partial<SlideElement['content']> = {}
+): SlideElement {
+  const defaultPositions: Record<SlideElementType, SlideElementPosition> = {
+    title: { x: 10, y: 5, width: 80, height: 12 },
+    subtitle: { x: 10, y: 18, width: 80, height: 8 },
+    text: { x: 10, y: 30, width: 40, height: 20 },
+    chart: { x: 10, y: 30, width: 45, height: 50 },
+    kpi: { x: 10, y: 30, width: 25, height: 20 },
+    table: { x: 10, y: 30, width: 80, height: 50 },
+    image: { x: 10, y: 30, width: 30, height: 30 },
+    icon: { x: 45, y: 30, width: 10, height: 15 },
+    shape: { x: 10, y: 30, width: 20, height: 20 },
+    metric: { x: 10, y: 30, width: 20, height: 15 },
+    alert: { x: 10, y: 80, width: 80, height: 10 },
+    trend: { x: 10, y: 30, width: 25, height: 20 },
+  };
+
+  const defaultContent: Record<SlideElementType, Partial<SlideElement['content']>> = {
+    title: { text: 'Title', fontSize: '3xl', fontWeight: 'bold', textAlign: 'center' },
+    subtitle: { text: 'Subtitle', fontSize: 'xl', textAlign: 'center' },
+    text: { text: 'Text content', fontSize: 'base', textAlign: 'left' },
+    chart: { chartType: 'bar' },
+    kpi: { label: 'KPI', value: '0', fontSize: '2xl', fontWeight: 'bold' },
+    table: {},
+    image: { imageUrl: '' },
+    icon: { icon: 'BarChart3' },
+    shape: { color: '#3b82f6' },
+    metric: { label: 'Metric', value: '$0', trend: 'neutral' },
+    alert: { text: 'Alert message', color: '#ef4444' },
+    trend: { label: 'Trend', value: '0%', trend: 'up', trendValue: '+5%' },
+  };
+
+  return {
+    id: `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type,
+    position: { ...defaultPositions[type], ...position },
+    content: { ...defaultContent[type], ...content },
+    zIndex: Date.now(),
+  };
+}
+
+// Default board configurations
+export const DEFAULT_BOARD_CONFIGS: Omit<BoardConfig, 'id' | 'createdAt' | 'updatedAt'>[] = [
+  {
+    name: 'Revue financière complète',
+    nameEn: 'Full Financial Review',
+    panels: [],
+    layout: 'grid',
+  },
+  {
+    name: 'Tableau de bord exécutif',
+    nameEn: 'Executive Dashboard',
+    panels: [],
+    layout: 'grid',
+  },
+  {
+    name: 'Revue des anomalies',
+    nameEn: 'Anomaly Review',
+    panels: [],
+    layout: 'list',
+  },
+];
+
 export interface Participant {
   id: string;
   name: string;

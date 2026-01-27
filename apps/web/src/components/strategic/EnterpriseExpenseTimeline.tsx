@@ -6,7 +6,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Plus, Layers, CheckSquare, Square, AlertCircle } from 'lucide-react';
+import { Plus, Layers, GripVertical, Calculator } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { PlannedExpense, generatePlanningId } from '../../lib/strategicPlanning';
 import EnterpriseExpenseCard from './EnterpriseExpenseCard';
@@ -589,6 +589,66 @@ export default function EnterpriseExpenseTimeline({
       .reduce((sum, e) => sum + e.amount, 0);
   }, [expenses, selectedIds]);
 
+  // Calculate totals per lane
+  const laneTotals = useMemo(() => {
+    const opexMonthly = opexExpenses.reduce((sum, e) => {
+      if (e.frequency === 'monthly') return sum + e.amount;
+      if (e.frequency === 'quarterly') return sum + e.amount / 3;
+      if (e.frequency === 'yearly') return sum + e.amount / 12;
+      return sum;
+    }, 0);
+    
+    const capexTotal = capexExpenses.reduce((sum, e) => sum + e.amount, 0);
+    
+    return { opexMonthly, capexTotal };
+  }, [opexExpenses, capexExpenses]);
+
+  const formatCurrency = (value: number) => {
+    if (Math.abs(value) >= 1000000) {
+      return (value / 1000000).toFixed(1) + 'M';
+    }
+    if (Math.abs(value) >= 1000) {
+      return Math.round(value / 1000) + 'K';
+    }
+    return value.toString();
+  };
+
+  const handleQuickAdd = useCallback((type: 'opex' | 'capex', targetDate?: Date) => {
+    if (!onExpenseAdd) return;
+    
+    const expenseStartDate = targetDate || new Date();
+    // Snap to first of month
+    expenseStartDate.setDate(1);
+    
+    const expenseEndDate = new Date(expenseStartDate);
+    
+    if (type === 'opex') {
+      // OpEx: 12-month recurring expense
+      expenseEndDate.setMonth(expenseEndDate.getMonth() + 12);
+    } else {
+      // CapEx: One-time expense (single day)
+      expenseEndDate.setDate(expenseEndDate.getDate() + 1);
+    }
+    
+    const newExpense: PlannedExpense = {
+      id: generatePlanningId('expense'),
+      name: isEn ? 'New Expense' : 'Nouvelle dépense',
+      nameEn: 'New Expense',
+      type,
+      category: type === 'opex' ? 'operations' : 'equipment',
+      startDate: expenseStartDate.toISOString().split('T')[0],
+      endDate: expenseEndDate.toISOString().split('T')[0],
+      amount: type === 'opex' ? 5000 : 25000,
+      frequency: type === 'opex' ? 'monthly' : 'one_time',
+      isLocked: false,
+      confidence: 70,
+    };
+    
+    onExpenseAdd(newExpense);
+    setSelectedIds(new Set([newExpense.id]));
+    onExpenseClick?.(newExpense);
+  }, [onExpenseAdd, onExpenseClick, isEn]);
+
   const renderLane = (
     type: 'opex' | 'capex',
     laneExpenses: PlannedExpense[],
@@ -596,41 +656,77 @@ export default function EnterpriseExpenseTimeline({
   ) => {
     const color = type === 'opex' ? OPEX_COLOR : CAPEX_COLOR;
     const title = type === 'opex' 
-      ? (isEn ? 'OPEX (Operating Expenses)' : 'OpEx (Dépenses opérationnelles)')
-      : (isEn ? 'CAPEX (Capital Expenditures)' : 'CapEx (Dépenses en capital)');
+      ? (isEn ? 'OpEx (Operating Expenses)' : 'OpEx (Dépenses opérationnelles)')
+      : (isEn ? 'CapEx (Capital Expenditures)' : 'CapEx (Dépenses en capital)');
+    const total = type === 'opex' ? laneTotals.opexMonthly : laneTotals.capexTotal;
+    const totalLabel = type === 'opex' ? '/mo' : ' total';
 
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 px-1">
-          <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
-          <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-            {title}
-          </span>
-          <span 
-            className="text-xs px-1.5 py-0.5 rounded-full"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-3 h-3 rounded-sm" 
+              style={{ backgroundColor: color }} 
+            />
+            <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              {title}
+            </span>
+            <span 
+              className="text-xs px-1.5 py-0.5 rounded-full font-medium"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}
+            >
+              {laneExpenses.length}
+            </span>
+            {laneExpenses.length > 0 && (
+              <span 
+                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold"
+                style={{ backgroundColor: `${color}15`, color }}
+              >
+                <Calculator className="w-3 h-3" />
+                ${formatCurrency(total)}{totalLabel}
+              </span>
+            )}
+          </div>
+          
+          {/* Quick Add Button */}
+          <button
+            onClick={() => handleQuickAdd(type)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition-colors"
+            style={{
+              backgroundColor: color,
+              color: 'white',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.02)';
+              e.currentTarget.style.boxShadow = `0 4px 12px ${color}40`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
-            {laneExpenses.length}
-          </span>
+            <Plus className="w-3.5 h-3.5" />
+            {isEn ? 'Add' : 'Ajouter'}
+          </button>
         </div>
 
         <div 
           ref={ref}
-          className="relative ml-5 rounded-lg overflow-hidden"
+          className="relative ml-5 rounded-lg overflow-hidden transition-all"
           style={{ 
             backgroundColor: 'rgb(var(--color-bg-subtle))',
-            minHeight: laneExpenses.length === 0 ? '56px' : `${Math.max(56, laneExpenses.length * 48 + 8)}px`,
+            minHeight: laneExpenses.length === 0 ? '80px' : `${Math.max(80, laneExpenses.length * 48 + 16)}px`,
             position: 'relative',
+            border: `2px dashed ${color}25`,
           }}
           onContextMenu={(e) => handleContextMenu(e, undefined, type)}
           onDoubleClick={(e) => {
-            if (onExpenseAdd) {
-              const rect = ref.current?.getBoundingClientRect();
-              if (rect) {
-                const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-                const clickDate = positionToDate(xPercent);
-                handleContextMenuAction(type === 'opex' ? 'add-opex' : 'add-capex');
-              }
+            if (onExpenseAdd && ref.current) {
+              const rect = ref.current.getBoundingClientRect();
+              const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+              const clickDate = positionToDate(xPercent);
+              handleQuickAdd(type, clickDate);
             }
           }}
         >
@@ -643,7 +739,7 @@ export default function EnterpriseExpenseTimeline({
                 style={{ 
                   width: `${period.width}%`,
                   borderColor: 'rgb(var(--color-border) / 0.15)',
-                  backgroundColor: period.isCurrentPeriod ? 'rgb(var(--color-primary-500) / 0.04)' : 'transparent',
+                  backgroundColor: period.isCurrentPeriod ? `${color}08` : 'transparent',
                 }}
               />
             ))}
@@ -651,27 +747,64 @@ export default function EnterpriseExpenseTimeline({
 
           {/* Today marker */}
           {todayPosition !== null && (
-            <div
-              className="absolute top-0 bottom-0 w-0.5 pointer-events-none"
-              style={{
-                left: `${todayPosition}%`,
-                backgroundColor: 'rgb(var(--color-error) / 0.5)',
-                zIndex: 5,
-              }}
-            />
+            <>
+              <div
+                className="absolute top-0 w-0.5 pointer-events-none"
+                style={{
+                  left: `${todayPosition}%`,
+                  height: '100%',
+                  backgroundColor: '#EF4444',
+                  zIndex: 5,
+                }}
+              />
+              <div
+                className="absolute -top-1 w-2 h-2 rounded-full pointer-events-none"
+                style={{
+                  left: `calc(${todayPosition}% - 3px)`,
+                  backgroundColor: '#EF4444',
+                  zIndex: 6,
+                }}
+              />
+            </>
           )}
 
           {/* Empty state */}
           {laneExpenses.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'rgb(var(--color-text-muted) / 0.5)' }}>
-                <Plus size={14} />
-                <span>
-                  {isEn 
-                    ? `Right-click or double-click to add ${type.toUpperCase()}`
-                    : `Clic droit ou double-clic pour ajouter ${type === 'opex' ? 'OpEx' : 'CapEx'}`
-                  }
-                </span>
+            <div 
+              className="absolute inset-0 flex items-center justify-center cursor-pointer group"
+              style={{ zIndex: 1 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleQuickAdd(type);
+              }}
+            >
+              <div 
+                className="flex flex-col items-center gap-2 px-6 py-4 rounded-xl transition-all group-hover:scale-105"
+                style={{ 
+                  backgroundColor: `${color}08`,
+                  border: `2px dashed ${color}30`,
+                }}
+              >
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: `${color}15` }}
+                >
+                  <Plus size={20} style={{ color }} />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold" style={{ color }}>
+                    {isEn 
+                      ? `Add ${type === 'opex' ? 'Operating Expense' : 'Capital Expense'}`
+                      : `Ajouter ${type === 'opex' ? 'une dépense opérationnelle' : 'une dépense en capital'}`
+                    }
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn 
+                      ? 'Click here or double-click on the timeline'
+                      : 'Cliquez ici ou double-cliquez sur la ligne de temps'
+                    }
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -754,28 +887,35 @@ export default function EnterpriseExpenseTimeline({
 
       {/* Footer instructions */}
       <div 
-        className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-3 border-t text-[11px]"
+        className="flex flex-wrap items-center gap-3 pt-4 border-t text-xs"
         style={{ borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text-muted))' }}
       >
-        <span className="flex items-center gap-1">
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-            {isEn ? 'Right-click' : 'Clic droit'}
+        <div className="flex items-center gap-1.5">
+          <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn ? 'Right click' : 'Clic droit'}
           </kbd>
-          {isEn ? 'Context menu' : 'Menu contextuel'}
-        </span>
-        <span className="flex items-center gap-1">
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>⌘</kbd>
-          +
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>Click</kbd>
-          {isEn ? 'Multi-select' : 'Multi-sélection'}
-        </span>
-        <span className="flex items-center gap-1">
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>Shift</kbd>
-          +
-          <kbd className="px-1 py-0.5 rounded text-[10px] font-mono" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>Click</kbd>
-          {isEn ? 'Range select' : 'Sélection plage'}
-        </span>
-        <span>{isEn ? 'Drag to move' : 'Glisser pour déplacer'}</span>
+          <span>{isEn ? 'Context menu' : 'Menu contextuel'}</span>
+        </div>
+        <span style={{ color: 'rgb(var(--color-border))' }}>•</span>
+        <div className="flex items-center gap-1.5">
+          <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}>⌘</kbd>
+          <span>+</span>
+          <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}>Click</kbd>
+          <span>{isEn ? 'Multi-select' : 'Multi-sélection'}</span>
+        </div>
+        <span style={{ color: 'rgb(var(--color-border))' }}>•</span>
+        <div className="flex items-center gap-1.5">
+          <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}>Shift</kbd>
+          <span>+</span>
+          <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}>Click</kbd>
+          <span>{isEn ? 'Range select' : 'Sélection plage'}</span>
+        </div>
+        <span style={{ color: 'rgb(var(--color-border))' }}>•</span>
+        <div className="flex items-center gap-1.5">
+          <GripVertical className="w-3 h-3" />
+          <span>{isEn ? 'Drag to move' : 'Glisser pour déplacer'}</span>
+        </div>
+        <span style={{ color: 'rgb(var(--color-border))' }}>•</span>
         <span>{isEn ? 'Drag edges to resize' : 'Glisser les bords pour redimensionner'}</span>
       </div>
 

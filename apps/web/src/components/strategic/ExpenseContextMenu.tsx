@@ -5,7 +5,7 @@
  * with keyboard shortcuts and full CRUD operations
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import {
   Plus,
   Edit3,
@@ -421,9 +421,6 @@ export default function ExpenseContextMenu({
       </button>
     );
   };
-
-  // Need useState for submenu
-  const [, useState] = [useRef, require('react').useState];
 
   return (
     <>

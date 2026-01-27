@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Save, Loader2, MessageSquare } from 'lucide-react';
+import { Plus, Save, Loader2, ChevronDown, Check } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import {
@@ -25,9 +25,7 @@ import QuickMetrics from '../components/strategic/QuickMetrics';
 import EnterpriseExpenseTimeline from '../components/strategic/EnterpriseExpenseTimeline';
 import LiveCashChart from '../components/strategic/LiveCashChart';
 import ExpenseDrawer from '../components/strategic/ExpenseDrawer';
-import JamesChatbot from '../components/strategic/JamesChatbot';
 import type { ViewMode } from '../components/strategic/EnterpriseTimelineHeader';
-import { FinancialContext } from '../lib/jamesPrompts';
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
 
@@ -43,7 +41,7 @@ export default function StrategicPlanning() {
   const [showExpenseDrawer, setShowExpenseDrawer] = useState(false);
   const [editingExpense, setEditingExpense] = useState<PlannedExpense | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [jamesOpen, setJamesOpen] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
 
   // Demo financial data for when no real data is available
@@ -251,6 +249,8 @@ export default function StrategicPlanning() {
     setTimeout(() => {
       saveToStorage(scenarios, activeScenarioId, expenses);
       setIsSaving(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
     }, 500);
   };
 
@@ -282,23 +282,6 @@ export default function StrategicPlanning() {
     setExpenses([]);
     saveToStorage(updated, newScenario.id, []);
   };
-
-  // Build financial context for James AI
-  const financialContext: FinancialContext = useMemo(() => {
-    const actualCash = currentCash;
-    const actualRevenue = baseRevenue;
-    const actualBurn = runwayData?.monthlyBurnRate || 0;
-    const runwayMonths = runwayData?.runwayMonths || Infinity;
-
-    return {
-      currentCash: actualCash,
-      monthlyRevenue: actualRevenue,
-      monthlyExpenses: actualBurn + actualRevenue,
-      runwayMonths,
-      zeroDate: runwayData?.zeroDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      burnRate: actualBurn,
-    };
-  }, [currentCash, baseRevenue, runwayData]);
 
   if (dataLoading) {
     return (
@@ -346,86 +329,8 @@ export default function StrategicPlanning() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6" style={{ minHeight: '100vh', padding: '1rem' }}>
-      {/* Header */}
-      <div className="card p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Strategic Planning' : 'Planification stratégique'}
-            </h1>
-            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Enterprise Expense Planning & Forecasting' : 'Planification et prévision des dépenses entreprise'}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            {scenarios.length > 0 && (
-              <select
-                value={activeScenarioId || scenarios[0]?.id || ''}
-                onChange={(e) => {
-                  setActiveScenarioId(e.target.value);
-                  const scenario = scenarios.find(s => s.id === e.target.value);
-                  if (scenario) {
-                    setExpenses((scenario.initiatives || []).map(initiativeToExpense));
-                  }
-                  saveToStorage(scenarios, e.target.value, expenses);
-                }}
-                className="px-3 py-2 rounded-lg text-sm font-medium"
-                style={{
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text))',
-                }}
-              >
-                {scenarios.map(scenario => (
-                  <option key={scenario.id} value={scenario.id}>
-                    {isEn ? scenario.nameEn : scenario.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            
-            <button
-              onClick={handleCreateScenario}
-              className="px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
-              style={{
-                backgroundColor: 'rgb(var(--color-primary-500))',
-                color: 'white',
-              }}
-            >
-              <Plus className="w-4 h-4" />
-              <span>{isEn ? 'New' : 'Nouveau'}</span>
-            </button>
-            
-            <button
-              onClick={handleSaveScenario}
-              disabled={isSaving}
-              className="px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium disabled:opacity-50"
-              style={{
-                backgroundColor: 'rgb(var(--color-success))',
-                color: 'white',
-              }}
-            >
-              <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-              <span>{isEn ? 'Save' : 'Enregistrer'}</span>
-            </button>
-
-            <button
-              onClick={() => setJamesOpen(!jamesOpen)}
-              className="px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
-              style={{
-                backgroundColor: jamesOpen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                color: jamesOpen ? 'white' : 'rgb(var(--color-text))',
-              }}
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">{isEn ? 'James' : 'James'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Metrics */}
+    <div className="min-h-screen">
+      {/* Quick Metrics - Top bar style */}
       <QuickMetrics
         cash={currentCash}
         burnRate={runwayData.monthlyBurnRate}
@@ -433,9 +338,96 @@ export default function StrategicPlanning() {
         zeroDate={runwayData.zeroDate}
       />
 
-      {/* Expense Timeline */}
-      <div className="card p-4 sm:p-6">
-        <ExpenseTimeline
+      {/* Enterprise Expense Timeline */}
+      <div className="p-4 sm:p-6">
+        <div className="card p-4 sm:p-6">
+          {/* Timeline Header with Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            <div className="flex items-center gap-3">
+              {/* Scenario Selector */}
+              {scenarios.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={activeScenarioId || scenarios[0]?.id || ''}
+                    onChange={(e) => {
+                      setActiveScenarioId(e.target.value);
+                      const scenario = scenarios.find(s => s.id === e.target.value);
+                      if (scenario) {
+                        setExpenses((scenario.initiatives || []).map(initiativeToExpense));
+                      }
+                      saveToStorage(scenarios, e.target.value, expenses);
+                    }}
+                    className="appearance-none pl-4 pr-10 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all hover:shadow-md"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      color: 'rgb(var(--color-text))',
+                      border: '2px solid rgb(var(--color-border))',
+                      minWidth: '200px',
+                    }}
+                  >
+                    {scenarios.map(scenario => (
+                      <option key={scenario.id} value={scenario.id}>
+                        {isEn ? scenario.nameEn : scenario.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" 
+                    style={{ color: 'rgb(var(--color-text-muted))' }} 
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {/* New Scenario */}
+              <button
+                onClick={handleCreateScenario}
+                className="group px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.3)',
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                <span>{isEn ? 'New Scenario' : 'Nouveau scénario'}</span>
+              </button>
+              
+              {/* Save Button */}
+              <button
+                onClick={handleSaveScenario}
+                disabled={isSaving}
+                className="group px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                style={{
+                  background: saveSuccess 
+                    ? 'linear-gradient(135deg, rgb(var(--color-success)) 0%, rgb(16 185 129) 100%)'
+                    : 'linear-gradient(135deg, rgb(var(--color-success)) 0%, rgb(34 197 94) 100%)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgb(var(--color-success) / 0.3)',
+                }}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : saveSuccess ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>
+                  {isSaving 
+                    ? (isEn ? 'Saving...' : 'Sauvegarde...') 
+                    : saveSuccess 
+                      ? (isEn ? 'Saved!' : 'Enregistré!')
+                      : (isEn ? 'Save' : 'Enregistrer')
+                  }
+                </span>
+              </button>
+            </div>
+          </div>
+          
+          <EnterpriseExpenseTimeline
           expenses={expenses}
           startDate={new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1)}
           endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 18, 0)}
@@ -445,18 +437,23 @@ export default function StrategicPlanning() {
             setShowExpenseDrawer(true);
           }}
           onExpenseAdd={handleExpenseAdd}
-          viewMode="month"
+          onExpenseDelete={handleExpenseDelete}
+          onExpenseDuplicate={handleExpenseDuplicate}
+          onBulkDelete={handleBulkDelete}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+        </div>
+
+        {/* Live Cash Chart */}
+        <LiveCashChart
+          currentCash={currentCash}
+          currentDate={currentDate}
+          expenses={expenses}
+          baseRevenue={baseRevenue}
+          months={24}
         />
       </div>
-
-      {/* Live Cash Chart */}
-      <LiveCashChart
-        currentCash={currentCash}
-        currentDate={currentDate}
-        expenses={expenses}
-        baseRevenue={baseRevenue}
-        months={24}
-      />
 
       {/* Expense Drawer */}
       <ExpenseDrawer
@@ -477,36 +474,6 @@ export default function StrategicPlanning() {
         }}
         onDelete={editingExpense ? handleExpenseDelete : undefined}
         onDuplicate={handleExpenseDuplicate}
-      />
-
-      {/* James AI Chatbot */}
-      <JamesChatbot
-        isOpen={jamesOpen}
-        onClose={() => setJamesOpen(false)}
-        onToggle={() => setJamesOpen(!jamesOpen)}
-        financialContext={financialContext}
-        scenarios={scenarios}
-        activeScenarioId={activeScenarioId}
-        runwayAnalysis={runwayData ? {
-          currentCash,
-          monthlyBurnRate: runwayData.monthlyBurnRate,
-          netBurnRate: runwayData.monthlyBurnRate,
-          grossBurnRate: runwayData.monthlyBurnRate + baseRevenue,
-          runwayMonths: runwayData.runwayMonths,
-          zeroDate: runwayData.zeroDate,
-          confidenceLevel: 85,
-          projectedCashByMonth: runwayData.projectedCashByMonth,
-        } : undefined}
-        onInitiativesGenerated={(initiatives) => {
-          const newExpenses = initiatives.map(initiativeToExpense);
-          const updated = [...expenses, ...newExpenses];
-          setExpenses(updated);
-          saveToStorage(scenarios, activeScenarioId, updated);
-          if (newExpenses.length > 0) {
-            setEditingExpense(newExpenses[0]);
-            setShowExpenseDrawer(true);
-          }
-        }}
       />
     </div>
   );

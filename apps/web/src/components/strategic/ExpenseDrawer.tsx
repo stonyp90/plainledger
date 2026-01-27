@@ -1,11 +1,11 @@
 /**
  * Expense Drawer Component
  * 
- * Slide-out panel for editing expense details
+ * Slide-out panel for editing expense details with quick templates
  */
 
-import { useState, useEffect } from 'react';
-import { X, Save, Trash2, Copy, Lock, Unlock } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Save, Trash2, Copy, Lock, Unlock, Zap, Users, Laptop, Building2, Truck, TrendingDown } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { PlannedExpense, generatePlanningId } from '../../lib/strategicPlanning';
 
@@ -17,6 +17,54 @@ interface ExpenseDrawerProps {
   onDelete?: (expenseId: string) => void;
   onDuplicate?: (expense: PlannedExpense) => void;
 }
+
+// Quick templates for common expenses
+const QUICK_TEMPLATES = [
+  {
+    id: 'hire',
+    icon: Users,
+    name: 'Nouvelle embauche',
+    nameEn: 'New Hire',
+    type: 'opex' as const,
+    category: 'salaries',
+    amount: 6500,
+    frequency: 'monthly' as const,
+    color: '#3B82F6',
+  },
+  {
+    id: 'software',
+    icon: Laptop,
+    name: 'Abonnement SaaS',
+    nameEn: 'SaaS Subscription',
+    type: 'opex' as const,
+    category: 'software',
+    amount: 500,
+    frequency: 'monthly' as const,
+    color: '#8B5CF6',
+  },
+  {
+    id: 'office',
+    icon: Building2,
+    name: 'Bureaux / Loyer',
+    nameEn: 'Office / Rent',
+    type: 'opex' as const,
+    category: 'rent',
+    amount: 8000,
+    frequency: 'monthly' as const,
+    color: '#EC4899',
+  },
+  {
+    id: 'equipment',
+    icon: Truck,
+    name: 'Équipement',
+    nameEn: 'Equipment',
+    type: 'capex' as const,
+    category: 'equipment',
+    amount: 25000,
+    frequency: 'one_time' as const,
+    color: '#F59E0B',
+  },
+];
 
 const EXPENSE_CATEGORIES = {
   opex: [
@@ -136,9 +184,41 @@ export default function ExpenseDrawer({
     onDuplicate?.(duplicated);
   };
 
+  // Calculate 12-month impact
+  const yearlyImpact = useMemo(() => {
+    if (frequency === 'one_time') return amount;
+    if (frequency === 'monthly') return amount * 12;
+    if (frequency === 'quarterly') return amount * 4;
+    if (frequency === 'annual') return amount;
+    return 0;
+  }, [amount, frequency]);
+
+  // Apply template
+  const applyTemplate = (template: typeof QUICK_TEMPLATES[0]) => {
+    setName(template.name);
+    setNameEn(template.nameEn);
+    setType(template.type);
+    setCategory(template.category);
+    setAmount(template.amount);
+    setFrequency(template.frequency);
+    
+    const today = new Date();
+    today.setDate(1);
+    setStartDate(today.toISOString().split('T')[0]);
+    
+    const end = new Date(today);
+    if (template.type === 'opex') {
+      end.setMonth(end.getMonth() + 12);
+    } else {
+      end.setDate(end.getDate() + 1);
+    }
+    setEndDate(end.toISOString().split('T')[0]);
+  };
+
   if (!isOpen) return null;
 
   const categories = type === 'opex' ? EXPENSE_CATEGORIES.opex : EXPENSE_CATEGORIES.capex;
+  const isNewExpense = !expense;
 
   return (
     <div 
@@ -166,9 +246,20 @@ export default function ExpenseDrawer({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
-          <h2 className="text-lg sm:text-xl font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-            {expense ? (isEn ? 'Edit Expense' : 'Modifier la dépense') : (isEn ? 'New Expense' : 'Nouvelle dépense')}
-          </h2>
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              {expense ? (isEn ? 'Edit Expense' : 'Modifier la dépense') : (isEn ? 'Add Expense' : 'Ajouter une dépense')}
+            </h2>
+            {amount > 0 && (
+              <p className="text-sm mt-0.5 flex items-center gap-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <TrendingDown className="w-3.5 h-3.5" style={{ color: '#EF4444' }} />
+                {isEn ? '12-month impact:' : 'Impact sur 12 mois:'}{' '}
+                <span className="font-semibold" style={{ color: '#EF4444' }}>
+                  -${yearlyImpact.toLocaleString()}
+                </span>
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {expense && onDuplicate && (
               <button
@@ -192,6 +283,47 @@ export default function ExpenseDrawer({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {/* Quick Templates - Only for new expenses */}
+          {isNewExpense && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                <label className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Quick Templates' : 'Modèles rapides'}
+                </label>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {QUICK_TEMPLATES.map((template) => {
+                  const Icon = template.icon;
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => applyTemplate(template)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      style={{ 
+                        backgroundColor: `${template.color}10`,
+                        border: `1px solid ${template.color}30`,
+                      }}
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: `${template.color}20` }}
+                      >
+                        <Icon className="w-4 h-4" style={{ color: template.color }} />
+                      </div>
+                      <span className="text-xs font-medium text-center" style={{ color: template.color }}>
+                        {isEn ? template.nameEn : template.name}
+                      </span>
+                      <span className="text-[10px] font-semibold" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        ${template.amount.toLocaleString()}{template.frequency === 'monthly' ? '/mo' : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Name */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>

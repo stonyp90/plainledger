@@ -226,30 +226,30 @@ export default function Dashboard() {
   // Show cutting-edge skeleton loading state
   if (isLoading && !financialData) {
     return (
-      <div className="space-y-6 animate-pulse">
+      <div className="space-y-4 sm:space-y-6 animate-pulse">
         {/* Header skeleton */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="h-8 w-48 rounded-lg bg-gradient-to-r from-[rgb(var(--color-bg-muted))] via-[rgb(var(--color-border))] to-[rgb(var(--color-bg-muted))] animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
-            <div className="h-4 w-32 mt-2 rounded bg-[rgb(var(--color-bg-muted))]" />
+            <div className="h-6 sm:h-8 w-36 sm:w-48 rounded-lg bg-gradient-to-r from-[rgb(var(--color-bg-muted))] via-[rgb(var(--color-border))] to-[rgb(var(--color-bg-muted))] animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+            <div className="h-3 sm:h-4 w-24 sm:w-32 mt-2 rounded bg-[rgb(var(--color-bg-muted))]" />
           </div>
           <div className="flex gap-2">
-            <div className="h-9 w-32 rounded-lg bg-[rgb(var(--color-bg-muted))]" />
-            <div className="h-9 w-24 rounded-lg bg-[rgb(var(--color-bg-muted))]" />
+            <div className="h-8 sm:h-9 w-24 sm:w-32 rounded-lg bg-[rgb(var(--color-bg-muted))]" />
+            <div className="h-8 sm:h-9 w-20 sm:w-24 rounded-lg bg-[rgb(var(--color-bg-muted))]" />
           </div>
         </div>
         
         {/* KPI cards skeleton */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[...Array(4)].map((_, i) => (
             <div 
               key={i}
-              className="rounded-xl p-5 relative overflow-hidden"
+              className="rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 relative overflow-hidden"
               style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
             >
-              <div className="h-3 w-20 rounded bg-[rgb(var(--color-bg-muted))] mb-4" />
-              <div className="h-8 w-28 rounded bg-[rgb(var(--color-bg-muted))] mb-3" />
-              <div className="h-4 w-16 rounded bg-[rgb(var(--color-bg-muted))]" />
+              <div className="h-2.5 sm:h-3 w-16 sm:w-20 rounded bg-[rgb(var(--color-bg-muted))] mb-3 sm:mb-4" />
+              <div className="h-6 sm:h-8 w-20 sm:w-28 rounded bg-[rgb(var(--color-bg-muted))] mb-2 sm:mb-3" />
+              <div className="h-3 sm:h-4 w-12 sm:w-16 rounded bg-[rgb(var(--color-bg-muted))]" />
               {/* Shimmer effect */}
               <div 
                 className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]"
@@ -262,41 +262,41 @@ export default function Dashboard() {
         </div>
         
         {/* Ratios skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[...Array(4)].map((_, i) => (
             <div 
               key={i}
-              className="rounded-xl p-4"
+              className="rounded-lg sm:rounded-xl p-3 sm:p-4"
               style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
             >
-              <div className="h-3 w-24 rounded bg-[rgb(var(--color-border))] mb-3" />
-              <div className="h-7 w-16 rounded bg-[rgb(var(--color-border))]" />
+              <div className="h-2.5 sm:h-3 w-20 sm:w-24 rounded bg-[rgb(var(--color-border))] mb-2 sm:mb-3" />
+              <div className="h-5 sm:h-7 w-12 sm:w-16 rounded bg-[rgb(var(--color-border))]" />
             </div>
           ))}
         </div>
         
         {/* Charts skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
           {[...Array(2)].map((_, i) => (
             <div 
               key={i}
-              className="rounded-xl p-6 h-64"
+              className="rounded-lg sm:rounded-xl p-4 sm:p-6 h-48 sm:h-56 lg:h-64"
               style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
             >
-              <div className="h-5 w-32 rounded bg-[rgb(var(--color-bg-muted))] mb-2" />
-              <div className="h-3 w-48 rounded bg-[rgb(var(--color-bg-muted))] mb-6" />
-              <div className="h-40 rounded bg-[rgb(var(--color-bg-muted))]" />
+              <div className="h-4 sm:h-5 w-24 sm:w-32 rounded bg-[rgb(var(--color-bg-muted))] mb-2" />
+              <div className="h-2.5 sm:h-3 w-32 sm:w-48 rounded bg-[rgb(var(--color-bg-muted))] mb-4 sm:mb-6" />
+              <div className="h-28 sm:h-32 lg:h-40 rounded bg-[rgb(var(--color-bg-muted))]" />
             </div>
           ))}
         </div>
         
         {/* Loading indicator */}
-        <div className="flex items-center justify-center py-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative">
-              <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
-            <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <span className="text-xs sm:text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {t('common.loading')}
             </span>
           </div>
@@ -328,18 +328,18 @@ export default function Dashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-primary">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary truncate">
               {currentTenant ? currentTenant.name : t('dashboard.title')}
             </h1>
-            <p className="text-sm mt-1 text-muted">
+            <p className="text-xs sm:text-sm mt-0.5 sm:mt-1 text-muted">
               {t('dashboard.subtitle')}
             </p>
           </div>
           
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <div 
               className="flex rounded-lg p-0.5"
               style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
@@ -348,7 +348,7 @@ export default function Dashboard() {
                 <button
                   key={period.id}
                   onClick={() => setSelectedPeriod(period.id as 'mtd' | 'qtd' | 'ytd')}
-                  className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all"
+                  className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-all"
                   style={{
                     backgroundColor: selectedPeriod === period.id ? 'rgb(var(--color-surface))' : 'transparent',
                     color: selectedPeriod === period.id ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
@@ -361,20 +361,20 @@ export default function Dashboard() {
             
             <button
               onClick={handleRefresh}
-              className="btn-secondary btn-sm flex items-center gap-2"
+              className="btn-secondary btn-sm flex items-center gap-1.5 sm:gap-2 !px-2 sm:!px-3"
               disabled={isRefreshing}
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{isRefreshing ? t('common.refreshing') : t('common.refresh')}</span>
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden md:inline">{isRefreshing ? t('common.refreshing') : t('common.refresh')}</span>
             </button>
 
             <button
               onClick={() => setShowAIAssistant(true)}
-              className="btn-primary btn-sm flex items-center gap-2"
+              className="btn-primary btn-sm flex items-center gap-1.5 sm:gap-2 !px-2 sm:!px-3"
               title={language === 'en' ? 'Ask James' : 'Demander à James'}
             >
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">{language === 'en' ? 'Ask James' : 'Demander'}</span>
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden md:inline">{language === 'en' ? 'Ask James' : 'Demander'}</span>
             </button>
           </div>
         </div>
@@ -404,9 +404,9 @@ export default function Dashboard() {
       )}
 
       {/* Health Score + Key Metrics */}
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Health Score - Compact */}
-        <div className="xl:col-span-1 order-2 xl:order-1">
+        <div className="lg:col-span-1 order-2 lg:order-1">
           <HealthScoreGauge
             score={analysis.healthScore}
             criticalCount={analysis.summary.critical}
@@ -420,7 +420,7 @@ export default function Dashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="xl:col-span-4 grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 order-1 xl:order-2">
+        <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 order-1 lg:order-2">
           <KPICard
             title={t('dashboard.kpi.revenue')}
             value={formatCurrency(kpis.revenue.current)}
@@ -686,13 +686,13 @@ export default function Dashboard() {
 
       {/* AI Query Assistant Modal */}
       {showAIAssistant && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowAIAssistant(false)}
           />
           <div 
-            className="relative w-full max-w-2xl h-[600px] rounded-2xl overflow-hidden shadow-2xl"
+            className="relative w-full sm:max-w-2xl h-[85vh] sm:h-[600px] rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
             <AIQueryAssistant 
@@ -730,7 +730,7 @@ function KPICard({ title, value, change, subtitle, trend, badge, vsPriorLabel = 
   
   return (
     <div 
-      className="group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+      className="group relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))',
@@ -749,27 +749,27 @@ function KPICard({ title, value, change, subtitle, trend, badge, vsPriorLabel = 
       />
       
       {/* Live indicator pulse */}
-      <div className="absolute top-3 right-3">
-        <span className="relative flex h-2 w-2">
+      <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+        <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
           <span 
             className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
             style={{ backgroundColor: 'rgb(var(--color-success))' }}
           />
           <span 
-            className="relative inline-flex rounded-full h-2 w-2"
+            className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2"
             style={{ backgroundColor: 'rgb(var(--color-success))' }}
           />
         </span>
       </div>
       
-      <div className="relative p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted leading-tight">
+      <div className="relative p-3 sm:p-4 lg:p-5">
+        <div className="flex items-start justify-between gap-1 sm:gap-2 mb-2 sm:mb-3">
+          <span className="text-[9px] sm:text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-muted leading-tight line-clamp-1">
             {title}
           </span>
           {badge && (
             <span 
-              className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium whitespace-nowrap"
+              className="px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] lg:text-[10px] font-medium whitespace-nowrap flex-shrink-0"
               style={{ 
                 backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                 color: 'rgb(var(--color-primary-600))',
@@ -781,19 +781,19 @@ function KPICard({ title, value, change, subtitle, trend, badge, vsPriorLabel = 
         </div>
         
         {/* Value with animated counter effect */}
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-2">
+          <div className="min-w-0 flex-1">
             <p 
-              className="text-2xl sm:text-3xl font-bold tabular-nums tracking-tight"
+              className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold tabular-nums tracking-tight"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {value}
             </p>
             
             {change !== undefined ? (
-              <div className="flex items-center gap-1.5 mt-2">
+              <div className="flex items-center gap-1 sm:gap-1.5 mt-1 sm:mt-2">
                 <div 
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
+                  className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] lg:text-xs font-semibold ${
                     trend === 'up' ? 'text-success' : trend === 'down' ? 'text-error' : 'text-muted'
                   }`}
                   style={{
@@ -805,25 +805,25 @@ function KPICard({ title, value, change, subtitle, trend, badge, vsPriorLabel = 
                   }}
                 >
                   {trend === 'up' ? (
-                    <ArrowUpRight className="w-3 h-3" />
+                    <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   ) : trend === 'down' ? (
-                    <ArrowDownRight className="w-3 h-3" />
+                    <ArrowDownRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   ) : null}
                   {change >= 0 ? '+' : ''}{change.toFixed(1)}%
                 </div>
-                <span className="text-[10px] sm:text-xs text-muted hidden sm:inline">
+                <span className="text-[9px] sm:text-[10px] lg:text-xs text-muted hidden md:inline">
                   {vsPriorLabel}
                 </span>
               </div>
             ) : subtitle ? (
-              <p className="text-[10px] sm:text-xs mt-2 text-muted">
+              <p className="text-[9px] sm:text-[10px] lg:text-xs mt-1 sm:mt-2 text-muted line-clamp-1">
                 {subtitle}
               </p>
             ) : null}
           </div>
           
-          {/* Mini sparkline chart */}
-          <div className="w-20 h-10 opacity-60 group-hover:opacity-100 transition-opacity">
+          {/* Mini sparkline chart - hidden on very small screens */}
+          <div className="hidden xs:block w-12 sm:w-16 lg:w-20 h-8 sm:h-10 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <svg viewBox="0 0 80 40" className="w-full h-full overflow-visible">
               {/* Area fill */}
               <path
@@ -888,7 +888,7 @@ function RatioCard({ label, value, benchmark, format, lowerIsBetter, vsLabel = '
 
   return (
     <div 
-      className="group relative p-4 sm:p-5 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md cursor-default"
+      className="group relative p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md cursor-default"
       style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
     >
       {/* Background progress indicator */}
@@ -900,41 +900,41 @@ function RatioCard({ label, value, benchmark, format, lowerIsBetter, vsLabel = '
       />
       
       <div className="relative">
-        <div className="flex items-start justify-between mb-2">
-          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted leading-tight">
+        <div className="flex items-start justify-between mb-1.5 sm:mb-2 gap-1">
+          <p className="text-[9px] sm:text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-muted leading-tight line-clamp-1">
             {label}
           </p>
           {/* Status icon */}
           <div 
-            className={`w-5 h-5 rounded-full flex items-center justify-center ${
+            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
               isGood ? 'bg-success/20' : 'bg-warning/20'
             }`}
           >
             {isGood ? (
-              <CheckCircle className="w-3 h-3 text-success" />
+              <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-success" />
             ) : (
-              <AlertTriangle className="w-3 h-3 text-warning" />
+              <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-warning" />
             )}
           </div>
         </div>
         
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-2">
+          <div className="min-w-0">
             <span 
-              className="text-xl sm:text-2xl font-bold tabular-nums"
+              className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {formatValue()}
             </span>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className={`text-[10px] sm:text-xs font-medium ${isGood ? 'text-success' : 'text-warning'}`}>
+            <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 sm:mt-1">
+              <span className={`text-[9px] sm:text-[10px] lg:text-xs font-medium ${isGood ? 'text-success' : 'text-warning'}`}>
                 {isGood ? '✓' : '!'} {vsLabel} {formatBenchmark()}
               </span>
             </div>
           </div>
           
-          {/* Circular progress indicator */}
-          <div className="relative w-10 h-10 opacity-70 group-hover:opacity-100 transition-opacity">
+          {/* Circular progress indicator - smaller on mobile */}
+          <div className="relative w-8 h-8 sm:w-10 sm:h-10 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
               <circle
                 cx="18"
@@ -957,7 +957,7 @@ function RatioCard({ label, value, benchmark, format, lowerIsBetter, vsLabel = '
               />
             </svg>
             <span 
-              className="absolute inset-0 flex items-center justify-center text-[8px] font-bold"
+              className="absolute inset-0 flex items-center justify-center text-[7px] sm:text-[8px] font-bold"
               style={{ color: isGood ? 'rgb(var(--color-success))' : 'rgb(var(--color-warning))' }}
             >
               {Math.round(progress)}%
@@ -981,7 +981,7 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
   return (
     <Link
       to={to}
-      className="group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+      className="group relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: `1px solid ${hasAttention ? 'rgb(var(--color-error) / 0.4)' : 'rgb(var(--color-border))'}`,
@@ -997,43 +997,43 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
         }}
       />
       
-      {/* Animated arrow on hover */}
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+      {/* Animated arrow on hover - hidden on mobile */}
+      <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300 hidden sm:block">
         <ChevronRight 
-          className="w-5 h-5" 
+          className="w-4 h-4 sm:w-5 sm:h-5" 
           style={{ color: hasAttention ? 'rgb(var(--color-error))' : 'rgb(var(--color-primary-500))' }}
         />
       </div>
       
-      <div className="relative flex items-center gap-3 p-4">
+      <div className="relative flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
         <div 
-          className={`relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${
+          className={`relative w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${
             hasAttention 
               ? 'bg-error/10 text-error' 
               : 'bg-muted'
           }`}
           style={{ color: hasAttention ? undefined : 'rgb(var(--color-text-muted))' }}
         >
-          {icon}
+          <span className="[&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{icon}</span>
           {/* Pulse effect for attention items */}
           {hasAttention && (
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 flex h-2 w-2 sm:h-3 sm:w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-error" />
+              <span className="relative inline-flex rounded-full h-2 w-2 sm:h-3 sm:w-3 bg-error" />
             </span>
           )}
         </div>
         <div className="min-w-0 flex-1">
           <Tooltip content={title} position="top" delay={400}>
             <p 
-              className="font-semibold text-sm group-hover:text-primary-600 transition-colors truncate cursor-help"
+              className="font-semibold text-xs sm:text-sm group-hover:text-primary-600 transition-colors truncate cursor-help"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {title}
             </p>
           </Tooltip>
           <Tooltip content={subtitle} position="bottom" delay={400}>
-            <p className="text-xs text-muted truncate mt-0.5 cursor-help">
+            <p className="text-[10px] sm:text-xs text-muted truncate mt-0.5 cursor-help">
               {subtitle}
             </p>
           </Tooltip>

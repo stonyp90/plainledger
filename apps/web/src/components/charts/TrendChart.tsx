@@ -48,6 +48,32 @@ export default function TrendChart({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const chartRef = useRef<HTMLDivElement>(null);
 
+  // Early return for empty or insufficient data
+  if (!data || data.length === 0) {
+    return (
+      <div 
+        className="rounded-xl p-4 sm:p-5"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))'
+        }}
+      >
+        <h3 
+          className="font-semibold mb-2"
+          style={{ color: 'rgb(var(--color-text))' }}
+        >
+          {isEn && titleEn ? titleEn : title}
+        </h3>
+        <div 
+          className="flex items-center justify-center"
+          style={{ height: `${height}px`, color: 'rgb(var(--color-text-muted))' }}
+        >
+          {isEn ? 'No data available' : 'Aucune donnée disponible'}
+        </div>
+      </div>
+    );
+  }
+
   const { 
     processedData, 
     minValue, 
@@ -61,10 +87,27 @@ export default function TrendChart({
     percentChange,
     volatility,
   } = useMemo(() => {
+    // Guard against empty data (though we have early return above, useMemo might run before)
+    if (!data || data.length === 0) {
+      return {
+        processedData: [],
+        minValue: 0,
+        maxValue: 100,
+        avgValue: 0,
+        outliers: [],
+        trend: 'stable' as const,
+        warningBand: { low: 0, high: 100 },
+        criticalBand: { low: 0, high: 100 },
+        movingAverage: [],
+        percentChange: 0,
+        volatility: 0,
+      };
+    }
+    
     const values = data.map(d => d.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
     const base = baseline || avg;
     
     // Calculate bands
@@ -152,12 +195,20 @@ export default function TrendChart({
 
   const getYPosition = (value: number) => {
     const range = maxValue - minValue;
+    // Handle case where all values are the same (range = 0)
+    if (range === 0 || !isFinite(range)) {
+      return height / 2;
+    }
     return height - ((value - minValue) / range) * height;
   };
 
   const getXPosition = (index: number) => {
     const padding = 40;
     const width = 100 - padding;
+    // Handle case where there's only one data point
+    if (data.length <= 1) {
+      return 50; // Center the single point
+    }
     return padding / 2 + (index / (data.length - 1)) * width;
   };
 
@@ -174,14 +225,18 @@ export default function TrendChart({
   };
 
   // Generate SVG path for the line
-  const linePath = processedData.map((point, i) => {
-    const x = getXPosition(i);
-    const y = getYPosition(point.value);
-    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-  }).join(' ');
+  const linePath = processedData.length > 0 
+    ? processedData.map((point, i) => {
+        const x = getXPosition(i);
+        const y = getYPosition(point.value);
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+      }).join(' ')
+    : '';
 
-  // Generate area path
-  const areaPath = `${linePath} L ${getXPosition(data.length - 1)} ${height} L ${getXPosition(0)} ${height} Z`;
+  // Generate area path (only if we have a valid line path)
+  const areaPath = linePath 
+    ? `${linePath} L ${getXPosition(data.length - 1)} ${height} L ${getXPosition(0)} ${height} Z`
+    : '';
 
   // Generate moving average path
   const maPath = showMA && movingAverage.length > 0 
@@ -409,10 +464,12 @@ export default function TrendChart({
               <stop offset="100%" stopColor={color} stopOpacity="0.03" />
             </linearGradient>
           </defs>
-          <path
-            d={areaPath}
-            fill={`url(#areaGradient-${title.replace(/\s/g, '')})`}
-          />
+          {areaPath && (
+            <path
+              d={areaPath}
+              fill={`url(#areaGradient-${title.replace(/\s/g, '')})`}
+            />
+          )}
 
           {/* Budget line if provided */}
           {budget && budgetPath && (
@@ -438,14 +495,16 @@ export default function TrendChart({
           )}
 
           {/* Main line */}
-          <path
-            d={linePath}
-            fill="none"
-            stroke={color}
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          {linePath && (
+            <path
+              d={linePath}
+              fill="none"
+              stroke={color}
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
 
           {/* Hover vertical line */}
           {hoveredPointIndex !== null && (

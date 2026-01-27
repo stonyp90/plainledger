@@ -50,6 +50,8 @@ import {
   Shield,
   Users,
   FileDown,
+  Layers,
+  GripVertical,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -58,12 +60,22 @@ import {
   boardMeetingService,
   generateExecutiveSummarySlides,
   MEETING_TEMPLATES,
+  createBoardPanel,
+  createSlideElement,
   type BoardMeeting as BoardMeetingType,
   type MeetingSlide,
   type AgendaItem,
   type Participant,
   type Note,
+  type BoardPanel,
+  type BoardPanelType,
+  type PanelSize,
+  type SlideElement,
+  type SlideElementType,
 } from '../lib/boardMeeting';
+import BoardPanelPicker from '../components/strategic/BoardPanelPicker';
+import BoardPanelRenderer from '../components/strategic/BoardPanelRenderer';
+import SlideEditor from '../components/strategic/SlideEditor';
 
 // Slide components
 function TitleSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
@@ -950,12 +962,140 @@ export default function BoardMeeting() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   
+  // Panel system state
+  const [viewMode, setViewMode] = useState<'slides' | 'panels'>('slides');
+  const [showPanelPicker, setShowPanelPicker] = useState(false);
+  const [boardPanels, setBoardPanels] = useState<BoardPanel[]>(() => {
+    try {
+      const stored = localStorage.getItem('plainledger-board-panels');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showAddElementMenu, setShowAddElementMenu] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  
+  // Slide elements state (per slide)
+  const [slideElements, setSlideElements] = useState<Record<string, SlideElement[]>>(() => {
+    try {
+      const stored = localStorage.getItem('plainledger-slide-elements');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+  
+  // Save slide elements to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('plainledger-slide-elements', JSON.stringify(slideElements));
+    } catch (error) {
+      console.error('Failed to save slide elements:', error);
+    }
+  }, [slideElements]);
+  
+  // Save panels to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('plainledger-board-panels', JSON.stringify(boardPanels));
+    } catch (error) {
+      console.error('Failed to save board panels:', error);
+    }
+  }, [boardPanels]);
+  
+  // Panel handlers
+  const handleAddPanel = useCallback((type: BoardPanelType) => {
+    const newPanel = createBoardPanel(type, boardPanels.length);
+    setBoardPanels(prev => [...prev, newPanel]);
+  }, [boardPanels.length]);
+  
+  const handleUpdatePanel = useCallback((updatedPanel: BoardPanel) => {
+    setBoardPanels(prev => prev.map(p => p.id === updatedPanel.id ? updatedPanel : p));
+  }, []);
+  
+  const handleDeletePanel = useCallback((panelId: string) => {
+    setBoardPanels(prev => prev.filter(p => p.id !== panelId));
+  }, []);
+  
+  const handleResizePanel = useCallback((panelId: string, size: PanelSize) => {
+    setBoardPanels(prev => prev.map(p => 
+      p.id === panelId ? { ...p, size, updatedAt: new Date().toISOString() } : p
+    ));
+  }, []);
+  
+  const handleMovePanel = useCallback((fromIndex: number, toIndex: number) => {
+    setBoardPanels(prev => {
+      const newPanels = [...prev];
+      const [moved] = newPanels.splice(fromIndex, 1);
+      newPanels.splice(toIndex, 0, moved);
+      return newPanels.map((p, i) => ({ ...p, order: i }));
+    });
+  }, []);
+  
+  // Get existing panel types for the picker
+  const existingPanelTypes = useMemo(() => 
+    boardPanels.map(p => p.type),
+  [boardPanels]);
+  
   // Generate slides
   const slides = useMemo(() => {
     return generateExecutiveSummarySlides(financialData, isEn);
   }, [financialData, isEn]);
   
   const currentSlide = slides[currentSlideIndex];
+  
+  // Get elements for current slide
+  const currentSlideElements = useMemo(() => {
+    return slideElements[currentSlide?.id || ''] || [];
+  }, [slideElements, currentSlide]);
+  
+  // Update elements for current slide
+  const handleSlideElementsChange = useCallback((elements: SlideElement[]) => {
+    if (!currentSlide) return;
+    setSlideElements(prev => ({
+      ...prev,
+      [currentSlide.id]: elements,
+    }));
+  }, [currentSlide]);
+  
+  // Add element to slide
+  const handleAddSlideElement = useCallback((elementType: string) => {
+    if (!currentSlide) return;
+    
+    // Map display names to element types
+    const typeMap: Record<string, SlideElementType> = {
+      'Chart': 'chart',
+      'Graphique': 'chart',
+      'Pie': 'chart',
+      'Camembert': 'chart',
+      'KPI': 'kpi',
+      'Text': 'text',
+      'Texte': 'text',
+      'Metric': 'metric',
+      'Métrique': 'metric',
+      'Alert': 'alert',
+      'Alerte': 'alert',
+      'Trend': 'trend',
+      'Tendance': 'trend',
+      'Table': 'table',
+      'Tableau': 'table',
+    };
+    
+    const type = typeMap[elementType] || 'text';
+    const newElement = createSlideElement(type);
+    
+    // If adding a chart type, set the specific chart type
+    if (elementType === 'Pie' || elementType === 'Camembert') {
+      newElement.content.chartType = 'pie';
+    }
+    
+    handleSlideElementsChange([...currentSlideElements, newElement]);
+    setShowAddElementMenu(false);
+  }, [currentSlide, currentSlideElements, handleSlideElementsChange]);
   
   // Timer effect
   useEffect(() => {
@@ -1179,6 +1319,60 @@ export default function BoardMeeting() {
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
+          {/* View Mode Toggle */}
+          <div 
+            className="flex items-center rounded-lg p-1"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
+            <button
+              onClick={() => setViewMode('slides')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                viewMode === 'slides' ? 'shadow-sm' : ''
+              }`}
+              style={{
+                backgroundColor: viewMode === 'slides' ? 'rgb(var(--color-surface))' : 'transparent',
+                color: viewMode === 'slides' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
+              }}
+            >
+              <Presentation className="w-4 h-4" />
+              <span className="hidden sm:inline">Slides</span>
+            </button>
+            <button
+              onClick={() => setViewMode('panels')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                viewMode === 'panels' ? 'shadow-sm' : ''
+              }`}
+              style={{
+                backgroundColor: viewMode === 'panels' ? 'rgb(var(--color-surface))' : 'transparent',
+                color: viewMode === 'panels' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
+              }}
+            >
+              <Layers className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {isEn ? 'Sections' : 'Sections'}
+                {boardPanels.length > 0 && (
+                  <span 
+                    className="ml-1.5 px-1.5 py-0.5 rounded-full text-xs"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}
+                  >
+                    {boardPanels.length}
+                  </span>
+                )}
+              </span>
+            </button>
+          </div>
+          
+          {/* Add Section Button (only in panels view) */}
+          {viewMode === 'panels' && (
+            <button
+              onClick={() => setShowPanelPicker(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">{isEn ? 'Add Section' : 'Ajouter section'}</span>
+            </button>
+          )}
+          
           {/* Meeting timer */}
           {meetingStarted && (
             <div 
@@ -1210,14 +1404,16 @@ export default function BoardMeeting() {
             </button>
           )}
           
-          <button
-            onClick={() => setIsFullscreen(true)}
-            className="btn-secondary flex items-center gap-2"
-            title={isEn ? 'Enter presentation mode' : 'Mode présentation'}
-          >
-            <Presentation className="w-4 h-4" />
-            <span className="hidden sm:inline">{isEn ? 'Present' : 'Présenter'}</span>
-          </button>
+          {viewMode === 'slides' && (
+            <button
+              onClick={() => setIsFullscreen(true)}
+              className="btn-secondary flex items-center gap-2"
+              title={isEn ? 'Enter presentation mode' : 'Mode présentation'}
+            >
+              <Presentation className="w-4 h-4" />
+              <span className="hidden sm:inline">{isEn ? 'Present' : 'Présenter'}</span>
+            </button>
+          )}
           
           {/* Share Button */}
           <button
@@ -1244,30 +1440,106 @@ export default function BoardMeeting() {
             <span className="hidden sm:inline">{isEn ? 'PDF' : 'PDF'}</span>
           </button>
           
-          <button
-            onClick={() => setShowAgenda(!showAgenda)}
-            className={`p-2 rounded-lg border transition-colors ${showAgenda ? 'bg-primary-500 text-white border-primary-500' : ''}`}
-            style={{ borderColor: showAgenda ? undefined : 'rgb(var(--color-border))' }}
-            title={isEn ? 'Toggle agenda' : 'Afficher l\'agenda'}
-          >
-            <List className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => setShowParticipants(!showParticipants)}
-            className={`p-2 rounded-lg border transition-colors ${showParticipants ? 'bg-primary-500 text-white border-primary-500' : ''}`}
-            style={{ borderColor: showParticipants ? undefined : 'rgb(var(--color-border))' }}
-            title={isEn ? 'Toggle participants' : 'Afficher les participants'}
-          >
-            <Users className="w-4 h-4" />
-          </button>
+          {viewMode === 'slides' && (
+            <>
+              <button
+                onClick={() => setShowAgenda(!showAgenda)}
+                className={`p-2 rounded-lg border transition-colors ${showAgenda ? 'bg-primary-500 text-white border-primary-500' : ''}`}
+                style={{ borderColor: showAgenda ? undefined : 'rgb(var(--color-border))' }}
+                title={isEn ? 'Toggle agenda' : 'Afficher l\'agenda'}
+              >
+                <List className="w-4 h-4" />
+              </button>
+              
+              <button
+                onClick={() => setShowParticipants(!showParticipants)}
+                className={`p-2 rounded-lg border transition-colors ${showParticipants ? 'bg-primary-500 text-white border-primary-500' : ''}`}
+                style={{ borderColor: showParticipants ? undefined : 'rgb(var(--color-border))' }}
+                title={isEn ? 'Toggle participants' : 'Afficher les participants'}
+              >
+                <Users className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
       </div>
       
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - Agenda */}
-        {showAgenda && (
+        {/* Panel Picker Modal */}
+        <BoardPanelPicker
+          isOpen={showPanelPicker}
+          onClose={() => setShowPanelPicker(false)}
+          onAddPanel={handleAddPanel}
+          existingPanels={existingPanelTypes}
+        />
+        
+        {/* Panels View */}
+        {viewMode === 'panels' && (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {boardPanels.length === 0 ? (
+              <div 
+                className="flex flex-col items-center justify-center min-h-[400px] text-center p-8 rounded-2xl border-2 border-dashed"
+                style={{ borderColor: 'rgb(var(--color-border))' }}
+              >
+                <div 
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <Layers className="w-8 h-8" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                </div>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'No sections added yet' : 'Aucune section ajoutée'}
+                </h3>
+                <p className="text-sm mb-6 max-w-md" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn 
+                    ? 'Add financial sections to customize your board meeting presentation. Choose from balance sheets, income statements, anomaly reports, and more.'
+                    : 'Ajoutez des sections financières pour personnaliser votre présentation. Choisissez parmi les bilans, états des résultats, rapports d\'anomalies, et plus.'}
+                </p>
+                <button
+                  onClick={() => setShowPanelPicker(true)}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  {isEn ? 'Add Your First Section' : 'Ajouter votre première section'}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {boardPanels.map((panel, index) => (
+                  <BoardPanelRenderer
+                    key={panel.id}
+                    panel={panel}
+                    onUpdate={handleUpdatePanel}
+                    onDelete={handleDeletePanel}
+                    onResize={handleResizePanel}
+                    financialData={financialData}
+                  />
+                ))}
+                
+                {/* Add more button */}
+                <button
+                  onClick={() => setShowPanelPicker(true)}
+                  className="col-span-1 min-h-[200px] rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all hover:border-primary-500 hover:bg-primary-500/5"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
+                >
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    <Plus className="w-6 h-6" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Add Section' : 'Ajouter une section'}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Slides View - Sidebar - Agenda */}
+        {viewMode === 'slides' && showAgenda && (
           <div 
             className="w-64 border-r overflow-y-auto p-4"
             style={{ borderColor: 'rgb(var(--color-border))' }}
@@ -1292,23 +1564,108 @@ export default function BoardMeeting() {
         )}
         
         {/* Main slide area */}
+        {viewMode === 'slides' && (
         <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Edit Toolbar */}
+          {isEditMode && (
+            <div 
+              className="flex items-center justify-between px-4 py-2 border-b"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                borderColor: 'rgb(var(--color-border))',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Edit Mode' : 'Mode édition'}
+                </span>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)', color: 'rgb(var(--color-primary-600))' }}>
+                  {currentSlide?.title}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAddElementMenu(!showAddElementMenu)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500))',
+                    color: 'white',
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                  {isEn ? 'Add Element' : 'Ajouter élément'}
+                </button>
+                <button
+                  onClick={() => setIsEditMode(false)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {isEn ? 'Done' : 'Terminé'}
+                </button>
+              </div>
+              
+              {/* Add Element Menu */}
+              {showAddElementMenu && (
+                <div 
+                  className="absolute top-full left-1/2 -translate-x-1/2 mt-2 p-2 rounded-xl shadow-lg border z-50"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    borderColor: 'rgb(var(--color-border))',
+                  }}
+                >
+                  <div className="grid grid-cols-4 gap-2 p-2">
+                    {[
+                      { icon: BarChart3, label: isEn ? 'Chart' : 'Graphique' },
+                      { icon: PieChart, label: isEn ? 'Pie' : 'Camembert' },
+                      { icon: Target, label: 'KPI' },
+                      { icon: FileText, label: isEn ? 'Text' : 'Texte' },
+                      { icon: DollarSign, label: isEn ? 'Metric' : 'Métrique' },
+                      { icon: AlertTriangle, label: isEn ? 'Alert' : 'Alerte' },
+                      { icon: TrendingUp, label: isEn ? 'Trend' : 'Tendance' },
+                      { icon: Layers, label: isEn ? 'Table' : 'Tableau' },
+                    ].map((item, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          handleAddSlideElement(item.label);
+                          setShowAddElementMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-black/5 transition-colors"
+                      >
+                        <item.icon className="w-5 h-5" style={{ color: 'rgb(var(--color-text-secondary))' }} />
+                        <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Slide */}
           <div 
-            className="flex-1 overflow-hidden relative"
+            className="flex-1 overflow-hidden relative p-4"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
-            {/* Blur overlay when sidebars are open */}
-            {(showAgenda || showParticipants || showNotes) && (
-              <div 
-                className="absolute inset-0 z-10 pointer-events-none transition-all duration-300"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg) / 0.3)',
-                  backdropFilter: 'blur(2px)',
-                }}
-              />
-            )}
-            {renderSlide(currentSlide)}
+            {/* Slide Editor with PowerPoint-style positioning */}
+            <div className="w-full h-full relative">
+              {/* Base slide content */}
+              <div className={`absolute inset-0 ${isEditMode && currentSlideElements.length > 0 ? 'opacity-30' : ''}`}>
+                {renderSlide(currentSlide)}
+              </div>
+              
+              {/* Draggable elements layer */}
+              {(isEditMode || currentSlideElements.length > 0) && (
+                <div className="absolute inset-0">
+                  <SlideEditor
+                    elements={currentSlideElements}
+                    onElementsChange={handleSlideElementsChange}
+                    isEditMode={isEditMode}
+                    slideTitle={currentSlide?.title}
+                  />
+                </div>
+              )}
+            </div>
             
             {/* Navigation arrows */}
             <button
@@ -1327,29 +1684,34 @@ export default function BoardMeeting() {
             >
               <ChevronRight className="w-6 h-6" style={{ color: 'rgb(var(--color-text))' }} />
             </button>
+            
+            {/* Edit mode indicator */}
+            {!isEditMode && (
+              <button
+                onClick={() => setIsEditMode(true)}
+                className="absolute top-4 right-4 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all opacity-0 hover:opacity-100 z-20"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-secondary))',
+                }}
+              >
+                <Edit3 className="w-4 h-4" />
+                {isEn ? 'Edit' : 'Éditer'}
+              </button>
+            )}
           </div>
           
           {/* Slide thumbnails */}
           <div 
-            className="p-3 border-t overflow-x-auto relative"
+            className="p-3 border-t overflow-x-auto"
             style={{ borderColor: 'rgb(var(--color-border))' }}
           >
-            {/* Blur overlay when sidebars are open */}
-            {(showAgenda || showParticipants || showNotes) && (
-              <div 
-                className="absolute inset-0 z-10 pointer-events-none transition-all duration-300"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg) / 0.3)',
-                  backdropFilter: 'blur(2px)',
-                }}
-              />
-            )}
-            <div className="flex gap-2 relative z-20">
+            <div className="flex gap-2">
               {slides.map((slide, idx) => (
                 <button
                   key={slide.id}
                   onClick={() => setCurrentSlideIndex(idx)}
-                  className={`flex-shrink-0 w-24 h-16 rounded-lg border-2 overflow-hidden transition-all ${idx === currentSlideIndex ? 'border-primary-500 ring-2 ring-primary-500/30' : 'border-transparent'}`}
+                  className={`flex-shrink-0 w-24 h-16 rounded-lg border-2 overflow-hidden transition-all ${idx === currentSlideIndex ? 'border-primary-500 ring-2 ring-primary-500/30' : 'border-transparent hover:border-gray-300'}`}
                   style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                 >
                   <div className="p-2 h-full flex items-center justify-center">
@@ -1362,13 +1724,57 @@ export default function BoardMeeting() {
             </div>
           </div>
         </div>
+        )}
         
         {/* Right sidebar - Notes & Participants */}
-        {(showNotes || showParticipants) && (
+        {viewMode === 'slides' && (showNotes || showParticipants) && (
           <div 
-            className="w-80 border-l flex flex-col"
+            className={`border-l flex flex-col transition-all duration-300 ${rightSidebarCollapsed ? 'w-12' : 'w-80'}`}
             style={{ borderColor: 'rgb(var(--color-border))' }}
           >
+            {/* Collapse button */}
+            <div 
+              className="flex items-center justify-between p-2 border-b"
+              style={{ borderColor: 'rgb(var(--color-border))' }}
+            >
+              {!rightSidebarCollapsed && (
+                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                  {showNotes && !showParticipants ? 'Notes' : (isEn ? 'Team' : 'Équipe')}
+                </span>
+              )}
+              <button
+                onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
+                className="p-1.5 rounded-lg hover:bg-black/5 transition-colors ml-auto"
+                title={rightSidebarCollapsed ? (isEn ? 'Expand' : 'Agrandir') : (isEn ? 'Collapse' : 'Réduire')}
+              >
+                {rightSidebarCollapsed ? (
+                  <ChevronLeft className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                ) : (
+                  <ChevronRight className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                )}
+              </button>
+            </div>
+            
+            {/* Collapsed state - icon buttons */}
+            {rightSidebarCollapsed ? (
+              <div className="flex flex-col items-center gap-2 p-2">
+                <button
+                  onClick={() => { setShowNotes(true); setShowParticipants(false); setRightSidebarCollapsed(false); }}
+                  className={`p-2 rounded-lg transition-colors ${showNotes ? 'bg-primary-500/10' : 'hover:bg-black/5'}`}
+                  title="Notes"
+                >
+                  <FileText className="w-5 h-5" style={{ color: showNotes ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }} />
+                </button>
+                <button
+                  onClick={() => { setShowParticipants(true); setShowNotes(false); setRightSidebarCollapsed(false); }}
+                  className={`p-2 rounded-lg transition-colors ${showParticipants ? 'bg-primary-500/10' : 'hover:bg-black/5'}`}
+                  title={isEn ? 'Team' : 'Équipe'}
+                >
+                  <Users className="w-5 h-5" style={{ color: showParticipants ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }} />
+                </button>
+              </div>
+            ) : (
+              <>
             {/* Tabs */}
             <div className="flex border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
               <button
@@ -1487,6 +1893,8 @@ export default function BoardMeeting() {
                   </button>
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         )}

@@ -1,10 +1,10 @@
 /**
  * Quick Metrics Component
  * 
- * Compact header bar with key financial metrics
+ * Executive dashboard-style metrics bar with key financial indicators
  */
 
-import { DollarSign, TrendingDown, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { DollarSign, TrendingDown, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 
 interface QuickMetricsProps {
@@ -26,15 +26,18 @@ export default function QuickMetrics({
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1000000) {
       return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
-        style: 'currency',
-        currency: 'CAD',
+        style: 'decimal',
         maximumFractionDigits: 1,
-        notation: 'compact',
-      }).format(value);
+      }).format(value / 1000000) + 'M';
+    }
+    if (Math.abs(value) >= 1000) {
+      return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
+        style: 'decimal',
+        maximumFractionDigits: 0,
+      }).format(value / 1000) + 'K';
     }
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
-      style: 'currency',
-      currency: 'CAD',
+      style: 'decimal',
       maximumFractionDigits: 0,
     }).format(value);
   };
@@ -43,7 +46,8 @@ export default function QuickMetrics({
     if (runwayMonths === Infinity) {
       return {
         color: '#10B981',
-        bg: '#F0FDF4',
+        gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+        bg: 'rgba(16, 185, 129, 0.08)',
         label: isEn ? 'Sustainable' : 'Durable',
         icon: CheckCircle2,
       };
@@ -51,7 +55,8 @@ export default function QuickMetrics({
     if (runwayMonths < 3) {
       return {
         color: '#EF4444',
-        bg: '#FEF2F2',
+        gradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+        bg: 'rgba(239, 68, 68, 0.08)',
         label: isEn ? 'Critical' : 'Critique',
         icon: AlertTriangle,
       };
@@ -59,7 +64,8 @@ export default function QuickMetrics({
     if (runwayMonths < 6) {
       return {
         color: '#F59E0B',
-        bg: '#FFFBEB',
+        gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+        bg: 'rgba(245, 158, 11, 0.08)',
         label: isEn ? 'Warning' : 'Attention',
         icon: AlertTriangle,
       };
@@ -67,14 +73,16 @@ export default function QuickMetrics({
     if (runwayMonths < 12) {
       return {
         color: '#F59E0B',
-        bg: '#FFFBEB',
+        gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+        bg: 'rgba(245, 158, 11, 0.08)',
         label: isEn ? 'Monitor' : 'Surveiller',
         icon: Clock,
       };
     }
     return {
       color: '#10B981',
-      bg: '#F0FDF4',
+      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+      bg: 'rgba(16, 185, 129, 0.08)',
       label: isEn ? 'Healthy' : 'Sain',
       icon: CheckCircle2,
     };
@@ -84,91 +92,117 @@ export default function QuickMetrics({
   const StatusIcon = status.icon;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      {/* Cash Position */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-          >
-            <DollarSign className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+    <div 
+      className="sticky top-0 z-30 border-b backdrop-blur-md"
+      style={{ 
+        backgroundColor: 'rgb(var(--color-surface) / 0.95)',
+        borderColor: 'rgb(var(--color-border))',
+      }}
+    >
+      <div className="px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between gap-4 overflow-x-auto">
+          {/* Cash Position */}
+          <div className="flex items-center gap-3 min-w-fit">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                boxShadow: '0 4px 12px rgb(var(--color-primary-500) / 0.25)',
+              }}
+            >
+              <DollarSign className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Treasury' : 'Trésorerie'}
+              </p>
+              <p className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                {formatCurrency(cash)} <span className="text-sm font-medium">$</span>
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Cash' : 'Trésorerie'}
-          </span>
-        </div>
-        <p className="text-2xl font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
-          {formatCurrency(cash)}
-        </p>
-      </div>
-      
-      {/* Monthly Burn */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-          >
-            <TrendingDown className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+          
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-12 flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
+          
+          {/* Monthly Burn */}
+          <div className="flex items-center gap-3 min-w-fit">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ 
+                background: 'linear-gradient(135deg, #F87171 0%, #EF4444 100%)',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
+              }}
+            >
+              <TrendingDown className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                Burn Rate
+              </p>
+              <p className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: '#EF4444' }}>
+                {formatCurrency(burnRate)} <span className="text-sm font-medium">$/mo</span>
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Burn Rate' : 'Burn Rate'}
-          </span>
-        </div>
-        <p className="text-2xl font-bold" style={{ color: 'rgb(var(--color-error))' }}>
-          {formatCurrency(burnRate)}
-          <span className="text-sm font-normal">/mo</span>
-        </p>
-      </div>
-      
-      {/* Runway */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: `${status.color}15` }}
-          >
-            <Clock className="w-4 h-4" style={{ color: status.color }} />
+          
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-12 flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
+          
+          {/* Runway */}
+          <div className="flex items-center gap-3 min-w-fit">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ 
+                background: status.gradient,
+                boxShadow: `0 4px 12px ${status.color}40`,
+              }}
+            >
+              <Clock className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Runway' : 'Autonomie'}
+              </p>
+              <div className="flex items-baseline gap-1">
+                {runwayMonths === Infinity ? (
+                  <span className="text-xl sm:text-2xl font-bold" style={{ color: status.color }}>∞</span>
+                ) : (
+                  <span className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: status.color }}>
+                    {runwayMonths.toFixed(0)}
+                  </span>
+                )}
+                <span className="text-sm font-medium" style={{ color: status.color }}>
+                  {isEn ? 'months' : 'mois'}
+                </span>
+              </div>
+            </div>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Runway' : 'Autonomie'}
-          </span>
-          {runwayMonths < 6 && (
-            <AlertTriangle className="w-3.5 h-3.5 ml-auto" style={{ color: status.color }} />
-          )}
-        </div>
-        <p className="text-2xl font-bold" style={{ color: status.color }}>
-          {runwayMonths === Infinity ? '∞' : runwayMonths.toFixed(1)}
-          <span className="text-sm font-normal ml-1">{isEn ? 'months' : 'mois'}</span>
-        </p>
-      </div>
-      
-      {/* Status */}
-      <div className="card p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: `${status.color}15` }}
-          >
-            <StatusIcon className="w-4 h-4" style={{ color: status.color }} />
+          
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-12 flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
+          
+          {/* Status Badge */}
+          <div className="flex items-center gap-3 min-w-fit">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ 
+                background: status.gradient,
+                boxShadow: `0 4px 12px ${status.color}40`,
+              }}
+            >
+              <StatusIcon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Status' : 'Statut'}
+              </p>
+              <p className="text-lg sm:text-xl font-bold" style={{ color: status.color }}>
+                {status.label}
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Status' : 'Statut'}
-          </span>
         </div>
-        <p className="text-lg font-semibold" style={{ color: status.color }}>
-          {status.label}
-        </p>
-        {zeroDate && runwayMonths !== Infinity && (
-          <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {new Date(zeroDate).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric' 
-            })}
-          </p>
-        )}
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useTenant, type Tenant, type TenantInvitation } from '../contexts/TenantContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { RoleSelector } from './RolesPermissions';
+import { RoleSelector, ROLE_DEFINITIONS } from './RolesPermissions';
 import { useI18n } from '../lib/i18n';
 import { generateInvitationEmail, generateInvitationEmailText, type SectionAccess } from '../lib/emailTemplates';
 

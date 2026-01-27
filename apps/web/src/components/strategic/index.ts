@@ -33,3 +33,8 @@ export { default as EnterpriseTimelineHeader } from './EnterpriseTimelineHeader'
 export { default as ExpenseContextMenu } from './ExpenseContextMenu';
 export type { ViewMode, Period } from './EnterpriseTimelineHeader';
 export type { ContextMenuAction, ContextMenuItem } from './ExpenseContextMenu';
+
+// Board Meeting Panel System
+export { default as BoardPanelPicker } from './BoardPanelPicker';
+export { default as BoardPanelRenderer } from './BoardPanelRenderer';
+export { default as SlideEditor } from './SlideEditor';
