@@ -671,9 +671,10 @@ export default function JamesChatbot({
     return (
       <button
         onClick={onToggle}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl transition-all active:scale-95 group"
+        className="fixed bottom-6 right-6 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl transition-all active:scale-95 group"
         style={{
           background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+          zIndex: 1400,
         }}
         aria-label={isEn ? 'Open James AI (⌘K)' : 'Ouvrir James IA (⌘K)'}
       >
@@ -692,11 +693,12 @@ export default function JamesChatbot({
 
   return (
     <div
-      className={`fixed z-50 flex flex-col transition-all duration-300 ease-out ${
+      className={`fixed flex flex-col transition-all duration-300 ease-out ${
         isExpanded
           ? 'inset-4 sm:inset-6 rounded-2xl'
           : 'right-0 top-0 h-full w-full sm:w-[440px] lg:w-[480px]'
       }`}
+      style={{ zIndex: 1500 }}
       style={{
         backgroundColor: 'rgb(var(--color-bg))',
         boxShadow: isExpanded ? '0 25px 80px rgb(0 0 0 / 0.25)' : '-8px 0 40px rgb(0 0 0 / 0.15)',

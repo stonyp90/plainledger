@@ -141,10 +141,17 @@ export default function ExpenseDrawer({
   const categories = type === 'opex' ? EXPENSE_CATEGORIES.opex : EXPENSE_CATEGORIES.capex;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div 
+      className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ zIndex: 2000 }}
+    >
       <div
         className="absolute inset-0"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)' }}
+        style={{ 
+          backgroundColor: 'rgba(0, 0, 0, 0.7)', 
+          backdropFilter: 'blur(4px)',
+          zIndex: 2001,
+        }}
         onClick={onCancel}
       />
       
@@ -153,6 +160,7 @@ export default function ExpenseDrawer({
         style={{
           backgroundColor: 'rgb(var(--color-surface))',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          zIndex: 2002,
         }}
         onClick={(e) => e.stopPropagation()}
       >

@@ -667,14 +667,33 @@ export default function OpExCapExChart({
         {/* Settings Panel */}
         {showSettings && (
           <div 
-            className="mt-4 p-4 rounded-xl grid grid-cols-2 sm:grid-cols-4 gap-4"
-            style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+            className="mt-4 p-4 sm:p-5 rounded-xl"
+            style={{ backgroundColor: 'rgb(var(--color-bg-subtle))', border: '1px solid rgb(var(--color-border))' }}
           >
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Annual Growth Rate' : 'Taux de croissance annuel'}
-              </label>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-4">
+              <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Projection Settings' : 'Paramètres de projection'}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Growth Rate */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Annual Growth' : 'Croissance annuelle'}
+                  </label>
+                  <span 
+                    className="text-sm font-bold px-2 py-0.5 rounded"
+                    style={{ 
+                      backgroundColor: settings.growthRate > 0 ? 'rgb(var(--color-success) / 0.1)' : settings.growthRate < 0 ? 'rgb(var(--color-error) / 0.1)' : 'rgb(var(--color-bg))',
+                      color: settings.growthRate > 0 ? 'rgb(var(--color-success))' : settings.growthRate < 0 ? 'rgb(var(--color-error))' : 'rgb(var(--color-text-muted))',
+                    }}
+                  >
+                    {settings.growthRate > 0 ? '+' : ''}{settings.growthRate}%
+                  </span>
+                </div>
                 <input
                   type="range"
                   min="-10"
@@ -682,19 +701,33 @@ export default function OpExCapExChart({
                   step="0.5"
                   value={settings.growthRate}
                   onChange={(e) => handleSettingsChange({ growthRate: parseFloat(e.target.value) })}
-                  className="flex-1"
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-500)) ${((settings.growthRate + 10) / 40) * 100}%, rgb(var(--color-border)) ${((settings.growthRate + 10) / 40) * 100}%, rgb(var(--color-border)) 100%)`,
+                  }}
                 />
-                <span className="text-sm font-medium w-12 text-right" style={{ color: 'rgb(var(--color-text))' }}>
-                  {settings.growthRate}%
-                </span>
+                <div className="flex justify-between text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>-10%</span>
+                  <span>+30%</span>
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Inflation Rate' : 'Taux d\'inflation'}
-              </label>
-              <div className="flex items-center gap-2">
+              
+              {/* Inflation Rate */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Inflation Rate' : 'Taux d\'inflation'}
+                  </label>
+                  <span 
+                    className="text-sm font-bold px-2 py-0.5 rounded"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                      color: 'rgb(var(--color-warning))',
+                    }}
+                  >
+                    {settings.inflationRate}%
+                  </span>
+                </div>
                 <input
                   type="range"
                   min="0"
@@ -702,19 +735,33 @@ export default function OpExCapExChart({
                   step="0.5"
                   value={settings.inflationRate}
                   onChange={(e) => handleSettingsChange({ inflationRate: parseFloat(e.target.value) })}
-                  className="flex-1"
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, rgb(var(--color-warning)) 0%, rgb(var(--color-warning)) ${(settings.inflationRate / 10) * 100}%, rgb(var(--color-border)) ${(settings.inflationRate / 10) * 100}%, rgb(var(--color-border)) 100%)`,
+                  }}
                 />
-                <span className="text-sm font-medium w-12 text-right" style={{ color: 'rgb(var(--color-text))' }}>
-                  {settings.inflationRate}%
-                </span>
+                <div className="flex justify-between text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>0%</span>
+                  <span>10%</span>
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Scenario Multiplier' : 'Multiplicateur de scénario'}
-              </label>
-              <div className="flex items-center gap-2">
+              
+              {/* Scenario Multiplier */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Scenario Multiplier' : 'Multiplicateur'}
+                  </label>
+                  <span 
+                    className="text-sm font-bold px-2 py-0.5 rounded"
+                    style={{ 
+                      backgroundColor: settings.scenarioMultiplier > 1 ? 'rgb(var(--color-error) / 0.1)' : settings.scenarioMultiplier < 1 ? 'rgb(var(--color-success) / 0.1)' : 'rgb(var(--color-bg))',
+                      color: settings.scenarioMultiplier > 1 ? 'rgb(var(--color-error))' : settings.scenarioMultiplier < 1 ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))',
+                    }}
+                  >
+                    {settings.scenarioMultiplier.toFixed(1)}x
+                  </span>
+                </div>
                 <input
                   type="range"
                   min="0.5"
@@ -722,29 +769,50 @@ export default function OpExCapExChart({
                   step="0.1"
                   value={settings.scenarioMultiplier}
                   onChange={(e) => handleSettingsChange({ scenarioMultiplier: parseFloat(e.target.value) })}
-                  className="flex-1"
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                  style={{ 
+                    background: `linear-gradient(to right, rgb(var(--color-info)) 0%, rgb(var(--color-info)) ${((settings.scenarioMultiplier - 0.5) / 1.5) * 100}%, rgb(var(--color-border)) ${((settings.scenarioMultiplier - 0.5) / 1.5) * 100}%, rgb(var(--color-border)) 100%)`,
+                  }}
                 />
-                <span className="text-sm font-medium w-12 text-right" style={{ color: 'rgb(var(--color-text))' }}>
-                  {settings.scenarioMultiplier}x
-                </span>
+                <div className="flex justify-between text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>0.5x</span>
+                  <span>1x</span>
+                  <span>2x</span>
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Seasonality' : 'Saisonnalité'}
-              </label>
-              <button
-                onClick={() => handleSettingsChange({ seasonalityEnabled: !settings.seasonalityEnabled })}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: settings.seasonalityEnabled ? 'rgb(var(--color-success) / 0.1)' : 'rgb(var(--color-bg))',
-                  color: settings.seasonalityEnabled ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))',
-                  border: `1px solid ${settings.seasonalityEnabled ? 'rgb(var(--color-success))' : 'rgb(var(--color-border))'}`,
-                }}
-              >
-                {settings.seasonalityEnabled ? (isEn ? 'Enabled' : 'Activé') : (isEn ? 'Disabled' : 'Désactivé')}
-              </button>
+              
+              {/* Seasonality Toggle */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Seasonality' : 'Saisonnalité'}
+                  </label>
+                </div>
+                <button
+                  onClick={() => handleSettingsChange({ seasonalityEnabled: !settings.seasonalityEnabled })}
+                  className="w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: settings.seasonalityEnabled ? 'rgb(var(--color-success))' : 'rgb(var(--color-bg))',
+                    color: settings.seasonalityEnabled ? 'white' : 'rgb(var(--color-text-muted))',
+                    border: `1px solid ${settings.seasonalityEnabled ? 'rgb(var(--color-success))' : 'rgb(var(--color-border))'}`,
+                  }}
+                >
+                  {settings.seasonalityEnabled ? (
+                    <>
+                      <Eye className="w-4 h-4" />
+                      {isEn ? 'Enabled' : 'Activé'}
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="w-4 h-4" />
+                      {isEn ? 'Disabled' : 'Désactivé'}
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Apply seasonal patterns' : 'Appliquer les tendances saisonnières'}
+                </p>
+              </div>
             </div>
           </div>
         )}

@@ -328,11 +328,13 @@ export default function ExpenseTimeline({
           style={{ 
             backgroundColor: 'rgb(var(--color-bg-subtle))',
             minHeight: opexExpenses.length === 0 ? '50px' : `${Math.max(50, opexExpenses.length * 50)}px`,
+            position: 'relative',
+            zIndex: 1,
           }}
           onDoubleClick={(e) => handleTimelineDoubleClick(e, 'opex')}
         >
           {/* Grid */}
-          <div className="absolute inset-0 flex pointer-events-none">
+          <div className="absolute inset-0 flex pointer-events-none" style={{ zIndex: 0 }}>
             {periods.map((period, i) => (
               <div 
                 key={i} 
@@ -347,7 +349,7 @@ export default function ExpenseTimeline({
 
           {/* Empty state */}
           {opexExpenses.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
               <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted) / 0.5)' }}>
                 {isEn ? 'Double-click to add OPEX' : 'Double-cliquez pour ajouter OpEx'}
               </span>
@@ -399,11 +401,13 @@ export default function ExpenseTimeline({
           style={{ 
             backgroundColor: 'rgb(var(--color-bg-subtle))',
             minHeight: capexExpenses.length === 0 ? '50px' : `${Math.max(50, capexExpenses.length * 50)}px`,
+            position: 'relative',
+            zIndex: 1,
           }}
           onDoubleClick={(e) => handleTimelineDoubleClick(e, 'capex')}
         >
           {/* Grid */}
-          <div className="absolute inset-0 flex pointer-events-none">
+          <div className="absolute inset-0 flex pointer-events-none" style={{ zIndex: 0 }}>
             {periods.map((period, i) => (
               <div 
                 key={i} 
@@ -418,7 +422,7 @@ export default function ExpenseTimeline({
 
           {/* Empty state */}
           {capexExpenses.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
               <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted) / 0.5)' }}>
                 {isEn ? 'Double-click to add CAPEX' : 'Double-cliquez pour ajouter CapEx'}
               </span>

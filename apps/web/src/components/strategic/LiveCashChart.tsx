@@ -292,13 +292,14 @@ export default function LiveCashChart({
         {/* Tooltip */}
         {hoveredIndex !== null && animatedData[hoveredIndex] && (
           <div
-            className="fixed z-50 p-3 rounded-xl shadow-xl text-xs pointer-events-none"
+            className="fixed p-3 rounded-xl shadow-xl text-xs pointer-events-none"
             style={{
               left: tooltipPosition.x + 10,
               top: tooltipPosition.y - 10,
               backgroundColor: 'rgb(30, 30, 30)',
               border: '1px solid rgb(50, 50, 50)',
               minWidth: 200,
+              zIndex: 1000,
             }}
           >
             <p className="text-gray-400 text-xs mb-2">

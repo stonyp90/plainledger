@@ -54,7 +54,8 @@ export default function ExpenseCard({
         width: `${widthPercent}%`,
         height: '40px',
         minWidth: '80px',
-        zIndex: isSelected || isDragging ? 20 : 1,
+        zIndex: isDragging ? 30 : isSelected ? 20 : 10,
+        pointerEvents: 'auto',
       }}
     >
       <div
@@ -118,7 +119,10 @@ export default function ExpenseCard({
           <>
             <div
               className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize rounded-l-lg"
-              style={{ backgroundColor: isDragging ? color : 'transparent' }}
+              style={{ 
+                backgroundColor: isDragging ? color : 'transparent',
+                zIndex: 50,
+              }}
               onMouseDown={(e) => {
                 e.stopPropagation();
                 onDragStart(e, 'resize-start');
@@ -130,7 +134,10 @@ export default function ExpenseCard({
             />
             <div
               className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize rounded-r-lg"
-              style={{ backgroundColor: isDragging ? color : 'transparent' }}
+              style={{ 
+                backgroundColor: isDragging ? color : 'transparent',
+                zIndex: 50,
+              }}
               onMouseDown={(e) => {
                 e.stopPropagation();
                 onDragStart(e, 'resize-end');
