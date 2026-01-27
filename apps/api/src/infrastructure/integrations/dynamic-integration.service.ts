@@ -460,17 +460,19 @@ export class DynamicIntegrationService {
         }
         return Boolean(value);
 
-      case "date":
+      case "date": {
         if (value instanceof Date) return value;
-        const date = new Date(value as string);
-        return isNaN(date.getTime()) ? null : date;
+        const parsedDate = new Date(value as string);
+        return isNaN(parsedDate.getTime()) ? null : parsedDate;
+      }
 
-      case "currency":
+      case "currency": {
         // Handle currency values (might be string or number)
         if (typeof value === "string") {
           return parseFloat(value.replace(/[^0-9.-]/g, "")) || 0;
         }
         return Number(value) || 0;
+      }
 
       default:
         return value;
