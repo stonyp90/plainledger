@@ -11,6 +11,8 @@ import {
   Link2,
   Loader2,
   Sparkles,
+  BarChart2,
+  Eye,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from '../components/Tooltip';

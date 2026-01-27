@@ -97,6 +97,11 @@ export default function StrategicPlanning() {
     }
   }, [scenarios.length, financialData, dataLoading]);
 
+  // Compute active scenario
+  const activeScenario = useMemo(() => {
+    return scenarios.find(s => s.id === activeScenarioId) || scenarios[0];
+  }, [scenarios, activeScenarioId]);
+
   // Sync expenses when active scenario changes
   useEffect(() => {
     if (activeScenarioId && activeScenario) {
@@ -132,7 +137,6 @@ export default function StrategicPlanning() {
     }
   }, []);
 
-  const activeScenario = scenarios.find(s => s.id === activeScenarioId) || scenarios[0];
   const hasRealData = financialData && (
     financialData.summary?.cashBalance > 0 ||
     financialData.metrics?.revenue > 0

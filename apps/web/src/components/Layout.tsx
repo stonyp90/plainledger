@@ -26,11 +26,11 @@ import {
   Command,
   Menu,
   X,
-  ChevronRight,
   BarChart3,
   Presentation,
   Target,
   ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -376,19 +376,34 @@ export default function Layout({ children }: LayoutProps) {
                 localStorage.setItem('pl-sidebar-collapsed', String(newState));
               } catch {}
             }}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
+            className="group absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center z-10"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '2px solid rgb(var(--color-border))',
-              color: 'rgb(var(--color-text-muted))',
+              boxShadow: '0 2px 8px rgb(0 0 0 / 0.08)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+              e.currentTarget.style.borderColor = 'rgb(var(--color-primary-500))';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgb(var(--color-primary-500) / 0.3)';
+              e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
+              e.currentTarget.style.borderColor = 'rgb(var(--color-border))';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgb(0 0 0 / 0.08)';
+              e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
             }}
             title={isSidebarCollapsed ? (language === 'en' ? 'Expand sidebar' : 'Agrandir la barre latérale') : (language === 'en' ? 'Collapse sidebar' : 'Réduire la barre latérale')}
           >
-            {isSidebarCollapsed ? (
-              <ChevronRight className="w-3.5 h-3.5" />
-            ) : (
-              <ChevronLeft className="w-3.5 h-3.5" />
-            )}
+            <ChevronLeft 
+              className="w-4 h-4 transition-all duration-300 ease-out group-hover:text-white"
+              style={{ 
+                color: 'rgb(var(--color-text-muted))',
+                transform: isSidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+              }} 
+            />
           </button>
           {isInternalStaff && (
             <span 
