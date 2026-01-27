@@ -991,11 +991,14 @@ export default function DriverRow({
               className="text-right outline-none"
               style={{
                 fontSize: '15px',
-                color: colors.text.primary,
+                color: '#111827',
                 fontVariantNumeric: 'tabular-nums',
                 width: '100%',
-                backgroundColor: 'transparent',
-                border: 'none',
+                backgroundColor: '#EFF6FF',
+                border: '2px solid #3B82F6',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                boxSizing: 'border-box',
               }}
               autoFocus
             />

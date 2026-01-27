@@ -22,10 +22,11 @@ import {
   cloneScenario,
 } from '../lib/scenarioEngine';
 import QuickMetrics from '../components/strategic/QuickMetrics';
-import ExpenseTimeline from '../components/strategic/ExpenseTimeline';
+import EnterpriseExpenseTimeline from '../components/strategic/EnterpriseExpenseTimeline';
 import LiveCashChart from '../components/strategic/LiveCashChart';
 import ExpenseDrawer from '../components/strategic/ExpenseDrawer';
 import JamesChatbot from '../components/strategic/JamesChatbot';
+import type { ViewMode } from '../components/strategic/EnterpriseTimelineHeader';
 import { FinancialContext } from '../lib/jamesPrompts';
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
@@ -43,6 +44,7 @@ export default function StrategicPlanning() {
   const [editingExpense, setEditingExpense] = useState<PlannedExpense | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [jamesOpen, setJamesOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
 
   // Demo financial data for when no real data is available
   const DEMO_FINANCIAL = {
@@ -236,6 +238,14 @@ export default function StrategicPlanning() {
     handleExpenseAdd(duplicated);
   }, [handleExpenseAdd]);
 
+  const handleBulkDelete = useCallback((expenseIds: string[]) => {
+    const updated = expenses.filter(e => !expenseIds.includes(e.id));
+    setExpenses(updated);
+    saveToStorage(scenarios, activeScenarioId, updated);
+    setShowExpenseDrawer(false);
+    setEditingExpense(null);
+  }, [expenses, scenarios, activeScenarioId, saveToStorage]);
+
   const handleSaveScenario = () => {
     setIsSaving(true);
     setTimeout(() => {
@@ -342,10 +352,10 @@ export default function StrategicPlanning() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Strategix' : 'Strategix'}
+              {isEn ? 'Strategic Planning' : 'Planification stratégique'}
             </h1>
             <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Executive Expense Planning' : 'Planification des dépenses exécutives'}
+              {isEn ? 'Enterprise Expense Planning & Forecasting' : 'Planification et prévision des dépenses entreprise'}
             </p>
           </div>
           
