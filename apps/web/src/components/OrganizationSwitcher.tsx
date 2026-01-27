@@ -784,7 +784,7 @@ const SECTION_DEFINITIONS = [
     icon: AlertCircle, 
     nameEn: 'Anomaly Detection', 
     nameFr: 'Détection d\'anomalies',
-    descEn: 'AI-powered insights',
+    descEn: 'Intelligent insights',
     descFr: 'Insights alimentés par l\'IA',
   },
   { 

@@ -183,10 +183,10 @@ export default function AISuggestions({
         </div>
         <div>
           <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'AI Insights' : 'Suggestions IA'}
+            {isEn ? 'James Insights' : 'Suggestions James'}
           </h3>
           <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'AI-powered recommendations' : 'Recommandations alimentées par IA'}
+            {isEn ? 'Powered by our AI' : 'Propulsé par notre IA'}
           </p>
         </div>
       </div>

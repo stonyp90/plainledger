@@ -72,6 +72,11 @@ variable "novu_secret_arn" {
   type        = string
 }
 
+variable "keycloak_smtp_secret_arn" {
+  description = "ARN of AWS Secrets Manager secret containing Keycloak SMTP credentials"
+  type        = string
+}
+
 variable "kms_key_arn" {
   description = "KMS key ARN"
   type        = string

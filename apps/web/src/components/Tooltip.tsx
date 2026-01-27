@@ -609,7 +609,7 @@ export function AnomalyTooltip({
             color: 'rgb(var(--color-primary-600))',
           }}
         >
-          🤖 {isEn ? 'AI Detection' : 'Détection IA'}
+          🤖 {isEn ? 'Intelligent Detection' : 'Détection intelligente'}
         </span>
         <span 
           className="text-xs"

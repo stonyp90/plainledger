@@ -65,6 +65,10 @@ export class ChatRequestDto {
   @Min(1)
   @Max(5)
   retries?: number;
+
+  @IsOptional()
+  @IsString()
+  modelTier?: 'lite' | 'full';
 }
 
 @Controller('ai')
@@ -112,6 +116,7 @@ export class AIController {
         temperature: dto.temperature,
         maxTokens: dto.maxTokens,
         retries: dto.retries,
+        modelTier: dto.modelTier || 'full', // Default to full, but allow lite for cost optimization
       });
 
       const latency = Date.now() - startTime;

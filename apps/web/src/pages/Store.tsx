@@ -43,7 +43,6 @@ import {
   type PricingTierConfig,
   type BillingInterval,
 } from '../lib/pricing';
-import CPAPricingSection from '../components/CPAPricingSection';
 import IntegrationLogos from '../components/IntegrationLogos';
 import { Tooltip } from '../components/Tooltip';
 
@@ -56,7 +55,7 @@ const FEATURES = [
     icon: BarChart3,
     title: { en: 'Smart Dashboard', fr: 'Tableau de bord intelligent' },
     description: { 
-      en: 'Real-time financial health score with AI-powered insights. See cash flow, ratios, and trends at a glance.',
+      en: 'Real-time financial health score with intelligent insights, powered by our AI. See cash flow, ratios, and trends at a glance.',
       fr: 'Score de santé financière en temps réel avec insights IA. Visualisez trésorerie, ratios et tendances.'
     },
     stat: { value: '87', label: { en: 'Health Score', fr: 'Score santé' } },
@@ -69,9 +68,9 @@ const FEATURES = [
   },
   {
     icon: AlertTriangle,
-    title: { en: 'AI Anomaly Detection', fr: 'Détection d\'anomalies IA' },
+    title: { en: 'Intelligent Anomaly Detection', fr: 'Détection intelligente d\'anomalies' },
     description: { 
-      en: 'AI automatically flags duplicate payments, fraud patterns, and unusual expenses before they become problems.',
+      en: 'Our AI automatically flags duplicate payments, fraud patterns, and unusual expenses before they become problems.',
       fr: 'L\'IA signale paiements en double, fraudes et dépenses inhabituelles avant qu\'ils ne deviennent problèmes.'
     },
     stat: { value: '$847K', label: { en: 'Saved avg.', fr: 'Économisé moy.' } },
@@ -117,13 +116,13 @@ const FEATURES = [
     icon: Shield,
     title: { en: 'Canadian Data Security', fr: 'Sécurité canadienne' },
     description: { 
-      en: 'Bank-level AES-256 encryption. Data stored exclusively in Canada. Built by CPAs, for CPAs. SOC 2 compliant.',
-      fr: 'Chiffrement bancaire AES-256. Données exclusivement au Canada. Conçu par des CPA, pour des CPA. Conforme SOC 2.'
+      en: 'Bank-level AES-256 encryption. Data stored exclusively in Canada. Built by CPAs, for CPAs.',
+      fr: 'Chiffrement bancaire AES-256. Données exclusivement au Canada. Conçu par des CPA, pour des CPA.'
     },
     stat: { value: '100%', label: { en: 'Canadian hosted', fr: 'Hébergé au Canada' } },
     highlights: [
       { en: 'AES-256 encrypted', fr: 'Chiffré AES-256' },
-      { en: 'SOC 2 compliant', fr: 'Conforme SOC 2' },
+      { en: 'Read-only access', fr: 'Accès lecture seule' },
       { en: 'No write access', fr: 'Aucun accès écriture' },
     ],
     color: 'warning',
@@ -244,12 +243,22 @@ function Header({ isEn, onLanguageToggle }: { isEn: boolean; onLanguageToggle: (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 group">
             <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
+              }}
             >
-              PL
+              <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
               PlainLedger
@@ -592,34 +601,14 @@ function FeaturesSection({ isEn }: { isEn: boolean }) {
 // Pricing Card Component
 function PricingCard({ 
   plan, 
-  billingCycle, 
-  users, 
-  onUsersChange,
   isEn, 
   onSelect 
 }: { 
   plan: PricingTierConfig;
-  billingCycle: BillingInterval;
-  users: number;
-  onUsersChange: (users: number) => void;
   isEn: boolean;
   onSelect: (planId: string) => void;
 }) {
   const [showDetails, setShowDetails] = useState(false);
-
-  const pricing = useMemo(() => {
-    return PricingCalculator.calculate(plan.tier, billingCycle, users);
-  }, [plan.tier, billingCycle, users]);
-
-  const displayPrice = billingCycle === 'yearly' 
-    ? pricing.effectiveMonthly 
-    : pricing.monthlyTotal;
-
-  const isEnterprise = plan.tier === 'enterprise';
-  const isFree = plan.tier === 'free';
-  const { includedUsers, additionalUserPrice, maxUsers } = plan.userPricing;
-  const canAddUsers = maxUsers === -1 || users < maxUsers;
-  const canRemoveUsers = users > includedUsers;
 
   return (
     <div 
@@ -656,102 +645,10 @@ function PricingCard({
         </p>
       </div>
 
-      {/* Price */}
-      <div className="mb-4 min-h-[60px]">
-        {isEnterprise ? (
-          <div>
-            <span className="text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Custom' : 'Sur mesure'}
-            </span>
-            <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Contact us for pricing' : 'Contactez-nous pour les tarifs'}
-            </p>
-          </div>
-        ) : isFree ? (
-          <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Free' : 'Gratuit'}
-              </span>
-              <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'forever' : 'pour toujours'}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                ${Math.round(displayPrice)}
-              </span>
-              <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                /{isEn ? 'mo' : 'mois'}
-              </span>
-            </div>
-            
-            {/* Price breakdown */}
-            {pricing.additionalUsersCost > 0 && (
-              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                ${plan.basePrice} {isEn ? 'base' : 'de base'} + ${pricing.additionalUsersCost} ({users - includedUsers} {isEn ? 'extra users' : 'utilisateurs supp.'})
-              </p>
-            )}
-            
-            {billingCycle === 'yearly' && pricing.savings > 0 && (
-              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
-                {isEn ? `Save $${Math.round(pricing.savings)}/year` : `Économisez ${Math.round(pricing.savings)}$/an`}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* User selector (only show when additional users can be added) */}
-      {!isFree && !isEnterprise && additionalUserPrice > 0 && (
-        <div 
-          className="mb-4 p-3 rounded-lg"
-          style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-        >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Team members' : 'Membres d\'équipe'}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => canRemoveUsers && onUsersChange(users - 1)}
-                disabled={!canRemoveUsers}
-                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors disabled:opacity-30"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-surface))',
-                  border: '1px solid rgb(var(--color-border))'
-                }}
-              >
-                <Minus className="w-3 h-3" />
-              </button>
-              <span 
-                className="w-8 text-center font-bold text-sm"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {users}
-              </span>
-              <button
-                onClick={() => canAddUsers && onUsersChange(users + 1)}
-                disabled={!canAddUsers}
-                className="w-7 h-7 rounded-md flex items-center justify-center transition-colors disabled:opacity-30"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-surface))',
-                  border: '1px solid rgb(var(--color-border))'
-                }}
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-          <p className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {includedUsers} {isEn ? 'included' : 'inclus'}
-            {additionalUserPrice > 0 && `, +$${additionalUserPrice}/${isEn ? 'user after' : 'utilisateur après'}`}
-          </p>
-        </div>
-      )}
+      {/* Description */}
+      <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+        {isEn ? plan.description : plan.descriptionFr}
+      </p>
 
       {/* Features */}
       <ul className="space-y-2 mb-4 flex-1">
@@ -767,11 +664,6 @@ function PricingCard({
             )}
             <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {isEn ? feature.name : feature.nameFr}
-              {feature.limit && (
-                <span className="text-[10px] ml-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  ({isEn ? feature.limit : feature.limitFr})
-                </span>
-              )}
             </span>
           </li>
         ))}
@@ -805,219 +697,64 @@ function PricingCard({
       >
         {isEn ? plan.ctaText : plan.ctaTextFr}
       </button>
-
-      {/* Per-user cost (only show when per-user pricing applies) */}
-      {!isFree && !isEnterprise && additionalUserPrice > 0 && (
-        <p className="text-center text-[10px] mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          ${pricing.perUserCost.toFixed(2)}/{isEn ? 'user/month' : 'utilisateur/mois'}
-        </p>
-      )}
     </div>
   );
 }
 
 function PricingSection({ isEn }: { isEn: boolean }) {
-  const [billingCycle, setBillingCycle] = useState<BillingInterval>('monthly');
-  const [userCounts, setUserCounts] = useState<Record<string, number>>({
-    plan_starter: 1,
-    plan_professional: 5,
-    plan_business: 15,
-    plan_enterprise: 10,
-  });
-  const { register } = useKeycloak();
-
   const handlePlanSelect = (planId: string) => {
-    const plan = PRICING_TIERS.find(p => p.id === planId);
-    analytics.track('pricing_plan_selected', { 
-      plan: planId, 
-      billing: billingCycle,
-      users: userCounts[planId] || 1,
-    });
-    
-    if (plan?.tier === 'enterprise') {
-      window.location.href = 'mailto:sales@plainledger.ca?subject=Enterprise%20Inquiry&body=Bonjour,%0A%0AJ\'aimerais en savoir plus sur le plan Entreprise.';
-    } else {
-      // Start registration with plan details in redirect URI
-      const redirectUri = `${window.location.origin}/onboarding?plan=${planId}&billing=${billingCycle}&users=${userCounts[planId] || 1}`;
-      register(redirectUri);
-    }
-  };
-
-  const handleUsersChange = (planId: string, users: number) => {
-    setUserCounts(prev => ({ ...prev, [planId]: users }));
+    analytics.track('pricing_plan_selected', { plan: planId });
+    // All plans direct to Calendly for quote
+    window.open('https://calendly.com/anthonypaquet1508/15min', '_blank');
   };
 
   return (
     <section id="pricing" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Simple, usage-based pricing' : 'Tarification simple basée sur l\'utilisation'}
+        <div className="text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Plans tailored to your business' : 'Plans adaptés à votre entreprise'}
           </h2>
-          <p className="text-sm mb-1 text-center" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {isEn ? 'Start free, pay only for what you use' : 'Commencez gratuitement, payez seulement ce que vous utilisez'}
-          </p>
-          <p className="text-xs flex items-center justify-center gap-1.5 w-full" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Info className="w-3.5 h-3.5" />
+          <p className="text-base mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn 
-              ? 'All plans include team members. No hidden fees.' 
-              : 'Tous les plans incluent des membres d\'équipe. Aucun frais caché.'}
+              ? 'Schedule a call to discuss your needs and get a personalized quote.' 
+              : 'Planifiez un appel pour discuter de vos besoins et obtenir une soumission personnalisée.'}
           </p>
         </div>
 
-        {/* Billing toggle */}
-        <div className="flex justify-center mb-6">
-          <div 
-            className="inline-flex items-center gap-1 p-1 rounded-lg"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all`}
-              style={{
-                backgroundColor: billingCycle === 'monthly' ? 'rgb(var(--color-surface))' : 'transparent',
-                color: billingCycle === 'monthly' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-                boxShadow: billingCycle === 'monthly' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              {isEn ? 'Monthly' : 'Mensuel'}
-            </button>
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5`}
-              style={{
-                backgroundColor: billingCycle === 'yearly' ? 'rgb(var(--color-surface))' : 'transparent',
-                color: billingCycle === 'yearly' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-                boxShadow: billingCycle === 'yearly' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              {isEn ? 'Yearly' : 'Annuel'}
-              <span 
-                className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
-                style={{ backgroundColor: 'rgb(var(--color-success) / 0.15)', color: 'rgb(var(--color-success))' }}
-              >
-                -20%
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Pricing cards - Main 4 plans */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
-          {PRICING_TIERS.filter(plan => plan.tier !== 'enterprise').map((plan) => (
+        {/* Pricing cards - All plans */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-7xl mx-auto">
+          {PRICING_TIERS.map((plan) => (
             <PricingCard
               key={plan.id}
               plan={plan}
-              billingCycle={billingCycle}
-              users={userCounts[plan.id] || plan.userPricing.includedUsers}
-              onUsersChange={(users) => handleUsersChange(plan.id, users)}
               isEn={isEn}
               onSelect={handlePlanSelect}
             />
           ))}
         </div>
 
-        {/* Enterprise - Compact Full Width */}
-        {PRICING_TIERS.filter(plan => plan.tier === 'enterprise').map((plan) => (
-          <div key={plan.id} className="mt-5 max-w-7xl mx-auto">
-            <div 
-              className="p-4 sm:p-5 rounded-xl relative"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: '1px solid rgb(var(--color-border))',
-              }}
-            >
-              {/* Badge */}
-              {(plan.badge || plan.badgeFr) && (
-                <div 
-                  className="absolute -top-2.5 left-4 px-3 py-0.5 rounded-full text-xs font-semibold text-white"
-                  style={{ backgroundColor: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn ? plan.badge : plan.badgeFr}
-                </div>
-              )}
-
-              <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
-                {/* Left side - Info (compact) */}
-                <div className="flex-shrink-0 lg:w-48">
-                  <h3 className="font-bold text-lg mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? plan.name : plan.nameFr}
-                  </h3>
-                  <p className="text-xs mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? plan.tagline : plan.taglineFr}
-                  </p>
-                  <div className="mb-3">
-                    <span className="text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Custom' : 'Sur mesure'}
-                    </span>
-                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? 'Contact us for pricing' : 'Contactez-nous pour les tarifs'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handlePlanSelect(plan.id)}
-                    className="btn-secondary px-5 py-2 text-sm"
-                  >
-                    {isEn ? plan.ctaText : plan.ctaTextFr}
-                  </button>
-                </div>
-
-                {/* Right side - Features in 4-column grid */}
-                <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1.5">
-                  {plan.features.map((feature, idx) => (
-                    <div 
-                      key={idx} 
-                      className="flex items-center gap-1.5 text-xs"
-                    >
-                      <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
-                      <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                        {isEn ? feature.name : feature.nameFr}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Price calculator hint */}
-        <div className="mt-4 text-center">
-          <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Calculator className="w-3.5 h-3.5 inline mr-1" />
+        {/* CTA */}
+        <div className="mt-10 text-center">
+          <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn 
-              ? 'Use the + / - buttons to see how pricing changes with team size' 
-              : 'Utilisez les boutons + / - pour voir comment le prix change selon la taille de l\'équipe'}
+              ? 'Not sure which plan is right for you?' 
+              : 'Vous ne savez pas quel plan vous convient?'}
           </p>
+          <button
+            onClick={() => window.open('https://calendly.com/anthonypaquet1508/15min', '_blank')}
+            className="btn-primary btn-lg"
+          >
+            {isEn ? 'Schedule a free consultation' : 'Planifier une consultation gratuite'}
+          </button>
         </div>
       </div>
     </section>
   );
 }
 
-function CPAPartnerSection({ isEn }: { isEn: boolean }) {
-  const navigate = useNavigate();
-
-  const handleCPACTA = (tierId: string, action: 'trial' | 'contact') => {
-    if (action === 'contact') {
-      analytics.track('cpa_partner_inquiry', { tier: tierId });
-      window.location.href = `mailto:partners@plainledger.ca?subject=CPA%20Partner%20Program%20-%20${tierId}&body=${encodeURIComponent(
-        isEn 
-          ? 'Hello,\n\nI\'m interested in the CPA Partner Program.\n\nFirm name:\nNumber of clients:\nYour name:\nPhone:'
-          : 'Bonjour,\n\nJe suis intéressé par le Programme Partenaire CPA.\n\nNom du cabinet:\nNombre de clients:\nVotre nom:\nTéléphone:'
-      )}`;
-    } else {
-      analytics.track('cpa_trial_started', { tier: tierId });
-      navigate('/signup?plan=cpa');
-    }
-  };
-
-  return (
-    <>
-      <CPAPricingSection onCTAClick={handleCPACTA} />
-      <IntegrationLogos />
-    </>
-  );
+function IntegrationsSection() {
+  return <IntegrationLogos />;
 }
 
 function TestimonialsSection({ isEn }: { isEn: boolean }) {
@@ -1201,10 +938,19 @@ function Footer({ isEn }: { isEn: boolean }) {
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white"
-                style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
+                }}
               >
-                PL
+                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                  <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
               <span className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                 PlainLedger
@@ -1317,7 +1063,7 @@ export default function Store() {
         <HeroSection isEn={isEn} onWatchDemo={() => setShowDemoModal(true)} />
         <FeaturesSection isEn={isEn} />
         <PricingSection isEn={isEn} />
-        <CPAPartnerSection isEn={isEn} />
+        <IntegrationsSection />
         <TestimonialsSection isEn={isEn} />
         <CTASection isEn={isEn} />
       </main>

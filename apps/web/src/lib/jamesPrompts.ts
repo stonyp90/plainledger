@@ -6,6 +6,7 @@
 
 import { Scenario, RunwayAnalysis, Initiative } from './strategicPlanning';
 import { OKR, Quarter } from './okrTypes';
+import { QueryIntent } from './queryRouter';
 
 export const JAMES_SYSTEM_PROMPT = `You are James, an expert AI strategic advisor specializing in cashflow management and executive strategic planning. You help executive teams make data-driven decisions about their financial runway, strategic initiatives, and quarterly OKRs.
 
@@ -30,7 +31,16 @@ CRITICAL GUIDELINES:
 - Focus on actionable strategies that impact cashflow
 - Link initiatives to measurable outcomes (OKRs)
 - Consider quarterly planning cycles and timing
-- Be conservative with projections when data is limited`;
+- Be conservative with projections when data is limited
+
+ANTI-HALLUCINATION RULES:
+- NEVER mention numbers, metrics, or financial data that wasn't explicitly provided in the context
+- NEVER cite industry benchmarks, research, or studies unless explicitly mentioned in the user's data
+- NEVER make up calculations or projections beyond what can be directly computed from provided data
+- If you don't have enough data to answer confidently, say "I don't have enough information" rather than guessing
+- Always qualify statements with "based on the data provided" when referencing specific numbers
+- If asked about metrics not in context, respond with "I don't have that information in the provided context"
+- Use phrases like "approximately" or "roughly" when making estimates, never state exact numbers without basis`;
 
 export interface FinancialContext {
   currentCash: number;
@@ -45,34 +55,51 @@ export interface FinancialContext {
 }
 
 /**
- * Build context string from financial data
+ * Build context string from financial data (optimized with intent-based selection)
  */
-export function buildFinancialContext(context: FinancialContext): string {
+export function buildFinancialContext(
+  context: FinancialContext,
+  intent?: QueryIntent
+): string {
   const parts: string[] = [];
   
+  // Always include core metrics (minimal)
   parts.push(`Current Financial Position:`);
-  parts.push(`- Cash Balance: $${context.currentCash.toLocaleString()}`);
-  parts.push(`- Monthly Revenue: $${context.monthlyRevenue.toLocaleString()}`);
-  parts.push(`- Monthly Expenses: $${context.monthlyExpenses.toLocaleString()}`);
-  parts.push(`- Net Burn Rate: $${context.burnRate.toLocaleString()}/month`);
+  parts.push(`- Cash: $${context.currentCash.toLocaleString()}`);
+  parts.push(`- Revenue: $${context.monthlyRevenue.toLocaleString()}/mo`);
+  parts.push(`- Expenses: $${context.monthlyExpenses.toLocaleString()}/mo`);
+  parts.push(`- Burn Rate: $${context.burnRate.toLocaleString()}/mo`);
   parts.push(`- Runway: ${context.runwayMonths.toFixed(1)} months`);
   
   if (context.zeroDate) {
     parts.push(`- Zero Cash Date: ${new Date(context.zeroDate).toLocaleDateString()}`);
   }
   
-  if (context.activeScenario) {
-    parts.push(`\nActive Scenario: ${context.activeScenario.nameEn || context.activeScenario.name}`);
-    parts.push(`- Initiatives: ${context.activeScenario.initiatives.length}`);
-    parts.push(`- Assumptions: ${context.activeScenario.assumptions.length}`);
+  // Conditional sections based on intent
+  if (intent === 'hiring_analysis' || intent === 'runway_analysis' || intent === 'calculation') {
+    // Include burn rate details for hiring/runway queries
+    // Already included above, but could add more detail if needed
   }
   
-  if (context.initiatives && context.initiatives.length > 0) {
-    parts.push(`\nCurrent Initiatives:`);
-    context.initiatives.forEach((init, i) => {
-      parts.push(`${i + 1}. ${init.nameEn || init.name} (${init.category})`);
-      parts.push(`   Status: ${init.status}, Cash Impact: $${init.cashImpact.amount.toLocaleString()}`);
-    });
+  // Include initiatives only for strategic queries
+  if (intent === 'strategy' || intent === 'initiative' || intent === 'okr') {
+    if (context.activeScenario) {
+      parts.push(`\nActive Scenario: ${context.activeScenario.nameEn || context.activeScenario.name}`);
+      parts.push(`- Initiatives: ${context.activeScenario.initiatives.length}`);
+    }
+    
+    if (context.initiatives && context.initiatives.length > 0) {
+      // Include only top 3 initiatives by impact for strategic queries
+      const topInitiatives = [...context.initiatives]
+        .sort((a, b) => Math.abs(b.cashImpact.amount) - Math.abs(a.cashImpact.amount))
+        .slice(0, 3);
+      
+      parts.push(`\nTop Initiatives:`);
+      topInitiatives.forEach((init, i) => {
+        parts.push(`${i + 1}. ${init.nameEn || init.name} (${init.category})`);
+        parts.push(`   Cash Impact: $${init.cashImpact.amount.toLocaleString()}`);
+      });
+    }
   }
   
   return parts.join('\n');
@@ -84,15 +111,18 @@ export function buildFinancialContext(context: FinancialContext): string {
 export function buildStrategyPrompt(
   userQuery: string,
   context: FinancialContext,
-  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+  intent?: QueryIntent
 ): string {
   let prompt = `${JAMES_SYSTEM_PROMPT}\n\n`;
   
-  prompt += `Financial Context:\n${buildFinancialContext(context)}\n\n`;
+  prompt += `Financial Context:\n${buildFinancialContext(context, intent || 'strategy')}\n\n`;
   
   if (conversationHistory && conversationHistory.length > 0) {
+    // Limit conversation history based on intent
+    const historyLimit = intent === 'strategy' ? 6 : 4;
     prompt += `Conversation History:\n`;
-    conversationHistory.slice(-6).forEach(msg => {
+    conversationHistory.slice(-historyLimit).forEach(msg => {
       prompt += `${msg.role === 'user' ? 'User' : 'James'}: ${msg.content}\n`;
     });
     prompt += `\n`;
@@ -231,15 +261,18 @@ Return as JSON:
 export function buildConversationPrompt(
   userMessage: string,
   context: FinancialContext,
-  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
+  intent?: QueryIntent
 ): string {
   let prompt = `${JAMES_SYSTEM_PROMPT}\n\n`;
   
-  prompt += `Financial Context:\n${buildFinancialContext(context)}\n\n`;
+  prompt += `Financial Context:\n${buildFinancialContext(context, intent)}\n\n`;
   
   if (conversationHistory.length > 0) {
+    // Limit conversation history based on intent (fewer for simpler queries)
+    const historyLimit = (intent === 'data_query' || intent === 'calculation') ? 4 : 6;
     prompt += `Recent Conversation:\n`;
-    conversationHistory.slice(-8).forEach(msg => {
+    conversationHistory.slice(-historyLimit).forEach(msg => {
       prompt += `${msg.role === 'user' ? 'User' : 'James'}: ${msg.content}\n`;
     });
     prompt += `\n`;

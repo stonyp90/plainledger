@@ -389,6 +389,13 @@ resource "aws_lb_listener_rule" "keycloak" {
   }
 
   condition {
+    host_header {
+      values = ["auth.${var.domain_name}"]
+    }
+  }
+
+  # Keep path-based condition as fallback
+  condition {
     path_pattern {
       values = ["/auth/*", "/realms/*"]
     }
@@ -505,7 +512,7 @@ resource "aws_ecs_task_definition" "web" {
 
       environment = [
         { name = "VITE_API_URL", value = "https://${var.domain_name}/api" },
-        { name = "VITE_KEYCLOAK_URL", value = "https://${var.domain_name}" },
+        { name = "VITE_KEYCLOAK_URL", value = "https://auth.${var.domain_name}" },
         { name = "VITE_KEYCLOAK_REALM", value = "plainledger" },
         { name = "VITE_KEYCLOAK_CLIENT_ID", value = "plainledger-web" },
         { name = "VITE_NOVU_APP_ID", value = "FNfEAbhmW05j" },
@@ -651,11 +658,21 @@ resource "aws_ecs_task_definition" "keycloak" {
 
       environment = [
         { name = "KC_PROXY", value = "edge" },
-        { name = "KC_HOSTNAME", value = var.domain_name },
+        { name = "KC_HOSTNAME", value = "auth.${var.domain_name}" },
+        { name = "KC_HOSTNAME_STRICT", value = "true" },
+        { name = "KC_HOSTNAME_STRICT_HTTPS", value = "true" },
         { name = "KC_HTTP_ENABLED", value = "true" },
         { name = "KC_HEALTH_ENABLED", value = "true" },
         { name = "KC_DB", value = "postgres" },
-        { name = "KC_DB_URL_DATABASE", value = "keycloak" }
+        { name = "KC_DB_URL_DATABASE", value = "keycloak" },
+        # SMTP configuration
+        { name = "SMTP_HOST", value = "email-smtp.us-east-1.amazonaws.com" },
+        { name = "SMTP_PORT", value = "587" },
+        { name = "SMTP_FROM", value = "noreply@plainledger.ca" },
+        { name = "SMTP_REPLY_TO", value = "support@plainledger.ca" },
+        { name = "SMTP_SSL", value = "false" },
+        { name = "SMTP_STARTTLS", value = "true" },
+        { name = "SMTP_AUTH", value = "true" }
       ]
 
       secrets = [
@@ -670,6 +687,14 @@ resource "aws_ecs_task_definition" "keycloak" {
         {
           name      = "KC_DB_PASSWORD"
           valueFrom = "${var.db_credentials_secret_arn}:password::"
+        },
+        {
+          name      = "SMTP_USER"
+          valueFrom = "${var.keycloak_smtp_secret_arn}:user::"
+        },
+        {
+          name      = "SMTP_PASSWORD"
+          valueFrom = "${var.keycloak_smtp_secret_arn}:password::"
         }
       ]
 

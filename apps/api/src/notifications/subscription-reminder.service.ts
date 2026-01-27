@@ -102,7 +102,7 @@ const PLANS: Record<string, SubscriptionPlan> = {
     nameFr: 'Professionnel',
     price: 79,
     features: [
-      { id: 'ai', name: 'AI-Powered Insights', nameFr: 'Analyses propulsées par l\'IA', description: 'Advanced AI analysis and recommendations', descriptionFr: 'Analyses et recommandations avancées par IA', icon: 'sparkles', locked: true },
+      { id: 'ai', name: 'James Insights', nameFr: 'Analyses James', description: 'Advanced analysis and recommendations powered by our AI', descriptionFr: 'Analyses et recommandations avancées propulsées par notre IA', icon: 'sparkles', locked: true },
       { id: 'multi-company', name: 'Multi-Company', nameFr: 'Multi-entreprises', description: 'Manage multiple companies', descriptionFr: 'Gérez plusieurs entreprises', icon: 'building', locked: true },
       { id: 'team', name: 'Team Access', nameFr: 'Accès équipe', description: 'Invite team members', descriptionFr: 'Invitez des membres d\'équipe', icon: 'users', locked: true },
       { id: 'custom-reports', name: 'Custom Reports', nameFr: 'Rapports personnalisés', description: 'Build custom report templates', descriptionFr: 'Créez des modèles de rapports personnalisés', icon: 'layout', locked: true },
@@ -417,7 +417,7 @@ export class SubscriptionReminderService {
       planName: isEn ? plan.name : plan.nameFr,
       nextLevelFeatures: [
         { text: 'Rapports illimités avec modèles personnalisés', textEn: 'Unlimited reports with custom templates' },
-        { text: 'Détection d\'anomalies avancée par IA', textEn: 'Advanced AI-powered anomaly detection' },
+        { text: 'Détection d\'anomalies avancée propulsée par notre IA', textEn: 'Advanced anomaly detection powered by our AI' },
         { text: 'Accès multi-utilisateurs pour votre équipe', textEn: 'Multi-user access for your team' },
       ],
       upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,

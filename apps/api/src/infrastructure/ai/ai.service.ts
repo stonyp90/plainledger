@@ -14,6 +14,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AIGuardrailsService, FinancialContext as GuardrailContext } from './ai-guardrails.service';
 
 export type AIProvider = 'openai' | 'anthropic' | 'google' | 'mistral' | 'cohere' | 'azure' | 'ollama';
 
@@ -35,6 +36,7 @@ export interface AIGenerationOptions {
   retries?: number;
   preferredProvider?: AIProvider;
   forceProvider?: boolean;
+  modelTier?: 'lite' | 'full'; // Model tier selection for cost optimization
 }
 
 export interface AIResponse {
@@ -74,6 +76,7 @@ export class AIService {
   private readonly circuitBreakers: Map<string, CircuitBreakerState> = new Map();
   private readonly requestCache: Map<string, { response: AIResponse; expiresAt: number }> = new Map();
   private readonly tokenUsage: Map<string, { total: number; lastReset: Date }> = new Map();
+  private readonly guardrails: AIGuardrailsService = new AIGuardrailsService();
 
   // Rate limits: requests per minute per tenant
   private readonly RATE_LIMIT_REQUESTS = 30;
@@ -86,7 +89,7 @@ export class AIService {
   // Cache TTL: 5 minutes
   private readonly CACHE_TTL_MS = 5 * 60 * 1000;
 
-  // Default models per provider
+  // Default models per provider (full tier)
   private readonly DEFAULT_MODELS: Record<AIProvider, string> = {
     openai: 'gpt-4-turbo-preview',
     anthropic: 'claude-3-opus-20240229',
@@ -94,6 +97,17 @@ export class AIService {
     mistral: 'mistral-large-latest',
     cohere: 'command-r-plus',
     azure: 'gpt-4',
+    ollama: 'llama2',
+  };
+
+  // Lite models per provider (cheaper, faster)
+  private readonly LITE_MODELS: Record<AIProvider, string> = {
+    openai: 'gpt-3.5-turbo',
+    anthropic: 'claude-3-haiku-20240307',
+    google: 'gemini-1.5-flash',
+    mistral: 'mistral-small-latest',
+    cohere: 'command',
+    azure: 'gpt-35-turbo',
     ollama: 'llama2',
   };
 
@@ -255,11 +269,18 @@ export class AIService {
         return this.generateSimulatedResponse(prompt);
       }
 
+      // Select model based on tier
+      const modelTier = options.modelTier || 'full';
+      const providersWithModels = providersToTry.map(p => ({
+        ...p,
+        model: modelTier === 'lite' ? (this.LITE_MODELS[p.provider] || p.model) : (p.model || this.DEFAULT_MODELS[p.provider]),
+      }));
+
       // Generate response with retry logic and provider fallback
       let lastError: Error | null = null;
       const maxAttempts = options.retries || this.maxRetries;
 
-      for (const provider of providersToTry) {
+      for (const provider of providersWithModels) {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           try {
             let response: AIResponse;
@@ -290,6 +311,50 @@ export class AIService {
                 throw new Error(`Unsupported provider: ${provider.provider}`);
             }
 
+            // Apply guardrails to prevent hallucinations
+            const context = this.guardrails.extractContextFromPrompt(prompt);
+            const guardrailResult = this.guardrails.validateResponse(
+              response.message,
+              context,
+              prompt
+            );
+
+            // Sanitize response
+            response.message = this.guardrails.sanitizeResponse(response.message);
+
+            // Use validated response if available
+            if (guardrailResult.validatedResponse) {
+              response.message = guardrailResult.validatedResponse;
+            }
+
+            // Log guardrail results
+            if (guardrailResult.warnings.length > 0 || guardrailResult.errors.length > 0) {
+              this.logger.warn(
+                `Guardrail issues detected for tenant ${tenantId}: ` +
+                `Confidence: ${guardrailResult.confidence}%, ` +
+                `Warnings: ${guardrailResult.warnings.length}, ` +
+                `Errors: ${guardrailResult.errors.length}`
+              );
+              
+              if (guardrailResult.errors.length > 0) {
+                this.logger.error(`Guardrail errors: ${guardrailResult.errors.join('; ')}`);
+              }
+              if (guardrailResult.warnings.length > 0) {
+                this.logger.warn(`Guardrail warnings: ${guardrailResult.warnings.join('; ')}`);
+              }
+            }
+
+            // Reject response if guardrails failed
+            if (!guardrailResult.passed) {
+              this.logger.error(
+                `Response failed guardrails for tenant ${tenantId}. Confidence: ${guardrailResult.confidence}%`
+              );
+              throw new Error(
+                `Response validation failed. Confidence: ${guardrailResult.confidence}%. ` +
+                `Errors: ${guardrailResult.errors.join('; ')}`
+              );
+            }
+
             // Track token usage
             if (response.tokensUsed) {
               this.trackTokenUsage(tenantId, response.tokensUsed.total);
@@ -308,7 +373,11 @@ export class AIService {
             });
 
             // Log metrics
-            this.logger.log(`AI response generated via ${provider.provider}/${provider.model} in ${response.latency}ms for tenant: ${tenantId}`);
+            this.logger.log(
+              `AI response generated via ${provider.provider}/${provider.model} ` +
+              `in ${response.latency}ms for tenant: ${tenantId} ` +
+              `(Confidence: ${guardrailResult.confidence}%)`
+            );
 
             return response;
           } catch (error) {

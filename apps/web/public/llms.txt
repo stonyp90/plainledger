@@ -84,7 +84,7 @@ All plans include:
 - 14-day free trial
 - No credit card required
 - Unlimited users
-- Bank-level security (SOC 2 compliant)
+- Bank-level security (AES-256 encryption)
 
 ## Newsletter: OffBalance
 
@@ -98,7 +98,6 @@ Join 500+ CPAs. Every Thursday, 5-minute read.
 
 ## Security & Compliance
 
-- SOC 2 Type II compliant
 - Bank-level encryption (AES-256)
 - Read-only data access
 - No write access to your accounting software

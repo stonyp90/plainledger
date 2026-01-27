@@ -148,9 +148,13 @@ export default function Layout({ children }: LayoutProps) {
               boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
             }}
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+              <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+              <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <span 
@@ -197,9 +201,13 @@ export default function Layout({ children }: LayoutProps) {
                 boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
               }}
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span 
@@ -336,9 +344,17 @@ export default function Layout({ children }: LayoutProps) {
                 boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.25)'
               }}
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 5h16M4 5v14a1 1 0 001 1h14a1 1 0 001-1V5M4 5l2-3h12l2 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 9h6M9 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Ledger book spine */}
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                {/* Ledger pages */}
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                {/* Ledger lines */}
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                {/* Checkmark */}
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             {!isSidebarCollapsed && (

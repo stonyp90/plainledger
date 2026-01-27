@@ -369,10 +369,10 @@ export default function Dashboard() {
             <button
               onClick={() => setShowAIAssistant(true)}
               className="btn-primary btn-sm flex items-center gap-2"
-              title={language === 'en' ? 'Ask AI Assistant' : 'Demander à l\'assistant IA'}
+              title={language === 'en' ? 'Ask James' : 'Demander à James'}
             >
               <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">{language === 'en' ? 'Ask AI' : 'Demander'}</span>
+              <span className="hidden sm:inline">{language === 'en' ? 'Ask James' : 'Demander'}</span>
             </button>
           </div>
         </div>

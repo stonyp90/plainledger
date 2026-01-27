@@ -33,7 +33,7 @@ const stripeConfig: StripeConfig = {
 // =====================================================
 
 export type PlanInterval = 'month' | 'year';
-export type PlanTier = 'free' | 'starter' | 'professional' | 'enterprise';
+export type PlanTier = 'starter' | 'professional' | 'business' | 'enterprise';
 
 export interface PricingFeature {
   name: string;
@@ -79,110 +79,113 @@ export interface PricingPlan {
 }
 
 // =====================================================
-// USAGE-BASED PRICING MODEL (2026)
+// ENTERPRISE-FOCUSED PRICING (2026)
 // =====================================================
 // 
-// Canadian Market Competitive Analysis:
-// - QuickBooks Online Plus: $60 CAD/mo + $11/user
-// - Xero Growing: $45 CAD/mo + $5/user
-// - Sage Business Cloud: $35 CAD/mo + $15/user
-// - Fathom Analytics: ~$80 CAD/mo (flat)
+// Target Market: Canadian enterprises with $2M-$20M+ annual revenue
 // 
-// PlainLedger Positioning:
-// - Complementary to accounting software (not replacement)
-// - AI-powered anomaly detection (unique)
-// - Canada-first: Bilingual UI, GST/HST/PST, local support
+// Competitive Positioning:
+// - Jirav: $500-2000/mo - We offer dedicated CPA support
+// - Vena: $1000+/mo - We're simpler, faster time-to-value
+// - Planful: $2000+/mo - We're better priced for mid-market
+// 
+// PlainLedger Value Proposition:
+// - Dedicated CPA support included in all plans
+// - AI-powered anomaly detection (unique differentiator)
+// - Canada-first: Bilingual UI, data residency, GST/HST/PST
 
-// Dynamic pricing plans with user-based scaling
+// Enterprise pricing plans
 export const pricingPlans: PricingPlan[] = [
   {
-    id: 'plan_free',
-    tier: 'free',
-    name: 'Free',
-    nameFr: 'Gratuit',
-    description: 'Try PlainLedger risk-free',
-    descriptionFr: 'Essayez PlainLedger sans risque',
-    priceMonthly: 0,
-    priceYearly: 0,
-    currency: 'CAD',
-    limits: {
-      users: 1, // Fixed, no additional users
-      connections: 1,
-      reports: 5,
-      storage: 100, // 100MB
-      apiCalls: 0,
-    },
-    features: [
-      { name: '1 user', nameFr: '1 utilisateur', included: true },
-      { name: '1 data connection', nameFr: '1 connexion de données', included: true },
-      { name: '5 reports/month', nameFr: '5 rapports/mois', included: true },
-      { name: 'Basic dashboard', nameFr: 'Tableau de bord de base', included: true },
-      { name: 'Community support', nameFr: 'Support communautaire', included: true },
-      { name: 'Anomaly detection', nameFr: 'Détection d\'anomalies', included: false },
-      { name: 'Team collaboration', nameFr: 'Collaboration d\'équipe', included: false },
-      { name: 'Export (PDF/Excel)', nameFr: 'Export (PDF/Excel)', included: false },
-    ],
-  },
-  {
-    id: 'plan_starter',
+    id: 'plan_essentiel',
     tier: 'starter',
-    name: 'Starter',
-    nameFr: 'Démarrage',
-    description: 'For small businesses & freelancers',
-    descriptionFr: 'Pour les petites entreprises et travailleurs autonomes',
-    stripePriceIdMonthly: 'price_starter_monthly',
-    stripePriceIdYearly: 'price_starter_yearly',
-    priceMonthly: 39, // Base price, includes 2 users
-    priceYearly: 374, // 20% discount
+    name: 'Essentiel',
+    nameFr: 'Essentiel',
+    description: 'For businesses $2M-$5M revenue',
+    descriptionFr: 'Pour entreprises 2M$-5M$ de revenus',
+    stripePriceIdMonthly: 'price_essentiel_monthly',
+    stripePriceIdYearly: 'price_essentiel_yearly',
+    priceMonthly: 500, // Base price, includes 3 users
+    priceYearly: 4800, // 20% discount
     currency: 'CAD',
     limits: {
-      users: 5, // Max 5, base includes 2, +$12/user
-      connections: 2,
-      reports: 25,
-      storage: 1000, // 1GB
+      users: 10, // Max 10, base includes 3, +$50/user
+      connections: 3,
+      reports: -1, // Unlimited
+      storage: 25000, // 25GB
       apiCalls: 500,
     },
     features: [
-      { name: '2 users included', nameFr: '2 utilisateurs inclus', included: true, limit: '+$12/user', limitFr: '+12$/util.' },
-      { name: '2 data connections', nameFr: '2 connexions de données', included: true },
-      { name: '25 reports/month', nameFr: '25 rapports/mois', included: true },
-      { name: 'Smart dashboard', nameFr: 'Tableau de bord intelligent', included: true },
-      { name: 'Basic anomaly detection', nameFr: 'Détection d\'anomalies de base', included: true },
-      { name: 'Email support', nameFr: 'Support par courriel', included: true },
+      { name: '3 users included', nameFr: '3 utilisateurs inclus', included: true, limit: '+$50/user', limitFr: '+50$/util.' },
+      { name: '3 data connections', nameFr: '3 connexions de données', included: true },
+      { name: 'Unlimited reports', nameFr: 'Rapports illimités', included: true },
+      { name: 'Anomaly detection', nameFr: 'Détection d\'anomalies', included: true },
+      { name: 'Monthly reports', nameFr: 'Rapports mensuels', included: true },
+      { name: 'CPA email support', nameFr: 'Support CPA par courriel', included: true },
       { name: 'Export (PDF/Excel)', nameFr: 'Export (PDF/Excel)', included: true },
       { name: 'API access', nameFr: 'Accès API', included: false },
     ],
   },
   {
-    id: 'plan_professional',
+    id: 'plan_professionnel',
     tier: 'professional',
-    name: 'Professional',
+    name: 'Professionnel',
     nameFr: 'Professionnel',
-    description: 'For growing teams with advanced needs',
-    descriptionFr: 'Pour les équipes en croissance avec besoins avancés',
-    stripePriceIdMonthly: 'price_professional_monthly',
-    stripePriceIdYearly: 'price_professional_yearly',
-    priceMonthly: 99, // Base price, includes 5 users
-    priceYearly: 950, // 20% discount
+    description: 'For businesses $5M-$10M revenue',
+    descriptionFr: 'Pour entreprises 5M$-10M$ de revenus',
+    stripePriceIdMonthly: 'price_professionnel_monthly',
+    stripePriceIdYearly: 'price_professionnel_yearly',
+    priceMonthly: 1200, // Base price, includes 5 users
+    priceYearly: 11520, // 20% discount
     currency: 'CAD',
     popular: true,
     badge: 'Most Popular',
     badgeFr: 'Plus populaire',
     limits: {
-      users: 25, // Max 25, base includes 5, +$15/user
-      connections: 5,
-      reports: 100,
-      storage: 5000, // 5GB
+      users: 25, // Max 25, base includes 5, +$75/user
+      connections: 10,
+      reports: -1,
+      storage: 100000, // 100GB
       apiCalls: 5000,
     },
     features: [
-      { name: '5 users included', nameFr: '5 utilisateurs inclus', included: true, limit: '+$15/user', limitFr: '+15$/util.' },
-      { name: '5 data connections', nameFr: '5 connexions de données', included: true },
-      { name: '100 reports/month', nameFr: '100 rapports/mois', included: true },
-      { name: 'Advanced AI detection', nameFr: 'Détection IA avancée', included: true },
+      { name: '5 users included', nameFr: '5 utilisateurs inclus', included: true, limit: '+$75/user', limitFr: '+75$/util.' },
+      { name: '10 data connections', nameFr: '10 connexions de données', included: true },
+      { name: 'Weekly reviews', nameFr: 'Revues hebdomadaires', included: true },
+      { name: 'Priority CPA (48h)', nameFr: 'CPA prioritaire (48h)', included: true },
+      { name: 'Cash flow forecasting', nameFr: 'Prévisions de trésorerie', included: true },
       { name: 'Budget vs Actual', nameFr: 'Budget vs Réel', included: true },
-      { name: 'Priority support', nameFr: 'Support prioritaire', included: true },
+      { name: 'Slack & Teams alerts', nameFr: 'Alertes Slack & Teams', included: true },
       { name: 'Full API access', nameFr: 'Accès API complet', included: true },
+    ],
+  },
+  {
+    id: 'plan_premium',
+    tier: 'business',
+    name: 'Premium',
+    nameFr: 'Premium',
+    description: 'For businesses $10M-$20M revenue',
+    descriptionFr: 'Pour entreprises 10M$-20M$ de revenus',
+    stripePriceIdMonthly: 'price_premium_monthly',
+    stripePriceIdYearly: 'price_premium_yearly',
+    priceMonthly: 2500, // Base price, includes 10 users
+    priceYearly: 24000, // 20% discount
+    currency: 'CAD',
+    limits: {
+      users: 50, // Max 50, base includes 10, +$100/user
+      connections: -1, // Unlimited
+      reports: -1,
+      storage: 500000, // 500GB
+      apiCalls: -1, // Unlimited
+    },
+    features: [
+      { name: '10 users included', nameFr: '10 utilisateurs inclus', included: true, limit: '+$100/user', limitFr: '+100$/util.' },
+      { name: 'Unlimited connections', nameFr: 'Connexions illimitées', included: true },
+      { name: 'Dedicated CPA', nameFr: 'CPA dédié', included: true },
+      { name: 'Same-day response', nameFr: 'Réponse le jour même', included: true },
+      { name: 'Multi-entity consolidation', nameFr: 'Consolidation multi-entités', included: true },
+      { name: 'Board-ready reports', nameFr: 'Rapports pour CA', included: true },
+      { name: 'Quarterly business review', nameFr: 'Revue trimestrielle', included: true },
       { name: 'Custom branding', nameFr: 'Marque personnalisée', included: true },
     ],
   },
@@ -191,40 +194,39 @@ export const pricingPlans: PricingPlan[] = [
     tier: 'enterprise',
     name: 'Enterprise',
     nameFr: 'Entreprise',
-    description: 'For large organizations & accounting firms',
-    descriptionFr: 'Pour les grandes organisations et cabinets comptables',
+    description: 'For large organizations $20M+',
+    descriptionFr: 'Pour grandes organisations 20M$+',
     stripePriceIdMonthly: 'price_enterprise_monthly',
     stripePriceIdYearly: 'price_enterprise_yearly',
-    priceMonthly: 0, // Custom pricing, starts ~$299
-    priceYearly: 0,
+    priceMonthly: 5000, // Starting price
+    priceYearly: 45000, // 25% discount
     currency: 'CAD',
-    badge: 'Custom',
-    badgeFr: 'Sur mesure',
     limits: {
-      users: -1, // Unlimited, volume discount at $12/user
+      users: -1, // Unlimited
       connections: -1,
       reports: -1,
       storage: -1,
       apiCalls: -1,
     },
     features: [
-      { name: '10+ users included', nameFr: '10+ utilisateurs inclus', included: true, limit: 'Volume discount', limitFr: 'Remise volume' },
+      { name: 'Unlimited users', nameFr: 'Utilisateurs illimités', included: true },
       { name: 'Unlimited connections', nameFr: 'Connexions illimitées', included: true },
-      { name: 'Unlimited reports', nameFr: 'Rapports illimités', included: true },
       { name: 'Dedicated account manager', nameFr: 'Gestionnaire de compte dédié', included: true },
       { name: 'SSO (SAML/OIDC)', nameFr: 'SSO (SAML/OIDC)', included: true },
       { name: '99.9% SLA', nameFr: 'SLA 99.9%', included: true },
+      { name: 'Custom onboarding', nameFr: 'Intégration personnalisée', included: true },
+      { name: 'On-site training', nameFr: 'Formation sur site', included: true },
       { name: 'Custom integrations', nameFr: 'Intégrations personnalisées', included: true },
-      { name: 'On-premise option', nameFr: 'Option sur site', included: true },
     ],
   },
 ];
 
 // Per-seat pricing rates (for usage-based billing)
 export const USER_PRICING = {
-  starter: { includedUsers: 2, additionalUserPrice: 12, maxUsers: 5 },
-  professional: { includedUsers: 5, additionalUserPrice: 15, maxUsers: 25 },
-  enterprise: { includedUsers: 10, additionalUserPrice: 12, maxUsers: -1 }, // Volume discount
+  starter: { includedUsers: 3, additionalUserPrice: 50, maxUsers: 10 },     // Essentiel
+  professional: { includedUsers: 5, additionalUserPrice: 75, maxUsers: 25 }, // Professionnel
+  business: { includedUsers: 10, additionalUserPrice: 100, maxUsers: 50 },   // Premium
+  enterprise: { includedUsers: -1, additionalUserPrice: 0, maxUsers: -1 },   // Unlimited
 } as const;
 
 // =====================================================
@@ -429,7 +431,7 @@ class StripeService {
       id: 'sub_demo_123',
       customerId: 'cus_demo_123',
       status: 'active',
-      planId: 'plan_professional',
+      planId: 'plan_professionnel',
       planTier: 'professional',
       interval: 'month',
       currentPeriodStart: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
@@ -535,10 +537,10 @@ class StripeService {
   }
 
   /**
-   * Contact sales for enterprise plan
+   * Schedule a meeting for enterprise plan
    */
-  openContactSales(): void {
-    window.open('mailto:sales@plainledger.com?subject=Enterprise%20Plan%20Inquiry', '_blank');
+  openScheduleMeeting(): void {
+    window.open('https://calendly.com/anthonypaquet1508/15min', '_blank');
   }
 }
 

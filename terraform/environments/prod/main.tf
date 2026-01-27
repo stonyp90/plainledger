@@ -176,6 +176,27 @@ resource "aws_secretsmanager_secret_version" "novu" {
 }
 
 # ------------------------------------------------------------------------------
+# Keycloak SMTP Secret
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "keycloak_smtp" {
+  name        = "${var.project}/${var.environment}/keycloak/smtp"
+  description = "SMTP credentials for Keycloak email sending"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "keycloak_smtp" {
+  secret_id = aws_secretsmanager_secret.keycloak_smtp.id
+  secret_string = jsonencode({
+    host     = "email-smtp.us-east-1.amazonaws.com"
+    port     = "587"
+    user     = "REPLACE_WITH_SES_SMTP_USERNAME"
+    password = "REPLACE_WITH_SES_SMTP_PASSWORD"
+    from     = "noreply@plainledger.ca"
+    reply_to = "support@plainledger.ca"
+  })
+}
+
+# ------------------------------------------------------------------------------
 # ECS Module
 # ------------------------------------------------------------------------------
 module "ecs" {
@@ -197,6 +218,7 @@ module "ecs" {
   redis_auth_secret_arn     = module.database.redis_auth_secret_arn
   stripe_secret_arn         = aws_secretsmanager_secret.stripe.arn
   novu_secret_arn           = aws_secretsmanager_secret.novu.arn
+  keycloak_smtp_secret_arn  = aws_secretsmanager_secret.keycloak_smtp.arn
   kms_key_arn               = module.database.kms_key_arn
 
   ecr_web_repository_url      = aws_ecr_repository.web.repository_url
@@ -226,6 +248,22 @@ module "ecs" {
   keycloak_desired_count = 2
 
   depends_on = [module.networking, module.database]
+}
+
+# ------------------------------------------------------------------------------
+# Route53 Record for auth.plainledger.ca (Keycloak)
+# ------------------------------------------------------------------------------
+resource "aws_route53_record" "auth" {
+  count   = var.create_hosted_zone ? 1 : 0
+  zone_id = module.networking.route53_zone_id
+  name    = "auth.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.ecs.alb_dns_name
+    zone_id                = module.ecs.alb_zone_id
+    evaluate_target_health = true
+  }
 }
 
 # ------------------------------------------------------------------------------

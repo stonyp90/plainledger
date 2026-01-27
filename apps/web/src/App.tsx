@@ -15,6 +15,8 @@ import AnomalyDashboard from './pages/AnomalyDashboard';
 import CustomDashboard from './pages/CustomDashboard';
 import BoardMeeting from './pages/BoardMeeting';
 import StrategicPlanning from './pages/StrategicPlanning';
+import FinancialModel from './pages/FinancialModel';
+import MontageFinancier from './pages/MontageFinancier';
 import Store from './pages/Store';
 import Onboarding from './components/Onboarding';
 import EmailConfirmation from './pages/EmailConfirmation';
@@ -425,6 +427,26 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <StrategicPlanning />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/financial-model"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <FinancialModel />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/montage-financier"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <MontageFinancier />
             </AppLayout>
           </ProtectedRoute>
         }

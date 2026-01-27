@@ -19,7 +19,9 @@ export type QueryIntent =
   | 'forecast'
   | 'anomaly'
   | 'rank'
-  | 'filter';
+  | 'filter'
+  | 'hiring_analysis'
+  | 'runway_analysis';
 
 export type VisualizationType = 
   | 'bar_chart'
@@ -162,6 +164,24 @@ const QUERY_PATTERNS: Array<{
     intent: 'rank',
     visualization: 'bar_chart',
   },
+  {
+    patterns: [
+      /can.*afford.*hire|should.*hire|can.*embaucher|peut.*embaucher/i,
+      /hiring.*analysis|analyse.*embauche/i,
+      /afford.*employee|embaucher.*employé/i,
+    ],
+    intent: 'hiring_analysis',
+    visualization: 'kpi_card',
+  },
+  {
+    patterns: [
+      /runway|autonomie|how long.*cash|combien.*temps.*trésorerie/i,
+      /project.*runway|forecast.*runway|prévision.*autonomie/i,
+      /months.*cash|mois.*trésorerie/i,
+    ],
+    intent: 'runway_analysis',
+    visualization: 'gauge',
+  },
 ];
 
 const METRIC_KEYWORDS: Record<string, string[]> = {
@@ -294,6 +314,10 @@ export class QueryEngine {
         return this.executeRankQuery(parsedQuery);
       case 'anomaly':
         return this.executeAnomalyQuery(parsedQuery);
+      case 'hiring_analysis':
+        return this.executeHiringAnalysisQuery(parsedQuery);
+      case 'runway_analysis':
+        return this.executeRunwayAnalysisQuery(parsedQuery);
       default:
         return this.executeTotalQuery(parsedQuery);
     }
@@ -745,6 +769,115 @@ export class QueryEngine {
       { label: 'Average', value: this.formatCurrency(avg) },
       { label: 'High/Low', value: `${this.formatCurrency(max)} / ${this.formatCurrency(min)}` },
     ];
+  }
+
+  private executeHiringAnalysisQuery(query: ParsedQuery): QueryResult {
+    const summary = this.financialData!.summary;
+    const cash = summary.cash.current;
+    const monthlyExpenses = summary.expenses.current;
+    const monthlyRevenue = summary.revenue.current;
+    const burnRate = monthlyExpenses - monthlyRevenue;
+    const runwayMonths = burnRate > 0 ? cash / burnRate : Infinity;
+    
+    // Extract salary from query (default: $100K)
+    const salaryMatch = query.originalQuery.match(/\$?(\d+)[kK]|\$(\d{1,3}),?\d{3}/);
+    const annualSalary = salaryMatch 
+      ? (salaryMatch[1] ? parseInt(salaryMatch[1]) * 1000 : parseInt(salaryMatch[2].replace(/,/g, '')))
+      : 100000;
+    
+    const monthlySalaryCost = annualSalary / 12 * 1.3; // Include benefits/overhead (30%)
+    const newBurnRate = burnRate + monthlySalaryCost;
+    const newRunwayMonths = newBurnRate > 0 ? cash / newBurnRate : Infinity;
+    const runwayImpact = runwayMonths - newRunwayMonths;
+    
+    const canAfford = runwayMonths > 12 && runwayImpact < runwayMonths * 0.3; // Can afford if runway > 12mo and impact < 30%
+    
+    return {
+      success: true,
+      data: {
+        canAfford,
+        currentRunway: runwayMonths,
+        newRunway: newRunwayMonths,
+        runwayImpact,
+        monthlySalaryCost,
+        annualSalary,
+        recommendation: canAfford ? 'proceed' : 'caution',
+      },
+      visualization: {
+        type: 'kpi_card',
+        title: 'Analyse d\'embauche',
+        titleEn: 'Hiring Analysis',
+        config: {
+          value: canAfford ? 'Yes' : 'Caution',
+          change: runwayImpact,
+          format: 'text',
+        },
+      },
+      summary: {
+        text: canAfford
+          ? `Vous pouvez vous permettre d'embaucher. Impact sur le runway: ${runwayImpact.toFixed(1)} mois`
+          : `Attention: L'embauche réduirait le runway de ${runwayImpact.toFixed(1)} mois`,
+        textEn: canAfford
+          ? `You can afford to hire. Runway impact: ${runwayImpact.toFixed(1)} months`
+          : `Caution: Hiring would reduce runway by ${runwayImpact.toFixed(1)} months`,
+        highlights: [
+          { label: 'Current Runway', value: `${runwayMonths.toFixed(1)} months` },
+          { label: 'New Runway', value: `${newRunwayMonths.toFixed(1)} months` },
+          { label: 'Monthly Cost', value: this.formatCurrency(monthlySalaryCost) },
+        ],
+      },
+      suggestedFollowUps: [
+        'What if we hire a contractor instead?',
+        'Show runway with different salary levels',
+        'Compare hiring vs outsourcing',
+      ],
+    };
+  }
+
+  private executeRunwayAnalysisQuery(query: ParsedQuery): QueryResult {
+    const summary = this.financialData!.summary;
+    const cash = summary.cash.current;
+    const monthlyExpenses = summary.expenses.current;
+    const monthlyRevenue = summary.revenue.current;
+    const burnRate = monthlyExpenses - monthlyRevenue;
+    const runwayMonths = burnRate > 0 ? cash / burnRate : Infinity;
+    
+    // Project runway with different scenarios
+    const scenarios = [
+      { name: 'Current', burnRate, runway: runwayMonths },
+      { name: '10% Cost Reduction', burnRate: burnRate * 0.9, runway: burnRate * 0.9 > 0 ? cash / (burnRate * 0.9) : Infinity },
+      { name: '20% Cost Reduction', burnRate: burnRate * 0.8, runway: burnRate * 0.8 > 0 ? cash / (burnRate * 0.8) : Infinity },
+      { name: '10% Revenue Increase', burnRate: burnRate - (monthlyRevenue * 0.1), runway: (burnRate - monthlyRevenue * 0.1) > 0 ? cash / (burnRate - monthlyRevenue * 0.1) : Infinity },
+    ];
+    
+    return {
+      success: true,
+      data: scenarios,
+      visualization: {
+        type: 'gauge',
+        title: 'Analyse du runway',
+        titleEn: 'Runway Analysis',
+        config: {
+          value: runwayMonths,
+          max: Math.max(...scenarios.map(s => s.runway).filter(r => isFinite(r))),
+          format: 'months',
+        },
+      },
+      summary: {
+        text: `Runway actuel: ${runwayMonths.toFixed(1)} mois`,
+        textEn: `Current runway: ${runwayMonths.toFixed(1)} months`,
+        highlights: scenarios.slice(0, 3).map(s => ({
+          label: s.name,
+          value: `${s.runway.toFixed(1)} months`,
+          trend: s.runway > runwayMonths ? 'up' : 'neutral',
+        })),
+      },
+      suggestedFollowUps: [
+        'What actions extend runway the most?',
+        'Show runway with hiring scenarios',
+        'Compare runway to industry benchmarks',
+      ],
+    };
   }
 
   private createErrorResult(message: string): QueryResult {

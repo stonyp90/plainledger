@@ -21,6 +21,10 @@ import { Initiative } from './strategicPlanning';
 import { OKR, generateOKRId } from './okrTypes';
 import { generatePlanningId } from './strategicPlanning';
 import { jamesAnalytics } from './jamesAnalytics';
+import { classifyQuery, getModelTier, isLocalHandler, QueryHandler } from './queryRouter';
+import { pruneContext, buildPrunedContextString } from './contextPruner';
+import { enforceTokenBudget, getBudgetInfo } from './tokenBudget';
+import { validateAIResponse } from './responseGuardrails';
 
 export interface ChatMessage {
   id: string;
@@ -193,13 +197,27 @@ class JamesAIService {
   }
 
   /**
-   * Execute send with retry logic
+   * Execute send with retry logic and query optimization
    */
   private async executeSend(
     userMessage: string,
     context: FinancialContext,
     options?: { stream?: boolean; type?: 'strategy' | 'initiative' | 'okr' | 'general' }
   ): Promise<ChatResponse> {
+    const startTime = Date.now();
+    
+    // Classify query to determine handler
+    const classification = classifyQuery(userMessage);
+    const handler: QueryHandler = classification.handler;
+    const intent = classification.intent;
+    
+    // Check if query can be handled locally (no LLM needed)
+    if (isLocalHandler(handler)) {
+      // For now, we'll still send to LLM but with optimized context
+      // TODO: Implement local handlers in future iteration
+      console.log(`[QueryRouter] Query classified as ${handler}, but local handlers not yet implemented`);
+    }
+    
     // Add user message to history
     this.addMessage({
       role: 'user',
@@ -220,12 +238,15 @@ class JamesAIService {
 
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
-        // Build prompt based on type
-        let prompt: string;
+        // Prune context based on query intent
         const history = this.conversationHistory.slice(0, -1); // Exclude the message we just added
+        const prunedContext = pruneContext(userMessage, context, history, intent);
+        
+        // Build prompt based on type with pruned context
+        let prompt: string;
         
         if (options?.type === 'strategy') {
-          prompt = buildStrategyPrompt(userMessage, context, history);
+          prompt = buildStrategyPrompt(userMessage, context, history, intent);
         } else if (options?.type === 'initiative') {
           const strategy = history.find(m => m.metadata?.type === 'strategy')?.content || userMessage;
           prompt = buildInitiativeGenerationPrompt(strategy, context);
@@ -235,7 +256,16 @@ class JamesAIService {
           const year = this.extractYear(userMessage) || new Date().getFullYear();
           prompt = buildOKRGenerationPrompt(userMessage, initiatives, quarter, year);
         } else {
-          prompt = buildConversationPrompt(userMessage, context, history);
+          prompt = buildConversationPrompt(userMessage, context, history, intent);
+        }
+        
+        // Enforce token budget
+        const budgetInfo = getBudgetInfo(handler);
+        const budgeted = enforceTokenBudget(prompt, handler, budgetInfo.maxTokens);
+        prompt = budgeted.prunedPrompt;
+        
+        if (budgeted.wasPruned) {
+          console.log(`[TokenBudget] Pruned prompt from ${budgeted.originalTokens} to ${budgeted.prunedTokens} tokens`);
         }
 
         // Call API with timeout
@@ -244,6 +274,9 @@ class JamesAIService {
         }, this.REQUEST_TIMEOUT);
 
         try {
+          // Determine model tier based on handler
+          const modelTier = isLocalHandler(handler) ? 'lite' : getModelTier(handler);
+          
           const response = await apiClient.post<{
             success: boolean;
             message: string;
@@ -260,6 +293,7 @@ class JamesAIService {
             stream: false,
             temperature: 0.7,
             maxTokens: 2000,
+            modelTier, // Pass model tier to backend
           }, {
             signal: abortController.signal,
           } as any);
@@ -271,7 +305,34 @@ class JamesAIService {
             throw new Error(response.data.error || response.data.message || 'Request failed');
           }
 
-          const assistantMessage = response.data.message || '';
+          let assistantMessage = response.data.message || '';
+          
+          // Validate response with guardrails
+          const validation = validateAIResponse(assistantMessage, context);
+          
+          if (!validation.isValid) {
+            console.warn(
+              `Response validation failed: ${validation.issues.join('; ')}. ` +
+              `Confidence: ${validation.confidence}%`
+            );
+            
+            // Use sanitized message if available, otherwise add error
+            if (validation.sanitizedMessage) {
+              assistantMessage = validation.sanitizedMessage;
+            } else {
+              assistantMessage = 
+                `⚠️ I apologize, but I couldn't verify the accuracy of my response. ` +
+                `Please double-check all numbers against your financial data. ` +
+                `Original response: ${assistantMessage}`;
+            }
+          } else if (validation.sanitizedMessage) {
+            assistantMessage = validation.sanitizedMessage;
+          }
+          
+          // Log validation warnings
+          if (validation.warnings.length > 0) {
+            console.warn('Response validation warnings:', validation.warnings);
+          }
           
           // Parse structured data if present
           let initiatives: Initiative[] | undefined;

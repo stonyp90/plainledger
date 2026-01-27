@@ -351,7 +351,7 @@ export default function AnomalyDashboard() {
                   }}
                 >
                   <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                  <span className="hidden xs:inline">{isEn ? 'AI-Powered' : 'IA'}</span>
+                  <span className="hidden xs:inline">{isEn ? 'Our AI' : 'Notre IA'}</span>
                 </span>
               )}
               <InfoTooltip

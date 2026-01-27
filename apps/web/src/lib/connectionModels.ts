@@ -493,7 +493,7 @@ export function createDemoConnection(
     }],
     stats: {
       accountsCount: 45,
-      transactionsCount: 1847,
+      transactionsCount: 847,
       lastTransactionDate: now,
       oldestTransactionDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
       dataSize: 2500000, // ~2.5 MB

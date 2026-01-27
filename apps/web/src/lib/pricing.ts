@@ -1,55 +1,45 @@
 /**
  * PlainLedger Pricing Engine
  * 
- * Usage-Based Pricing with Canadian Market Positioning
- * ==================================================
+ * Enterprise-Focused Pricing for Mid-Market Canadian Businesses
+ * =============================================================
  * 
- * MARKET ANALYSIS - CANADIAN ACCOUNTING SOFTWARE LANDSCAPE (2026)
+ * TARGET MARKET: Canadian enterprises with $2M-$20M+ annual revenue
  * 
- * Key Competitors:
- * ┌────────────────────┬──────────────┬───────────────┬─────────────────────────────┐
- * │ Competitor         │ Starting     │ Per User      │ Target Market              │
- * ├────────────────────┼──────────────┼───────────────┼─────────────────────────────┤
- * │ QuickBooks Online  │ $22/mo CAD   │ +$11/user     │ SMB, Self-employed         │
- * │ Xero               │ $20/mo CAD   │ +$5/user      │ SMB, Growing businesses    │
- * │ Sage Business Cloud│ $35/mo CAD   │ +$15/user     │ SMB to Mid-market          │
- * │ FreshBooks         │ $22/mo CAD   │ +$12/user     │ Freelancers, Small teams   │
- * │ Wave               │ Free         │ N/A           │ Micro businesses           │
- * │ Dext               │ $25/mo CAD   │ N/A           │ Receipt capture            │
- * │ Fathom Analytics   │ $59/mo USD   │ Flat          │ Financial reporting        │
- * │ Spotlight          │ $45/mo USD   │ Flat          │ Forecasting                │
- * │ Float              │ $59/mo USD   │ Flat          │ Cash flow                  │
- * └────────────────────┴──────────────┴───────────────┴─────────────────────────────┘
+ * Key Differentiators:
+ * - Dedicated CPA support included in all plans
+ * - Enterprise-grade anomaly detection & AI insights
+ * - Multi-entity consolidation capabilities
+ * - Bank-level security with Canadian data residency
+ * - White-glove onboarding and ongoing support
  * 
- * CANADIAN MARKET SPECIFICS:
- * - 98% of businesses are SMBs (< 100 employees)
- * - Bilingual support (English & French)
- * - High CPA/accountant involvement in software decisions
- * - Price sensitivity in the $50-200/mo range
- * - GST/HST/PST compliance requirements across provinces
- * - Federal and provincial tax credits for digital transformation
+ * COMPETITIVE POSITIONING:
+ * ┌────────────────────┬──────────────┬─────────────────────────────────────────┐
+ * │ Competitor         │ Price Range  │ PlainLedger Advantage                   │
+ * ├────────────────────┼──────────────┼─────────────────────────────────────────┤
+ * │ Fathom Analytics   │ $59-299/mo   │ Dedicated CPA, AI anomaly detection     │
+ * │ Jirav              │ $500-2000/mo │ Canadian-first, simpler setup           │
+ * │ Vena Solutions     │ $1000+/mo    │ Faster time-to-value, lower complexity  │
+ * │ Planful            │ $2000+/mo    │ Mid-market focus, better pricing        │
+ * └────────────────────┴──────────────┴─────────────────────────────────────────┘
  * 
- * PLAINLEDGER POSITIONING:
- * "Financial Intelligence for Canadian Businesses"
- * - Not a replacement for accounting software (QuickBooks, Sage)
- * - A complementary analysis & reporting layer
- * - AI-powered anomaly detection (unique differentiator)
- * - Accountant-focused collaboration features
- * - Canada-first: Bilingual interface, GST/HST/PST compliance, local support
+ * PRICING TIERS (Revenue-Based):
+ * - Essentiel:     $500/mo  - Businesses $2M-$5M revenue
+ * - Professionnel: $1,200/mo - Businesses $5M-$10M revenue
+ * - Premium:       $2,500/mo - Businesses $10M-$20M revenue
+ * - Enterprise:    Custom    - Large organizations $20M+
  * 
- * PRICING STRATEGY:
- * - Base tier includes X users, charge per additional user
- * - Usage-based add-ons for high-volume features
- * - Enterprise volume discounts
- * - Annual prepay discount (20%)
- * - CPA partner program pricing
+ * VALUE PROPOSITION:
+ * - ROI: Avg. $50K+ in anomalies caught per year
+ * - Time savings: 40+ hours/month on financial reporting
+ * - CPA support: Dedicated accountant guidance included
  */
 
 // =====================================================
 // TYPES
 // =====================================================
 
-export type PricingTier = 'free' | 'starter' | 'professional' | 'enterprise';
+export type PricingTier = 'starter' | 'professional' | 'business' | 'enterprise';
 export type BillingInterval = 'monthly' | 'yearly';
 export type Currency = 'CAD' | 'USD';
 
@@ -155,7 +145,7 @@ const USAGE_FEATURES: Record<string, UsageBasedFeature> = {
   },
   aiQueries: {
     id: 'aiQueries',
-    name: 'AI Assistant Queries',
+    name: 'James Assistant Queries',
     nameFr: 'Requêtes assistant IA',
     description: 'Natural language financial queries',
     descriptionFr: 'Requêtes financières en langage naturel',
@@ -197,102 +187,61 @@ const USAGE_FEATURES: Record<string, UsageBasedFeature> = {
 
 export const PRICING_TIERS: PricingTierConfig[] = [
   {
-    id: 'plan_free',
-    tier: 'free',
-    name: 'Free',
-    nameFr: 'Gratuit',
-    tagline: 'Get started with financial insights',
-    taglineFr: 'Commencez avec des insights financiers',
-    description: 'Perfect for trying out PlainLedger',
-    descriptionFr: 'Parfait pour essayer PlainLedger',
-    
-    basePrice: 0,
-    yearlyDiscount: 0,
-    currency: 'CAD',
-    
-    userPricing: {
-      includedUsers: 1,
-      additionalUserPrice: 0,
-      maxUsers: 1,
-    },
-    
-    usageFeatures: [
-      { ...USAGE_FEATURES.reports, includedQuantity: 10 },
-      { ...USAGE_FEATURES.aiQueries, includedQuantity: 25 },
-      { ...USAGE_FEATURES.connections, includedQuantity: 1 },
-      { ...USAGE_FEATURES.storage, includedQuantity: 1 }, // 1GB
-    ],
-    
-    features: [
-      { id: 'dashboard', name: 'Full dashboard', nameFr: 'Tableau de bord complet', included: true },
-      { id: 'reports', name: '10 reports/month', nameFr: '10 rapports/mois', included: true },
-      { id: 'connection', name: '1 data connection', nameFr: '1 connexion de données', included: true },
-      { id: 'ai_queries', name: '25 AI queries/mo', nameFr: '25 requêtes IA/mois', included: true },
-      { id: 'export', name: 'Export (PDF)', nameFr: 'Export (PDF)', included: true },
-      { id: 'email_support', name: 'Email support', nameFr: 'Support par courriel', included: true },
-      { id: 'team', name: 'Team collaboration', nameFr: 'Collaboration d\'équipe', included: false },
-      { id: 'alerts', name: 'Slack & Teams alerts', nameFr: 'Alertes Slack & Teams', included: false },
-    ],
-    
-    ctaText: 'Get started free',
-    ctaTextFr: 'Commencer gratuitement',
-  },
-  {
-    id: 'plan_starter',
+    id: 'plan_essentiel',
     tier: 'starter',
-    name: 'Solo',
-    nameFr: 'Solo',
-    tagline: 'For freelancers and solopreneurs',
-    taglineFr: 'Pour les travailleurs autonomes',
-    description: 'Everything you need to manage your finances',
-    descriptionFr: 'Tout ce dont vous avez besoin pour gérer vos finances',
+    name: 'Essentiel',
+    nameFr: 'Essentiel',
+    tagline: 'For growing businesses',
+    taglineFr: 'Pour entreprises en croissance',
+    description: 'Core financial intelligence with CPA support',
+    descriptionFr: 'Intelligence financière essentielle avec support CPA',
     
-    basePrice: 29,
+    basePrice: 0, // Contact for quote
     yearlyDiscount: 20,
     currency: 'CAD',
     
     userPricing: {
-      includedUsers: 1,
+      includedUsers: 3,
       additionalUserPrice: 0,
-      maxUsers: 1,
+      maxUsers: 10,
     },
     
     usageFeatures: [
-      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 }, // Unlimited
-      { ...USAGE_FEATURES.aiQueries, includedQuantity: 100, pricePerUnit: 0.05 },
-      { ...USAGE_FEATURES.connections, includedQuantity: 2, pricePerUnit: 10 },
-      { ...USAGE_FEATURES.storage, includedQuantity: 5 }, // 5GB
+      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.aiQueries, includedQuantity: 500, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.connections, includedQuantity: 3, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.storage, includedQuantity: 25 },
     ],
     
     features: [
-      { id: 'dashboard', name: 'Full dashboard', nameFr: 'Tableau de bord complet', included: true },
-      { id: 'reports', name: 'Unlimited reports', nameFr: 'Rapports illimités', included: true },
-      { id: 'connections', name: '2 data connections', nameFr: '2 connexions de données', included: true },
-      { id: 'anomaly_basic', name: 'Anomaly detection', nameFr: 'Détection d\'anomalies', included: true },
+      { id: 'dashboard', name: 'Executive dashboard', nameFr: 'Tableau de bord exécutif', included: true },
+      { id: 'anomaly', name: 'Anomaly detection', nameFr: 'Détection d\'anomalies', included: true },
+      { id: 'reports', name: 'Monthly reports', nameFr: 'Rapports mensuels', included: true },
+      { id: 'cpa_support', name: 'CPA email support', nameFr: 'Support CPA par courriel', included: true },
+      { id: 'connections', name: '3 data connections', nameFr: '3 connexions de données', included: true },
       { id: 'export', name: 'Export (PDF/Excel)', nameFr: 'Export (PDF/Excel)', included: true },
-      { id: 'email_support', name: 'Email support', nameFr: 'Support par courriel', included: true },
-      { id: 'ai_queries', name: '100 AI queries/mo', nameFr: '100 requêtes IA/mois', included: true },
-      { id: 'team', name: 'Team collaboration', nameFr: 'Collaboration d\'équipe', included: false },
+      { id: 'team', name: 'Up to 3 users', nameFr: 'Jusqu\'à 3 utilisateurs', included: true },
+      { id: 'alerts', name: 'Email alerts', nameFr: 'Alertes par courriel', included: true },
     ],
     
-    stripePriceId: 'price_solo_monthly',
-    stripeYearlyPriceId: 'price_solo_yearly',
-    stripeUserPriceId: '',
+    stripePriceId: 'price_essentiel_monthly',
+    stripeYearlyPriceId: 'price_essentiel_yearly',
+    stripeUserPriceId: 'price_essentiel_user',
     
-    ctaText: 'Start 14-day free trial',
-    ctaTextFr: 'Essai gratuit de 14 jours',
+    ctaText: 'Get a quote',
+    ctaTextFr: 'Demander une soumission',
   },
   {
-    id: 'plan_professional',
+    id: 'plan_professionnel',
     tier: 'professional',
-    name: 'Team',
-    nameFr: 'Équipe',
-    tagline: 'For small businesses and teams',
-    taglineFr: 'Pour les PME et équipes',
-    description: 'Collaborate with your team on financial insights',
-    descriptionFr: 'Collaborez avec votre équipe sur les insights financiers',
+    name: 'Professionnel',
+    nameFr: 'Professionnel',
+    tagline: 'For mid-market companies',
+    taglineFr: 'Pour entreprises de taille moyenne',
+    description: 'Advanced analytics with priority CPA support',
+    descriptionFr: 'Analytique avancée avec support CPA prioritaire',
     
-    basePrice: 79,
+    basePrice: 0, // Contact for quote
     yearlyDiscount: 20,
     currency: 'CAD',
     popular: true,
@@ -302,78 +251,78 @@ export const PRICING_TIERS: PricingTierConfig[] = [
     userPricing: {
       includedUsers: 5,
       additionalUserPrice: 0,
-      maxUsers: 5,
+      maxUsers: 25,
     },
     
     usageFeatures: [
-      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 }, // Unlimited
-      { ...USAGE_FEATURES.aiQueries, includedQuantity: 500, pricePerUnit: 0.04 },
-      { ...USAGE_FEATURES.connections, includedQuantity: 5, pricePerUnit: 8 },
-      { ...USAGE_FEATURES.storage, includedQuantity: 25 }, // 25GB
+      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.aiQueries, includedQuantity: 2000, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.connections, includedQuantity: 10, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.storage, includedQuantity: 100 },
     ],
     
     features: [
-      { id: 'everything_solo', name: 'Everything in Solo', nameFr: 'Tout de Solo', included: true },
-      { id: 'team', name: 'Up to 5 team members', nameFr: 'Jusqu\'à 5 membres', included: true },
-      { id: 'connections', name: '5 data connections', nameFr: '5 connexions de données', included: true },
-      { id: 'ai_advanced', name: 'Advanced AI insights', nameFr: 'Insights IA avancés', included: true },
-      { id: 'ai_queries', name: '500 AI queries/mo', nameFr: '500 requêtes IA/mois', included: true },
-      { id: 'alerts', name: 'Slack & Teams alerts', nameFr: 'Alertes Slack & Teams', included: true },
-      { id: 'priority_support', name: 'Priority support', nameFr: 'Support prioritaire', included: true },
+      { id: 'everything_essentiel', name: 'Everything in Essentiel', nameFr: 'Tout d\'Essentiel', included: true },
+      { id: 'weekly_reviews', name: 'Weekly reviews', nameFr: 'Revues hebdomadaires', included: true },
+      { id: 'priority_cpa', name: 'Priority CPA (48h)', nameFr: 'CPA prioritaire (48h)', included: true },
+      { id: 'advanced_ai', name: 'Advanced AI insights', nameFr: 'Insights IA avancés', included: true },
+      { id: 'forecasting', name: 'Cash flow forecasting', nameFr: 'Prévisions de trésorerie', included: true },
+      { id: 'budget', name: 'Budget vs Actual', nameFr: 'Budget vs Réel', included: true },
       { id: 'api', name: 'API access', nameFr: 'Accès API', included: true },
+      { id: 'alerts', name: 'Slack & Teams alerts', nameFr: 'Alertes Slack & Teams', included: true },
     ],
     
-    stripePriceId: 'price_team_monthly',
-    stripeYearlyPriceId: 'price_team_yearly',
-    stripeUserPriceId: '',
+    stripePriceId: 'price_professionnel_monthly',
+    stripeYearlyPriceId: 'price_professionnel_yearly',
+    stripeUserPriceId: 'price_professionnel_user',
     
-    ctaText: 'Start 14-day free trial',
-    ctaTextFr: 'Essai gratuit de 14 jours',
+    ctaText: 'Get a quote',
+    ctaTextFr: 'Demander une soumission',
   },
   {
-    id: 'plan_business',
+    id: 'plan_premium',
     tier: 'business',
-    name: 'Business',
-    nameFr: 'Business',
-    tagline: 'For growing companies',
-    taglineFr: 'Pour les entreprises en croissance',
-    description: 'Advanced features for scaling businesses',
-    descriptionFr: 'Fonctionnalités avancées pour les entreprises en croissance',
+    name: 'Premium',
+    nameFr: 'Premium',
+    tagline: 'For established enterprises',
+    taglineFr: 'Pour entreprises établies',
+    description: 'Full-service with dedicated CPA',
+    descriptionFr: 'Service complet avec CPA dédié',
     
-    basePrice: 149,
+    basePrice: 0, // Contact for quote
     yearlyDiscount: 20,
     currency: 'CAD',
     
     userPricing: {
-      includedUsers: 15,
+      includedUsers: 10,
       additionalUserPrice: 0,
-      maxUsers: 15,
+      maxUsers: 50,
     },
     
     usageFeatures: [
-      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 }, // Unlimited
-      { ...USAGE_FEATURES.aiQueries, includedQuantity: 2000, pricePerUnit: 0.03 },
-      { ...USAGE_FEATURES.connections, includedQuantity: -1, pricePerUnit: 0 }, // Unlimited
-      { ...USAGE_FEATURES.storage, includedQuantity: 100 }, // 100GB
+      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.aiQueries, includedQuantity: -1, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.connections, includedQuantity: -1, pricePerUnit: 0 },
+      { ...USAGE_FEATURES.storage, includedQuantity: 500 },
     ],
     
     features: [
-      { id: 'everything_team', name: 'Everything in Team', nameFr: 'Tout de Équipe', included: true },
-      { id: 'team', name: 'Up to 15 team members', nameFr: 'Jusqu\'à 15 membres', included: true },
-      { id: 'connections', name: 'Unlimited connections', nameFr: 'Connexions illimitées', included: true },
-      { id: 'ai_queries', name: '2,000 AI queries/mo', nameFr: '2 000 requêtes IA/mois', included: true },
+      { id: 'everything_pro', name: 'Everything in Professionnel', nameFr: 'Tout de Professionnel', included: true },
+      { id: 'dedicated_cpa', name: 'Dedicated CPA', nameFr: 'CPA dédié', included: true },
+      { id: 'same_day', name: 'Same-day response', nameFr: 'Réponse le jour même', included: true },
+      { id: 'multi_entity', name: 'Multi-entity consolidation', nameFr: 'Consolidation multi-entités', included: true },
       { id: 'custom_branding', name: 'Custom branding', nameFr: 'Marque personnalisée', included: true },
-      { id: 'budget', name: 'Budget vs Actual', nameFr: 'Budget vs Réel', included: true },
-      { id: 'forecasting', name: 'Cash flow forecasting', nameFr: 'Prévisions de trésorerie', included: true },
-      { id: 'audit', name: 'Audit logs', nameFr: 'Journaux d\'audit', included: true },
+      { id: 'board_reports', name: 'Board-ready reports', nameFr: 'Rapports pour CA', included: true },
+      { id: 'quarterly_review', name: 'Quarterly business review', nameFr: 'Revue trimestrielle', included: true },
+      { id: 'audit', name: 'Advanced audit logs', nameFr: 'Journaux d\'audit avancés', included: true },
     ],
     
-    stripePriceId: 'price_business_monthly',
-    stripeYearlyPriceId: 'price_business_yearly',
-    stripeUserPriceId: '',
+    stripePriceId: 'price_premium_monthly',
+    stripeYearlyPriceId: 'price_premium_yearly',
+    stripeUserPriceId: 'price_premium_user',
     
-    ctaText: 'Start 14-day free trial',
-    ctaTextFr: 'Essai gratuit de 14 jours',
+    ctaText: 'Get a quote',
+    ctaTextFr: 'Demander une soumission',
   },
   {
     id: 'plan_enterprise',
@@ -381,42 +330,40 @@ export const PRICING_TIERS: PricingTierConfig[] = [
     name: 'Enterprise',
     nameFr: 'Entreprise',
     tagline: 'For large organizations',
-    taglineFr: 'Pour les grandes organisations',
-    description: 'Custom solutions with dedicated support',
-    descriptionFr: 'Solutions sur mesure avec support dédié',
+    taglineFr: 'Pour grandes organisations',
+    description: 'White-glove service with dedicated support',
+    descriptionFr: 'Service personnalisé avec support dédié',
     
-    basePrice: 0, // Custom pricing
+    basePrice: 0, // Contact for quote
     yearlyDiscount: 25,
     currency: 'CAD',
-    badge: 'Custom',
-    badgeFr: 'Sur mesure',
     
     userPricing: {
-      includedUsers: -1, // Unlimited
+      includedUsers: -1,
       additionalUserPrice: 0,
-      maxUsers: -1, // Unlimited
+      maxUsers: -1,
     },
     
     usageFeatures: [
-      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 }, // Unlimited
+      { ...USAGE_FEATURES.reports, includedQuantity: -1, pricePerUnit: 0 },
       { ...USAGE_FEATURES.aiQueries, includedQuantity: -1, pricePerUnit: 0 },
       { ...USAGE_FEATURES.connections, includedQuantity: -1, pricePerUnit: 0 },
       { ...USAGE_FEATURES.storage, includedQuantity: -1, pricePerUnit: 0 },
     ],
     
     features: [
-      { id: 'everything_business', name: 'Everything in Business', nameFr: 'Tout de Business', included: true },
-      { id: 'team', name: 'Unlimited team members', nameFr: 'Membres illimités', included: true },
-      { id: 'ai_queries', name: 'Unlimited AI queries', nameFr: 'Requêtes IA illimitées', included: true },
+      { id: 'everything_premium', name: 'Everything in Premium', nameFr: 'Tout de Premium', included: true },
+      { id: 'unlimited_users', name: 'Unlimited team members', nameFr: 'Utilisateurs illimités', included: true },
+      { id: 'unlimited_ai', name: 'Unlimited AI queries', nameFr: 'Requêtes IA illimitées', included: true },
       { id: 'sso', name: 'SSO (SAML/OIDC)', nameFr: 'SSO (SAML/OIDC)', included: true },
       { id: 'sla', name: '99.9% SLA', nameFr: 'SLA 99.9%', included: true },
-      { id: 'dedicated_support', name: 'Dedicated account manager', nameFr: 'Gestionnaire de compte dédié', included: true },
+      { id: 'dedicated_manager', name: 'Dedicated account manager', nameFr: 'Gestionnaire de compte dédié', included: true },
       { id: 'onboarding', name: 'Custom onboarding', nameFr: 'Intégration personnalisée', included: true },
-      { id: 'multi_entity', name: 'Multi-entity consolidation', nameFr: 'Consolidation multi-entités', included: true },
+      { id: 'training', name: 'On-site training', nameFr: 'Formation sur site', included: true },
     ],
     
-    ctaText: 'Contact sales',
-    ctaTextFr: 'Contacter les ventes',
+    ctaText: 'Get a quote',
+    ctaTextFr: 'Demander une soumission',
   },
 ];
 
@@ -744,7 +691,7 @@ export const CANADA_MARKET_MESSAGING = {
     {
       vs: 'Excel/Spreadsheets',
       advantage: {
-        en: 'Real-time sync, AI anomaly detection, no manual data entry',
+        en: 'Real-time sync, intelligent anomaly detection, no manual data entry',
         fr: 'Synchronisation en temps réel, détection IA, aucune saisie manuelle',
       },
     },

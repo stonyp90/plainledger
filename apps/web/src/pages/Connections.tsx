@@ -1006,7 +1006,7 @@ export default function Connections() {
     if (selectedProvider) {
       setProviderList(prev => prev.map(p => 
         p.id === selectedProvider.id 
-          ? { ...p, status: 'connected', lastSync: isEn ? 'Just now' : 'À l\'instant', accountsCount: 24, transactionsCount: 1847 }
+          ? { ...p, status: 'connected', lastSync: isEn ? 'Just now' : 'À l\'instant', accountsCount: 24, transactionsCount: 847 }
           : p
       ));
     }

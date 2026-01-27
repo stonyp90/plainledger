@@ -6,9 +6,18 @@ import Keycloak from 'keycloak-js';
 const MOCK_AUTH_ENABLED = import.meta.env.VITE_MOCK_AUTH === 'true' || 
   (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false');
 
+// Check if Keycloak URL is properly configured (not localhost in production)
+const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || '';
+const isKeycloakConfigured = keycloakUrl && 
+  !keycloakUrl.includes('localhost') && 
+  !keycloakUrl.includes('127.0.0.1');
+
+// If Keycloak is not configured in production, fall back to mock auth to prevent hanging
+const KEYCLOAK_AVAILABLE = MOCK_AUTH_ENABLED || isKeycloakConfigured || import.meta.env.DEV;
+
 // Keycloak configuration
 const keycloakConfig = {
-  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080',
+  url: keycloakUrl || 'http://localhost:8080',
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'plainledger',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web',
 };
@@ -133,6 +142,15 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
       return;
     }
 
+    // If Keycloak is not properly configured, use guest mode
+    if (!KEYCLOAK_AVAILABLE) {
+      console.warn('⚠️ Keycloak not configured - running in guest mode. Set VITE_KEYCLOAK_URL for authentication.');
+      setAuthenticated(false);
+      setUser(null);
+      setInitialized(true);
+      return;
+    }
+
     const initKeycloak = async () => {
       try {
         // Check if already initialized
@@ -147,12 +165,21 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
           return;
         }
 
+        // Set a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.warn('⚠️ Keycloak initialization timed out - running in guest mode');
+          setAuthenticated(false);
+          setUser(null);
+          setInitialized(true);
+        }, 10000); // 10 second timeout
+
         const auth = await keycloak.init({
           onLoad: 'check-sso',
           silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
           pkceMethod: 'S256',
         });
 
+        clearTimeout(timeoutId);
         setAuthenticated(auth);
         setInitialized(true);
 
@@ -170,6 +197,9 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         };
       } catch (error) {
         console.error('Keycloak initialization failed:', error);
+        // Don't hang - just run without authentication
+        setAuthenticated(false);
+        setUser(null);
         setInitialized(true);
       }
     };
@@ -183,6 +213,13 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     if (MOCK_AUTH_ENABLED) {
       setAuthenticated(true);
       setUser(MOCK_USER);
+      return;
+    }
+
+    // If Keycloak is not available, show a message
+    if (!KEYCLOAK_AVAILABLE) {
+      console.warn('Keycloak not configured - login unavailable');
+      alert('Authentication is not configured. Please contact support.');
       return;
     }
     
@@ -200,11 +237,21 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
   // Register (signup) - redirects to Keycloak registration page
   const register = (redirectUri?: string) => {
-    // Mock auth mode - just set authenticated
+    console.log('[Auth] register() called, MOCK_AUTH_ENABLED:', MOCK_AUTH_ENABLED);
+    // Mock auth mode - just set authenticated and navigate
     if (MOCK_AUTH_ENABLED) {
+      console.log('[Auth] Mock mode - navigating to onboarding');
       setAuthenticated(true);
       setUser(MOCK_USER);
-      window.location.href = '/onboarding';
+      // Use assign for more reliable navigation
+      window.location.assign(redirectUri || '/onboarding');
+      return;
+    }
+
+    // If Keycloak is not available, show a message
+    if (!KEYCLOAK_AVAILABLE) {
+      console.warn('Keycloak not configured - registration unavailable');
+      alert('Registration is not available at this time. Please contact support.');
       return;
     }
     
@@ -330,8 +377,8 @@ export function useKeycloak(): KeycloakContextType {
 }
 
 export function useAuth() {
-  const { authenticated, user, login, logout } = useKeycloak();
-  return { authenticated, user, login, logout };
+  const { authenticated, user, login, logout, register } = useKeycloak();
+  return { authenticated, user, login, logout, register };
 }
 
 export function useAuthenticatedFetch() {

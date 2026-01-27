@@ -20,7 +20,7 @@ import {
 const integrations = ['QuickBooks', 'Xero', 'Sage', 'FreshBooks', 'Wave'];
 
 export default function Landing() {
-  const { login, authenticated } = useAuth();
+  const { login, register, authenticated } = useAuth();
   const { language } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -42,12 +42,22 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 group">
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white"
-                style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                  boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
+                }}
               >
-                PL
+                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                  <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
               <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
                 PlainLedger
@@ -224,10 +234,19 @@ export default function Landing() {
           }}
         >
           <div 
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold"
-            style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ 
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
+            }}
           >
-            PL
+            <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+              <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+              <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
           <div>
             <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
@@ -281,10 +300,20 @@ export default function Landing() {
               <div className="w-px h-8" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
             </div>
             <div 
-              className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-white font-bold text-xl"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+              className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 4px 16px rgb(var(--color-primary-500) / 0.3)'
+              }}
             >
-              PL
+              <svg className="w-10 h-10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <p className="text-sm mt-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn ? 'All your data, one platform' : 'Toutes vos données, une plateforme'}
@@ -380,15 +409,15 @@ export default function Landing() {
             className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6"
             style={{ color: 'rgb(var(--color-text))' }}
           >
-            {isEn ? 'Simple pricing. No surprises.' : 'Tarification simple. Sans surprises.'}
+            {isEn ? 'Plans for every stage of growth' : 'Des plans pour chaque étape de croissance'}
           </h2>
           <p 
             className="text-lg mb-12 max-w-2xl mx-auto"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
             {isEn 
-              ? 'Start with our Essentiel plan. Upgrade as you grow.'
-              : 'Commencez avec notre plan Essentiel. Évoluez selon vos besoins.'}
+              ? 'Get a personalized quote based on your business needs.'
+              : 'Obtenez une soumission personnalisée selon vos besoins.'}
           </p>
 
           {/* Pricing Cards */}
@@ -396,27 +425,24 @@ export default function Landing() {
             {[
               {
                 name: 'Essentiel',
-                price: '$500',
-                descEn: 'For small businesses',
-                descFr: 'Pour petites entreprises',
+                descEn: 'For growing businesses',
+                descFr: 'Pour entreprises en croissance',
                 featuresEn: ['Anomaly detection', 'Monthly reports', 'CPA email support'],
                 featuresFr: ['Détection d\'anomalies', 'Rapports mensuels', 'Support CPA par courriel'],
                 highlighted: false,
               },
               {
                 name: 'Professionnel',
-                price: '$1,200',
-                descEn: 'For growing businesses',
-                descFr: 'Pour entreprises en croissance',
+                descEn: 'For mid-market companies',
+                descFr: 'Pour entreprises de taille moyenne',
                 featuresEn: ['Everything in Essentiel', 'Weekly reviews', 'Priority CPA (48h)'],
                 featuresFr: ['Tout de Essentiel', 'Revues hebdomadaires', 'CPA prioritaire (48h)'],
                 highlighted: true,
               },
               {
                 name: 'Premium',
-                price: '$2,500',
-                descEn: 'Full-service support',
-                descFr: 'Support complet',
+                descEn: 'For established enterprises',
+                descFr: 'Pour entreprises établies',
                 featuresEn: ['Everything in Pro', 'Dedicated CPA', 'Same-day response'],
                 featuresFr: ['Tout de Pro', 'CPA dédié', 'Réponse le jour même'],
                 highlighted: false,
@@ -429,14 +455,11 @@ export default function Landing() {
                   backgroundColor: 'rgb(var(--color-surface))',
                 }}
               >
-                <h3 className="font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                <h3 className="font-semibold text-lg mb-1" style={{ color: 'rgb(var(--color-text))' }}>
                   {tier.name}
                 </h3>
                 <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   {isEn ? tier.descEn : tier.descFr}
-                </p>
-                <p className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-                  {tier.price}<span className="text-sm font-normal" style={{ color: 'rgb(var(--color-text-muted))' }}>/mo</span>
                 </p>
                 <ul className="space-y-2 mb-6">
                   {(isEn ? tier.featuresEn : tier.featuresFr).map((feature) => (
@@ -447,7 +470,7 @@ export default function Landing() {
                   ))}
                 </ul>
                 <button 
-                  onClick={() => login()}
+                  onClick={() => window.open('https://calendly.com/anthonypaquet1508/15min', '_blank')}
                   className={`w-full py-2.5 rounded-full text-sm font-medium transition-all ${
                     tier.highlighted ? '' : 'border'
                   }`}
@@ -457,7 +480,7 @@ export default function Landing() {
                     borderColor: tier.highlighted ? undefined : 'rgb(var(--color-border))',
                   }}
                 >
-                  {isEn ? 'Get Started' : 'Commencer'}
+                  {isEn ? 'Get a quote' : 'Demander une soumission'}
                 </button>
               </div>
             ))}
@@ -555,7 +578,7 @@ export default function Landing() {
               : 'Rejoignez les comptables qui économisent des heures chaque semaine.'}
           </p>
           <button 
-            onClick={() => login()}
+            onClick={() => register()}
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full font-medium text-lg transition-all hover:scale-105"
             style={{ 
               backgroundColor: 'rgb(var(--color-text))',
@@ -579,10 +602,18 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div 
-              className="w-6 h-6 rounded flex items-center justify-center"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
+              className="w-6 h-6 rounded-md flex items-center justify-center"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
+              }}
             >
-              <span className="text-xs font-bold">PL</span>
+              <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
           </div>

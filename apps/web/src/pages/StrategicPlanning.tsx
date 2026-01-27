@@ -405,7 +405,7 @@ export default function StrategicPlanning() {
               }}
             >
               <MessageSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">{isEn ? 'AI Assistant' : 'Assistant IA'}</span>
+              <span className="hidden sm:inline">{isEn ? 'James' : 'James'}</span>
             </button>
           </div>
         </div>

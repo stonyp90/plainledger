@@ -60,7 +60,7 @@ const DEMO_SLIDES = [
   {
     id: 'anomalies',
     icon: Shield,
-    title: { en: 'AI-Powered Detection', fr: 'Détection par IA' },
+    title: { en: 'Intelligent Detection', fr: 'Détection intelligente' },
     subtitle: { 
       en: '97% accuracy in fraud & error detection', 
       fr: '97% de précision dans la détection' 
@@ -80,7 +80,7 @@ const DEMO_SLIDES = [
   {
     id: 'ai',
     icon: Brain,
-    title: { en: 'Financial AI Assistant', fr: 'Assistant IA financier' },
+    title: { en: 'James Financial Assistant', fr: 'Assistant financier James' },
     subtitle: { 
       en: 'Natural language queries for instant answers', 
       fr: 'Questions en langage naturel' 
@@ -442,8 +442,8 @@ function AnimatedBarChart({
 function FullDashboardMockup({ isEn }: { isEn: boolean }) {
   const [showElements, setShowElements] = useState(false);
   const healthScore = useAnimatedCounter(87, 1500, 400);
-  const revenue = useAnimatedCounter(847230, 1500, 500);
-  const savings = useAnimatedCounter(156800, 1500, 600);
+  const revenue = useAnimatedCounter(847, 1500, 500);
+  const savings = useAnimatedCounter(156, 1500, 600);
   
   const revenueData = [42, 58, 51, 67, 54, 78, 72, 89, 76, 94, 88, 102];
   const chartData = [
@@ -498,9 +498,17 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
         <div className="hidden md:flex flex-col w-14 lg:w-48 border-r py-3 px-2 lg:px-3 gap-1"
           style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
           <div className="flex items-center gap-2 px-2 py-2 mb-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>
-              PL
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
+              }}>
+              <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <span className="hidden lg:block text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
               PlainLedger
@@ -511,7 +519,7 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
             { icon: BarChart3, label: 'Dashboard', active: true },
             { icon: Shield, label: isEn ? 'Anomalies' : 'Anomalies', active: false, badge: '3' },
             { icon: FileText, label: isEn ? 'Reports' : 'Rapports', active: false },
-            { icon: Brain, label: isEn ? 'AI Assistant' : 'Assistant IA', active: false },
+            { icon: Brain, label: isEn ? 'James' : 'James', active: false },
           ].map((item, i) => (
             <div 
               key={i}
@@ -759,7 +767,7 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
 function AnomalyMockup({ isEn }: { isEn: boolean }) {
   const [showElements, setShowElements] = useState(false);
   const [visibleAlerts, setVisibleAlerts] = useState(0);
-  const savedAmount = useAnimatedCounter(847230, 2000, 400);
+  const savedAmount = useAnimatedCounter(847, 2000, 400);
   const accuracy = useAnimatedCounter(97, 1500, 500);
   
   useEffect(() => {
@@ -899,7 +907,7 @@ function AnomalyMockup({ isEn }: { isEn: boolean }) {
               </span>
             </div>
             <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? '12 algorithms • 2,847 transactions scanned' : '12 algorithmes • 2,847 transactions analysées'}
+              {isEn ? '12 algorithms • 847 transactions scanned' : '12 algorithmes • 847 transactions analysées'}
             </p>
           </div>
         </div>
@@ -1009,7 +1017,7 @@ function ReportsMockup({ isEn }: { isEn: boolean }) {
         {/* Stats Bar */}
         <div className="grid grid-cols-4 gap-2 mb-5">
           {[
-            { label: isEn ? 'Reports Generated' : 'Rapports générés', value: '2,847', icon: FileText },
+            { label: isEn ? 'Reports Generated' : 'Rapports générés', value: '847', icon: FileText },
             { label: isEn ? 'Avg. Generation Time' : 'Temps moy.', value: '2.3s', icon: Clock },
             { label: isEn ? 'Time Saved' : 'Temps économisé', value: '85%', icon: TrendingUp },
             { label: isEn ? 'Export Formats' : 'Formats export', value: '12+', icon: Activity },

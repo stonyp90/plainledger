@@ -203,7 +203,7 @@ const getSearchData = (t: (key: string) => string): SearchResult[] => [
   {
     id: 'help-anomaly',
     title: 'Anomaly Detection',
-    description: 'AI-powered detection of accounting inconsistencies',
+    description: 'Intelligent detection of accounting inconsistencies, powered by our AI',
     category: 'help',
     icon: <AlertTriangle className="w-4 h-4" />,
     path: '/app/anomalies',

@@ -20,6 +20,8 @@ import {
   Mail,
   PartyPopper,
   Menu,
+  ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../lib/keycloak';
 import { useI18n, LanguageToggle } from '../lib/i18n';
@@ -27,6 +29,8 @@ import ThemeToggle from './ThemeToggle';
 import { useTenant } from '../contexts/TenantContext';
 import { analytics, type OnboardingStep } from '../lib/analytics';
 import { crmService } from '../lib/crm';
+import { getAllIndustries, getIndustryTemplate, type IndustryTemplate } from '../lib/industries';
+import { getKPIsForIndustry } from '../lib/industryKPIs';
 
 // =====================================================
 // TYPES
@@ -87,17 +91,6 @@ function CompanyInfoStep({
     { value: '201+', label: '201+' },
   ];
 
-  const industries = [
-    { value: 'technology', label: isEn ? 'Technology' : 'Technologie' },
-    { value: 'retail', label: isEn ? 'Retail' : 'Commerce de détail' },
-    { value: 'services', label: isEn ? 'Professional Services' : 'Services professionnels' },
-    { value: 'manufacturing', label: isEn ? 'Manufacturing' : 'Fabrication' },
-    { value: 'construction', label: isEn ? 'Construction' : 'Construction' },
-    { value: 'healthcare', label: isEn ? 'Healthcare' : 'Santé' },
-    { value: 'finance', label: isEn ? 'Finance' : 'Finance' },
-    { value: 'nonprofit', label: isEn ? 'Non-profit' : 'Organisme à but non lucratif' },
-    { value: 'other', label: isEn ? 'Other' : 'Autre' },
-  ];
 
   const isValid = data.companyName.trim().length > 0;
 
@@ -150,19 +143,55 @@ function CompanyInfoStep({
           </div>
         </div>
 
-        {/* Industry */}
+        {/* Industry - Visual Cards */}
         <div>
           <label className="label">{isEn ? 'Industry' : 'Secteur d\'activité'}</label>
-          <select
-            value={data.industry}
-            onChange={(e) => onChange({ industry: e.target.value })}
-            className="select"
-          >
-            <option value="">{isEn ? 'Select industry...' : 'Sélectionner le secteur...'}</option>
-            {industries.map((ind) => (
-              <option key={ind.value} value={ind.value}>{ind.label}</option>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+            {getAllIndustries().map((industry) => (
+              <button
+                key={industry.id}
+                onClick={() => onChange({ industry: industry.id })}
+                className={`p-4 rounded-xl text-left transition-all border-2 ${
+                  data.industry === industry.id
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                    : 'border-border bg-surface hover:border-primary-300'
+                }`}
+                style={{
+                  borderColor: data.industry === industry.id
+                    ? 'rgb(var(--color-primary-500))'
+                    : 'rgb(var(--color-border))',
+                  backgroundColor: data.industry === industry.id
+                    ? 'rgb(var(--color-primary-500) / 0.1)'
+                    : 'rgb(var(--color-surface))',
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">{industry.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                        {isEn ? industry.name.en : industry.name.fr}
+                      </span>
+                      {industry.popular && (
+                        <span 
+                          className="text-xs px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
+                            color: 'rgb(var(--color-primary-700))',
+                          }}
+                        >
+                          {isEn ? 'Popular' : 'Populaire'}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs mt-1 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? industry.description.en : industry.description.fr}
+                    </p>
+                  </div>
+                </div>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         {/* Fiscal Year & Currency */}
@@ -484,6 +513,134 @@ function InviteTeamStep({
   );
 }
 
+// Step 2: Industry KPIs Preview
+function IndustryPreviewStep({
+  data,
+  onChange,
+  onNext,
+  onBack,
+}: {
+  data: OnboardingData;
+  onChange: (data: Partial<OnboardingData>) => void;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
+  
+  const industryTemplate = data.industry ? getIndustryTemplate(data.industry) : null;
+  const kpis = industryTemplate ? getKPIsForIndustry(industryTemplate.id) : [];
+  
+  if (!industryTemplate) {
+    // Skip this step if no industry selected
+    onNext();
+    return null;
+  }
+  
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'Your Industry KPIs' : 'Vos indicateurs de performance'}
+        </h2>
+        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          {isEn
+            ? `We'll pre-configure these metrics for ${industryTemplate.name.en}`
+            : `Nous préconfigurerons ces métriques pour ${industryTemplate.name.fr}`}
+        </p>
+      </div>
+      
+      {/* Industry Summary */}
+      <div 
+        className="p-6 rounded-xl mb-6"
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))',
+        }}
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-4xl">{industryTemplate.icon}</span>
+          <div>
+            <h3 className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? industryTemplate.name.en : industryTemplate.name.fr}
+            </h3>
+            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? industryTemplate.description.en : industryTemplate.description.fr}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Key KPIs */}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'Key Metrics' : 'Métriques clés'}
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {kpis.slice(0, 6).map((kpi) => (
+            <div
+              key={kpi.id}
+              className="p-4 rounded-lg"
+              style={{
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? kpi.name.en : kpi.name.fr}
+                </span>
+                {kpi.benchmark && (
+                  <span className="text-xs px-2 py-0.5 rounded" style={{
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                    color: 'rgb(var(--color-primary-700))',
+                  }}>
+                    {kpi.benchmark.min}-{kpi.benchmark.max} {kpi.benchmark.unit}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? kpi.description.en : kpi.description.fr}
+              </p>
+            </div>
+          ))}
+        </div>
+        {kpis.length > 6 && (
+          <p className="text-sm mt-4 text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? `+ ${kpis.length - 6} more metrics` : `+ ${kpis.length - 6} autres métriques`}
+          </p>
+        )}
+      </div>
+      
+      {/* Info */}
+      <div 
+        className="p-4 rounded-lg mb-6"
+        style={{
+          backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+          border: '1px solid rgb(var(--color-primary-500) / 0.2)',
+        }}
+      >
+        <p className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn
+            ? 'These metrics will be automatically added to your financial model. You can customize them later.'
+            : 'Ces métriques seront automatiquement ajoutées à votre modèle financier. Vous pourrez les personnaliser plus tard.'}
+        </p>
+      </div>
+      
+      <div className="flex justify-between">
+        <button onClick={onBack} className="btn-ghost">
+          <ChevronLeft className="w-4 h-4" />
+          {isEn ? 'Back' : 'Retour'}
+        </button>
+        <button onClick={onNext} className="btn-primary">
+          {isEn ? 'Continue' : 'Continuer'}
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Step 6: Tour/Features
 function TourStep({ 
   onNext, 
@@ -507,7 +664,7 @@ function TourStep({
       icon: AlertTriangle,
       title: isEn ? 'Anomaly Detection' : 'Détection d\'anomalies',
       description: isEn 
-        ? 'AI-powered alerts for unusual transactions and potential issues'
+        ? 'Intelligent alerts for unusual transactions and potential issues, powered by our AI'
         : 'Alertes IA pour les transactions inhabituelles et problèmes potentiels',
     },
     {
@@ -661,7 +818,7 @@ export default function Onboarding() {
   const [startTime] = useState(Date.now());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const steps: OnboardingStep[] = ['company_info', 'connect_source', 'invite_team', 'tour', 'complete'];
+  const steps: OnboardingStep[] = ['company_info', 'industry_preview', 'connect_source', 'invite_team', 'tour', 'complete'];
   const currentIndex = steps.indexOf(currentStep);
 
   // Track step views
@@ -678,7 +835,16 @@ export default function Onboarding() {
   }, [user?.email]);
 
   const updateData = useCallback((newData: Partial<OnboardingData>) => {
-    setData(prev => ({ ...prev, ...newData }));
+    setData(prev => {
+      const updated = { ...prev, ...newData };
+      // Save to localStorage for FinancialModel to access
+      try {
+        localStorage.setItem('pl_onboarding_data', JSON.stringify(updated));
+      } catch (e) {
+        // Ignore errors
+      }
+      return updated;
+    });
   }, []);
 
   const goToStep = useCallback((step: OnboardingStep) => {
@@ -749,12 +915,22 @@ export default function Onboarding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 group">
               <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white"
-                style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                  boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
+                }}
               >
-                PL
+                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                  <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
               <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
                 PlainLedger
@@ -906,6 +1082,9 @@ export default function Onboarding() {
       <main className="flex-1 flex items-center justify-center p-6">
         {currentStep === 'company_info' && (
           <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} />
+        )}
+        {currentStep === 'industry_preview' && (
+          <IndustryPreviewStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
         )}
         {currentStep === 'connect_source' && (
           <ConnectSourceStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />

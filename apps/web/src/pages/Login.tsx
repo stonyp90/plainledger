@@ -14,10 +14,20 @@ export default function Login() {
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <div 
-              className="w-10 h-10 rounded flex items-center justify-center"
-              style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.25)'
+              }}
             >
-              <span className="text-base font-bold">PL</span>
+              <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
             <span 
               className="text-xl font-semibold tracking-tight"
@@ -104,7 +114,7 @@ export default function Login() {
               >
                 Cash Flow
               </div>
-              <div style={{ color: 'rgb(var(--color-text-subtle))' }}>AI-powered</div>
+              <div style={{ color: 'rgb(var(--color-text-subtle))' }}>Powered by our AI</div>
             </div>
           </div>
         </div>

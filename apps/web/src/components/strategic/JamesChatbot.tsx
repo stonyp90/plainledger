@@ -698,8 +698,8 @@ export default function JamesChatbot({
           ? 'inset-4 sm:inset-6 rounded-2xl'
           : 'right-0 top-0 h-full w-full sm:w-[440px] lg:w-[480px]'
       }`}
-      style={{ zIndex: 1500 }}
       style={{
+        zIndex: 1500,
         backgroundColor: 'rgb(var(--color-bg))',
         boxShadow: isExpanded ? '0 25px 80px rgb(0 0 0 / 0.25)' : '-8px 0 40px rgb(0 0 0 / 0.15)',
         border: isExpanded ? '1px solid rgb(var(--color-border))' : undefined,

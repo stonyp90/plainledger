@@ -7,7 +7,6 @@
 import { useState } from 'react';
 import { Check, Zap, RefreshCw, Shield, ArrowRight } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface Integration {
   name: string;
@@ -21,43 +20,48 @@ interface Integration {
 const QuickBooksLogo = () => (
   <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
     <circle cx="20" cy="20" r="20" fill="#2CA01C"/>
-    <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none"/>
-    <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-    <path d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none"/>
+    {/* QuickBooks stylized "Q" icon */}
+    <path d="M20 8c-6.627 0-12 5.373-12 12s5.373 12 12 12c2.21 0 4-1.79 4-4v-1h-1c-5.523 0-10-4.477-10-10s4.477-10 10-10 10 4.477 10 10v1h1c2.21 0 4-1.79 4-4 0-6.627-5.373-12-12-12z" fill="white" fillOpacity="0"/>
+    <circle cx="20" cy="20" r="7" stroke="white" strokeWidth="3" fill="none"/>
+    <path d="M27 20v10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
   </svg>
 );
 
 const XeroLogo = () => (
   <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
     <circle cx="20" cy="20" r="20" fill="#13B5EA"/>
-    <text x="20" y="25" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="14" letterSpacing="-0.5">xero</text>
-    <circle cx="33" cy="20" r="1.5" fill="white"/>
+    <text x="14" y="25" textAnchor="start" fill="white" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="13" letterSpacing="-0.5">xero</text>
+    <circle cx="32" cy="15" r="2" fill="white"/>
   </svg>
 );
 
 // Sage with theme-aware background
-const SageLogo = ({ isDark }: { isDark: boolean }) => (
+const SageLogo = () => (
   <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
-    <circle cx="20" cy="20" r="20" fill={isDark ? '#2D2D2B' : '#1D1D1B'}/>
-    <text x="20" y="25" textAnchor="middle" fill="#00D639" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="12">Sage</text>
+    <rect width="40" height="40" rx="8" fill="#00D639"/>
+    <text x="20" y="26" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="13">Sage</text>
   </svg>
 );
 
 const FreshBooksLogo = () => (
   <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
-    <rect width="40" height="40" rx="8" fill="#0075DD"/>
-    <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white" fillOpacity="0.9"/>
-    <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white"/>
+    <rect width="40" height="40" rx="6" fill="#0075DD"/>
+    {/* Folded corner effect */}
+    <path d="M28 0h12v12L28 0z" fill="#005BB5"/>
+    <path d="M28 0c0 6.627 5.373 12 12 12V0H28z" fill="white" fillOpacity="0.3"/>
+    {/* F letter */}
+    <path d="M12 10h16v4H16v6h10v4H16v10h-4V10z" fill="white"/>
   </svg>
 );
 
-// Wave with theme-aware background
-const WaveLogo = ({ isDark }: { isDark: boolean }) => (
+// Wave logo with bars
+const WaveLogo = () => (
   <svg viewBox="0 0 40 40" fill="none" className="w-8 h-8 sm:w-10 sm:h-10">
-    <rect width="40" height="40" rx="8" fill={isDark ? '#1a2942' : '#f0f5fa'}/>
-    <path d="M8 26c0 1.6 1.4 3 3 3s3-1.4 3-3V17c0-1.6-1.4-3-3-3s-3 1.4-3 3v9z" fill="#003D79"/>
-    <path d="M16 29c0 1.6 1.4 3 3 3s3-1.4 3-3V11c0-1.6-1.4-3-3-3s-3 1.4-3 3v18z" fill="#2E77BC"/>
-    <path d="M24 26c0 1.6 1.4 3 3 3s3-1.4 3-3V14c0-1.6-1.4-3-3-3s-3 1.4-3 3v12z" fill="#6AB8F7"/>
+    <rect width="40" height="40" rx="6" fill="#1C3A5F"/>
+    {/* Three vertical bars */}
+    <rect x="8" y="18" width="6" height="14" rx="3" fill="#003D79"/>
+    <rect x="17" y="10" width="6" height="22" rx="3" fill="#2E77BC"/>
+    <rect x="26" y="14" width="6" height="18" rx="3" fill="#6AB8F7"/>
   </svg>
 );
 
@@ -81,9 +85,7 @@ const SYNC_FEATURES = [
 
 export default function IntegrationLogos() {
   const { language } = useI18n();
-  const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
-  const isDark = resolvedTheme === 'dark';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Build integrations with theme-aware logos
@@ -112,7 +114,7 @@ export default function IntegrationLogos() {
     },
     {
       name: 'Sage',
-      logo: <SageLogo isDark={isDark} />,
+      logo: <SageLogo />,
       color: '#00D639',
       themeColor: 'rgb(var(--color-success))',
       features: [
@@ -134,7 +136,7 @@ export default function IntegrationLogos() {
     },
     {
       name: 'Wave',
-      logo: <WaveLogo isDark={isDark} />,
+      logo: <WaveLogo />,
       color: '#2E77BC',
       themeColor: 'rgb(var(--color-primary-600))',
       features: [
@@ -238,7 +240,7 @@ export default function IntegrationLogos() {
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {SYNC_FEATURES.map((feature, index) => (
-              <div key={index} className="flex items-start gap-3 sm:gap-4">
+              <div key={index} className="flex items-center gap-3 sm:gap-4">
                 <div 
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
