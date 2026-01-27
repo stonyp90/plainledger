@@ -26,10 +26,15 @@ import { AIService } from "@infrastructure/ai/ai.service";
 import { PowerBIService } from "@infrastructure/services/powerbi.service";
 import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
 import { PowerBIDatalakeService } from "@infrastructure/services/powerbi-datalake.service";
+import { DatalakeDataService } from "@infrastructure/services/datalake-data.service";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 
 // Infrastructure - GraphQL
 import { GraphQLModule } from "@infrastructure/graphql/graphql.module";
+import { FinancialResolver } from "@infrastructure/graphql/resolvers/financial.resolver";
+import { OrganizationResolver } from "@infrastructure/graphql/resolvers/organization.resolver";
+import { DataSourceResolver } from "@infrastructure/graphql/resolvers/datasource.resolver";
+import { GqlAuthGuard } from "@infrastructure/graphql/guards/gql-auth.guard";
 
 // Application - Use Cases
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
@@ -140,10 +145,17 @@ import { NovuModule } from "./notifications/novu.service";
     PowerBIService,
     PowerBIThemeService,
     PowerBIDatalakeService,
+    DatalakeDataService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
     },
+
+    // GraphQL Resolvers
+    FinancialResolver,
+    OrganizationResolver,
+    DataSourceResolver,
+    GqlAuthGuard,
 
     // Repositories (Adapters)
     {

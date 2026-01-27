@@ -278,6 +278,12 @@ function App() {
           element={<LoginRedirect />} 
         />
         
+        {/* Signin - alias for login */}
+        <Route 
+          path="/signin" 
+          element={<LoginRedirect />} 
+        />
+        
         <Route 
           path="/newsletter" 
           element={<NewsletterPage />} 

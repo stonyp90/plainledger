@@ -1,0 +1,443 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""Chart of accounts entry"""
+type Account {
+  balance: Float!
+  code: String!
+  currency: String!
+  id: ID!
+  isActive: Boolean!
+  lastActivityAt: DateTime
+  name: String!
+  parentAccountId: String
+  type: AccountType!
+}
+
+"""Account filter input"""
+input AccountFilterInput {
+  isActive: Boolean
+  parentAccountId: String
+  search: String
+  types: [AccountType!]
+}
+
+"""The type of account in the chart of accounts"""
+enum AccountType {
+  ASSET
+  EQUITY
+  EXPENSE
+  LIABILITY
+  REVENUE
+}
+
+"""Paginated accounts response"""
+type AccountsConnection {
+  nodes: [Account!]!
+  pageInfo: PageInfo!
+}
+
+"""Available provider"""
+type AvailableProvider {
+  description: String!
+  id: String!
+  isEnabled: Boolean!
+  logoUrl: String!
+  name: String!
+  supportedFeatures: [String!]!
+}
+
+"""Balance sheet report"""
+type BalanceSheet {
+  asOfDate: DateTime!
+  assets: [BalanceSheetLine!]!
+  currency: String!
+  equity: [BalanceSheetLine!]!
+  liabilities: [BalanceSheetLine!]!
+  organizationName: String!
+  totalAssets: Float!
+  totalEquity: Float!
+  totalLiabilities: Float!
+}
+
+"""Balance sheet line item"""
+type BalanceSheetLine {
+  accountCode: String!
+  accountName: String!
+  accountType: AccountType!
+  balance: Float!
+  isSubtotal: Boolean!
+  level: Int!
+}
+
+"""Cash flow summary"""
+type CashFlowSummary {
+  changePercent: Float!
+  inflows: Money!
+  netCashFlow: Money!
+  outflows: Money!
+  trend: TrendDirection!
+}
+
+"""Input for creating an organization"""
+input CreateOrganizationInput {
+  industry: String
+  name: String!
+  timezone: String
+}
+
+"""Dashboard filter input"""
+input DashboardFilterInput {
+  compareWithPrevious: Boolean
+  dateRange: DateRangeInput
+  period: String = "month"
+}
+
+"""Financial dashboard summary"""
+type DashboardSummary {
+  accountsPayable: Money!
+  accountsReceivable: Money!
+  asOfDate: DateTime!
+  cashFlow: CashFlowSummary!
+  cashOnHand: Money!
+  keyMetrics: [MetricWithTrend!]!
+  netIncome: Money!
+  periodLabel: String!
+  totalExpenses: Money!
+  totalRevenue: Money!
+}
+
+"""Data source connection"""
+type DataSource {
+  companyName: String
+  createdAt: DateTime!
+  errorMessage: String
+  id: ID!
+  lastSyncAt: DateTime
+  name: String!
+  nextSyncAt: DateTime
+  provider: String!
+  status: DataSourceStatus!
+  syncStats: SyncStats
+  updatedAt: DateTime!
+}
+
+"""Connection status of a data source"""
+enum DataSourceStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+}
+
+"""Date range filter input"""
+input DateRangeInput {
+  endDate: DateTime!
+  startDate: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Financial trend data"""
+type FinancialTrend {
+  data: [TimeSeriesPoint!]!
+  metricName: String!
+  periodChangePercent: Float!
+  trend: TrendDirection!
+}
+
+"""Income statement report"""
+type IncomeStatement {
+  currency: String!
+  endDate: DateTime!
+  expenses: [IncomeStatementLine!]!
+  grossRevenue: Float!
+  netIncome: Float!
+  organizationName: String!
+  revenue: [IncomeStatementLine!]!
+  startDate: DateTime!
+  totalExpenses: Float!
+}
+
+"""Income statement line item"""
+type IncomeStatementLine {
+  accountCode: String!
+  accountName: String!
+  amount: Float!
+  budget: Float
+  level: Int!
+  variance: Float
+}
+
+"""Metric with trend information"""
+type MetricWithTrend {
+  changePercent: Float!
+  currentValue: Float!
+  direction: TrendDirection!
+  history: [TrendPoint!]
+  name: String!
+  previousValue: Float
+}
+
+"""Monetary value with currency"""
+type Money {
+  amount: Float!
+  currency: String!
+  formatted: String
+}
+
+type Mutation {
+  """Complete OAuth flow with callback data"""
+  completeOAuth(input: OAuthCallbackInput!): DataSource!
+
+  """Create a new organization"""
+  createOrganization(input: CreateOrganizationInput!): Organization!
+
+  """Delete a data source and all associated data"""
+  deleteDataSource(confirmDelete: Boolean!, id: String!): MutationResponse!
+
+  """Disconnect a data source"""
+  disconnectDataSource(id: String!): MutationResponse!
+
+  """Get OAuth authorization URL for a provider"""
+  initiateOAuth(provider: String!, redirectUri: String): OAuthUrlResponse!
+
+  """Trigger a sync for a data source"""
+  syncDataSource(id: String!, options: SyncOptionsInput): SyncResult!
+
+  """Update organization details"""
+  updateOrganization(input: UpdateOrganizationInput!): Organization!
+
+  """Update organization feature flags (admin only)"""
+  updateOrganizationFeatures(input: UpdateOrganizationFeaturesInput!, organizationId: String!): OrganizationFeatures!
+}
+
+"""Standard mutation response"""
+type MutationResponse {
+  errors: [String!]
+  message: String
+  success: Boolean!
+}
+
+"""OAuth callback input"""
+input OAuthCallbackInput {
+  code: String!
+  realmId: String
+  state: String!
+}
+
+"""OAuth URL response"""
+type OAuthUrlResponse {
+  provider: String!
+  state: String!
+  url: String!
+}
+
+"""Organization entity"""
+type Organization {
+  createdAt: DateTime!
+  id: ID!
+  industry: String
+  name: String!
+  slug: String
+  subscription: SubscriptionPlan
+  updatedAt: DateTime!
+}
+
+"""Organization feature flags"""
+type OrganizationFeatures {
+  aiInsightsEnabled: Boolean!
+  analyticsEnabled: Boolean!
+  apiAccessEnabled: Boolean!
+  customReportsEnabled: Boolean!
+  maxDataSources: Int!
+  maxUsers: Int!
+  multiCurrencyEnabled: Boolean!
+  organizationId: ID!
+}
+
+"""Pagination information"""
+type PageInfo {
+  currentPage: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+"""Pagination input"""
+input PaginationInput {
+  page: Int! = 1
+  pageSize: Int! = 20
+}
+
+type Query {
+  """Get a single account by ID"""
+  account(id: String!): Account
+
+  """Get paginated list of accounts"""
+  accounts(filter: AccountFilterInput, pagination: PaginationInput): AccountsConnection!
+
+  """List all available accounting providers"""
+  availableProviders: [AvailableProvider!]!
+
+  """Generate balance sheet report"""
+  balanceSheet(asOfDate: DateTime): BalanceSheet!
+
+  """Get financial dashboard summary with key metrics"""
+  dashboardSummary(filter: DashboardFilterInput): DashboardSummary!
+
+  """Get a specific data source by ID"""
+  dataSource(id: String!): DataSource
+
+  """Get all data sources for the organization"""
+  dataSources: [DataSource!]!
+
+  """Get financial trend data for charts"""
+  financialTrends(dateRange: DateRangeInput, metrics: [String!]!): [FinancialTrend!]!
+
+  """Generate income statement report"""
+  incomeStatement(dateRange: DateRangeInput!): IncomeStatement!
+
+  """Get the current user's organization"""
+  organization: Organization!
+
+  """Get organization by ID (admin only)"""
+  organizationById(id: String!): Organization
+
+  """Get feature flags for the current organization"""
+  organizationFeatures: OrganizationFeatures!
+
+  """Get paginated list of transactions"""
+  transactions(filter: TransactionFilterInput, pagination: PaginationInput): TransactionsConnection!
+}
+
+"""Organization subscription plan"""
+type SubscriptionPlan {
+  features: [String!]!
+  maxConnections: Int
+  maxUsers: Int
+  name: String!
+  tier: String!
+}
+
+"""Data source sync options"""
+input SyncOptionsInput {
+  entities: [String!]
+  fromDate: DateTime
+  fullSync: Boolean = false
+}
+
+"""Sync result"""
+type SyncResult {
+  message: String
+  stats: SyncStats!
+  success: Boolean!
+  syncedAt: DateTime!
+  warnings: [String!]
+}
+
+"""Sync statistics"""
+type SyncStats {
+  accountsSynced: Int!
+  billsSynced: Int!
+  contactsSynced: Int!
+  invoicesSynced: Int!
+  transactionsSynced: Int!
+}
+
+"""Time series data point"""
+type TimeSeriesPoint {
+  date: String!
+  label: String
+  value: Float!
+}
+
+"""Financial transaction"""
+type Transaction {
+  amount: Float!
+  contactId: String
+  contactName: String
+  createdAt: DateTime!
+  currency: String!
+  date: DateTime!
+  description: String
+  id: ID!
+  lines: [TransactionLine!]!
+  reference: String
+  type: TransactionType!
+}
+
+"""Transaction filter input"""
+input TransactionFilterInput {
+  accountId: String
+  contactId: String
+  dateRange: DateRangeInput
+  maxAmount: Float
+  minAmount: Float
+  search: String
+  types: [TransactionType!]
+}
+
+"""Transaction line item"""
+type TransactionLine {
+  accountId: ID!
+  accountName: String
+  creditAmount: Float!
+  debitAmount: Float!
+  description: String
+  id: ID!
+}
+
+"""The type of financial transaction"""
+enum TransactionType {
+  EXPENSE
+  INVOICE
+  JOURNAL
+  PAYMENT
+  TRANSFER
+}
+
+"""Paginated transactions response"""
+type TransactionsConnection {
+  nodes: [Transaction!]!
+  pageInfo: PageInfo!
+}
+
+"""Direction of a trend"""
+enum TrendDirection {
+  DOWN
+  FLAT
+  UP
+}
+
+"""Trend data point"""
+type TrendPoint {
+  changePercent: Float
+  period: String!
+  previousValue: Float
+  value: Float!
+}
+
+"""Input for updating organization features"""
+input UpdateOrganizationFeaturesInput {
+  aiInsightsEnabled: Boolean
+  analyticsEnabled: Boolean
+  apiAccessEnabled: Boolean
+  customReportsEnabled: Boolean
+  maxDataSources: Int
+  maxUsers: Int
+  multiCurrencyEnabled: Boolean
+}
+
+"""Input for updating an organization"""
+input UpdateOrganizationInput {
+  industry: String
+  name: String
+  timezone: String
+}

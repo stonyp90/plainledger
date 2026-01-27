@@ -7,26 +7,15 @@
  * - Playground disabled in production
  * - Introspection controlled by environment
  * - CSRF protection enabled
+ *
+ * Note: Resolvers are provided in AppModule to ensure proper dependency injection
+ * of use cases and repositories.
  */
 import { Module } from "@nestjs/common";
 import { GraphQLModule as NestGraphQLModule } from "@nestjs/graphql";
 import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { join } from "path";
-
-// Resolvers
-import { FinancialResolver } from "./resolvers/financial.resolver";
-import { OrganizationResolver } from "./resolvers/organization.resolver";
-import { DataSourceResolver } from "./resolvers/datasource.resolver";
-
-// Guards
-import { GqlAuthGuard } from "./guards/gql-auth.guard";
-
-// Use Cases
-import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
-import { GetOrganizationUseCase } from "@application/use-cases/get-organization.use-case";
-import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
-import { UpdateOrgFeaturesUseCase } from "@application/use-cases/update-org-features.use-case";
 
 @Module({
   imports: [
@@ -90,21 +79,6 @@ import { UpdateOrgFeaturesUseCase } from "@application/use-cases/update-org-feat
       },
       inject: [ConfigService],
     }),
-  ],
-  providers: [
-    // Resolvers
-    FinancialResolver,
-    OrganizationResolver,
-    DataSourceResolver,
-    
-    // Guards
-    GqlAuthGuard,
-    
-    // Use Cases (injected into resolvers)
-    CreateOrganizationUseCase,
-    GetOrganizationUseCase,
-    GenerateBalanceSheetUseCase,
-    UpdateOrgFeaturesUseCase,
   ],
   exports: [NestGraphQLModule],
 })

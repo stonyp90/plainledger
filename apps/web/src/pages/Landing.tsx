@@ -527,19 +527,21 @@ export default function Landing() {
           </div>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <span className="flex items-center gap-1.5 sm:gap-2">
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
-              {isEn ? 'No credit card' : 'Sans carte de crédit'}
-            </span>
-            <span className="flex items-center gap-1.5 sm:gap-2">
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
-              {isEn ? '5 min setup' : '5 min config'}
-            </span>
-            <span className="flex items-center gap-1.5 sm:gap-2">
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
-              {isEn ? 'Data in Canada' : 'Données au Canada'} 🇨🇦
-            </span>
+          <div className="w-full flex justify-center">
+            <div className="inline-flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <span className="flex items-center gap-1.5 sm:gap-2">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+                {isEn ? 'No credit card' : 'Sans carte de crédit'}
+              </span>
+              <span className="flex items-center gap-1.5 sm:gap-2">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+                {isEn ? '5 min setup' : '5 min config'}
+              </span>
+              <span className="flex items-center gap-1.5 sm:gap-2">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+                {isEn ? 'Data in Canada' : 'Données au Canada'} 🇨🇦
+              </span>
+            </div>
           </div>
         </div>
       </section>
@@ -1288,7 +1290,7 @@ export default function Landing() {
               {isEn ? 'Start free trial' : 'Essai gratuit'}
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <p className="text-xs sm:text-sm mt-3 sm:mt-4 text-white/80">
+            <p className="text-xs sm:text-sm mt-3 sm:mt-4 text-white/80 text-center">
               {isEn ? 'No credit card required' : 'Sans carte de crédit'}
             </p>
           </div>

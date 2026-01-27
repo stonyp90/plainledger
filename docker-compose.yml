@@ -249,6 +249,7 @@ services:
     container_name: plainledger-web
     environment:
       VITE_API_URL: ${API_URL:-http://localhost:3000}
+      VITE_GRAPHQL_URL: ${GRAPHQL_URL:-http://localhost:3000/graphql}
       VITE_KEYCLOAK_URL: ${KEYCLOAK_URL:-http://localhost:8080}
       VITE_KEYCLOAK_REALM: plainledger
       VITE_KEYCLOAK_CLIENT_ID: plainledger-web
