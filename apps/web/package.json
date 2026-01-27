@@ -15,18 +15,20 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@apollo/client": "^4.1.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
     "@keycloak/keycloak-admin-client": "^23.0.4",
     "@tanstack/react-query": "^5.17.0",
     "axios": "^1.6.5",
+    "graphql": "^16.12.0",
     "keycloak-js": "^23.0.4",
     "lucide-react": "^0.303.0",
+    "powerbi-client": "^2.22.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
-    "recharts": "^2.10.3",
-    "powerbi-client": "^2.22.2"
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.0",

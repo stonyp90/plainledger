@@ -13,7 +13,7 @@ import {
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
 import { AccountEntity } from "@infrastructure/persistence/postgres/entities/account.entity";
 
-// Infrastructure
+// Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
 import { OrganizationController } from "@infrastructure/http/controllers/organization.controller";
 import { ReportController } from "@infrastructure/http/controllers/report.controller";
@@ -25,6 +25,9 @@ import { AIService } from "@infrastructure/ai/ai.service";
 import { PowerBIService } from "@infrastructure/services/powerbi.service";
 import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
+
+// Infrastructure - GraphQL
+import { GraphQLModule } from "@infrastructure/graphql/graphql.module";
 
 // Application - Use Cases
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
@@ -92,6 +95,9 @@ import { NovuModule } from "./notifications/novu.service";
 
     // Notifications
     NovuModule,
+
+    // GraphQL API
+    GraphQLModule,
   ],
   controllers: [
     HealthController,

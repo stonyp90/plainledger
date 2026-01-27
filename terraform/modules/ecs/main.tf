@@ -319,7 +319,7 @@ resource "aws_lb_listener_rule" "api_http" {
 
   condition {
     path_pattern {
-      values = ["/api/*", "/health"]
+      values = ["/api/*", "/health", "/graphql"]
     }
   }
 
@@ -367,7 +367,7 @@ resource "aws_lb_listener_rule" "api" {
 
   condition {
     path_pattern {
-      values = ["/api/*", "/health"]
+      values = ["/api/*", "/health", "/graphql"]
     }
   }
 
