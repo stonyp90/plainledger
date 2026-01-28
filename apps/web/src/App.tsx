@@ -22,6 +22,7 @@ import Onboarding from './components/Onboarding';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import EmailConfirmation from './pages/EmailConfirmation';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -270,10 +271,10 @@ function App() {
           element={authenticated ? <Navigate to="/app" replace /> : <ForgotPassword />} 
         />
         
-        {/* Reset Password - handled by Keycloak email link */}
+        {/* Reset Password - custom UI for setting new password */}
         <Route 
           path="/reset-password" 
-          element={authenticated ? <Navigate to="/app" replace /> : <LoginRedirect />} 
+          element={authenticated ? <Navigate to="/app" replace /> : <ResetPassword />} 
         />
         
         <Route 

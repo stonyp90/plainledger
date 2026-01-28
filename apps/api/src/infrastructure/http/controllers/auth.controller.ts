@@ -27,6 +27,7 @@ import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdmi
 import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { ConfigService } from "@nestjs/config";
+import * as crypto from "crypto";
 
 // =====================================================
 // DTOs
@@ -106,6 +107,30 @@ export class LoginDto {
 
   @IsString()
   @MinLength(1, { message: "Password is required" })
+  password: string;
+}
+
+export class ValidateResetTokenDto {
+  @IsString()
+  token: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  token: string;
+
+  @IsString()
+  @MinLength(12, { message: "Password must be at least 12 characters" })
+  @Matches(/[A-Z]/, {
+    message: "Password must contain at least one uppercase letter",
+  })
+  @Matches(/[a-z]/, {
+    message: "Password must contain at least one lowercase letter",
+  })
+  @Matches(/\d/, { message: "Password must contain at least one number" })
+  @Matches(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, {
+    message: "Password must contain at least one special character",
+  })
   password: string;
 }
 
@@ -379,9 +404,75 @@ export class AuthController {
     }
   }
 
+  // =====================================================
+  // PASSWORD RESET TOKEN HELPERS
+  // =====================================================
+
+  /**
+   * Generate a secure password reset token
+   * Format: base64(userId:email:expiry):signature
+   */
+  private generateResetToken(userId: string, email: string): string {
+    const secret = this.configService.get<string>("PASSWORD_RESET_SECRET") || 
+                   this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
+                   "plainledger-default-secret-change-me";
+    
+    // Token expires in 15 minutes
+    const expiry = Date.now() + 15 * 60 * 1000;
+    const payload = Buffer.from(`${userId}:${email}:${expiry}`).toString("base64url");
+    
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url");
+    
+    return `${payload}.${signature}`;
+  }
+
+  /**
+   * Verify and decode a password reset token
+   */
+  private verifyResetToken(token: string): { userId: string; email: string } | null {
+    try {
+      const secret = this.configService.get<string>("PASSWORD_RESET_SECRET") || 
+                     this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
+                     "plainledger-default-secret-change-me";
+      
+      const [payload, signature] = token.split(".");
+      if (!payload || !signature) return null;
+      
+      // Verify signature
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(payload)
+        .digest("base64url");
+      
+      if (signature !== expectedSignature) {
+        this.logger.warn("Invalid password reset token signature");
+        return null;
+      }
+      
+      // Decode payload
+      const decoded = Buffer.from(payload, "base64url").toString();
+      const [userId, email, expiryStr] = decoded.split(":");
+      const expiry = parseInt(expiryStr, 10);
+      
+      // Check expiry
+      if (Date.now() > expiry) {
+        this.logger.warn("Password reset token has expired");
+        return null;
+      }
+      
+      return { userId, email };
+    } catch (error) {
+      this.logger.error(`Failed to verify reset token: ${error.message}`);
+      return null;
+    }
+  }
+
   /**
    * Request password reset
-   * Public endpoint - sends password reset email
+   * Public endpoint - sends password reset email via Keycloak with redirect to our app
    */
   @Post("forgot-password")
   @Public()
@@ -399,7 +490,8 @@ export class AuthController {
       const user = await this.keycloakAdminService.findUserByEmail(dto.email);
 
       if (user) {
-        // Send password reset email
+        // Send password reset email via Keycloak
+        // After user resets password, they'll be redirected to /login?passwordReset=true
         await this.keycloakAdminService.sendPasswordResetEmail(user.id);
         this.logger.log(`Password reset email sent to: ${dto.email}`);
       } else {
@@ -427,6 +519,139 @@ export class AuthController {
         message:
           "If an account exists with this email, you will receive password reset instructions.",
       };
+    }
+  }
+
+  /**
+   * Validate password reset token
+   * Public endpoint - checks if token is valid and not expired
+   */
+  @Post("validate-reset-token")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async validateResetToken(@Body() dto: ValidateResetTokenDto) {
+    const tokenData = this.verifyResetToken(dto.token);
+    
+    if (!tokenData) {
+      return { valid: false };
+    }
+    
+    // Verify user still exists
+    const user = await this.keycloakAdminService.findUserByEmail(tokenData.email);
+    if (!user || user.id !== tokenData.userId) {
+      return { valid: false };
+    }
+    
+    return { valid: true, email: tokenData.email };
+  }
+
+  /**
+   * Reset password using token
+   * Public endpoint - sets new password via Keycloak Admin API
+   */
+  @Post("reset-password")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    this.logger.log("Password reset attempt with token");
+
+    if (!this.keycloakAdminService.isAvailable()) {
+      throw new BadRequestException(
+        "Password reset is temporarily unavailable. Please try again later.",
+      );
+    }
+
+    // Verify token
+    const tokenData = this.verifyResetToken(dto.token);
+    if (!tokenData) {
+      throw new BadRequestException(
+        "Invalid or expired password reset link. Please request a new one.",
+      );
+    }
+
+    try {
+      // Verify user exists
+      const user = await this.keycloakAdminService.findUserByEmail(tokenData.email);
+      if (!user || user.id !== tokenData.userId) {
+        throw new BadRequestException(
+          "Invalid password reset link. Please request a new one.",
+        );
+      }
+
+      // Set new password using Keycloak Admin API
+      // We need to add this method to the service
+      await this.setUserPassword(tokenData.userId, dto.password);
+      
+      this.logger.log(`Password successfully reset for user: ${tokenData.email}`);
+
+      return {
+        success: true,
+        message: "Password has been reset successfully.",
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      this.logger.error(`Password reset failed: ${error.message}`, error.stack);
+      throw new BadRequestException(
+        "Failed to reset password. Please try again.",
+      );
+    }
+  }
+
+  /**
+   * Set user password using Keycloak Admin REST API directly
+   */
+  private async setUserPassword(userId: string, password: string): Promise<void> {
+    const keycloakUrl = this.configService.get<string>("KEYCLOAK_URL") || "http://localhost:8080";
+    const realm = this.configService.get<string>("KEYCLOAK_REALM") || "plainledger";
+    const clientId = this.configService.get<string>("KEYCLOAK_ADMIN_CLIENT_ID") || "plainledger-api";
+    const clientSecret = this.configService.get<string>("KEYCLOAK_CLIENT_SECRET");
+
+    if (!clientSecret) {
+      throw new Error("Keycloak client secret not configured");
+    }
+
+    // Get admin token
+    const tokenResponse = await fetch(`${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        client_id: clientId,
+        client_secret: clientSecret,
+      }).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error("Failed to obtain admin token");
+    }
+
+    const tokenData = await tokenResponse.json();
+    const adminToken = tokenData.access_token;
+
+    // Reset user password
+    const resetResponse = await fetch(
+      `${keycloakUrl}/admin/realms/${realm}/users/${userId}/reset-password`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({
+          type: "password",
+          value: password,
+          temporary: false,
+        }),
+      }
+    );
+
+    if (!resetResponse.ok) {
+      const errorText = await resetResponse.text();
+      this.logger.error(`Keycloak password reset failed: ${resetResponse.status} - ${errorText}`);
+      throw new Error("Failed to reset password in Keycloak");
     }
   }
 

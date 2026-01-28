@@ -42,7 +42,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Pre-fill email from URL params and check for verification success
+  // Pre-fill email from URL params and check for success messages
   useEffect(() => {
     const emailParam = searchParams.get('email');
     if (emailParam) {
@@ -57,7 +57,17 @@ export default function Login() {
           ? 'Email verified successfully! You can now sign in.'
           : 'Courriel vérifié avec succès! Vous pouvez maintenant vous connecter.'
       );
-      // Clear the URL parameter
+      window.history.replaceState({}, '', '/login');
+    }
+    
+    // Check if user just reset their password
+    const passwordReset = searchParams.get('passwordReset');
+    if (passwordReset === 'true') {
+      setSuccessMessage(
+        isEn 
+          ? 'Password reset successfully! You can now sign in with your new password.'
+          : 'Mot de passe réinitialisé avec succès! Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.'
+      );
       window.history.replaceState({}, '', '/login');
     }
   }, [searchParams, isEn]);

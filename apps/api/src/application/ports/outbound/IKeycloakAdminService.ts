@@ -62,9 +62,9 @@ export interface IKeycloakAdminService {
   disableUser(userId: string): Promise<void>;
 
   /**
-   * Send password reset email
+   * Send password reset email with optional redirect URI
    */
-  sendPasswordResetEmail(userId: string): Promise<void>;
+  sendPasswordResetEmail(userId: string, redirectUri?: string): Promise<void>;
 
   /**
    * Send verification email with optional redirect URI

@@ -507,19 +507,26 @@ export class KeycloakAdminService
 
   /**
    * Send password reset email to user
+   * Uses executeActionsEmail with redirectUri to redirect back to our app after password update
    */
-  async sendPasswordResetEmail(userId: string): Promise<void> {
+  async sendPasswordResetEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
       throw new Error("Keycloak Admin Service not configured");
     }
 
     try {
+      const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
+      const clientId = this.configService.get<string>("KEYCLOAK_WEB_CLIENT_ID", "plainledger-web");
+      
       await this.adminClient.users.executeActionsEmail({
         realm: this.realm,
         id: userId,
+        clientId: clientId,
+        redirectUri: redirectUri || `${frontendUrl}/login?passwordReset=true`,
+        lifespan: 900, // 15 minutes in seconds
         actions: ["UPDATE_PASSWORD"],
       });
-      this.logger.log(`Password reset email sent to user: ${userId}`);
+      this.logger.log(`Password reset email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`);
     } catch (error) {
       this.logger.error(
         `Failed to send password reset email: ${error.message}`,

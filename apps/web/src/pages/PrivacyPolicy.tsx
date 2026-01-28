@@ -20,54 +20,54 @@ export default function PrivacyPolicy() {
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
       {/* Header */}
-      <header className="px-4 py-4 flex items-center justify-between max-w-7xl mx-auto">
+      <header className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between max-w-7xl mx-auto">
         <Link to="/" className="flex items-center gap-2">
           <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
           >
-            <Building2 className="w-5 h-5 text-white" />
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+          <span className="font-semibold text-base sm:text-lg" style={{ color: 'rgb(var(--color-text))' }}>
             PlainLedger
           </span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
           <LanguageToggle />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
+          className="space-y-6 sm:space-y-8"
         >
           {/* Back Link */}
           <Link 
             to="/signup" 
-            className="inline-flex items-center gap-2 text-sm"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm hover:underline transition-colors"
             style={{ color: 'rgb(var(--color-primary-500))' }}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             {isEn ? 'Back to Signup' : 'Retour à l\'inscription'}
           </Link>
 
           {/* Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <div 
-              className="w-12 h-12 rounded-lg flex items-center justify-center"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0"
               style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
             >
-              <Shield className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Shield className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Privacy Policy' : 'Politique de confidentialité'}
               </h1>
-              <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {isEn 
                   ? 'Last updated: January 27, 2026'
                   : 'Dernière mise à jour : 27 janvier 2026'}
