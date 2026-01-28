@@ -28,6 +28,7 @@ import { PowerBIDataController } from "@infrastructure/http/controllers/powerbi-
 import { TeamController } from "@infrastructure/http/controllers/team.controller";
 import { AuthController } from "@infrastructure/http/controllers/auth.controller";
 import { SyncAdminController } from "@infrastructure/http/controllers/sync-admin.controller";
+import { KeycloakAdminController } from "@infrastructure/http/controllers/keycloak-admin.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
