@@ -211,16 +211,37 @@ export class KeycloakAdminService
 
       // Set password separately if provided (this is the correct way in Keycloak)
       if (input.password) {
-        await this.adminClient.users.resetPassword({
-          realm: this.realm,
-          id: userId,
-          credential: {
-            type: "password",
-            value: input.password,
-            temporary: input.temporaryPassword ?? false,
-          },
-        });
-        this.logger.log(`Password set for user: ${userId}`);
+        try {
+          await this.adminClient.users.resetPassword({
+            realm: this.realm,
+            id: userId,
+            credential: {
+              type: "password",
+              value: input.password,
+              temporary: input.temporaryPassword ?? false,
+            },
+          });
+          this.logger.log(`Password set for user: ${userId}`);
+        } catch (passwordError) {
+          // If password setting fails, delete the user to avoid orphaned accounts
+          this.logger.error(
+            `Failed to set password for user ${userId}: ${passwordError.message}. Cleaning up user.`,
+          );
+          try {
+            await this.adminClient.users.del({
+              realm: this.realm,
+              id: userId,
+            });
+            this.logger.log(`Cleaned up user ${userId} after password setting failure`);
+          } catch (deleteError) {
+            this.logger.error(
+              `Failed to clean up user ${userId} after password error: ${deleteError.message}`,
+            );
+          }
+          throw new Error(
+            `Failed to set password: ${passwordError.message}`,
+          );
+        }
       }
 
       // Assign roles if specified
