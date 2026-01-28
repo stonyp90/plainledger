@@ -206,6 +206,10 @@ export default function Signup() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle validation errors
+        if (data.errors && Array.isArray(data.errors)) {
+          throw new Error(data.errors.join('. '));
+        }
         throw new Error(data.message || 'Registration failed');
       }
 

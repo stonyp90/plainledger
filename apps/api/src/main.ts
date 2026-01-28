@@ -1,5 +1,5 @@
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { ValidationPipe, BadRequestException } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { DomainExceptionFilter } from "@infrastructure/http/filters/domain-exception.filter";
@@ -15,6 +15,17 @@ async function bootstrap() {
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map((error) => {
+          const constraints = error.constraints || {};
+          return Object.values(constraints).join(", ");
+        });
+        return new BadRequestException({
+          statusCode: 400,
+          message: "Validation failed",
+          errors: messages,
+        });
       },
     }),
   );
