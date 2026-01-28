@@ -247,8 +247,8 @@
   ],
   "users": [
     {
-      "username": "admin@plainledger.ca",
-      "email": "admin@plainledger.ca",
+      "username": "admin@plainledger.com",
+      "email": "admin@plainledger.com",
       "firstName": "Admin",
       "lastName": "User",
       "enabled": true,
@@ -268,8 +268,8 @@
       }
     },
     {
-      "username": "accountant@plainledger.ca",
-      "email": "accountant@plainledger.ca",
+      "username": "accountant@plainledger.com",
+      "email": "accountant@plainledger.com",
       "firstName": "Jane",
       "lastName": "Smith",
       "enabled": true,
@@ -289,8 +289,8 @@
       }
     },
     {
-      "username": "demo@plainledger.ca",
-      "email": "demo@plainledger.ca",
+      "username": "demo@plainledger.com",
+      "email": "demo@plainledger.com",
       "firstName": "Demo",
       "lastName": "User",
       "enabled": true,
