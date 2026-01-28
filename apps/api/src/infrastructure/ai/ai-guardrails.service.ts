@@ -185,7 +185,6 @@ export class AIGuardrailsService {
     context: FinancialContext,
   ): string[] {
     const issues: string[] = [];
-    const lowerResponse = response.toLowerCase();
 
     // Extract all dollar amounts from response
     const dollarMatches = response.match(/\$[\d,]+(?:\.\d{2})?/g) || [];

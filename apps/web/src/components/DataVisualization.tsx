@@ -1544,7 +1544,7 @@ function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
 }
 
 // Heatmap Chart
-function HeatmapChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function HeatmapChart({ data, config: _config }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
   const weeks = Array.from({ length: 12 }, (_, i) => i + 1);
   
@@ -1613,7 +1613,7 @@ function HeatmapChart({ data }: { data: any[]; config: ChartConfig; isEn: boolea
 }
 
 // Waterfall Chart
-function WaterfallChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   let cumulative = 0;
   const processedData = data.map((d) => {
     const start = cumulative;
@@ -1703,7 +1703,7 @@ function WaterfallChart({ data }: { data: any[]; config: ChartConfig; isEn: bool
 }
 
 // Table View
-function TableView({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function TableView({ data, config: _config }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   return (
     <div className="h-full overflow-auto">
       <table className="w-full text-sm">

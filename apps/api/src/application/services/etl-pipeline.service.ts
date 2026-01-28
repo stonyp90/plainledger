@@ -24,7 +24,6 @@ import {
   SilverContactType,
   SilverTransactionType,
   SilverSourceSystem,
-  SILVER_QUALITY_RULES,
 } from "@domain/datalake/silver-schema";
 import {
   DimAccount,
