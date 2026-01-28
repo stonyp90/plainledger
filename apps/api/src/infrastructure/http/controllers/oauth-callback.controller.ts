@@ -1,17 +1,10 @@
 /**
  * OAuth Callback Controller
- * 
+ *
  * Handles OAuth callbacks at /api/v1/datasources/oauth/:provider/callback
  * This matches the redirect URIs registered with OAuth providers.
  */
-import {
-  Controller,
-  Get,
-  Query,
-  Param,
-  Logger,
-  Res,
-} from "@nestjs/common";
+import { Controller, Get, Query, Param, Logger, Res } from "@nestjs/common";
 import { Response } from "express";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
@@ -50,9 +43,12 @@ export class OAuthCallbackController {
   constructor(private readonly configService: ConfigService) {
     this.quickbooksService = new QuickBooksService(configService);
     // Read environment from config - default to sandbox for safety
-    const environment = this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
+    const environment =
+      this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
     this.useSandbox = environment !== "production";
-    this.logger.log(`QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`);
+    this.logger.log(
+      `QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`,
+    );
   }
 
   /**
@@ -73,21 +69,29 @@ export class OAuthCallbackController {
     @Query("error_description") errorDescription: string,
     @Res() res: Response,
   ): Promise<void> {
-    const frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://plainledger.ca";
-    
-    this.logger.log(`OAuth callback for ${provider}: code=${code ? 'present' : 'missing'}, realmId=${realmId}, state=${state}`);
+    const frontendUrl =
+      this.configService.get<string>("FRONTEND_URL") ||
+      "https://plainledger.ca";
+
+    this.logger.log(
+      `OAuth callback for ${provider}: code=${code ? "present" : "missing"}, realmId=${realmId}, state=${state}`,
+    );
 
     // Handle OAuth errors
     if (error) {
       this.logger.error(`OAuth error: ${error} - ${errorDescription}`);
-      res.redirect(`${frontendUrl}/connections?error=${encodeURIComponent(errorDescription || error)}&provider=${provider}`);
+      res.redirect(
+        `${frontendUrl}/connections?error=${encodeURIComponent(errorDescription || error)}&provider=${provider}`,
+      );
       return;
     }
 
     // Validate required parameters
     if (!code) {
       this.logger.error("Missing authorization code");
-      res.redirect(`${frontendUrl}/connections?error=missing_code&provider=${provider}`);
+      res.redirect(
+        `${frontendUrl}/connections?error=missing_code&provider=${provider}`,
+      );
       return;
     }
 
@@ -98,9 +102,12 @@ export class OAuthCallbackController {
       if (provider === "quickbooks" && realmId) {
         // Exchange authorization code for tokens
         this.logger.log(`Exchanging code for tokens, realmId: ${realmId}`);
-        
-        const tokens = await this.quickbooksService.exchangeCodeForTokens(code, realmId);
-        
+
+        const tokens = await this.quickbooksService.exchangeCodeForTokens(
+          code,
+          realmId,
+        );
+
         this.logger.log(`Tokens obtained for QuickBooks realm: ${realmId}`);
 
         // Store tokens
@@ -147,12 +154,12 @@ export class OAuthCallbackController {
       // Redirect to frontend with success
       this.logger.log(`OAuth successful, redirecting to frontend`);
       res.redirect(
-        `${frontendUrl}/connections?success=true&provider=${provider}&datasourceId=${datasourceId}&company=${encodeURIComponent(companyName)}`
+        `${frontendUrl}/connections?success=true&provider=${provider}&datasourceId=${datasourceId}&company=${encodeURIComponent(companyName)}`,
       );
     } catch (err) {
       this.logger.error(`OAuth callback failed: ${err}`);
       res.redirect(
-        `${frontendUrl}/connections?error=${encodeURIComponent(String(err))}&provider=${provider}`
+        `${frontendUrl}/connections?error=${encodeURIComponent(String(err))}&provider=${provider}`,
       );
     }
   }
@@ -166,20 +173,33 @@ export class OAuthCallbackController {
     realmId: string,
   ): Promise<void> {
     this.logger.log(`Triggering initial sync for datasource: ${datasourceId}`);
-    
+
     try {
       // Fetch data from QuickBooks
       const [accounts, customers, vendors] = await Promise.all([
-        this.quickbooksService.getAccounts(accessToken, realmId, this.useSandbox),
-        this.quickbooksService.getCustomers(accessToken, realmId, this.useSandbox),
-        this.quickbooksService.getVendors(accessToken, realmId, this.useSandbox),
+        this.quickbooksService.getAccounts(
+          accessToken,
+          realmId,
+          this.useSandbox,
+        ),
+        this.quickbooksService.getCustomers(
+          accessToken,
+          realmId,
+          this.useSandbox,
+        ),
+        this.quickbooksService.getVendors(
+          accessToken,
+          realmId,
+          this.useSandbox,
+        ),
       ]);
 
-      this.logger.log(`Initial sync data fetched: ${accounts.length} accounts, ${customers.length} customers, ${vendors.length} vendors`);
+      this.logger.log(
+        `Initial sync data fetched: ${accounts.length} accounts, ${customers.length} customers, ${vendors.length} vendors`,
+      );
 
       // TODO: Send to Bronze layer S3 bucket
       // This would be done by calling the ETL service or directly writing to S3
-      
     } catch (err) {
       this.logger.error(`Initial sync failed: ${err}`);
     }

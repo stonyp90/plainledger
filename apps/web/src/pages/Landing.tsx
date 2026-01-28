@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
@@ -6,26 +6,21 @@ import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
-import { AnalyticsAnimation, DataFlowAnimation, ProcessingAnimation } from '../components/LottieAnimations';
 import { 
   ArrowRight,
   Check,
   Shield,
   Menu,
   X,
-  Lock,
   Database,
   Sparkles,
-  Cpu,
   FileCheck,
   Layers,
   Zap,
   TrendingUp,
   Eye,
   RefreshCw,
-  ArrowUpRight,
   ArrowDownRight,
-  Gauge,
   Brain,
   Calendar,
   Target,
@@ -1112,11 +1107,11 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           </div>
           
           {/* KPI Cards Row - Runway Style */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 relative">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 relative">
             {current.kpis.map((kpi, i) => (
               <div 
                 key={i}
-                className={`p-3 rounded-xl transition-all duration-300 cursor-pointer relative group ${
+                className={`p-2 rounded-lg transition-all duration-300 cursor-pointer relative group ${
                   showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                 }`}
                 style={{ 
@@ -1129,18 +1124,18 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                 onMouseEnter={() => setHoveredKpi(i)}
                 onMouseLeave={() => setHoveredKpi(null)}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[8px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
                     {kpi.label}
                   </span>
-                  <span className="text-xs sm:text-sm font-bold" style={{ color: theme.green }}>
+                  <span className="text-[10px] sm:text-xs font-bold" style={{ color: theme.green }}>
                     {kpi.value}
                   </span>
                 </div>
                 <AnimatedAreaChart 
                   data={kpi.data}
                   color={theme.green}
-                  height={45}
+                  height={35}
                   delay={400 + i * 100}
                   trigger={isVisible}
                   showDashed={kpi.projection}
@@ -1151,24 +1146,24 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                 {/* Hover Tooltip - Slick & Compact */}
                 {hoveredKpi === i && kpi.threshold && (
                   <div 
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 rounded-lg shadow-xl z-20 whitespace-nowrap"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1.5 rounded-md shadow-xl z-20 whitespace-nowrap"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                       border: `1px solid ${theme.green}25`,
                       backdropFilter: 'blur(12px)',
                     }}
                   >
-                    <div className="flex items-center gap-3 text-[9px]">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                    <div className="flex items-center gap-2 text-[8px]">
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 rounded-full" style={{ backgroundColor: theme.green }} />
                         <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>{kpi.threshold}</span>
                       </div>
-                      <div className="w-px h-3" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                      <div className="w-px h-2.5" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 rounded-full" style={{ backgroundColor: theme.gold }} />
                         <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>{kpi.target}</span>
                       </div>
-                      <div className="w-px h-3" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
+                      <div className="w-px h-2.5" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
                       <span className="font-medium" style={{ color: theme.green }}>{kpi.insight}</span>
                     </div>
                   </div>
@@ -1315,7 +1310,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             {current.benchmarks.map((row, i) => {
               const isExcellent = row.status === 'excellent';
               const isGood = row.status === 'good';
-              const statusIcon = isExcellent ? CheckCircle : isGood ? CheckCircle : AlertCircle;
+              // Status icon determined by condition below
               const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
               
               return (
@@ -1390,8 +1385,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
   );
 }
 
-// Supported integrations
-const integrations = ['QuickBooks', 'Xero', 'Sage', 'FreshBooks', 'Wave', 'CSV Import'];
+// Supported integrations - used inline in JSX
 
 // Theme colors
 const colors = {

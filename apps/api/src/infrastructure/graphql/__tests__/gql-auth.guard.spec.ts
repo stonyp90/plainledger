@@ -50,11 +50,15 @@ describe("GqlAuthGuard", () => {
 
   // Create a valid JWT for testing
   const createMockToken = (payload: Record<string, unknown>): string => {
-    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64");
-    const body = Buffer.from(JSON.stringify({
-      exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-      ...payload,
-    })).toString("base64");
+    const header = Buffer.from(
+      JSON.stringify({ alg: "HS256", typ: "JWT" }),
+    ).toString("base64");
+    const body = Buffer.from(
+      JSON.stringify({
+        exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+        ...payload,
+      }),
+    ).toString("base64");
     const signature = "mock-signature";
     return `${header}.${body}.${signature}`;
   };
@@ -90,7 +94,7 @@ describe("GqlAuthGuard", () => {
   describe("canActivate", () => {
     it("should allow access to public endpoints", async () => {
       jest.spyOn(reflector, "get").mockReturnValue(true);
-      
+
       const context = createMockContext();
       const result = await guard.canActivate(context);
 
@@ -100,7 +104,9 @@ describe("GqlAuthGuard", () => {
     it("should reject requests without authorization header", async () => {
       const context = createMockContext({});
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should reject requests with invalid authorization format", async () => {
@@ -108,7 +114,9 @@ describe("GqlAuthGuard", () => {
         authorization: "InvalidFormat token123",
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should reject requests with invalid JWT format", async () => {
@@ -116,7 +124,9 @@ describe("GqlAuthGuard", () => {
         authorization: "Bearer invalid-token",
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should allow requests with valid JWT", async () => {
@@ -141,15 +151,21 @@ describe("GqlAuthGuard", () => {
         sub: "user-123",
         exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
       };
-      const header = Buffer.from(JSON.stringify({ alg: "HS256" })).toString("base64");
-      const body = Buffer.from(JSON.stringify(expiredPayload)).toString("base64");
+      const header = Buffer.from(JSON.stringify({ alg: "HS256" })).toString(
+        "base64",
+      );
+      const body = Buffer.from(JSON.stringify(expiredPayload)).toString(
+        "base64",
+      );
       const token = `${header}.${body}.signature`;
 
       const context = createMockContext({
         authorization: `Bearer ${token}`,
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it("should extract organization ID from token", async () => {
@@ -178,7 +194,9 @@ describe("GqlAuthGuard", () => {
       await guard.canActivate(context);
 
       expect(mockRequest.user).toBeDefined();
-      expect((mockRequest.user as Record<string, string>).organizationId).toBe("org-specific-123");
+      expect((mockRequest.user as Record<string, string>).organizationId).toBe(
+        "org-specific-123",
+      );
     });
 
     it("should extract roles from Keycloak token format", async () => {
@@ -208,8 +226,12 @@ describe("GqlAuthGuard", () => {
 
       await guard.canActivate(context);
 
-      expect((mockRequest.user as Record<string, string[]>).roles).toContain("admin");
-      expect((mockRequest.user as Record<string, string[]>).roles).toContain("user");
+      expect((mockRequest.user as Record<string, string[]>).roles).toContain(
+        "admin",
+      );
+      expect((mockRequest.user as Record<string, string[]>).roles).toContain(
+        "user",
+      );
     });
   });
 
@@ -236,7 +258,9 @@ describe("GqlAuthGuard", () => {
 
       const context = createMockContext({});
 
-      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -297,14 +321,21 @@ describe("GqlAuthGuard Token Validation", () => {
       roles: ["user"], // Instead of realm_access.roles
     };
 
-    const header = Buffer.from(JSON.stringify({ alg: "HS256" })).toString("base64");
-    const body = Buffer.from(JSON.stringify({
-      ...payload,
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    })).toString("base64");
+    const header = Buffer.from(JSON.stringify({ alg: "HS256" })).toString(
+      "base64",
+    );
+    const body = Buffer.from(
+      JSON.stringify({
+        ...payload,
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      }),
+    ).toString("base64");
     const token = `${header}.${body}.signature`;
 
-    const mockRequest = { headers: { authorization: `Bearer ${token}` }, user: undefined as unknown };
+    const mockRequest = {
+      headers: { authorization: `Bearer ${token}` },
+      user: undefined as unknown,
+    };
     const mockGqlContext = {
       getContext: () => ({ req: mockRequest }),
       getInfo: () => ({
@@ -321,7 +352,11 @@ describe("GqlAuthGuard Token Validation", () => {
 
     await guard.canActivate(context);
 
-    expect((mockRequest.user as Record<string, string>).sub).toBe("alt-user-123");
-    expect((mockRequest.user as Record<string, string>).organizationId).toBe("alt-org-456");
+    expect((mockRequest.user as Record<string, string>).sub).toBe(
+      "alt-user-123",
+    );
+    expect((mockRequest.user as Record<string, string>).organizationId).toBe(
+      "alt-org-456",
+    );
   });
 });

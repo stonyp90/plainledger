@@ -111,7 +111,12 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
     oauth: {
       authorizationUrl: "https://appcenter.intuit.com/connect/oauth2",
       tokenUrl: "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-      scopes: ["com.intuit.quickbooks.accounting", "openid", "profile", "email"],
+      scopes: [
+        "com.intuit.quickbooks.accounting",
+        "openid",
+        "profile",
+        "email",
+      ],
       responseType: "code",
     },
     api: {
@@ -129,13 +134,24 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "Id",
         updatedAtField: "MetaData.LastUpdatedTime",
         fields: [
-          { sourceField: "Id", targetField: "source_account_id", required: true },
+          {
+            sourceField: "Id",
+            targetField: "source_account_id",
+            required: true,
+          },
           { sourceField: "Name", targetField: "account_name", required: true },
           { sourceField: "AcctNum", targetField: "account_code" },
           { sourceField: "AccountType", targetField: "source_account_type" },
-          { sourceField: "AccountSubType", targetField: "source_account_subtype" },
+          {
+            sourceField: "AccountSubType",
+            targetField: "source_account_subtype",
+          },
           { sourceField: "Classification", targetField: "classification" },
-          { sourceField: "Active", targetField: "is_active", transform: "boolean" },
+          {
+            sourceField: "Active",
+            targetField: "is_active",
+            transform: "boolean",
+          },
           { sourceField: "CurrencyRef.value", targetField: "currency_code" },
           {
             sourceField: "MetaData.CreateTime",
@@ -155,8 +171,16 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "Id",
         updatedAtField: "MetaData.LastUpdatedTime",
         fields: [
-          { sourceField: "Id", targetField: "source_contact_id", required: true },
-          { sourceField: "DisplayName", targetField: "display_name", required: true },
+          {
+            sourceField: "Id",
+            targetField: "source_contact_id",
+            required: true,
+          },
+          {
+            sourceField: "DisplayName",
+            targetField: "display_name",
+            required: true,
+          },
           { sourceField: "CompanyName", targetField: "legal_name" },
           { sourceField: "GivenName", targetField: "first_name" },
           { sourceField: "FamilyName", targetField: "last_name" },
@@ -168,9 +192,16 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
             sourceField: "BillAddr.CountrySubDivisionCode",
             targetField: "address_province_code",
           },
-          { sourceField: "BillAddr.PostalCode", targetField: "address_postal_code" },
+          {
+            sourceField: "BillAddr.PostalCode",
+            targetField: "address_postal_code",
+          },
           { sourceField: "BillAddr.Country", targetField: "address_country" },
-          { sourceField: "Active", targetField: "is_active", transform: "boolean" },
+          {
+            sourceField: "Active",
+            targetField: "is_active",
+            transform: "boolean",
+          },
         ],
       },
       invoices: {
@@ -180,15 +211,42 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "Id",
         updatedAtField: "MetaData.LastUpdatedTime",
         fields: [
-          { sourceField: "Id", targetField: "source_transaction_id", required: true },
+          {
+            sourceField: "Id",
+            targetField: "source_transaction_id",
+            required: true,
+          },
           { sourceField: "DocNumber", targetField: "reference_number" },
-          { sourceField: "TxnDate", targetField: "transaction_date", transform: "date" },
-          { sourceField: "DueDate", targetField: "due_date", transform: "date" },
-          { sourceField: "CustomerRef.value", targetField: "source_contact_id" },
-          { sourceField: "TotalAmt", targetField: "total_amount", transform: "currency" },
-          { sourceField: "Balance", targetField: "balance", transform: "currency" },
+          {
+            sourceField: "TxnDate",
+            targetField: "transaction_date",
+            transform: "date",
+          },
+          {
+            sourceField: "DueDate",
+            targetField: "due_date",
+            transform: "date",
+          },
+          {
+            sourceField: "CustomerRef.value",
+            targetField: "source_contact_id",
+          },
+          {
+            sourceField: "TotalAmt",
+            targetField: "total_amount",
+            transform: "currency",
+          },
+          {
+            sourceField: "Balance",
+            targetField: "balance",
+            transform: "currency",
+          },
           { sourceField: "CurrencyRef.value", targetField: "currency_code" },
-          { sourceField: "ExchangeRate", targetField: "exchange_rate", transform: "number" },
+          {
+            sourceField: "ExchangeRate",
+            targetField: "exchange_rate",
+            transform: "number",
+          },
         ],
       },
       journalEntries: {
@@ -198,9 +256,17 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "Id",
         updatedAtField: "MetaData.LastUpdatedTime",
         fields: [
-          { sourceField: "Id", targetField: "source_transaction_id", required: true },
+          {
+            sourceField: "Id",
+            targetField: "source_transaction_id",
+            required: true,
+          },
           { sourceField: "DocNumber", targetField: "reference_number" },
-          { sourceField: "TxnDate", targetField: "transaction_date", transform: "date" },
+          {
+            sourceField: "TxnDate",
+            targetField: "transaction_date",
+            transform: "date",
+          },
           { sourceField: "PrivateNote", targetField: "memo" },
           { sourceField: "CurrencyRef.value", targetField: "currency_code" },
         ],
@@ -250,14 +316,22 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "AccountID",
         updatedAtField: "UpdatedDateUTC",
         fields: [
-          { sourceField: "AccountID", targetField: "source_account_id", required: true },
+          {
+            sourceField: "AccountID",
+            targetField: "source_account_id",
+            required: true,
+          },
           { sourceField: "Name", targetField: "account_name", required: true },
           { sourceField: "Code", targetField: "account_code" },
           { sourceField: "Type", targetField: "source_account_type" },
           { sourceField: "Class", targetField: "classification" },
           { sourceField: "Status", targetField: "status" },
           { sourceField: "CurrencyCode", targetField: "currency_code" },
-          { sourceField: "UpdatedDateUTC", targetField: "source_updated_at", transform: "date" },
+          {
+            sourceField: "UpdatedDateUTC",
+            targetField: "source_updated_at",
+            transform: "date",
+          },
         ],
       },
       contacts: {
@@ -265,13 +339,25 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "ContactID",
         updatedAtField: "UpdatedDateUTC",
         fields: [
-          { sourceField: "ContactID", targetField: "source_contact_id", required: true },
+          {
+            sourceField: "ContactID",
+            targetField: "source_contact_id",
+            required: true,
+          },
           { sourceField: "Name", targetField: "display_name", required: true },
           { sourceField: "FirstName", targetField: "first_name" },
           { sourceField: "LastName", targetField: "last_name" },
           { sourceField: "EmailAddress", targetField: "email" },
-          { sourceField: "IsCustomer", targetField: "is_customer", transform: "boolean" },
-          { sourceField: "IsSupplier", targetField: "is_vendor", transform: "boolean" },
+          {
+            sourceField: "IsCustomer",
+            targetField: "is_customer",
+            transform: "boolean",
+          },
+          {
+            sourceField: "IsSupplier",
+            targetField: "is_vendor",
+            transform: "boolean",
+          },
         ],
       },
       invoices: {
@@ -279,13 +365,36 @@ export const DEFAULT_PROVIDERS: Partial<IntegrationProvider>[] = [
         idField: "InvoiceID",
         updatedAtField: "UpdatedDateUTC",
         fields: [
-          { sourceField: "InvoiceID", targetField: "source_transaction_id", required: true },
+          {
+            sourceField: "InvoiceID",
+            targetField: "source_transaction_id",
+            required: true,
+          },
           { sourceField: "InvoiceNumber", targetField: "reference_number" },
-          { sourceField: "Date", targetField: "transaction_date", transform: "date" },
-          { sourceField: "DueDate", targetField: "due_date", transform: "date" },
-          { sourceField: "Contact.ContactID", targetField: "source_contact_id" },
-          { sourceField: "Total", targetField: "total_amount", transform: "currency" },
-          { sourceField: "AmountDue", targetField: "balance", transform: "currency" },
+          {
+            sourceField: "Date",
+            targetField: "transaction_date",
+            transform: "date",
+          },
+          {
+            sourceField: "DueDate",
+            targetField: "due_date",
+            transform: "date",
+          },
+          {
+            sourceField: "Contact.ContactID",
+            targetField: "source_contact_id",
+          },
+          {
+            sourceField: "Total",
+            targetField: "total_amount",
+            transform: "currency",
+          },
+          {
+            sourceField: "AmountDue",
+            targetField: "balance",
+            transform: "currency",
+          },
           { sourceField: "CurrencyCode", targetField: "currency_code" },
         ],
       },

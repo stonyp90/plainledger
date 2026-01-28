@@ -24,35 +24,45 @@ import { join } from "path";
       driver: ApolloDriver,
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const isProduction = configService.get<string>("NODE_ENV") === "production";
-        
+        const isProduction =
+          configService.get<string>("NODE_ENV") === "production";
+
         return {
           // Schema generation - use in-memory for production (no file system access needed)
           // In development, write to src/schema.gql for IDE support
-          autoSchemaFile: isProduction ? true : join(process.cwd(), "src/schema.gql"),
+          autoSchemaFile: isProduction
+            ? true
+            : join(process.cwd(), "src/schema.gql"),
           sortSchema: true,
-          
+
           // Security settings
           playground: !isProduction,
-          introspection: !isProduction || configService.get<boolean>("GRAPHQL_INTROSPECTION"),
-          
+          introspection:
+            !isProduction ||
+            configService.get<boolean>("GRAPHQL_INTROSPECTION"),
+
           // Context setup - pass request for auth
-          context: ({ req, res }: { req: Request; res: Response }) => ({ req, res }),
-          
+          context: ({ req, res }: { req: Request; res: Response }) => ({
+            req,
+            res,
+          }),
+
           // CORS handled by NestJS main config
           cors: false,
-          
+
           // Path configuration
           path: "/graphql",
-          
+
           // Performance & Security
           cache: "bounded",
           persistedQueries: false, // Disable for now, can enable with Redis
-          
+
           // Error formatting - hide internal errors in production
           formatError: (error) => {
-            const originalError = error.extensions?.originalError as { message?: string } | undefined;
-            
+            const originalError = error.extensions?.originalError as
+              | { message?: string }
+              | undefined;
+
             if (isProduction) {
               // Don't expose internal error details
               return {
@@ -63,7 +73,7 @@ import { join } from "path";
                 },
               };
             }
-            
+
             // Development: include full error details
             return {
               message: error.message,

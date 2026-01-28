@@ -79,7 +79,7 @@ function FieldPicker({
   onFieldToggle,
   onFieldReorder,
   onFieldRemove,
-  onFieldUpdate,
+  onFieldUpdate: _onFieldUpdate,
   isEn,
 }: FieldPickerProps) {
   const [hoveredField, setHoveredField] = useState<DataMetric | null>(null);
@@ -730,10 +730,7 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
         )}
 
         {/* Lines/Areas for each field */}
-        {enabledFields.map((field, fieldIndex) => {
-          const info = METRIC_INFO[field.id];
-          const color = field.color || info.color;
-          
+        {enabledFields.map((field) => {
           const points = mockData.map((d, i) => ({
             x: padding.left + (i / (mockData.length - 1)) * chartWidth,
             y: padding.top + chartHeight - ((d[field.id] - minValue) / range) * chartHeight,
@@ -884,7 +881,7 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
     const isDonut = chartType === 'donut';
     
     let currentAngle = -90;
-    const segments = enabledFields.map((field, i) => {
+    const segments = enabledFields.map((field) => {
       const info = METRIC_INFO[field.id];
       const value = mockData[mockData.length - 1][field.id];
       const angle = (value / total) * 360;
@@ -1005,7 +1002,6 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
     const percentage = Math.min(100, (value / maxValue) * 100);
     const field = enabledFields[0];
     const info = field ? METRIC_INFO[field.id] : null;
-    const color = field?.color || info?.color || 'rgb(var(--color-primary-500))';
 
     const getGaugeColor = () => {
       if (percentage < 33) return 'rgb(var(--color-error))';

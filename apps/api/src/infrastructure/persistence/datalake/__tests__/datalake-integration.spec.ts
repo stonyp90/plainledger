@@ -24,7 +24,11 @@ import {
   SilverContactType,
   SilverTransactionType,
 } from "@domain/datalake/silver-schema";
-import { AccountType, ContactType, SourceSystem } from "@domain/datalake/schemas";
+import {
+  AccountType,
+  ContactType,
+  SourceSystem,
+} from "@domain/datalake/schemas";
 
 // Test configuration
 const LOCALSTACK_ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:4566";
@@ -297,8 +301,7 @@ describe("Datalake Integration Tests", () => {
         "ds-456",
       );
 
-      const silverTxns =
-        etlService.transformQuickBooksInvoiceToSilver(bronze);
+      const silverTxns = etlService.transformQuickBooksInvoiceToSilver(bronze);
 
       // Should create multiple transactions (A/R entry + line items)
       expect(silverTxns.length).toBe(3); // 1 A/R + 2 line items
@@ -429,8 +432,7 @@ describe("Datalake Integration Tests", () => {
         "org-123",
         "ds-456",
       );
-      const silverTxns =
-        etlService.transformQuickBooksInvoiceToSilver(bronze);
+      const silverTxns = etlService.transformQuickBooksInvoiceToSilver(bronze);
 
       const accountKeyMap = new Map([["accounts_receivable", "gold_acc_ar"]]);
       const contactKeyMap = new Map([["101", "gold_contact_acme"]]);
@@ -463,8 +465,7 @@ describe("Datalake Integration Tests", () => {
         "org-123",
         "ds-456",
       );
-      const silverTxns =
-        etlService.transformQuickBooksInvoiceToSilver(bronze);
+      const silverTxns = etlService.transformQuickBooksInvoiceToSilver(bronze);
       const goldTxns = etlService.transformSilverTransactionsToGold(
         silverTxns,
         "org-key-1",
@@ -721,12 +722,15 @@ describe("Datalake Integration Tests", () => {
     it("should handle batch of 100 accounts efficiently", () => {
       if (skipIfNoLocalStack()) return;
 
-      const accounts: QuickBooksAccount[] = Array.from({ length: 100 }, (_, i) => ({
-        ...sampleQuickBooksAccount,
-        Id: `${i + 1}`,
-        AcctNum: `${1000 + i}`,
-        Name: `Account ${i + 1}`,
-      }));
+      const accounts: QuickBooksAccount[] = Array.from(
+        { length: 100 },
+        (_, i) => ({
+          ...sampleQuickBooksAccount,
+          Id: `${i + 1}`,
+          AcctNum: `${1000 + i}`,
+          Name: `Account ${i + 1}`,
+        }),
+      );
 
       const startTime = Date.now();
 

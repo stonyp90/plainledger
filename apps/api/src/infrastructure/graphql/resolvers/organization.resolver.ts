@@ -10,7 +10,12 @@
  * - Admin operations require elevated permissions
  */
 import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
-import { UseGuards, Logger, ForbiddenException, Injectable } from "@nestjs/common";
+import {
+  UseGuards,
+  Logger,
+  ForbiddenException,
+  Injectable,
+} from "@nestjs/common";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
 import {
   Organization,
@@ -44,13 +49,18 @@ export class OrganizationResolver {
     description: "Get the current user's organization",
   })
   async getOrganization(
-    @Context() context: { req: { user: { organizationId: string; sub: string } } },
+    @Context()
+    context: {
+      req: { user: { organizationId: string; sub: string } };
+    },
   ): Promise<Organization> {
     const { organizationId, sub: userId } = context.req.user;
     this.logger.log(`User ${userId} fetching organization ${organizationId}`);
 
     try {
-      const org = await this.getOrganizationUseCase.execute({ tenantId: organizationId });
+      const org = await this.getOrganizationUseCase.execute({
+        tenantId: organizationId,
+      });
 
       return {
         id: org.id,
@@ -73,7 +83,8 @@ export class OrganizationResolver {
   })
   async getOrganizationById(
     @Args("id") id: string,
-    @Context() context: { req: { user: { roles: string[]; organizationId: string } } },
+    @Context()
+    context: { req: { user: { roles: string[]; organizationId: string } } },
   ): Promise<Organization | null> {
     // Security: Only allow access to own org or if admin
     const isAdmin = context.req.user.roles?.includes("admin");
@@ -142,7 +153,7 @@ export class OrganizationResolver {
     try {
       // Generate a tenant ID for the new organization
       const tenantId = `tenant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const org = await this.createOrganizationUseCase.execute({
         tenantId,
         name: input.name,
@@ -169,21 +180,26 @@ export class OrganizationResolver {
   })
   async updateOrganization(
     @Args("input") input: UpdateOrganizationInput,
-    @Context() context: { req: { user: { organizationId: string; roles: string[] } } },
+    @Context()
+    context: { req: { user: { organizationId: string; roles: string[] } } },
   ): Promise<Organization> {
     const { organizationId, roles } = context.req.user;
-    
+
     // Security: Only admins and owners can update
     const canUpdate = roles?.includes("admin") || roles?.includes("owner");
     if (!canUpdate) {
-      throw new ForbiddenException("Insufficient permissions to update organization");
+      throw new ForbiddenException(
+        "Insufficient permissions to update organization",
+      );
     }
 
     this.logger.log(`Updating organization ${organizationId}`);
 
     try {
       // Would normally call an update use case
-      const org = await this.getOrganizationUseCase.execute({ tenantId: organizationId });
+      const org = await this.getOrganizationUseCase.execute({
+        tenantId: organizationId,
+      });
 
       return {
         id: org.id,
@@ -211,7 +227,9 @@ export class OrganizationResolver {
     // Security: Only platform admins can update features
     const isAdmin = context.req.user.roles?.includes("platform-admin");
     if (!isAdmin) {
-      throw new ForbiddenException("Only platform administrators can update features");
+      throw new ForbiddenException(
+        "Only platform administrators can update features",
+      );
     }
 
     this.logger.log(`Updating features for org: ${organizationId}`);
@@ -230,7 +248,9 @@ export class OrganizationResolver {
             visibleToRoles: ["admin"],
           },
         },
-        updatedBy: context.req.user.roles?.includes("platform-admin") ? "platform-admin" : "admin",
+        updatedBy: context.req.user.roles?.includes("platform-admin")
+          ? "platform-admin"
+          : "admin",
       });
 
       return {

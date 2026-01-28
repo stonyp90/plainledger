@@ -221,7 +221,7 @@ interface TimeRangeSelectorProps {
   isEn: boolean;
 }
 
-export function TimeRangeSelector({ selected, onChange, isEn }: TimeRangeSelectorProps) {
+export function TimeRangeSelector({ selected, onChange }: TimeRangeSelectorProps) {
   const ranges: TimeRange[] = ['1W', '1M', '3M', '6M', 'YTD', '1Y', '2Y', 'ALL'];
   
   return (
@@ -682,7 +682,6 @@ export function DataVisualizationCard({
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [localBookmarked, setLocalBookmarked] = useState(isBookmarked);
   
-  const chartInfo = CHART_TYPE_INFO[config.chartType];
   const Icon = ChartTypeIcon[config.chartType];
   
   // Mock views for demo
@@ -1060,7 +1059,6 @@ export function DataVisualizationCard({
 // Simple Line/Bar/Area Chart with Hover Tooltips
 function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   
   const maxValue = Math.max(...data.map(d => d.value));
   const minValue = Math.min(...data.map(d => d.value));
@@ -1387,7 +1385,7 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
 }
 
 // Radar Chart
-function RadarChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function RadarChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const maxValue = Math.max(...data.map(d => d.value));
   const numPoints = data.length;
   const angleStep = (2 * Math.PI) / numPoints;
@@ -1480,7 +1478,7 @@ function RadarChart({ data, config, isEn }: { data: any[]; config: ChartConfig; 
 }
 
 // Gauge Chart
-function GaugeChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const value = data[0]?.value || 0;
   const maxValue = data[0]?.max || 3;
   const percentage = Math.min(100, (value / maxValue) * 100);
@@ -1546,7 +1544,7 @@ function GaugeChart({ data, config, isEn }: { data: any[]; config: ChartConfig; 
 }
 
 // Heatmap Chart
-function HeatmapChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function HeatmapChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
   const weeks = Array.from({ length: 12 }, (_, i) => i + 1);
   
@@ -1615,9 +1613,9 @@ function HeatmapChart({ data, config, isEn }: { data: any[]; config: ChartConfig
 }
 
 // Waterfall Chart
-function WaterfallChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function WaterfallChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   let cumulative = 0;
-  const processedData = data.map((d, i) => {
+  const processedData = data.map((d) => {
     const start = cumulative;
     cumulative += d.value;
     return {
@@ -1705,7 +1703,7 @@ function WaterfallChart({ data, config, isEn }: { data: any[]; config: ChartConf
 }
 
 // Table View
-function TableView({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function TableView({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   return (
     <div className="h-full overflow-auto">
       <table className="w-full text-sm">

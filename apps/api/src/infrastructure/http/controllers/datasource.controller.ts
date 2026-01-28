@@ -66,12 +66,12 @@ class SyncResultDto {
 
 /**
  * SECURITY WARNING: In-memory storage for development only!
- * 
+ *
  * In production, tokens MUST be:
  * 1. Stored in an encrypted database column
  * 2. Encrypted at rest using AWS KMS or similar
  * 3. Access logged and audited
- * 
+ *
  * TODO: Migrate to PostgresDataSourceRepository with encrypted token storage
  * @see https://docs.nestjs.com/security/encryption-and-hashing
  */
@@ -95,7 +95,9 @@ setInterval(() => {
   for (const [key, data] of tokenStore.entries()) {
     if (data.expiresAt && data.expiresAt < now) {
       tokenStore.delete(key);
-      console.log(`[Security] Cleared expired token for datasource: ${key.substring(0, 8)}...`);
+      console.log(
+        `[Security] Cleared expired token for datasource: ${key.substring(0, 8)}...`,
+      );
     }
   }
 }, 60000); // Check every minute
@@ -111,9 +113,12 @@ export class DataSourceController {
   constructor(private readonly configService: ConfigService) {
     this.quickbooksService = new QuickBooksService(configService);
     // Read environment from config - default to sandbox for safety
-    const environment = this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
+    const environment =
+      this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
     this.useSandbox = environment !== "production";
-    this.logger.log(`QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`);
+    this.logger.log(
+      `QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`,
+    );
   }
 
   @Get()
@@ -149,20 +154,25 @@ export class DataSourceController {
     const state = crypto.randomUUID();
 
     // Use configured redirect URI if not provided
-    const effectiveRedirectUri = redirectUri || 
-      this.configService.get<string>(`${provider.toUpperCase()}_REDIRECT_URI`) ||
-      `${this.configService.get<string>('APP_URL')}/api/v1/datasources/oauth/${provider}/callback`;
+    const effectiveRedirectUri =
+      redirectUri ||
+      this.configService.get<string>(
+        `${provider.toUpperCase()}_REDIRECT_URI`,
+      ) ||
+      `${this.configService.get<string>("APP_URL")}/api/v1/datasources/oauth/${provider}/callback`;
 
     // Provider-specific OAuth URL generation
-    if (provider === 'quickbooks') {
+    if (provider === "quickbooks") {
       const url = this.quickbooksService.getAuthorizationUrl(state);
       this.logger.log(`Generated QuickBooks OAuth URL for state: ${state}`);
       return { url, state };
     }
 
     // Fallback for other providers
-    const clientId = this.configService.get<string>(`${provider.toUpperCase()}_CLIENT_ID`) || 'YOUR_CLIENT_ID';
-    
+    const clientId =
+      this.configService.get<string>(`${provider.toUpperCase()}_CLIENT_ID`) ||
+      "YOUR_CLIENT_ID";
+
     const oauthUrls: Record<string, string> = {
       xero: `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(effectiveRedirectUri)}&scope=openid profile email accounting.transactions accounting.contacts&state=${state}`,
       sage: `https://www.sageone.com/oauth2/auth?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(effectiveRedirectUri)}&scope=full_access&state=${state}`,
@@ -183,8 +193,13 @@ export class DataSourceController {
    */
   @Public()
   @Get(":provider/oauth/callback")
-  @ApiOperation({ summary: "Handle OAuth callback redirect from provider (GET)" })
-  @ApiResponse({ status: 302, description: "Redirect to frontend with connection result" })
+  @ApiOperation({
+    summary: "Handle OAuth callback redirect from provider (GET)",
+  })
+  @ApiResponse({
+    status: 302,
+    description: "Redirect to frontend with connection result",
+  })
   async handleOAuthCallbackGet(
     @Param("provider") provider: string,
     @Query("code") code: string,
@@ -193,26 +208,40 @@ export class DataSourceController {
     @Query("error") error: string,
     @Res() res: Response,
   ): Promise<void> {
-    this.logger.log(`OAuth GET callback received for ${provider}, state: ${state}, realmId: ${realmId}`);
-    
-    const frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://plainledger.ca";
-    
+    this.logger.log(
+      `OAuth GET callback received for ${provider}, state: ${state}, realmId: ${realmId}`,
+    );
+
+    const frontendUrl =
+      this.configService.get<string>("FRONTEND_URL") ||
+      "https://plainledger.ca";
+
     // Handle OAuth errors
     if (error) {
       this.logger.error(`OAuth error for ${provider}: ${error}`);
-      res.redirect(`${frontendUrl}/connections?error=${encodeURIComponent(error)}&provider=${provider}`);
+      res.redirect(
+        `${frontendUrl}/connections?error=${encodeURIComponent(error)}&provider=${provider}`,
+      );
       return;
     }
 
     try {
       // Process the callback using the existing logic
-      const result = await this.processOAuthCallback(provider, { code, state, realmId });
-      
+      const result = await this.processOAuthCallback(provider, {
+        code,
+        state,
+        realmId,
+      });
+
       // Redirect to frontend with success
-      res.redirect(`${frontendUrl}/connections?success=true&provider=${provider}&datasourceId=${result.id}&company=${encodeURIComponent(result.companyName || '')}`);
+      res.redirect(
+        `${frontendUrl}/connections?success=true&provider=${provider}&datasourceId=${result.id}&company=${encodeURIComponent(result.companyName || "")}`,
+      );
     } catch (err) {
       this.logger.error(`OAuth callback processing failed: ${err}`);
-      res.redirect(`${frontendUrl}/connections?error=${encodeURIComponent(String(err))}&provider=${provider}`);
+      res.redirect(
+        `${frontendUrl}/connections?error=${encodeURIComponent(String(err))}&provider=${provider}`,
+      );
     }
   }
 
@@ -241,7 +270,7 @@ export class DataSourceController {
     const datasourceId = crypto.randomUUID();
 
     // Handle QuickBooks OAuth callback
-    if (provider === 'quickbooks' && callback.realmId) {
+    if (provider === "quickbooks" && callback.realmId) {
       try {
         // Exchange authorization code for tokens
         const tokens = await this.quickbooksService.exchangeCodeForTokens(
@@ -249,14 +278,16 @@ export class DataSourceController {
           callback.realmId,
         );
 
-        this.logger.log(`QuickBooks tokens obtained for realm: ${callback.realmId}`);
+        this.logger.log(
+          `QuickBooks tokens obtained for realm: ${callback.realmId}`,
+        );
 
         // Store tokens (in production, encrypt and save to database)
         // SECURITY: Tokens are stored with expiry for automatic cleanup
-        const expiresAt = tokens.accessTokenExpiresAt 
+        const expiresAt = tokens.accessTokenExpiresAt
           ? new Date(tokens.accessTokenExpiresAt)
           : new Date(Date.now() + 60 * 60 * 1000); // Default 1 hour
-        
+
         tokenStore.set(datasourceId, {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
@@ -299,7 +330,9 @@ export class DataSourceController {
   }
 
   @Post(":id/full-sync")
-  @ApiOperation({ summary: "Perform full data sync for a QuickBooks connection" })
+  @ApiOperation({
+    summary: "Perform full data sync for a QuickBooks connection",
+  })
   @ApiResponse({ status: 200, description: "Sync completed" })
   async fullSync(@Param("id") id: string): Promise<SyncResultDto> {
     const dataSource = mockDataSources.find((ds) => ds.id === id);
@@ -325,14 +358,15 @@ export class DataSourceController {
 
       // Update datasource stats
       dataSource.accountsCount = syncData.accounts.length;
-      dataSource.transactionsCount = syncData.invoices.length + syncData.journalEntries.length;
+      dataSource.transactionsCount =
+        syncData.invoices.length + syncData.journalEntries.length;
       dataSource.lastSyncAt = new Date().toISOString();
       dataSource.status = "connected";
 
       this.logger.log(
         `Full sync complete: ${syncData.accounts.length} accounts, ` +
-        `${syncData.customers.length} customers, ${syncData.vendors.length} vendors, ` +
-        `${syncData.invoices.length} invoices, ${syncData.journalEntries.length} journal entries`,
+          `${syncData.customers.length} customers, ${syncData.vendors.length} vendors, ` +
+          `${syncData.invoices.length} invoices, ${syncData.journalEntries.length} journal entries`,
       );
 
       return {

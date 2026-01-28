@@ -1,7 +1,7 @@
 /**
  * Keycloak Admin Service
  * Programmatic user management via Keycloak Admin REST API
- * 
+ *
  * Use cases:
  * - Create users programmatically (admin invite, team invites)
  * - Set user attributes (organization, industry)
@@ -62,7 +62,10 @@ export class KeycloakAdminService implements OnModuleInit {
   private isConfigured = false;
 
   constructor(private readonly configService: ConfigService) {
-    this.realm = this.configService.get<string>("KEYCLOAK_REALM", "plainledger");
+    this.realm = this.configService.get<string>(
+      "KEYCLOAK_REALM",
+      "plainledger",
+    );
   }
 
   async onModuleInit() {
@@ -73,12 +76,22 @@ export class KeycloakAdminService implements OnModuleInit {
    * Initialize Keycloak Admin Client with service account credentials
    */
   private async initializeClient(): Promise<void> {
-    const baseUrl = this.configService.get<string>("KEYCLOAK_URL", "http://localhost:8080");
-    const clientId = this.configService.get<string>("KEYCLOAK_ADMIN_CLIENT_ID", "plainledger-api");
-    const clientSecret = this.configService.get<string>("KEYCLOAK_CLIENT_SECRET");
+    const baseUrl = this.configService.get<string>(
+      "KEYCLOAK_URL",
+      "http://localhost:8080",
+    );
+    const clientId = this.configService.get<string>(
+      "KEYCLOAK_ADMIN_CLIENT_ID",
+      "plainledger-api",
+    );
+    const clientSecret = this.configService.get<string>(
+      "KEYCLOAK_CLIENT_SECRET",
+    );
 
     if (!clientSecret) {
-      this.logger.warn("KEYCLOAK_CLIENT_SECRET not configured - Keycloak Admin API disabled");
+      this.logger.warn(
+        "KEYCLOAK_CLIENT_SECRET not configured - Keycloak Admin API disabled",
+      );
       return;
     }
 
@@ -96,12 +109,16 @@ export class KeycloakAdminService implements OnModuleInit {
       });
 
       this.isConfigured = true;
-      this.logger.log(`Keycloak Admin Client initialized for realm: ${this.realm}`);
+      this.logger.log(
+        `Keycloak Admin Client initialized for realm: ${this.realm}`,
+      );
 
       // Set up token refresh (tokens expire after 5 minutes by default)
       this.scheduleTokenRefresh(clientId, clientSecret);
     } catch (error) {
-      this.logger.error(`Failed to initialize Keycloak Admin Client: ${error.message}`);
+      this.logger.error(
+        `Failed to initialize Keycloak Admin Client: ${error.message}`,
+      );
       this.isConfigured = false;
     }
   }
@@ -111,17 +128,22 @@ export class KeycloakAdminService implements OnModuleInit {
    */
   private scheduleTokenRefresh(clientId: string, clientSecret: string): void {
     // Refresh every 4 minutes (before 5 minute expiry)
-    setInterval(async () => {
-      try {
-        await this.adminClient.auth({
-          grantType: "client_credentials",
-          clientId,
-          clientSecret,
-        });
-      } catch (error) {
-        this.logger.error(`Failed to refresh Keycloak Admin token: ${error.message}`);
-      }
-    }, 4 * 60 * 1000);
+    setInterval(
+      async () => {
+        try {
+          await this.adminClient.auth({
+            grantType: "client_credentials",
+            clientId,
+            clientSecret,
+          });
+        } catch (error) {
+          this.logger.error(
+            `Failed to refresh Keycloak Admin token: ${error.message}`,
+          );
+        }
+      },
+      4 * 60 * 1000,
+    );
   }
 
   /**
@@ -320,7 +342,7 @@ export class KeycloakAdminService implements OnModuleInit {
 
       await this.adminClient.users.update(
         { realm: this.realm, id: input.userId },
-        { attributes: mergedAttributes }
+        { attributes: mergedAttributes },
       );
 
       this.logger.log(`Attributes updated for user: ${input.userId}`);
@@ -338,21 +360,30 @@ export class KeycloakAdminService implements OnModuleInit {
       throw new Error("Keycloak Admin Service not configured");
     }
 
-    this.logger.log(`Assigning roles ${roleNames.join(", ")} to user: ${userId}`);
+    this.logger.log(
+      `Assigning roles ${roleNames.join(", ")} to user: ${userId}`,
+    );
 
     try {
       // Get all realm roles
-      const realmRoles = await this.adminClient.roles.find({ realm: this.realm });
+      const realmRoles = await this.adminClient.roles.find({
+        realm: this.realm,
+      });
 
       // Filter to requested roles that have both id and name
       const rolesToAssign = realmRoles
-        .filter((role): role is RoleRepresentation & { id: string; name: string } => 
-          Boolean(role.id) && Boolean(role.name) && roleNames.includes(role.name!)
+        .filter(
+          (role): role is RoleRepresentation & { id: string; name: string } =>
+            Boolean(role.id) &&
+            Boolean(role.name) &&
+            roleNames.includes(role.name!),
         )
         .map((role) => ({ id: role.id, name: role.name }));
 
       if (rolesToAssign.length === 0) {
-        this.logger.warn(`No matching roles found for: ${roleNames.join(", ")}`);
+        this.logger.warn(
+          `No matching roles found for: ${roleNames.join(", ")}`,
+        );
         return;
       }
 
@@ -406,7 +437,9 @@ export class KeycloakAdminService implements OnModuleInit {
       });
       this.logger.log(`Password reset email sent to user: ${userId}`);
     } catch (error) {
-      this.logger.error(`Failed to send password reset email: ${error.message}`);
+      this.logger.error(
+        `Failed to send password reset email: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -415,11 +448,13 @@ export class KeycloakAdminService implements OnModuleInit {
    * Invite team member - creates user with organization attributes
    */
   async inviteTeamMember(input: InviteTeamMemberInput): Promise<KeycloakUser> {
-    this.logger.log(`Inviting team member: ${input.email} to organization: ${input.organizationName}`);
+    this.logger.log(
+      `Inviting team member: ${input.email} to organization: ${input.organizationName}`,
+    );
 
     // Check if user already exists
     const existingUser = await this.findUserByEmail(input.email);
-    
+
     if (existingUser) {
       // User exists - update their attributes to add this organization
       await this.updateUserAttributes({
@@ -460,7 +495,9 @@ export class KeycloakAdminService implements OnModuleInit {
   /**
    * Get all users in an organization (by attribute)
    */
-  async getUsersByOrganization(organizationId: string): Promise<KeycloakUser[]> {
+  async getUsersByOrganization(
+    organizationId: string,
+  ): Promise<KeycloakUser[]> {
     if (!this.isConfigured) {
       throw new Error("Keycloak Admin Service not configured");
     }
@@ -471,7 +508,7 @@ export class KeycloakAdminService implements OnModuleInit {
       // 1. Keycloak extension for attribute search
       // 2. Custom SPI
       // 3. Query all users and filter (not scalable for large user bases)
-      
+
       // For now, we'll use a workaround with first/max pagination
       const allUsers = await this.adminClient.users.find({
         realm: this.realm,
@@ -495,7 +532,9 @@ export class KeycloakAdminService implements OnModuleInit {
           createdTimestamp: user.createdTimestamp,
         }));
     } catch (error) {
-      this.logger.error(`Failed to get users by organization: ${error.message}`);
+      this.logger.error(
+        `Failed to get users by organization: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -531,7 +570,7 @@ export class KeycloakAdminService implements OnModuleInit {
     try {
       await this.adminClient.users.update(
         { realm: this.realm, id: userId },
-        { enabled: false }
+        { enabled: false },
       );
       this.logger.log(`User disabled: ${userId}`);
     } catch (error) {
@@ -551,7 +590,7 @@ export class KeycloakAdminService implements OnModuleInit {
     try {
       await this.adminClient.users.update(
         { realm: this.realm, id: userId },
-        { enabled: true }
+        { enabled: true },
       );
       this.logger.log(`User enabled: ${userId}`);
     } catch (error) {

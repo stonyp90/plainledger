@@ -729,7 +729,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
 
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
@@ -821,7 +821,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
 
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -904,7 +904,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
       const model = config.model || this.DEFAULT_MODELS.google;
 
       const response = await fetch(
@@ -983,7 +983,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
 
       const response = await fetch(
         "https://api.mistral.ai/v1/chat/completions",
@@ -1061,7 +1061,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
 
       const response = await fetch("https://api.cohere.ai/v1/chat", {
         method: "POST",
@@ -1131,7 +1131,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
       const deployment = config.model || this.DEFAULT_MODELS.azure;
 
       const response = await fetch(
@@ -1209,7 +1209,7 @@ export class AIService {
     );
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      const { default: fetch } = await import("node-fetch");
       const endpoint = config.endpoint || "http://localhost:11434";
 
       const response = await fetch(`${endpoint}/api/chat`, {

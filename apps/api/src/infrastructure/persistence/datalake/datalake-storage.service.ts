@@ -15,7 +15,7 @@ import {
   HeadBucketCommand,
   CreateBucketCommand,
 } from "@aws-sdk/client-s3";
-import { Pool, PoolClient } from "pg";
+import { Pool } from "pg";
 
 export interface DatalakeConfig {
   s3Endpoint: string;
@@ -60,10 +60,14 @@ export function createDatalakeConfigFromEnv(): DatalakeConfig {
   }
 
   return {
-    s3Endpoint: process.env.S3_ENDPOINT || (isProduction ? "" : "http://localhost:4566"),
+    s3Endpoint:
+      process.env.S3_ENDPOINT || (isProduction ? "" : "http://localhost:4566"),
     s3Region: process.env.S3_REGION || "ca-central-1",
-    s3AccessKey: process.env.AWS_ACCESS_KEY_ID || (isProduction ? "" : "localstack-test"),
-    s3SecretKey: process.env.AWS_SECRET_ACCESS_KEY || (isProduction ? "" : "localstack-test"),
+    s3AccessKey:
+      process.env.AWS_ACCESS_KEY_ID || (isProduction ? "" : "localstack-test"),
+    s3SecretKey:
+      process.env.AWS_SECRET_ACCESS_KEY ||
+      (isProduction ? "" : "localstack-test"),
     bucketName: process.env.S3_BUCKET_NAME || "plainledger-datalake",
     dbConnectionString:
       process.env.DATABASE_URL ||
@@ -290,7 +294,11 @@ export class DatalakeStorageService {
     entityType: string,
     data: T[],
     bronzeIngestionId: string,
-    qualityMetrics: { validCount: number; invalidCount: number; avgScore: number },
+    qualityMetrics: {
+      validCount: number;
+      invalidCount: number;
+      avgScore: number;
+    },
   ): Promise<WriteResult> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const s3Path = `silver/${sourceSystem}/${organizationId}/${entityType}/${timestamp}.json`;
@@ -394,7 +402,14 @@ export class DatalakeStorageService {
           s3_path, partition_key, status)
          VALUES ($1, $2, $3, $4, $5, $6, 'active')
          RETURNING dataset_id`,
-        [silverJobId, organizationId, datasetType, data.length, s3Path, partitionKey],
+        [
+          silverJobId,
+          organizationId,
+          datasetType,
+          data.length,
+          s3Path,
+          partitionKey,
+        ],
       );
 
       return {

@@ -4,7 +4,14 @@
  * Shared types, scalars, and interfaces used across the GraphQL schema.
  * Following clean architecture, these map to domain value objects.
  */
-import { Field, ObjectType, ID, Float, Int, registerEnumType } from "@nestjs/graphql";
+import {
+  Field,
+  ObjectType,
+  ID,
+  Float,
+  Int,
+  registerEnumType,
+} from "@nestjs/graphql";
 import { GraphQLISODateTime } from "@nestjs/graphql";
 
 // =====================================================

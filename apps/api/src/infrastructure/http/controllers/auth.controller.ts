@@ -15,7 +15,13 @@ import {
   ConflictException,
 } from "@nestjs/common";
 import { Public } from "nest-keycloak-connect";
-import { IsEmail, IsString, IsOptional, MinLength, Matches } from "class-validator";
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  MinLength,
+  Matches,
+} from "class-validator";
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 
@@ -24,7 +30,21 @@ import { PostgresUserProfileRepository } from "@infrastructure/persistence/postg
 // =====================================================
 
 // Valid Canadian province/territory codes
-const VALID_PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'];
+const VALID_PROVINCES = [
+  "AB",
+  "BC",
+  "MB",
+  "NB",
+  "NL",
+  "NS",
+  "NT",
+  "NU",
+  "ON",
+  "PE",
+  "QC",
+  "SK",
+  "YT",
+];
 
 export class RegisterUserDto {
   @IsEmail({}, { message: "Please provide a valid email address" })
@@ -40,11 +60,15 @@ export class RegisterUserDto {
 
   @IsString()
   @MinLength(12, { message: "Password must be at least 12 characters" })
-  @Matches(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-  @Matches(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+  @Matches(/[A-Z]/, {
+    message: "Password must contain at least one uppercase letter",
+  })
+  @Matches(/[a-z]/, {
+    message: "Password must contain at least one lowercase letter",
+  })
   @Matches(/\d/, { message: "Password must contain at least one number" })
-  @Matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, { 
-    message: "Password must contain at least one special character" 
+  @Matches(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, {
+    message: "Password must contain at least one special character",
   })
   password: string;
 
@@ -54,7 +78,7 @@ export class RegisterUserDto {
 
   @IsString()
   @Matches(/^(AB|BC|MB|NB|NL|NS|NT|NU|ON|PE|QC|SK|YT)$/, {
-    message: "Please select a valid Canadian province or territory"
+    message: "Please select a valid Canadian province or territory",
   })
   province: string;
 
@@ -100,17 +124,19 @@ export class AuthController {
     if (!this.keycloakAdminService.isAvailable()) {
       this.logger.error("Keycloak Admin Service not configured");
       throw new BadRequestException(
-        "Registration is temporarily unavailable. Please try again later."
+        "Registration is temporarily unavailable. Please try again later.",
       );
     }
 
     try {
       // Check if user already exists
-      const existingUser = await this.keycloakAdminService.findUserByEmail(dto.email);
+      const existingUser = await this.keycloakAdminService.findUserByEmail(
+        dto.email,
+      );
       if (existingUser) {
         this.logger.warn(`User already exists: ${dto.email}`);
         throw new ConflictException(
-          "An account with this email already exists. Please sign in instead."
+          "An account with this email already exists. Please sign in instead.",
         );
       }
 
@@ -124,7 +150,9 @@ export class AuthController {
         emailVerified: false,
         sendVerificationEmail: true,
         attributes: {
-          ...(dto.organizationName ? { organizationName: [dto.organizationName] } : {}),
+          ...(dto.organizationName
+            ? { organizationName: [dto.organizationName] }
+            : {}),
           ...(dto.industry ? { industry: [dto.industry] } : {}),
           province: [dto.province],
           registrationSource: ["web-signup"],
@@ -150,32 +178,41 @@ export class AuthController {
         this.logger.log(`User profile saved to database: ${user.id}`);
       } catch (dbError) {
         // Log but don't fail - Keycloak user was created successfully
-        this.logger.warn(`Failed to save user profile to database: ${dbError.message}`);
+        this.logger.warn(
+          `Failed to save user profile to database: ${dbError.message}`,
+        );
       }
 
       return {
         success: true,
-        message: "Account created successfully. Please check your email to verify your account.",
+        message:
+          "Account created successfully. Please check your email to verify your account.",
         userId: user.id,
         email: user.email,
       };
     } catch (error) {
       // Re-throw known exceptions
-      if (error instanceof ConflictException || error instanceof BadRequestException) {
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
       this.logger.error(`Registration failed: ${error.message}`, error.stack);
-      
+
       // Check for specific Keycloak errors
-      if (error.response?.status === 409 || error.message?.includes("already exists")) {
+      if (
+        error.response?.status === 409 ||
+        error.message?.includes("already exists")
+      ) {
         throw new ConflictException(
-          "An account with this email already exists. Please sign in instead."
+          "An account with this email already exists. Please sign in instead.",
         );
       }
 
       throw new BadRequestException(
-        "Registration failed. Please try again later."
+        "Registration failed. Please try again later.",
       );
     }
   }
@@ -192,34 +229,41 @@ export class AuthController {
 
     if (!this.keycloakAdminService.isAvailable()) {
       throw new BadRequestException(
-        "Password reset is temporarily unavailable. Please try again later."
+        "Password reset is temporarily unavailable. Please try again later.",
       );
     }
 
     try {
       const user = await this.keycloakAdminService.findUserByEmail(dto.email);
-      
+
       if (user) {
         // Send password reset email
         await this.keycloakAdminService.sendPasswordResetEmail(user.id);
         this.logger.log(`Password reset email sent to: ${dto.email}`);
       } else {
         // Don't reveal whether email exists or not (security)
-        this.logger.log(`Password reset requested for non-existent email: ${dto.email}`);
+        this.logger.log(
+          `Password reset requested for non-existent email: ${dto.email}`,
+        );
       }
 
       // Always return success (don't reveal if email exists)
       return {
         success: true,
-        message: "If an account exists with this email, you will receive password reset instructions.",
+        message:
+          "If an account exists with this email, you will receive password reset instructions.",
       };
     } catch (error) {
-      this.logger.error(`Forgot password failed: ${error.message}`, error.stack);
-      
+      this.logger.error(
+        `Forgot password failed: ${error.message}`,
+        error.stack,
+      );
+
       // Still return success to not reveal email existence
       return {
         success: true,
-        message: "If an account exists with this email, you will receive password reset instructions.",
+        message:
+          "If an account exists with this email, you will receive password reset instructions.",
       };
     }
   }
@@ -236,13 +280,13 @@ export class AuthController {
 
     if (!this.keycloakAdminService.isAvailable()) {
       throw new BadRequestException(
-        "Verification is temporarily unavailable. Please try again later."
+        "Verification is temporarily unavailable. Please try again later.",
       );
     }
 
     try {
       const user = await this.keycloakAdminService.findUserByEmail(dto.email);
-      
+
       if (user) {
         if (user.emailVerified) {
           return {
@@ -256,20 +300,27 @@ export class AuthController {
         await this.keycloakAdminService.sendVerificationEmail(user.id);
         this.logger.log(`Verification email resent to: ${dto.email}`);
       } else {
-        this.logger.log(`Verification requested for non-existent email: ${dto.email}`);
+        this.logger.log(
+          `Verification requested for non-existent email: ${dto.email}`,
+        );
       }
 
       // Always return success
       return {
         success: true,
-        message: "If an account exists with this email, you will receive a verification email.",
+        message:
+          "If an account exists with this email, you will receive a verification email.",
       };
     } catch (error) {
-      this.logger.error(`Resend verification failed: ${error.message}`, error.stack);
-      
+      this.logger.error(
+        `Resend verification failed: ${error.message}`,
+        error.stack,
+      );
+
       return {
         success: true,
-        message: "If an account exists with this email, you will receive a verification email.",
+        message:
+          "If an account exists with this email, you will receive a verification email.",
       };
     }
   }

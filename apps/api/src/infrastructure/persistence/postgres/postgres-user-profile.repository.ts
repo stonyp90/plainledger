@@ -86,25 +86,30 @@ export class PostgresUserProfileRepository {
    * Find user profile by email
    */
   async findByEmail(email: string): Promise<UserProfileEntity | null> {
-    return this.repository.findOne({ 
-      where: { email: email.toLowerCase() } 
+    return this.repository.findOne({
+      where: { email: email.toLowerCase() },
     });
   }
 
   /**
    * Find all users in an organization
    */
-  async findByOrganizationId(organizationId: string): Promise<UserProfileEntity[]> {
-    return this.repository.find({ 
+  async findByOrganizationId(
+    organizationId: string,
+  ): Promise<UserProfileEntity[]> {
+    return this.repository.find({
       where: { organizationId },
-      order: { createdAt: "ASC" }
+      order: { createdAt: "ASC" },
     });
   }
 
   /**
    * Update user profile
    */
-  async update(id: string, input: UpdateUserProfileInput): Promise<UserProfileEntity | null> {
+  async update(
+    id: string,
+    input: UpdateUserProfileInput,
+  ): Promise<UserProfileEntity | null> {
     this.logger.log(`Updating user profile: ${id}`);
 
     const profile = await this.findById(id);
@@ -117,29 +122,37 @@ export class PostgresUserProfileRepository {
     if (input.firstName !== undefined) profile.firstName = input.firstName;
     if (input.lastName !== undefined) profile.lastName = input.lastName;
     if (input.province !== undefined) profile.province = input.province;
-    if (input.phoneNumber !== undefined) profile.phoneNumber = input.phoneNumber;
+    if (input.phoneNumber !== undefined)
+      profile.phoneNumber = input.phoneNumber;
     if (input.jobTitle !== undefined) profile.jobTitle = input.jobTitle;
-    if (input.organizationId !== undefined) profile.organizationId = input.organizationId;
-    if (input.organizationName !== undefined) profile.organizationName = input.organizationName;
+    if (input.organizationId !== undefined)
+      profile.organizationId = input.organizationId;
+    if (input.organizationName !== undefined)
+      profile.organizationName = input.organizationName;
     if (input.industry !== undefined) profile.industry = input.industry;
     if (input.language !== undefined) profile.language = input.language;
     if (input.theme !== undefined) profile.theme = input.theme;
     if (input.timezone !== undefined) profile.timezone = input.timezone;
     if (input.dateFormat !== undefined) profile.dateFormat = input.dateFormat;
-    if (input.currencyFormat !== undefined) profile.currencyFormat = input.currencyFormat;
+    if (input.currencyFormat !== undefined)
+      profile.currencyFormat = input.currencyFormat;
     if (input.notificationPreferences !== undefined) {
       profile.notificationPreferences = input.notificationPreferences;
     }
-    if (input.featureFlags !== undefined) profile.featureFlags = input.featureFlags;
+    if (input.featureFlags !== undefined)
+      profile.featureFlags = input.featureFlags;
     if (input.onboardingCompleted !== undefined) {
       profile.onboardingCompleted = input.onboardingCompleted;
       if (input.onboardingCompleted) {
         profile.onboardingCompletedAt = new Date();
       }
     }
-    if (input.onboardingData !== undefined) profile.onboardingData = input.onboardingData;
-    if (input.emailVerified !== undefined) profile.emailVerified = input.emailVerified;
-    if (input.lastLoginAt !== undefined) profile.lastLoginAt = input.lastLoginAt;
+    if (input.onboardingData !== undefined)
+      profile.onboardingData = input.onboardingData;
+    if (input.emailVerified !== undefined)
+      profile.emailVerified = input.emailVerified;
+    if (input.lastLoginAt !== undefined)
+      profile.lastLoginAt = input.lastLoginAt;
 
     const saved = await this.repository.save(profile);
     this.logger.log(`User profile updated: ${saved.id}`);
@@ -167,7 +180,7 @@ export class PostgresUserProfileRepository {
    * Complete onboarding
    */
   async completeOnboarding(
-    id: string, 
+    id: string,
     data: UserProfileEntity["onboardingData"],
     organizationId?: string,
   ): Promise<UserProfileEntity | null> {

@@ -93,7 +93,9 @@ describe("OrganizationResolver", () => {
       expect(result).toBeDefined();
       expect(result.id).toBe("org-123");
       expect(result.name).toBe("Test Company");
-      expect(getOrgUseCase.execute).toHaveBeenCalledWith({ tenantId: "org-123" });
+      expect(getOrgUseCase.execute).toHaveBeenCalledWith({
+        tenantId: "org-123",
+      });
     });
   });
 
@@ -115,7 +117,10 @@ describe("OrganizationResolver", () => {
         },
       };
 
-      const result = await resolver.getOrganizationById("org-123", adminContext);
+      const result = await resolver.getOrganizationById(
+        "org-123",
+        adminContext,
+      );
 
       expect(result).toBeDefined();
     });

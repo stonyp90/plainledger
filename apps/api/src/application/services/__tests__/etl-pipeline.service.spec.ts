@@ -14,7 +14,11 @@ import {
   SilverTransactionType,
   SilverSourceSystem,
 } from "@domain/datalake/silver-schema";
-import { AccountType, ContactType, SourceSystem } from "@domain/datalake/schemas";
+import {
+  AccountType,
+  ContactType,
+  SourceSystem,
+} from "@domain/datalake/schemas";
 import {
   QuickBooksAccount,
   QuickBooksCustomer,
@@ -89,7 +93,8 @@ describe("ETLPipelineService", () => {
       // =========================================================
       // STAGE 2: BRONZE → SILVER (Cleansed & standardized)
       // =========================================================
-      const silverAccount = etl.transformQuickBooksAccountToSilver(bronzeAccount);
+      const silverAccount =
+        etl.transformQuickBooksAccountToSilver(bronzeAccount);
 
       // Silver layer has standardized schema
       expect(silverAccount).toMatchObject({
@@ -159,7 +164,10 @@ describe("ETLPipelineService", () => {
         Classification: "Expense",
         FullyQualifiedName: "Test Account",
         CurrencyRef: { value: "CAD", name: "CAD" },
-        MetaData: { CreateTime: "2024-01-01T00:00:00Z", LastUpdatedTime: "2024-01-01T00:00:00Z" },
+        MetaData: {
+          CreateTime: "2024-01-01T00:00:00Z",
+          LastUpdatedTime: "2024-01-01T00:00:00Z",
+        },
       };
 
       const bronze = etl.ingestQuickBooksAccountToBronze(
@@ -226,7 +234,8 @@ describe("ETLPipelineService", () => {
       // =========================================================
       // STAGE 2: BRONZE → SILVER
       // =========================================================
-      const silverContact = etl.transformQuickBooksCustomerToSilver(bronzeCustomer);
+      const silverContact =
+        etl.transformQuickBooksCustomerToSilver(bronzeCustomer);
 
       expect(silverContact).toMatchObject({
         silver_contact_id: "silver_qb_cust_21",
@@ -283,7 +292,10 @@ describe("ETLPipelineService", () => {
         PrimaryEmailAddr: { Address: "not-an-email" }, // Invalid
         Active: true,
         Balance: 0,
-        MetaData: { CreateTime: "2024-01-01T00:00:00Z", LastUpdatedTime: "2024-01-01T00:00:00Z" },
+        MetaData: {
+          CreateTime: "2024-01-01T00:00:00Z",
+          LastUpdatedTime: "2024-01-01T00:00:00Z",
+        },
       };
 
       const bronze = etl.ingestQuickBooksCustomerToBronze(
@@ -439,7 +451,10 @@ describe("ETLPipelineService", () => {
 
       // Verify double-entry balance
       const totalDebits = goldTxns.reduce((sum, t) => sum + t.debit_amount, 0);
-      const totalCredits = goldTxns.reduce((sum, t) => sum + t.credit_amount, 0);
+      const totalCredits = goldTxns.reduce(
+        (sum, t) => sum + t.credit_amount,
+        0,
+      );
       expect(totalDebits).toBe(totalCredits);
     });
   });
@@ -503,7 +518,8 @@ describe("ETLPipelineService", () => {
       // =========================================================
       // STAGE 2: BRONZE → SILVER
       // =========================================================
-      const silverTxns = etl.transformQuickBooksJournalEntryToSilver(bronzeJournal);
+      const silverTxns =
+        etl.transformQuickBooksJournalEntryToSilver(bronzeJournal);
 
       expect(silverTxns).toHaveLength(2);
 
@@ -562,7 +578,10 @@ describe("ETLPipelineService", () => {
 
       // Verify double-entry
       const totalDebits = goldTxns.reduce((sum, t) => sum + t.debit_amount, 0);
-      const totalCredits = goldTxns.reduce((sum, t) => sum + t.credit_amount, 0);
+      const totalCredits = goldTxns.reduce(
+        (sum, t) => sum + t.credit_amount,
+        0,
+      );
       expect(totalDebits).toBe(totalCredits);
     });
 
@@ -591,7 +610,10 @@ describe("ETLPipelineService", () => {
           },
         ],
         CurrencyRef: { value: "CAD", name: "CAD" },
-        MetaData: { CreateTime: "2024-03-31T00:00:00Z", LastUpdatedTime: "2024-03-31T00:00:00Z" },
+        MetaData: {
+          CreateTime: "2024-03-31T00:00:00Z",
+          LastUpdatedTime: "2024-03-31T00:00:00Z",
+        },
       };
 
       const bronze = etl.ingestQuickBooksJournalEntryToBronze(
@@ -640,8 +662,12 @@ describe("ETLPipelineService", () => {
       );
 
       expect(bronzeAccount.metadata.source_system).toBe("XERO");
-      expect(bronzeAccount.metadata.source_endpoint).toBe("/api.xro/2.0/Accounts");
-      expect(bronzeAccount.raw_data.AccountID).toBe("bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4");
+      expect(bronzeAccount.metadata.source_endpoint).toBe(
+        "/api.xro/2.0/Accounts",
+      );
+      expect(bronzeAccount.raw_data.AccountID).toBe(
+        "bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4",
+      );
 
       // =========================================================
       // STAGE 2: BRONZE → SILVER
@@ -649,7 +675,8 @@ describe("ETLPipelineService", () => {
       const silverAccount = etl.transformXeroAccountToSilver(bronzeAccount);
 
       expect(silverAccount).toMatchObject({
-        silver_account_id: "silver_xero_acc_bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4",
+        silver_account_id:
+          "silver_xero_acc_bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4",
         source_account_id: "bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4",
         account_code: "200",
         account_name: "Sales Revenue",
@@ -659,15 +686,21 @@ describe("ETLPipelineService", () => {
         currency_code: "CAD",
         is_active: true,
       });
-      expect(silverAccount.metadata.source_system).toBe(SilverSourceSystem.XERO);
+      expect(silverAccount.metadata.source_system).toBe(
+        SilverSourceSystem.XERO,
+      );
 
       // =========================================================
       // STAGE 3: SILVER → GOLD
       // =========================================================
-      const goldAccount = etl.transformSilverAccountToGold(silverAccount, TEST_ORG_KEY);
+      const goldAccount = etl.transformSilverAccountToGold(
+        silverAccount,
+        TEST_ORG_KEY,
+      );
 
       expect(goldAccount).toMatchObject({
-        account_key: "gold_silver_xero_acc_bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4",
+        account_key:
+          "gold_silver_xero_acc_bd9e85e0-0478-433d-ae9f-0b3c4f04bfe4",
         organization_key: TEST_ORG_KEY,
         account_code: "200",
         account_name: "Sales Revenue",
@@ -721,7 +754,9 @@ describe("ETLPipelineService", () => {
         TEST_DATASOURCE_ID,
       );
 
-      expect(bronzeContact.metadata.source_endpoint).toBe("/api.xro/2.0/Contacts");
+      expect(bronzeContact.metadata.source_endpoint).toBe(
+        "/api.xro/2.0/Contacts",
+      );
 
       // =========================================================
       // STAGE 2: BRONZE → SILVER
@@ -747,7 +782,10 @@ describe("ETLPipelineService", () => {
       // =========================================================
       // STAGE 3: SILVER → GOLD
       // =========================================================
-      const goldContact = etl.transformSilverContactToGold(silverContact, TEST_ORG_KEY);
+      const goldContact = etl.transformSilverContactToGold(
+        silverContact,
+        TEST_ORG_KEY,
+      );
 
       expect(goldContact).toMatchObject({
         contact_key: "gold_silver_xero_contact_contact-uuid-12345",
@@ -772,7 +810,11 @@ describe("ETLPipelineService", () => {
         UpdatedDateUTC: "2024-03-20T10:00:00Z",
       };
 
-      const bronze = etl.ingestXeroContactToBronze(rawContact, TEST_ORG_ID, TEST_DATASOURCE_ID);
+      const bronze = etl.ingestXeroContactToBronze(
+        rawContact,
+        TEST_ORG_ID,
+        TEST_DATASOURCE_ID,
+      );
       const silver = etl.transformXeroContactToSilver(bronze);
       const gold = etl.transformSilverContactToGold(silver, TEST_ORG_KEY);
 
@@ -862,7 +904,10 @@ describe("ETLPipelineService", () => {
         Classification: "Asset",
         FullyQualifiedName: "Cash",
         CurrencyRef: { value: "CAD", name: "CAD" },
-        MetaData: { CreateTime: "2024-01-01T00:00:00Z", LastUpdatedTime: "2024-01-01T00:00:00Z" },
+        MetaData: {
+          CreateTime: "2024-01-01T00:00:00Z",
+          LastUpdatedTime: "2024-01-01T00:00:00Z",
+        },
       };
 
       // Xero account
@@ -877,8 +922,16 @@ describe("ETLPipelineService", () => {
         UpdatedDateUTC: "2024-01-01T00:00:00Z",
       };
 
-      const qbBronze = etl.ingestQuickBooksAccountToBronze(qbAccount, TEST_ORG_ID, TEST_DATASOURCE_ID);
-      const xeroBronze = etl.ingestXeroAccountToBronze(xeroAccount, TEST_ORG_ID, TEST_DATASOURCE_ID);
+      const qbBronze = etl.ingestQuickBooksAccountToBronze(
+        qbAccount,
+        TEST_ORG_ID,
+        TEST_DATASOURCE_ID,
+      );
+      const xeroBronze = etl.ingestXeroAccountToBronze(
+        xeroAccount,
+        TEST_ORG_ID,
+        TEST_DATASOURCE_ID,
+      );
 
       const qbSilver = etl.transformQuickBooksAccountToSilver(qbBronze);
       const xeroSilver = etl.transformXeroAccountToSilver(xeroBronze);
@@ -895,7 +948,9 @@ describe("ETLPipelineService", () => {
       expect(xeroSilver.currency_code).toBe("CAD");
 
       // Source system should be tracked
-      expect(qbSilver.metadata.source_system).toBe(SilverSourceSystem.QUICKBOOKS);
+      expect(qbSilver.metadata.source_system).toBe(
+        SilverSourceSystem.QUICKBOOKS,
+      );
       expect(xeroSilver.metadata.source_system).toBe(SilverSourceSystem.XERO);
     });
 
@@ -912,7 +967,10 @@ describe("ETLPipelineService", () => {
         Classification: "Revenue",
         FullyQualifiedName: "Revenue",
         CurrencyRef: { value: "CAD", name: "CAD" },
-        MetaData: { CreateTime: "2024-01-01T00:00:00Z", LastUpdatedTime: "2024-01-01T00:00:00Z" },
+        MetaData: {
+          CreateTime: "2024-01-01T00:00:00Z",
+          LastUpdatedTime: "2024-01-01T00:00:00Z",
+        },
       };
 
       // Xero path
@@ -926,14 +984,25 @@ describe("ETLPipelineService", () => {
         UpdatedDateUTC: "2024-01-01T00:00:00Z",
       };
 
-      const qbBronze = etl.ingestQuickBooksAccountToBronze(qbAccount, TEST_ORG_ID, TEST_DATASOURCE_ID);
-      const xeroBronze = etl.ingestXeroAccountToBronze(xeroAccount, TEST_ORG_ID, TEST_DATASOURCE_ID);
+      const qbBronze = etl.ingestQuickBooksAccountToBronze(
+        qbAccount,
+        TEST_ORG_ID,
+        TEST_DATASOURCE_ID,
+      );
+      const xeroBronze = etl.ingestXeroAccountToBronze(
+        xeroAccount,
+        TEST_ORG_ID,
+        TEST_DATASOURCE_ID,
+      );
 
       const qbSilver = etl.transformQuickBooksAccountToSilver(qbBronze);
       const xeroSilver = etl.transformXeroAccountToSilver(xeroBronze);
 
       const qbGold = etl.transformSilverAccountToGold(qbSilver, TEST_ORG_KEY);
-      const xeroGold = etl.transformSilverAccountToGold(xeroSilver, TEST_ORG_KEY);
+      const xeroGold = etl.transformSilverAccountToGold(
+        xeroSilver,
+        TEST_ORG_KEY,
+      );
 
       // Both should have same account type in gold
       expect(qbGold.account_type).toBe(AccountType.REVENUE);
@@ -969,10 +1038,17 @@ describe("ETLPipelineService", () => {
         Classification: "Expense",
         FullyQualifiedName: "Lineage Test",
         CurrencyRef: { value: "CAD", name: "CAD" },
-        MetaData: { CreateTime: "2024-01-01T00:00:00Z", LastUpdatedTime: "2024-01-01T00:00:00Z" },
+        MetaData: {
+          CreateTime: "2024-01-01T00:00:00Z",
+          LastUpdatedTime: "2024-01-01T00:00:00Z",
+        },
       };
 
-      const bronze = etl.ingestQuickBooksAccountToBronze(rawAccount, TEST_ORG_ID, TEST_DATASOURCE_ID);
+      const bronze = etl.ingestQuickBooksAccountToBronze(
+        rawAccount,
+        TEST_ORG_ID,
+        TEST_DATASOURCE_ID,
+      );
       const silver = etl.transformQuickBooksAccountToSilver(bronze);
       const gold = etl.transformSilverAccountToGold(silver, TEST_ORG_KEY);
 

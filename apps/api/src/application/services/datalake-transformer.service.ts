@@ -9,7 +9,6 @@ import {
   FactTransaction,
   AccountType,
   ContactType,
-  TransactionTypeCode,
   SourceSystem,
 } from "@domain/datalake/schemas";
 import {
@@ -21,13 +20,8 @@ import {
   XeroAccount,
   XeroContact,
   XeroInvoice,
-  XeroManualJournal,
   SageAccount,
-  SageContact,
-  SageInvoice,
   FreshBooksAccount,
-  FreshBooksClient,
-  FreshBooksInvoice,
 } from "@domain/datalake/provider-types";
 
 export class DatalakeTransformerService {

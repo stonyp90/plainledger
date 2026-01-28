@@ -102,7 +102,11 @@ export class DynamicIntegrationService {
     if (!existing) {
       throw new Error(`Provider not found: ${providerId}`);
     }
-    this.providers.set(providerId, { ...existing, ...updates, updatedAt: new Date() });
+    this.providers.set(providerId, {
+      ...existing,
+      ...updates,
+      updatedAt: new Date(),
+    });
     this.logger.log(`Updated provider: ${providerId}`);
   }
 
@@ -260,9 +264,10 @@ export class DynamicIntegrationService {
     }
 
     // Build API URL
-    const baseUrl = useSandbox && provider.api.sandboxUrl
-      ? provider.api.sandboxUrl
-      : provider.api.baseUrl;
+    const baseUrl =
+      useSandbox && provider.api.sandboxUrl
+        ? provider.api.sandboxUrl
+        : provider.api.baseUrl;
 
     let url = baseUrl;
 
@@ -278,7 +283,10 @@ export class DynamicIntegrationService {
     if (mapping.queryTemplate) {
       const query = mapping.queryTemplate
         .replace("{startDate}", context.startDate || "2020-01-01")
-        .replace("{endDate}", context.endDate || new Date().toISOString().split("T")[0])
+        .replace(
+          "{endDate}",
+          context.endDate || new Date().toISOString().split("T")[0],
+        )
         .replace("{limit}", String(provider.api.maxPageSize || 1000));
 
       url = `${url}?query=${encodeURIComponent(query)}`;
@@ -304,7 +312,11 @@ export class DynamicIntegrationService {
     const data = await response.json();
 
     // Extract records from response (different providers structure differently)
-    const records = this.extractRecordsFromResponse(providerId, entityType, data);
+    const records = this.extractRecordsFromResponse(
+      providerId,
+      entityType,
+      data,
+    );
 
     // Transform records using field mappings
     return records.map((record) =>
@@ -396,7 +408,10 @@ export class DynamicIntegrationService {
       const sourceValue = this.getNestedValue(record, field.sourceField);
 
       // Check required fields
-      if (field.required && (sourceValue === undefined || sourceValue === null)) {
+      if (
+        field.required &&
+        (sourceValue === undefined || sourceValue === null)
+      ) {
         result._metadata.qualityIssues.push(
           `Missing required field: ${field.sourceField}`,
         );
@@ -449,9 +464,10 @@ export class DynamicIntegrationService {
       case "string":
         return String(value);
 
-      case "number":
+      case "number": {
         const num = Number(value);
-        return isNaN(num) ? defaultValue ?? 0 : num;
+        return isNaN(num) ? (defaultValue ?? 0) : num;
+      }
 
       case "boolean":
         if (typeof value === "boolean") return value;
@@ -612,7 +628,9 @@ export class DynamicIntegrationService {
           context,
           useSandbox,
         );
-        this.logger.log(`Fetched ${results.journalEntries.length} journal entries`);
+        this.logger.log(
+          `Fetched ${results.journalEntries.length} journal entries`,
+        );
       } catch (error) {
         this.logger.error(`Failed to fetch journal entries: ${error}`);
       }

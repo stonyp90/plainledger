@@ -52,7 +52,10 @@ export class GqlAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if endpoint is marked as public
-    const isPublic = this.reflector.get<boolean>("isPublic", context.getHandler());
+    const isPublic = this.reflector.get<boolean>(
+      "isPublic",
+      context.getHandler(),
+    );
     if (isPublic) {
       return true;
     }
@@ -85,7 +88,7 @@ export class GqlAuthGuard implements CanActivate {
     try {
       // Decode and validate JWT
       const user = await this.validateToken(token);
-      
+
       // Check rate limit
       await this.checkRateLimit(user.sub);
 
@@ -121,7 +124,7 @@ export class GqlAuthGuard implements CanActivate {
       }
 
       const payload = JSON.parse(
-        Buffer.from(parts[1], "base64").toString("utf8")
+        Buffer.from(parts[1], "base64").toString("utf8"),
       );
 
       // Check expiration
@@ -148,9 +151,9 @@ export class GqlAuthGuard implements CanActivate {
   private async checkRateLimit(userId: string): Promise<void> {
     const key = `rate:${userId}`;
     const now = new Date();
-    
+
     let entry = this.rateLimits.get(key);
-    
+
     if (!entry || entry.resetAt < now) {
       // Create new window
       entry = {
@@ -162,7 +165,7 @@ export class GqlAuthGuard implements CanActivate {
     }
 
     entry.count++;
-    
+
     if (entry.count > this.RATE_LIMIT_MAX) {
       this.logger.warn(`Rate limit exceeded for user: ${userId}`);
       throw new Error("Rate limit exceeded. Please try again later.");

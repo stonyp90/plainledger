@@ -14,10 +14,7 @@ import {
   Zap,
   Shield,
   BarChart3,
-  AlertTriangle,
   Users,
-  Database,
-  FileText,
   Star,
   Play,
   Menu,
@@ -26,8 +23,6 @@ import {
   Calculator,
   ChevronDown,
   ChevronUp,
-  Minus,
-  Plus,
   Info,
   Sparkles,
   Clock,
@@ -38,11 +33,8 @@ import { analytics } from '../lib/analytics';
 import DemoModal from '../components/DemoModal';
 import IndustryKPISection from '../components/IndustryKPISection';
 import { 
-  PRICING_TIERS, 
-  PricingCalculator, 
   CANADA_MARKET_MESSAGING,
   type PricingTierConfig,
-  type BillingInterval,
 } from '../lib/pricing';
 import { Tooltip } from '../components/Tooltip';
 
@@ -593,109 +585,6 @@ function FeaturesSection({ isEn }: { isEn: boolean }) {
         </div>
       </div>
     </section>
-  );
-}
-
-// Pricing Card Component
-function PricingCard({ 
-  plan, 
-  isEn, 
-  onSelect 
-}: { 
-  plan: PricingTierConfig;
-  isEn: boolean;
-  onSelect: (planId: string) => void;
-}) {
-  const [showDetails, setShowDetails] = useState(false);
-
-  return (
-    <div 
-      className={`
-        p-5 rounded-2xl relative transition-all duration-300 flex flex-col
-        ${plan.popular ? 'ring-2' : 'hover:ring-1'}
-      `}
-      style={{ 
-        backgroundColor: 'rgb(var(--color-surface))',
-        border: '1px solid rgb(var(--color-border))',
-        ...(plan.popular && { 
-          '--tw-ring-color': 'rgb(var(--color-primary-500))',
-          boxShadow: '0 8px 30px rgb(var(--color-primary-500) / 0.15)'
-        }),
-      }}
-    >
-      {/* Badge */}
-      {(plan.badge || plan.badgeFr) && (
-        <div 
-          className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap"
-          style={{ backgroundColor: plan.popular ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-secondary))' }}
-        >
-          {isEn ? plan.badge : plan.badgeFr}
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="mb-4">
-        <h3 className="font-bold text-lg mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? plan.name : plan.nameFr}
-        </h3>
-        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn ? plan.tagline : plan.taglineFr}
-        </p>
-      </div>
-
-      {/* Description */}
-      <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-        {isEn ? plan.description : plan.descriptionFr}
-      </p>
-
-      {/* Features */}
-      <ul className="space-y-2 mb-4 flex-1">
-        {plan.features.slice(0, showDetails ? undefined : 5).map((feature, idx) => (
-          <li 
-            key={idx} 
-            className={`flex items-start gap-1.5 text-xs ${!feature.included ? 'opacity-50' : ''}`}
-          >
-            {feature.included ? (
-              <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
-            ) : (
-              <X className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            )}
-            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? feature.name : feature.nameFr}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      {/* Show more */}
-      {plan.features.length > 5 && (
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          className="flex items-center gap-1 text-xs mb-4 hover:underline"
-          style={{ color: 'rgb(var(--color-primary-500))' }}
-        >
-          {showDetails ? (
-            <>
-              {isEn ? 'Show less' : 'Voir moins'}
-              <ChevronUp className="w-3 h-3" />
-            </>
-          ) : (
-            <>
-              {isEn ? `Show all ${plan.features.length} features` : `Voir les ${plan.features.length} fonctionnalités`}
-              <ChevronDown className="w-3 h-3" />
-            </>
-          )}
-        </button>
-      )}
-
-      {/* CTA */}
-      <button
-        onClick={() => onSelect(plan.id)}
-        className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}
-      >
-        {isEn ? plan.ctaText : plan.ctaTextFr}
-      </button>
-    </div>
   );
 }
 

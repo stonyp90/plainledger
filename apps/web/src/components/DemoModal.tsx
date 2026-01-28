@@ -29,9 +29,6 @@ import {
   Brain,
   Gauge,
   Activity,
-  BarChart2,
-  LineChart,
-  Eye,
   XCircle,
 } from 'lucide-react';
 
@@ -191,8 +188,6 @@ function AnimatedSparkline({
   
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const areaPath = `${linePath} L ${width} ${height} L 0 ${height} Z`;
-  
-  const visibleLength = linePath.length * progress;
   
   return (
     <svg width={width} height={height} className="overflow-visible">
@@ -454,7 +449,6 @@ function AnimatedBarChart({
 
 function FullDashboardMockup({ isEn }: { isEn: boolean }) {
   const [showElements, setShowElements] = useState(false);
-  const healthScore = useAnimatedCounter(87, 1500, 400);
   const revenue = useAnimatedCounter(847, 1500, 500);
   const savings = useAnimatedCounter(156, 1500, 600);
   
@@ -1461,7 +1455,7 @@ function IndustryAIMockup({ isEn }: { isEn: boolean }) {
       setSelectedIndustry(prev => (prev + 1) % industries.length);
     }, 3000);
     return () => clearInterval(timer);
-  }, []);
+  }, [industries.length]);
   
   const current = industries[selectedIndustry];
   
@@ -1671,11 +1665,6 @@ export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoM
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, goNext, goPrev]);
   
-  if (!isOpen) return null;
-  
-  const slide = DEMO_SLIDES[currentSlide];
-  const SlideIcon = slide.icon;
-  
   // Find the last ROI slide index for "Skip to ROI" button
   const lastROISlideIndex = DEMO_SLIDES.findIndex(s => s.id === 'cost-savings');
   
@@ -1683,6 +1672,11 @@ export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoM
     setCurrentSlide(lastROISlideIndex);
     setIsAutoPlaying(false);
   }, [lastROISlideIndex]);
+  
+  if (!isOpen) return null;
+  
+  const slide = DEMO_SLIDES[currentSlide];
+  const SlideIcon = slide.icon;
   
   const renderMockup = () => {
     switch (slide.id) {

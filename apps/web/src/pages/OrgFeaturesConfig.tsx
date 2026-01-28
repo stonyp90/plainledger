@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, Save } from 'lucide-react';
 import { useAnalyticsVisibility } from '../contexts/AnalyticsVisibilityContext';
 import { useTenant } from '../contexts/TenantContext';
 import { api } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
 
 export default function OrgFeaturesConfig() {
-  const navigate = useNavigate();
   const { currentTenant } = useTenant();
   const { features, refreshFeatures } = useAnalyticsVisibility();
   const toast = useToast();

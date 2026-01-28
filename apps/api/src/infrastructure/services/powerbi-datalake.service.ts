@@ -18,6 +18,7 @@
  */
 
 import { Injectable, Logger } from "@nestjs/common";
+import * as crypto from "crypto";
 import { ConfigService } from "@nestjs/config";
 import {
   S3Client,
@@ -72,8 +73,7 @@ export class PowerBIDatalakeService {
       endpoint: s3Endpoint,
       region: s3Region,
       credentials: {
-        accessKeyId:
-          this.configService.get<string>("AWS_ACCESS_KEY_ID") || "",
+        accessKeyId: this.configService.get<string>("AWS_ACCESS_KEY_ID") || "",
         secretAccessKey:
           this.configService.get<string>("AWS_SECRET_ACCESS_KEY") || "",
       },
@@ -258,9 +258,7 @@ export class PowerBIDatalakeService {
 
       return signedUrl;
     } catch (error) {
-      this.logger.error(
-        `Failed to generate secure URL: ${error}`,
-      );
+      this.logger.error(`Failed to generate secure URL: ${error}`);
       throw error;
     }
   }
@@ -311,8 +309,9 @@ export class PowerBIDatalakeService {
   /**
    * Create HMAC signature for access token
    */
-  private createAccessSignature(access: Omit<SecureDataAccess, "signature">): string {
-    const crypto = require("crypto");
+  private createAccessSignature(
+    access: Omit<SecureDataAccess, "signature">,
+  ): string {
     const payload = `${access.organizationId}:${access.userId}:${access.expiresAt.toISOString()}`;
     return crypto
       .createHmac("sha256", this.secretKey)
@@ -351,8 +350,9 @@ export class PowerBIDatalakeService {
    * Generate M Query (Power Query) for secure data import
    */
   generateMQuery(tableName: string): string {
-    const baseUrl = this.configService.get<string>("API_URL") || "https://api.plainledger.ca";
-    
+    const baseUrl =
+      this.configService.get<string>("API_URL") || "https://api.plainledger.ca";
+
     return `let
     // PlainLedger Gold Layer - ${tableName}
     // This query uses secure API endpoint with RLS enforcement

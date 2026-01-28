@@ -32,17 +32,23 @@ export class DataSourceResolver {
   private readonly logger = new Logger(DataSourceResolver.name);
 
   // In-memory state store for OAuth CSRF protection
-  private static oauthStateStore: Map<string, { 
-    organizationId: string; 
-    provider: string; 
-    expiresAt: Date;
-  }> = new Map();
+  private static oauthStateStore: Map<
+    string,
+    {
+      organizationId: string;
+      provider: string;
+      expiresAt: Date;
+    }
+  > = new Map();
 
   constructor(private readonly configService: ConfigService) {
     // Clean up expired OAuth states periodically
     setInterval(() => {
       const now = new Date();
-      for (const [state, data] of DataSourceResolver.oauthStateStore.entries()) {
+      for (const [
+        state,
+        data,
+      ] of DataSourceResolver.oauthStateStore.entries()) {
         if (data.expiresAt < now) {
           DataSourceResolver.oauthStateStore.delete(state);
         }
@@ -111,10 +117,18 @@ export class DataSourceResolver {
       {
         id: "quickbooks",
         name: "QuickBooks Online",
-        description: "Connect to QuickBooks Online for comprehensive accounting data sync",
+        description:
+          "Connect to QuickBooks Online for comprehensive accounting data sync",
         logoUrl: "/providers/quickbooks.svg",
         isEnabled: true,
-        supportedFeatures: ["accounts", "transactions", "invoices", "bills", "contacts", "reports"],
+        supportedFeatures: [
+          "accounts",
+          "transactions",
+          "invoices",
+          "bills",
+          "contacts",
+          "reports",
+        ],
       },
       {
         id: "xero",
@@ -122,7 +136,13 @@ export class DataSourceResolver {
         description: "Connect to Xero for cloud accounting integration",
         logoUrl: "/providers/xero.svg",
         isEnabled: true,
-        supportedFeatures: ["accounts", "transactions", "invoices", "bills", "contacts"],
+        supportedFeatures: [
+          "accounts",
+          "transactions",
+          "invoices",
+          "bills",
+          "contacts",
+        ],
       },
       {
         id: "sage",
@@ -161,7 +181,7 @@ export class DataSourceResolver {
 
     // Generate secure state for CSRF protection
     const state = crypto.randomUUID();
-    
+
     // Store state with expiration (10 minutes)
     DataSourceResolver.oauthStateStore.set(state, {
       organizationId,
@@ -170,21 +190,27 @@ export class DataSourceResolver {
     });
 
     // Build OAuth URL based on provider
-    const baseRedirectUri = redirectUri || 
-      this.configService.get<string>(`${provider.toUpperCase()}_REDIRECT_URI`) ||
+    const baseRedirectUri =
+      redirectUri ||
+      this.configService.get<string>(
+        `${provider.toUpperCase()}_REDIRECT_URI`,
+      ) ||
       `${this.configService.get<string>("APP_URL")}/api/v1/datasources/oauth/${provider}/callback`;
 
     let url: string;
-    
+
     switch (provider) {
       case "quickbooks": {
         const clientId = this.configService.get<string>("QUICKBOOKS_CLIENT_ID");
-        const environment = this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
-        const baseUrl = environment === "production" 
-          ? "https://appcenter.intuit.com"
-          : "https://appcenter.intuit.com";
-        
-        url = `${baseUrl}/connect/oauth2?` +
+        const environment =
+          this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
+        const baseUrl =
+          environment === "production"
+            ? "https://appcenter.intuit.com"
+            : "https://appcenter.intuit.com";
+
+        url =
+          `${baseUrl}/connect/oauth2?` +
           `client_id=${clientId}&` +
           `response_type=code&` +
           `scope=com.intuit.quickbooks.accounting&` +
@@ -194,7 +220,8 @@ export class DataSourceResolver {
       }
       case "xero": {
         const clientId = this.configService.get<string>("XERO_CLIENT_ID");
-        url = `https://login.xero.com/identity/connect/authorize?` +
+        url =
+          `https://login.xero.com/identity/connect/authorize?` +
           `response_type=code&` +
           `client_id=${clientId}&` +
           `redirect_uri=${encodeURIComponent(baseRedirectUri)}&` +
@@ -218,17 +245,21 @@ export class DataSourceResolver {
     @Context() context: { req: { user: { organizationId: string } } },
   ): Promise<DataSource> {
     const { organizationId } = context.req.user;
-    this.logger.log(`Completing OAuth for state: ${input.state.substring(0, 8)}...`);
+    this.logger.log(
+      `Completing OAuth for state: ${input.state.substring(0, 8)}...`,
+    );
 
     // Validate OAuth state (CSRF protection)
     const stateData = DataSourceResolver.oauthStateStore.get(input.state);
     if (!stateData) {
       throw new Error("Invalid or expired OAuth state. Please try again.");
     }
-    
+
     // Verify organization matches
     if (stateData.organizationId !== organizationId) {
-      this.logger.warn(`OAuth state mismatch: expected ${stateData.organizationId}, got ${organizationId}`);
+      this.logger.warn(
+        `OAuth state mismatch: expected ${stateData.organizationId}, got ${organizationId}`,
+      );
       throw new Error("OAuth state mismatch. Please try again.");
     }
 
@@ -278,7 +309,9 @@ export class DataSourceResolver {
         billsSynced: 34,
       },
       syncedAt: new Date(),
-      message: options?.fullSync ? "Full sync completed" : "Incremental sync completed",
+      message: options?.fullSync
+        ? "Full sync completed"
+        : "Incremental sync completed",
     };
   }
 
@@ -288,10 +321,11 @@ export class DataSourceResolver {
   })
   async disconnectDataSource(
     @Args("id") id: string,
-    @Context() context: { req: { user: { organizationId: string; roles: string[] } } },
+    @Context()
+    context: { req: { user: { organizationId: string; roles: string[] } } },
   ): Promise<MutationResponse> {
     const { organizationId, roles } = context.req.user;
-    
+
     // Security: Only admins can disconnect
     if (!roles?.includes("admin") && !roles?.includes("owner")) {
       return {
@@ -301,7 +335,9 @@ export class DataSourceResolver {
       };
     }
 
-    this.logger.log(`Disconnecting data source ${id} for org: ${organizationId}`);
+    this.logger.log(
+      `Disconnecting data source ${id} for org: ${organizationId}`,
+    );
 
     // Would actually disconnect and clean up tokens
     return {
@@ -317,10 +353,11 @@ export class DataSourceResolver {
   async deleteDataSource(
     @Args("id") id: string,
     @Args("confirmDelete") confirmDelete: boolean,
-    @Context() context: { req: { user: { organizationId: string; roles: string[] } } },
+    @Context()
+    context: { req: { user: { organizationId: string; roles: string[] } } },
   ): Promise<MutationResponse> {
     const { organizationId, roles } = context.req.user;
-    
+
     // Security: Require confirmation and admin role
     if (!confirmDelete) {
       return {

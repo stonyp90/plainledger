@@ -36,35 +36,6 @@ const colors = {
 // ANIMATED HOOKS & COMPONENTS
 // =====================================================
 
-function useAnimatedCounter(target: number, duration: number = 1500, isVisible: boolean = true, decimals: number = 0): number {
-  const [value, setValue] = useState(0);
-  
-  useEffect(() => {
-    if (!isVisible) return;
-    
-    let startTime: number;
-    let animationId: number;
-    
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setValue(target * easeOutQuart);
-      
-      if (progress < 1) {
-        animationId = requestAnimationFrame(animate);
-      }
-    };
-    
-    animationId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationId);
-  }, [target, duration, isVisible]);
-  
-  return Number(value.toFixed(decimals));
-}
-
 function useInView(threshold = 0.2) {
   const ref = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
@@ -153,75 +124,6 @@ function AnimatedSparkline({
           fill={color}
         />
       )}
-    </svg>
-  );
-}
-
-// Animated gauge component
-function AnimatedGauge({ 
-  value, 
-  target, 
-  color, 
-  isVisible = true 
-}: { 
-  value: number; 
-  target: number; 
-  color: string;
-  isVisible?: boolean;
-}) {
-  const [progress, setProgress] = useState(0);
-  
-  useEffect(() => {
-    if (!isVisible) return;
-    let start: number;
-    const animate = (time: number) => {
-      if (!start) start = time;
-      const p = Math.min((time - start) / 1200, 1);
-      setProgress(p);
-      if (p < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [isVisible]);
-  
-  const percentage = Math.min((value / target) * 100, 100);
-  const currentPercentage = percentage * progress;
-  const circumference = 2 * Math.PI * 20;
-  const strokeDashoffset = circumference - (currentPercentage / 100) * circumference;
-  
-  return (
-    <svg width="50" height="50" viewBox="0 0 50 50">
-      <circle
-        cx="25"
-        cy="25"
-        r="20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="4"
-        className="opacity-10"
-      />
-      <circle
-        cx="25"
-        cy="25"
-        r="20"
-        fill="none"
-        stroke={color}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        transform="rotate(-90 25 25)"
-        style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-      />
-      <text
-        x="25"
-        y="27"
-        textAnchor="middle"
-        fontSize="10"
-        fontWeight="bold"
-        fill={color}
-      >
-        {Math.round(currentPercentage)}%
-      </text>
     </svg>
   );
 }

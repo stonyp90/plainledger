@@ -31,7 +31,12 @@ import {
   PageInfo,
   BalanceSheetLine,
 } from "../types";
-import { DatalakeDataService, DashboardData, DimAccount, FactTransaction } from "@infrastructure/services/datalake-data.service";
+import {
+  DatalakeDataService,
+  DashboardData,
+  DimAccount,
+  FactTransaction,
+} from "@infrastructure/services/datalake-data.service";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
 
 // Paginated response wrapper
@@ -88,19 +93,28 @@ export class FinancialResolver {
     try {
       const data = await this.datalakeService.getDashboardData(organizationId);
       const summary = data.summary;
-      
+
       // Map to GraphQL type
       return {
         totalRevenue: { amount: summary.totalRevenue, currency: "CAD" },
         totalExpenses: { amount: summary.totalExpenses, currency: "CAD" },
         netIncome: { amount: summary.netIncome, currency: "CAD" },
         cashOnHand: { amount: summary.cashBalance || 0, currency: "CAD" },
-        accountsReceivable: { amount: summary.accountsReceivable || 0, currency: "CAD" },
-        accountsPayable: { amount: summary.accountsPayable || 0, currency: "CAD" },
+        accountsReceivable: {
+          amount: summary.accountsReceivable || 0,
+          currency: "CAD",
+        },
+        accountsPayable: {
+          amount: summary.accountsPayable || 0,
+          currency: "CAD",
+        },
         cashFlow: {
           inflows: { amount: summary.totalRevenue, currency: "CAD" },
           outflows: { amount: summary.totalExpenses, currency: "CAD" },
-          netCashFlow: { amount: summary.totalRevenue - summary.totalExpenses, currency: "CAD" },
+          netCashFlow: {
+            amount: summary.totalRevenue - summary.totalExpenses,
+            currency: "CAD",
+          },
           changePercent: 0,
           trend: TrendDirection.FLAT,
         },
@@ -124,17 +138,19 @@ export class FinancialResolver {
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<FinancialTrend[]> {
     const organizationId = context?.req?.user?.organizationId || "default";
-    this.logger.log(`Fetching trends for org: ${organizationId}, metrics: ${metrics.join(", ")}`);
+    this.logger.log(
+      `Fetching trends for org: ${organizationId}, metrics: ${metrics.join(", ")}`,
+    );
 
     try {
       const data = await this.datalakeService.getDashboardData(organizationId);
       const trends = data.trends;
-      
+
       return metrics.map((metric) => {
         const key = metric.toLowerCase() as keyof typeof trends;
         const trendData = trends[key] || [];
         const periodChange = this.calculatePeriodChange(trendData);
-        
+
         return {
           metricName: metric,
           data: trendData.map((point) => ({
@@ -173,23 +189,24 @@ export class FinancialResolver {
     try {
       const data = await this.datalakeService.getDashboardData(organizationId);
       let accounts = data.accounts;
-      
+
       // Apply filters
       if (filter?.types?.length) {
-        accounts = accounts.filter((a: DimAccount) => 
-          filter.types!.includes(a.account_type as AccountType)
+        accounts = accounts.filter((a: DimAccount) =>
+          filter.types!.includes(a.account_type as AccountType),
         );
       }
       if (filter?.search) {
         const search = filter.search.toLowerCase();
-        accounts = accounts.filter((a: DimAccount) =>
-          a.account_name.toLowerCase().includes(search) ||
-          a.account_code.toLowerCase().includes(search)
+        accounts = accounts.filter(
+          (a: DimAccount) =>
+            a.account_name.toLowerCase().includes(search) ||
+            a.account_code.toLowerCase().includes(search),
         );
       }
       if (filter?.isActive !== undefined) {
-        accounts = accounts.filter((a: DimAccount) => 
-          a.is_active === filter.isActive
+        accounts = accounts.filter(
+          (a: DimAccount) => a.is_active === filter.isActive,
         );
       }
 
@@ -238,8 +255,10 @@ export class FinancialResolver {
 
     try {
       const data = await this.datalakeService.getDashboardData(organizationId);
-      const account = data.accounts.find((a: DimAccount) => a.account_key === id);
-      
+      const account = data.accounts.find(
+        (a: DimAccount) => a.account_key === id,
+      );
+
       if (!account) return null;
 
       return {
@@ -279,7 +298,7 @@ export class FinancialResolver {
     try {
       const data = await this.datalakeService.getDashboardData(organizationId);
       let transactions = data.transactions;
-      
+
       // Apply filters
       if (filter?.dateRange) {
         const startDate = new Date(filter.dateRange.startDate);
@@ -290,16 +309,21 @@ export class FinancialResolver {
         });
       }
       if (filter?.minAmount !== undefined) {
-        transactions = transactions.filter((t: FactTransaction) => Math.abs(t.amount) >= filter.minAmount!);
+        transactions = transactions.filter(
+          (t: FactTransaction) => Math.abs(t.amount) >= filter.minAmount!,
+        );
       }
       if (filter?.maxAmount !== undefined) {
-        transactions = transactions.filter((t: FactTransaction) => Math.abs(t.amount) <= filter.maxAmount!);
+        transactions = transactions.filter(
+          (t: FactTransaction) => Math.abs(t.amount) <= filter.maxAmount!,
+        );
       }
       if (filter?.search) {
         const search = filter.search.toLowerCase();
-        transactions = transactions.filter((t: FactTransaction) =>
-          t.memo?.toLowerCase().includes(search) ||
-          t.reference_number?.toLowerCase().includes(search)
+        transactions = transactions.filter(
+          (t: FactTransaction) =>
+            t.memo?.toLowerCase().includes(search) ||
+            t.reference_number?.toLowerCase().includes(search),
         );
       }
 
@@ -358,10 +382,16 @@ export class FinancialResolver {
         tenantId: organizationId,
         asOfDate: reportDate,
       });
-      
+
       // Flatten the balance sheet sections into line items
       const flattenSection = (
-        section: { items: Array<{ accountCode: string; accountName: string; currentBalance: number }> },
+        section: {
+          items: Array<{
+            accountCode: string;
+            accountName: string;
+            currentBalance: number;
+          }>;
+        },
         accountType: AccountType,
       ): BalanceSheetLine[] => {
         return section.items.map((item) => ({
@@ -382,8 +412,14 @@ export class FinancialResolver {
           ...flattenSection(result.assets.fixedAssets, AccountType.ASSET),
         ],
         liabilities: [
-          ...flattenSection(result.liabilities.currentLiabilities, AccountType.LIABILITY),
-          ...flattenSection(result.liabilities.longTermLiabilities, AccountType.LIABILITY),
+          ...flattenSection(
+            result.liabilities.currentLiabilities,
+            AccountType.LIABILITY,
+          ),
+          ...flattenSection(
+            result.liabilities.longTermLiabilities,
+            AccountType.LIABILITY,
+          ),
         ],
         equity: result.equity.items.map((item) => ({
           accountCode: item.accountCode,
@@ -419,7 +455,7 @@ export class FinancialResolver {
     try {
       const data = await this.datalakeService.getDashboardData(organizationId);
       const summary = data.summary;
-      
+
       return {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,

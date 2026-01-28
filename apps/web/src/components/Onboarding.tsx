@@ -37,10 +37,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../lib/keycloak';
 import { useI18n, LanguageToggle } from '../lib/i18n';
 import ThemeToggle from './ThemeToggle';
-import { useTenant } from '../contexts/TenantContext';
 import { analytics, type OnboardingStep } from '../lib/analytics';
 import { crmService } from '../lib/crm';
-import { getAllIndustries, getIndustryTemplate, type IndustryTemplate } from '../lib/industries';
+import { getAllIndustries, getIndustryTemplate } from '../lib/industries';
 import { getKPIsForIndustry } from '../lib/industryKPIs';
 // =====================================================
 // TYPES
@@ -329,7 +328,7 @@ const ProviderLogos: Record<string, JSX.Element> = {
 // Step 2: Connect Data Source
 function ConnectSourceStep({ 
   data, 
-  onChange, 
+  onChange: _onChange, 
   onNext, 
   onBack 
 }: { 
@@ -591,7 +590,7 @@ function InviteTeamStep({
 // Step 2: Industry KPIs Preview
 function IndustryPreviewStep({
   data,
-  onChange,
+  onChange: _onChange,
   onNext,
   onBack,
 }: {
@@ -750,7 +749,7 @@ function IndustryPreviewStep({
 // Step 6: Tour/Features
 function TourStep({ 
   onNext, 
-  onBack 
+  onBack: _onBack 
 }: { 
   onNext: () => void;
   onBack: () => void;

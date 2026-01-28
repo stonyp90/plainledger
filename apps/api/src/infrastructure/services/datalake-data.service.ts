@@ -320,7 +320,10 @@ export class DatalakeDataService {
     const equityAccounts = accounts.filter((a) => a.account_type === "EQUITY");
 
     // Calculate totals from transactions
-    const totalDebits = transactions.reduce((sum, t) => sum + t.debit_amount, 0);
+    const totalDebits = transactions.reduce(
+      (sum, t) => sum + t.debit_amount,
+      0,
+    );
     const totalCredits = transactions.reduce(
       (sum, t) => sum + t.credit_amount,
       0,
@@ -500,7 +503,11 @@ export class DatalakeDataService {
   /**
    * Check if datalake connection is healthy
    */
-  async healthCheck(): Promise<{ healthy: boolean; bucket: string; error?: string }> {
+  async healthCheck(): Promise<{
+    healthy: boolean;
+    bucket: string;
+    error?: string;
+  }> {
     try {
       await this.s3Client.send(
         new ListObjectsV2Command({

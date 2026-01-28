@@ -40,7 +40,9 @@ const TEST_CONFIG = {
 };
 
 // Mock ConfigService for testing
-const createMockConfigService = (config: Record<string, string>): ConfigService => {
+const createMockConfigService = (
+  config: Record<string, string>,
+): ConfigService => {
   return {
     get: (key: string) => config[key],
   } as unknown as ConfigService;
@@ -280,7 +282,9 @@ describe("QuickBooks Integration", () => {
         // Stage 2: Bronze → Silver
         const silver = etlService.transformQuickBooksAccountToSilver(bronze);
 
-        expect(silver.metadata.source_system).toBe(SilverSourceSystem.QUICKBOOKS);
+        expect(silver.metadata.source_system).toBe(
+          SilverSourceSystem.QUICKBOOKS,
+        );
         expect(silver.account_type).toBe(SilverAccountType.ASSET);
         expect(silver.account_code).toBe("1000");
         expect(silver.account_name).toBe("Business Checking");
@@ -288,7 +292,10 @@ describe("QuickBooks Integration", () => {
         expect(silver.metadata.quality_score).toBeGreaterThanOrEqual(70);
 
         // Stage 3: Silver → Gold
-        const gold = etlService.transformSilverAccountToGold(silver, TEST_ORG_KEY);
+        const gold = etlService.transformSilverAccountToGold(
+          silver,
+          TEST_ORG_KEY,
+        );
 
         expect(gold.account_type).toBe(AccountType.ASSET);
         expect(gold.organization_key).toBe(TEST_ORG_KEY);
@@ -341,7 +348,10 @@ describe("QuickBooks Integration", () => {
         expect(silver.address_country_code).toBe("CA");
 
         // Stage 3: Silver → Gold
-        const gold = etlService.transformSilverContactToGold(silver, TEST_ORG_KEY);
+        const gold = etlService.transformSilverContactToGold(
+          silver,
+          TEST_ORG_KEY,
+        );
 
         expect(gold.is_customer).toBe(true);
         expect(gold.is_vendor).toBe(false);
@@ -396,7 +406,8 @@ describe("QuickBooks Integration", () => {
         expect(bronze.raw_data.TotalAmt).toBe(11300.0);
 
         // Stage 2: Bronze → Silver
-        const silverTxns = etlService.transformQuickBooksInvoiceToSilver(bronze);
+        const silverTxns =
+          etlService.transformQuickBooksInvoiceToSilver(bronze);
 
         // Invoice creates A/R entry + line items
         expect(silverTxns.length).toBeGreaterThanOrEqual(2);
@@ -426,8 +437,14 @@ describe("QuickBooks Integration", () => {
         expect(goldTxns.length).toBe(silverTxns.length);
 
         // Verify double-entry balance
-        const totalDebits = goldTxns.reduce((sum, t) => sum + t.debit_amount, 0);
-        const totalCredits = goldTxns.reduce((sum, t) => sum + t.credit_amount, 0);
+        const totalDebits = goldTxns.reduce(
+          (sum, t) => sum + t.debit_amount,
+          0,
+        );
+        const totalCredits = goldTxns.reduce(
+          (sum, t) => sum + t.credit_amount,
+          0,
+        );
         expect(Math.abs(totalDebits - totalCredits)).toBeLessThan(0.01);
       });
 
@@ -498,7 +515,10 @@ describe("QuickBooks Integration", () => {
 
         // Verify double-entry
         const debitTotal = goldTxns.reduce((sum, t) => sum + t.debit_amount, 0);
-        const creditTotal = goldTxns.reduce((sum, t) => sum + t.credit_amount, 0);
+        const creditTotal = goldTxns.reduce(
+          (sum, t) => sum + t.credit_amount,
+          0,
+        );
         expect(debitTotal).toBe(creditTotal);
         expect(debitTotal).toBe(5000.0);
       });
@@ -633,7 +653,10 @@ describe("QuickBooks Integration", () => {
           TEST_DATASOURCE_ID,
         );
         const silver = etlService.transformQuickBooksAccountToSilver(bronze);
-        const gold = etlService.transformSilverAccountToGold(silver, TEST_ORG_KEY);
+        const gold = etlService.transformSilverAccountToGold(
+          silver,
+          TEST_ORG_KEY,
+        );
 
         // Verify lineage chain
         expect(bronze.metadata.ingestion_id).toBeDefined();

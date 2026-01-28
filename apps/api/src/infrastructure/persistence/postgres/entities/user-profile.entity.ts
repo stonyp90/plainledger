@@ -88,7 +88,11 @@ export class UserProfileEntity {
   @Column({ name: "onboarding_completed", type: "boolean", default: false })
   onboardingCompleted: boolean;
 
-  @Column({ name: "onboarding_completed_at", type: "timestamptz", nullable: true })
+  @Column({
+    name: "onboarding_completed_at",
+    type: "timestamptz",
+    nullable: true,
+  })
   onboardingCompletedAt?: Date;
 
   @Column({ name: "onboarding_data", type: "jsonb", nullable: true })

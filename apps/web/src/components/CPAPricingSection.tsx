@@ -6,7 +6,7 @@
 import { useState, useMemo } from 'react';
 import { Check, Award, Crown, Users, TrendingDown } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { CPA_PARTNER_TIERS, PricingCalculator } from '../lib/pricing';
+import { CPA_PARTNER_TIERS } from '../lib/pricing';
 import { analytics } from '../lib/analytics';
 
 interface CPAPricingSectionProps {
@@ -24,20 +24,6 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
   const tierCalculations = useMemo(() => {
     return CPA_PARTNER_TIERS.map(tier => {
       const effectiveClients = Math.max(clientCount, tier.minimumClients);
-      const calculation = PricingCalculator.calculateCPAPrice(tier.id, effectiveClients);
-      
-      // Determine which tier applies based on client count
-      let applicableTier = tier;
-      if (clientCount >= tier.minimumClients) {
-        // Check if we qualify for a better tier
-        const betterTier = CPA_PARTNER_TIERS.find(t => 
-          t.minimumClients > tier.minimumClients && 
-          clientCount >= t.minimumClients
-        );
-        if (betterTier) {
-          applicableTier = betterTier;
-        }
-      }
 
       const monthlyPrice = effectiveClients * tier.pricePerClient;
       const yearlyPrice = monthlyPrice * 12 * 0.8; // 20% discount

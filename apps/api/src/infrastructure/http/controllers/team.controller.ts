@@ -19,9 +19,18 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { AuthenticatedUser, Roles } from "nest-keycloak-connect";
-import { IsEmail, IsString, IsOptional, IsArray, ValidateNested } from "class-validator";
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+} from "class-validator";
 import { Type } from "class-transformer";
-import { KeycloakAdminService, KeycloakUser } from "@infrastructure/auth/keycloak-admin.service";
+import {
+  KeycloakAdminService,
+  KeycloakUser,
+} from "@infrastructure/auth/keycloak-admin.service";
 
 // =====================================================
 // DTOs
@@ -118,14 +127,20 @@ export class TeamController {
     this.logger.log(`User ${user.email} inviting ${dto.email}`);
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("Team management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "Team management is not configured. Contact administrator.",
+      );
     }
 
     try {
       // Get organization info from current user's attributes
-      const currentUser = await this.keycloakAdminService.findUserById(user.sub);
-      const organizationId = currentUser?.attributes?.organization?.[0] || user.sub;
-      const organizationName = currentUser?.attributes?.organizationName?.[0] || "PlainLedger";
+      const currentUser = await this.keycloakAdminService.findUserById(
+        user.sub,
+      );
+      const organizationId =
+        currentUser?.attributes?.organization?.[0] || user.sub;
+      const organizationName =
+        currentUser?.attributes?.organizationName?.[0] || "PlainLedger";
       const industry = currentUser?.attributes?.industry?.[0];
 
       const invitedUser = await this.keycloakAdminService.inviteTeamMember({
@@ -151,8 +166,13 @@ export class TeamController {
         },
       };
     } catch (error) {
-      this.logger.error(`Failed to invite team member: ${error.message}`, error.stack);
-      throw new BadRequestException(`Failed to invite team member: ${error.message}`);
+      this.logger.error(
+        `Failed to invite team member: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Failed to invite team member: ${error.message}`,
+      );
     }
   }
 
@@ -166,18 +186,29 @@ export class TeamController {
     @Body() dto: BulkInviteDto,
     @AuthenticatedUser() user: AuthUser,
   ) {
-    this.logger.log(`User ${user.email} bulk inviting ${dto.invites.length} members`);
+    this.logger.log(
+      `User ${user.email} bulk inviting ${dto.invites.length} members`,
+    );
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("Team management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "Team management is not configured. Contact administrator.",
+      );
     }
 
-    const results: Array<{ email: string; success: boolean; message: string; userId?: string }> = [];
+    const results: Array<{
+      email: string;
+      success: boolean;
+      message: string;
+      userId?: string;
+    }> = [];
 
     // Get organization info once
     const currentUser = await this.keycloakAdminService.findUserById(user.sub);
-    const organizationId = currentUser?.attributes?.organization?.[0] || user.sub;
-    const organizationName = currentUser?.attributes?.organizationName?.[0] || "PlainLedger";
+    const organizationId =
+      currentUser?.attributes?.organization?.[0] || user.sub;
+    const organizationName =
+      currentUser?.attributes?.organizationName?.[0] || "PlainLedger";
     const industry = currentUser?.attributes?.industry?.[0];
 
     for (const invite of dto.invites) {
@@ -226,15 +257,21 @@ export class TeamController {
     this.logger.log(`User ${user.email} listing team members`);
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("Team management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "Team management is not configured. Contact administrator.",
+      );
     }
 
     try {
       // Get organization ID from current user
-      const currentUser = await this.keycloakAdminService.findUserById(user.sub);
-      const organizationId = currentUser?.attributes?.organization?.[0] || user.sub;
+      const currentUser = await this.keycloakAdminService.findUserById(
+        user.sub,
+      );
+      const organizationId =
+        currentUser?.attributes?.organization?.[0] || user.sub;
 
-      const members = await this.keycloakAdminService.getUsersByOrganization(organizationId);
+      const members =
+        await this.keycloakAdminService.getUsersByOrganization(organizationId);
 
       return {
         success: true,
@@ -254,8 +291,13 @@ export class TeamController {
         count: members.length,
       };
     } catch (error) {
-      this.logger.error(`Failed to get team members: ${error.message}`, error.stack);
-      throw new BadRequestException(`Failed to get team members: ${error.message}`);
+      this.logger.error(
+        `Failed to get team members: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Failed to get team members: ${error.message}`,
+      );
     }
   }
 
@@ -272,7 +314,9 @@ export class TeamController {
     this.logger.log(`User ${user.email} removing team member ${userId}`);
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("Team management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "Team management is not configured. Contact administrator.",
+      );
     }
 
     // Cannot remove yourself
@@ -282,7 +326,9 @@ export class TeamController {
 
     try {
       // Verify user belongs to same organization
-      const currentUser = await this.keycloakAdminService.findUserById(user.sub);
+      const currentUser = await this.keycloakAdminService.findUserById(
+        user.sub,
+      );
       const targetUser = await this.keycloakAdminService.findUserById(userId);
 
       if (!targetUser) {
@@ -293,7 +339,9 @@ export class TeamController {
       const targetOrg = targetUser?.attributes?.organization?.[0];
 
       if (currentOrg !== targetOrg) {
-        throw new ForbiddenException("User does not belong to your organization");
+        throw new ForbiddenException(
+          "User does not belong to your organization",
+        );
       }
 
       // Disable user instead of deleting (safer)
@@ -304,11 +352,19 @@ export class TeamController {
         message: `Team member ${targetUser.email} has been removed`,
       };
     } catch (error) {
-      if (error instanceof ForbiddenException || error instanceof NotFoundException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
-      this.logger.error(`Failed to remove team member: ${error.message}`, error.stack);
-      throw new BadRequestException(`Failed to remove team member: ${error.message}`);
+      this.logger.error(
+        `Failed to remove team member: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Failed to remove team member: ${error.message}`,
+      );
     }
   }
 
@@ -326,7 +382,9 @@ export class TeamController {
     this.logger.log(`Admin ${user.email} creating user ${dto.email}`);
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("User management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "User management is not configured. Contact administrator.",
+      );
     }
 
     try {
@@ -340,7 +398,9 @@ export class TeamController {
         sendVerificationEmail: true,
         attributes: {
           ...(dto.organizationId ? { organization: [dto.organizationId] } : {}),
-          ...(dto.organizationName ? { organizationName: [dto.organizationName] } : {}),
+          ...(dto.organizationName
+            ? { organizationName: [dto.organizationName] }
+            : {}),
           ...(dto.industry ? { industry: [dto.industry] } : {}),
         },
         roles: dto.role ? [dto.role] : ["viewer"],
@@ -369,7 +429,9 @@ export class TeamController {
     this.logger.log(`Admin ${user.email} looking up user ${email}`);
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("User management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "User management is not configured. Contact administrator.",
+      );
     }
 
     try {
@@ -405,7 +467,9 @@ export class TeamController {
     this.logger.log(`User ${user.email} resending invitation to ${userId}`);
 
     if (!this.keycloakAdminService.isAvailable()) {
-      throw new BadRequestException("Team management is not configured. Contact administrator.");
+      throw new BadRequestException(
+        "Team management is not configured. Contact administrator.",
+      );
     }
 
     try {
@@ -429,8 +493,13 @@ export class TeamController {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      this.logger.error(`Failed to resend invitation: ${error.message}`, error.stack);
-      throw new BadRequestException(`Failed to resend invitation: ${error.message}`);
+      this.logger.error(
+        `Failed to resend invitation: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        `Failed to resend invitation: ${error.message}`,
+      );
     }
   }
 

@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { ArrowUp, ArrowDown, Equal, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
 
 interface WaterfallItem {

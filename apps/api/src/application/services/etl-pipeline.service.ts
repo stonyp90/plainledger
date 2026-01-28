@@ -234,7 +234,9 @@ export class ETLPipelineService {
       qualityScore -= 20;
     }
 
-    const accountType = this.mapQBClassificationToSilverType(raw.Classification);
+    const accountType = this.mapQBClassificationToSilverType(
+      raw.Classification,
+    );
     const normalBalance =
       accountType === SilverAccountType.ASSET ||
       accountType === SilverAccountType.EXPENSE
@@ -322,9 +324,7 @@ export class ETLPipelineService {
       email: raw.PrimaryEmailAddr?.Address || null,
       email_is_valid: emailIsValid,
       phone: raw.PrimaryPhone?.FreeFormNumber || null,
-      phone_normalized: this.normalizePhone(
-        raw.PrimaryPhone?.FreeFormNumber,
-      ),
+      phone_normalized: this.normalizePhone(raw.PrimaryPhone?.FreeFormNumber),
       address_line1: raw.BillAddr?.Line1 || null,
       address_city: raw.BillAddr?.City || null,
       address_province_state: raw.BillAddr?.CountrySubDivisionCode || null,

@@ -122,14 +122,16 @@ module "database" {
   rds_security_group_id   = module.networking.rds_security_group_id
   redis_security_group_id = module.networking.redis_security_group_id
 
-  db_instance_class        = var.db_instance_class
+  # MVP cost optimization: smaller instance, no Multi-AZ
+  db_instance_class        = "db.t3.micro"
   db_allocated_storage     = var.db_allocated_storage
   db_max_allocated_storage = var.db_max_allocated_storage
-  db_multi_az              = true
+  db_multi_az              = false
   db_backup_retention      = 7
 
+  # MVP cost optimization: single Redis node
   redis_node_type          = var.redis_node_type
-  redis_num_cache_clusters = 2
+  redis_num_cache_clusters = 1
   redis_snapshot_retention = 7
 }
 

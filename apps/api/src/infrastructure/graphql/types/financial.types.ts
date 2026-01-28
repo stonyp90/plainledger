@@ -6,7 +6,13 @@
  */
 import { Field, ObjectType, ID, Float, Int, InputType } from "@nestjs/graphql";
 import { GraphQLISODateTime } from "@nestjs/graphql";
-import { AccountType, TransactionType, Money, TrendDirection, MetricWithTrend } from "./common.types";
+import {
+  AccountType,
+  TransactionType,
+  Money,
+  TrendDirection,
+  MetricWithTrend,
+} from "./common.types";
 
 // =====================================================
 // ACCOUNT TYPES

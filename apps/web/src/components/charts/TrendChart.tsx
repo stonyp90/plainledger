@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef } from 'react';
-import { AlertTriangle, TrendingUp, TrendingDown, Eye, EyeOff, Settings2 } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, Settings2 } from 'lucide-react';
 import { 
   DEFAULT_THRESHOLDS, 
   formatCurrency,

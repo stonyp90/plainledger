@@ -91,7 +91,11 @@ import { NovuModule } from "./notifications/novu.service";
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([OrganizationEntity, AccountEntity, UserProfileEntity]),
+    TypeOrmModule.forFeature([
+      OrganizationEntity,
+      AccountEntity,
+      UserProfileEntity,
+    ]),
 
     // Keycloak Authentication
     KeycloakConnectModule.registerAsync({

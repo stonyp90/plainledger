@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Edit2, Save, Calendar, DollarSign, TrendingUp, PieChart } from 'lucide-react';
+import { Plus, Trash2, DollarSign } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import {
   type FinancingSource,
@@ -20,7 +20,6 @@ import {
   calculateEquityPercentage,
   calculateDebtToEquityRatio,
   calculateTotalMonthlyDebtService,
-  generateRepaymentSchedule,
 } from '../lib/financing';
 
 const STORAGE_KEY = 'plainledger-montage-financier';
@@ -54,8 +53,6 @@ export default function MontageFinancierPage() {
   const isEn = language === 'en';
   
   const [montage, setMontage] = useState<MontageFinancier | null>(null);
-  const [editingSource, setEditingSource] = useState<string | null>(null);
-  const [editingUse, setEditingUse] = useState<string | null>(null);
   const [showAddSource, setShowAddSource] = useState(false);
   const [showAddUse, setShowAddUse] = useState(false);
   

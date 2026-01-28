@@ -129,7 +129,6 @@ export default function AssumptionPanel({
         {assumptions.map((assumption, index) => {
           const isDragged = draggedId === assumption.id;
           const isDragOver = dragOverIndex === index;
-          const isEditing = editingId === assumption.id;
 
           return (
             <div

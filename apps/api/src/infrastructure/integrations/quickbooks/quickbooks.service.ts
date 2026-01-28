@@ -373,21 +373,27 @@ export class QuickBooksService {
   }> {
     this.logger.log(`Starting full sync for realm ${realmId}`);
 
-    const [companyInfo, accounts, customers, vendors, invoices, journalEntries] =
-      await Promise.all([
-        this.getCompanyInfo(accessToken, realmId, useSandbox),
-        this.getAccounts(accessToken, realmId, useSandbox),
-        this.getCustomers(accessToken, realmId, useSandbox),
-        this.getVendors(accessToken, realmId, useSandbox),
-        this.getInvoices(accessToken, realmId, startDate, endDate, useSandbox),
-        this.getJournalEntries(
-          accessToken,
-          realmId,
-          startDate,
-          endDate,
-          useSandbox,
-        ),
-      ]);
+    const [
+      companyInfo,
+      accounts,
+      customers,
+      vendors,
+      invoices,
+      journalEntries,
+    ] = await Promise.all([
+      this.getCompanyInfo(accessToken, realmId, useSandbox),
+      this.getAccounts(accessToken, realmId, useSandbox),
+      this.getCustomers(accessToken, realmId, useSandbox),
+      this.getVendors(accessToken, realmId, useSandbox),
+      this.getInvoices(accessToken, realmId, startDate, endDate, useSandbox),
+      this.getJournalEntries(
+        accessToken,
+        realmId,
+        startDate,
+        endDate,
+        useSandbox,
+      ),
+    ]);
 
     this.logger.log(
       `Full sync complete: ${accounts.length} accounts, ${customers.length} customers, ${vendors.length} vendors, ${invoices.length} invoices, ${journalEntries.length} journal entries`,

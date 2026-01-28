@@ -90,7 +90,7 @@ export class PowerBIDataController {
     private readonly configService: ConfigService,
   ) {
     this.datalakeService = new DatalakeDataService(configService);
-    
+
     // Load allowed IPs for Power BI gateway (optional additional security)
     const ipList = this.configService.get<string>("POWERBI_ALLOWED_IPS") || "";
     this.allowedIPs = ipList.split(",").filter((ip) => ip.trim().length > 0);
@@ -100,7 +100,9 @@ export class PowerBIDataController {
    * Get Gold layer schema for Power BI dataset configuration
    */
   @Get("schema")
-  @ApiOperation({ summary: "Get data schema for Power BI dataset configuration" })
+  @ApiOperation({
+    summary: "Get data schema for Power BI dataset configuration",
+  })
   @ApiResponse({ status: 200, description: "Schema retrieved successfully" })
   async getSchema(): Promise<SchemaResponse> {
     const schemas = this.powerBIDatalakeService.getGoldLayerSchema();
@@ -125,7 +127,10 @@ export class PowerBIDataController {
   @ApiOperation({ summary: "Generate secure access token for data requests" })
   @ApiResponse({ status: 200, description: "Token generated successfully" })
   async generateAccessToken(
-    @Req() req: { user: { sub: string; organizationId: string; roles?: string[] } },
+    @Req()
+    req: {
+      user: { sub: string; organizationId: string; roles?: string[] };
+    },
   ): Promise<AccessTokenResponse> {
     const { sub: userId, organizationId, roles = [] } = req.user;
 
@@ -202,8 +207,9 @@ export class PowerBIDataController {
 
     try {
       // Fetch data with RLS (organization scoping)
-      const dashboardData = await this.datalakeService.getDashboardData(organizationId);
-      
+      const dashboardData =
+        await this.datalakeService.getDashboardData(organizationId);
+
       let data: unknown[];
       switch (tableName) {
         case "dim_account":
@@ -260,7 +266,8 @@ export class PowerBIDataController {
   @ApiResponse({ status: 200, description: "Signed URL generated" })
   async getSignedUrl(
     @Param("tableName") tableName: string,
-    @Req() req: { user: { sub: string; organizationId: string; roles?: string[] } },
+    @Req()
+    req: { user: { sub: string; organizationId: string; roles?: string[] } },
   ): Promise<{ url: string; expiresAt: string }> {
     const { sub: userId, organizationId, roles = [] } = req.user;
 

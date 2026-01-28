@@ -1,6 +1,6 @@
 /**
  * Sync Admin Controller
- * 
+ *
  * Allows PlainLedger super admins (CPA admins) to configure sync schedules
  * for any integration type (QuickBooks, Xero, Sage, FreshBooks, etc.)
  */
@@ -32,9 +32,15 @@ import { CPAAdminGuard } from "../guards/cpa-admin.guard";
 
 class SyncScheduleConfigDto {
   autoSyncEnabled: boolean;
-  syncFrequency: 'hourly' | 'every_6_hours' | 'every_12_hours' | 'daily' | 'weekly' | 'manual';
-  syncTimeUtc: string;  // HH:MM format
-  syncDayOfWeek?: number;  // 0-6 for weekly syncs
+  syncFrequency:
+    | "hourly"
+    | "every_6_hours"
+    | "every_12_hours"
+    | "daily"
+    | "weekly"
+    | "manual";
+  syncTimeUtc: string; // HH:MM format
+  syncDayOfWeek?: number; // 0-6 for weekly syncs
   syncToDatalake: boolean;
   syncEntities: string[];
   syncDateRangeDays: number;
@@ -96,11 +102,19 @@ const mockConnections: ConnectionSyncStatusDto[] = [
     autoSyncEnabled: true,
     syncFrequency: "daily",
     syncTimeUtc: "09:00",
-    nextScheduledSyncAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+    nextScheduledSyncAt: new Date(
+      Date.now() + 12 * 60 * 60 * 1000,
+    ).toISOString(),
     lastSyncAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
     lastSyncStatus: "completed",
     lastError: null,
-    syncEntities: ["accounts", "customers", "vendors", "invoices", "journal_entries"],
+    syncEntities: [
+      "accounts",
+      "customers",
+      "vendors",
+      "invoices",
+      "journal_entries",
+    ],
     accountsCount: 24,
     contactsCount: 15,
     transactionsCount: 156,
@@ -150,26 +164,31 @@ export class SyncAdminController {
 
   @Get("connections")
   @ApiOperation({ summary: "List all datasource connections with sync status" })
-  @ApiResponse({ status: 200, description: "List of connections with sync status" })
+  @ApiResponse({
+    status: 200,
+    description: "List of connections with sync status",
+  })
   async listConnections(
     @Query("provider") provider?: string,
     @Query("status") status?: string,
     @Query("autoSyncEnabled") autoSyncEnabled?: string,
   ): Promise<ConnectionSyncStatusDto[]> {
-    this.logger.log(`Admin listing connections - provider: ${provider}, status: ${status}`);
+    this.logger.log(
+      `Admin listing connections - provider: ${provider}, status: ${status}`,
+    );
 
     let connections = [...mockConnections];
 
     // Apply filters
     if (provider) {
-      connections = connections.filter(c => c.providerId === provider);
+      connections = connections.filter((c) => c.providerId === provider);
     }
     if (status) {
-      connections = connections.filter(c => c.status === status);
+      connections = connections.filter((c) => c.status === status);
     }
     if (autoSyncEnabled !== undefined) {
       const enabled = autoSyncEnabled === "true";
-      connections = connections.filter(c => c.autoSyncEnabled === enabled);
+      connections = connections.filter((c) => c.autoSyncEnabled === enabled);
     }
 
     return connections;
@@ -182,10 +201,12 @@ export class SyncAdminController {
   @Get("connections/:id")
   @ApiOperation({ summary: "Get detailed sync status for a connection" })
   @ApiResponse({ status: 200, description: "Connection sync details" })
-  async getConnection(@Param("id") id: string): Promise<ConnectionSyncStatusDto> {
+  async getConnection(
+    @Param("id") id: string,
+  ): Promise<ConnectionSyncStatusDto> {
     this.logger.log(`Admin getting connection details: ${id}`);
 
-    const connection = mockConnections.find(c => c.id === id);
+    const connection = mockConnections.find((c) => c.id === id);
     if (!connection) {
       throw new Error(`Connection not found: ${id}`);
     }
@@ -207,7 +228,7 @@ export class SyncAdminController {
     this.logger.log(`Admin updating sync schedule for connection: ${id}`);
     this.logger.log(`New config: ${JSON.stringify(config)}`);
 
-    const connection = mockConnections.find(c => c.id === id);
+    const connection = mockConnections.find((c) => c.id === id);
     if (!connection) {
       throw new Error(`Connection not found: ${id}`);
     }
@@ -231,7 +252,9 @@ export class SyncAdminController {
       connection.nextScheduledSyncAt = null;
     }
 
-    this.logger.log(`Updated connection ${id} - next sync: ${connection.nextScheduledSyncAt}`);
+    this.logger.log(
+      `Updated connection ${id} - next sync: ${connection.nextScheduledSyncAt}`,
+    );
 
     return connection;
   }
@@ -244,10 +267,12 @@ export class SyncAdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Toggle auto-sync for a connection" })
   @ApiResponse({ status: 200, description: "Auto-sync toggled" })
-  async toggleAutoSync(@Param("id") id: string): Promise<{ enabled: boolean; nextSyncAt: string | null }> {
+  async toggleAutoSync(
+    @Param("id") id: string,
+  ): Promise<{ enabled: boolean; nextSyncAt: string | null }> {
     this.logger.log(`Admin toggling auto-sync for connection: ${id}`);
 
-    const connection = mockConnections.find(c => c.id === id);
+    const connection = mockConnections.find((c) => c.id === id);
     if (!connection) {
       throw new Error(`Connection not found: ${id}`);
     }
@@ -285,7 +310,7 @@ export class SyncAdminController {
   ): Promise<{ message: string; syncId: string; estimatedDuration: string }> {
     this.logger.log(`Admin triggering sync for connection: ${id}`);
 
-    const connection = mockConnections.find(c => c.id === id);
+    const connection = mockConnections.find((c) => c.id === id);
     if (!connection) {
       throw new Error(`Connection not found: ${id}`);
     }
@@ -325,7 +350,9 @@ export class SyncAdminController {
         syncType: "scheduled",
         status: "completed",
         startedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        completedAt: new Date(Date.now() - 12 * 60 * 60 * 1000 + 45000).toISOString(),
+        completedAt: new Date(
+          Date.now() - 12 * 60 * 60 * 1000 + 45000,
+        ).toISOString(),
         accountsFetched: 24,
         contactsFetched: 15,
         transactionsFetched: 12,
@@ -339,7 +366,9 @@ export class SyncAdminController {
         syncType: "manual",
         status: "completed",
         startedAt: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
-        completedAt: new Date(Date.now() - 36 * 60 * 60 * 1000 + 120000).toISOString(),
+        completedAt: new Date(
+          Date.now() - 36 * 60 * 60 * 1000 + 120000,
+        ).toISOString(),
         accountsFetched: 24,
         contactsFetched: 15,
         transactionsFetched: 156,
@@ -356,18 +385,26 @@ export class SyncAdminController {
   // ===========================================================================
 
   @Post("bulk-update")
-  @ApiOperation({ summary: "Bulk update sync schedules for multiple connections" })
+  @ApiOperation({
+    summary: "Bulk update sync schedules for multiple connections",
+  })
   @ApiResponse({ status: 200, description: "Bulk update completed" })
   async bulkUpdateSchedules(
-    @Body() updates: { connectionIds: string[]; config: Partial<SyncScheduleConfigDto> },
+    @Body()
+    updates: {
+      connectionIds: string[];
+      config: Partial<SyncScheduleConfigDto>;
+    },
   ): Promise<{ updated: number; failed: string[] }> {
-    this.logger.log(`Admin bulk updating ${updates.connectionIds.length} connections`);
+    this.logger.log(
+      `Admin bulk updating ${updates.connectionIds.length} connections`,
+    );
 
     const failed: string[] = [];
     let updated = 0;
 
     for (const connId of updates.connectionIds) {
-      const connection = mockConnections.find(c => c.id === connId);
+      const connection = mockConnections.find((c) => c.id === connId);
       if (!connection) {
         failed.push(connId);
         continue;
@@ -412,13 +449,13 @@ export class SyncAdminController {
     return {
       totalConnections: mockConnections.length,
       byProvider,
-      autoSyncEnabled: mockConnections.filter(c => c.autoSyncEnabled).length,
-      syncedLast24h: mockConnections.filter(c => {
+      autoSyncEnabled: mockConnections.filter((c) => c.autoSyncEnabled).length,
+      syncedLast24h: mockConnections.filter((c) => {
         if (!c.lastSyncAt) return false;
         const syncTime = new Date(c.lastSyncAt).getTime();
         return Date.now() - syncTime < 24 * 60 * 60 * 1000;
       }).length,
-      errorCount: mockConnections.filter(c => c.status === "error").length,
+      errorCount: mockConnections.filter((c) => c.status === "error").length,
     };
   }
 
@@ -427,7 +464,13 @@ export class SyncAdminController {
   // ===========================================================================
 
   private calculateNextSync(
-    frequency: 'hourly' | 'every_6_hours' | 'every_12_hours' | 'daily' | 'weekly' | 'manual',
+    frequency:
+      | "hourly"
+      | "every_6_hours"
+      | "every_12_hours"
+      | "daily"
+      | "weekly"
+      | "manual",
     timeUtc: string,
     dayOfWeek?: number,
   ): string {

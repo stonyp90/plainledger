@@ -100,7 +100,7 @@ const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
     id: 'special',
     label: 'One special character (!@#$%^&*)',
     labelFr: 'Un caractère spécial (!@#$%^&*)',
-    check: (p) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p),
+    check: (p) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(p),
   },
 ];
 
@@ -122,10 +122,8 @@ const INITIAL_FORM_DATA: SignupFormData = {
 export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { resolvedTheme } = useTheme();
   const { language } = useI18n();
   const isEn = language === 'en';
-  const isDark = resolvedTheme === 'dark';
 
   // Form state
   const [formData, setFormData] = useState<SignupFormData>(INITIAL_FORM_DATA);

@@ -21,17 +21,71 @@ jest.mock("@infrastructure/services/datalake-data.service", () => {
         dataSource: "test",
         lastUpdated: "2026-01-27T12:00:00Z",
         accounts: [
-          { account_key: "acc-1", account_code: "1000", account_name: "Cash", account_type: "ASSET", is_active: true },
-          { account_key: "acc-2", account_code: "1100", account_name: "Accounts Receivable", account_type: "ASSET", is_active: true },
-          { account_key: "acc-3", account_code: "2000", account_name: "Accounts Payable", account_type: "LIABILITY", is_active: true },
-          { account_key: "acc-4", account_code: "4000", account_name: "Revenue", account_type: "REVENUE", is_active: true },
-          { account_key: "acc-5", account_code: "5000", account_name: "Expenses", account_type: "EXPENSE", is_active: true },
+          {
+            account_key: "acc-1",
+            account_code: "1000",
+            account_name: "Cash",
+            account_type: "ASSET",
+            is_active: true,
+          },
+          {
+            account_key: "acc-2",
+            account_code: "1100",
+            account_name: "Accounts Receivable",
+            account_type: "ASSET",
+            is_active: true,
+          },
+          {
+            account_key: "acc-3",
+            account_code: "2000",
+            account_name: "Accounts Payable",
+            account_type: "LIABILITY",
+            is_active: true,
+          },
+          {
+            account_key: "acc-4",
+            account_code: "4000",
+            account_name: "Revenue",
+            account_type: "REVENUE",
+            is_active: true,
+          },
+          {
+            account_key: "acc-5",
+            account_code: "5000",
+            account_name: "Expenses",
+            account_type: "EXPENSE",
+            is_active: true,
+          },
         ],
         contacts: [],
         transactions: [
-          { transaction_key: "txn-1", transaction_date: "2026-01-15", amount: 5000, memo: "Invoice #001", reference_number: "INV-001", currency_code: "CAD", posting_date: "2026-01-15" },
-          { transaction_key: "txn-2", transaction_date: "2026-01-16", amount: 3000, memo: "Payment received", reference_number: "PMT-001", currency_code: "CAD", posting_date: "2026-01-16" },
-          { transaction_key: "txn-3", transaction_date: "2026-01-17", amount: 1500, memo: "Office supplies", reference_number: "EXP-001", currency_code: "CAD", posting_date: "2026-01-17" },
+          {
+            transaction_key: "txn-1",
+            transaction_date: "2026-01-15",
+            amount: 5000,
+            memo: "Invoice #001",
+            reference_number: "INV-001",
+            currency_code: "CAD",
+            posting_date: "2026-01-15",
+          },
+          {
+            transaction_key: "txn-2",
+            transaction_date: "2026-01-16",
+            amount: 3000,
+            memo: "Payment received",
+            reference_number: "PMT-001",
+            currency_code: "CAD",
+            posting_date: "2026-01-16",
+          },
+          {
+            transaction_key: "txn-3",
+            transaction_date: "2026-01-17",
+            amount: 1500,
+            memo: "Office supplies",
+            reference_number: "EXP-001",
+            currency_code: "CAD",
+            posting_date: "2026-01-17",
+          },
         ],
         balances: [],
         summary: {
@@ -89,8 +143,16 @@ describe("FinancialResolver", () => {
           totalAssets: 45000,
         },
         liabilities: {
-          currentLiabilities: { title: "Current Liabilities", items: [], total: 15000 },
-          longTermLiabilities: { title: "Long-term Liabilities", items: [], total: 0 },
+          currentLiabilities: {
+            title: "Current Liabilities",
+            items: [],
+            total: 15000,
+          },
+          longTermLiabilities: {
+            title: "Long-term Liabilities",
+            items: [],
+            total: 0,
+          },
           totalLiabilities: 15000,
         },
         equity: {
@@ -154,7 +216,10 @@ describe("FinancialResolver", () => {
 
     it("should handle missing organization gracefully", async () => {
       const contextWithoutOrg = { req: { user: {} } } as any;
-      const result = await resolver.getDashboardSummary(undefined, contextWithoutOrg);
+      const result = await resolver.getDashboardSummary(
+        undefined,
+        contextWithoutOrg,
+      );
 
       expect(result).toBeDefined();
     });
@@ -186,7 +251,11 @@ describe("FinancialResolver", () => {
     });
 
     it("should handle empty metrics array", async () => {
-      const result = await resolver.getFinancialTrends([], undefined, mockContext);
+      const result = await resolver.getFinancialTrends(
+        [],
+        undefined,
+        mockContext,
+      );
 
       expect(result).toHaveLength(0);
     });
@@ -194,7 +263,11 @@ describe("FinancialResolver", () => {
 
   describe("getAccounts", () => {
     it("should return paginated accounts", async () => {
-      const result = await resolver.getAccounts(undefined, undefined, mockContext);
+      const result = await resolver.getAccounts(
+        undefined,
+        undefined,
+        mockContext,
+      );
 
       expect(result.nodes).toHaveLength(5);
       expect(result.pageInfo.totalCount).toBe(5);
@@ -208,7 +281,9 @@ describe("FinancialResolver", () => {
         mockContext,
       );
 
-      expect(result.nodes.every((a) => a.type === AccountType.ASSET)).toBe(true);
+      expect(result.nodes.every((a) => a.type === AccountType.ASSET)).toBe(
+        true,
+      );
     });
 
     it("should filter accounts by search term", async () => {
@@ -253,7 +328,11 @@ describe("FinancialResolver", () => {
 
   describe("getTransactions", () => {
     it("should return paginated transactions", async () => {
-      const result = await resolver.getTransactions(undefined, undefined, mockContext);
+      const result = await resolver.getTransactions(
+        undefined,
+        undefined,
+        mockContext,
+      );
 
       expect(result.nodes).toHaveLength(3);
       expect(result.pageInfo.totalCount).toBe(3);
@@ -266,7 +345,11 @@ describe("FinancialResolver", () => {
         mockContext,
       );
 
-      expect(result.nodes.every((t) => Math.abs(t.amount) >= 2000 && Math.abs(t.amount) <= 4000)).toBe(true);
+      expect(
+        result.nodes.every(
+          (t) => Math.abs(t.amount) >= 2000 && Math.abs(t.amount) <= 4000,
+        ),
+      ).toBe(true);
     });
 
     it("should filter by search term", async () => {
@@ -318,8 +401,16 @@ describe("FinancialResolver Security", () => {
     const mockBalanceSheetUseCase = {
       execute: jest.fn().mockResolvedValue({
         organizationName: "Test",
-        assets: { currentAssets: { items: [] }, fixedAssets: { items: [] }, totalAssets: 0 },
-        liabilities: { currentLiabilities: { items: [] }, longTermLiabilities: { items: [] }, totalLiabilities: 0 },
+        assets: {
+          currentAssets: { items: [] },
+          fixedAssets: { items: [] },
+          totalAssets: 0,
+        },
+        liabilities: {
+          currentLiabilities: { items: [] },
+          longTermLiabilities: { items: [] },
+          totalLiabilities: 0,
+        },
         equity: { items: [], totalEquity: 0 },
         currency: "CAD",
       }),
@@ -359,7 +450,10 @@ describe("FinancialResolver Security", () => {
     const malformedContext = { req: {} } as any;
 
     // Should not throw, should use default values
-    const result = await resolver.getDashboardSummary(undefined, malformedContext);
+    const result = await resolver.getDashboardSummary(
+      undefined,
+      malformedContext,
+    );
     expect(result).toBeDefined();
   });
 });

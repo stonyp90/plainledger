@@ -773,13 +773,17 @@ export class NovuService implements OnModuleInit {
         industry: data.industry || "N/A",
         fiscalYearEnd: data.fiscalYearEnd || 12,
         currency: data.currency || "CAD",
-        primarySource: data.primarySource || (data.skipSource ? "Skipped" : "N/A"),
-        teamEmails: data.teamEmails?.join(", ") || (data.skipTeam ? "Skipped" : "None"),
+        primarySource:
+          data.primarySource || (data.skipSource ? "Skipped" : "N/A"),
+        teamEmails:
+          data.teamEmails?.join(", ") || (data.skipTeam ? "Skipped" : "None"),
       },
     });
 
     // TODO: Store in database (create onboarding_data table or extend organization table)
-    this.logger.log(`Onboarding data for ${data.email}: ${JSON.stringify(data)}`);
+    this.logger.log(
+      `Onboarding data for ${data.email}: ${JSON.stringify(data)}`,
+    );
   }
 
   // ---------------------------------------------------------------------------

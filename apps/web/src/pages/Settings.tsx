@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   Users,
   Link2,
-  Unlink,
   Camera,
   Lock,
   Mail,
@@ -438,7 +437,7 @@ export default function Settings() {
 
 // Security Settings Component - Integrates with Keycloak Account Console
 function SecuritySettings() {
-  const { openAccountConsole, getAccountConsoleUrl } = useKeycloak();
+  const { openAccountConsole } = useKeycloak();
   const { user } = useAuth();
   
   // Security management items that redirect to Keycloak
