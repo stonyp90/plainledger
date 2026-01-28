@@ -268,21 +268,22 @@ module "ecs" {
   route53_zone_id        = module.networking.route53_zone_id
   create_route53_records = var.create_hosted_zone
 
+  # MVP configuration - single instance per service (cost optimization)
   web_cpu           = 256
   web_memory        = 512
-  web_desired_count = 2
-  web_min_count     = 2
-  web_max_count     = 10
+  web_desired_count = 1
+  web_min_count     = 1
+  web_max_count     = 4
 
   api_cpu           = 512
   api_memory        = 1024
-  api_desired_count = 2
-  api_min_count     = 2
-  api_max_count     = 10
+  api_desired_count = 1
+  api_min_count     = 1
+  api_max_count     = 4
 
   keycloak_cpu           = 512
   keycloak_memory        = 1024
-  keycloak_desired_count = 2
+  keycloak_desired_count = 1
 
   depends_on = [module.networking, module.database]
 }
