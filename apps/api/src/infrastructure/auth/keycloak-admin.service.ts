@@ -76,6 +76,11 @@ export class KeycloakAdminService
 
   async onModuleInit() {
     await this.initializeClient();
+    // Auto-enable Direct Access Grants on plainledger-web client if not already enabled
+    // This ensures the custom login UI works properly
+    if (this.isConfigured) {
+      await this.ensureDirectAccessGrantsEnabled();
+    }
   }
 
   /**
@@ -616,6 +621,53 @@ export class KeycloakAdminService
     } catch (error) {
       this.logger.error(`Failed to enable user: ${error.message}`);
       throw error;
+    }
+  }
+
+  /**
+   * Ensure Direct Access Grants is enabled on plainledger-web client
+   * Called automatically on module initialization
+   */
+  private async ensureDirectAccessGrantsEnabled(): Promise<void> {
+    try {
+      const clients = await this.adminClient.clients.find({
+        realm: this.realm,
+        clientId: "plainledger-web",
+      });
+
+      if (!clients || clients.length === 0) {
+        this.logger.warn(
+          "plainledger-web client not found - skipping Direct Access Grants check",
+        );
+        return;
+      }
+
+      const client = clients[0];
+      if (client.directAccessGrantsEnabled === true) {
+        this.logger.log(
+          "Direct Access Grants already enabled on plainledger-web client",
+        );
+        return;
+      }
+
+      this.logger.log(
+        "Enabling Direct Access Grants on plainledger-web client...",
+      );
+      await this.adminClient.clients.update(
+        { realm: this.realm, id: client.id },
+        {
+          ...client,
+          directAccessGrantsEnabled: true,
+        },
+      );
+      this.logger.log(
+        "✅ Successfully enabled Direct Access Grants on plainledger-web client",
+      );
+    } catch (error) {
+      // Don't fail startup if this fails - log and continue
+      this.logger.warn(
+        `Failed to enable Direct Access Grants: ${error.message}. This can be done manually in Keycloak Admin Console.`,
+      );
     }
   }
 }
