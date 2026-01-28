@@ -83,8 +83,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Check if email verification is needed (skip for verify-email route itself)
   // In production, this checks the emailVerified flag from Keycloak
   // Allow bypass with URL parameter for development/testing
+  // IMPORTANT: Only redirect if we KNOW email is not verified (emailVerified === false)
+  // If emailVerified is undefined, allow access (assume verified - better UX)
   const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
-  if (!skipEmailVerification && user && !user.emailVerified && !location.pathname.includes('/verify-email')) {
+  if (!skipEmailVerification && user && user.emailVerified === false && !location.pathname.includes('/verify-email')) {
     return <Navigate to="/verify-email" replace />;
   }
 
@@ -108,8 +110,10 @@ function LoginRedirect() {
 }
 
 // Protected route for email verification (doesn't redirect to verify-email again)
+// Allows unauthenticated users if they have an email query param (coming from signup)
 function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNode }) {
   const { authenticated, initialized, user } = useKeycloak();
+  const emailFromQuery = new URLSearchParams(window.location.search).get('email');
 
   if (!initialized) {
     return (
@@ -125,13 +129,15 @@ function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNo
     );
   }
 
-  if (!authenticated) {
-    // Redirect to custom login page instead of Keycloak's UI
+  // Allow unauthenticated users if they have an email query param (coming from signup)
+  // This is needed because after signup, the user has an account but hasn't logged in yet
+  if (!authenticated && !emailFromQuery) {
+    // No email param = not coming from signup, redirect to login
     return <Navigate to="/login" replace />;
   }
 
-  // If email already verified, proceed to onboarding or dashboard
-  if (user?.emailVerified) {
+  // If authenticated and email already verified, proceed to onboarding or dashboard
+  if (authenticated && user?.emailVerified) {
     if (!hasCompletedOnboarding()) {
       return <Navigate to="/onboarding" replace />;
     }

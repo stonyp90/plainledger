@@ -81,6 +81,14 @@ export default function Login() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Handle EMAIL_NOT_VERIFIED error - redirect to verify-email page
+        if (errorData.error === 'EMAIL_NOT_VERIFIED') {
+          analytics.track('login_email_not_verified', { email: email.toLowerCase() });
+          navigate(`/verify-email?email=${encodeURIComponent(errorData.email || email.toLowerCase())}`);
+          return;
+        }
+        
         const errorMsg = errorData.message || errorData.error || 'Invalid email or password';
         throw new Error(errorMsg);
       }

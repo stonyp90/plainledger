@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Mail, RefreshCw, CheckCircle, ArrowRight, Inbox, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Mail, RefreshCw, CheckCircle, ArrowRight, Inbox, Clock, LogIn } from 'lucide-react';
 import { useKeycloak } from '../lib/keycloak';
 import { useI18n } from '../lib/i18n';
 
 export default function EmailConfirmation() {
-  const { user, logout } = useKeycloak();
+  const { user, logout, authenticated } = useKeycloak();
   const { language } = useI18n();
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -111,13 +112,13 @@ export default function EmailConfirmation() {
           <div 
             className="rounded-lg p-4 mb-6 text-left"
             style={{ 
-              backgroundColor: 'rgb(var(--color-info) / 0.08)',
-              border: '1px solid rgb(var(--color-info) / 0.2)'
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.08)',
+              border: '1px solid rgb(var(--color-primary-500) / 0.2)'
             }}
           >
             <h3 
               className="font-semibold mb-3 flex items-center gap-2"
-              style={{ color: 'rgb(var(--color-info))' }}
+              style={{ color: 'rgb(var(--color-primary-600))' }}
             >
               <CheckCircle className="w-4 h-4" />
               {isEn ? 'Next Steps' : 'Prochaines étapes'}
@@ -127,8 +128,8 @@ export default function EmailConfirmation() {
                 <span 
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
                   style={{ 
-                    backgroundColor: 'rgb(var(--color-info) / 0.2)',
-                    color: 'rgb(var(--color-info))'
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
+                    color: 'rgb(var(--color-primary-600))'
                   }}
                 >
                   1
@@ -141,8 +142,8 @@ export default function EmailConfirmation() {
                 <span 
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
                   style={{ 
-                    backgroundColor: 'rgb(var(--color-info) / 0.2)',
-                    color: 'rgb(var(--color-info))'
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
+                    color: 'rgb(var(--color-primary-600))'
                   }}
                 >
                   2
@@ -155,8 +156,8 @@ export default function EmailConfirmation() {
                 <span 
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
                   style={{ 
-                    backgroundColor: 'rgb(var(--color-info) / 0.2)',
-                    color: 'rgb(var(--color-info))'
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
+                    color: 'rgb(var(--color-primary-600))'
                   }}
                 >
                   3
@@ -186,14 +187,25 @@ export default function EmailConfirmation() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {/* Primary: Continue/Refresh */}
-            <button
-              onClick={handleRefreshStatus}
-              className="btn-primary w-full py-3 flex items-center justify-center gap-2"
-            >
-              {isEn ? 'Continue to Dashboard' : 'Continuer vers le tableau de bord'}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {authenticated ? (
+              /* If authenticated, show continue button */
+              <button
+                onClick={handleRefreshStatus}
+                className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+              >
+                {isEn ? 'Continue to Dashboard' : 'Continuer vers le tableau de bord'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              /* If not authenticated, show login button */
+              <Link
+                to="/login"
+                className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                {isEn ? 'Go to Login' : 'Aller à la connexion'}
+              </Link>
+            )}
 
             {/* Secondary: Resend */}
             <button
@@ -230,13 +242,23 @@ export default function EmailConfirmation() {
                 ? "Can't find the email? Check your spam folder."
                 : "Vous ne trouvez pas le courriel? Vérifiez votre dossier spam."}
             </p>
-            <button
-              onClick={logout}
-              className="text-sm font-medium hover:underline"
-              style={{ color: 'rgb(var(--color-primary-600))' }}
-            >
-              {isEn ? 'Use a different email address' : 'Utiliser une autre adresse courriel'}
-            </button>
+            {authenticated ? (
+              <button
+                onClick={logout}
+                className="text-sm font-medium hover:underline"
+                style={{ color: 'rgb(var(--color-primary-600))' }}
+              >
+                {isEn ? 'Use a different email address' : 'Utiliser une autre adresse courriel'}
+              </button>
+            ) : (
+              <Link
+                to="/signup"
+                className="text-sm font-medium hover:underline"
+                style={{ color: 'rgb(var(--color-primary-600))' }}
+              >
+                {isEn ? 'Use a different email address' : 'Utiliser une autre adresse courriel'}
+              </Link>
+            )}
           </div>
         </div>
 

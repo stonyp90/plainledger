@@ -187,6 +187,31 @@ export class AuthController {
           `Login failed for ${dto.email}: ${response.status} - ${errorData.error_description || errorData.error || "Invalid credentials"}`,
         );
 
+        // Check if user exists but email is not verified
+        // This provides a better UX by redirecting to verify-email instead of showing generic error
+        try {
+          const existingUser = await this.keycloakAdminService.findUserByEmail(
+            dto.email.toLowerCase().trim(),
+          );
+          
+          if (existingUser && !existingUser.emailVerified) {
+            this.logger.log(`Login blocked for unverified email: ${dto.email}`);
+            // Return a specific error that frontend can handle
+            throw new UnauthorizedException({
+              statusCode: 401,
+              message: "Please verify your email address before logging in.",
+              error: "EMAIL_NOT_VERIFIED",
+              email: dto.email.toLowerCase().trim(),
+            });
+          }
+        } catch (checkError) {
+          // If it's our custom error, re-throw it
+          if (checkError instanceof UnauthorizedException) {
+            throw checkError;
+          }
+          // Otherwise ignore and fall through to generic error
+        }
+
         // Don't reveal specific error details for security
         throw new UnauthorizedException(
           "Invalid email or password. Please try again.",

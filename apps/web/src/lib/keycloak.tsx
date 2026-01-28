@@ -117,7 +117,8 @@ function extractUserProfile(keycloak: Keycloak, tokenParsed: Record<string, unkn
     roles: keycloak.realmAccess?.roles || [],
     picture,
     locale: tokenParsed.locale as string,
-    emailVerified: tokenParsed.email_verified as boolean,
+    // Default to true if not specified - better UX than blocking users
+    emailVerified: tokenParsed.email_verified !== false,
     identityProvider: idp,
   };
 }

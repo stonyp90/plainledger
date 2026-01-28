@@ -4,7 +4,7 @@
     
     <p>Your administrator has requested that you update your PlainLedger account. Please complete the following actions:</p>
     
-    <ul>
+    <ul class="action-list">
     <#if requiredActions??>
         <#list requiredActions as reqActionItem>
             <li>${msg("requiredAction.${reqActionItem}")}</li>
@@ -14,19 +14,21 @@
     
     <p>Click the button below to complete this process:</p>
     
-    <p style="text-align: center;">
+    <p style="text-align: center; margin: 32px 0;">
         <a href="${link}" class="email-button">Update Account</a>
     </p>
     
-    <p>Or copy and paste this link into your browser:</p>
-    <p style="word-break: break-all; font-size: 13px; color: #737373;">${link}</p>
-    
-    <hr class="email-divider">
+    <div class="email-link-text">
+        Or copy and paste this link into your browser:<br>
+        <a href="${link}">${link}</a>
+    </div>
     
     <div class="email-note">
         <strong>This link will expire in ${linkExpiration} minutes.</strong><br>
-        If you didn't expect this email, please contact support.
+        If you didn't expect this email, please contact your administrator or our support team.
     </div>
     
-    <p style="margin-top: 24px;">— The PlainLedger Team</p>
+    <div class="email-signature">
+        <p>Best regards,<br><strong>The PlainLedger Team</strong></p>
+    </div>
 </@layout.emailLayout>
