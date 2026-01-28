@@ -171,7 +171,8 @@ export class AuthController {
       params.append("client_secret", clientSecret);
       params.append("username", dto.email.toLowerCase().trim());
       params.append("password", dto.password);
-      params.append("scope", "openid");
+      // Request all necessary scopes to include email_verified, profile, and roles in tokens
+      params.append("scope", "openid email profile roles");
 
       const response = await fetch(tokenUrl, {
         method: "POST",
