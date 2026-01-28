@@ -21,9 +21,22 @@ export default function EmailConfirmation() {
   const handleResendEmail = async () => {
     setIsResending(true);
     try {
-      // In a real implementation, this would call an API endpoint
-      // For now, we simulate the resend
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the API to resend verification email
+      const email = user?.email || new URLSearchParams(window.location.search).get('email');
+      if (!email) {
+        throw new Error('No email address available');
+      }
+      
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to resend verification email');
+      }
+      
       setResendSuccess(true);
       setCountdown(60); // 60 second cooldown
       setTimeout(() => setResendSuccess(false), 5000);
@@ -89,7 +102,7 @@ export default function EmailConfirmation() {
                 className="font-medium"
                 style={{ color: 'rgb(var(--color-text))' }}
               >
-                {user?.email || 'your@email.com'}
+                {user?.email || new URLSearchParams(window.location.search).get('email') || 'your@email.com'}
               </span>
             </div>
           </div>

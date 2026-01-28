@@ -145,7 +145,8 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
           var.redis_auth_secret_arn,
           var.stripe_secret_arn,
           var.novu_secret_arn,
-          var.quickbooks_secret_arn
+          var.quickbooks_secret_arn,
+          var.keycloak_client_secret_arn
         ])
       },
       {
@@ -611,6 +612,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "KEYCLOAK_REALM", value = "plainledger" },
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
+        { name = "KEYCLOAK_ADMIN_CLIENT_ID", value = "plainledger-api" },
         { name = "CORS_ORIGIN", value = "https://${var.domain_name}" },
         { name = "APP_URL", value = "https://${var.domain_name}" }
       ]
@@ -656,7 +658,12 @@ resource "aws_ecs_task_definition" "api" {
           name      = "STRIPE_PUBLISHABLE_KEY"
           valueFrom = "${var.stripe_secret_arn}:publishable_key::"
         }
-      ], var.quickbooks_secret_arn != "" ? [
+      ], var.keycloak_client_secret_arn != "" ? [
+        {
+          name      = "KEYCLOAK_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_client_secret_arn}:secret::"
+        }
+      ] : [], var.quickbooks_secret_arn != "" ? [
         {
           name      = "QUICKBOOKS_CLIENT_ID"
           valueFrom = "${var.quickbooks_secret_arn}:client_id::"

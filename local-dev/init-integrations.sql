@@ -330,3 +330,67 @@ WHERE dc.status != 'disconnected'
 COMMENT ON TABLE integration_providers IS 'Dynamic integration provider configurations - add new accounting software without code changes';
 COMMENT ON TABLE integration_credentials IS 'Customer-specific OAuth credentials for white-label integrations';
 COMMENT ON TABLE datasource_connections IS 'Active connections between PlainLedger organizations and external accounting systems';
+
+-- =============================================================================
+-- Seed Demo QuickBooks Connection for demo-org
+-- =============================================================================
+
+INSERT INTO datasource_connections (
+    organization_id,
+    provider_id,
+    name,
+    company_name,
+    realm_id,
+    status,
+    last_sync_at,
+    last_sync_status,
+    accounts_count,
+    contacts_count,
+    transactions_count
+)
+SELECT 
+    o.id,
+    'quickbooks',
+    'Demo QuickBooks Connection',
+    'Demo Corp',
+    '4620816365123456789',
+    'connected',
+    NOW() - INTERVAL '2 hours',
+    'completed',
+    24,
+    15,
+    156
+FROM accounting.organizations o
+WHERE o.tenant_id = 'demo-org'
+ON CONFLICT DO NOTHING;
+
+-- Add a sync log entry for the demo connection
+INSERT INTO datasource_sync_logs (
+    connection_id,
+    sync_type,
+    status,
+    started_at,
+    completed_at,
+    accounts_fetched,
+    contacts_fetched,
+    transactions_fetched,
+    records_created,
+    records_updated,
+    records_skipped
+)
+SELECT 
+    dc.id,
+    'full',
+    'completed',
+    NOW() - INTERVAL '2 hours' - INTERVAL '45 seconds',
+    NOW() - INTERVAL '2 hours',
+    24,
+    15,
+    156,
+    195,
+    0,
+    0
+FROM datasource_connections dc
+JOIN accounting.organizations o ON dc.organization_id = o.id
+WHERE o.tenant_id = 'demo-org' AND dc.provider_id = 'quickbooks'
+ON CONFLICT DO NOTHING;

@@ -77,6 +77,12 @@ variable "keycloak_smtp_secret_arn" {
   type        = string
 }
 
+variable "keycloak_client_secret_arn" {
+  description = "ARN of AWS Secrets Manager secret containing Keycloak API client secret"
+  type        = string
+  default     = ""
+}
+
 variable "quickbooks_secret_arn" {
   description = "ARN of QuickBooks OAuth credentials secret"
   type        = string

@@ -19,6 +19,7 @@ import FinancialModel from './pages/FinancialModel';
 import MontageFinancier from './pages/MontageFinancier';
 // Store removed - using Landing as main website
 import Onboarding from './components/Onboarding';
+import Signup from './pages/Signup';
 import EmailConfirmation from './pages/EmailConfirmation';
 import PowerBIAnalytics from './pages/PowerBIAnalytics';
 import OrgFeaturesConfig from './pages/OrgFeaturesConfig';
@@ -320,10 +321,16 @@ function App() {
           element={<Navigate to="/" replace />} 
         />
         
-        {/* Signup - redirects to onboarding if authenticated */}
+        {/* Signup - custom registration form or redirect if authenticated */}
         <Route 
           path="/signup" 
-          element={authenticated ? <Navigate to="/onboarding" replace /> : <Landing />} 
+          element={authenticated ? <Navigate to="/onboarding" replace /> : <Signup />} 
+        />
+        
+        {/* Register - alias for signup */}
+        <Route 
+          path="/register" 
+          element={authenticated ? <Navigate to="/onboarding" replace /> : <Signup />} 
         />
         
         {/* Login - handled by Keycloak */}

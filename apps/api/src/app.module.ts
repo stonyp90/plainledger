@@ -12,6 +12,7 @@ import {
 // Domain
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
 import { AccountEntity } from "@infrastructure/persistence/postgres/entities/account.entity";
+import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -24,6 +25,11 @@ import { OnboardingController } from "@infrastructure/http/controllers/onboardin
 import { AIController } from "@infrastructure/http/controllers/ai.controller";
 import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
 import { PowerBIDataController } from "@infrastructure/http/controllers/powerbi-data.controller";
+import { TeamController } from "@infrastructure/http/controllers/team.controller";
+import { AuthController } from "@infrastructure/http/controllers/auth.controller";
+
+// Infrastructure - Auth
+import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
 import { AIService } from "@infrastructure/ai/ai.service";
 import { PowerBIService } from "@infrastructure/services/powerbi.service";
 import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
@@ -51,6 +57,7 @@ import { PostgresOrganizationRepository } from "@infrastructure/persistence/post
 import { PostgresAccountRepository } from "@infrastructure/persistence/postgres/postgres-account.repository";
 import { PostgresAnalyticsReportRepository } from "@infrastructure/persistence/postgres/postgres-analytics-report.repository";
 import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persistence/postgres/postgres-organization-features.repository";
+import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 
 // Notifications
 import { NovuModule } from "./notifications/novu.service";
@@ -73,7 +80,7 @@ import { NovuModule } from "./notifications/novu.service";
         username: configService.get<string>("DB_USERNAME") || "postgres",
         password: configService.get<string>("DB_PASSWORD") || "postgres",
         database: configService.get<string>("DB_NAME") || "plainledger",
-        entities: [OrganizationEntity, AccountEntity],
+        entities: [OrganizationEntity, AccountEntity, UserProfileEntity],
         synchronize: process.env.NODE_ENV !== "production",
         logging: process.env.NODE_ENV !== "production",
         ssl:
@@ -83,7 +90,7 @@ import { NovuModule } from "./notifications/novu.service";
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([OrganizationEntity, AccountEntity]),
+    TypeOrmModule.forFeature([OrganizationEntity, AccountEntity, UserProfileEntity]),
 
     // Keycloak Authentication
     KeycloakConnectModule.registerAsync({
@@ -119,6 +126,8 @@ import { NovuModule } from "./notifications/novu.service";
     AIController,
     AnalyticsController,
     PowerBIDataController,
+    TeamController,
+    AuthController,
   ],
   providers: [
     // Guards
@@ -150,6 +159,7 @@ import { NovuModule } from "./notifications/novu.service";
     PowerBIThemeService,
     PowerBIDatalakeService,
     DatalakeDataService,
+    KeycloakAdminService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
@@ -179,6 +189,7 @@ import { NovuModule } from "./notifications/novu.service";
       provide: "IOrganizationFeaturesRepository",
       useClass: PostgresOrganizationFeaturesRepository,
     },
+    PostgresUserProfileRepository,
   ],
 })
 export class AppModule {}

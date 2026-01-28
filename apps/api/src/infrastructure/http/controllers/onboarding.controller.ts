@@ -15,6 +15,7 @@ import {
 import { AuthenticatedUser } from "nest-keycloak-connect";
 import { NovuService } from "../../../notifications/novu.service";
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
+import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import {
   IsEmail,
   IsString,
@@ -82,6 +83,7 @@ export class OnboardingController {
   constructor(
     private readonly novuService: NovuService,
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
+    private readonly userProfileRepository: PostgresUserProfileRepository,
   ) {}
 
   @Post("complete")
@@ -112,6 +114,31 @@ export class OnboardingController {
         } else {
           throw orgError;
         }
+      }
+
+      // Update user profile in database with onboarding data
+      try {
+        await this.userProfileRepository.completeOnboarding(
+          user.sub,
+          {
+            companySize: dto.companySize,
+            primarySource: dto.primarySource,
+            teamEmails: dto.teamEmails,
+          },
+          organization?.id,
+        );
+
+        // Also update organization details on user profile
+        await this.userProfileRepository.update(user.sub, {
+          organizationId: organization?.id,
+          organizationName: dto.companyName,
+          industry: dto.industry,
+        });
+
+        this.logger.log(`User profile updated with onboarding data: ${user.sub}`);
+      } catch (profileError) {
+        // Non-critical - log but don't fail
+        this.logger.warn(`Failed to update user profile: ${profileError.message}`);
       }
 
       // Send notification for onboarding completion

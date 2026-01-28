@@ -916,15 +916,6 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
         
-        {/* User Avatar */}
-        <div className="w-7 h-7 rounded-full overflow-hidden border-2 shadow-sm" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)' }}>
-          <img 
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" 
-            alt="User" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-        
         {/* Industry Selector Dropdown */}
         <div 
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-black/5 transition-colors"
@@ -946,11 +937,12 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           >
             {isEn ? 'Live Data' : 'Temps réel'}
           </div>
-          <div 
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-            style={{ backgroundColor: theme.green }}
-          >
-            JD
+          <div className="w-7 h-7 rounded-full overflow-hidden border-2 shadow-sm" style={{ borderColor: theme.green }}>
+            <img 
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" 
+              alt="User" 
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </div>
@@ -2026,6 +2018,7 @@ export default function Landing() {
       </section>
 
       {/* How It Works - Clean Animated Pipeline */}
+      <span id="integrations" className="absolute" style={{ top: '-100px' }} />
       <section 
         id="pipeline" 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
