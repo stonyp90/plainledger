@@ -9,8 +9,9 @@
  * 4. Set NOVU_API_KEY and NOVU_APP_ID in environment variables
  */
 
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { EmailTemplatesService } from "@infrastructure/templates/email-templates.service";
 
 // ============================================================================
 // Types
@@ -143,7 +144,10 @@ export class NovuService implements OnModuleInit, INotificationService {
   private baseUrl = "https://api.novu.co/v1";
   private enabled = false;
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    @Optional() private emailTemplates?: EmailTemplatesService,
+  ) {}
 
   async onModuleInit() {
     this.apiKey = this.configService.get<string>("NOVU_API_KEY") || "";
@@ -266,6 +270,14 @@ export class NovuService implements OnModuleInit, INotificationService {
    */
   async sendPasswordResetEmail(options: PasswordResetEmailOptions): Promise<boolean> {
     const { to, firstName, resetUrl } = options;
+    const expiresIn = "15 minutes";
+
+    // Generate branded HTML template
+    const htmlContent = this.emailTemplates?.passwordReset({
+      firstName: firstName || "there",
+      resetUrl,
+      expiresIn,
+    });
 
     try {
       // Create temporary subscriber for the email recipient
@@ -283,8 +295,9 @@ export class NovuService implements OnModuleInit, INotificationService {
         payload: {
           firstName: firstName || "there",
           resetUrl,
-          expiresIn: "15 minutes",
+          expiresIn,
           baseUrl: this.getBaseUrl(),
+          htmlContent, // Pass branded HTML to Novu workflow
         },
       });
 
@@ -307,6 +320,14 @@ export class NovuService implements OnModuleInit, INotificationService {
    */
   async sendVerificationEmail(options: VerificationEmailOptions): Promise<boolean> {
     const { to, firstName, verifyUrl } = options;
+    const expiresIn = "24 hours";
+
+    // Generate branded HTML template
+    const htmlContent = this.emailTemplates?.emailVerification({
+      firstName: firstName || "there",
+      verifyUrl,
+      expiresIn,
+    });
 
     try {
       const subscriberId = `verify-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
@@ -323,8 +344,9 @@ export class NovuService implements OnModuleInit, INotificationService {
         payload: {
           firstName: firstName || "there",
           verifyUrl,
-          expiresIn: "24 hours",
+          expiresIn,
           baseUrl: this.getBaseUrl(),
+          htmlContent, // Pass branded HTML to Novu workflow
         },
       });
 
@@ -347,6 +369,12 @@ export class NovuService implements OnModuleInit, INotificationService {
   async sendMFAEnabledEmail(options: MFAEnabledEmailOptions): Promise<boolean> {
     const { to, firstName, timestamp } = options;
 
+    // Generate branded HTML template
+    const htmlContent = this.emailTemplates?.mfaEnabled({
+      firstName: firstName || "there",
+      timestamp: timestamp.toISOString(),
+    });
+
     try {
       const subscriberId = `mfa-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
       
@@ -363,6 +391,7 @@ export class NovuService implements OnModuleInit, INotificationService {
           firstName: firstName || "there",
           timestamp: timestamp.toISOString(),
           securityUrl: `${this.getBaseUrl()}/app/settings`,
+          htmlContent, // Pass branded HTML to Novu workflow
         },
       });
 
@@ -372,6 +401,26 @@ export class NovuService implements OnModuleInit, INotificationService {
       this.logger.error(`Failed to send MFA enabled email: ${error.message}`);
       return false;
     }
+  }
+
+  /**
+   * Send password changed security alert email (INotificationService implementation)
+   */
+  async sendPasswordChangedEmail(
+    userId: string,
+    data: { email: string; firstName: string; timestamp: Date }
+  ): Promise<void> {
+    // Generate branded HTML template
+    const htmlContent = this.emailTemplates?.passwordChanged({
+      firstName: data.firstName || "there",
+      timestamp: data.timestamp.toISOString(),
+    });
+
+    await this.sendPasswordChanged(userId, {
+      email: data.email,
+      firstName: data.firstName,
+      timestamp: data.timestamp,
+    });
   }
 
   /**

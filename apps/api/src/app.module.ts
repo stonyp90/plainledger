@@ -66,6 +66,9 @@ import { DatabaseInitializerService } from "@infrastructure/persistence/postgres
 // Notifications
 import { NovuModule, NovuService } from "./infrastructure/notifications/novu.service";
 
+// Email Templates
+import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
+
 @Module({
   imports: [
     // Configuration
@@ -208,6 +211,7 @@ import { NovuModule, NovuService } from "./infrastructure/notifications/novu.ser
     DatalakeDataService,
     KeycloakAdminService,
     NovuService,
+    EmailTemplatesService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
