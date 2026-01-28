@@ -1542,9 +1542,6 @@ export default function Landing() {
               <a href="#industries" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn ? 'Industries' : 'Industries'}
               </a>
-              <a href="#integrations" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Integrations' : 'Intégrations'}
-              </a>
               <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn ? 'Pricing' : 'Tarifs'}
               </a>
@@ -1602,9 +1599,6 @@ export default function Landing() {
               <nav className="flex flex-col gap-3">
                 <a href="#industries" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Industries' : 'Industries'}
-                </a>
-                <a href="#integrations" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Integrations' : 'Intégrations'}
                 </a>
                 <a href="#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Pricing' : 'Tarifs'}
@@ -2012,7 +2006,6 @@ export default function Landing() {
       </section>
 
       {/* How It Works - Clean Animated Pipeline */}
-      <span id="integrations" className="absolute" style={{ top: '-100px' }} />
       <section 
         id="pipeline" 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"

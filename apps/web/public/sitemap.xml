@@ -84,15 +84,5 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
-  <!-- Integrations Section (anchor) -->
-  <url>
-    <loc>https://plainledger.io/#integrations</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://plainledger.io/#integrations" />
-    <xhtml:link rel="alternate" hreflang="fr-CA" href="https://plainledger.io/?lang=fr#integrations" />
-    <lastmod>2026-01-27</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
 
 </urlset>

@@ -1023,7 +1023,6 @@ function Footer({ isEn }: { isEn: boolean }) {
             <ul className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               <li><a href="#features" className="hover:underline">{isEn ? 'Features' : 'Fonctionnalités'}</a></li>
               <li><a href="#pricing" className="hover:underline">{isEn ? 'Pricing' : 'Tarifs'}</a></li>
-              <li><a href="#" className="hover:underline">{isEn ? 'Integrations' : 'Intégrations'}</a></li>
               <li><a href="#" className="hover:underline">{isEn ? 'Security' : 'Sécurité'}</a></li>
             </ul>
           </div>
