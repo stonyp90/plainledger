@@ -198,7 +198,7 @@ export default function Signup() {
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           password: formData.password,
-          organizationName: formData.organizationName.trim() || undefined,
+          ...(formData.organizationName.trim() && { organizationName: formData.organizationName.trim() }),
           province: formData.province,
         }),
       });
