@@ -68,14 +68,14 @@ export interface PlanFeature {
 // Constants
 // ============================================================================
 
-const TRIAL_DURATION_DAYS = 14;
+const TRIAL_DURATION_DAYS = 7;
 
 const REMINDER_SCHEDULE = {
-  HALF_WAY: 7, // Day 7 - half-way through trial
-  FEATURE_HIGHLIGHT: 12, // Day 12 - 2 days before end
-  ENDING_SOON: 13, // Day 13 - 1 day before end
-  EXPIRED: 15, // Day 15 - 1 day after end
-  LAST_CHANCE: 20, // Day 20 - final win-back attempt
+  HALF_WAY: 3, // Day 3 - half-way through trial
+  FEATURE_HIGHLIGHT: 5, // Day 5 - 2 days before end
+  ENDING_SOON: 6, // Day 6 - 1 day before end
+  EXPIRED: 8, // Day 8 - 1 day after end
+  LAST_CHANCE: 12, // Day 12 - final win-back attempt
 };
 
 const USAGE_MILESTONES = {
@@ -286,7 +286,7 @@ export class SubscriptionReminderService {
     const payload = {
       isEn,
       firstName: user.firstName,
-      daysLeft: TRIAL_DURATION_DAYS - 7,
+      daysLeft: TRIAL_DURATION_DAYS - 3,
       stage: "halfway through",
       stageFr: "est à mi-chemin",
       reportsGenerated: user.usage.reportsGenerated,
@@ -310,7 +310,7 @@ export class SubscriptionReminderService {
 
     await this.sendEmailNotification(user, "trial_reminder", payload, {
       subject: isEn
-        ? `${user.firstName}, 7 days left in your trial`
+        ? `${user.firstName}, 3 days left in your trial`
         : `${user.firstName}, il reste 7 jours à votre essai`,
     });
 

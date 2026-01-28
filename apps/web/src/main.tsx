@@ -8,6 +8,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { TenantProvider } from './contexts/TenantContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { DemoModeProvider } from './contexts/DemoModeContext';
 import { I18nProvider } from './lib/i18n';
 import './styles/globals.css';
 
@@ -27,15 +28,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeProvider defaultTheme="light">
         <KeycloakProvider>
           <TenantProvider>
-            <QueryClientProvider client={queryClient}>
-              <BrowserRouter>
-                <NotificationProvider>
-                  <ToastProvider>
-                    <App />
-                  </ToastProvider>
-                </NotificationProvider>
-              </BrowserRouter>
-            </QueryClientProvider>
+            <DemoModeProvider>
+              <QueryClientProvider client={queryClient}>
+                <BrowserRouter>
+                  <NotificationProvider>
+                    <ToastProvider>
+                      <App />
+                    </ToastProvider>
+                  </NotificationProvider>
+                </BrowserRouter>
+              </QueryClientProvider>
+            </DemoModeProvider>
           </TenantProvider>
         </KeycloakProvider>
       </ThemeProvider>

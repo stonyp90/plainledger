@@ -304,7 +304,7 @@ export default function Signup() {
             </h1>
             <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {isEn 
-                ? 'Start your 21-day free trial. No credit card required.'
+                ? 'Start your 7-day free trial. No credit card required.'
                 : 'Commencez votre essai gratuit de 21 jours. Aucune carte de crédit requise.'}
             </p>
           </div>

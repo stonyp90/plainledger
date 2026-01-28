@@ -1690,7 +1690,7 @@ export default function Landing() {
                 boxShadow: `0 8px 24px ${theme.green}40`
               }}
             >
-              {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
+              {isEn ? 'Start free 7-day trial' : 'Essai gratuit de 7 jours'}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button 

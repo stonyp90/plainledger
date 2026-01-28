@@ -121,7 +121,7 @@ export default function TermsOfService() {
                     4. Free Trial
                   </h2>
                   <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    PlainLedger offers a 21-day free trial period. During this trial, you have full access to the Service's features. No credit card is required to start your trial. At the end of the trial period, you may choose to subscribe to a paid plan or your access will be limited.
+                    PlainLedger offers a 7-day free trial period. During this trial, you have access to core features (AI features are not included). No credit card is required to start your trial. At the end of the trial period, you may choose to subscribe to a paid plan or your access will be limited.
                   </p>
                 </section>
 

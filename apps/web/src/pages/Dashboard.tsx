@@ -30,6 +30,7 @@ import AIQueryAssistant from '../components/AIQueryAssistant';
 import PremiumFeatureGate, { usePremiumFeature } from '../components/PremiumFeatureGate';
 import { useTenant } from '../contexts/TenantContext';
 import { useToast } from '../contexts/ToastContext';
+import { useDemoMode } from '../contexts/DemoModeContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { 
@@ -50,6 +51,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { currentTenant } = useTenant();
   const toast = useToast();
+  const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { t, formatCurrency, language } = useI18n();
   const [selectedPeriod, setSelectedPeriod] = useState<'mtd' | 'qtd' | 'ytd'>('mtd');
   const { hasAccess: hasAIAccess } = usePremiumFeature('aiInsights');
@@ -374,6 +376,28 @@ export default function Dashboard() {
               <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span className="hidden md:inline">{isRefreshing ? t('common.refreshing') : t('common.refresh')}</span>
             </button>
+
+            {/* Demo Mode Toggle - Only show for trial users */}
+            {currentTenant?.status === 'trial' && (
+              <button
+                onClick={toggleDemoMode}
+                className={`btn-sm flex items-center gap-1.5 sm:gap-2 !px-2 sm:!px-3 ${
+                  isDemoMode ? 'btn-primary' : 'btn-secondary'
+                }`}
+                title={isDemoMode 
+                  ? (language === 'en' ? 'Disable demo mode' : 'Désactiver le mode démo')
+                  : (language === 'en' ? 'Enable demo mode with sample data' : 'Activer le mode démo avec données d\'exemple')
+                }
+              >
+                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden md:inline">
+                  {isDemoMode 
+                    ? (language === 'en' ? 'Demo' : 'Démo')
+                    : (language === 'en' ? 'Try Demo' : 'Essayer démo')
+                  }
+                </span>
+              </button>
+            )}
 
                     <button
                       onClick={() => {

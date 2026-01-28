@@ -20,10 +20,13 @@ import {
   Camera,
   Lock,
   Mail,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth, useKeycloak } from '../lib/keycloak';
 import Avatar, { IDPBadge } from '../components/Avatar';
 import { useTenant } from '../contexts/TenantContext';
+import { useDemoMode } from '../contexts/DemoModeContext';
 import { 
   getEntitlements, 
   type SubscriptionTier, 
@@ -50,6 +53,7 @@ const mockSubscription = {
 export default function Settings() {
   const { user } = useAuth();
   const { currentTenant, canManageSettings, canManageMembers, canManageBilling, isInternalStaff } = useTenant();
+  const { isDemoMode, toggleDemoMode } = useDemoMode();
   const [activeTab, setActiveTab] = useState('organization');
   const [subscription] = useState(mockSubscription);
   const entitlements = getEntitlements(currentTenant?.plan || subscription.tier);
@@ -79,9 +83,37 @@ export default function Settings() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-primary">Paramètres</h2>
-        <p className="text-sm sm:text-base text-secondary">Gérez les paramètres de votre organisation</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-primary">Paramètres</h2>
+          <p className="text-sm sm:text-base text-secondary">Gérez les paramètres de votre organisation</p>
+        </div>
+        
+        {/* Demo Mode Toggle - Only show for trial users */}
+        {currentTenant?.status === 'trial' && (
+          <button
+            onClick={toggleDemoMode}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              isDemoMode ? 'btn-primary' : 'btn-secondary'
+            }`}
+            title={isDemoMode 
+              ? 'Désactiver le mode démo'
+              : 'Activer le mode démo avec données d\'exemple'
+            }
+          >
+            {isDemoMode ? (
+              <>
+                <EyeOff className="w-4 h-4" />
+                <span>Mode démo activé</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4" />
+                <span>Essayer avec données d'exemple</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Mobile Tab Selector */}

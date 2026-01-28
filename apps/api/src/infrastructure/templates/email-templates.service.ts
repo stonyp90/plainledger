@@ -205,7 +205,7 @@ export class EmailTemplatesService {
       <p>Welcome to PlainLedger${data.organizationName ? ` for ${data.organizationName}` : ""}! We're thrilled to have you on board.</p>
       
       <div style="font-size: 14px; color: #64748b; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #10b981; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
-        <strong style="color: #059669;">Your 21-day free trial has started!</strong><br>
+        <strong style="color: #059669;">Your 7-day free trial has started!</strong><br>
         You have full access to all features. No credit card required.
       </div>
       

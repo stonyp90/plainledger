@@ -367,7 +367,7 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
         {/* CTAs - Green primary, Gold accent */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <button onClick={handleCTA} className="btn-primary btn-lg group">
-            {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
+            {isEn ? 'Start free 7-day trial' : 'Essai gratuit de 7 jours'}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <button onClick={handleWatchDemo} className="btn-accent btn-lg flex items-center gap-2">
@@ -965,7 +965,7 @@ function CTASection({ isEn }: { isEn: boolean }) {
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <p className="text-sm mt-4 text-white/70">
-            {isEn ? 'No credit card • No hidden fees • 21 days free' : 'Sans carte de crédit • Sans frais cachés • 21 jours gratuits'}
+            {isEn ? 'No credit card • No hidden fees • 7 days free' : 'Sans carte de crédit • Sans frais cachés • 7 jours gratuits'}
           </p>
         </div>
       </div>

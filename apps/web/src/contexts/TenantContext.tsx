@@ -252,6 +252,18 @@ const ENTERPRISE_FEATURES: TenantSettings['features'] = {
   sso: true,
 };
 
+// Trial features - explicitly excludes AI features
+// Used for all trial accounts regardless of plan tier
+const TRIAL_FEATURES: TenantSettings['features'] = {
+  powerBI: false,
+  aiInsights: false,  // No AI features in trial
+  customReports: false,
+  apiAccess: false,
+  auditLogs: false,
+  webhooks: false,
+  sso: false,
+};
+
 // Mock data for development
 const MOCK_TENANTS: Tenant[] = [
   {
@@ -260,9 +272,9 @@ const MOCK_TENANTS: Tenant[] = [
     slug: 'demo-corp',
     plan: 'free', // Changed to free to test premium gates
     status: 'trial',
-    trialEndsAt: '2026-02-15T23:59:59Z',
+    trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     createdAt: '2024-01-15T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES },
+    settings: { ...DEFAULT_SETTINGS, features: TRIAL_FEATURES },
     limits: {
       ...PLAN_LIMITS.free,
       currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 100 },
@@ -276,9 +288,9 @@ const MOCK_TENANTS: Tenant[] = [
     slug: 'acme-inc',
     plan: 'starter',
     status: 'trial',
-    trialEndsAt: '2026-02-15T23:59:59Z',
+    trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     createdAt: '2025-01-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: STARTER_FEATURES, currency: 'USD' },
+    settings: { ...DEFAULT_SETTINGS, features: TRIAL_FEATURES, currency: 'USD' },
     limits: {
       ...PLAN_LIMITS.starter,
       currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 150 },
@@ -425,9 +437,9 @@ export function TenantProvider({ children }: TenantProviderProps) {
       slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
       plan: 'free',
       status: 'trial',
-      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       createdAt: new Date().toISOString(),
-      settings: { ...DEFAULT_SETTINGS, ...data.settings },
+      settings: { ...DEFAULT_SETTINGS, ...data.settings, features: TRIAL_FEATURES },
       limits: {
         ...PLAN_LIMITS.free,
         currentUsage: { users: 1, connections: 0, reports: 0, storage: 0, apiCalls: 0 },

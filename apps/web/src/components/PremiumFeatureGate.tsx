@@ -3,10 +3,11 @@
  * Shows grayed-out premium sections with upgrade CTA for free/starter tier users
  */
 
-import { ReactNode } from 'react';
-import { Lock, Sparkles, Calendar, ArrowRight, Crown, Rocket } from 'lucide-react';
+import { ReactNode, useState } from 'react';
+import { Lock, Sparkles, Calendar, ArrowRight, Crown, Rocket, Mail } from 'lucide-react';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import UpgradeRequestForm from './UpgradeRequestForm';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -36,6 +37,10 @@ interface PremiumFeatureGateProps {
   description?: string;
   /** Additional class names */
   className?: string;
+  /** Show email form option alongside Calendly */
+  showEmailForm?: boolean;
+  /** Default to email form instead of Calendly */
+  defaultToEmailForm?: boolean;
 }
 
 // Feature metadata for display
@@ -160,10 +165,13 @@ export default function PremiumFeatureGate({
   title,
   description,
   className = '',
+  showEmailForm = true,
+  defaultToEmailForm = false,
 }: PremiumFeatureGateProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { hasAccess, requiredPlan, currentPlan } = usePremiumFeature(feature);
+  const [showEmailFormState, setShowEmailFormState] = useState(defaultToEmailForm);
   
   const featureInfo = FEATURE_INFO[feature];
   const Icon = featureInfo.icon;
@@ -178,6 +186,10 @@ export default function PremiumFeatureGate({
   
   const handleUpgradeClick = () => {
     window.open(CALENDLY_URL, '_blank');
+  };
+  
+  const handleEmailFormSubmitted = () => {
+    setShowEmailFormState(false);
   };
 
   // Compact mode for inline elements
@@ -195,17 +207,44 @@ export default function PremiumFeatureGate({
         <div 
           className={`${showPreview ? 'absolute inset-0' : ''} flex items-center justify-center`}
         >
-          <button
-            onClick={handleUpgradeClick}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 hover:shadow-lg"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white',
-            }}
-          >
-            <Lock className="w-4 h-4" />
-            <span>{isEn ? 'Upgrade to unlock' : 'Passer au niveau supérieur'}</span>
-          </button>
+          {showEmailForm && showEmailFormState ? (
+            <div className="w-full max-w-sm mx-auto p-4">
+              <UpgradeRequestForm
+                feature={feature}
+                compact={true}
+                showCalendlyOption={true}
+                onSubmitted={handleEmailFormSubmitted}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {showEmailForm && (
+                <button
+                  onClick={() => setShowEmailFormState(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    color: 'rgb(var(--color-text))',
+                    border: '1px solid rgb(var(--color-border))',
+                  }}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>{isEn ? 'Request Info' : 'Demander info'}</span>
+                </button>
+              )}
+              <button
+                onClick={handleUpgradeClick}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 hover:shadow-lg"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                }}
+              >
+                <Lock className="w-4 h-4" />
+                <span>{isEn ? 'Upgrade to unlock' : 'Passer au niveau supérieur'}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -270,19 +309,48 @@ export default function PremiumFeatureGate({
             {displayDesc}
           </p>
           
-          {/* CTA Button */}
-          <button
-            onClick={handleUpgradeClick}
-            className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 hover:shadow-xl"
-            style={{ 
-              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-              boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.4)',
-            }}
-          >
-            <Calendar className="w-5 h-5" />
-            <span>{isEn ? 'Schedule Upgrade Call' : 'Planifier un appel'}</span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          {/* CTA Options */}
+          {showEmailForm && showEmailFormState ? (
+            <div className="w-full max-w-md mx-auto">
+              <UpgradeRequestForm
+                feature={feature}
+                compact={false}
+                showCalendlyOption={true}
+                onSubmitted={handleEmailFormSubmitted}
+                title={displayTitle}
+                description={displayDesc}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {showEmailForm && (
+                <button
+                  onClick={() => setShowEmailFormState(true)}
+                  className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    color: 'rgb(var(--color-text))',
+                    border: '1px solid rgb(var(--color-border))',
+                  }}
+                >
+                  <Mail className="w-5 h-5" />
+                  <span>{isEn ? 'Request Information' : 'Demander des informations'}</span>
+                </button>
+              )}
+              <button
+                onClick={handleUpgradeClick}
+                className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 hover:shadow-xl"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.4)',
+                }}
+              >
+                <Calendar className="w-5 h-5" />
+                <span>{isEn ? 'Schedule Upgrade Call' : 'Planifier un appel'}</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          )}
           
           {/* Current Plan Info */}
           <p 

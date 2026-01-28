@@ -386,7 +386,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
             <Award className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
             <span>
               {isEn 
-                ? '14-day free trial • No credit card required • Cancel anytime'
+                ? '7-day free trial • No credit card required • Cancel anytime'
                 : 'Essai gratuit 14 jours • Aucune carte de crédit requise • Annulez à tout moment'
               }
             </span>
