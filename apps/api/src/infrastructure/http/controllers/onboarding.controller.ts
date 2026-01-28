@@ -116,18 +116,22 @@ export class OnboardingController {
 
       // Send notification for onboarding completion
       try {
-        await this.novuService.sendOnboardingCompleteNotification({
-          email: userEmail,
-          companyName: dto.companyName,
-          companySize: dto.companySize,
-          industry: dto.industry,
-          fiscalYearEnd: dto.fiscalYearEnd,
-          currency: dto.currency,
-          primarySource: dto.primarySource,
-          skipSource: dto.skipSource,
-          teamEmails: dto.teamEmails,
-          skipTeam: dto.skipTeam,
-        });
+        if (userEmail) {
+          await this.novuService.sendOnboardingCompleteNotification({
+            email: userEmail,
+            companyName: dto.companyName,
+            companySize: dto.companySize,
+            industry: dto.industry,
+            fiscalYearEnd: dto.fiscalYearEnd,
+            currency: dto.currency,
+            primarySource: dto.primarySource,
+            skipSource: dto.skipSource,
+            teamEmails: dto.teamEmails,
+            skipTeam: dto.skipTeam,
+          });
+        } else {
+          this.logger.warn("No email available for onboarding notification");
+        }
       } catch (notifError) {
         // Non-critical - log but don't fail
         this.logger.warn(`Failed to send onboarding notification: ${notifError.message}`);
