@@ -451,6 +451,30 @@ resource "aws_lb_listener_rule" "keycloak_resources" {
   }
 }
 
+# Keycloak host-based routing (auth.${domain_name})
+resource "aws_lb_listener_rule" "keycloak_host" {
+  count        = var.acm_certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 50
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.keycloak.arn
+  }
+
+  condition {
+    host_header {
+      values = ["auth.${var.domain_name}"]
+    }
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-keycloak-host-rule"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
 # ------------------------------------------------------------------------------
 # Target Groups
 # ------------------------------------------------------------------------------

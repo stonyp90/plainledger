@@ -27,6 +27,7 @@ import { AnalyticsController } from "@infrastructure/http/controllers/analytics.
 import { PowerBIDataController } from "@infrastructure/http/controllers/powerbi-data.controller";
 import { TeamController } from "@infrastructure/http/controllers/team.controller";
 import { AuthController } from "@infrastructure/http/controllers/auth.controller";
+import { SyncAdminController } from "@infrastructure/http/controllers/sync-admin.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
@@ -128,6 +129,7 @@ import { NovuModule } from "./notifications/novu.service";
     PowerBIDataController,
     TeamController,
     AuthController,
+    SyncAdminController,
   ],
   providers: [
     // Guards

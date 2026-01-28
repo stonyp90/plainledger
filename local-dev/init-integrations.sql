@@ -109,6 +109,24 @@ CREATE TABLE IF NOT EXISTS datasource_connections (
     contacts_count INTEGER DEFAULT 0,
     transactions_count INTEGER DEFAULT 0,
     
+    -- =============================================================================
+    -- Sync Scheduling (Configurable by PlainLedger Admin)
+    -- =============================================================================
+    auto_sync_enabled BOOLEAN NOT NULL DEFAULT false,
+    sync_frequency VARCHAR(20) DEFAULT 'daily',
+    -- 'hourly', 'every_6_hours', 'every_12_hours', 'daily', 'weekly', 'manual'
+    sync_time_utc TIME DEFAULT '09:00:00',  -- Preferred sync time (UTC)
+    sync_day_of_week INTEGER,  -- 0=Sunday, 1=Monday, etc. (for weekly syncs)
+    next_scheduled_sync_at TIMESTAMP WITH TIME ZONE,
+    sync_to_datalake BOOLEAN NOT NULL DEFAULT true,  -- Write to Bronze/Silver/Gold
+    sync_entities TEXT[] DEFAULT ARRAY['accounts', 'customers', 'vendors', 'invoices', 'journal_entries'],
+    -- Which entities to sync: accounts, customers, vendors, invoices, bills, journal_entries, etc.
+    sync_date_range_days INTEGER DEFAULT 365,  -- How far back to sync transactions
+    
+    -- Admin configuration
+    configured_by_user_id UUID,  -- PlainLedger admin who configured the schedule
+    configured_at TIMESTAMP WITH TIME ZONE,
+    
     -- Metadata
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -163,6 +181,16 @@ CREATE INDEX IF NOT EXISTS idx_datasource_connections_status
 
 CREATE INDEX IF NOT EXISTS idx_datasource_sync_logs_connection 
     ON datasource_sync_logs(connection_id, created_at DESC);
+
+-- Index for finding connections due for scheduled sync
+CREATE INDEX IF NOT EXISTS idx_datasource_connections_next_sync 
+    ON datasource_connections(next_scheduled_sync_at)
+    WHERE auto_sync_enabled = true AND status = 'connected';
+
+-- Index for sync scheduling queries
+CREATE INDEX IF NOT EXISTS idx_datasource_connections_sync_enabled 
+    ON datasource_connections(auto_sync_enabled, sync_frequency)
+    WHERE auto_sync_enabled = true;
 
 -- =============================================================================
 -- Insert Default Providers
@@ -346,7 +374,15 @@ INSERT INTO datasource_connections (
     last_sync_status,
     accounts_count,
     contacts_count,
-    transactions_count
+    transactions_count,
+    -- Sync scheduling fields (configured by admin)
+    auto_sync_enabled,
+    sync_frequency,
+    sync_time_utc,
+    sync_to_datalake,
+    sync_entities,
+    sync_date_range_days,
+    next_scheduled_sync_at
 )
 SELECT 
     o.id,
@@ -359,7 +395,15 @@ SELECT
     'completed',
     24,
     15,
-    156
+    156,
+    -- Sync scheduling - daily at 4 AM EST (9 AM UTC)
+    true,  -- auto_sync_enabled
+    'daily',  -- sync_frequency
+    '09:00:00',  -- sync_time_utc (4 AM EST)
+    true,  -- sync_to_datalake
+    ARRAY['accounts', 'customers', 'vendors', 'invoices', 'journal_entries'],
+    365,  -- sync_date_range_days
+    (CURRENT_DATE + 1 + TIME '09:00:00')::TIMESTAMP WITH TIME ZONE  -- next_scheduled_sync_at
 FROM accounting.organizations o
 WHERE o.tenant_id = 'demo-org'
 ON CONFLICT DO NOTHING;

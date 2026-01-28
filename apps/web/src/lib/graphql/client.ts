@@ -65,7 +65,7 @@ const httpLink = createHttpLink({
   credentials: "include", // Include cookies for session auth
 });
 
-// Auth Link - adds the JWT token to requests
+// Auth Link - adds the JWT token and CSRF prevention headers to requests
 const authLink = setContext((_, { headers }) => {
   // Get the authentication token from localStorage or Keycloak
   const token = localStorage.getItem("kc-token") || 
@@ -75,6 +75,9 @@ const authLink = setContext((_, { headers }) => {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : "",
+      // Required for Apollo Server 4 CSRF protection
+      "apollo-require-preflight": "true",
+      "content-type": "application/json",
     },
   };
 });

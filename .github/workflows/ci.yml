@@ -358,6 +358,11 @@ jobs:
           provenance: false
           build-args: |
             NODE_ENV=production
+            VITE_API_URL=https://plainledger.ca
+            VITE_KEYCLOAK_URL=https://auth.plainledger.ca
+            VITE_KEYCLOAK_REALM=plainledger
+            VITE_KEYCLOAK_CLIENT_ID=plainledger-web
+            VITE_MOCK_AUTH=false
 
   # ==========================================================================
   # Stage 5: Deploy to ECS
