@@ -12,7 +12,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { Public } from "nest-keycloak-connect";
-import { NovuService } from "../../../notifications/novu.service";
+import { NovuService } from "../../notifications/novu.service";
 import {
   IsEmail,
   IsString,

@@ -14,6 +14,10 @@ import { ConfigService } from "@nestjs/config";
 import KcAdminClient from "@keycloak/keycloak-admin-client";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+
+// Re-export interface for convenience
+export { IKeycloakAdminService };
 
 export interface CreateUserInput {
   email: string;
@@ -55,7 +59,9 @@ export interface KeycloakUser {
 }
 
 @Injectable()
-export class KeycloakAdminService implements OnModuleInit {
+export class KeycloakAdminService
+  implements IKeycloakAdminService, OnModuleInit
+{
   private readonly logger = new Logger(KeycloakAdminService.name);
   private adminClient: KcAdminClient;
   private realm: string;
@@ -245,7 +251,21 @@ export class KeycloakAdminService implements OnModuleInit {
   }
 
   /**
-   * Find user by email
+   * Get user by email (implements interface)
+   */
+  async getUserByEmail(email: string): Promise<KeycloakUser | null> {
+    return this.findUserByEmail(email);
+  }
+
+  /**
+   * Get user by ID (implements interface)
+   */
+  async getUserById(userId: string): Promise<KeycloakUser | null> {
+    return this.findUserById(userId);
+  }
+
+  /**
+   * Find user by email (internal method)
    */
   async findUserByEmail(email: string): Promise<KeycloakUser | null> {
     if (!this.isConfigured) {
@@ -281,7 +301,7 @@ export class KeycloakAdminService implements OnModuleInit {
   }
 
   /**
-   * Find user by ID
+   * Find user by ID (internal method)
    */
   async findUserById(userId: string): Promise<KeycloakUser | null> {
     if (!this.isConfigured) {

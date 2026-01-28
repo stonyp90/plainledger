@@ -26,6 +26,7 @@ import {
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { IPowerBIDatalakeService } from "@application/ports/outbound/IPowerBIDatalakeService";
 
 export interface DatasetSchema {
   tableName: string;
@@ -57,7 +58,7 @@ export interface SecureDataAccess {
 }
 
 @Injectable()
-export class PowerBIDatalakeService {
+export class PowerBIDatalakeService implements IPowerBIDatalakeService {
   private readonly logger = new Logger(PowerBIDatalakeService.name);
   private readonly s3Client: S3Client;
   private readonly goldBucket: string;
@@ -92,6 +93,9 @@ export class PowerBIDatalakeService {
 
   /**
    * Get the Gold layer schema for Power BI dataset configuration
+   */
+  /**
+   * Get Gold layer schema (implements interface)
    */
   getGoldLayerSchema(): DatasetSchema[] {
     return [
@@ -203,7 +207,7 @@ export class PowerBIDatalakeService {
   }
 
   /**
-   * Generate signed URL for secure data access
+   * Generate signed URL for secure data access (implements interface)
    * Used by Power BI gateway or custom connectors
    */
   async generateSecureDataUrl(

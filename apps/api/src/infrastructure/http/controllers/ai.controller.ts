@@ -38,8 +38,8 @@ import {
   MaxLength,
   ValidateIf,
 } from "class-validator";
-import { AIService } from "../../../infrastructure/ai/ai.service";
 import { Transform } from "class-transformer";
+import { GenerateAIResponseUseCase } from "@application/use-cases/generate-ai-response.use-case";
 
 export class ChatRequestDto {
   @IsString()
@@ -85,12 +85,10 @@ export class ChatRequestDto {
 @Controller("ai")
 export class AIController {
   private readonly logger = new Logger(AIController.name);
-  private readonly requestCounts: Map<
-    string,
-    { count: number; resetAt: number }
-  > = new Map();
 
-  constructor(private readonly aiService: AIService) {}
+  constructor(
+    private readonly generateAIResponseUseCase: GenerateAIResponseUseCase,
+  ) {}
 
   @Post("chat")
   @HttpCode(HttpStatus.OK)
@@ -115,44 +113,26 @@ export class AIController {
         throw new BadRequestException("Tenant ID is required");
       }
 
-      // Additional rate limiting at controller level
-      if (!this.checkControllerRateLimit(tenantId)) {
-        this.logger.warn(
-          `Controller rate limit exceeded for tenant: ${tenantId}`,
-        );
-        throw new TooManyRequestsException(
-          "Too many requests. Please try again later.",
-        );
-      }
-
-      this.logger.log(
-        `AI chat request [${requestId}] from tenant: ${tenantId}, prompt length: ${dto.prompt.length}`,
-      );
-
-      // Generate response
-      const response = await this.aiService.generateResponse(dto.prompt, {
-        stream: dto.stream || false,
+      // Use the use case to generate response
+      const result = await this.generateAIResponseUseCase.execute({
+        prompt: dto.prompt,
         tenantId,
+        stream: dto.stream,
         temperature: dto.temperature,
         maxTokens: dto.maxTokens,
         retries: dto.retries,
-        modelTier: dto.modelTier || "full", // Default to full, but allow lite for cost optimization
+        modelTier: dto.modelTier || "full",
       });
-
-      const latency = Date.now() - startTime;
-      this.logger.log(
-        `AI chat request [${requestId}] completed in ${latency}ms, tokens: ${response.tokensUsed?.total || 0}`,
-      );
 
       return {
         success: true,
-        message: response.message,
-        initiatives: response.initiatives,
-        okrs: response.okrs,
+        message: result.response.message,
+        initiatives: result.response.initiatives,
+        okrs: result.response.okrs,
         metadata: {
-          requestId,
-          latency,
-          tokensUsed: response.tokensUsed,
+          requestId: result.requestId,
+          latency: result.latency,
+          tokensUsed: result.response.tokensUsed,
         },
       };
     } catch (error) {
@@ -177,7 +157,10 @@ export class AIController {
         message:
           error instanceof Error && error.message.includes("timeout")
             ? "Request timed out. Please try again."
-            : error instanceof Error && error.message.includes("Rate limit")
+            : (error instanceof Error &&
+                  error.message.includes("Rate limit")) ||
+                (error instanceof Error &&
+                  error.message.includes("Too many requests"))
               ? "Rate limit exceeded. Please try again later."
               : "I apologize, but I encountered an error processing your request. Please try again.",
         error:
@@ -192,33 +175,5 @@ export class AIController {
         },
       };
     }
-  }
-
-  /**
-   * Additional rate limiting at controller level (more restrictive)
-   */
-  private checkControllerRateLimit(tenantId: string): boolean {
-    const now = Date.now();
-    const key = `controller-${tenantId}`;
-    const limit = this.requestCounts.get(key);
-
-    // 20 requests per minute at controller level
-    const CONTROLLER_LIMIT = 20;
-    const WINDOW_MS = 60 * 1000;
-
-    if (!limit || limit.resetAt < now) {
-      this.requestCounts.set(key, {
-        count: 1,
-        resetAt: now + WINDOW_MS,
-      });
-      return true;
-    }
-
-    if (limit.count >= CONTROLLER_LIMIT) {
-      return false;
-    }
-
-    limit.count++;
-    return true;
   }
 }

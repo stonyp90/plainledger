@@ -10,9 +10,9 @@
  * - Rate limiting applied to prevent abuse
  */
 import { Resolver, Query, Args, Context } from "@nestjs/graphql";
-import { UseGuards, Logger, Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { UseGuards, Logger, Injectable, Inject } from "@nestjs/common";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
+import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 import {
   DashboardSummary,
   FinancialTrend,
@@ -65,15 +65,12 @@ class TransactionsConnection {
 @Injectable()
 export class FinancialResolver {
   private readonly logger = new Logger(FinancialResolver.name);
-  private readonly datalakeService: DatalakeDataService;
 
   constructor(
-    private readonly configService: ConfigService,
+    @Inject("IDatalakeDataService")
+    private readonly datalakeService: IDatalakeDataService,
     private readonly balanceSheetUseCase: GenerateBalanceSheetUseCase,
-  ) {
-    // Initialize datalake service
-    this.datalakeService = new DatalakeDataService(configService);
-  }
+  ) {}
 
   // =====================================================
   // DASHBOARD QUERIES
@@ -153,7 +150,7 @@ export class FinancialResolver {
 
         return {
           metricName: metric,
-          data: trendData.map((point) => ({
+          data: trendData.map((point: { period: string; value: number }) => ({
             date: point.period,
             value: point.value,
           })),

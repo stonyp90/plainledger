@@ -22,7 +22,8 @@ import {
   MinLength,
   Matches,
 } from "class-validator";
-import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
+import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 
 // =====================================================
@@ -106,7 +107,8 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(
-    private readonly keycloakAdminService: KeycloakAdminService,
+    @Inject("IKeycloakAdminService")
+    private readonly keycloakAdminService: IKeycloakAdminService,
     private readonly userProfileRepository: PostgresUserProfileRepository,
   ) {}
 

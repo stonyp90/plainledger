@@ -17,6 +17,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Inject,
 } from "@nestjs/common";
 import { AuthenticatedUser, Roles } from "nest-keycloak-connect";
 import {
@@ -27,10 +28,8 @@ import {
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
-import {
-  KeycloakAdminService,
-  KeycloakUser,
-} from "@infrastructure/auth/keycloak-admin.service";
+import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+import { KeycloakUser } from "@infrastructure/auth/keycloak-admin.service";
 
 // =====================================================
 // DTOs
@@ -111,7 +110,10 @@ interface AuthUser {
 export class TeamController {
   private readonly logger = new Logger(TeamController.name);
 
-  constructor(private readonly keycloakAdminService: KeycloakAdminService) {}
+  constructor(
+    @Inject("IKeycloakAdminService")
+    private readonly keycloakAdminService: IKeycloakAdminService,
+  ) {}
 
   /**
    * Invite a team member to the organization
@@ -276,7 +278,7 @@ export class TeamController {
       return {
         success: true,
         organizationId,
-        members: members.map((m) => ({
+        members: members.map((m: KeycloakUser) => ({
           id: m.id,
           email: m.email,
           firstName: m.firstName,

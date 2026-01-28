@@ -40,16 +40,15 @@ import {
 } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { Public, Roles } from "nest-keycloak-connect";
+import { SecureDataAccess } from "@infrastructure/services/powerbi-datalake.service";
 import {
-  PowerBIDatalakeService,
-  SecureDataAccess,
-} from "@infrastructure/services/powerbi-datalake.service";
-import {
-  DatalakeDataService,
   DimAccount,
   DimContact,
   FactTransaction,
 } from "@infrastructure/services/datalake-data.service";
+import { IPowerBIDatalakeService } from "@application/ports/outbound/IPowerBIDatalakeService";
+import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
+import { Inject } from "@nestjs/common";
 
 // Response DTOs
 interface DataResponse<T> {
@@ -82,15 +81,15 @@ interface AccessTokenResponse {
 @Controller("api/v1/analytics/data")
 export class PowerBIDataController {
   private readonly logger = new Logger(PowerBIDataController.name);
-  private readonly datalakeService: DatalakeDataService;
   private readonly allowedIPs: string[];
 
   constructor(
-    private readonly powerBIDatalakeService: PowerBIDatalakeService,
+    @Inject("IPowerBIDatalakeService")
+    private readonly powerBIDatalakeService: IPowerBIDatalakeService,
+    @Inject("IDatalakeDataService")
+    private readonly datalakeService: IDatalakeDataService,
     private readonly configService: ConfigService,
   ) {
-    this.datalakeService = new DatalakeDataService(configService);
-
     // Load allowed IPs for Power BI gateway (optional additional security)
     const ipList = this.configService.get<string>("POWERBI_ALLOWED_IPS") || "";
     this.allowedIPs = ipList.split(",").filter((ip) => ip.trim().length > 0);

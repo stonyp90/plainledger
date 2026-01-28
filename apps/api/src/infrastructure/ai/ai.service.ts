@@ -18,6 +18,7 @@ import {
   AIGuardrailsService,
   FinancialContext as GuardrailContext,
 } from "./ai-guardrails.service";
+import { IAIService } from "@application/ports/outbound/IAIService";
 
 export type AIProvider =
   | "openai"
@@ -76,7 +77,7 @@ interface CircuitBreakerState {
 }
 
 @Injectable()
-export class AIService {
+export class AIService implements IAIService {
   private readonly logger = new Logger(AIService.name);
   private readonly providers: Map<AIProvider, AIProviderConfig> = new Map();
   private readonly maxRetries: number;

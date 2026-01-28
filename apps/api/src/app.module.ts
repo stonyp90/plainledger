@@ -52,6 +52,7 @@ import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-bal
 import { GetEmbedConfigUseCase } from "@application/use-cases/get-embed-config.use-case";
 import { ListAnalyticsReportsUseCase } from "@application/use-cases/list-analytics-reports.use-case";
 import { UpdateOrgFeaturesUseCase } from "@application/use-cases/update-org-features.use-case";
+import { GenerateAIResponseUseCase } from "@application/use-cases/generate-ai-response.use-case";
 
 // Repositories
 import { PostgresOrganizationRepository } from "@infrastructure/persistence/postgres/postgres-organization.repository";
@@ -61,7 +62,7 @@ import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persiste
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 
 // Notifications
-import { NovuModule } from "./notifications/novu.service";
+import { NovuModule } from "./infrastructure/notifications/novu.service";
 
 @Module({
   imports: [
@@ -158,6 +159,7 @@ import { NovuModule } from "./notifications/novu.service";
     GetEmbedConfigUseCase,
     ListAnalyticsReportsUseCase,
     UpdateOrgFeaturesUseCase,
+    GenerateAIResponseUseCase,
 
     // Services
     AIService,
@@ -169,6 +171,23 @@ import { NovuModule } from "./notifications/novu.service";
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
+    },
+    // Register interfaces for dependency injection
+    {
+      provide: "IAIService",
+      useClass: AIService,
+    },
+    {
+      provide: "IDatalakeDataService",
+      useClass: DatalakeDataService,
+    },
+    {
+      provide: "IPowerBIDatalakeService",
+      useClass: PowerBIDatalakeService,
+    },
+    {
+      provide: "IKeycloakAdminService",
+      useClass: KeycloakAdminService,
     },
 
     // GraphQL Resolvers

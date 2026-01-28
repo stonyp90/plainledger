@@ -6,8 +6,6 @@ import {
   Param,
   HttpCode,
   HttpStatus,
-  BadRequestException,
-  NotFoundException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -19,11 +17,6 @@ import {
 import { Roles } from "nest-keycloak-connect";
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import { GetOrganizationUseCase } from "@application/use-cases/get-organization.use-case";
-import {
-  DomainError,
-  EntityNotFoundError,
-  DuplicateEntityError,
-} from "@domain/errors/DomainError";
 
 class CreateOrganizationDto {
   tenantId: string;
@@ -56,17 +49,7 @@ export class OrganizationController {
   @ApiResponse({ status: 400, description: "Invalid input data" })
   @ApiResponse({ status: 409, description: "Organization already exists" })
   async create(@Body() dto: CreateOrganizationDto) {
-    try {
-      return await this.createOrganizationUseCase.execute(dto);
-    } catch (error) {
-      if (error instanceof DuplicateEntityError) {
-        throw new BadRequestException(error.message);
-      }
-      if (error instanceof DomainError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    return await this.createOrganizationUseCase.execute(dto);
   }
 
   @Get(":tenantId")
@@ -75,16 +58,6 @@ export class OrganizationController {
   @ApiResponse({ status: 200, description: "Organization found" })
   @ApiResponse({ status: 404, description: "Organization not found" })
   async findOne(@Param("tenantId") tenantId: string) {
-    try {
-      return await this.getOrganizationUseCase.execute({ tenantId });
-    } catch (error) {
-      if (error instanceof EntityNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
-      if (error instanceof DomainError) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    return await this.getOrganizationUseCase.execute({ tenantId });
   }
 }

@@ -13,7 +13,7 @@ import {
   Req,
 } from "@nestjs/common";
 import { AuthenticatedUser } from "nest-keycloak-connect";
-import { NovuService } from "../../../notifications/novu.service";
+import { NovuService } from "../../notifications/novu.service";
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import {

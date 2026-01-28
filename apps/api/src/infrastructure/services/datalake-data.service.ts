@@ -12,6 +12,7 @@ import {
   GetObjectCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 
 // Gold Layer Types (matching the schema)
 export interface DimAccount {
@@ -114,7 +115,7 @@ export interface DashboardData {
 }
 
 @Injectable()
-export class DatalakeDataService {
+export class DatalakeDataService implements IDatalakeDataService {
   private readonly logger = new Logger(DatalakeDataService.name);
   private s3Client: S3Client;
   private goldBucket: string;
@@ -144,7 +145,10 @@ export class DatalakeDataService {
   /**
    * Fetch dashboard data for an organization from Gold layer
    */
-  async getDashboardData(organizationId: string): Promise<DashboardData> {
+  async getDashboardData(
+    organizationId: string,
+    asOfDate?: Date,
+  ): Promise<DashboardData> {
     this.logger.log(
       `Fetching dashboard data for organization: ${organizationId}`,
     );
@@ -183,6 +187,51 @@ export class DatalakeDataService {
       // Return empty/default data structure
       return this.getDefaultDashboardData(organizationId);
     }
+  }
+
+  /**
+   * Get accounts for an organization
+   */
+  async getAccounts(organizationId: string): Promise<DimAccount[]> {
+    return this.fetchAccounts(organizationId);
+  }
+
+  /**
+   * Get contacts for an organization
+   */
+  async getContacts(organizationId: string): Promise<DimContact[]> {
+    return this.fetchContacts(organizationId);
+  }
+
+  /**
+   * Get transactions for an organization
+   */
+  async getTransactions(
+    organizationId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<FactTransaction[]> {
+    const transactions = await this.fetchTransactions(organizationId);
+    if (startDate || endDate) {
+      return transactions.filter((txn) => {
+        const txnDate = new Date(txn.transaction_date);
+        if (startDate && txnDate < startDate) return false;
+        if (endDate && txnDate > endDate) return false;
+        return true;
+      });
+    }
+    return transactions;
+  }
+
+  /**
+   * Get account balances for an organization
+   */
+  async getAccountBalances(
+    organizationId: string,
+    asOfDate?: Date,
+  ): Promise<FactAccountBalance[]> {
+    // TODO: Implement when FactAccountBalance data is available in Gold layer
+    return [];
   }
 
   /**

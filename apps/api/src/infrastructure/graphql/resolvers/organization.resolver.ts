@@ -151,8 +151,8 @@ export class OrganizationResolver {
     this.logger.log(`User ${userId} creating organization: ${input.name}`);
 
     try {
-      // Generate a tenant ID for the new organization
-      const tenantId = `tenant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // Use Keycloak user ID as tenant ID (consistent with onboarding flow)
+      const tenantId = context.req.user.sub;
 
       const org = await this.createOrganizationUseCase.execute({
         tenantId,

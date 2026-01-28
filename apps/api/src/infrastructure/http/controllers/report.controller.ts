@@ -16,7 +16,8 @@ import {
 import { Roles, Public } from "nest-keycloak-connect";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
 import { DomainError, EntityNotFoundError } from "@domain/errors/DomainError";
-import { DatalakeDataService } from "../../services/datalake-data.service";
+import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
+import { Inject } from "@nestjs/common";
 
 @Controller("reports")
 @ApiTags("reports")
@@ -24,7 +25,8 @@ import { DatalakeDataService } from "../../services/datalake-data.service";
 export class ReportController {
   constructor(
     private readonly generateBalanceSheetUseCase: GenerateBalanceSheetUseCase,
-    private readonly datalakeDataService: DatalakeDataService,
+    @Inject("IDatalakeDataService")
+    private readonly datalakeDataService: IDatalakeDataService,
   ) {}
 
   @Get(":tenantId/balance-sheet")

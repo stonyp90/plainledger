@@ -1,12 +1,16 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { Public } from "nest-keycloak-connect";
-import { AIService } from "../../ai/ai.service";
+import { IAIService } from "@application/ports/outbound/IAIService";
+import { Inject } from "@nestjs/common";
 
 @Controller("health")
 @ApiTags("health")
 export class HealthController {
-  constructor(private readonly aiService: AIService) {}
+  constructor(
+    @Inject("IAIService")
+    private readonly aiService: IAIService,
+  ) {}
   @Get()
   @Public()
   @ApiOperation({ summary: "Health check endpoint" })
