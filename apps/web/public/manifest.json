@@ -5,7 +5,7 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "theme_color": "#10b981",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
@@ -14,65 +14,36 @@
     {
       "src": "/favicon.svg",
       "type": "image/svg+xml",
-      "sizes": "any"
+      "sizes": "any",
+      "purpose": "any"
     },
     {
-      "src": "/icon-72.png",
-      "type": "image/png",
-      "sizes": "72x72"
-    },
-    {
-      "src": "/icon-96.png",
-      "type": "image/png",
-      "sizes": "96x96"
-    },
-    {
-      "src": "/icon-128.png",
-      "type": "image/png",
-      "sizes": "128x128"
-    },
-    {
-      "src": "/icon-144.png",
-      "type": "image/png",
-      "sizes": "144x144"
-    },
-    {
-      "src": "/icon-152.png",
-      "type": "image/png",
-      "sizes": "152x152"
-    },
-    {
-      "src": "/icon-192.png",
-      "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-384.png",
-      "type": "image/png",
-      "sizes": "384x384"
-    },
-    {
-      "src": "/icon-512.png",
-      "type": "image/png",
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
       "sizes": "512x512",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "180x180",
+      "purpose": "any"
     }
   ],
   "screenshots": [
     {
       "src": "/screenshot-dashboard.png",
       "type": "image/png",
-      "sizes": "1280x720",
+      "sizes": "1200x630",
       "form_factor": "wide",
-      "label": "Dashboard with financial overview"
+      "label": "ROI Calculator showing potential savings"
     },
     {
-      "src": "/screenshot-anomalies.png",
+      "src": "/og-image.png",
       "type": "image/png",
-      "sizes": "1280x720",
+      "sizes": "1200x630",
       "form_factor": "wide",
-      "label": "AI-powered anomaly detection"
+      "label": "PlainLedger - No Surprises, Just Numbers"
     }
   ],
   "related_applications": [],

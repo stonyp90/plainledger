@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import ThemeToggle from '../components/ThemeToggle';
@@ -26,7 +26,478 @@ import {
   TrendingUp,
   Eye,
   RefreshCw,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle,
+  AlertTriangle,
+  Gauge,
+  Brain,
 } from 'lucide-react';
+
+// =====================================================
+// ANIMATED COUNTER HOOK (from DemoModal)
+// =====================================================
+
+function useAnimatedCounter(target: number, duration: number = 1500, delay: number = 0, trigger: boolean = true) {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    if (!trigger) return;
+    setCount(0);
+    
+    const timeoutId = setTimeout(() => {
+      const startTime = Date.now();
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+        setCount(Math.floor(target * eased));
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    }, delay);
+    
+    return () => clearTimeout(timeoutId);
+  }, [target, duration, delay, trigger]);
+  
+  return count;
+}
+
+// =====================================================
+// INTERSECTION OBSERVER HOOK
+// =====================================================
+
+function useInView(options?: IntersectionObserverInit) {
+  const [isInView, setIsInView] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsInView(true);
+      }
+    }, { threshold: 0.2, ...options });
+    
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
+  
+  return { ref, isInView };
+}
+
+// =====================================================
+// ANIMATED SPARKLINE COMPONENT (from DemoModal)
+// =====================================================
+
+function AnimatedSparkline({ 
+  data, 
+  color, 
+  showArea = true,
+  delay = 300,
+  width = 120,
+  height = 40,
+  trigger = true
+}: { 
+  data: number[]; 
+  color: string;
+  showArea?: boolean;
+  delay?: number;
+  width?: number;
+  height?: number;
+  trigger?: boolean;
+}) {
+  const [progress, setProgress] = useState(0);
+  
+  useEffect(() => {
+    if (!trigger) return;
+    setProgress(0);
+    
+    const timeoutId = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1500;
+      
+      const animateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        setProgress(p);
+        
+        if (p < 1) {
+          requestAnimationFrame(animateProgress);
+        }
+      };
+      
+      requestAnimationFrame(animateProgress);
+    }, delay);
+    
+    return () => clearTimeout(timeoutId);
+  }, [data, delay, trigger]);
+  
+  const points = useMemo(() => {
+    const max = Math.max(...data);
+    const min = Math.min(...data);
+    const range = max - min || 1;
+    
+    return data.map((value, i) => ({
+      x: (i / (data.length - 1)) * width,
+      y: height - ((value - min) / range) * (height - 8) - 4,
+    }));
+  }, [data, width, height]);
+  
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = `${linePath} L ${width} ${height} L 0 ${height} Z`;
+  
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <defs>
+        <linearGradient id={`sparkline-gradient-landing-${color.replace(/[^a-z0-9]/gi, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      
+      {showArea && (
+        <path
+          d={areaPath}
+          fill={`url(#sparkline-gradient-landing-${color.replace(/[^a-z0-9]/gi, '')})`}
+          style={{ opacity: progress }}
+        />
+      )}
+      
+      <path
+        d={linePath}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          strokeDasharray: linePath.length,
+          strokeDashoffset: linePath.length * (1 - progress),
+          transition: 'stroke-dashoffset 0.1s linear',
+        }}
+      />
+      
+      {/* Animated dot at end */}
+      {progress > 0.9 && (
+        <circle
+          cx={points[points.length - 1].x}
+          cy={points[points.length - 1].y}
+          r="3"
+          fill={color}
+          className="animate-pulse"
+        />
+      )}
+    </svg>
+  );
+}
+
+// =====================================================
+// ANIMATED GAUGE COMPONENT (from DemoModal)
+// =====================================================
+
+function AnimatedGauge({ 
+  value, 
+  maxValue = 100, 
+  size = 120, 
+  strokeWidth = 10,
+  color = '#10b981',
+  showLabel = true,
+  delay = 400,
+  trigger = true
+}: {
+  value: number;
+  maxValue?: number;
+  size?: number;
+  strokeWidth?: number;
+  color?: string;
+  showLabel?: boolean;
+  delay?: number;
+  trigger?: boolean;
+}) {
+  const [animatedValue, setAnimatedValue] = useState(0);
+  
+  useEffect(() => {
+    if (!trigger) return;
+    setAnimatedValue(0);
+    
+    const timeoutId = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1500;
+      
+      const animateValue = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 4);
+        setAnimatedValue(Math.floor(value * eased));
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateValue);
+        }
+      };
+      
+      requestAnimationFrame(animateValue);
+    }, delay);
+    
+    return () => clearTimeout(timeoutId);
+  }, [value, delay, trigger]);
+  
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const percentage = animatedValue / maxValue;
+  const strokeDashoffset = circumference * (1 - percentage);
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgb(var(--color-border))"
+          strokeWidth={strokeWidth}
+        />
+        
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          style={{ 
+            transition: 'stroke-dashoffset 0.1s linear',
+            filter: `drop-shadow(0 0 6px ${color})`,
+          }}
+        />
+      </svg>
+      
+      {showLabel && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl sm:text-3xl font-bold" style={{ color }}>
+            {animatedValue}
+          </span>
+          <span className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            / {maxValue}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================
+// HERO DASHBOARD PREVIEW COMPONENT
+// =====================================================
+
+function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: boolean; theme: typeof colors.light; isEn: boolean; isVisible: boolean }) {
+  const revenue = useAnimatedCounter(847, 1500, 400, isVisible);
+  const savings = useAnimatedCounter(156, 1500, 600, isVisible);
+  const [showElements, setShowElements] = useState(false);
+  
+  const revenueData = [42, 58, 51, 67, 54, 78, 72, 89, 76, 94, 88, 102];
+  
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => setShowElements(true), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible]);
+
+  return (
+    <div 
+      className="relative w-full max-w-2xl mx-auto rounded-xl overflow-hidden shadow-2xl"
+      style={{ 
+        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+        border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(16, 185, 129, 0.2)'}`,
+      }}
+    >
+      {/* Browser Chrome */}
+      <div 
+        className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b"
+        style={{ 
+          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(248, 250, 252, 0.9)',
+          borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.6)'
+        }}
+      >
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
+        </div>
+        <div className="flex-1 flex justify-center">
+          <div 
+            className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.6)' : 'rgba(241, 245, 249, 0.9)',
+              color: 'rgb(var(--color-text-muted))'
+            }}
+          >
+            app.plainledger.ca/dashboard
+          </div>
+        </div>
+      </div>
+      
+      {/* Dashboard Content */}
+      <div className="p-4 sm:p-6">
+        {/* KPI Cards Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {[
+            { 
+              label: isEn ? 'Revenue MTD' : 'Revenus MTD', 
+              value: `$${revenue.toLocaleString()}K`, 
+              change: '+12.4%', 
+              up: true,
+              sparkData: revenueData,
+              color: theme.green
+            },
+            { 
+              label: isEn ? 'Cash Position' : 'Trésorerie', 
+              value: '$234K', 
+              change: '+8.2%', 
+              up: true,
+              sparkData: [35, 42, 38, 45, 52, 48, 55, 60, 58, 65, 62, 68],
+              color: theme.green
+            },
+            { 
+              label: isEn ? 'Working Cap.' : 'Fonds roul.', 
+              value: `$${savings.toLocaleString()}K`, 
+              change: '+5.6%', 
+              up: true,
+              sparkData: [45, 48, 52, 55, 50, 58, 62, 60, 65, 70, 68, 75],
+              color: theme.gold
+            },
+            { 
+              label: isEn ? 'Net Margin' : 'Marge nette', 
+              value: '18.5%', 
+              change: '-2.1%', 
+              up: false,
+              sparkData: [22, 20, 21, 19, 20, 18, 19, 18, 17, 18, 19, 18.5],
+              color: theme.gold
+            },
+          ].map((kpi, i) => (
+            <div 
+              key={i} 
+              className={`p-3 rounded-xl transition-all duration-700 ${
+                showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+              style={{ 
+                backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.5)'}`,
+                transitionDelay: `${i * 100 + 200}ms`
+              }}
+            >
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-[8px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {kpi.label}
+                </span>
+                <div className={`flex items-center gap-0.5 text-[9px] font-bold`} style={{ color: kpi.up ? theme.green : '#ef4444' }}>
+                  {kpi.up ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
+                  {kpi.change}
+                </div>
+              </div>
+              
+              <div className="text-sm sm:text-base lg:text-lg font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                {kpi.value}
+              </div>
+              
+              <AnimatedSparkline 
+                data={kpi.sparkData} 
+                color={kpi.color}
+                delay={300 + i * 100}
+                width={80}
+                height={24}
+                trigger={isVisible}
+              />
+            </div>
+          ))}
+        </div>
+        
+        {/* Bottom Row - Health Score + Alert */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Health Score */}
+          <div 
+            className={`p-4 rounded-xl text-center transition-all duration-700 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{ 
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
+              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.5)'}`,
+              transitionDelay: '600ms'
+            }}
+          >
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Gauge className="w-4 h-4" style={{ color: theme.green }} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Health Score' : 'Score santé'}
+              </span>
+            </div>
+            <div className="flex justify-center">
+              <AnimatedGauge 
+                value={87} 
+                size={80} 
+                strokeWidth={6}
+                color={theme.green}
+                delay={700}
+                trigger={isVisible}
+              />
+            </div>
+          </div>
+          
+          {/* AI Alert */}
+          <div 
+            className={`p-4 rounded-xl transition-all duration-700 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{ 
+              backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : 'rgba(254, 243, 199, 0.6)',
+              border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(251, 191, 36, 0.4)'}`,
+              transitionDelay: '700ms'
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${theme.gold}20` }}
+              >
+                <Brain className="w-4 h-4" style={{ color: theme.goldDark }} />
+              </div>
+              <div>
+                <p className="text-[10px] sm:text-xs font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'AI Alert' : 'Alerte IA'}
+                </p>
+                <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Marketing expense 29% over budget' : 'Marketing dépasse le budget de 29%'}
+                </p>
+                <div className="flex items-center gap-1 mt-2">
+                  <span 
+                    className="text-[8px] px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: `${theme.gold}20`, color: theme.goldDark }}
+                  >
+                    97% {isEn ? 'confidence' : 'confiance'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Supported integrations
 const integrations = ['QuickBooks', 'Xero', 'Sage', 'FreshBooks', 'Wave', 'CSV Import'];
@@ -67,6 +538,7 @@ function ROICalculatorSection({
 }) {
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(500000);
   const [transactionVolume, setTransactionVolume] = useState<number>(1000);
+  const { ref: sectionRef, isInView } = useInView();
   
   // ROI calculations based on industry averages
   const estimatedSavings = useMemo(() => {
@@ -86,9 +558,16 @@ function ROICalculatorSection({
       timeSavedHours,
     };
   }, [monthlyRevenue, transactionVolume]);
+  
+  // Animated counters for stats
+  const animatedYearlySavings = useAnimatedCounter(Math.floor(estimatedSavings.yearlySavings), 1500, 300, isInView);
+  const animatedMonthlySavings = useAnimatedCounter(Math.floor(estimatedSavings.monthlySavings), 1200, 400, isInView);
+  const animatedErrors = useAnimatedCounter(estimatedSavings.detectedErrors, 1000, 500, isInView);
+  const animatedHours = useAnimatedCounter(estimatedSavings.timeSavedHours, 1000, 600, isInView);
 
   return (
     <section 
+      ref={sectionRef}
       id="roi" 
       className="py-16 sm:py-20 px-6 relative"
       style={{ 
@@ -214,11 +693,11 @@ function ROICalculatorSection({
               
               {/* Big Number - Yearly Savings */}
               <div 
-                className="p-6 rounded-xl mb-6"
+                className={`p-6 rounded-xl mb-6 transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.08)' }}
               >
                 <div className="text-4xl sm:text-5xl font-bold mb-2" style={{ color: theme.green }}>
-                  ${Math.floor(estimatedSavings.yearlySavings).toLocaleString()}
+                  ${animatedYearlySavings.toLocaleString()}
                 </div>
                 <div className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Estimated annual savings' : 'Économies annuelles estimées'}
@@ -227,31 +706,31 @@ function ROICalculatorSection({
               
               {/* Breakdown */}
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between items-center">
+                <div className={`flex justify-between items-center transition-all duration-500 ${isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '200ms' }}>
                   <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     <Shield className="w-3 h-3" style={{ color: theme.green }} />
                     {isEn ? 'Errors detected/month' : 'Erreurs détectées/mois'}
                   </span>
                   <span className="font-semibold" style={{ color: theme.green }}>
-                    {estimatedSavings.detectedErrors}
+                    {animatedErrors}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className={`flex justify-between items-center transition-all duration-500 ${isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '300ms' }}>
                   <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     <Check className="w-3 h-3" style={{ color: theme.green }} />
                     {isEn ? 'Monthly savings' : 'Économies mensuelles'}
                   </span>
                   <span className="font-semibold" style={{ color: theme.green }}>
-                    ${Math.floor(estimatedSavings.monthlySavings).toLocaleString()}
+                    ${animatedMonthlySavings.toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className={`flex justify-between items-center transition-all duration-500 ${isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '400ms' }}>
                   <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     <Clock className="w-3 h-3" style={{ color: theme.goldDark }} />
                     {isEn ? 'Time saved/month' : 'Temps économisé/mois'}
                   </span>
                   <span className="font-semibold" style={{ color: theme.goldDark }}>
-                    {estimatedSavings.timeSavedHours}+ {isEn ? 'hours' : 'heures'}
+                    {animatedHours}+ {isEn ? 'hours' : 'heures'}
                   </span>
                 </div>
               </div>
@@ -585,21 +1064,12 @@ export default function Landing() {
             </div>
           </div>
           
-          {/* Analytics Animation */}
+          {/* Interactive Dashboard Preview */}
           <div 
-            className="mt-12 sm:mt-16 flex justify-center animate-fade-up opacity-0"
+            className="mt-10 sm:mt-14 animate-fade-up opacity-0"
             style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}
           >
-            <div 
-              className="p-6 sm:p-8 rounded-2xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
-                boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.3)' : `0 8px 40px ${theme.green}15`,
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : `${theme.green}20`}`
-              }}
-            >
-              <AnalyticsAnimation style={{ width: 200, height: 150 }} />
-            </div>
+            <HeroDashboardPreview isDark={isDark} theme={theme} isEn={isEn} isVisible={true} />
           </div>
         </div>
       </section>
@@ -610,9 +1080,6 @@ export default function Landing() {
       <section id="industries" className="py-16 sm:py-20 lg:py-24 relative">
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
-
-      {/* Fair Value, Clear Returns - ROI Calculator */}
-      <ROICalculatorSection isEn={isEn} isDark={isDark} theme={theme} onScheduleCall={handleScheduleCall} />
 
       {/* How It Works - Compact Pipeline */}
       <section 

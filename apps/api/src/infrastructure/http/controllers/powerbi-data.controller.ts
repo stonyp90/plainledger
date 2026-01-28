@@ -335,8 +335,9 @@ export class PowerBIDataController {
 
   /**
    * Health check for Power BI connectivity
+   * Note: Using _health path to avoid conflict with :tableName parameter route
    */
-  @Get("health/check")
+  @Get("_health")
   @Public()
   @ApiOperation({ summary: "Check Power BI data connectivity health" })
   @ApiResponse({ status: 200, description: "Health status" })
