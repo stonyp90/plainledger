@@ -171,7 +171,7 @@ export class AuthController {
       params.append("client_secret", clientSecret);
       params.append("username", dto.email.toLowerCase().trim());
       params.append("password", dto.password);
-      params.append("scope", "openid profile email");
+      params.append("scope", "openid");
 
       const response = await fetch(tokenUrl, {
         method: "POST",
