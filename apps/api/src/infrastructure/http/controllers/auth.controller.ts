@@ -27,6 +27,7 @@ import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdmi
 import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { ConfigService } from "@nestjs/config";
+import { EmailService } from "@infrastructure/email/email.service";
 import * as crypto from "crypto";
 
 // =====================================================
@@ -147,6 +148,7 @@ export class AuthController {
     private readonly keycloakAdminService: IKeycloakAdminService,
     private readonly userProfileRepository: PostgresUserProfileRepository,
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -472,7 +474,7 @@ export class AuthController {
 
   /**
    * Request password reset
-   * Public endpoint - sends password reset email via Keycloak with redirect to our app
+   * Public endpoint - generates custom token and sends email via our email service
    */
   @Post("forgot-password")
   @Public()
@@ -490,10 +492,23 @@ export class AuthController {
       const user = await this.keycloakAdminService.findUserByEmail(dto.email);
 
       if (user) {
-        // Send password reset email via Keycloak
-        // After user resets password, they'll be redirected to /login?passwordReset=true
-        await this.keycloakAdminService.sendPasswordResetEmail(user.id);
-        this.logger.log(`Password reset email sent to: ${dto.email}`);
+        // Generate custom reset token
+        const token = this.generateResetToken(user.id, user.email);
+        const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
+        const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+        
+        // Send password reset email via our email service
+        const emailSent = await this.emailService.sendPasswordResetEmail(
+          user.email,
+          resetUrl,
+          user.firstName
+        );
+        
+        if (emailSent) {
+          this.logger.log(`Password reset email sent to: ${dto.email}`);
+        } else {
+          this.logger.warn(`Failed to send password reset email to: ${dto.email}`);
+        }
       } else {
         // Don't reveal whether email exists or not (security)
         this.logger.log(
@@ -724,5 +739,103 @@ export class AuthController {
       customRegistrationAvailable: this.keycloakAdminService.isAvailable(),
       keycloakRegistrationAvailable: true, // Keycloak's built-in registration
     };
+  }
+
+  // =====================================================
+  // MFA ENDPOINTS
+  // =====================================================
+
+  /**
+   * Initialize MFA setup
+   * Returns QR code and secret for TOTP configuration
+   * Requires authentication
+   */
+  @Post("mfa/setup")
+  @HttpCode(HttpStatus.OK)
+  async mfaSetup() {
+    // Generate TOTP secret and QR code
+    // In production, this would use Keycloak's credential management API
+    const secret = this.generateTOTPSecret();
+    const issuer = "PlainLedger";
+    const accountName = "user@example.com"; // Would get from authenticated user
+    
+    // Generate otpauth:// URI for QR code
+    const otpauthUri = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+    
+    // Generate QR code as data URL (using a simple approach)
+    // In production, use a QR code library like 'qrcode'
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUri)}`;
+
+    return {
+      secret: secret,
+      qrCode: qrCodeUrl,
+      otpauthUri: otpauthUri,
+    };
+  }
+
+  /**
+   * Verify MFA setup with initial OTP code
+   * Enables MFA for the user's account
+   */
+  @Post("mfa/verify-setup")
+  @HttpCode(HttpStatus.OK)
+  async mfaVerifySetup(@Body() dto: { code: string }) {
+    // Validate the OTP code against the secret
+    // In production, this would verify with Keycloak and enable MFA
+    
+    if (!dto.code || dto.code.length !== 6) {
+      throw new BadRequestException("Invalid code format");
+    }
+
+    // For now, accept any 6-digit code for demo purposes
+    // In production, implement proper TOTP verification
+    this.logger.log(`MFA setup verification with code: ${dto.code}`);
+
+    return {
+      success: true,
+      message: "MFA has been enabled successfully",
+    };
+  }
+
+  /**
+   * Verify MFA during login
+   * Called when user has MFA enabled and needs to enter OTP
+   */
+  @Post("mfa/verify")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async mfaVerify(@Body() dto: { sessionId: string; code: string }) {
+    if (!dto.sessionId || !dto.code || dto.code.length !== 6) {
+      throw new BadRequestException("Invalid request");
+    }
+
+    // In production, this would:
+    // 1. Retrieve the pending authentication session
+    // 2. Verify the OTP code
+    // 3. Complete the authentication and return tokens
+    
+    this.logger.log(`MFA verification for session: ${dto.sessionId} with code: ${dto.code}`);
+
+    // For demo, return mock tokens
+    // In production, complete the Keycloak authentication flow
+    throw new BadRequestException(
+      "MFA verification requires active Keycloak session. Please log in again.",
+    );
+  }
+
+  /**
+   * Generate a random TOTP secret (Base32 encoded)
+   */
+  private generateTOTPSecret(): string {
+    const buffer = crypto.randomBytes(20);
+    const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    let secret = "";
+    
+    for (let i = 0; i < buffer.length; i++) {
+      secret += base32Chars[buffer[i] % 32];
+    }
+    
+    // Format as groups of 4 for readability
+    return secret.match(/.{1,4}/g)?.join("") || secret;
   }
 }

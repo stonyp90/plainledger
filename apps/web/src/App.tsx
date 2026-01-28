@@ -24,6 +24,8 @@ import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import EmailConfirmation from './pages/EmailConfirmation';
+import MFASetup from './pages/MFASetup';
+import MFAVerify from './pages/MFAVerify';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PowerBIAnalytics from './pages/PowerBIAnalytics';
@@ -275,6 +277,18 @@ function App() {
         <Route 
           path="/reset-password" 
           element={authenticated ? <Navigate to="/app" replace /> : <ResetPassword />} 
+        />
+
+        {/* MFA Setup - authenticated users only */}
+        <Route 
+          path="/mfa/setup" 
+          element={authenticated ? <MFASetup /> : <Navigate to="/login" replace />} 
+        />
+
+        {/* MFA Verify - during login when MFA is required */}
+        <Route 
+          path="/mfa/verify" 
+          element={<MFAVerify />} 
         />
         
         <Route 
