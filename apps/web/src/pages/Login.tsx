@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  CheckCircle,
   Loader2,
   Mail,
   Lock,
@@ -39,14 +40,27 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Pre-fill email from URL params (e.g., from password reset)
+  // Pre-fill email from URL params and check for verification success
   useEffect(() => {
     const emailParam = searchParams.get('email');
     if (emailParam) {
       setEmail(emailParam);
     }
-  }, [searchParams]);
+    
+    // Check if user just verified their email
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setSuccessMessage(
+        isEn 
+          ? 'Email verified successfully! You can now sign in.'
+          : 'Courriel vérifié avec succès! Vous pouvez maintenant vous connecter.'
+      );
+      // Clear the URL parameter
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [searchParams, isEn]);
 
   // Track page view
   useEffect(() => {
@@ -177,6 +191,22 @@ export default function Login() {
                 : 'Entrez votre courriel et mot de passe pour continuer'}
             </p>
           </div>
+
+          {/* Success Alert */}
+          {successMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 rounded-lg flex items-start gap-3"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                border: '1px solid rgb(var(--color-success) / 0.2)'
+              }}
+            >
+              <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+              <p className="text-sm" style={{ color: 'rgb(var(--color-success))' }}>{successMessage}</p>
+            </motion.div>
+          )}
 
           {/* Error Alert */}
           {error && (

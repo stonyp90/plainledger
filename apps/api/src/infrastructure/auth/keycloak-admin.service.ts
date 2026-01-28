@@ -455,20 +455,52 @@ export class KeycloakAdminService
 
   /**
    * Send verification email to user
+   * Uses executeActionsEmail with VERIFY_EMAIL action for better control
+   * Redirects user back to our app after verification
    */
-  async sendVerificationEmail(userId: string): Promise<void> {
+  async sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
       throw new Error("Keycloak Admin Service not configured");
     }
 
     try {
-      await this.adminClient.users.sendVerifyEmail({
+      // Use executeActionsEmail instead of sendVerifyEmail to support redirectUri
+      // This allows us to redirect users back to our app after verification
+      const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
+      const clientId = this.configService.get<string>("KEYCLOAK_WEB_CLIENT_ID", "plainledger-web");
+      
+      await this.adminClient.users.executeActionsEmail({
         realm: this.realm,
         id: userId,
+        clientId: clientId,
+        redirectUri: redirectUri || `${frontendUrl}/login?verified=true`,
+        lifespan: 86400, // 24 hours in seconds
+        actions: ["VERIFY_EMAIL"],
       });
-      this.logger.log(`Verification email sent to user: ${userId}`);
+      this.logger.log(`Verification email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`);
     } catch (error) {
       this.logger.error(`Failed to send verification email: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Directly set email as verified for a user (Admin action)
+   * Use this for admin-initiated verification or when user verification link fails
+   */
+  async setEmailVerified(userId: string, verified: boolean = true): Promise<void> {
+    if (!this.isConfigured) {
+      throw new Error("Keycloak Admin Service not configured");
+    }
+
+    try {
+      await this.adminClient.users.update(
+        { realm: this.realm, id: userId },
+        { emailVerified: verified },
+      );
+      this.logger.log(`Email verified status set to ${verified} for user: ${userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to set email verified status: ${error.message}`);
       throw error;
     }
   }

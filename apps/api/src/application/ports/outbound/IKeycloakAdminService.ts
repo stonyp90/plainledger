@@ -64,10 +64,15 @@ export interface IKeycloakAdminService {
   /**
    * Send password reset email
    */
-  sendPasswordResetEmail(email: string): Promise<void>;
+  sendPasswordResetEmail(userId: string): Promise<void>;
 
   /**
-   * Send verification email
+   * Send verification email with optional redirect URI
    */
-  sendVerificationEmail(email: string): Promise<void>;
+  sendVerificationEmail(userId: string, redirectUri?: string): Promise<void>;
+
+  /**
+   * Directly set email as verified for a user (Admin action)
+   */
+  setEmailVerified(userId: string, verified?: boolean): Promise<void>;
 }
