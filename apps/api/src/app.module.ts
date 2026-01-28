@@ -135,6 +135,7 @@ import { NovuModule } from "./infrastructure/notifications/novu.service";
     TeamController,
     AuthController,
     SyncAdminController,
+    KeycloakAdminController,
   ],
   providers: [
     // Guards
