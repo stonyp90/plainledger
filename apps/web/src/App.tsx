@@ -73,11 +73,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!authenticated) {
-    // Redirect to landing page - login() will handle mock auth appropriately
-    // This prevents infinite loops when user has explicitly logged out
-    login();
-    // Show loading while redirect happens
-    return <Navigate to="/" replace />;
+    // Redirect to custom login page instead of Keycloak's UI
+    // This maintains our custom UI/UX while using Keycloak securely via API
+    return <Navigate to="/login" replace />;
   }
 
   // Check if email verification is needed (skip for verify-email route itself)
@@ -95,90 +93,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Login redirect - triggers Keycloak login
+// Login redirect - redirects to custom login page
 function LoginRedirect() {
-  const { login, authenticated, initialized } = useKeycloak();
-  const [loginAttempted, setLoginAttempted] = useState(false);
-  const [redirectTimeout, setRedirectTimeout] = useState(false);
-  
-  useEffect(() => {
-    if (!authenticated && initialized && !loginAttempted) {
-      setLoginAttempted(true);
-      login();
-      
-      // Set a timeout - if we're still on this page after 5 seconds, 
-      // Keycloak is probably not configured
-      const timeoutId = setTimeout(() => {
-        setRedirectTimeout(true);
-      }, 5000);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [authenticated, initialized, login, loginAttempted]);
+  const { authenticated } = useKeycloak();
 
   if (authenticated) {
     return <Navigate to="/app" replace />;
   }
 
-  // If login timed out, show a helpful message and redirect option
-  if (redirectTimeout) {
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-      >
-        <div className="text-center max-w-md px-4">
-          <div 
-            className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-warning-100))' }}
-          >
-            <svg className="w-8 h-8" fill="none" stroke="rgb(var(--color-warning-600))" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 
-            className="text-xl font-semibold mb-2"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
-            Connexion temporairement indisponible
-          </h2>
-          <p 
-            className="mb-6"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            Le service d'authentification n'est pas accessible. Veuillez réessayer plus tard ou contacter le support.
-          </p>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-colors"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white'
-            }}
-          >
-            Retour à l'accueil
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div 
-      className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-    >
-      <div className="text-center">
-        <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
-        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
-      </div>
-    </div>
-  );
+  // Redirect to custom login page instead of Keycloak's UI
+  return <Navigate to="/login" replace />;
 }
 
 // Protected route for email verification (doesn't redirect to verify-email again)
 function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNode }) {
-  const { authenticated, initialized, login, user } = useKeycloak();
+  const { authenticated, initialized, user } = useKeycloak();
 
   if (!initialized) {
     return (
@@ -195,18 +124,8 @@ function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNo
   }
 
   if (!authenticated) {
-    login();
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-      >
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
-          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
-        </div>
-      </div>
-    );
+    // Redirect to custom login page instead of Keycloak's UI
+    return <Navigate to="/login" replace />;
   }
 
   // If email already verified, proceed to onboarding or dashboard
@@ -222,7 +141,7 @@ function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNo
 
 // Protected route for onboarding (doesn't redirect to onboarding again)
 function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
-  const { authenticated, initialized, login, user } = useKeycloak();
+  const { authenticated, initialized, user } = useKeycloak();
 
   if (!initialized) {
     return (
@@ -239,18 +158,8 @@ function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!authenticated) {
-    login();
-    return (
-      <div 
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-      >
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
-          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Redirection vers la connexion...</p>
-        </div>
-      </div>
-    );
+    // Redirect to custom login page instead of Keycloak's UI
+    return <Navigate to="/login" replace />;
   }
 
   // Check if email verification is needed first

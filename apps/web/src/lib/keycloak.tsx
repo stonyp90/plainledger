@@ -305,23 +305,12 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
       return;
     }
     
-    const options: Keycloak.KeycloakLoginOptions = {
-      locale: document.documentElement.lang === 'en' ? 'en' : 'fr',
-    };
-    
-    // If email provided (from custom login), use loginHint to pre-fill
-    // If IDP hint provided, redirect directly to that provider
-    if (emailOrIdpHint) {
-      if (emailOrIdpHint.includes('@')) {
-        // It's an email - use loginHint
-        options.loginHint = emailOrIdpHint;
-      } else {
-        // It's an IDP hint
-        options.idpHint = emailOrIdpHint;
-      }
-    }
-    
-    keycloak.login(options);
+    // Redirect to our custom login page instead of Keycloak's UI
+    // This maintains our custom UI/UX while using Keycloak securely via API
+    const loginUrl = '/login' + (emailOrIdpHint && emailOrIdpHint.includes('@') 
+      ? `?email=${encodeURIComponent(emailOrIdpHint)}` 
+      : '');
+    window.location.href = loginUrl;
   };
 
   // Register (signup) - navigates to custom registration page that uses Keycloak Admin API
