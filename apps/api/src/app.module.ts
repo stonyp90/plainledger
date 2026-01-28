@@ -61,6 +61,7 @@ import { PostgresAccountRepository } from "@infrastructure/persistence/postgres/
 import { PostgresAnalyticsReportRepository } from "@infrastructure/persistence/postgres/postgres-analytics-report.repository";
 import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persistence/postgres/postgres-organization-features.repository";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
+import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
 
 // Notifications
 import { NovuModule } from "./infrastructure/notifications/novu.service";
@@ -84,14 +85,50 @@ import { NovuModule } from "./infrastructure/notifications/novu.service";
         password: configService.get<string>("DB_PASSWORD") || "postgres",
         database: configService.get<string>("DB_NAME") || "plainledger",
         entities: [OrganizationEntity, AccountEntity, UserProfileEntity],
-        synchronize: process.env.NODE_ENV !== "production",
-        logging: process.env.NODE_ENV !== "production",
+        // Enable synchronize if SYNC_DB=true or in development
+        synchronize:
+          process.env.SYNC_DB === "true" ||
+          process.env.NODE_ENV !== "production",
+        logging:
+          process.env.NODE_ENV !== "production" ||
+          process.env.SYNC_DB === "true",
         ssl:
           process.env.NODE_ENV === "production"
             ? { rejectUnauthorized: false }
             : false,
       }),
       inject: [ConfigService],
+      // Create schemas before TypeORM synchronize
+      async dataSourceFactory(options) {
+        const { DataSource } = await import("typeorm");
+        const dataSource = new DataSource(options!);
+
+        // Create schemas before initializing (which runs synchronize)
+        const tempDs = new DataSource({
+          ...options!,
+          synchronize: false,
+          logging: false,
+        });
+
+        try {
+          await tempDs.initialize();
+          await tempDs.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+          await tempDs.query("CREATE SCHEMA IF NOT EXISTS accounting");
+          await tempDs.query("CREATE SCHEMA IF NOT EXISTS reporting");
+          await tempDs.query("CREATE SCHEMA IF NOT EXISTS integration");
+          console.log("[Database] Schemas created successfully");
+          await tempDs.destroy();
+        } catch (error) {
+          console.error("[Database] Schema creation error:", error.message);
+          try {
+            await tempDs.destroy();
+          } catch {
+            // ignore
+          }
+        }
+
+        return dataSource;
+      },
     }),
     TypeOrmModule.forFeature([
       OrganizationEntity,
@@ -217,6 +254,7 @@ import { NovuModule } from "./infrastructure/notifications/novu.service";
       useClass: PostgresOrganizationFeaturesRepository,
     },
     PostgresUserProfileRepository,
+    DatabaseInitializerService,
   ],
 })
 export class AppModule {}
