@@ -558,24 +558,24 @@ export default function Signup() {
                 {isEn ? (
                   <>
                     I agree to the{' '}
-                    <a href="/terms" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                    <Link to="/terms" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
                       Terms of Service
-                    </a>{' '}
+                    </Link>{' '}
                     and{' '}
-                    <a href="/privacy" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                    <Link to="/privacy" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
                       Privacy Policy
-                    </a>
+                    </Link>
                   </>
                 ) : (
                   <>
                     J'accepte les{' '}
-                    <a href="/terms" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                    <Link to="/terms" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
                       Conditions d'utilisation
-                    </a>{' '}
+                    </Link>{' '}
                     et la{' '}
-                    <a href="/privacy" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                    <Link to="/privacy" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
                       Politique de confidentialité
-                    </a>
+                    </Link>
                   </>
                 )}
               </label>

@@ -67,10 +67,8 @@ export default function Login() {
       // Authenticate via backend API endpoint
       // This maintains our custom UI while using Keycloak securely
       // The backend uses Direct Access Grants with the API client credentials
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const loginUrl = `${apiUrl}/auth/login`;
-
-      const response = await fetch(loginUrl, {
+      // Use relative URL to align with ALB routing rules (/api/* routes to API service)
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

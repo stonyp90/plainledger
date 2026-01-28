@@ -4,7 +4,14 @@
  * TODO: Remove after migration or secure with admin-only access
  */
 
-import { Controller, Post, HttpCode, HttpStatus, Logger, UseGuards } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  UseGuards,
+} from "@nestjs/common";
 import { Public } from "nest-keycloak-connect";
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
 import { Inject } from "@nestjs/common";
@@ -83,7 +90,10 @@ export class KeycloakAdminController {
         clientId: client.id,
       };
     } catch (error) {
-      this.logger.error(`Failed to update client: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to update client: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }

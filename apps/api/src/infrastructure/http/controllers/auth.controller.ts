@@ -150,8 +150,9 @@ export class AuthController {
       const clientId =
         this.configService.get<string>("KEYCLOAK_CLIENT_ID") ||
         "plainledger-api";
-      const clientSecret =
-        this.configService.get<string>("KEYCLOAK_CLIENT_SECRET");
+      const clientSecret = this.configService.get<string>(
+        "KEYCLOAK_CLIENT_SECRET",
+      );
 
       if (!clientSecret) {
         this.logger.error("Keycloak client secret not configured");

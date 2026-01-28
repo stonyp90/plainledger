@@ -90,18 +90,51 @@ export function addResponseInterceptor(interceptor: ResponseInterceptor): () => 
 // ============================================================================
 
 function buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
-  const baseUrl = config.api.baseUrl.replace(/\/$/, '');
-  const url = new URL(path.startsWith('/') ? `${baseUrl}${path}` : `${baseUrl}/${path}`);
-  
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        url.searchParams.append(key, String(value));
-      }
-    });
+  // If path is already absolute or baseUrl is empty, use relative URLs
+  // This ensures compatibility with ALB routing where /api/* routes to API service
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    // Already absolute URL
+    const url = new URL(path);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+    return url.toString();
   }
   
-  return url.toString();
+  // Use relative URLs for better compatibility with ALB routing
+  // If baseUrl is set and is absolute, use it; otherwise use relative path
+  const baseUrl = config.api.baseUrl.replace(/\/$/, '');
+  let fullPath = path.startsWith('/') ? path : `/${path}`;
+  
+  // If baseUrl is absolute, prepend it; otherwise use relative path
+  if (baseUrl && (baseUrl.startsWith('http://') || baseUrl.startsWith('https://'))) {
+    const url = new URL(fullPath, baseUrl);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+    return url.toString();
+  }
+  
+  // Relative URL - just append query params if needed
+  if (params && Object.keys(params).length > 0) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, String(value));
+      }
+    });
+    return `${fullPath}?${searchParams.toString()}`;
+  }
+  
+  return fullPath;
 }
 
 function getAuthToken(): string | null {

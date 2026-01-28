@@ -10,6 +10,7 @@ import {
   Query,
   Logger,
   Res,
+  Request,
 } from "@nestjs/common";
 import { Response } from "express";
 import {
@@ -21,6 +22,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { Public } from "nest-keycloak-connect";
 import { QuickBooksService } from "@infrastructure/integrations/quickbooks/quickbooks.service";
+import { shouldUseSandbox } from "@infrastructure/integrations/quickbooks/quickbooks-environment.util";
 
 // DTO for creating a data source connection
 class CreateDataSourceDto {
@@ -108,16 +110,15 @@ setInterval(() => {
 export class DataSourceController {
   private readonly logger = new Logger(DataSourceController.name);
   private readonly quickbooksService: QuickBooksService;
-  private readonly useSandbox: boolean;
+  private readonly defaultEnvironment: string;
 
   constructor(private readonly configService: ConfigService) {
     this.quickbooksService = new QuickBooksService(configService);
-    // Read environment from config - default to sandbox for safety
-    const environment =
-      this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
-    this.useSandbox = environment !== "production";
+    // Read default environment from config - defaults to production
+    this.defaultEnvironment =
+      this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "production";
     this.logger.log(
-      `QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`,
+      `QuickBooks default environment: ${this.defaultEnvironment}`,
     );
   }
 
@@ -297,11 +298,13 @@ export class DataSourceController {
         });
 
         // Fetch company info
+        // Note: OAuth callback is public, so we default to sandbox for safety
+        // The actual sync will use the correct environment based on user
         try {
           const companyInfo = await this.quickbooksService.getCompanyInfo(
             tokens.accessToken,
             callback.realmId,
-            this.useSandbox,
+            true, // Default to sandbox during OAuth callback
           );
           companyName = companyInfo.companyName;
           this.logger.log(`Connected to QuickBooks company: ${companyName}`);
@@ -334,7 +337,10 @@ export class DataSourceController {
     summary: "Perform full data sync for a QuickBooks connection",
   })
   @ApiResponse({ status: 200, description: "Sync completed" })
-  async fullSync(@Param("id") id: string): Promise<SyncResultDto> {
+  async fullSync(
+    @Param("id") id: string,
+    @Request() req: any,
+  ): Promise<SyncResultDto> {
     const dataSource = mockDataSources.find((ds) => ds.id === id);
     if (!dataSource) {
       throw new Error("Data source not found");
@@ -345,7 +351,13 @@ export class DataSourceController {
       throw new Error("No tokens found for this connection. Please reconnect.");
     }
 
-    this.logger.log(`Starting full sync for datasource: ${id}`);
+    // Determine if this user should use sandbox
+    const userEmail = req.user?.email || req.user?.preferred_username;
+    const useSandbox = shouldUseSandbox(userEmail);
+
+    this.logger.log(
+      `Starting full sync for datasource: ${id}, user: ${userEmail}, environment: ${useSandbox ? "sandbox" : "production"}`,
+    );
 
     try {
       const syncData = await this.quickbooksService.getFullSync(
@@ -353,7 +365,7 @@ export class DataSourceController {
         tokens.realmId,
         "2020-01-01", // Wide date range
         new Date().toISOString().split("T")[0],
-        this.useSandbox,
+        useSandbox,
       );
 
       // Update datasource stats

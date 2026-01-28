@@ -23,6 +23,8 @@ import Signup from './pages/Signup';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import EmailConfirmation from './pages/EmailConfirmation';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import PowerBIAnalytics from './pages/PowerBIAnalytics';
 import OrgFeaturesConfig from './pages/OrgFeaturesConfig';
 import CrispChat from './components/CrispChat';
@@ -271,6 +273,18 @@ function App() {
         <Route 
           path="/newsletter" 
           element={<NewsletterPage />} 
+        />
+
+        {/* Terms of Service - public page */}
+        <Route 
+          path="/terms" 
+          element={<TermsOfService />} 
+        />
+
+        {/* Privacy Policy - public page */}
+        <Route 
+          path="/privacy" 
+          element={<PrivacyPolicy />} 
         />
 
         {/* Email Verification - protected but separate from main app */}

@@ -38,17 +38,10 @@ export const connectedDataSources: Array<{
 export class OAuthCallbackController {
   private readonly logger = new Logger(OAuthCallbackController.name);
   private readonly quickbooksService: QuickBooksService;
-  private readonly useSandbox: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.quickbooksService = new QuickBooksService(configService);
-    // Read environment from config - default to sandbox for safety
-    const environment =
-      this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
-    this.useSandbox = environment !== "production";
-    this.logger.log(
-      `QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`,
-    );
+    this.logger.log(`QuickBooks OAuth callback controller initialized`);
   }
 
   /**
@@ -124,11 +117,13 @@ export class OAuthCallbackController {
         });
 
         // Fetch company info
+        // Note: OAuth callback is public, so we default to sandbox for safety
+        // The actual sync will use the correct environment based on user
         try {
           const companyInfo = await this.quickbooksService.getCompanyInfo(
             tokens.accessToken,
             realmId,
-            this.useSandbox,
+            true, // Default to sandbox during OAuth callback
           );
           companyName = companyInfo.companyName;
           this.logger.log(`Connected to QuickBooks company: ${companyName}`);
@@ -166,6 +161,7 @@ export class OAuthCallbackController {
 
   /**
    * Trigger initial data sync after OAuth connection
+   * Note: This runs in background without user context, so defaults to sandbox
    */
   private async triggerInitialSync(
     datasourceId: string,
@@ -176,22 +172,12 @@ export class OAuthCallbackController {
 
     try {
       // Fetch data from QuickBooks
+      // Default to sandbox since we don't have user context in background job
+      const useSandbox = true;
       const [accounts, customers, vendors] = await Promise.all([
-        this.quickbooksService.getAccounts(
-          accessToken,
-          realmId,
-          this.useSandbox,
-        ),
-        this.quickbooksService.getCustomers(
-          accessToken,
-          realmId,
-          this.useSandbox,
-        ),
-        this.quickbooksService.getVendors(
-          accessToken,
-          realmId,
-          this.useSandbox,
-        ),
+        this.quickbooksService.getAccounts(accessToken, realmId, useSandbox),
+        this.quickbooksService.getCustomers(accessToken, realmId, useSandbox),
+        this.quickbooksService.getVendors(accessToken, realmId, useSandbox),
       ]);
 
       this.logger.log(

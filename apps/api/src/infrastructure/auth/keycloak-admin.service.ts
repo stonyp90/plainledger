@@ -185,17 +185,8 @@ export class KeycloakAdminService
       requiredActions: [],
     };
 
-    // If password provided, set credentials
-    if (input.password) {
-      userRep.credentials = [
-        {
-          type: "password",
-          value: input.password,
-          temporary: input.temporaryPassword ?? false,
-        },
-      ];
-    } else {
-      // User will need to set password via email
+    // If no password provided, user will need to set password via email
+    if (!input.password) {
       userRep.requiredActions = ["UPDATE_PASSWORD"];
     }
 
@@ -208,7 +199,8 @@ export class KeycloakAdminService
     }
 
     try {
-      // Create user
+      // Create user WITHOUT password first (passwords must be set separately in Keycloak)
+      // Including credentials in the create payload doesn't reliably set the password
       const response = await this.adminClient.users.create({
         realm: this.realm,
         ...userRep,
@@ -216,6 +208,20 @@ export class KeycloakAdminService
 
       const userId = response.id;
       this.logger.log(`User created with ID: ${userId}`);
+
+      // Set password separately if provided (this is the correct way in Keycloak)
+      if (input.password) {
+        await this.adminClient.users.resetPassword({
+          realm: this.realm,
+          id: userId,
+          credential: {
+            type: "password",
+            value: input.password,
+            temporary: input.temporaryPassword ?? false,
+          },
+        });
+        this.logger.log(`Password set for user: ${userId}`);
+      }
 
       // Assign roles if specified
       if (input.roles && input.roles.length > 0) {
@@ -653,6 +659,12 @@ export class KeycloakAdminService
       this.logger.log(
         "Enabling Direct Access Grants on plainledger-web client...",
       );
+
+      if (!client.id) {
+        this.logger.warn("Client ID is missing - cannot update");
+        return;
+      }
+
       await this.adminClient.clients.update(
         { realm: this.realm, id: client.id },
         {

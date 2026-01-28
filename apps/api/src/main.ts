@@ -22,10 +22,38 @@ async function bootstrap() {
   // Global exception filter for domain errors
   app.useGlobalFilters(new DomainExceptionFilter());
 
+  // Set global prefix for all routes except health check
+  // This aligns with ALB routing rules that route /api/* to API service
+  app.setGlobalPrefix("api", {
+    exclude: ["/health"],
+  });
+
   // CORS
+  // Support multiple origins: main domain, www subdomain, and localhost for development
+  const corsOrigins = process.env.CORS_ORIGIN?.split(",") || [
+    "http://localhost:5173",
+  ];
+  // If production domain is set, also include www subdomain
+  if (
+    process.env.CORS_ORIGIN &&
+    !process.env.CORS_ORIGIN.includes("localhost")
+  ) {
+    const mainDomain = process.env.CORS_ORIGIN.split(",")[0].trim();
+    if (mainDomain && !mainDomain.includes("www.")) {
+      corsOrigins.push(mainDomain.replace("https://", "https://www."));
+    }
+  }
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
+    origin: corsOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Tenant-ID",
+      "X-Request-ID",
+    ],
   });
 
   // Swagger API Documentation

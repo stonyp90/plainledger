@@ -168,7 +168,7 @@
     {
       "clientId": "plainledger-api",
       "name": "PlainLedger API Backend",
-      "description": "NestJS API backend service",
+      "description": "NestJS API backend service - Uses Direct Access Grants for custom login UI",
       "enabled": true,
       "publicClient": false,
       "directAccessGrantsEnabled": true,
@@ -186,7 +186,24 @@
         "http://localhost:3001",
         "https://api.plainledger.ca",
         "+"
-      ]
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "attributes": {
+        "access.token.lifespan": "300",
+        "client.secret.creation.time": "0"
+      }
     }
   ],
   "roles": {
