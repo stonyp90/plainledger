@@ -9,7 +9,9 @@ import {
   HttpStatus,
   Query,
   Logger,
+  Res,
 } from "@nestjs/common";
+import { Response } from "express";
 import {
   ApiTags,
   ApiOperation,
@@ -170,15 +172,65 @@ export class DataSourceController {
     return { url, state };
   }
 
+  /**
+   * GET handler for OAuth callback (browser redirect from OAuth provider)
+   * QuickBooks and other providers redirect with GET request containing query params
+   */
+  @Public()
+  @Get(":provider/oauth/callback")
+  @ApiOperation({ summary: "Handle OAuth callback redirect from provider (GET)" })
+  @ApiResponse({ status: 302, description: "Redirect to frontend with connection result" })
+  async handleOAuthCallbackGet(
+    @Param("provider") provider: string,
+    @Query("code") code: string,
+    @Query("state") state: string,
+    @Query("realmId") realmId: string,
+    @Query("error") error: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log(`OAuth GET callback received for ${provider}, state: ${state}, realmId: ${realmId}`);
+    
+    const frontendUrl = this.configService.get<string>("FRONTEND_URL") || "https://plainledger.ca";
+    
+    // Handle OAuth errors
+    if (error) {
+      this.logger.error(`OAuth error for ${provider}: ${error}`);
+      res.redirect(`${frontendUrl}/connections?error=${encodeURIComponent(error)}&provider=${provider}`);
+      return;
+    }
+
+    try {
+      // Process the callback using the existing logic
+      const result = await this.processOAuthCallback(provider, { code, state, realmId });
+      
+      // Redirect to frontend with success
+      res.redirect(`${frontendUrl}/connections?success=true&provider=${provider}&datasourceId=${result.id}&company=${encodeURIComponent(result.companyName || '')}`);
+    } catch (err) {
+      this.logger.error(`OAuth callback processing failed: ${err}`);
+      res.redirect(`${frontendUrl}/connections?error=${encodeURIComponent(String(err))}&provider=${provider}`);
+    }
+  }
+
   @Public()
   @Post(":provider/oauth/callback")
-  @ApiOperation({ summary: "Handle OAuth callback from provider" })
+  @ApiOperation({ summary: "Handle OAuth callback from provider (POST)" })
   @ApiResponse({ status: 201, description: "Connection established" })
   async handleOAuthCallback(
     @Param("provider") provider: string,
     @Body() callback: OAuthCallbackDto,
   ): Promise<DataSourceResponseDto> {
-    this.logger.log(`OAuth callback received for ${provider}`);
+    this.logger.log(`OAuth POST callback received for ${provider}`);
+    return this.processOAuthCallback(provider, callback);
+  }
+
+  /**
+   * Process OAuth callback (shared logic for GET and POST handlers)
+   */
+  private async processOAuthCallback(
+    provider: string,
+    callback: OAuthCallbackDto,
+  ): Promise<DataSourceResponseDto> {
+    this.logger.log(`Processing OAuth callback for ${provider}`);
 
     let companyName = `${provider.charAt(0).toUpperCase() + provider.slice(1)} Company`;
     const datasourceId = crypto.randomUUID();

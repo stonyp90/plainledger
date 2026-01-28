@@ -10,14 +10,10 @@ import {
   ArrowRight,
   Check,
   Shield,
-  Play,
   Menu,
   X,
   Lock,
   Database,
-  Calculator,
-  Info,
-  Clock,
   Sparkles,
   Cpu,
   FileCheck,
@@ -26,13 +22,13 @@ import {
   TrendingUp,
   Eye,
   RefreshCw,
-  BarChart3,
   ArrowUpRight,
   ArrowDownRight,
-  CheckCircle,
-  AlertTriangle,
   Gauge,
   Brain,
+  Calendar,
+  Target,
+  BarChart3,
 } from 'lucide-react';
 
 // =====================================================
@@ -300,15 +296,273 @@ function AnimatedGauge({
 }
 
 // =====================================================
-// HERO DASHBOARD PREVIEW COMPONENT
+// ANIMATED BAR CHART COMPONENT
+// =====================================================
+
+function AnimatedBarChart({
+  data,
+  labels,
+  delay = 500,
+  height = 100,
+  trigger = true,
+}: {
+  data: { actual: number; budget: number }[];
+  labels: string[];
+  delay?: number;
+  height?: number;
+  trigger?: boolean;
+}) {
+  const [progress, setProgress] = useState(0);
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  
+  useEffect(() => {
+    if (!trigger) return;
+    setProgress(0);
+    
+    const timeoutId = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1200;
+      
+      const animateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setProgress(eased);
+        
+        if (p < 1) {
+          requestAnimationFrame(animateProgress);
+        }
+      };
+      
+      requestAnimationFrame(animateProgress);
+    }, delay);
+    
+    return () => clearTimeout(timeoutId);
+  }, [delay, trigger]);
+  
+  const maxValue = Math.max(...data.map(d => Math.max(d.actual, d.budget)));
+  
+  return (
+    <div className="w-full">
+      <div className="flex items-end gap-1" style={{ height }}>
+        {data.map((d, i) => {
+          const actualHeight = (d.actual / maxValue) * height * progress;
+          const budgetHeight = (d.budget / maxValue) * height * progress;
+          const isAboveBudget = d.actual > d.budget;
+          const isHovered = hoveredBar === i;
+          
+          return (
+            <div 
+              key={i} 
+              className="flex-1 flex flex-col items-center gap-0.5 relative cursor-pointer"
+              style={{ transitionDelay: `${i * 50}ms` }}
+              onMouseEnter={() => setHoveredBar(i)}
+              onMouseLeave={() => setHoveredBar(null)}
+            >
+              {/* Tooltip on hover */}
+              {isHovered && (
+                <div 
+                  className="absolute -top-16 left-1/2 -translate-x-1/2 px-2 py-1.5 rounded-lg text-[9px] whitespace-nowrap z-10 shadow-lg"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    border: '1px solid rgb(var(--color-border))',
+                    color: 'rgb(var(--color-text))'
+                  }}
+                >
+                  <div className="font-semibold mb-1">{labels[i]}</div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: isAboveBudget ? '#10b981' : '#94a3b8' }} />
+                    <span>Actual: ${d.actual}K</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#cbd5e1' }} />
+                    <span>Budget: ${d.budget}K</span>
+                  </div>
+                  {isAboveBudget && (
+                    <div className="text-[8px] mt-1 font-medium" style={{ color: '#10b981' }}>
+                      +{Math.round((d.actual - d.budget) / d.budget * 100)}% above target
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="w-full flex gap-0.5 h-full items-end justify-center">
+                <div 
+                  className={`w-[45%] rounded-t transition-all duration-500 ${isHovered ? 'scale-110' : ''}`}
+                  style={{ 
+                    height: actualHeight,
+                    backgroundColor: isAboveBudget ? '#10b981' : '#94a3b8',
+                    boxShadow: isAboveBudget && isHovered ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
+                  }}
+                />
+                <div 
+                  className={`w-[45%] rounded-t transition-all duration-500 ${isHovered ? 'scale-110' : ''}`}
+                  style={{ 
+                    height: budgetHeight,
+                    backgroundColor: '#cbd5e1',
+                    opacity: 0.6,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      <div className="flex justify-between mt-2">
+        {labels.map((label, i) => (
+          <span 
+            key={i} 
+            className={`text-[8px] sm:text-[9px] font-medium transition-all ${hoveredBar === i ? 'scale-110' : ''}`}
+            style={{ color: hoveredBar === i ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))' }}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// ANIMATED AREA CHART COMPONENT (Runway-style)
+// =====================================================
+
+function AnimatedAreaChart({
+  data,
+  color,
+  height = 50,
+  delay = 300,
+  trigger = true,
+  showDashed = false,
+}: {
+  data: number[];
+  color: string;
+  height?: number;
+  delay?: number;
+  trigger?: boolean;
+  showDashed?: boolean;
+}) {
+  const [progress, setProgress] = useState(0);
+  
+  useEffect(() => {
+    if (!trigger) return;
+    setProgress(0);
+    
+    const timeoutId = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1200;
+      
+      const animateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        setProgress(p);
+        
+        if (p < 1) {
+          requestAnimationFrame(animateProgress);
+        }
+      };
+      
+      requestAnimationFrame(animateProgress);
+    }, delay);
+    
+    return () => clearTimeout(timeoutId);
+  }, [delay, trigger]);
+
+  const width = 120;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  
+  const points = data.map((value, i) => ({
+    x: (i / (data.length - 1)) * width,
+    y: height - ((value - min) / range) * (height - 10) - 5,
+  }));
+  
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = `${linePath} L ${width} ${height} L 0 ${height} Z`;
+
+  // For dashed projection line (last 3 points)
+  const solidPoints = points.slice(0, -3);
+  const dashedPoints = points.slice(-4);
+  const solidPath = solidPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const dashedPath = dashedPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <defs>
+        <linearGradient id={`area-gradient-${color.replace(/[^a-z0-9]/gi, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+      
+      {/* Area fill */}
+      <path
+        d={areaPath}
+        fill={`url(#area-gradient-${color.replace(/[^a-z0-9]/gi, '')})`}
+        style={{ opacity: progress }}
+      />
+      
+      {/* Main line */}
+      {showDashed ? (
+        <>
+          <path
+            d={solidPath}
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{ opacity: progress }}
+          />
+          <path
+            d={dashedPath}
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray="4 3"
+            style={{ opacity: progress * 0.7 }}
+          />
+        </>
+      ) : (
+        <path
+          d={linePath}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            strokeDasharray: 500,
+            strokeDashoffset: 500 * (1 - progress),
+          }}
+        />
+      )}
+      
+      {/* Current value dot */}
+      {progress > 0.8 && (
+        <circle
+          cx={points[showDashed ? points.length - 4 : points.length - 1].x}
+          cy={points[showDashed ? points.length - 4 : points.length - 1].y}
+          r="3"
+          fill={color}
+          stroke="white"
+          strokeWidth="1.5"
+        />
+      )}
+    </svg>
+  );
+}
+
+// =====================================================
+// HERO DASHBOARD PREVIEW COMPONENT (Runway-inspired)
 // =====================================================
 
 function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: boolean; theme: typeof colors.light; isEn: boolean; isVisible: boolean }) {
-  const revenue = useAnimatedCounter(847, 1500, 400, isVisible);
-  const savings = useAnimatedCounter(156, 1500, 600, isVisible);
   const [showElements, setShowElements] = useState(false);
-  
-  const revenueData = [42, 58, 51, 67, 54, 78, 72, 89, 76, 94, 88, 102];
+  const [selectedIndustry, setSelectedIndustry] = useState(0);
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   
   useEffect(() => {
     if (isVisible) {
@@ -317,20 +571,87 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
     }
   }, [isVisible]);
 
+  // Industry-specific configurations
+  const industries = [
+    { 
+      id: 'restaurant',
+      name: isEn ? 'Restaurant' : 'Restauration',
+      icon: 'R',
+      iconColor: theme.green,
+      kpis: [
+        { label: isEn ? 'Revenue' : 'Revenus', value: '$847K', data: [42, 45, 48, 52, 58, 54, 62, 68, 72, 78, 82, 85], projection: true },
+        { label: isEn ? 'Food Cost %' : 'Coût nourriture', value: '28.5%', data: [32, 30, 29, 31, 28, 29, 27, 28, 29, 28, 28.5, 28], projection: false },
+        { label: isEn ? 'Labor Cost %' : 'Coût M-O', value: '24.2%', data: [26, 25, 24, 25, 24, 23, 24, 25, 24, 24, 24, 24.2], projection: false },
+        { label: isEn ? 'Prime Cost' : 'Coût principal', value: '52.7%', data: [58, 55, 53, 56, 52, 52, 51, 53, 53, 52, 52.5, 52.7], projection: true },
+      ],
+      benchmarks: [
+        { metric: isEn ? 'Food Cost %' : 'Coût nourriture %', yours: '28.5%', target: '25-35%', status: 'good' },
+        { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '24.2%', target: '20-30%', status: 'good' },
+        { metric: isEn ? 'Prime Cost %' : 'Coût principal %', yours: '52.7%', target: '55-65%', status: 'excellent' },
+        { metric: isEn ? 'Net Margin' : 'Marge nette', yours: '8.2%', target: '6-9%', status: 'good' },
+      ]
+    },
+    { 
+      id: 'realestate',
+      name: isEn ? 'Real Estate' : 'Immobilier',
+      icon: 'RE',
+      iconColor: theme.gold,
+      kpis: [
+        { label: isEn ? 'NOI' : 'Bénéfice net', value: '$1.2M', data: [85, 88, 92, 95, 98, 102, 108, 112, 115, 118, 120, 124], projection: true },
+        { label: isEn ? 'Occupancy' : 'Occupation', value: '94.5%', data: [88, 89, 90, 91, 92, 93, 93, 94, 94, 94, 94.5, 95], projection: true },
+        { label: isEn ? 'Cap Rate' : 'Taux cap.', value: '6.8%', data: [7.2, 7.1, 7.0, 6.9, 6.9, 6.8, 6.8, 6.8, 6.7, 6.8, 6.8, 6.8], projection: false },
+        { label: isEn ? 'Cash-on-Cash' : 'Rendement', value: '12.4%', data: [10, 10.5, 11, 11.2, 11.5, 11.8, 12, 12.1, 12.2, 12.3, 12.4, 12.5], projection: true },
+      ],
+      benchmarks: [
+        { metric: isEn ? 'Occupancy Rate' : 'Taux occupation', yours: '94.5%', target: '90-95%', status: 'good' },
+        { metric: isEn ? 'Cap Rate' : 'Taux capitalisation', yours: '6.8%', target: '5-8%', status: 'good' },
+        { metric: isEn ? 'Cash-on-Cash' : 'Rendement cash', yours: '12.4%', target: '8-12%', status: 'excellent' },
+        { metric: 'DSC Ratio', yours: '1.35', target: '>1.25', status: 'good' },
+      ]
+    },
+    { 
+      id: 'saas',
+      name: 'SaaS / Tech',
+      icon: 'S',
+      iconColor: theme.green,
+      kpis: [
+        { label: 'ARR', value: '$2.8M', data: [1.5, 1.7, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8], projection: true },
+        { label: isEn ? 'Cash' : 'Trésorerie', value: '$4.6M', data: [3.2, 3.4, 3.6, 3.8, 4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.55, 4.6], projection: true },
+        { label: isEn ? 'Avg ACV' : 'ACV moyen', value: '$23K', data: [18, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 23], projection: false },
+        { label: 'Runway', value: isEn ? '14 Mo' : '14 mois', data: [18, 17, 16, 16, 15, 15, 14, 14, 14, 14, 14, 14], projection: true },
+      ],
+      benchmarks: [
+        { metric: isEn ? 'Net Retention' : 'Rétention nette', yours: '115%', target: '>100%', status: 'excellent' },
+        { metric: isEn ? 'Gross Margin' : 'Marge brute', yours: '78%', target: '70-85%', status: 'good' },
+        { metric: 'CAC Payback', yours: isEn ? '12 mo' : '12 mois', target: '<18 mo', status: 'good' },
+        { metric: isEn ? 'Magic Number' : 'Nombre magique', yours: '0.85', target: '>0.75', status: 'good' },
+      ]
+    },
+  ];
+
+  const current = industries[selectedIndustry];
+
+  // Strategic roadmap items
+  const roadmapItems = [
+    { plan: isEn ? 'Q1 Expansion' : 'Expansion Q1', start: 0, end: 30, color: theme.green },
+    { plan: isEn ? 'Cost Optimization' : 'Optimisation coûts', start: 20, end: 60, color: theme.gold },
+    { plan: isEn ? 'New Revenue Stream' : 'Nouveau revenu', start: 50, end: 100, color: theme.green },
+  ];
+
   return (
     <div 
-      className="relative w-full max-w-2xl mx-auto rounded-xl overflow-hidden shadow-2xl"
+      className="relative w-full max-w-5xl mx-auto rounded-xl overflow-hidden shadow-2xl"
       style={{ 
-        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-        border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(16, 185, 129, 0.2)'}`,
+        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.98)' : 'rgba(255, 255, 255, 0.99)',
+        border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.6)'}`,
       }}
     >
-      {/* Browser Chrome */}
+      {/* Top Bar */}
       <div 
-        className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b"
+        className="h-10 sm:h-12 flex items-center px-3 sm:px-4 gap-3 border-b"
         style={{ 
-          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(248, 250, 252, 0.9)',
-          borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.6)'
+          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(250, 250, 250, 0.95)',
+          borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
         }}
       >
         <div className="flex gap-1.5">
@@ -338,160 +659,388 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
-        <div className="flex-1 flex justify-center">
+        
+        {/* Industry Selector Dropdown */}
+        <div 
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-black/5 transition-colors"
+          style={{ backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.8)' }}
+        >
+          <span className="text-sm">{current.icon}</span>
+          <span className="text-[10px] sm:text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+            {current.name}
+          </span>
+          <ArrowDownRight className="w-3 h-3 rotate-45" style={{ color: 'rgb(var(--color-text-muted))' }} />
+        </div>
+        
+        <div className="flex-1" />
+        
+        <div className="hidden sm:flex items-center gap-2">
           <div 
-            className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
-            style={{ 
-              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.6)' : 'rgba(241, 245, 249, 0.9)',
-              color: 'rgb(var(--color-text-muted))'
-            }}
+            className="px-3 py-1 rounded-md text-[10px] font-medium"
+            style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
           >
-            app.plainledger.ca/dashboard
+            {isEn ? 'Live Data' : 'Temps réel'}
+          </div>
+          <div 
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+            style={{ backgroundColor: theme.green }}
+          >
+            JD
           </div>
         </div>
       </div>
       
-      {/* Dashboard Content */}
-      <div className="p-4 sm:p-6">
-        {/* KPI Cards Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {[
-            { 
-              label: isEn ? 'Revenue MTD' : 'Revenus MTD', 
-              value: `$${revenue.toLocaleString()}K`, 
-              change: '+12.4%', 
-              up: true,
-              sparkData: revenueData,
-              color: theme.green
-            },
-            { 
-              label: isEn ? 'Cash Position' : 'Trésorerie', 
-              value: '$234K', 
-              change: '+8.2%', 
-              up: true,
-              sparkData: [35, 42, 38, 45, 52, 48, 55, 60, 58, 65, 62, 68],
-              color: theme.green
-            },
-            { 
-              label: isEn ? 'Working Cap.' : 'Fonds roul.', 
-              value: `$${savings.toLocaleString()}K`, 
-              change: '+5.6%', 
-              up: true,
-              sparkData: [45, 48, 52, 55, 50, 58, 62, 60, 65, 70, 68, 75],
-              color: theme.gold
-            },
-            { 
-              label: isEn ? 'Net Margin' : 'Marge nette', 
-              value: '18.5%', 
-              change: '-2.1%', 
-              up: false,
-              sparkData: [22, 20, 21, 19, 20, 18, 19, 18, 17, 18, 19, 18.5],
-              color: theme.gold
-            },
-          ].map((kpi, i) => (
+      <div className="flex">
+        {/* Sidebar - Hidden on mobile */}
+        <div 
+          className="hidden md:flex flex-col w-48 border-r py-3 px-2"
+          style={{ 
+            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(250, 250, 250, 0.8)',
+            borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
+          }}
+        >
+          {/* Main Navigation */}
+          <div className="text-[8px] font-bold uppercase tracking-wider px-2 mb-2" style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}>
+            {isEn ? 'Navigation' : 'Navigation'}
+          </div>
+          
+          {/* Exec Dashboard - Active with sub-items */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '0ms' }}>
             <div 
-              key={i} 
-              className={`p-3 rounded-xl transition-all duration-700 ${
-                showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-semibold cursor-pointer"
               style={{ 
-                backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.5)'}`,
-                transitionDelay: `${i * 100 + 200}ms`
+                backgroundColor: `${theme.green}15`,
+                color: theme.green,
               }}
             >
-              <div className="flex items-start justify-between mb-1">
-                <span className="text-[8px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {kpi.label}
-                </span>
-                <div className={`flex items-center gap-0.5 text-[9px] font-bold`} style={{ color: kpi.up ? theme.green : '#ef4444' }}>
-                  {kpi.up ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
-                  {kpi.change}
+              <BarChart3 className="w-3.5 h-3.5" />
+              {isEn ? 'Exec Dashboard' : 'Tableau exécutif'}
+            </div>
+            {/* Sub-items */}
+            <div className="ml-5 mt-1 space-y-0.5">
+              {[
+                { label: isEn ? 'Overview' : 'Aperçu', active: true },
+                { label: isEn ? 'Cash Flow' : 'Flux de trésorerie', active: false },
+                { label: isEn ? 'P&L Analysis' : 'Analyse P&L', active: false },
+              ].map((sub, j) => (
+                <div 
+                  key={j}
+                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  style={{ 
+                    color: sub.active ? theme.green : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
+                    backgroundColor: sub.active ? `${theme.green}08` : 'transparent',
+                    borderLeft: `2px solid ${sub.active ? theme.green : 'transparent'}`
+                  }}
+                >
+                  {sub.label}
                 </div>
-              </div>
-              
-              <div className="text-sm sm:text-base lg:text-lg font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                {kpi.value}
-              </div>
-              
-              <AnimatedSparkline 
-                data={kpi.sparkData} 
-                color={kpi.color}
-                delay={300 + i * 100}
-                width={80}
-                height={24}
-                trigger={isVisible}
-              />
-            </div>
-          ))}
-        </div>
-        
-        {/* Bottom Row - Health Score + Alert */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Health Score */}
-          <div 
-            className={`p-4 rounded-xl text-center transition-all duration-700 ${
-              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-            style={{ 
-              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.5)'}`,
-              transitionDelay: '600ms'
-            }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Gauge className="w-4 h-4" style={{ color: theme.green }} />
-              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Health Score' : 'Score santé'}
-              </span>
-            </div>
-            <div className="flex justify-center">
-              <AnimatedGauge 
-                value={87} 
-                size={80} 
-                strokeWidth={6}
-                color={theme.green}
-                delay={700}
-                trigger={isVisible}
-              />
+              ))}
             </div>
           </div>
           
-          {/* AI Alert */}
+          {/* Industry KPIs */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '50ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium cursor-pointer hover:bg-opacity-50 transition-colors"
+              style={{ 
+                color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
+              }}
+            >
+              <TrendingUp className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+              {isEn ? 'Industry KPIs' : 'KPIs sectoriels'}
+            </div>
+            <div className="ml-5 mt-1 space-y-0.5">
+              {[
+                { label: isEn ? 'Benchmarks' : 'Références' },
+                { label: isEn ? 'Trends' : 'Tendances' },
+              ].map((sub, j) => (
+                <div 
+                  key={j}
+                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                >
+                  {sub.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Scenarios */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '100ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium cursor-pointer hover:bg-opacity-50 transition-colors"
+              style={{ 
+                color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
+              }}
+            >
+              <Target className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+              {isEn ? 'Scenarios' : 'Scénarios'}
+            </div>
+            <div className="ml-5 mt-1 space-y-0.5">
+              {[
+                { label: isEn ? 'What-If' : 'Simulation' },
+                { label: isEn ? 'Forecasts' : 'Prévisions' },
+              ].map((sub, j) => (
+                <div 
+                  key={j}
+                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                >
+                  {sub.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Reports */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '150ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium cursor-pointer hover:bg-opacity-50 transition-colors"
+              style={{ 
+                color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
+              }}
+            >
+              <FileCheck className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Reports' : 'Rapports'}
+            </div>
+            <div className="ml-5 mt-1 space-y-0.5">
+              {[
+                { label: isEn ? 'Monthly' : 'Mensuel' },
+                { label: isEn ? 'Custom' : 'Personnalisé' },
+              ].map((sub, j) => (
+                <div 
+                  key={j}
+                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                >
+                  {sub.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Industries Section */}
+          <div className="mt-auto pt-3 border-t" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+            <div className="text-[8px] font-bold uppercase tracking-wider px-2 mb-2" style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}>
+              {isEn ? 'Your Industry' : 'Votre industrie'}
+            </div>
+            {industries.map((ind, i) => (
+              <div 
+                key={i}
+                onClick={() => setSelectedIndustry(i)}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] cursor-pointer transition-all ${
+                  selectedIndustry === i ? 'font-semibold' : ''
+                }`}
+                style={{ 
+                  backgroundColor: selectedIndustry === i ? `${ind.iconColor}12` : 'transparent',
+                  color: selectedIndustry === i ? ind.iconColor : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
+                }}
+              >
+                <div 
+                  className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold"
+                  style={{ 
+                    backgroundColor: selectedIndustry === i ? `${ind.iconColor}25` : (isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'),
+                    color: selectedIndustry === i ? ind.iconColor : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
+                  }}
+                >
+                  {ind.icon}
+                </div>
+                {ind.name}
+              </div>
+            ))}
+          </div>
+          
+          {/* AI Status */}
           <div 
-            className={`p-4 rounded-xl transition-all duration-700 ${
+            className="mt-3 p-2 rounded-md"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
+              border: `1px solid ${theme.green}20`
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: theme.green }} />
+              <span className="text-[9px] font-semibold" style={{ color: theme.green }}>
+                {isEn ? 'AI Active' : 'IA Active'}
+              </span>
+            </div>
+            <p className="text-[8px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+              {isEn ? 'Analyzing your data in real-time' : 'Analyse en temps réel'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-1 p-3 sm:p-4 min-h-[400px]">
+          {/* Breadcrumb */}
+          <div className={`flex items-center gap-2 mb-4 text-[10px] transition-all duration-500 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
+            <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Overview' : 'Aperçu'}</span>
+            <span style={{ color: 'rgb(var(--color-text-muted))' }}>›</span>
+            <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Exec Dashboard' : 'Tableau exécutif'}</span>
+          </div>
+          
+          {/* KPI Cards Row - Runway Style */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            {current.kpis.map((kpi, i) => (
+              <div 
+                key={i}
+                className={`p-3 rounded-xl transition-all duration-500 cursor-pointer hover:shadow-lg ${
+                  showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                }`}
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(255, 255, 255, 0.9)',
+                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                  transitionDelay: `${i * 100 + 200}ms`
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                    {kpi.label}
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold" style={{ color: theme.green }}>
+                    {kpi.value}
+                  </span>
+                </div>
+                <AnimatedAreaChart 
+                  data={kpi.data}
+                  color={theme.green}
+                  height={45}
+                  delay={400 + i * 100}
+                  trigger={isVisible}
+                  showDashed={kpi.projection}
+                />
+              </div>
+            ))}
+          </div>
+          
+          {/* Strategic Roadmap */}
+          <div 
+            className={`p-3 sm:p-4 rounded-xl mb-4 transition-all duration-700 ${
               showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{ 
-              backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : 'rgba(254, 243, 199, 0.6)',
-              border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(251, 191, 36, 0.4)'}`,
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(250, 250, 250, 0.9)',
+              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
+              transitionDelay: '500ms'
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Strategic Roadmap' : 'Feuille de route stratégique'}
+              </h4>
+              <button 
+                className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
+                style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
+              >
+                <Sparkles className="w-3 h-3" />
+                {isEn ? 'Customize' : 'Personnaliser'}
+              </button>
+            </div>
+            
+            {/* Timeline Header */}
+            <div className="flex mb-2">
+              <div className="w-28 sm:w-36" />
+              <div className="flex-1 flex justify-between text-[8px] sm:text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <span>Q1 '26</span>
+                <span>Q2 '26</span>
+                <span>Q3 '26</span>
+                <span>Q4 '26</span>
+              </div>
+            </div>
+            
+            {/* Roadmap Items */}
+            {roadmapItems.map((item, i) => (
+              <div key={i} className="flex items-center mb-2">
+                <div className="w-28 sm:w-36 text-[9px] sm:text-[10px] font-medium pr-2 truncate" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {item.plan}
+                </div>
+                <div className="flex-1 h-6 relative rounded overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)' }}>
+                  <div 
+                    className="absolute top-1 bottom-1 rounded transition-all duration-1000"
+                    style={{ 
+                      left: `${item.start}%`,
+                      width: showElements ? `${item.end - item.start}%` : '0%',
+                      backgroundColor: item.color,
+                      opacity: 0.8,
+                      transitionDelay: `${600 + i * 150}ms`
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Industry Benchmarks Table */}
+          <div 
+            className={`rounded-xl overflow-hidden transition-all duration-700 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{ 
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(255, 255, 255, 0.95)',
+              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
               transitionDelay: '700ms'
             }}
           >
-            <div className="flex items-start gap-2">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: `${theme.gold}20` }}
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+              <h4 className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Industry Benchmarks' : 'Références sectorielles'} - {current.name}
+              </h4>
+              <button 
+                className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
+                style={{ backgroundColor: `${theme.gold}15`, color: theme.goldDark }}
               >
-                <Brain className="w-4 h-4" style={{ color: theme.goldDark }} />
-              </div>
-              <div>
-                <p className="text-[10px] sm:text-xs font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'AI Alert' : 'Alerte IA'}
-                </p>
-                <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Marketing expense 29% over budget' : 'Marketing dépasse le budget de 29%'}
-                </p>
-                <div className="flex items-center gap-1 mt-2">
+                <Brain className="w-3 h-3" />
+                {isEn ? 'AI Analyze' : 'Analyser IA'}
+              </button>
+            </div>
+            
+            {/* Table Header */}
+            <div 
+              className="grid grid-cols-4 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
+              style={{ backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)' }}
+            >
+              <span style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
+              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Your Value' : 'Votre valeur'}</span>
+              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
+            </div>
+            
+            {/* Table Rows */}
+            {current.benchmarks.map((row, i) => (
+              <div 
+                key={i}
+                className={`grid grid-cols-4 text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all ${
+                  hoveredRow === i ? 'bg-black/5' : ''
+                }`}
+                style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)' }}
+                onMouseEnter={() => setHoveredRow(i)}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
+                <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{row.metric}</span>
+                <span className="text-center font-semibold" style={{ color: theme.green }}>{row.yours}</span>
+                <span 
+                  className="text-center px-2 py-0.5 rounded-full mx-auto"
+                  style={{ 
+                    backgroundColor: `${theme.green}10`,
+                    color: theme.green,
+                    fontSize: '9px'
+                  }}
+                >
+                  {row.target}
+                </span>
+                <div className="flex justify-end items-center gap-1">
                   <span 
-                    className="text-[8px] px-1.5 py-0.5 rounded-full"
-                    style={{ backgroundColor: `${theme.gold}20`, color: theme.goldDark }}
+                    className="px-1.5 py-0.5 rounded text-[8px] font-medium"
+                    style={{ 
+                      backgroundColor: row.status === 'excellent' ? `${theme.green}20` : `${theme.gold}15`,
+                      color: row.status === 'excellent' ? theme.green : theme.goldDark,
+                    }}
                   >
-                    97% {isEn ? 'confidence' : 'confiance'}
+                    {row.status === 'excellent' ? '★ ' : ''}{row.status === 'excellent' ? (isEn ? 'Excellent' : 'Excellent') : (isEn ? 'On Track' : 'En ligne')}
                   </span>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
@@ -523,243 +1072,6 @@ const colors = {
     navBg: 'rgba(15, 23, 42, 0.92)',
   }
 };
-
-// ROI Calculator Section Component
-function ROICalculatorSection({ 
-  isEn, 
-  isDark, 
-  theme, 
-  onScheduleCall 
-}: { 
-  isEn: boolean; 
-  isDark: boolean; 
-  theme: typeof colors.light; 
-  onScheduleCall: () => void;
-}) {
-  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(500000);
-  const [transactionVolume, setTransactionVolume] = useState<number>(1000);
-  const { ref: sectionRef, isInView } = useInView();
-  
-  // ROI calculations based on industry averages
-  const estimatedSavings = useMemo(() => {
-    const anomalyRate = 0.02; // 2% error rate industry average
-    const detectionAccuracy = 0.97; // Our 97% detection rate
-    const avgErrorValue = monthlyRevenue * 0.005; // 0.5% of revenue per error
-    const errorsPerMonth = Math.floor(transactionVolume * anomalyRate);
-    const detectedErrors = Math.floor(errorsPerMonth * detectionAccuracy);
-    const monthlySavings = detectedErrors * avgErrorValue;
-    const yearlySavings = monthlySavings * 12;
-    const timeSavedHours = Math.floor(transactionVolume * 0.02); // 2 min per 100 transactions
-    
-    return {
-      monthlySavings,
-      yearlySavings,
-      detectedErrors,
-      timeSavedHours,
-    };
-  }, [monthlyRevenue, transactionVolume]);
-  
-  // Animated counters for stats
-  const animatedYearlySavings = useAnimatedCounter(Math.floor(estimatedSavings.yearlySavings), 1500, 300, isInView);
-  const animatedMonthlySavings = useAnimatedCounter(Math.floor(estimatedSavings.monthlySavings), 1200, 400, isInView);
-  const animatedErrors = useAnimatedCounter(estimatedSavings.detectedErrors, 1000, 500, isInView);
-  const animatedHours = useAnimatedCounter(estimatedSavings.timeSavedHours, 1000, 600, isInView);
-
-  return (
-    <section 
-      ref={sectionRef}
-      id="roi" 
-      className="py-16 sm:py-20 px-6 relative"
-      style={{ 
-        background: isDark 
-          ? 'rgba(15, 23, 42, 0.5)' 
-          : 'linear-gradient(180deg, rgba(240, 253, 244, 0.6) 0%, rgba(254, 252, 232, 0.4) 50%, rgba(255, 255, 255, 0.8) 100%)'
-      }}
-    >
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div 
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
-            style={{ 
-              backgroundColor: `${theme.gold}1a`,
-              color: theme.goldDark
-            }}
-          >
-            <Calculator className="w-4 h-4" />
-            {isEn ? 'ROI Calculator' : 'Calculateur ROI'}
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Calculate Your Potential Savings' : 'Calculez vos économies potentielles'}
-          </h2>
-          <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {isEn 
-              ? 'See how much you could save with automated anomaly detection and industry benchmarking.'
-              : 'Découvrez combien vous pourriez économiser avec la détection automatisée d\'anomalies et le benchmarking sectoriel.'}
-          </p>
-        </div>
-
-        {/* Calculator Card */}
-        <div 
-          className="rounded-2xl overflow-hidden shadow-lg"
-          style={{ 
-            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-            border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)'}`,
-          }}
-        >
-          <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.5)' }}>
-            {/* Input Side */}
-            <div className="p-8">
-              <h3 className="font-semibold text-lg mb-6" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Your Business' : 'Votre entreprise'}
-              </h3>
-              
-              {/* Monthly Revenue Slider */}
-              <div className="mb-8">
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn ? 'Monthly Revenue' : 'Revenus mensuels'}
-                  </label>
-                  <span className="text-sm font-semibold" style={{ color: theme.green }}>
-                    ${monthlyRevenue.toLocaleString()}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="50000"
-                  max="5000000"
-                  step="50000"
-                  value={monthlyRevenue}
-                  onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                  style={{ 
-                    background: `linear-gradient(to right, ${theme.green} ${((monthlyRevenue - 50000) / 4950000) * 100}%, ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'} ${((monthlyRevenue - 50000) / 4950000) * 100}%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  <span>$50K</span>
-                  <span>$5M+</span>
-                </div>
-              </div>
-              
-              {/* Transaction Volume Slider */}
-              <div className="mb-6">
-                <div className="flex justify-between mb-2">
-                  <label className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn ? 'Monthly Transactions' : 'Transactions mensuelles'}
-                  </label>
-                  <span className="text-sm font-semibold" style={{ color: theme.green }}>
-                    {transactionVolume.toLocaleString()}
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="100"
-                  max="10000"
-                  step="100"
-                  value={transactionVolume}
-                  onChange={(e) => setTransactionVolume(Number(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                  style={{ 
-                    background: `linear-gradient(to right, ${theme.green} ${((transactionVolume - 100) / 9900) * 100}%, ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'} ${((transactionVolume - 100) / 9900) * 100}%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  <span>100</span>
-                  <span>10,000+</span>
-                </div>
-              </div>
-
-              {/* Assumptions Note */}
-              <div 
-                className="p-3 rounded-lg text-xs"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.8)',
-                  color: 'rgb(var(--color-text-muted))'
-                }}
-              >
-                <Info className="w-3 h-3 inline mr-1" />
-                {isEn 
-                  ? 'Based on industry average 2% error rate and our 97% detection accuracy'
-                  : 'Basé sur le taux d\'erreur moyen de 2% et notre précision de détection de 97%'}
-              </div>
-            </div>
-            
-            {/* Results Side */}
-            <div className="p-8" style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.05)' : 'rgba(16, 185, 129, 0.03)' }}>
-              <h3 className="font-semibold text-lg mb-6" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Your Potential Returns' : 'Vos retours potentiels'}
-              </h3>
-              
-              {/* Big Number - Yearly Savings */}
-              <div 
-                className={`p-6 rounded-xl mb-6 transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.08)' }}
-              >
-                <div className="text-4xl sm:text-5xl font-bold mb-2" style={{ color: theme.green }}>
-                  ${animatedYearlySavings.toLocaleString()}
-                </div>
-                <div className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Estimated annual savings' : 'Économies annuelles estimées'}
-                </div>
-              </div>
-              
-              {/* Breakdown */}
-              <div className="space-y-3 mb-6">
-                <div className={`flex justify-between items-center transition-all duration-500 ${isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '200ms' }}>
-                  <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    <Shield className="w-3 h-3" style={{ color: theme.green }} />
-                    {isEn ? 'Errors detected/month' : 'Erreurs détectées/mois'}
-                  </span>
-                  <span className="font-semibold" style={{ color: theme.green }}>
-                    {animatedErrors}
-                  </span>
-                </div>
-                <div className={`flex justify-between items-center transition-all duration-500 ${isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '300ms' }}>
-                  <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    <Check className="w-3 h-3" style={{ color: theme.green }} />
-                    {isEn ? 'Monthly savings' : 'Économies mensuelles'}
-                  </span>
-                  <span className="font-semibold" style={{ color: theme.green }}>
-                    ${animatedMonthlySavings.toLocaleString()}
-                  </span>
-                </div>
-                <div className={`flex justify-between items-center transition-all duration-500 ${isInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: '400ms' }}>
-                  <span className="text-sm flex items-center gap-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    <Clock className="w-3 h-3" style={{ color: theme.goldDark }} />
-                    {isEn ? 'Time saved/month' : 'Temps économisé/mois'}
-                  </span>
-                  <span className="font-semibold" style={{ color: theme.goldDark }}>
-                    {animatedHours}+ {isEn ? 'hours' : 'heures'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* CTA */}
-              <button
-                onClick={onScheduleCall}
-                className="w-full py-3 rounded-xl font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
-                  color: 'white',
-                  boxShadow: `0 4px 12px ${theme.gold}40`
-                }}
-              >
-                {isEn ? 'Get Your Free ROI Analysis' : 'Obtenez votre analyse ROI gratuite'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              
-              <p className="text-center text-xs mt-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'No commitment. No surprises.' : 'Sans engagement. Sans surprises.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-  );
-}
 
 export default function Landing() {
   const { login, register, authenticated } = useAuth();
@@ -1002,15 +1314,36 @@ export default function Landing() {
             )}
           </h1>
 
-          {/* Tagline */}
-          <p 
-            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 px-2 animate-fade-up opacity-0"
-            style={{ color: 'rgb(var(--color-text-secondary))', animationDelay: '0.15s', animationFillMode: 'forwards' }}
+          {/* Value Proposition */}
+          <div 
+            className="max-w-3xl mx-auto mb-8 sm:mb-10 px-2 animate-fade-up opacity-0"
+            style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}
           >
-            {isEn 
-              ? 'Exec-ready dashboards with industry KPIs, OKRs, strategic projections, and AI-optimized financial modeling. Built for Canadian businesses.'
-              : 'Tableaux de bord prêts pour la direction avec KPIs sectoriels, OKRs, projections stratégiques et modélisation financière optimisée par IA. Conçu pour les entreprises canadiennes.'}
-          </p>
+            <p 
+              className="text-base sm:text-lg md:text-xl leading-relaxed mb-4"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'Industry-specific AI that understands your business. Get exec-ready dashboards with KPIs, OKRs, and strategic projections tailored to your sector.'
+                : 'IA spécifique à votre industrie qui comprend votre entreprise. Obtenez des tableaux de bord avec KPIs, OKRs et projections stratégiques adaptés à votre secteur.'}
+            </p>
+            
+            {/* ROI Highlights */}
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm">
+              <div className="flex items-center gap-2" style={{ color: theme.green }}>
+                <Sparkles className="w-4 h-4" />
+                <span className="font-medium">{isEn ? '97% AI accuracy' : '97% précision IA'}</span>
+              </div>
+              <div className="flex items-center gap-2" style={{ color: theme.gold }}>
+                <TrendingUp className="w-4 h-4" />
+                <span className="font-medium">{isEn ? '15+ industries' : '15+ industries'}</span>
+              </div>
+              <div className="flex items-center gap-2" style={{ color: theme.green }}>
+                <Target className="w-4 h-4" />
+                <span className="font-medium">{isEn ? 'Avg $4K/mo savings' : 'Économies moy. 4K$/mois'}</span>
+              </div>
+            </div>
+          </div>
 
           {/* CTAs */}
           <div 
@@ -1030,7 +1363,7 @@ export default function Landing() {
               <ArrowRight className="w-5 h-5" />
             </button>
             <button 
-              onClick={() => setShowDemoModal(true)}
+              onClick={handleScheduleCall}
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 text-base"
               style={{ 
                 border: `2px solid ${theme.green}`,
@@ -1038,8 +1371,8 @@ export default function Landing() {
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)'
               }}
             >
-              <Play className="w-5 h-5" />
-              {isEn ? 'Watch demo' : 'Voir la démo'}
+              <Calendar className="w-5 h-5" />
+              {isEn ? 'Schedule a call' : 'Planifier un appel'}
             </button>
           </div>
 
@@ -1074,14 +1407,184 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Industry KPIs Section - Multiple IDs for SEO compatibility */}
+      {/* Exec Dashboard Features Section */}
       <span id="features" className="absolute" style={{ top: '-100px' }} />
+      <section 
+        id="exec-dashboard" 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
+            : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-12">
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              style={{ 
+                background: `${theme.green}15`,
+                border: `1px solid ${theme.green}25`,
+                color: theme.greenDark
+              }}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              {isEn ? 'Exec Dashboard' : 'Tableau de bord exécutif'}
+            </div>
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
+              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+            >
+              {isEn ? 'Strategic Intelligence at a Glance' : 'Intelligence stratégique en un coup d\'œil'}
+            </h2>
+            <p 
+              className="text-sm sm:text-base max-w-2xl mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'Real-time metrics, AI-powered insights, and strategic planning tools designed for executive decision-making.'
+                : 'Métriques en temps réel, insights alimentés par l\'IA et outils de planification stratégique conçus pour les décisions exécutives.'}
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {[
+              {
+                icon: Eye,
+                title: isEn ? 'Real-Time Visibility' : 'Visibilité en temps réel',
+                desc: isEn 
+                  ? 'Live dashboards that sync with your accounting software. See your cash position, revenue trends, and key metrics updated automatically.'
+                  : 'Tableaux de bord en direct synchronisés avec votre logiciel comptable. Position de trésorerie, tendances et métriques clés mis à jour automatiquement.',
+                highlight: isEn ? 'Auto-sync every 15 min' : 'Synchro auto chaque 15 min',
+                color: theme.green,
+              },
+              {
+                icon: Brain,
+                title: isEn ? 'AI-Powered Alerts' : 'Alertes alimentées par l\'IA',
+                desc: isEn 
+                  ? 'Proactive anomaly detection that catches issues before they become problems. Get notified about unusual expenses, cash flow risks, and opportunities.'
+                  : 'Détection proactive d\'anomalies qui identifie les problèmes avant qu\'ils ne surviennent. Alertes sur dépenses inhabituelles et risques de trésorerie.',
+                highlight: isEn ? '97% detection accuracy' : '97% de précision',
+                color: theme.gold,
+              },
+              {
+                icon: Target,
+                title: isEn ? 'OKRs & Goal Tracking' : 'OKRs & Suivi des objectifs',
+                desc: isEn 
+                  ? 'Set quarterly objectives and track progress automatically. Link financial KPIs to strategic goals for complete alignment.'
+                  : 'Définissez des objectifs trimestriels et suivez la progression automatiquement. Liez les KPIs financiers aux objectifs stratégiques.',
+                highlight: isEn ? 'Quarterly planning' : 'Planification trimestrielle',
+                color: theme.green,
+              },
+              {
+                icon: TrendingUp,
+                title: isEn ? 'Scenario Planning' : 'Planification de scénarios',
+                desc: isEn 
+                  ? 'What-if analysis for strategic decisions. Model hiring plans, expansion costs, or market changes and see projected impact.'
+                  : 'Analyse "what-if" pour décisions stratégiques. Modélisez embauches, coûts d\'expansion ou changements de marché.',
+                highlight: isEn ? '12-month forecasts' : 'Prévisions 12 mois',
+                color: theme.gold,
+              },
+              {
+                icon: FileCheck,
+                title: isEn ? 'Board-Ready Reports' : 'Rapports prêts pour le CA',
+                desc: isEn 
+                  ? 'One-click exports for board meetings, investor updates, or bank reviews. Professional formatting with your branding.'
+                  : 'Exports en un clic pour réunions du CA, mises à jour investisseurs ou revues bancaires. Formatage professionnel avec votre image.',
+                highlight: isEn ? 'PDF, Excel, PowerPoint' : 'PDF, Excel, PowerPoint',
+                color: theme.green,
+              },
+              {
+                icon: Zap,
+                title: isEn ? 'Action Recommendations' : 'Recommandations d\'action',
+                desc: isEn 
+                  ? 'AI suggests specific actions based on your data: optimize payment terms, reduce specific costs, or invest in growth areas.'
+                  : 'L\'IA suggère des actions spécifiques: optimiser les délais de paiement, réduire certains coûts, ou investir dans des zones de croissance.',
+                highlight: isEn ? 'Data-driven decisions' : 'Décisions basées sur les données',
+                color: theme.gold,
+              },
+            ].map((feature, idx) => (
+              <div 
+                key={idx}
+                className="group p-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                }}
+              >
+                {/* Icon */}
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
+                  style={{ backgroundColor: `${feature.color}15` }}
+                >
+                  <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
+                </div>
+                
+                {/* Title */}
+                <h3 
+                  className="text-base font-bold mb-2"
+                  style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                >
+                  {feature.title}
+                </h3>
+                
+                {/* Description */}
+                <p 
+                  className="text-xs leading-relaxed mb-3"
+                  style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                >
+                  {feature.desc}
+                </p>
+                
+                {/* Highlight */}
+                <div 
+                  className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                  style={{ 
+                    backgroundColor: `${feature.color}12`,
+                    color: feature.color
+                  }}
+                >
+                  <Check className="w-3 h-3" />
+                  {feature.highlight}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="text-center mt-10">
+            <p 
+              className="text-sm mb-4"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'All features included in every plan. No hidden upgrades.'
+                : 'Toutes les fonctionnalités incluses dans chaque plan. Aucune mise à niveau cachée.'}
+            </p>
+            <button 
+              onClick={() => register()}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 text-sm"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 4px 16px ${theme.green}35`
+              }}
+            >
+              {isEn ? 'Try the dashboard free' : 'Essayez le tableau de bord gratuitement'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Industry KPIs Section - Formulas & Benchmarks */}
       <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
       <section id="industries" className="py-16 sm:py-20 lg:py-24 relative">
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
-      {/* How It Works - Compact Pipeline */}
+      {/* How It Works - Clean Animated Pipeline */}
       <section 
         id="pipeline" 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
@@ -1091,12 +1594,20 @@ export default function Landing() {
             : 'linear-gradient(180deg, #fafafa 0%, #f0fdf4 50%, #fafafa 100%)'
         }}
       >
-
-        <div className="max-w-6xl mx-auto relative z-10">
+        {/* Background decoration */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `radial-gradient(${theme.green}10 1px, transparent 1px)`,
+            backgroundSize: '24px 24px'
+          }}
+        />
+        
+        <div className="max-w-5xl mx-auto relative z-10">
           {/* Section Header */}
-          <div className="text-center mb-10 sm:mb-12">
+          <div className="text-center mb-10 sm:mb-14">
             <div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
               style={{ 
                 background: `${theme.green}15`,
                 border: `1px solid ${theme.green}25`,
@@ -1108,215 +1619,242 @@ export default function Landing() {
             </div>
             <h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
-              style={{ color: 'rgb(var(--color-text))' }}
+              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
               {isEn ? 'Your Data Journey' : 'Le parcours de vos données'}
             </h2>
             <p 
-              className="text-sm sm:text-base max-w-lg mx-auto mb-6"
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
+              className="text-sm sm:text-base max-w-lg mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'From connection to insights in 4 simple steps'
-                : 'De la connexion aux insights en 4 étapes simples'}
+                ? 'From connection to insights in 4 intelligent steps'
+                : 'De la connexion aux insights en 4 étapes intelligentes'}
             </p>
-            
-            {/* Data Flow Animation */}
-            <div className="flex justify-center">
-              <DataFlowAnimation style={{ width: 200, height: 40 }} />
-            </div>
           </div>
 
-          {/* Horizontal Steps - Desktop */}
-          <div className="hidden lg:block">
-            <div className="flex items-start justify-between gap-4 relative">
-              {/* Connector Line */}
+          {/* Pipeline Steps - Horizontal on Desktop */}
+          <div className="relative">
+            {/* Animated Connection Line - Desktop */}
+            <div className="hidden lg:block absolute top-[52px] left-[12%] right-[12%] h-[2px] z-0">
               <div 
-                className="absolute top-8 left-[12%] right-[12%] h-0.5"
+                className="h-full animate-pulse"
                 style={{ 
-                  background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.green} 50%, ${theme.gold} 100%)`
+                  background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.green} 40%, ${theme.gold} 100%)`
                 }}
               />
-              
+              {/* Animated dots on line */}
+              <div 
+                className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-[moveRight_3s_ease-in-out_infinite]"
+                style={{ backgroundColor: theme.green, left: '0%' }}
+              />
+            </div>
+            
+            {/* Steps Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
               {[
                 { 
                   num: 1, 
                   icon: Database, 
                   title: isEn ? 'Connect' : 'Connecter',
-                  desc: isEn ? 'Link your accounting software securely' : 'Liez votre logiciel comptable',
+                  desc: isEn ? 'Link your accounting software' : 'Liez votre logiciel comptable',
                   tags: ['QuickBooks', 'Xero', 'Sage'],
-                  color: theme.green
+                  color: theme.green,
+                  delay: '0s'
                 },
                 { 
                   num: 2, 
                   icon: RefreshCw, 
-                  title: isEn ? 'Clean' : 'Nettoyer',
-                  desc: isEn ? 'Data sanitized in Canadian data lake' : 'Données nettoyées au Canada',
-                  tags: [isEn ? 'Normalized' : 'Normalisé', isEn ? 'Validated' : 'Validé'],
-                  color: theme.green
+                  title: isEn ? 'Clean & Store' : 'Nettoyer',
+                  desc: isEn ? 'Canadian data lake' : 'Data lake canadien',
+                  tags: [isEn ? 'Sanitized' : 'Assaini', isEn ? 'Validated' : 'Validé'],
+                  color: theme.green,
+                  delay: '0.1s'
                 },
                 { 
                   num: 3, 
                   icon: Sparkles, 
-                  title: isEn ? 'Analyze' : 'Analyser',
-                  desc: isEn ? 'AI models optimized for your industry' : 'Modèles IA pour votre secteur',
-                  tags: ['97%', isEn ? 'Predictions' : 'Prédictions'],
-                  color: theme.gold
+                  title: isEn ? 'AI Analysis' : 'Analyse IA',
+                  desc: isEn ? 'Industry ML models' : 'Modèles ML sectoriels',
+                  tags: ['97%', isEn ? 'Accuracy' : 'Précision'],
+                  color: theme.gold,
+                  delay: '0.2s'
                 },
                 { 
                   num: 4, 
                   icon: TrendingUp, 
                   title: isEn ? 'Dashboard' : 'Tableau',
-                  desc: isEn ? 'Exec-ready KPIs and strategic insights' : 'KPIs et insights stratégiques',
+                  desc: isEn ? 'Exec-ready insights' : 'Insights exécutifs',
                   tags: ['KPIs', 'OKRs'],
-                  color: theme.gold
+                  color: theme.gold,
+                  delay: '0.3s'
                 },
-              ].map((step) => (
-                <div key={step.num} className="flex-1 flex flex-col items-center text-center transition-all duration-300 hover:scale-105">
-                  {/* Number Circle */}
+              ].map((step, idx) => (
+                <div 
+                  key={step.num}
+                  className="group relative animate-fade-up opacity-0"
+                  style={{ animationDelay: step.delay, animationFillMode: 'forwards' }}
+                >
+                  {/* Step Card */}
                   <div 
-                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4 relative z-10"
+                    className="relative p-5 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden h-full"
                     style={{ 
-                      background: `linear-gradient(135deg, ${step.color} 0%, ${step.num <= 2 ? theme.greenDark : theme.goldDark} 100%)`,
-                      boxShadow: `0 4px 20px ${step.color}40`
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
                     }}
                   >
-                    <step.icon className="w-7 h-7 text-white" />
-                  </div>
-                  
-                  {/* Step Number Badge */}
-                  <span 
-                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-2"
-                    style={{ backgroundColor: `${step.color}15`, color: step.num <= 2 ? theme.greenDark : theme.goldDark }}
-                  >
-                    {isEn ? `Step ${step.num}` : `Étape ${step.num}`}
-                  </span>
-                  
-                  {/* Title */}
-                  <h4 className="text-base font-bold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                    {step.title}
-                  </h4>
-                  
-                  {/* Description */}
-                  <p className="text-xs mb-3 px-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {step.desc}
-                  </p>
-                  
-                  {/* Tags */}
-                  <div className="flex flex-wrap justify-center gap-1">
-                    {step.tags.map((tag) => (
-                      <span 
-                        key={tag}
-                        className="text-[10px] px-2 py-0.5 rounded-full"
+                    {/* Top accent line */}
+                    <div 
+                      className="absolute top-0 left-0 right-0 h-1 transition-all duration-300 group-hover:h-1.5"
+                      style={{ backgroundColor: step.color }}
+                    />
+                    
+                    {/* Hover glow effect */}
+                    <div 
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{ 
+                        background: `radial-gradient(circle at center, ${step.color}08 0%, transparent 70%)`
+                      }}
+                    />
+                    
+                    {/* Step Number - Large */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div 
+                        className="w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold transition-transform duration-300 group-hover:scale-110"
                         style={{ 
-                          backgroundColor: `${step.color}10`,
-                          color: step.num <= 2 ? theme.greenDark : theme.goldDark,
-                          border: `1px solid ${step.color}20`
+                          backgroundColor: `${step.color}15`,
+                          color: step.color
                         }}
                       >
-                        {tag}
-                      </span>
-                    ))}
+                        {step.num}
+                      </div>
+                      <div 
+                        className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:rotate-12"
+                        style={{ 
+                          backgroundColor: `${step.color}10`,
+                        }}
+                      >
+                        <step.icon className="w-5 h-5" style={{ color: step.color }} />
+                      </div>
+                    </div>
+                    
+                    {/* Title */}
+                    <h4 
+                      className="text-base font-bold mb-2"
+                      style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                    >
+                      {step.title}
+                    </h4>
+                    
+                    {/* Description */}
+                    <p 
+                      className="text-xs mb-4 leading-relaxed"
+                      style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                    >
+                      {step.desc}
+                    </p>
+                    
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {step.tags.map((tag) => (
+                        <span 
+                          key={tag}
+                          className="text-[10px] px-2.5 py-1 rounded font-medium transition-colors duration-300 group-hover:bg-opacity-100"
+                          style={{ 
+                            backgroundColor: `${step.color}12`,
+                            color: step.color,
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    
+                    {/* Animated corner indicator */}
+                    <div 
+                      className="absolute bottom-0 right-0 w-8 h-8 transition-transform duration-300 group-hover:scale-150 opacity-20"
+                      style={{
+                        background: `linear-gradient(135deg, transparent 50%, ${step.color} 50%)`
+                      }}
+                    />
                   </div>
+                  
+                  {/* Connector Arrow - Desktop only */}
+                  {idx < 3 && (
+                    <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-6 h-6">
+                      <div 
+                        className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] animate-pulse"
+                        style={{ borderLeftColor: step.color }}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Connector Line - Mobile/Tablet */}
+                  {idx < 3 && (
+                    <div className="lg:hidden flex justify-center my-3">
+                      <div 
+                        className="w-[2px] h-6 rounded-full"
+                        style={{ backgroundColor: `${step.color}50` }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Vertical Steps - Mobile/Tablet */}
-          <div className="lg:hidden space-y-4">
+          {/* Stats Bar */}
+          <div 
+            className="mt-10 p-4 rounded-lg flex flex-wrap justify-center gap-8 sm:gap-12"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
+            }}
+          >
             {[
-              { 
-                num: 1, 
-                icon: Database, 
-                title: isEn ? 'Connect Your Software' : 'Connectez votre logiciel',
-                desc: isEn ? 'Securely link your accounting software' : 'Liez votre logiciel comptable',
-                color: theme.green
-              },
-              { 
-                num: 2, 
-                icon: RefreshCw, 
-                title: isEn ? 'Data Lake & Sanitization' : 'Nettoyage des données',
-                desc: isEn ? 'Cleaned & stored in Canadian data lake' : 'Nettoyées & stockées au Canada',
-                color: theme.green
-              },
-              { 
-                num: 3, 
-                icon: Sparkles, 
-                title: isEn ? 'AI-Powered Analysis' : 'Analyse par l\'IA',
-                desc: isEn ? 'Industry-optimized ML models' : 'Modèles ML optimisés par secteur',
-                color: theme.gold
-              },
-              { 
-                num: 4, 
-                icon: TrendingUp, 
-                title: isEn ? 'Exec-Ready Dashboard' : 'Tableau de bord exécutif',
-                desc: isEn ? 'KPIs, OKRs & strategic projections' : 'KPIs, OKRs & projections',
-                color: theme.gold
-              },
-            ].map((step, idx) => (
+              { label: isEn ? 'Data Sources' : 'Sources', value: '6+', color: theme.green },
+              { label: isEn ? 'Processing' : 'Traitement', value: '<5min', color: theme.green },
+              { label: isEn ? 'AI Accuracy' : 'Précision IA', value: '97%', color: theme.gold },
+              { label: isEn ? 'Industries' : 'Industries', value: '15+', color: theme.gold },
+            ].map((stat, idx) => (
               <div 
-                key={step.num}
-                className="flex items-start gap-4 p-4 rounded-xl transition-all duration-300 hover:scale-[1.02]"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.9)',
-                  border: `1px solid ${step.color}25`
-                }}
+                key={stat.label} 
+                className="text-center animate-fade-up opacity-0"
+                style={{ animationDelay: `${0.4 + idx * 0.1}s`, animationFillMode: 'forwards' }}
               >
-                {/* Number Circle */}
-                <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${step.color} 0%, ${step.num <= 2 ? theme.greenDark : theme.goldDark} 100%)`,
-                    boxShadow: `0 2px 12px ${step.color}30`
-                  }}
-                >
-                  <step.icon className="w-5 h-5 text-white" />
+                <div className="text-xl sm:text-2xl font-bold mb-0.5" style={{ color: stat.color }}>
+                  {stat.value}
                 </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span 
-                      className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-                      style={{ backgroundColor: `${step.color}15`, color: step.num <= 2 ? theme.greenDark : theme.goldDark }}
-                    >
-                      {step.num}
-                    </span>
-                    <h4 className="text-sm font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                      {step.title}
-                    </h4>
-                  </div>
-                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {step.desc}
-                  </p>
+                <div className="text-[10px] font-medium uppercase tracking-wider" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                  {stat.label}
                 </div>
-                
-                {/* Connector */}
-                {idx < 3 && (
-                  <div 
-                    className="absolute left-10 mt-14 w-0.5 h-4"
-                    style={{ backgroundColor: `${step.color}30` }}
-                  />
-                )}
               </div>
             ))}
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-10">
+          <div className="text-center mt-8">
             <button 
-              onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 text-sm"
+              onClick={() => register()}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 hover:shadow-lg text-sm"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 16px ${theme.green}35`
               }}
             >
-              <Play className="w-4 h-4" />
-              {isEn ? 'See it in action' : 'Voir en action'}
+              {isEn ? 'Start your journey' : 'Commencer votre parcours'}
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
+        
+        {/* CSS Animation for moving dot */}
+        <style>{`
+          @keyframes moveRight {
+            0% { left: 0%; opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+          }
+        `}</style>
       </section>
 
       {/* AI & Security Features Section */}
@@ -1638,7 +2176,7 @@ export default function Landing() {
               </button>
               
               <button 
-                onClick={() => setShowDemoModal(true)}
+                onClick={handleScheduleCall}
                 className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base transition-all hover:scale-105"
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -1647,8 +2185,8 @@ export default function Landing() {
                   border: '1px solid rgba(255, 255, 255, 0.25)'
                 }}
               >
-                <Play className="w-5 h-5" />
-                {isEn ? 'Watch demo' : 'Voir démo'}
+                <Calendar className="w-5 h-5" />
+                {isEn ? 'Talk to an expert' : 'Parler à un expert'}
               </button>
             </div>
             

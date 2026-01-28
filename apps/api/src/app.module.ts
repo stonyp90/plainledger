@@ -18,6 +18,7 @@ import { HealthController } from "@infrastructure/http/controllers/health.contro
 import { OrganizationController } from "@infrastructure/http/controllers/organization.controller";
 import { ReportController } from "@infrastructure/http/controllers/report.controller";
 import { DataSourceController } from "@infrastructure/http/controllers/datasource.controller";
+import { OAuthCallbackController } from "@infrastructure/http/controllers/oauth-callback.controller";
 import { ContactController } from "@infrastructure/http/controllers/contact.controller";
 import { AIController } from "@infrastructure/http/controllers/ai.controller";
 import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
@@ -111,6 +112,7 @@ import { NovuModule } from "./notifications/novu.service";
     OrganizationController,
     ReportController,
     DataSourceController,
+    OAuthCallbackController,
     ContactController,
     AIController,
     AnalyticsController,
