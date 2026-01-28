@@ -1,100 +1,122 @@
 /**
  * Keycloak Admin Controller
- * Temporary endpoint to update client configuration
- * TODO: Remove after migration or secure with admin-only access
+ * Temporary endpoints for admin operations
  */
 
 import {
   Controller,
   Post,
+  Body,
+  Logger,
   HttpCode,
   HttpStatus,
-  Logger,
-  UseGuards,
 } from "@nestjs/common";
 import { Public } from "nest-keycloak-connect";
-import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
-import { Inject } from "@nestjs/common";
-import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
 
 @Controller("admin/keycloak")
 export class KeycloakAdminController {
   private readonly logger = new Logger(KeycloakAdminController.name);
 
   constructor(
-    @Inject("IKeycloakAdminService")
-    private readonly keycloakAdminService: KeycloakAdminService,
+    private readonly userProfileRepository: PostgresUserProfileRepository,
+    @InjectRepository(UserProfileEntity)
+    private readonly userProfileEntityRepository: Repository<UserProfileEntity>,
   ) {}
 
   /**
-   * Update plainledger-web client to enable Direct Access Grants
-   * Temporary endpoint for migration
+   * Temporary endpoint to check and update user emails in database
+   * TODO: Remove after migration is complete
    */
-  @Post("enable-direct-access-grants")
-  @Public() // TODO: Add admin guard
+  @Post("check-and-update-user-emails")
+  @Public()
   @HttpCode(HttpStatus.OK)
-  async enableDirectAccessGrants() {
-    this.logger.log("Updating plainledger-web client configuration...");
+  async checkAndUpdateUserEmails() {
+    this.logger.log("Checking and updating user emails from .com to .ca");
 
-    if (!this.keycloakAdminService.isAvailable()) {
-      throw new Error("Keycloak Admin Service not configured");
+    const updates = [
+      { old: "admin@plainledger.com", new: "admin@plainledger.ca" },
+      { old: "accountant@plainledger.com", new: "accountant@plainledger.ca" },
+      { old: "demo@plainledger.com", new: "demo@plainledger.ca" },
+    ];
+
+    const results = [];
+
+    for (const update of updates) {
+      try {
+        // Check if old email exists
+        const oldUser = await this.userProfileEntityRepository.findOne({
+          where: { email: update.old },
+        });
+
+        if (oldUser) {
+          // Update email directly using query builder
+          await this.userProfileEntityRepository
+            .createQueryBuilder()
+            .update(UserProfileEntity)
+            .set({ email: update.new })
+            .where("id = :id", { id: oldUser.id })
+            .execute();
+
+          results.push({
+            email: update.old,
+            status: "updated",
+            id: oldUser.id,
+            newEmail: update.new,
+          });
+          this.logger.log(`Updated ${update.old} → ${update.new}`);
+        } else {
+          // Check if already updated
+          const newUser = await this.userProfileEntityRepository.findOne({
+            where: { email: update.new },
+          });
+          if (newUser) {
+            results.push({
+              email: update.old,
+              status: "already_updated",
+              id: newUser.id,
+            });
+          } else {
+            results.push({
+              email: update.old,
+              status: "not_found",
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Failed to update ${update.old}: ${error.message}`);
+        results.push({
+          email: update.old,
+          status: "error",
+          error: error.message,
+        });
+      }
     }
 
-    try {
-      // Access the admin client directly
-      const adminClient = (this.keycloakAdminService as any).adminClient;
-      if (!adminClient) {
-        throw new Error("Keycloak Admin Client not initialized");
-      }
+    // List all users with plainledger emails
+    const allUsers = await this.userProfileEntityRepository
+      .createQueryBuilder("user")
+      .where("user.email LIKE :pattern", { pattern: "%@plainledger.%" })
+      .orderBy("user.email", "ASC")
+      .getMany();
 
-      const realm = (this.keycloakAdminService as any).realm || "plainledger";
+    const userList = allUsers.map((u) => ({
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      emailVerified: u.emailVerified,
+      createdAt: u.createdAt,
+    }));
 
-      // Find the client
-      const clients = await adminClient.clients.find({
-        realm,
-        clientId: "plainledger-web",
-      });
-
-      if (!clients || clients.length === 0) {
-        throw new Error('Client "plainledger-web" not found');
-      }
-
-      const client = clients[0];
-      this.logger.log(`Found client: ${client.id}`);
-
-      const currentStatus = client.directAccessGrantsEnabled;
-      this.logger.log(`Current Direct Access Grants: ${currentStatus}`);
-
-      if (currentStatus === true) {
-        return {
-          success: true,
-          message: "Direct Access Grants is already enabled",
-          clientId: client.id,
-        };
-      }
-
-      // Update client
-      await adminClient.clients.update(
-        { realm, id: client.id },
-        {
-          ...client,
-          directAccessGrantsEnabled: true,
-        },
-      );
-
-      this.logger.log("Successfully enabled Direct Access Grants");
-
-      return {
-        success: true,
-        message: "Direct Access Grants enabled successfully",
-        clientId: client.id,
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to update client: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
+    return {
+      success: true,
+      updates: results,
+      totalUsers: userList.length,
+      users: userList,
+    };
   }
 }

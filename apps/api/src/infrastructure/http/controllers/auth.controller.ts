@@ -206,6 +206,14 @@ export class AuthController {
         );
       }
 
+      // TEMPORARY: Allow login even if email is not verified (for testing)
+      // TODO: Re-enable email verification check after testing
+      // if (!user.emailVerified) {
+      //   throw new UnauthorizedException(
+      //     "Please verify your email address before logging in.",
+      //   );
+      // }
+
       this.logger.log(`User logged in successfully: ${user.id}`);
 
       return {
