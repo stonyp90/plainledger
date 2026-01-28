@@ -321,6 +321,10 @@ jobs:
             ecr_repo: plainledger-prod-web
             dockerfile: apps/web/Dockerfile
             context: .
+          - name: keycloak
+            ecr_repo: plainledger-prod-keycloak
+            dockerfile: keycloak/Dockerfile
+            context: keycloak
     outputs:
       image_tag: ${{ github.sha }}
     steps:
@@ -392,6 +396,15 @@ jobs:
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ Web service not found - infrastructure may need to be deployed first"
       
+      - name: Deploy Keycloak service
+        run: |
+          echo "🚀 Deploying Keycloak service..."
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service plainledger-prod-keycloak \
+            --force-new-deployment \
+            --no-cli-pager || echo "⚠️ Keycloak service not found - infrastructure may need to be deployed first"
+      
       - name: Clear CloudFront Cache (if exists)
         run: |
           echo "🧹 Checking for CloudFront distributions..."
@@ -443,7 +456,7 @@ jobs:
           fi
       
       - name: Wait for services to stabilize
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           echo "⏳ Waiting for services to stabilize..."
           
@@ -456,6 +469,11 @@ jobs:
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services plainledger-prod-web || echo "⚠️ Web service wait timed out or not found"
+          
+          # Wait for Keycloak
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services plainledger-prod-keycloak || echo "⚠️ Keycloak service wait timed out or not found"
           
           echo "✅ Deployment complete"
       
@@ -510,6 +528,7 @@ jobs:
           echo "| Web | ✅ Deployed | https://plainledger.ca |" >> $GITHUB_STEP_SUMMARY
           echo "| REST API | ✅ Deployed | https://plainledger.ca/api |" >> $GITHUB_STEP_SUMMARY
           echo "| GraphQL API | ✅ Deployed | https://plainledger.ca/graphql |" >> $GITHUB_STEP_SUMMARY
+          echo "| Keycloak | ✅ Deployed | https://plainledger.ca/realms/plainledger |" >> $GITHUB_STEP_SUMMARY
           echo "| Power BI Data | ✅ Deployed | https://plainledger.ca/api/v1/analytics/data |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### GraphQL Features" >> $GITHUB_STEP_SUMMARY

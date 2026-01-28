@@ -216,6 +216,22 @@ resource "aws_secretsmanager_secret_version" "keycloak_smtp" {
 }
 
 # ------------------------------------------------------------------------------
+# Keycloak Client Secret (for Admin API)
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "keycloak_client" {
+  name        = "${var.project}/${var.environment}/keycloak-client"
+  description = "Keycloak API client credentials for Admin API"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "keycloak_client" {
+  secret_id = aws_secretsmanager_secret.keycloak_client.id
+  secret_string = jsonencode({
+    secret = var.keycloak_client_secret
+  })
+}
+
+# ------------------------------------------------------------------------------
 # ECS Module
 # ------------------------------------------------------------------------------
 module "ecs" {
@@ -237,9 +253,10 @@ module "ecs" {
   redis_auth_secret_arn     = module.database.redis_auth_secret_arn
   stripe_secret_arn         = aws_secretsmanager_secret.stripe.arn
   novu_secret_arn           = aws_secretsmanager_secret.novu.arn
-  keycloak_smtp_secret_arn  = aws_secretsmanager_secret.keycloak_smtp.arn
-  quickbooks_secret_arn     = aws_secretsmanager_secret.quickbooks.arn
-  kms_key_arn               = module.database.kms_key_arn
+  keycloak_smtp_secret_arn   = aws_secretsmanager_secret.keycloak_smtp.arn
+  keycloak_client_secret_arn = aws_secretsmanager_secret.keycloak_client.arn
+  quickbooks_secret_arn      = aws_secretsmanager_secret.quickbooks.arn
+  kms_key_arn                = module.database.kms_key_arn
 
   ecr_web_repository_url      = aws_ecr_repository.web.repository_url
   ecr_api_repository_url      = aws_ecr_repository.api.repository_url

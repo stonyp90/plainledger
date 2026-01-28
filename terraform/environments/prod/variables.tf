@@ -126,6 +126,14 @@ variable "quickbooks_environment" {
   default     = "production"  # Production uses real QBO data
 }
 
+# Keycloak
+variable "keycloak_client_secret" {
+  description = "Keycloak API client secret for Admin API (service account)"
+  type        = string
+  sensitive   = true
+  default     = ""  # Can be empty initially, update via AWS console
+}
+
 # Terraform Backend
 variable "terraform_state_bucket" {
   description = "S3 bucket for Terraform state"
