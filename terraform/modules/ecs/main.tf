@@ -389,20 +389,61 @@ resource "aws_lb_listener_rule" "keycloak" {
   }
 
   condition {
-    host_header {
-      values = ["auth.${var.domain_name}"]
-    }
-  }
-
-  # Keep path-based condition as fallback
-  condition {
     path_pattern {
-      values = ["/auth/*", "/realms/*"]
+      values = ["/realms/*"]
     }
   }
 
   tags = {
     Name        = "${var.project}-${var.environment}-keycloak-rule"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+# Keycloak admin console
+resource "aws_lb_listener_rule" "keycloak_admin" {
+  count        = var.acm_certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 150
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.keycloak.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/admin/*"]
+    }
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-keycloak-admin-rule"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+# Keycloak static resources (CSS, JS, images)
+resource "aws_lb_listener_rule" "keycloak_resources" {
+  count        = var.acm_certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 175
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.keycloak.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/resources/*"]
+    }
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-keycloak-resources-rule"
     Project     = var.project
     Environment = var.environment
   }

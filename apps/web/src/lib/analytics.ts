@@ -57,6 +57,7 @@ export interface EventProperties {
 export type OnboardingStep = 
   | 'welcome'
   | 'account_type'
+  | 'signup'
   | 'company_info'
   | 'industry_preview'
   | 'connect_source'
@@ -390,7 +391,7 @@ class Analytics {
   }
 
   private getStepNumber(step: OnboardingStep): number {
-    const steps: OnboardingStep[] = ['welcome', 'account_type', 'company_info', 'industry_preview', 'connect_source', 'invite_team', 'tour', 'complete'];
+    const steps: OnboardingStep[] = ['welcome', 'account_type', 'signup', 'company_info', 'industry_preview', 'connect_source', 'invite_team', 'tour', 'complete'];
     return steps.indexOf(step) + 1;
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
 import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
@@ -29,6 +30,9 @@ import {
   Calendar,
   Target,
   BarChart3,
+  Info,
+  AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
 
 // =====================================================
@@ -435,6 +439,8 @@ function AnimatedAreaChart({
   delay = 300,
   trigger = true,
   showDashed = false,
+  showHoverValues = true,
+  isDark = false,
 }: {
   data: number[];
   color: string;
@@ -442,8 +448,12 @@ function AnimatedAreaChart({
   delay?: number;
   trigger?: boolean;
   showDashed?: boolean;
+  showHoverValues?: boolean;
+  isDark?: boolean;
 }) {
   const [progress, setProgress] = useState(0);
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   
   useEffect(() => {
     if (!trigger) return;
@@ -477,6 +487,7 @@ function AnimatedAreaChart({
   const points = data.map((value, i) => ({
     x: (i / (data.length - 1)) * width,
     y: height - ((value - min) / range) * (height - 10) - 5,
+    value,
   }));
   
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
@@ -488,13 +499,60 @@ function AnimatedAreaChart({
   const solidPath = solidPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const dashedPath = dashedPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
+  // Handle mouse move for hover detection
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!showHoverValues || !svgRef.current) return;
+    
+    const rect = svgRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    
+    // Find closest point
+    let closestIndex = 0;
+    let closestDistance = Infinity;
+    
+    points.forEach((point, i) => {
+      const distance = Math.abs(point.x - mouseX);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = i;
+      }
+    });
+    
+    if (closestDistance < 15) {
+      setHoveredPoint(closestIndex);
+    } else {
+      setHoveredPoint(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredPoint(null);
+  };
+
+  // Format value for display
+  const formatValue = (val: number) => {
+    if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
+    if (val < 1 && val > 0) return `${(val * 100).toFixed(1)}%`;
+    return val.toFixed(0);
+  };
+
   return (
-    <svg width={width} height={height} className="overflow-visible">
+    <svg 
+      ref={svgRef}
+      width={width} 
+      height={height} 
+      className="overflow-visible cursor-crosshair"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       <defs>
         <linearGradient id={`area-gradient-${color.replace(/[^a-z0-9]/gi, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor={color} stopOpacity="0.3" />
           <stop offset="100%" stopColor={color} stopOpacity="0.05" />
         </linearGradient>
+        <filter id="tooltip-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.15"/>
+        </filter>
       </defs>
       
       {/* Area fill */}
@@ -540,8 +598,70 @@ function AnimatedAreaChart({
         />
       )}
       
-      {/* Current value dot */}
-      {progress > 0.8 && (
+      {/* Hover vertical line */}
+      {hoveredPoint !== null && progress > 0.5 && (
+        <line
+          x1={points[hoveredPoint].x}
+          y1={0}
+          x2={points[hoveredPoint].x}
+          y2={height}
+          stroke={color}
+          strokeWidth="1"
+          strokeDasharray="3 3"
+          opacity="0.5"
+          className="transition-all duration-150"
+        />
+      )}
+      
+      {/* Hover point indicator */}
+      {hoveredPoint !== null && progress > 0.5 && (
+        <g className="animate-pulse">
+          <circle
+            cx={points[hoveredPoint].x}
+            cy={points[hoveredPoint].y}
+            r="6"
+            fill={color}
+            opacity="0.2"
+          />
+          <circle
+            cx={points[hoveredPoint].x}
+            cy={points[hoveredPoint].y}
+            r="4"
+            fill={color}
+            stroke="white"
+            strokeWidth="1.5"
+          />
+        </g>
+      )}
+      
+      {/* Hover tooltip - compact, close to point */}
+      {hoveredPoint !== null && progress > 0.5 && (
+        <g filter="url(#tooltip-shadow)">
+          <rect
+            x={points[hoveredPoint].x + 6}
+            y={points[hoveredPoint].y - 8}
+            width="28"
+            height="14"
+            rx="3"
+            fill={isDark ? 'rgb(30, 41, 59)' : 'white'}
+            stroke={color}
+            strokeWidth="0.5"
+          />
+          <text
+            x={points[hoveredPoint].x + 20}
+            y={points[hoveredPoint].y + 2}
+            textAnchor="middle"
+            fontSize="8"
+            fontWeight="600"
+            fill={color}
+          >
+            {formatValue(points[hoveredPoint].value)}
+          </text>
+        </g>
+      )}
+      
+      {/* Current value dot (only when not hovering) */}
+      {progress > 0.8 && hoveredPoint === null && (
         <circle
           cx={points[showDashed ? points.length - 4 : points.length - 1].x}
           cy={points[showDashed ? points.length - 4 : points.length - 1].y}
@@ -549,6 +669,7 @@ function AnimatedAreaChart({
           fill={color}
           stroke="white"
           strokeWidth="1.5"
+          className="animate-pulse"
         />
       )}
     </svg>
@@ -563,6 +684,8 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
   const [showElements, setShowElements] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState(0);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
+  const [roadmapView, setRoadmapView] = useState<'quarterly' | 'monthly' | 'yearly'>('quarterly');
   
   useEffect(() => {
     if (isVisible) {
@@ -579,10 +702,46 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
       icon: 'R',
       iconColor: theme.green,
       kpis: [
-        { label: isEn ? 'Revenue' : 'Revenus', value: '$847K', data: [42, 45, 48, 52, 58, 54, 62, 68, 72, 78, 82, 85], projection: true },
-        { label: isEn ? 'Food Cost %' : 'Coût nourriture', value: '28.5%', data: [32, 30, 29, 31, 28, 29, 27, 28, 29, 28, 28.5, 28], projection: false },
-        { label: isEn ? 'Labor Cost %' : 'Coût M-O', value: '24.2%', data: [26, 25, 24, 25, 24, 23, 24, 25, 24, 24, 24, 24.2], projection: false },
-        { label: isEn ? 'Prime Cost' : 'Coût principal', value: '52.7%', data: [58, 55, 53, 56, 52, 52, 51, 53, 53, 52, 52.5, 52.7], projection: true },
+        { 
+          label: isEn ? 'Revenue' : 'Revenus', 
+          value: '$847K', 
+          data: [42, 45, 48, 52, 58, 54, 62, 68, 72, 78, 82, 85], 
+          projection: true,
+          threshold: isEn ? 'Target: $800K+' : 'Cible: 800K$+',
+          target: '$800K',
+          previous: '$780K',
+          insight: isEn ? '+8.6% vs last month' : '+8,6% vs mois dernier'
+        },
+        { 
+          label: isEn ? 'Food Cost %' : 'Coût nourriture', 
+          value: '28.5%', 
+          data: [32, 30, 29, 31, 28, 29, 27, 28, 29, 28, 28.5, 28], 
+          projection: false,
+          threshold: isEn ? 'Target: 25-35%' : 'Cible: 25-35%',
+          target: '30%',
+          previous: '29.2%',
+          insight: isEn ? 'Within optimal range' : 'Dans la plage optimale'
+        },
+        { 
+          label: isEn ? 'Labor Cost %' : 'Coût M-O', 
+          value: '24.2%', 
+          data: [26, 25, 24, 25, 24, 23, 24, 25, 24, 24, 24, 24.2], 
+          projection: false,
+          threshold: isEn ? 'Target: 20-30%' : 'Cible: 20-30%',
+          target: '25%',
+          previous: '24.8%',
+          insight: isEn ? 'Optimized scheduling working' : 'Planification optimisée efficace'
+        },
+        { 
+          label: isEn ? 'Prime Cost' : 'Coût principal', 
+          value: '52.7%', 
+          data: [58, 55, 53, 56, 52, 52, 51, 53, 53, 52, 52.5, 52.7], 
+          projection: true,
+          threshold: isEn ? 'Target: 55-65%' : 'Cible: 55-65%',
+          target: '60%',
+          previous: '54.0%',
+          insight: isEn ? 'Excellent - below target' : 'Excellent - sous la cible'
+        },
       ],
       benchmarks: [
         { metric: isEn ? 'Food Cost %' : 'Coût nourriture %', yours: '28.5%', target: '25-35%', status: 'good' },
@@ -597,10 +756,46 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
       icon: 'RE',
       iconColor: theme.gold,
       kpis: [
-        { label: isEn ? 'NOI' : 'Bénéfice net', value: '$1.2M', data: [85, 88, 92, 95, 98, 102, 108, 112, 115, 118, 120, 124], projection: true },
-        { label: isEn ? 'Occupancy' : 'Occupation', value: '94.5%', data: [88, 89, 90, 91, 92, 93, 93, 94, 94, 94, 94.5, 95], projection: true },
-        { label: isEn ? 'Cap Rate' : 'Taux cap.', value: '6.8%', data: [7.2, 7.1, 7.0, 6.9, 6.9, 6.8, 6.8, 6.8, 6.7, 6.8, 6.8, 6.8], projection: false },
-        { label: isEn ? 'Cash-on-Cash' : 'Rendement', value: '12.4%', data: [10, 10.5, 11, 11.2, 11.5, 11.8, 12, 12.1, 12.2, 12.3, 12.4, 12.5], projection: true },
+        { 
+          label: isEn ? 'NOI' : 'Bénéfice net', 
+          value: '$1.2M', 
+          data: [85, 88, 92, 95, 98, 102, 108, 112, 115, 118, 120, 124], 
+          projection: true,
+          threshold: isEn ? 'Target: $1.0M+' : 'Cible: 1,0M$+',
+          target: '$1.0M',
+          previous: '$1.15M',
+          insight: isEn ? '+4.3% vs last quarter' : '+4,3% vs trimestre dernier'
+        },
+        { 
+          label: isEn ? 'Occupancy' : 'Occupation', 
+          value: '94.5%', 
+          data: [88, 89, 90, 91, 92, 93, 93, 94, 94, 94, 94.5, 95], 
+          projection: true,
+          threshold: isEn ? 'Target: 90-95%' : 'Cible: 90-95%',
+          target: '92%',
+          previous: '93.8%',
+          insight: isEn ? 'Near full occupancy' : 'Quasi pleine occupation'
+        },
+        { 
+          label: isEn ? 'Cap Rate' : 'Taux cap.', 
+          value: '6.8%', 
+          data: [7.2, 7.1, 7.0, 6.9, 6.9, 6.8, 6.8, 6.8, 6.7, 6.8, 6.8, 6.8], 
+          projection: false,
+          threshold: isEn ? 'Target: 5-8%' : 'Cible: 5-8%',
+          target: '6.5%',
+          previous: '6.9%',
+          insight: isEn ? 'Healthy returns' : 'Rendements sains'
+        },
+        { 
+          label: isEn ? 'Cash-on-Cash' : 'Rendement', 
+          value: '12.4%', 
+          data: [10, 10.5, 11, 11.2, 11.5, 11.8, 12, 12.1, 12.2, 12.3, 12.4, 12.5], 
+          projection: true,
+          threshold: isEn ? 'Target: 8-12%' : 'Cible: 8-12%',
+          target: '10%',
+          previous: '11.8%',
+          insight: isEn ? 'Exceeding target' : 'Dépasse la cible'
+        },
       ],
       benchmarks: [
         { metric: isEn ? 'Occupancy Rate' : 'Taux occupation', yours: '94.5%', target: '90-95%', status: 'good' },
@@ -615,10 +810,46 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
       icon: 'S',
       iconColor: theme.green,
       kpis: [
-        { label: 'ARR', value: '$2.8M', data: [1.5, 1.7, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8], projection: true },
-        { label: isEn ? 'Cash' : 'Trésorerie', value: '$4.6M', data: [3.2, 3.4, 3.6, 3.8, 4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.55, 4.6], projection: true },
-        { label: isEn ? 'Avg ACV' : 'ACV moyen', value: '$23K', data: [18, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 23], projection: false },
-        { label: 'Runway', value: isEn ? '14 Mo' : '14 mois', data: [18, 17, 16, 16, 15, 15, 14, 14, 14, 14, 14, 14], projection: true },
+        { 
+          label: 'ARR', 
+          value: '$2.8M', 
+          data: [1.5, 1.7, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8], 
+          projection: true,
+          threshold: isEn ? 'Target: $2.5M+' : 'Cible: 2,5M$+',
+          target: '$2.5M',
+          previous: '$2.6M',
+          insight: isEn ? '+7.7% growth rate' : '+7,7% taux de croissance'
+        },
+        { 
+          label: isEn ? 'Cash' : 'Trésorerie', 
+          value: '$4.6M', 
+          data: [3.2, 3.4, 3.6, 3.8, 4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.55, 4.6], 
+          projection: true,
+          threshold: isEn ? 'Target: $4.0M+' : 'Cible: 4,0M$+',
+          target: '$4.0M',
+          previous: '$4.4M',
+          insight: isEn ? 'Strong cash position' : 'Position de trésorerie solide'
+        },
+        { 
+          label: isEn ? 'Avg ACV' : 'ACV moyen', 
+          value: '$23K', 
+          data: [18, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 23], 
+          projection: false,
+          threshold: isEn ? 'Target: $20K+' : 'Cible: 20K$+',
+          target: '$20K',
+          previous: '$22K',
+          insight: isEn ? 'Higher value customers' : 'Clients à plus haute valeur'
+        },
+        { 
+          label: 'Runway', 
+          value: isEn ? '14 Mo' : '14 mois', 
+          data: [18, 17, 16, 16, 15, 15, 14, 14, 14, 14, 14, 14], 
+          projection: true,
+          threshold: isEn ? 'Target: 12+ months' : 'Cible: 12+ mois',
+          target: '12 Mo',
+          previous: '15 Mo',
+          insight: isEn ? 'Adequate runway' : 'Runway adéquat'
+        },
       ],
       benchmarks: [
         { metric: isEn ? 'Net Retention' : 'Rétention nette', yours: '115%', target: '>100%', status: 'excellent' },
@@ -633,10 +864,35 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
 
   // Strategic roadmap items
   const roadmapItems = [
-    { plan: isEn ? 'Q1 Expansion' : 'Expansion Q1', start: 0, end: 30, color: theme.green },
-    { plan: isEn ? 'Cost Optimization' : 'Optimisation coûts', start: 20, end: 60, color: theme.gold },
-    { plan: isEn ? 'New Revenue Stream' : 'Nouveau revenu', start: 50, end: 100, color: theme.green },
+    { 
+      plan: isEn ? 'Q1 Expansion' : 'Expansion Q1', 
+      start: 0, 
+      end: 30, 
+      color: theme.green,
+      details: isEn ? 'Open 2 new locations, hire 15 staff' : 'Ouvrir 2 nouveaux emplacements, embaucher 15 employés',
+      budget: isEn ? '$450K' : '450K$',
+      status: isEn ? 'On track' : 'Dans les temps'
+    },
+    { 
+      plan: isEn ? 'Cost Optimization' : 'Optimisation coûts', 
+      start: 20, 
+      end: 60, 
+      color: theme.gold,
+      details: isEn ? 'Reduce overhead by 12%, automate processes' : 'Réduire les frais généraux de 12%, automatiser les processus',
+      budget: isEn ? 'Save $180K/yr' : 'Économiser 180K$/an',
+      status: isEn ? 'In progress' : 'En cours'
+    },
+    { 
+      plan: isEn ? 'New Revenue Stream' : 'Nouveau revenu', 
+      start: 50, 
+      end: 100, 
+      color: theme.green,
+      details: isEn ? 'Launch catering service, target $200K ARR' : 'Lancer service traiteur, cible 200K$ ARR',
+      budget: isEn ? '$120K investment' : '120K$ investissement',
+      status: isEn ? 'Planned' : 'Planifié'
+    },
   ];
+  const [hoveredRoadmapItem, setHoveredRoadmapItem] = useState<number | null>(null);
 
   return (
     <div 
@@ -699,12 +955,8 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
           }}
         >
-          {/* Main Navigation */}
-          <div className="text-[8px] font-bold uppercase tracking-wider px-2 mb-2" style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}>
-            {isEn ? 'Navigation' : 'Navigation'}
-          </div>
           
-          {/* Exec Dashboard - Active with sub-items */}
+          {/* Board - Active with sub-items */}
           <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '0ms' }}>
             <div 
               className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-semibold cursor-pointer"
@@ -714,10 +966,10 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               }}
             >
               <BarChart3 className="w-3.5 h-3.5" />
-              {isEn ? 'Exec Dashboard' : 'Tableau exécutif'}
+              {isEn ? 'Board' : 'Tableau'}
             </div>
-            {/* Sub-items */}
-            <div className="ml-5 mt-1 space-y-0.5">
+            {/* Sub-items - Left aligned */}
+            <div className="mt-1 space-y-0.5 pl-4">
               {[
                 { label: isEn ? 'Overview' : 'Aperçu', active: true },
                 { label: isEn ? 'Cash Flow' : 'Flux de trésorerie', active: false },
@@ -725,7 +977,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               ].map((sub, j) => (
                 <div 
                   key={j}
-                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
                   style={{ 
                     color: sub.active ? theme.green : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
                     backgroundColor: sub.active ? `${theme.green}08` : 'transparent',
@@ -749,14 +1001,14 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               <TrendingUp className="w-3.5 h-3.5" style={{ color: theme.gold }} />
               {isEn ? 'Industry KPIs' : 'KPIs sectoriels'}
             </div>
-            <div className="ml-5 mt-1 space-y-0.5">
+            <div className="mt-1 space-y-0.5 pl-4">
               {[
                 { label: isEn ? 'Benchmarks' : 'Références' },
                 { label: isEn ? 'Trends' : 'Tendances' },
               ].map((sub, j) => (
                 <div 
                   key={j}
-                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
                   style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
                 >
                   {sub.label}
@@ -776,14 +1028,14 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               <Target className="w-3.5 h-3.5" style={{ color: theme.gold }} />
               {isEn ? 'Scenarios' : 'Scénarios'}
             </div>
-            <div className="ml-5 mt-1 space-y-0.5">
+            <div className="mt-1 space-y-0.5 pl-4">
               {[
                 { label: isEn ? 'What-If' : 'Simulation' },
                 { label: isEn ? 'Forecasts' : 'Prévisions' },
               ].map((sub, j) => (
                 <div 
                   key={j}
-                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
                   style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
                 >
                   {sub.label}
@@ -803,14 +1055,14 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               <FileCheck className="w-3.5 h-3.5" style={{ color: theme.green }} />
               {isEn ? 'Reports' : 'Rapports'}
             </div>
-            <div className="ml-5 mt-1 space-y-0.5">
+            <div className="mt-1 space-y-0.5 pl-4">
               {[
                 { label: isEn ? 'Monthly' : 'Mensuel' },
                 { label: isEn ? 'Custom' : 'Personnalisé' },
               ].map((sub, j) => (
                 <div 
                   key={j}
-                  className="text-[9px] px-2 py-1 rounded cursor-pointer transition-colors"
+                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
                   style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
                 >
                   {sub.label}
@@ -876,22 +1128,26 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           <div className={`flex items-center gap-2 mb-4 text-[10px] transition-all duration-500 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
             <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Overview' : 'Aperçu'}</span>
             <span style={{ color: 'rgb(var(--color-text-muted))' }}>›</span>
-            <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Exec Dashboard' : 'Tableau exécutif'}</span>
+            <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Board' : 'Tableau'}</span>
           </div>
           
           {/* KPI Cards Row - Runway Style */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 relative">
             {current.kpis.map((kpi, i) => (
               <div 
                 key={i}
-                className={`p-3 rounded-xl transition-all duration-500 cursor-pointer hover:shadow-lg ${
+                className={`p-3 rounded-xl transition-all duration-300 cursor-pointer relative group ${
                   showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                 }`}
                 style={{ 
                   backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(255, 255, 255, 0.9)',
-                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
-                  transitionDelay: `${i * 100 + 200}ms`
+                  border: `1px solid ${hoveredKpi === i ? theme.green : (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)')}`,
+                  boxShadow: hoveredKpi === i ? `0 8px 24px ${theme.green}30` : 'none',
+                  transitionDelay: `${i * 100 + 200}ms`,
+                  zIndex: hoveredKpi === i ? 10 : 1,
                 }}
+                onMouseEnter={() => setHoveredKpi(i)}
+                onMouseLeave={() => setHoveredKpi(null)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[9px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
@@ -908,7 +1164,53 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                   delay={400 + i * 100}
                   trigger={isVisible}
                   showDashed={kpi.projection}
+                  showHoverValues={true}
+                  isDark={isDark}
                 />
+                
+                {/* Hover Tooltip */}
+                {hoveredKpi === i && kpi.threshold && (
+                  <div 
+                    className="absolute top-full left-0 right-0 mt-2 p-3 rounded-lg shadow-xl z-20"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `1px solid ${theme.green}30`,
+                      backdropFilter: 'blur(8px)',
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                          {isEn ? 'Threshold' : 'Seuil'}
+                        </span>
+                        <span className="text-[9px] font-medium" style={{ color: theme.green }}>
+                          {kpi.threshold}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                          {isEn ? 'Target' : 'Cible'}
+                        </span>
+                        <span className="text-[9px] font-medium" style={{ color: theme.gold }}>
+                          {kpi.target}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                          {isEn ? 'Previous' : 'Précédent'}
+                        </span>
+                        <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                          {kpi.previous}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+                        <p className="text-[9px] font-medium" style={{ color: theme.green }}>
+                          {kpi.insight}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -928,44 +1230,125 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               <h4 className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Strategic Roadmap' : 'Feuille de route stratégique'}
               </h4>
-              <button 
-                className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
-                style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
-              >
-                <Sparkles className="w-3 h-3" />
-                {isEn ? 'Customize' : 'Personnaliser'}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="flex items-center gap-1 rounded border" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }}>
+                  {(['monthly', 'quarterly', 'yearly'] as const).map((view) => (
+                    <button
+                      key={view}
+                      onClick={() => setRoadmapView(view)}
+                      className="px-2 py-0.5 text-[8px] font-medium transition-colors rounded"
+                      style={{
+                        backgroundColor: roadmapView === view ? theme.green : 'transparent',
+                        color: roadmapView === view ? 'white' : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
+                      }}
+                    >
+                      {isEn 
+                        ? (view === 'monthly' ? 'Mo' : view === 'quarterly' ? 'Q' : 'Yr')
+                        : (view === 'monthly' ? 'M' : view === 'quarterly' ? 'T' : 'A')
+                      }
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
+                  style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {isEn ? 'Customize' : 'Personnaliser'}
+                </button>
+              </div>
             </div>
             
             {/* Timeline Header */}
             <div className="flex mb-2">
               <div className="w-28 sm:w-36" />
               <div className="flex-1 flex justify-between text-[8px] sm:text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                <span>Q1 '26</span>
-                <span>Q2 '26</span>
-                <span>Q3 '26</span>
-                <span>Q4 '26</span>
+                {roadmapView === 'monthly' ? (
+                  <>
+                    <span>Jan</span>
+                    <span>Apr</span>
+                    <span>Jul</span>
+                    <span>Oct</span>
+                  </>
+                ) : roadmapView === 'quarterly' ? (
+                  <>
+                    <span>Q1 '26</span>
+                    <span>Q2 '26</span>
+                    <span>Q3 '26</span>
+                    <span>Q4 '26</span>
+                  </>
+                ) : (
+                  <>
+                    <span>2025</span>
+                    <span>2026</span>
+                    <span>2027</span>
+                    <span>2028</span>
+                  </>
+                )}
               </div>
             </div>
             
             {/* Roadmap Items */}
             {roadmapItems.map((item, i) => (
-              <div key={i} className="flex items-center mb-2">
+              <div 
+                key={i} 
+                className="flex items-center mb-2 relative group"
+                onMouseEnter={() => setHoveredRoadmapItem(i)}
+                onMouseLeave={() => setHoveredRoadmapItem(null)}
+              >
                 <div className="w-28 sm:w-36 text-[9px] sm:text-[10px] font-medium pr-2 truncate" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {item.plan}
                 </div>
-                <div className="flex-1 h-6 relative rounded overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)' }}>
+                <div className="flex-1 h-6 relative rounded overflow-hidden cursor-pointer" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)' }}>
                   <div 
                     className="absolute top-1 bottom-1 rounded transition-all duration-1000"
                     style={{ 
                       left: `${item.start}%`,
                       width: showElements ? `${item.end - item.start}%` : '0%',
                       backgroundColor: item.color,
-                      opacity: 0.8,
+                      opacity: hoveredRoadmapItem === i ? 1 : 0.8,
                       transitionDelay: `${600 + i * 150}ms`
                     }}
                   />
                 </div>
+                
+                {/* Hover Tooltip */}
+                {hoveredRoadmapItem === i && (
+                  <div 
+                    className="absolute left-0 top-full mt-2 p-3 rounded-lg shadow-xl z-20 min-w-[200px]"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `1px solid ${item.color}30`,
+                      backdropFilter: 'blur(8px)',
+                    }}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                          {item.plan}
+                        </span>
+                        <span 
+                          className="text-[8px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{ 
+                            backgroundColor: `${item.color}15`,
+                            color: item.color
+                          }}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                        {item.details}
+                      </p>
+                      <div className="pt-2 border-t" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+                        <span className="text-[9px] font-medium" style={{ color: item.color }}>
+                          {item.budget}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -996,51 +1379,88 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             
             {/* Table Header */}
             <div 
-              className="grid grid-cols-4 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
+              className="grid grid-cols-5 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
               style={{ backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)' }}
             >
               <span style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
-              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Your Value' : 'Votre valeur'}</span>
-              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
+              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current Score' : 'Score actuel'}</span>
+              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target Score' : 'Score cible'}</span>
+              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}></span>
             </div>
             
             {/* Table Rows */}
-            {current.benchmarks.map((row, i) => (
-              <div 
-                key={i}
-                className={`grid grid-cols-4 text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all ${
-                  hoveredRow === i ? 'bg-black/5' : ''
-                }`}
-                style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)' }}
-                onMouseEnter={() => setHoveredRow(i)}
-                onMouseLeave={() => setHoveredRow(null)}
-              >
-                <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{row.metric}</span>
-                <span className="text-center font-semibold" style={{ color: theme.green }}>{row.yours}</span>
-                <span 
-                  className="text-center px-2 py-0.5 rounded-full mx-auto"
+            {current.benchmarks.map((row, i) => {
+              const isExcellent = row.status === 'excellent';
+              const isGood = row.status === 'good';
+              const statusIcon = isExcellent ? CheckCircle : isGood ? CheckCircle : AlertCircle;
+              const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
+              
+              return (
+                <div 
+                  key={i}
+                  className={`grid grid-cols-5 text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all group ${
+                    hoveredRow === i ? 'bg-opacity-50' : ''
+                  }`}
                   style={{ 
-                    backgroundColor: `${theme.green}10`,
-                    color: theme.green,
-                    fontSize: '9px'
+                    borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
+                    backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent'
                   }}
+                  onMouseEnter={() => setHoveredRow(i)}
+                  onMouseLeave={() => setHoveredRow(null)}
                 >
-                  {row.target}
-                </span>
-                <div className="flex justify-end items-center gap-1">
+                  <span className="font-medium flex items-center gap-1" style={{ color: 'rgb(var(--color-text))' }}>
+                    {row.metric}
+                  </span>
+                  <span className="text-center font-bold" style={{ color: theme.green }}>{row.yours}</span>
                   <span 
-                    className="px-1.5 py-0.5 rounded text-[8px] font-medium"
+                    className="text-center px-2 py-0.5 rounded-full mx-auto font-medium"
                     style={{ 
-                      backgroundColor: row.status === 'excellent' ? `${theme.green}20` : `${theme.gold}15`,
-                      color: row.status === 'excellent' ? theme.green : theme.goldDark,
+                      backgroundColor: `${theme.gold}12`,
+                      color: theme.goldDark,
+                      fontSize: '9px'
                     }}
                   >
-                    {row.status === 'excellent' ? '★ ' : ''}{row.status === 'excellent' ? (isEn ? 'Excellent' : 'Excellent') : (isEn ? 'On Track' : 'En ligne')}
+                    {row.target}
                   </span>
+                  <div className="flex justify-center items-center gap-1">
+                    {isExcellent ? (
+                      <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
+                    ) : isGood ? (
+                      <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
+                    )}
+                    <span 
+                      className="px-1.5 py-0.5 rounded text-[8px] font-medium"
+                      style={{ 
+                        backgroundColor: `${statusColor}15`,
+                        color: statusColor,
+                      }}
+                    >
+                      {isExcellent ? (isEn ? 'Excellent' : 'Excellent') : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
+                    </span>
+                  </div>
+                  <div className="flex justify-end items-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Could open a modal or navigate to detailed view
+                        alert(isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-opacity-50"
+                      style={{ 
+                        backgroundColor: `${theme.green}10`,
+                        color: theme.green
+                      }}
+                      title={isEn ? 'Learn more' : 'En savoir plus'}
+                    >
+                      <Info className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1290,11 +1710,28 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 relative z-10 min-h-[85vh] flex items-center">
-        <div className="max-w-4xl mx-auto text-center w-full">
+      <section 
+        className="pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 relative z-10 min-h-[85vh] flex items-center overflow-hidden"
+        style={{
+          backgroundImage: isDark 
+            ? `radial-gradient(circle at 20% 50%, ${theme.green}08 0%, transparent 50%), radial-gradient(circle at 80% 50%, ${theme.gold}06 0%, transparent 50%)`
+            : `radial-gradient(circle at 20% 50%, ${theme.green}05 0%, transparent 50%), radial-gradient(circle at 80% 50%, ${theme.gold}04 0%, transparent 50%)`,
+          backgroundSize: '100% 100%',
+        }}
+      >
+        {/* Corporate Background Pattern */}
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `radial-gradient(${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'} 1px, transparent 1px)`,
+            backgroundSize: '32px 32px',
+          }}
+        />
+        
+        <div className="max-w-4xl mx-auto text-center w-full relative z-10">
           {/* Main Headline */}
           <h1 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6 animate-fade-up"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight mb-6 sm:mb-8 animate-fade-up"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {isEn ? (
@@ -1314,45 +1751,29 @@ export default function Landing() {
             )}
           </h1>
 
-          {/* Value Proposition */}
+          {/* Value Proposition - Condensed */}
           <div 
-            className="max-w-3xl mx-auto mb-8 sm:mb-10 px-2 animate-fade-up opacity-0"
+            className="max-w-2xl mx-auto mb-8 px-2 animate-fade-up opacity-0"
             style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}
           >
             <p 
-              className="text-base sm:text-lg md:text-xl leading-relaxed mb-4"
+              className="text-lg sm:text-xl md:text-2xl leading-relaxed"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Industry-specific AI that understands your business. Get exec-ready dashboards with KPIs, OKRs, and strategic projections tailored to your sector.'
-                : 'IA spécifique à votre industrie qui comprend votre entreprise. Obtenez des tableaux de bord avec KPIs, OKRs et projections stratégiques adaptés à votre secteur.'}
+                ? 'Exec-ready dashboards with industry KPIs, OKRs, and AI-optimized projections.'
+                : 'Tableaux de bord avec KPIs sectoriels, OKRs et projections optimisées par IA.'}
             </p>
-            
-            {/* ROI Highlights */}
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm">
-              <div className="flex items-center gap-2" style={{ color: theme.green }}>
-                <Sparkles className="w-4 h-4" />
-                <span className="font-medium">{isEn ? '97% AI accuracy' : '97% précision IA'}</span>
-              </div>
-              <div className="flex items-center gap-2" style={{ color: theme.gold }}>
-                <TrendingUp className="w-4 h-4" />
-                <span className="font-medium">{isEn ? '15+ industries' : '15+ industries'}</span>
-              </div>
-              <div className="flex items-center gap-2" style={{ color: theme.green }}>
-                <Target className="w-4 h-4" />
-                <span className="font-medium">{isEn ? 'Avg $4K/mo savings' : 'Économies moy. 4K$/mois'}</span>
-              </div>
-            </div>
           </div>
 
-          {/* CTAs */}
+          {/* CTAs - Smaller buttons */}
           <div 
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-8 sm:mb-10 animate-fade-up opacity-0"
+            className="flex flex-col sm:flex-row gap-3 justify-center mb-8 animate-fade-up opacity-0"
             style={{ animationDelay: '0.25s', animationFillMode: 'forwards' }}
           >
             <button 
               onClick={() => register()}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 text-base shadow-lg"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 text-sm shadow-lg"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 color: 'white',
@@ -1360,18 +1781,18 @@ export default function Landing() {
               }}
             >
               {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </button>
             <button 
               onClick={handleScheduleCall}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 text-base"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 text-sm"
               style={{ 
                 border: `2px solid ${theme.green}`,
                 color: isDark ? theme.green : theme.greenDark,
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)'
               }}
             >
-              <Calendar className="w-5 h-5" />
+              <Calendar className="w-4 h-4" />
               {isEn ? 'Schedule a call' : 'Planifier un appel'}
             </button>
           </div>
@@ -1396,6 +1817,73 @@ export default function Landing() {
               </span>
             </div>
           </div>
+
+          {/* Social Proof - Trusted by founders */}
+          <motion.div 
+            className="mt-8 flex flex-col items-center gap-4"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 2, delay: 1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="flex items-center -space-x-3">
+              {[
+                { src: 'https://randomuser.me/api/portraits/men/32.jpg', name: 'Marc' },
+                { src: 'https://randomuser.me/api/portraits/women/44.jpg', name: 'Sophie' },
+                { src: 'https://randomuser.me/api/portraits/men/52.jpg', name: 'David' },
+                { src: 'https://randomuser.me/api/portraits/women/68.jpg', name: 'Julie' },
+                { src: 'https://randomuser.me/api/portraits/men/76.jpg', name: 'Pierre' },
+              ].map((person, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, scale: 0.3, x: -40 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  transition={{ 
+                    duration: 1.8, 
+                    delay: 1.5 + idx * 0.4, 
+                    ease: [0.16, 1, 0.3, 1]
+                  }}
+                  whileHover={{ scale: 1.15, zIndex: 20, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
+                  className="w-11 h-11 rounded-full border-[3px] overflow-hidden shadow-lg cursor-pointer"
+                  style={{ 
+                    borderColor: isDark ? 'rgb(30, 41, 59)' : 'white',
+                    zIndex: 10 - idx,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  <img 
+                    src={person.src} 
+                    alt={person.name}
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+              ))}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.3 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1.8, delay: 3.8, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ scale: 1.1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
+                className="w-11 h-11 rounded-full border-[3px] flex items-center justify-center text-xs font-bold shadow-lg cursor-pointer"
+                style={{ 
+                  borderColor: isDark ? 'rgb(30, 41, 59)' : 'white',
+                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                  color: 'white',
+                  zIndex: 0,
+                  boxShadow: `0 4px 12px ${theme.green}40`
+                }}
+              >
+                +50
+              </motion.div>
+            </div>
+            <motion.p 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.8, delay: 4.2, ease: [0.16, 1, 0.3, 1] }}
+              className="text-sm font-medium"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? 'Trusted by Canadian business owners' : 'Utilisé par des entrepreneurs canadiens'}
+            </motion.p>
+          </motion.div>
           
           {/* Interactive Dashboard Preview */}
           <div 
@@ -1420,9 +1908,19 @@ export default function Landing() {
       >
         <div className="max-w-6xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-12">
-            <div 
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <motion.div 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.4, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ 
                 background: `${theme.green}15`,
                 border: `1px solid ${theme.green}25`,
@@ -1431,22 +1929,30 @@ export default function Landing() {
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {isEn ? 'Exec Dashboard' : 'Tableau de bord exécutif'}
-            </div>
-            <h2 
+            </motion.div>
+            <motion.h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
               {isEn ? 'Strategic Intelligence at a Glance' : 'Intelligence stratégique en un coup d\'œil'}
-            </h2>
-            <p 
+            </motion.h2>
+            <motion.p 
               className="text-sm sm:text-base max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
                 ? 'Real-time metrics, AI-powered insights, and strategic planning tools designed for executive decision-making.'
                 : 'Métriques en temps réel, insights alimentés par l\'IA et outils de planification stratégique conçus pour les décisions exécutives.'}
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
           {/* Features Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -1506,25 +2012,46 @@ export default function Landing() {
                 color: theme.gold,
               },
             ].map((feature, idx) => (
-              <div 
+              <motion.div 
                 key={idx}
-                className="group p-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                initial={{ opacity: 0, y: 70, scale: 0.92 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ 
+                  duration: 1.8, 
+                  delay: 0.25 * idx,
+                  ease: [0.16, 1, 0.3, 1]
+                }}
+                whileHover={{ y: -10, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
+                className="group p-5 rounded-xl transition-all duration-500 relative overflow-hidden"
                 style={{ 
                   backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
                   border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
               >
-                {/* Icon */}
+                {/* Gradient overlay on hover */}
                 <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
-                  style={{ backgroundColor: `${feature.color}15` }}
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(135deg, ${feature.color}08 0%, transparent 100%)`
+                  }}
+                />
+                
+                {/* Icon with animation */}
+                <div 
+                  className="relative z-10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
+                  style={{ 
+                    backgroundColor: `${feature.color}15`,
+                    boxShadow: `0 4px 12px ${feature.color}20`
+                  }}
                 >
-                  <feature.icon className="w-5 h-5" style={{ color: feature.color }} />
+                  <feature.icon className="w-6 h-6 transition-transform duration-300 group-hover:scale-110" style={{ color: feature.color }} />
                 </div>
                 
                 {/* Title */}
                 <h3 
-                  className="text-base font-bold mb-2"
+                  className="relative z-10 text-base font-bold mb-2 transition-colors duration-300"
                   style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
                 >
                   {feature.title}
@@ -1532,7 +2059,7 @@ export default function Landing() {
                 
                 {/* Description */}
                 <p 
-                  className="text-xs leading-relaxed mb-3"
+                  className="relative z-10 text-xs leading-relaxed mb-3"
                   style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
                 >
                   {feature.desc}
@@ -1540,32 +2067,41 @@ export default function Landing() {
                 
                 {/* Highlight */}
                 <div 
-                  className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                  className="relative z-10 inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-300 group-hover:scale-105"
                   style={{ 
                     backgroundColor: `${feature.color}12`,
-                    color: feature.color
+                    color: feature.color,
+                    boxShadow: `0 2px 4px ${feature.color}15`
                   }}
                 >
                   <Check className="w-3 h-3" />
                   {feature.highlight}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* Bottom CTA */}
-          <div className="text-center mt-10">
+          <motion.div 
+            className="text-center mt-10"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.8, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          >
             <p 
-              className="text-sm mb-4"
+              className="text-sm mb-4 text-center"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
                 ? 'All features included in every plan. No hidden upgrades.'
                 : 'Toutes les fonctionnalités incluses dans chaque plan. Aucune mise à niveau cachée.'}
             </p>
-            <button 
+            <motion.button 
               onClick={() => register()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 text-sm"
+              whileHover={{ scale: 1.05, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 16px ${theme.green}35`
@@ -1573,8 +2109,8 @@ export default function Landing() {
             >
               {isEn ? 'Try the dashboard free' : 'Essayez le tableau de bord gratuitement'}
               <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         </div>
       </section>
 
@@ -1605,9 +2141,19 @@ export default function Landing() {
         
         <div className="max-w-5xl mx-auto relative z-10">
           {/* Section Header */}
-          <div className="text-center mb-10 sm:mb-14">
-            <div 
+          <motion.div 
+            className="text-center mb-10 sm:mb-14"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <motion.div 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ 
                 background: `${theme.green}15`,
                 border: `1px solid ${theme.green}25`,
@@ -1616,22 +2162,30 @@ export default function Landing() {
             >
               <Layers className="w-3.5 h-3.5" />
               {isEn ? 'How It Works' : 'Comment ça fonctionne'}
-            </div>
-            <h2 
+            </motion.div>
+            <motion.h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
               {isEn ? 'Your Data Journey' : 'Le parcours de vos données'}
-            </h2>
-            <p 
+            </motion.h2>
+            <motion.p 
               className="text-sm sm:text-base max-w-lg mx-auto"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
                 ? 'From connection to insights in 4 intelligent steps'
                 : 'De la connexion aux insights en 4 étapes intelligentes'}
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
           {/* Pipeline Steps - Horizontal on Desktop */}
           <div className="relative">
@@ -1650,8 +2204,8 @@ export default function Landing() {
               />
             </div>
             
-            {/* Steps Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {/* Steps Grid - Compact & Animated */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {[
                 { 
                   num: 1, 
@@ -1660,7 +2214,6 @@ export default function Landing() {
                   desc: isEn ? 'Link your accounting software' : 'Liez votre logiciel comptable',
                   tags: ['QuickBooks', 'Xero', 'Sage'],
                   color: theme.green,
-                  delay: '0s'
                 },
                 { 
                   num: 2, 
@@ -1669,7 +2222,6 @@ export default function Landing() {
                   desc: isEn ? 'Canadian data lake' : 'Data lake canadien',
                   tags: [isEn ? 'Sanitized' : 'Assaini', isEn ? 'Validated' : 'Validé'],
                   color: theme.green,
-                  delay: '0.1s'
                 },
                 { 
                   num: 3, 
@@ -1678,7 +2230,6 @@ export default function Landing() {
                   desc: isEn ? 'Industry ML models' : 'Modèles ML sectoriels',
                   tags: ['97%', isEn ? 'Accuracy' : 'Précision'],
                   color: theme.gold,
-                  delay: '0.2s'
                 },
                 { 
                   num: 4, 
@@ -1687,60 +2238,97 @@ export default function Landing() {
                   desc: isEn ? 'Exec-ready insights' : 'Insights exécutifs',
                   tags: ['KPIs', 'OKRs'],
                   color: theme.gold,
-                  delay: '0.3s'
                 },
               ].map((step, idx) => (
-                <div 
+                <motion.div 
                   key={step.num}
-                  className="group relative animate-fade-up opacity-0"
-                  style={{ animationDelay: step.delay, animationFillMode: 'forwards' }}
+                  className="group relative"
+                  initial={{ opacity: 0, x: -60, scale: 0.88 }}
+                  whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ 
+                    duration: 2, 
+                    delay: 0.5 + idx * 0.4,
+                    ease: [0.16, 1, 0.3, 1]
+                  }}
                 >
                   {/* Step Card */}
-                  <div 
-                    className="relative p-5 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden h-full"
+                  <motion.div 
+                    className="relative p-3 sm:p-4 rounded-lg cursor-pointer overflow-hidden h-full"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
                       border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
                     }}
+                    whileHover={{ 
+                      y: -10,
+                      scale: 1.03,
+                      boxShadow: `0 25px 50px -15px ${step.color}35`,
+                      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+                    }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    {/* Top accent line */}
-                    <div 
-                      className="absolute top-0 left-0 right-0 h-1 transition-all duration-300 group-hover:h-1.5"
+                    {/* Top accent line with animation */}
+                    <motion.div 
+                      className="absolute top-0 left-0 right-0 h-0.5"
                       style={{ backgroundColor: step.color }}
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: idx * 0.1 + 0.3 }}
                     />
                     
-                    {/* Hover glow effect */}
-                    <div 
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    {/* Animated background pulse on hover */}
+                    <motion.div 
+                      className="absolute inset-0 pointer-events-none"
                       style={{ 
-                        background: `radial-gradient(circle at center, ${step.color}08 0%, transparent 70%)`
+                        background: `radial-gradient(circle at center, ${step.color}10 0%, transparent 70%)`
                       }}
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
                     />
                     
-                    {/* Step Number - Large */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div 
-                        className="w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold transition-transform duration-300 group-hover:scale-110"
+                    {/* Step Number & Icon Row */}
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <motion.div 
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center text-sm sm:text-base font-bold"
                         style={{ 
                           backgroundColor: `${step.color}15`,
                           color: step.color
                         }}
-                      >
-                        {step.num}
-                      </div>
-                      <div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:rotate-12"
-                        style={{ 
-                          backgroundColor: `${step.color}10`,
+                        whileHover={{ 
+                          scale: 1.15,
+                          rotate: [0, -5, 5, 0],
+                          transition: { duration: 0.4 }
                         }}
                       >
-                        <step.icon className="w-5 h-5" style={{ color: step.color }} />
-                      </div>
+                        {step.num}
+                      </motion.div>
+                      <motion.div 
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center"
+                        style={{ backgroundColor: `${step.color}10` }}
+                        animate={{ 
+                          rotate: [0, 5, -5, 0],
+                        }}
+                        transition={{ 
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: idx * 0.5
+                        }}
+                        whileHover={{ 
+                          rotate: 180,
+                          scale: 1.1,
+                          transition: { duration: 0.4 }
+                        }}
+                      >
+                        <step.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: step.color }} />
+                      </motion.div>
                     </div>
                     
                     {/* Title */}
                     <h4 
-                      className="text-base font-bold mb-2"
+                      className="text-sm sm:text-base font-bold mb-1"
                       style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
                     >
                       {step.title}
@@ -1748,88 +2336,63 @@ export default function Landing() {
                     
                     {/* Description */}
                     <p 
-                      className="text-xs mb-4 leading-relaxed"
+                      className="text-[10px] sm:text-xs mb-2 sm:mb-3 leading-relaxed line-clamp-2"
                       style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
                     >
                       {step.desc}
                     </p>
                     
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {step.tags.map((tag) => (
-                        <span 
+                    {/* Tags with staggered animation */}
+                    <div className="flex flex-wrap gap-1">
+                      {step.tags.map((tag, tagIdx) => (
+                        <motion.span 
                           key={tag}
-                          className="text-[10px] px-2.5 py-1 rounded font-medium transition-colors duration-300 group-hover:bg-opacity-100"
+                          className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded font-medium"
                           style={{ 
                             backgroundColor: `${step.color}12`,
                             color: step.color,
                           }}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: idx * 0.1 + tagIdx * 0.05 + 0.4 }}
+                          whileHover={{ 
+                            scale: 1.1,
+                            backgroundColor: `${step.color}25`,
+                          }}
                         >
                           {tag}
-                        </span>
+                        </motion.span>
                       ))}
                     </div>
                     
                     {/* Animated corner indicator */}
-                    <div 
-                      className="absolute bottom-0 right-0 w-8 h-8 transition-transform duration-300 group-hover:scale-150 opacity-20"
+                    <motion.div 
+                      className="absolute bottom-0 right-0 w-6 h-6 opacity-20"
                       style={{
                         background: `linear-gradient(135deg, transparent 50%, ${step.color} 50%)`
                       }}
+                      whileHover={{ scale: 2, opacity: 0.3 }}
+                      transition={{ duration: 0.3 }}
                     />
-                  </div>
+                  </motion.div>
                   
                   {/* Connector Arrow - Desktop only */}
                   {idx < 3 && (
-                    <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-6 h-6">
+                    <motion.div 
+                      className="hidden lg:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-4 h-4"
+                      animate={{ x: [0, 3, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
                       <div 
-                        className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] animate-pulse"
+                        className="w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[6px]"
                         style={{ borderLeftColor: step.color }}
                       />
-                    </div>
+                    </motion.div>
                   )}
-                  
-                  {/* Connector Line - Mobile/Tablet */}
-                  {idx < 3 && (
-                    <div className="lg:hidden flex justify-center my-3">
-                      <div 
-                        className="w-[2px] h-6 rounded-full"
-                        style={{ backgroundColor: `${step.color}50` }}
-                      />
-                    </div>
-                  )}
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
-
-          {/* Stats Bar */}
-          <div 
-            className="mt-10 p-4 rounded-lg flex flex-wrap justify-center gap-8 sm:gap-12"
-            style={{ 
-              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
-              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
-            }}
-          >
-            {[
-              { label: isEn ? 'Data Sources' : 'Sources', value: '6+', color: theme.green },
-              { label: isEn ? 'Processing' : 'Traitement', value: '<5min', color: theme.green },
-              { label: isEn ? 'AI Accuracy' : 'Précision IA', value: '97%', color: theme.gold },
-              { label: isEn ? 'Industries' : 'Industries', value: '15+', color: theme.gold },
-            ].map((stat, idx) => (
-              <div 
-                key={stat.label} 
-                className="text-center animate-fade-up opacity-0"
-                style={{ animationDelay: `${0.4 + idx * 0.1}s`, animationFillMode: 'forwards' }}
-              >
-                <div className="text-xl sm:text-2xl font-bold mb-0.5" style={{ color: stat.color }}>
-                  {stat.value}
-                </div>
-                <div className="text-[10px] font-medium uppercase tracking-wider" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
           </div>
 
           {/* CTA */}
@@ -1860,143 +2423,265 @@ export default function Landing() {
       {/* AI & Security Features Section */}
       <section 
         id="integrations" 
-        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
         style={{ 
           background: isDark 
-            ? 'transparent' 
-            : 'linear-gradient(180deg, rgba(248, 250, 252, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)'
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%)' 
+            : 'linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 50%, rgba(240, 253, 244, 0.3) 100%)'
         }}
       >
-        <div className="max-w-5xl mx-auto">
-          {/* AI & Security Features */}
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-            {/* AI-Powered Intelligence */}
-            <div 
-              className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl"
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div 
+            className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-20"
+            style={{ background: `radial-gradient(circle, ${theme.gold}40 0%, transparent 70%)` }}
+          />
+          <div 
+            className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-20"
+            style={{ background: `radial-gradient(circle, ${theme.green}40 0%, transparent 70%)` }}
+          />
+        </div>
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          {/* Section Header */}
+          <motion.div 
+            className="text-center mb-12 sm:mb-16"
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <motion.div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(251, 191, 36, 0.3)'}`,
-                boxShadow: isDark ? 'none' : '0 4px 24px rgba(251, 191, 36, 0.08)'
+                backgroundColor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                color: theme.goldDark,
+                border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.2)' : 'rgba(251, 191, 36, 0.3)'}`
               }}
             >
-              <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <Sparkles className="w-4 h-4" />
+              {isEn ? 'Built for Modern Finance' : 'Conçu pour la finance moderne'}
+            </motion.div>
+            <motion.h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
+              initial={{ opacity: 0, y: 35 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Powerful features, enterprise security' : 'Fonctionnalités puissantes, sécurité entreprise'}
+            </motion.h2>
+            <motion.p 
+              className="text-base sm:text-lg max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 2, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'Leverage AI-powered insights while keeping your financial data protected with bank-grade security.'
+                : 'Profitez d\'insights alimentés par l\'IA tout en protégeant vos données avec une sécurité bancaire.'}
+            </motion.p>
+          </motion.div>
+
+          {/* Feature Cards Grid */}
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
+            {/* AI-Powered Intelligence Card */}
+            <motion.div 
+              className="group relative p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl"
+              initial={{ opacity: 0, x: -100 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }}
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.98)',
+                border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.2)' : 'rgba(251, 191, 36, 0.25)'}`,
+                boxShadow: isDark 
+                  ? '0 4px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
+                  : '0 4px 32px rgba(251, 191, 36, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05)'
+              }}
+            >
+              {/* Gradient accent bar */}
+              <div 
+                className="absolute top-0 left-8 right-8 h-1 rounded-b-full opacity-80"
+                style={{ background: `linear-gradient(90deg, ${theme.gold} 0%, ${theme.goldDark} 100%)` }}
+              />
+              
+              {/* Icon with glow effect */}
+              <div className="relative mb-6">
                 <div 
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
                   style={{ 
-                    background: `linear-gradient(135deg, ${theme.gold}25 0%, ${theme.gold}10 100%)`,
+                    background: `linear-gradient(135deg, ${theme.gold}30 0%, ${theme.gold}15 100%)`,
+                    boxShadow: `0 8px 24px ${theme.gold}20`
                   }}
                 >
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.goldDark }} />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'AI-Optimized for Your Industry' : 'IA optimisée pour votre industrie'}
-                  </h3>
-                  <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn 
-                      ? 'Industry-specific models for accurate insights'
-                      : 'Modèles spécifiques pour des insights précis'}
-                  </p>
+                  <Sparkles className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.goldDark }} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+
+              {/* Content */}
+              <div className="mb-8">
+                <h3 
+                  className="text-xl sm:text-2xl font-bold mb-2"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn ? 'AI-Optimized for Your Industry' : 'IA optimisée pour votre industrie'}
+                </h3>
+                <p 
+                  className="text-sm sm:text-base leading-relaxed"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {isEn 
+                    ? 'Industry-specific machine learning models trained to deliver accurate, actionable insights for your business sector.'
+                    : 'Modèles d\'apprentissage automatique spécifiques à l\'industrie pour des insights précis et exploitables.'}
+                </p>
+              </div>
+
+              {/* Feature Pills */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { icon: TrendingUp, en: 'Strategic projections', fr: 'Projections' },
-                  { icon: Zap, en: 'Montage financier', fr: 'Montage fin.' },
-                  { icon: Eye, en: 'KPIs & OKRs', fr: 'KPIs & OKRs' },
-                  { icon: Cpu, en: 'Benchmarks', fr: 'Références' },
-                ].map((item) => (
+                  { icon: TrendingUp, en: 'Strategic Projections', fr: 'Projections stratégiques', desc: isEn ? 'Forecast trends' : 'Prévisions' },
+                  { icon: Zap, en: 'Financial Modeling', fr: 'Montage financier', desc: isEn ? 'Scenario planning' : 'Scénarios' },
+                  { icon: Eye, en: 'KPIs & OKRs', fr: 'KPIs & OKRs', desc: isEn ? 'Track metrics' : 'Suivi métriques' },
+                  { icon: Cpu, en: 'Benchmarks', fr: 'Références', desc: isEn ? 'Compare peers' : 'Comparaison' },
+                ].map((item, index) => (
                   <div 
                     key={item.en}
-                    className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-md sm:rounded-lg"
+                    className="group/item relative p-3 sm:p-4 rounded-xl transition-all duration-300 hover:translate-y-[-2px]"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(251, 191, 36, 0.08)' : 'rgba(251, 191, 36, 0.06)',
+                      border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.15)'}`,
                     }}
                   >
-                    <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: theme.goldDark }} />
-                    <span className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn ? item.en : item.fr}
-                    </span>
+                    <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(251, 191, 36, 0.12)' }}
+                      >
+                        <item.icon className="w-4 h-4" style={{ color: theme.goldDark }} />
+                      </div>
+                      <span 
+                        className="text-sm sm:text-base font-semibold"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        {isEn ? item.en : item.fr}
+                      </span>
+                    </div>
+                    <p 
+                      className="text-xs pl-11"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {item.desc}
+                    </p>
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Security & Compliance */}
-            <div 
-              className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl"
+            {/* Security & Compliance Card */}
+            <motion.div 
+              className="group relative p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl"
+              initial={{ opacity: 0, x: 100 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }}
               style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(16, 185, 129, 0.3)'}`,
-                boxShadow: isDark ? 'none' : '0 4px 24px rgba(16, 185, 129, 0.08)'
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.98)',
+                border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)'}`,
+                boxShadow: isDark 
+                  ? '0 4px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
+                  : '0 4px 32px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05)'
               }}
             >
-              <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+              {/* Gradient accent bar */}
+              <div 
+                className="absolute top-0 left-8 right-8 h-1 rounded-b-full opacity-80"
+                style={{ background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.greenDark} 100%)` }}
+              />
+              
+              {/* Icon with glow effect */}
+              <div className="relative mb-6">
                 <div 
-                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
                   style={{ 
-                    background: `linear-gradient(135deg, ${theme.green}25 0%, ${theme.green}10 100%)`,
+                    background: `linear-gradient(135deg, ${theme.green}30 0%, ${theme.green}15 100%)`,
+                    boxShadow: `0 8px 24px ${theme.green}20`
                   }}
                 >
-                  <Shield className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.green }} />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Enterprise Security' : 'Sécurité Enterprise'}
-                  </h3>
-                  <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn 
-                      ? 'Bank-level protection for your data'
-                      : 'Protection bancaire pour vos données'}
-                  </p>
+                  <Shield className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.green }} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+
+              {/* Content */}
+              <div className="mb-8">
+                <h3 
+                  className="text-xl sm:text-2xl font-bold mb-2"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn ? 'Enterprise-Grade Security' : 'Sécurité de niveau entreprise'}
+                </h3>
+                <p 
+                  className="text-sm sm:text-base leading-relaxed"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {isEn 
+                    ? 'Your financial data is protected with bank-level encryption and hosted exclusively in Canadian data centers.'
+                    : 'Vos données financières sont protégées par un chiffrement bancaire et hébergées exclusivement au Canada.'}
+                </p>
+              </div>
+
+              {/* Security Features */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { icon: Lock, en: 'AES-256', fr: 'AES-256' },
-                  { icon: Database, en: 'Canada 🇨🇦', fr: 'Canada 🇨🇦' },
-                  { icon: Shield, en: 'RBAC', fr: 'RBAC' },
-                  { icon: FileCheck, en: 'Audit trail', fr: 'Audit' },
+                  { icon: Lock, en: 'AES-256 Encryption', fr: 'Chiffrement AES-256', desc: isEn ? 'Military grade' : 'Grade militaire' },
+                  { icon: Database, en: 'Canada Hosted', fr: 'Hébergé au Canada', desc: isEn ? 'Data sovereignty' : 'Souveraineté', flag: true },
+                  { icon: Shield, en: 'Role-Based Access', fr: 'Accès RBAC', desc: isEn ? 'Fine-grained' : 'Granulaire' },
+                  { icon: FileCheck, en: 'Audit Trail', fr: 'Piste d\'audit', desc: isEn ? 'Full history' : 'Historique complet' },
                 ].map((item) => (
                   <div 
                     key={item.en}
-                    className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-md sm:rounded-lg"
+                    className="group/item relative p-3 sm:p-4 rounded-xl transition-all duration-300 hover:translate-y-[-2px]"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)',
+                      border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)'}`,
                     }}
                   >
-                    <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: theme.green }} />
-                    <span className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn ? item.en : item.fr}
-                    </span>
+                    <div className="flex items-center gap-2 sm:gap-3 mb-1">
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)' }}
+                      >
+                        <item.icon className="w-4 h-4" style={{ color: theme.green }} />
+                      </div>
+                      <span 
+                        className="text-sm sm:text-base font-semibold flex items-center gap-1.5"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        {isEn ? item.en : item.fr}
+                        {item.flag && <span className="text-base">🇨🇦</span>}
+                      </span>
+                    </div>
+                    <p 
+                      className="text-xs pl-11"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {item.desc}
+                    </p>
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Supported Integrations Bar */}
-          <div className="mt-8 sm:mt-10 lg:mt-12 text-center max-w-2xl mx-auto">
-            <p className="text-xs sm:text-sm font-medium mb-3 sm:mb-4 mx-auto" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Seamless integrations with your favorite tools' : 'Intégrations fluides avec vos outils préférés'}
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-              {integrations.map((name) => (
-                <div 
-                  key={name}
-                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium flex items-center gap-1.5 sm:gap-2"
-                  style={{ 
-                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-                    border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.6)'}`,
-                    color: 'rgb(var(--color-text-secondary))'
-                  }}
-                >
-                  <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" style={{ color: theme.green }} />
-                  {name}
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -2011,20 +2696,35 @@ export default function Landing() {
         }}
       >
         <div className="max-w-4xl mx-auto text-center">
-          <h2 
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
-            style={{ color: 'rgb(var(--color-text))' }}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            {isEn ? 'Simple, transparent pricing' : 'Tarification simple et transparente'}
-          </h2>
-          <p 
-            className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-xl mx-auto px-2"
-            style={{ color: 'rgb(var(--color-text-secondary))' }}
-          >
-            {isEn 
-              ? 'Get a personalized quote based on your business needs.'
-              : 'Obtenez une soumission selon vos besoins.'}
-          </p>
+            <motion.h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, delay: 0.2 }}
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Simple, transparent pricing' : 'Tarification simple et transparente'}
+            </motion.h2>
+            <motion.p 
+              className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-xl mx-auto px-2"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, delay: 0.4 }}
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'Get a personalized quote based on your business needs.'
+                : 'Obtenez une soumission selon vos besoins.'}
+            </motion.p>
+          </motion.div>
 
           {/* Pricing Cards */}
           <div className="grid sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
@@ -2053,9 +2753,22 @@ export default function Landing() {
                 featuresFr: ['Tout Pro +', 'Gestionnaire dédié', 'Intégrations custom'],
                 highlighted: false,
               },
-            ].map((tier) => (
-              <div 
+            ].map((tier, idx) => (
+              <motion.div 
                 key={tier.name}
+                initial={{ opacity: 0, y: 80, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ 
+                  duration: 1.3, 
+                  delay: 0.2 + idx * 0.2,
+                  ease: [0.25, 0.1, 0.25, 1]
+                }}
+                whileHover={{ 
+                  y: -12, 
+                  scale: tier.highlighted ? 1.05 : 1.03,
+                  transition: { duration: 0.5 }
+                }}
                 className="p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl text-left relative overflow-hidden"
                 style={{ 
                   background: tier.highlighted 
@@ -2092,9 +2805,11 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
-                <button 
+                <motion.button 
                   onClick={handleScheduleCall}
-                  className="w-full py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all hover:scale-105"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold"
                   style={{ 
                     background: tier.highlighted 
                       ? `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`
@@ -2104,8 +2819,8 @@ export default function Landing() {
                   }}
                 >
                   {isEn ? 'Get quote' : 'Soumission'}
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -2134,37 +2849,101 @@ export default function Landing() {
         
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center">
-            {/* Badge */}
-            <div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-6"
-              style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.2)'
-              }}
+            {/* Avatar Stack with Badge */}
+            <motion.div 
+              className="flex flex-col items-center gap-4 mb-6"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
             >
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              {isEn ? 'Join 500+ Canadian businesses' : 'Rejoignez 500+ entreprises canadiennes'}
-            </div>
+              <div className="flex items-center -space-x-2.5">
+                {[
+                  { src: 'https://randomuser.me/api/portraits/women/65.jpg', name: 'Émilie' },
+                  { src: 'https://randomuser.me/api/portraits/men/41.jpg', name: 'François' },
+                  { src: 'https://randomuser.me/api/portraits/women/33.jpg', name: 'Catherine' },
+                  { src: 'https://randomuser.me/api/portraits/men/22.jpg', name: 'Antoine' },
+                ].map((person, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.3, x: -25 }}
+                    whileInView={{ opacity: 1, scale: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ 
+                      duration: 1.2, 
+                      delay: 0.4 + idx * 0.3, 
+                      ease: [0.25, 0.1, 0.25, 1]
+                    }}
+                    whileHover={{ scale: 1.2, zIndex: 20, transition: { duration: 0.4 } }}
+                    className="w-10 h-10 rounded-full border-2 border-white/40 overflow-hidden cursor-pointer"
+                    style={{ 
+                      zIndex: 10 - idx,
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+                    }}
+                  >
+                    <img 
+                      src={person.src} 
+                      alt={person.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, delay: 1.8 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+                style={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(8px)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}
+              >
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                {isEn ? 'Join 500+ Canadian businesses' : 'Rejoignez 500+ entreprises canadiennes'}
+              </motion.div>
+            </motion.div>
             
             {/* Heading */}
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white leading-tight">
+            <motion.h2 
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white leading-tight"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.4, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            >
               {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
-            </h2>
+            </motion.h2>
             
             {/* Subheading */}
-            <p className="text-base sm:text-lg lg:text-xl mb-8 text-white/85 max-w-2xl mx-auto">
+            <motion.p 
+              className="text-base sm:text-lg lg:text-xl mb-8 text-white/85 max-w-2xl mx-auto"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.4, delay: 0.5 }}
+            >
               {isEn 
                 ? 'Get the financial clarity you need to make confident decisions. Start your free trial today.'
                 : 'Obtenez la clarté financière dont vous avez besoin pour prendre des décisions éclairées.'}
-            </p>
+            </motion.p>
             
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <button 
+            <motion.div 
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, delay: 0.7 }}
+            >
+              <motion.button 
                 onClick={() => register()}
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base transition-all hover:scale-105 hover:shadow-xl"
+                whileHover={{ scale: 1.05, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base"
                 style={{ 
                   background: 'white',
                   color: theme.greenDark,
@@ -2173,11 +2952,13 @@ export default function Landing() {
               >
                 {isEn ? 'Start free 21-day trial' : 'Essai gratuit 21 jours'}
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </motion.button>
               
-              <button 
+              <motion.button 
                 onClick={handleScheduleCall}
-                className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base transition-all hover:scale-105"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base"
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   backdropFilter: 'blur(8px)',
@@ -2187,26 +2968,37 @@ export default function Landing() {
               >
                 <Calendar className="w-5 h-5" />
                 {isEn ? 'Talk to an expert' : 'Parler à un expert'}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
             
             {/* Trust Badges */}
-            <div className="w-full flex justify-center">
+            <motion.div 
+              className="w-full flex justify-center"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.4, delay: 0.9 }}
+            >
               <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-white/70 text-sm">
-                <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-300" />
-                  {isEn ? 'No credit card required' : 'Sans carte de crédit'}
-                </span>
-                <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-300" />
-                  {isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min'}
-                </span>
-                <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-300" />
-                  {isEn ? 'Data stays in Canada' : 'Données au Canada'} 🇨🇦
-                </span>
+                {[
+                  { text: isEn ? 'No credit card required' : 'Sans carte de crédit' },
+                  { text: isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min' },
+                  { text: isEn ? 'Data stays in Canada' : 'Données au Canada', flag: true },
+                ].map((badge, idx) => (
+                  <motion.span 
+                    key={idx}
+                    className="flex items-center gap-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 1 + idx * 0.15 }}
+                  >
+                    <Check className="w-4 h-4 text-green-300" />
+                    {badge.text} {badge.flag && '🇨🇦'}
+                  </motion.span>
+                ))}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>

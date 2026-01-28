@@ -112,6 +112,7 @@ export const NovuWorkflows = {
   // Contact
   CONTACT_FORM: "contact-form", // Contact form submission notification
   CONTACT_FORM_AUTO_REPLY: "contact-form-auto-reply", // Auto-reply to sender
+  ONBOARDING_COMPLETE: "onboarding-complete", // Onboarding completion notification
 } as const;
 
 type WorkflowId = (typeof NovuWorkflows)[keyof typeof NovuWorkflows];
@@ -735,6 +736,51 @@ export class NovuService implements OnModuleInit {
         subject: data.subject,
       },
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Onboarding
+  // ---------------------------------------------------------------------------
+
+  async sendOnboardingCompleteNotification(data: {
+    email: string;
+    companyName: string;
+    companySize?: string;
+    industry?: string;
+    fiscalYearEnd?: number;
+    currency?: string;
+    primarySource?: string;
+    skipSource?: boolean;
+    teamEmails?: string[];
+    skipTeam?: boolean;
+  }): Promise<void> {
+    const internalSubscriberId = "plainledger-info";
+
+    await this.upsertSubscriber({
+      subscriberId: internalSubscriberId,
+      email: "info@plainledger.ca",
+      firstName: "PlainLedger",
+      lastName: "Support",
+    });
+
+    // Send notification to info@plainledger.ca
+    await this.trigger({
+      workflowId: NovuWorkflows.ONBOARDING_COMPLETE,
+      to: internalSubscriberId,
+      payload: {
+        email: data.email,
+        companyName: data.companyName,
+        companySize: data.companySize || "N/A",
+        industry: data.industry || "N/A",
+        fiscalYearEnd: data.fiscalYearEnd || 12,
+        currency: data.currency || "CAD",
+        primarySource: data.primarySource || (data.skipSource ? "Skipped" : "N/A"),
+        teamEmails: data.teamEmails?.join(", ") || (data.skipTeam ? "Skipped" : "None"),
+      },
+    });
+
+    // TODO: Store in database (create onboarding_data table or extend organization table)
+    this.logger.log(`Onboarding data for ${data.email}: ${JSON.stringify(data)}`);
   }
 
   // ---------------------------------------------------------------------------

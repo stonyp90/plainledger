@@ -20,6 +20,7 @@ import { ReportController } from "@infrastructure/http/controllers/report.contro
 import { DataSourceController } from "@infrastructure/http/controllers/datasource.controller";
 import { OAuthCallbackController } from "@infrastructure/http/controllers/oauth-callback.controller";
 import { ContactController } from "@infrastructure/http/controllers/contact.controller";
+import { OnboardingController } from "@infrastructure/http/controllers/onboarding.controller";
 import { AIController } from "@infrastructure/http/controllers/ai.controller";
 import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
 import { PowerBIDataController } from "@infrastructure/http/controllers/powerbi-data.controller";
@@ -114,6 +115,7 @@ import { NovuModule } from "./notifications/novu.service";
     DataSourceController,
     OAuthCallbackController,
     ContactController,
+    OnboardingController,
     AIController,
     AnalyticsController,
     PowerBIDataController,

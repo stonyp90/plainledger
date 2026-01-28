@@ -22,7 +22,18 @@ import {
   Menu,
   ExternalLink,
   AlertTriangle,
+  UtensilsCrossed,
+  Hotel,
+  ShoppingBag,
+  Hammer,
+  Briefcase,
+  Factory,
+  Truck,
+  Heart,
+  GraduationCap,
+  Loader2,
 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../lib/keycloak';
 import { useI18n, LanguageToggle } from '../lib/i18n';
 import ThemeToggle from './ThemeToggle';
@@ -31,12 +42,17 @@ import { analytics, type OnboardingStep } from '../lib/analytics';
 import { crmService } from '../lib/crm';
 import { getAllIndustries, getIndustryTemplate, type IndustryTemplate } from '../lib/industries';
 import { getKPIsForIndustry } from '../lib/industryKPIs';
+import { authApi } from '../features/auth/api';
 
 // =====================================================
 // TYPES
 // =====================================================
 
 interface OnboardingData {
+  // Account credentials
+  email: string;
+  password: string;
+  confirmPassword: string;
   // Account type
   accountType: 'individual' | 'business' | 'enterprise';
   // Company info
@@ -54,6 +70,9 @@ interface OnboardingData {
 }
 
 const INITIAL_DATA: OnboardingData = {
+  email: '',
+  password: '',
+  confirmPassword: '',
   accountType: 'business',
   companyName: '',
   companySize: '',
@@ -70,8 +89,65 @@ const INITIAL_DATA: OnboardingData = {
 // STEP COMPONENTS
 // =====================================================
 
-// Step 1: Company Info (first step now)
-function CompanyInfoStep({ 
+// Industry icon mapping
+const INDUSTRY_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  real_estate: Building2,
+  construction: Hammer,
+  hospitality: Hotel,
+  retail: ShoppingBag,
+  restaurant: UtensilsCrossed,
+  professional_services: Briefcase,
+  manufacturing: Factory,
+  transportation: Truck,
+  healthcare: Heart,
+  education: GraduationCap,
+};
+
+const colors = {
+  green: '#2E7D5F',
+  greenDark: '#1E5A43',
+  gold: '#C5A24D',
+  goldDark: '#A68A3C',
+};
+
+// Password validation requirements
+const PASSWORD_REQUIREMENTS = {
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumber: true,
+  requireSpecial: true,
+};
+
+function validatePassword(password: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (password.length < PASSWORD_REQUIREMENTS.minLength) {
+    errors.push(`At least ${PASSWORD_REQUIREMENTS.minLength} characters`);
+  }
+  if (PASSWORD_REQUIREMENTS.requireUppercase && !/[A-Z]/.test(password)) {
+    errors.push('One uppercase letter');
+  }
+  if (PASSWORD_REQUIREMENTS.requireLowercase && !/[a-z]/.test(password)) {
+    errors.push('One lowercase letter');
+  }
+  if (PASSWORD_REQUIREMENTS.requireNumber && !/\d/.test(password)) {
+    errors.push('One number');
+  }
+  if (PASSWORD_REQUIREMENTS.requireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('One special character (!@#$%^&*)');
+  }
+  
+  return { valid: errors.length === 0, errors };
+}
+
+function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+// Step 0: Account Signup - Email and Password
+function SignupStep({ 
   data, 
   onChange, 
   onNext, 
@@ -81,7 +157,241 @@ function CompanyInfoStep({
   onNext: () => void;
 }) {
   const { language } = useI18n();
+  const { resolvedTheme } = useTheme();
+  const { user } = useAuth();
   const isEn = language === 'en';
+  const isDark = resolvedTheme === 'dark';
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false });
+  
+  // Pre-fill email from auth if available
+  useEffect(() => {
+    if (user?.email && !data.email) {
+      onChange({ email: user.email });
+    }
+  }, [user?.email, data.email, onChange]);
+  
+  const emailValid = validateEmail(data.email);
+  const passwordValidation = validatePassword(data.password);
+  const passwordsMatch = data.password === data.confirmPassword;
+  
+  const isValid = emailValid && passwordValidation.valid && passwordsMatch && data.confirmPassword.length > 0;
+  
+  const handleBlur = (field: 'email' | 'password' | 'confirmPassword') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  return (
+    <div className="max-w-md mx-auto">
+      <div className="text-center mb-8">
+        <div 
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+        >
+          <UserPlus className="w-8 h-8" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        </div>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'Create your account' : 'Créez votre compte'}
+        </h2>
+        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          {isEn ? "Enter your email and create a secure password" : "Entrez votre courriel et créez un mot de passe sécurisé"}
+        </p>
+      </div>
+
+      <div className="space-y-5">
+        {/* Email */}
+        <div>
+          <label className="label">{isEn ? 'Email Address' : 'Adresse courriel'} *</label>
+          <div className="relative">
+            <Mail 
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
+              style={{ color: 'rgb(var(--color-text-muted))' }} 
+            />
+            <input
+              type="email"
+              value={data.email}
+              onChange={(e) => onChange({ email: e.target.value })}
+              onBlur={() => handleBlur('email')}
+              className="input pl-10"
+              placeholder={isEn ? 'you@company.com' : 'vous@entreprise.com'}
+              autoFocus
+              autoComplete="email"
+              style={{
+                borderColor: touched.email && !emailValid ? '#ef4444' : undefined,
+              }}
+            />
+          </div>
+          {touched.email && !emailValid && data.email && (
+            <p className="text-xs mt-1" style={{ color: '#ef4444' }}>
+              {isEn ? 'Please enter a valid email address' : 'Veuillez entrer une adresse courriel valide'}
+            </p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="label">{isEn ? 'Password' : 'Mot de passe'} *</label>
+          <div className="relative">
+            <Shield 
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
+              style={{ color: 'rgb(var(--color-text-muted))' }} 
+            />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={data.password}
+              onChange={(e) => onChange({ password: e.target.value })}
+              onBlur={() => handleBlur('password')}
+              className="input pl-10 pr-10"
+              placeholder={isEn ? 'Create a strong password' : 'Créez un mot de passe fort'}
+              autoComplete="new-password"
+              style={{
+                borderColor: touched.password && !passwordValidation.valid ? '#ef4444' : undefined,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {showPassword ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+          
+          {/* Password Requirements */}
+          <div className="mt-3 space-y-1.5">
+            <p className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Password must contain:' : 'Le mot de passe doit contenir:'}
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              {[
+                { check: data.password.length >= 8, label: isEn ? '8+ characters' : '8+ caractères' },
+                { check: /[A-Z]/.test(data.password), label: isEn ? 'Uppercase letter' : 'Majuscule' },
+                { check: /[a-z]/.test(data.password), label: isEn ? 'Lowercase letter' : 'Minuscule' },
+                { check: /\d/.test(data.password), label: isEn ? 'Number' : 'Chiffre' },
+                { check: /[!@#$%^&*(),.?":{}|<>]/.test(data.password), label: isEn ? 'Special char' : 'Caractère spécial' },
+              ].map((req, idx) => (
+                <div 
+                  key={idx} 
+                  className="flex items-center gap-1.5 text-xs"
+                  style={{ 
+                    color: req.check 
+                      ? 'rgb(var(--color-success))' 
+                      : (touched.password && data.password ? '#ef4444' : 'rgb(var(--color-text-muted))')
+                  }}
+                >
+                  {req.check ? (
+                    <Check className="w-3.5 h-3.5" />
+                  ) : (
+                    <X className="w-3.5 h-3.5" />
+                  )}
+                  <span>{req.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="label">{isEn ? 'Confirm Password' : 'Confirmer le mot de passe'} *</label>
+          <div className="relative">
+            <Shield 
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
+              style={{ color: 'rgb(var(--color-text-muted))' }} 
+            />
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={data.confirmPassword}
+              onChange={(e) => onChange({ confirmPassword: e.target.value })}
+              onBlur={() => handleBlur('confirmPassword')}
+              className="input pl-10 pr-10"
+              placeholder={isEn ? 'Confirm your password' : 'Confirmez votre mot de passe'}
+              autoComplete="new-password"
+              style={{
+                borderColor: touched.confirmPassword && !passwordsMatch && data.confirmPassword ? '#ef4444' : undefined,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {showConfirmPassword ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+          {touched.confirmPassword && !passwordsMatch && data.confirmPassword && (
+            <p className="text-xs mt-1" style={{ color: '#ef4444' }}>
+              {isEn ? 'Passwords do not match' : 'Les mots de passe ne correspondent pas'}
+            </p>
+          )}
+          {touched.confirmPassword && passwordsMatch && data.confirmPassword && (
+            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'rgb(var(--color-success))' }}>
+              <Check className="w-3.5 h-3.5" />
+              {isEn ? 'Passwords match' : 'Les mots de passe correspondent'}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Security Note */}
+      <div 
+        className="mt-6 p-4 rounded-xl flex items-start gap-3"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-success) / 0.1)',
+          border: '1px solid rgb(var(--color-success) / 0.2)'
+        }}
+      >
+        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-success))' }} />
+        <div className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Your data is secure' : 'Vos données sont sécurisées'}
+          </span>
+          <br />
+          {isEn 
+            ? 'Passwords are encrypted with AES-256 and never stored in plain text.'
+            : 'Les mots de passe sont chiffrés avec AES-256 et jamais stockés en clair.'}
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-8">
+        <button onClick={onNext} className="btn-primary" disabled={!isValid}>
+          {isEn ? 'Continue' : 'Continuer'}
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Step 1: Company Info
+function CompanyInfoStep({ 
+  data, 
+  onChange, 
+  onNext,
+  onBack,
+}: { 
+  data: OnboardingData; 
+  onChange: (data: Partial<OnboardingData>) => void;
+  onNext: () => void;
+  onBack?: () => void;
+}) {
+  const { language } = useI18n();
+  const { resolvedTheme } = useTheme();
+  const isEn = language === 'en';
+  const isDark = resolvedTheme === 'dark';
+  const theme = isDark ? { green: colors.green, gold: colors.gold } : { green: colors.green, gold: colors.gold };
 
   const companySizes = [
     { value: '1', label: isEn ? 'Just me' : 'Juste moi' },
@@ -146,51 +456,59 @@ function CompanyInfoStep({
         {/* Industry - Visual Cards */}
         <div>
           <label className="label">{isEn ? 'Industry' : 'Secteur d\'activité'}</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-            {getAllIndustries().map((industry) => (
-              <button
-                key={industry.id}
-                onClick={() => onChange({ industry: industry.id })}
-                className={`p-4 rounded-xl text-left transition-all border-2 ${
-                  data.industry === industry.id
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                    : 'border-border bg-surface hover:border-primary-300'
-                }`}
-                style={{
-                  borderColor: data.industry === industry.id
-                    ? 'rgb(var(--color-primary-500))'
-                    : 'rgb(var(--color-border))',
-                  backgroundColor: data.industry === industry.id
-                    ? 'rgb(var(--color-primary-500) / 0.1)'
-                    : 'rgb(var(--color-surface))',
-                }}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{industry.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-                        {isEn ? industry.name.en : industry.name.fr}
-                      </span>
-                      {industry.popular && (
-                        <span 
-                          className="text-xs px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
-                            color: 'rgb(var(--color-primary-700))',
-                          }}
-                        >
-                          {isEn ? 'Popular' : 'Populaire'}
-                        </span>
-                      )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
+            {getAllIndustries().map((industry) => {
+              const IconComponent = INDUSTRY_ICONS[industry.id] || Building2;
+              const iconColor = industry.popular ? theme.gold : theme.green;
+              
+              return (
+                <button
+                  key={industry.id}
+                  onClick={() => onChange({ industry: industry.id })}
+                  className="p-4 rounded-xl text-left transition-all border-2"
+                  style={{
+                    borderColor: data.industry === industry.id
+                      ? iconColor
+                      : (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'),
+                    backgroundColor: data.industry === industry.id
+                      ? `${iconColor}15`
+                      : (isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.9)'),
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ 
+                        backgroundColor: `${iconColor}15`,
+                      }}
+                    >
+                      <IconComponent className="w-5 h-5" style={{ color: iconColor }} />
                     </div>
-                    <p className="text-xs mt-1 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? industry.description.en : industry.description.fr}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                          {isEn ? industry.name.en : industry.name.fr}
+                        </span>
+                        {industry.popular && (
+                          <span 
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap"
+                            style={{
+                              backgroundColor: `${theme.gold}20`,
+                              color: theme.goldDark,
+                            }}
+                          >
+                            {isEn ? 'Popular' : 'Populaire'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs mt-1 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {isEn ? industry.description.en : industry.description.fr}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -225,11 +543,19 @@ function CompanyInfoStep({
         </div>
       </div>
 
-      <div className="flex justify-end mt-8">
-        <button onClick={onNext} className="btn-primary" disabled={!isValid}>
-          {isEn ? 'Continue' : 'Continuer'}
-          <ChevronRight className="w-4 h-4" />
-        </button>
+      <div className="flex justify-between mt-8">
+        {onBack && (
+          <button onClick={onBack} className="btn-ghost">
+            <ChevronLeft className="w-4 h-4" />
+            {isEn ? 'Back' : 'Retour'}
+          </button>
+        )}
+        <div className={onBack ? '' : 'ml-auto'}>
+          <button onClick={onNext} className="btn-primary" disabled={!isValid}>
+            {isEn ? 'Continue' : 'Continuer'}
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -380,14 +706,37 @@ function ConnectSourceStep({
         ))}
       </div>
 
-      <div className="flex justify-between mt-8">
+      {/* Skip Option - Prominent */}
+      <div 
+        className="mt-8 p-4 rounded-xl text-center"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-bg-muted))',
+          border: '1px solid rgb(var(--color-border))'
+        }}
+      >
+        <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          {isEn 
+            ? "Don't have your accounting software ready? No problem!" 
+            : "Vous n'avez pas votre logiciel comptable sous la main? Pas de problème!"}
+        </p>
+        <button 
+          onClick={handleSkip} 
+          className="btn-primary w-full"
+        >
+          {isEn ? 'Skip and connect later' : 'Passer et connecter plus tard'}
+          <ChevronRight className="w-4 h-4" />
+        </button>
+        <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn 
+            ? 'You can always connect your software from Settings' 
+            : 'Vous pourrez toujours connecter votre logiciel depuis les Paramètres'}
+        </p>
+      </div>
+
+      <div className="flex justify-start mt-6">
         <button onClick={onBack} className="btn-ghost">
           <ChevronLeft className="w-4 h-4" />
           {isEn ? 'Back' : 'Retour'}
-        </button>
-        <button onClick={handleSkip} className="btn-secondary">
-          {isEn ? 'Skip for now' : 'Passer pour l\'instant'}
-          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -526,7 +875,10 @@ function IndustryPreviewStep({
   onBack: () => void;
 }) {
   const { language } = useI18n();
+  const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
+  const isDark = resolvedTheme === 'dark';
+  const theme = isDark ? { green: colors.green, gold: colors.gold } : { green: colors.green, gold: colors.gold };
   
   const industryTemplate = data.industry ? getIndustryTemplate(data.industry) : null;
   const kpis = industryTemplate ? getKPIsForIndustry(industryTemplate.id) : [];
@@ -554,12 +906,22 @@ function IndustryPreviewStep({
       <div 
         className="p-6 rounded-xl mb-6"
         style={{
-          backgroundColor: 'rgb(var(--color-surface))',
-          border: '1px solid rgb(var(--color-border))',
+          backgroundColor: `${theme.green}08`,
+          border: `1px solid ${theme.green}20`,
         }}
       >
         <div className="flex items-center gap-4">
-          <span className="text-4xl">{industryTemplate.icon}</span>
+          {(() => {
+            const IconComponent = INDUSTRY_ICONS[industryTemplate.id] || Building2;
+            return (
+              <div 
+                className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${theme.green}15` }}
+              >
+                <IconComponent className="w-8 h-8" style={{ color: theme.green }} />
+              </div>
+            );
+          })()}
           <div>
             <h3 className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? industryTemplate.name.en : industryTemplate.name.fr}
@@ -577,38 +939,56 @@ function IndustryPreviewStep({
           {isEn ? 'Key Metrics' : 'Métriques clés'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {kpis.slice(0, 6).map((kpi) => (
-            <div
-              key={kpi.id}
-              className="p-4 rounded-lg"
-              style={{
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                border: '1px solid rgb(var(--color-border))',
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? kpi.name.en : kpi.name.fr}
-                </span>
-                {kpi.benchmark && (
-                  <span className="text-xs px-2 py-0.5 rounded" style={{
-                    backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                    color: 'rgb(var(--color-primary-700))',
-                  }}>
-                    {kpi.benchmark.min}-{kpi.benchmark.max} {kpi.benchmark.unit}
-                  </span>
-                )}
+          {kpis.slice(0, 6).map((kpi, idx) => {
+            const metricColor = idx % 2 === 0 ? theme.green : theme.gold;
+            return (
+              <div
+                key={kpi.id}
+                className="p-4 rounded-lg transition-all hover:shadow-md"
+                style={{
+                  backgroundColor: `${metricColor}08`,
+                  border: `1px solid ${metricColor}20`,
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div 
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${metricColor}15` }}
+                  >
+                    <BarChart3 className="w-4 h-4" style={{ color: metricColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                        {isEn ? kpi.name.en : kpi.name.fr}
+                      </span>
+                      {kpi.benchmark && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap" style={{
+                          backgroundColor: `${metricColor}20`,
+                          color: metricColor,
+                        }}>
+                          {kpi.benchmark.min}-{kpi.benchmark.max} {kpi.benchmark.unit}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? kpi.description?.en : kpi.description?.fr}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? kpi.description.en : kpi.description.fr}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
         {kpis.length > 6 && (
-          <p className="text-sm mt-4 text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? `+ ${kpis.length - 6} more metrics` : `+ ${kpis.length - 6} autres métriques`}
-          </p>
+          <div className="mt-4 text-center">
+            <p className="text-sm font-medium" style={{ color: theme.green }}>
+              {isEn ? `+ ${kpis.length - 6} more metrics available` : `+ ${kpis.length - 6} autres métriques disponibles`}
+            </p>
+            <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'These are just examples. Your dashboard will include all relevant KPIs for your industry.' : 'Ce ne sont que des exemples. Votre tableau de bord inclura tous les KPIs pertinents pour votre industrie.'}
+            </p>
+          </div>
         )}
       </div>
       
@@ -729,10 +1109,49 @@ function TourStep({
   );
 }
 
-// Step 7: Complete - ROI-centric messaging
+// Step 7: Complete - ROI-centric messaging (email already collected in signup step)
 function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () => void }) {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleFinish = async () => {
+    setIsValidating(true);
+    try {
+      // Store onboarding data with email from signup step
+      const response = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          companyName: data.companyName,
+          companySize: data.companySize,
+          industry: data.industry,
+          fiscalYearEnd: data.fiscalYearEnd,
+          currency: data.currency,
+          primarySource: data.primarySource,
+          skipSource: data.skipSource,
+          teamEmails: data.teamEmails,
+          skipTeam: data.skipTeam,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save onboarding data');
+      }
+
+      // Call the original onFinish
+      onFinish();
+    } catch (error) {
+      console.error('Error saving onboarding data:', error);
+      // Still proceed with onboarding completion even if API call fails
+      onFinish();
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   return (
     <div className="text-center max-w-xl mx-auto">
@@ -741,7 +1160,7 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
           className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
           style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
         >
-          <BarChart3 className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
         </div>
         <h1 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
           {isEn ? "Your Data Intelligence Platform is Ready" : "Votre plateforme d'intelligence est prête"}
@@ -755,6 +1174,25 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
           {isEn 
             ? 'Our clients save an average of $847K/year. Start seeing your ROI today.'
             : 'Nos clients économisent en moyenne 847 000$/an. Commencez à voir votre ROI dès aujourd\'hui.'}
+        </p>
+      </div>
+      
+      {/* Account Summary */}
+      <div 
+        className="mb-6 p-4 rounded-xl text-left"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-success) / 0.1)',
+          border: '1px solid rgb(var(--color-success) / 0.2)'
+        }}
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+          <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Account created successfully' : 'Compte créé avec succès'}
+          </span>
+        </div>
+        <p className="text-sm ml-8" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          {data.email}
         </p>
       </div>
 
@@ -842,9 +1280,16 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         </div>
       </div>
 
-      <button onClick={onFinish} className="btn-primary btn-lg">
-        {isEn ? 'Start Seeing Your ROI' : 'Commencez à voir votre ROI'}
-        <ArrowRight className="w-5 h-5" />
+      <button 
+        onClick={handleFinish} 
+        className="btn-primary btn-lg"
+        disabled={isValidating}
+      >
+        {isValidating 
+          ? (isEn ? 'Creating your account...' : 'Création de votre compte...')
+          : (isEn ? 'Start Seeing Your ROI' : 'Commencez à voir votre ROI')
+        }
+        {!isValidating && <ArrowRight className="w-5 h-5" />}
       </button>
     </div>
   );
@@ -860,12 +1305,12 @@ export default function Onboarding() {
   const { language } = useI18n();
   const isEn = language === 'en';
   
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('company_info');
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('signup');
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [startTime] = useState(Date.now());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const steps: OnboardingStep[] = ['company_info', 'industry_preview', 'connect_source', 'invite_team', 'tour', 'complete'];
+  const steps: OnboardingStep[] = ['signup', 'company_info', 'industry_preview', 'invite_team', 'complete'];
   const currentIndex = steps.indexOf(currentStep);
 
   // Track step views
@@ -1127,20 +1572,17 @@ export default function Onboarding() {
 
       {/* Content */}
       <main className="flex-1 flex items-center justify-center p-6">
+        {currentStep === 'signup' && (
+          <SignupStep data={data} onChange={updateData} onNext={goNext} />
+        )}
         {currentStep === 'company_info' && (
-          <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} />
+          <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
         )}
         {currentStep === 'industry_preview' && (
           <IndustryPreviewStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
         )}
-        {currentStep === 'connect_source' && (
-          <ConnectSourceStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
-        )}
         {currentStep === 'invite_team' && (
           <InviteTeamStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
-        )}
-        {currentStep === 'tour' && (
-          <TourStep onNext={goNext} onBack={goBack} />
         )}
         {currentStep === 'complete' && (
           <CompleteStep data={data} onFinish={handleFinish} />
