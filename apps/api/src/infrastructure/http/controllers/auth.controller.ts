@@ -13,6 +13,7 @@ import {
   Logger,
   BadRequestException,
   ConflictException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { Public } from "nest-keycloak-connect";
 import {
@@ -25,6 +26,7 @@ import {
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
 import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
+import { ConfigService } from "@nestjs/config";
 
 // =====================================================
 // DTOs
@@ -98,6 +100,15 @@ export class ResendVerificationDto {
   email: string;
 }
 
+export class LoginDto {
+  @IsEmail({}, { message: "Please provide a valid email address" })
+  email: string;
+
+  @IsString()
+  @MinLength(1, { message: "Password is required" })
+  password: string;
+}
+
 // =====================================================
 // CONTROLLER
 // =====================================================
@@ -110,7 +121,122 @@ export class AuthController {
     @Inject("IKeycloakAdminService")
     private readonly keycloakAdminService: IKeycloakAdminService,
     private readonly userProfileRepository: PostgresUserProfileRepository,
+    private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Login with email and password
+   * Public endpoint - authenticates user via Keycloak Direct Access Grants
+   * Uses backend API client for secure authentication
+   */
+  @Post("login")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() dto: LoginDto) {
+    this.logger.log(`Login attempt for: ${dto.email}`);
+
+    if (!this.keycloakAdminService.isAvailable()) {
+      throw new BadRequestException(
+        "Authentication is temporarily unavailable. Please try again later.",
+      );
+    }
+
+    try {
+      const keycloakUrl =
+        this.configService.get<string>("KEYCLOAK_URL") ||
+        "http://localhost:8080";
+      const realm =
+        this.configService.get<string>("KEYCLOAK_REALM") || "plainledger";
+      const clientId =
+        this.configService.get<string>("KEYCLOAK_CLIENT_ID") ||
+        "plainledger-api";
+      const clientSecret =
+        this.configService.get<string>("KEYCLOAK_CLIENT_SECRET");
+
+      if (!clientSecret) {
+        this.logger.error("Keycloak client secret not configured");
+        throw new BadRequestException(
+          "Authentication is temporarily unavailable.",
+        );
+      }
+
+      // Authenticate user via Keycloak token endpoint using Direct Access Grants
+      // This uses the API client (which has Direct Access Grants enabled)
+      const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;
+
+      const params = new URLSearchParams();
+      params.append("grant_type", "password");
+      params.append("client_id", clientId);
+      params.append("client_secret", clientSecret);
+      params.append("username", dto.email.toLowerCase().trim());
+      params.append("password", dto.password);
+      params.append("scope", "openid profile email");
+
+      const response = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        this.logger.warn(
+          `Login failed for ${dto.email}: ${response.status} - ${errorData.error_description || errorData.error || "Invalid credentials"}`,
+        );
+
+        // Don't reveal specific error details for security
+        throw new UnauthorizedException(
+          "Invalid email or password. Please try again.",
+        );
+      }
+
+      const tokenData = await response.json();
+
+      // Get user info from Keycloak
+      const user = await this.keycloakAdminService.findUserByEmail(
+        dto.email.toLowerCase().trim(),
+      );
+
+      if (!user || !user.enabled) {
+        throw new UnauthorizedException(
+          "Your account is disabled. Please contact support.",
+        );
+      }
+
+      this.logger.log(`User logged in successfully: ${user.id}`);
+
+      return {
+        success: true,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        expiresIn: tokenData.expires_in,
+        refreshExpiresIn: tokenData.refresh_expires_in,
+        tokenType: tokenData.token_type,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          emailVerified: user.emailVerified,
+        },
+      };
+    } catch (error) {
+      // Re-throw known exceptions
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      this.logger.error(`Login failed: ${error.message}`, error.stack);
+      throw new UnauthorizedException(
+        "Invalid email or password. Please try again.",
+      );
+    }
+  }
 
   /**
    * Register a new user

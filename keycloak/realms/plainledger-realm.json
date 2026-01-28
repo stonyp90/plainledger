@@ -108,7 +108,7 @@
       "description": "Frontend React application for PlainLedger financial reporting",
       "enabled": true,
       "publicClient": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "protocol": "openid-connect",

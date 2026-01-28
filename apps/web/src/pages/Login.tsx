@@ -1,7 +1,138 @@
-import { useAuth } from '../lib/keycloak';
+/**
+ * Login Page
+ * Custom login form that authenticates via backend API
+ * Maintains our UI/UX while using Keycloak securely
+ */
+
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  Mail,
+  Lock,
+  Shield,
+} from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { useI18n, LanguageToggle } from '../lib/i18n';
+import ThemeToggle from '../components/ThemeToggle';
+import { analytics } from '../lib/analytics';
+import { useKeycloak } from '../lib/keycloak';
+
+// =====================================================
+// COMPONENT
+// =====================================================
 
 export default function Login() {
-  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { language } = useI18n();
+  const isEn = language === 'en';
+  const { keycloak } = useKeycloak();
+
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Pre-fill email from URL params (e.g., from password reset)
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [searchParams]);
+
+  // Track page view
+  useEffect(() => {
+    analytics.page('login');
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      analytics.track('login_attempt', { email: email.toLowerCase() });
+
+      // Authenticate directly with Keycloak using Direct Access Grants
+      // This maintains our custom UI while using Keycloak securely
+      // Direct Access Grants is enabled on plainledger-web client
+      const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080';
+      const realm = import.meta.env.VITE_KEYCLOAK_REALM || 'plainledger';
+      const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web';
+      
+      const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;
+      
+      const params = new URLSearchParams();
+      params.append('grant_type', 'password');
+      params.append('client_id', clientId);
+      params.append('username', email.trim().toLowerCase());
+      params.append('password', password);
+      params.append('scope', 'openid profile email');
+
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMsg = errorData.error_description || errorData.error || 'Invalid email or password';
+        throw new Error(errorMsg);
+      }
+
+      const tokenData = await response.json();
+
+      if (tokenData.access_token) {
+        analytics.track('login_success');
+        
+        // Store tokens in sessionStorage for Keycloak client to pick up
+        // Then reload to trigger Keycloak initialization with these tokens
+        sessionStorage.setItem('kc_token', tokenData.access_token);
+        sessionStorage.setItem('kc_refresh_token', tokenData.refresh_token || '');
+        if (tokenData.id_token) {
+          sessionStorage.setItem('kc_id_token', tokenData.id_token);
+        }
+        
+        // Parse token to get user info for analytics
+        try {
+          const tokenParts = tokenData.access_token.split('.');
+          if (tokenParts.length === 3) {
+            const tokenPayload = JSON.parse(atob(tokenParts[1]));
+            analytics.track('login_success', { userId: tokenPayload.sub });
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+        
+        // Reload page - Keycloak client will initialize with stored tokens
+        // This ensures proper session establishment and SSO
+        const redirectTo = searchParams.get('redirect') || '/app';
+        window.location.href = redirectTo;
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
+      setError(message);
+      analytics.track('login_error', { error: message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div 
@@ -10,7 +141,11 @@ export default function Login() {
     >
       <div className="w-full max-w-md">
         {/* Login Card */}
-        <div className="card p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-8"
+        >
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <div 
@@ -37,91 +172,191 @@ export default function Login() {
             </span>
           </div>
 
-          {/* Tagline */}
+          {/* Header */}
           <div className="text-center mb-8">
             <h1 
-              className="text-lg font-semibold mb-2"
+              className="text-2xl font-bold mb-2"
               style={{ color: 'rgb(var(--color-text))' }}
             >
-              Financial Reporting Platform
+              {isEn ? 'Sign in to your account' : 'Connectez-vous à votre compte'}
             </h1>
             <p 
               className="text-sm"
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
-              Enterprise-grade reports with anomaly detection
+              {isEn 
+                ? 'Enter your email and password to continue'
+                : 'Entrez votre courriel et mot de passe pour continuer'}
             </p>
           </div>
 
-          {/* Login Button */}
-          <button
-            onClick={() => login()}
-            className="btn-primary w-full py-2.5 mb-6"
-          >
-            Sign in to your account
-          </button>
+          {/* Error Alert */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 rounded-lg flex items-start gap-3"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                border: '1px solid rgb(var(--color-error) / 0.2)'
+              }}
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-error))' }} />
+              <p className="text-sm" style={{ color: 'rgb(var(--color-error))' }}>{error}</p>
+            </motion.div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Email' : 'Courriel'} *
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={isEn ? 'you@company.com' : 'vous@entreprise.com'}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-bg-subtle))',
+                    borderColor: 'rgb(var(--color-border))',
+                    color: 'rgb(var(--color-text))',
+                  }}
+                  required
+                  autoFocus
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Password' : 'Mot de passe'} *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={isEn ? 'Enter your password' : 'Entrez votre mot de passe'}
+                  className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-bg-subtle))',
+                    borderColor: 'rgb(var(--color-border))',
+                    color: 'rgb(var(--color-text))',
+                  }}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Forgot Password Link */}
+            <div className="flex items-center justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              >
+                {isEn ? 'Forgot password?' : 'Mot de passe oublié?'}
+              </Link>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={!email || !password || isSubmitting}
+              className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: (email && password && !isSubmitting) ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
+                color: (email && password && !isSubmitting) ? 'white' : 'rgb(var(--color-text-muted))',
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {isEn ? 'Signing in...' : 'Connexion...'}
+                </>
+              ) : (
+                isEn ? 'Sign in' : 'Se connecter'
+              )}
+            </button>
+          </form>
 
           {/* Divider */}
-          <div className="relative mb-6">
-            <div 
-              className="absolute inset-0 flex items-center"
-            >
-              <div 
-                className="w-full border-t"
-                style={{ borderColor: 'rgb(var(--color-border))' }}
-              />
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'rgb(var(--color-border))' }}></div>
             </div>
-            <div className="relative flex justify-center text-xs">
+            <div className="relative flex justify-center text-sm">
               <span 
-                className="px-3"
+                className="px-2" 
                 style={{ 
                   backgroundColor: 'rgb(var(--color-surface))',
                   color: 'rgb(var(--color-text-muted))'
                 }}
               >
-                Integrated with your accounting software
+                {isEn ? 'or' : 'ou'}
               </span>
             </div>
           </div>
 
-          {/* Features */}
+          {/* Sign Up Link */}
+          <div className="text-center">
+            <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              {isEn ? "Don't have an account?" : "Vous n'avez pas de compte?"}{' '}
+              <Link 
+                to="/signup" 
+                className="font-medium"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              >
+                {isEn ? 'Create account' : 'Créer un compte'}
+              </Link>
+            </p>
+          </div>
+
+          {/* Security Note */}
           <div 
-            className="grid grid-cols-3 gap-4 text-center text-xs"
+            className="flex items-center justify-center gap-2 text-xs mt-6"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
-            <div>
-              <div 
-                className="font-medium mb-1"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                Balance Sheets
-              </div>
-              <div style={{ color: 'rgb(var(--color-text-subtle))' }}>Real-time</div>
-            </div>
-            <div>
-              <div 
-                className="font-medium mb-1"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                Income Statements
-              </div>
-              <div style={{ color: 'rgb(var(--color-text-subtle))' }}>Automated</div>
-            </div>
-            <div>
-              <div 
-                className="font-medium mb-1"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                Cash Flow
-              </div>
-              <div style={{ color: 'rgb(var(--color-text-subtle))' }}>Powered by our AI</div>
-            </div>
+            <Shield className="w-4 h-4" />
+            <span>
+              {isEn 
+                ? 'Your data is encrypted and secure'
+                : 'Vos données sont chiffrées et sécurisées'}
+            </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Footer */}
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <ThemeToggle />
+          <LanguageToggle />
+        </div>
+
         <p 
-          className="text-center text-xs mt-6"
+          className="text-center text-xs mt-4"
           style={{ color: 'rgb(var(--color-text-subtle))' }}
         >
           Built by CPAs for CPAs · Bank-level encryption · Data in Canada

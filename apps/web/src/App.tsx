@@ -20,6 +20,8 @@ import MontageFinancier from './pages/MontageFinancier';
 // Store removed - using Landing as main website
 import Onboarding from './components/Onboarding';
 import Signup from './pages/Signup';
+import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import EmailConfirmation from './pages/EmailConfirmation';
 import PowerBIAnalytics from './pages/PowerBIAnalytics';
 import OrgFeaturesConfig from './pages/OrgFeaturesConfig';
@@ -333,16 +335,28 @@ function App() {
           element={authenticated ? <Navigate to="/onboarding" replace /> : <Signup />} 
         />
         
-        {/* Login - handled by Keycloak */}
+        {/* Login - custom UI */}
         <Route 
           path="/login" 
-          element={<LoginRedirect />} 
+          element={authenticated ? <Navigate to="/app" replace /> : <Login />} 
         />
         
         {/* Signin - alias for login */}
         <Route 
           path="/signin" 
-          element={<LoginRedirect />} 
+          element={authenticated ? <Navigate to="/app" replace /> : <Login />} 
+        />
+        
+        {/* Forgot Password */}
+        <Route 
+          path="/forgot-password" 
+          element={authenticated ? <Navigate to="/app" replace /> : <ForgotPassword />} 
+        />
+        
+        {/* Reset Password - handled by Keycloak email link */}
+        <Route 
+          path="/reset-password" 
+          element={authenticated ? <Navigate to="/app" replace /> : <LoginRedirect />} 
         />
         
         <Route 

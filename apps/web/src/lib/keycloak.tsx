@@ -167,6 +167,65 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
     const initKeycloak = async () => {
       try {
+        // Check for stored tokens from custom login
+        const storedToken = sessionStorage.getItem('kc_token');
+        const storedRefreshToken = sessionStorage.getItem('kc_refresh_token');
+        
+        if (storedToken && storedRefreshToken) {
+          // We have tokens from custom login - set them in Keycloak client
+          try {
+            const tokenParts = storedToken.split('.');
+            if (tokenParts.length === 3) {
+              const tokenPayload = JSON.parse(atob(tokenParts[1]));
+              
+              // Set tokens in Keycloak client
+              (keycloak as any).token = storedToken;
+              (keycloak as any).refreshToken = storedRefreshToken;
+              (keycloak as any).idToken = sessionStorage.getItem('kc_id_token') || storedToken;
+              (keycloak as any).authenticated = true;
+              (keycloak as any).tokenParsed = tokenPayload;
+              (keycloak as any).subject = tokenPayload.sub;
+              (keycloak as any).realmAccess = tokenPayload.realm_access || {};
+              (keycloak as any).resourceAccess = tokenPayload.resource_access || {};
+              
+              // Extract user profile
+              const tokenParsed = tokenPayload as Record<string, unknown>;
+              setAuthenticated(true);
+              setInitialized(true);
+              setUser(extractUserProfile(keycloak, tokenParsed));
+              
+              // Set up token refresh
+              keycloak.onTokenExpired = async () => {
+                try {
+                  await keycloak.updateToken(30);
+                  // Update stored tokens
+                  sessionStorage.setItem('kc_token', keycloak.token || '');
+                  sessionStorage.setItem('kc_refresh_token', keycloak.refreshToken || '');
+                } catch (error) {
+                  console.warn('Failed to refresh token, logging out');
+                  sessionStorage.removeItem('kc_token');
+                  sessionStorage.removeItem('kc_refresh_token');
+                  sessionStorage.removeItem('kc_id_token');
+                  keycloak.logout();
+                }
+              };
+              
+              // Clear stored tokens after successful initialization
+              sessionStorage.removeItem('kc_token');
+              sessionStorage.removeItem('kc_refresh_token');
+              sessionStorage.removeItem('kc_id_token');
+              
+              return;
+            }
+          } catch (e) {
+            console.warn('Failed to parse stored token:', e);
+            // Clear invalid tokens
+            sessionStorage.removeItem('kc_token');
+            sessionStorage.removeItem('kc_refresh_token');
+            sessionStorage.removeItem('kc_id_token');
+          }
+        }
+        
         // Check if already initialized
         if (keycloak.authenticated !== undefined) {
           setAuthenticated(keycloak.authenticated);
@@ -221,8 +280,8 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     initKeycloak();
   }, [keycloak]);
 
-  // Login with optional IDP hint (e.g., 'google', 'microsoft', 'saml')
-  const login = (idpHint?: string) => {
+  // Login with optional email/loginHint (for custom login form) or IDP hint (e.g., 'google', 'microsoft', 'saml')
+  const login = (emailOrIdpHint?: string) => {
     // Mock auth mode - just set authenticated
     if (MOCK_AUTH_ENABLED) {
       // Check if user explicitly logged out - redirect to landing instead of auto-login
@@ -250,15 +309,22 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
       locale: document.documentElement.lang === 'en' ? 'en' : 'fr',
     };
     
+    // If email provided (from custom login), use loginHint to pre-fill
     // If IDP hint provided, redirect directly to that provider
-    if (idpHint) {
-      options.idpHint = idpHint;
+    if (emailOrIdpHint) {
+      if (emailOrIdpHint.includes('@')) {
+        // It's an email - use loginHint
+        options.loginHint = emailOrIdpHint;
+      } else {
+        // It's an IDP hint
+        options.idpHint = emailOrIdpHint;
+      }
     }
     
     keycloak.login(options);
   };
 
-  // Register (signup) - redirects to Keycloak registration page
+  // Register (signup) - navigates to custom registration page that uses Keycloak Admin API
   const register = (redirectUri?: string) => {
     console.log('[Auth] register() called, MOCK_AUTH_ENABLED:', MOCK_AUTH_ENABLED);
     // Mock auth mode - just set authenticated and navigate
@@ -273,17 +339,10 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
       return;
     }
 
-    // If Keycloak is not available, show a message
-    if (!KEYCLOAK_AVAILABLE) {
-      console.warn('Keycloak not configured - registration unavailable');
-      alert('Registration is not available at this time. Please contact support.');
-      return;
-    }
-    
-    keycloak.register({
-      locale: document.documentElement.lang === 'en' ? 'en' : 'fr',
-      redirectUri: redirectUri || window.location.origin + '/onboarding',
-    });
+    // Navigate to custom signup page that uses Keycloak Admin API
+    // This maintains our custom UI/UX instead of redirecting to Keycloak's UI
+    const signupUrl = '/signup' + (redirectUri ? `?redirect=${encodeURIComponent(redirectUri)}` : '');
+    window.location.href = signupUrl;
   };
 
   const logout = () => {
