@@ -64,58 +64,40 @@ export default function Login() {
     try {
       analytics.track('login_attempt', { email: email.toLowerCase() });
 
-      // Authenticate directly with Keycloak using Direct Access Grants
+      // Authenticate via backend API endpoint
       // This maintains our custom UI while using Keycloak securely
-      // Direct Access Grants is enabled on plainledger-web client
-      const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080';
-      const realm = import.meta.env.VITE_KEYCLOAK_REALM || 'plainledger';
-      const clientId = import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web';
-      
-      const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;
-      
-      const params = new URLSearchParams();
-      params.append('grant_type', 'password');
-      params.append('client_id', clientId);
-      params.append('username', email.trim().toLowerCase());
-      params.append('password', password);
-      params.append('scope', 'openid profile email');
+      // The backend uses Direct Access Grants with the API client credentials
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const loginUrl = `${apiUrl}/auth/login`;
 
-      const response = await fetch(tokenUrl, {
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: params.toString(),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password: password,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMsg = errorData.error_description || errorData.error || 'Invalid email or password';
+        const errorMsg = errorData.message || errorData.error || 'Invalid email or password';
         throw new Error(errorMsg);
       }
 
-      const tokenData = await response.json();
+      const data = await response.json();
 
-      if (tokenData.access_token) {
-        analytics.track('login_success');
+      if (data.accessToken && data.user) {
+        analytics.track('login_success', { userId: data.user.id });
         
         // Store tokens in sessionStorage for Keycloak client to pick up
         // Then reload to trigger Keycloak initialization with these tokens
-        sessionStorage.setItem('kc_token', tokenData.access_token);
-        sessionStorage.setItem('kc_refresh_token', tokenData.refresh_token || '');
-        if (tokenData.id_token) {
-          sessionStorage.setItem('kc_id_token', tokenData.id_token);
-        }
-        
-        // Parse token to get user info for analytics
-        try {
-          const tokenParts = tokenData.access_token.split('.');
-          if (tokenParts.length === 3) {
-            const tokenPayload = JSON.parse(atob(tokenParts[1]));
-            analytics.track('login_success', { userId: tokenPayload.sub });
-          }
-        } catch (e) {
-          // Ignore parsing errors
+        sessionStorage.setItem('kc_token', data.accessToken);
+        sessionStorage.setItem('kc_refresh_token', data.refreshToken || '');
+        if (data.idToken) {
+          sessionStorage.setItem('kc_id_token', data.idToken);
         }
         
         // Reload page - Keycloak client will initialize with stored tokens
