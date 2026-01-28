@@ -633,7 +633,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "PORT", value = "3000" },
         { name = "DB_PORT", value = "5432" },
         { name = "REDIS_PORT", value = "6379" },
-        { name = "KEYCLOAK_URL", value = "https://auth.${var.domain_name}" },
+        { name = "KEYCLOAK_URL", value = "https://${var.domain_name}" },
         { name = "KEYCLOAK_REALM", value = "plainledger" },
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
         { name = "KEYCLOAK_ADMIN_CLIENT_ID", value = "plainledger-api" },
@@ -749,7 +749,7 @@ resource "aws_ecs_task_definition" "keycloak" {
 
       environment = [
         { name = "KC_PROXY", value = "edge" },
-        { name = "KC_HOSTNAME", value = "auth.${var.domain_name}" },
+        { name = "KC_HOSTNAME", value = "${var.domain_name}" },
         { name = "KC_HOSTNAME_STRICT", value = "true" },
         { name = "KC_HOSTNAME_STRICT_HTTPS", value = "true" },
         { name = "KC_HTTP_ENABLED", value = "true" },
