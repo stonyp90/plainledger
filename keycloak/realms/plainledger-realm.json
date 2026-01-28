@@ -148,6 +148,7 @@
         "+"
       ],
       "defaultClientScopes": [
+        "openid",
         "web-origins",
         "acr",
         "profile",
@@ -188,6 +189,7 @@
         "+"
       ],
       "defaultClientScopes": [
+        "openid",
         "web-origins",
         "acr",
         "profile",
@@ -247,8 +249,8 @@
   ],
   "users": [
     {
-      "username": "admin@plainledger.com",
-      "email": "admin@plainledger.com",
+      "username": "admin@plainledger.ca",
+      "email": "admin@plainledger.ca",
       "firstName": "Admin",
       "lastName": "User",
       "enabled": true,
@@ -268,8 +270,8 @@
       }
     },
     {
-      "username": "accountant@plainledger.com",
-      "email": "accountant@plainledger.com",
+      "username": "accountant@plainledger.ca",
+      "email": "accountant@plainledger.ca",
       "firstName": "Jane",
       "lastName": "Smith",
       "enabled": true,
@@ -289,8 +291,8 @@
       }
     },
     {
-      "username": "demo@plainledger.com",
-      "email": "demo@plainledger.com",
+      "username": "demo@plainledger.ca",
+      "email": "demo@plainledger.ca",
       "firstName": "Demo",
       "lastName": "User",
       "enabled": true,
@@ -450,7 +452,8 @@
           "protocolMapper": "oidc-usermodel-realm-role-mapper",
           "consentRequired": false,
           "config": {
-            "user.attribute": "foo",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
             "access.token.claim": "true",
             "claim.name": "realm_access.roles",
             "jsonType.label": "String",
@@ -463,12 +466,20 @@
           "protocolMapper": "oidc-usermodel-client-role-mapper",
           "consentRequired": false,
           "config": {
-            "user.attribute": "foo",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
             "access.token.claim": "true",
             "claim.name": "resource_access.${client_id}.roles",
             "jsonType.label": "String",
             "multivalued": "true"
           }
+        },
+        {
+          "name": "audience resolve",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-resolve-mapper",
+          "consentRequired": false,
+          "config": {}
         }
       ]
     },
@@ -537,7 +548,7 @@
     }
   ],
   "defaultDefaultClientScopes": [
-    "role_list",
+    "openid",
     "profile",
     "email",
     "roles",

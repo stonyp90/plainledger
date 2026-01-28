@@ -888,7 +888,7 @@ export function TeamMembersSection() {
       // Generate email (in production, this would be sent server-side)
       const emailHtml = generateInvitationEmail({
         inviterName: 'Admin User', // In production, get from auth
-        inviterEmail: 'admin@plainledger.com',
+        inviterEmail: 'admin@plainledger.ca',
         organizationName: currentTenant?.name || 'Your Organization',
         recipientEmail: inviteEmail.trim(),
         role: inviteRole,
@@ -1518,7 +1518,7 @@ export function TeamMembersSection() {
                             onClick={() => {
                               const emailText = generateInvitationEmailText({
                                 inviterName: 'Admin User',
-                                inviterEmail: 'admin@plainledger.com',
+                                inviterEmail: 'admin@plainledger.ca',
                                 organizationName: currentTenant?.name || '',
                                 recipientEmail: inviteEmail,
                                 role: inviteRole,

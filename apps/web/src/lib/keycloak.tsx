@@ -28,7 +28,7 @@ const keycloakConfig = {
 // Mock user for development
 const MOCK_USER: UserProfile = {
   id: 'mock-user-001',
-  email: 'admin@plainledger.com',
+  email: 'admin@plainledger.ca',
   name: 'Admin User',
   firstName: 'Admin',
   lastName: 'User',

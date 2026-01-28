@@ -4,9 +4,9 @@
 
 | Email | Password | Roles | Groups | QuickBooks Environment | Organization |
 |-------|----------|-------|--------|----------------------|--------------|
-| `admin@plainledger.com` | `AdminPass123!@#` | admin, owner | Administrators | **SANDBOX** | demo-org |
-| `accountant@plainledger.com` | `Accountant123!@#` | accountant | Accountants | **SANDBOX** | demo-org |
-| `demo@plainledger.com` | `DemoPass123!@#` | viewer | Viewers | **SANDBOX** | demo-org |
+| `admin@plainledger.ca` | `AdminPass123!@#` | admin, owner | Administrators | **SANDBOX** | demo-org |
+| `accountant@plainledger.ca` | `Accountant123!@#` | accountant | Accountants | **SANDBOX** | demo-org |
+| `demo@plainledger.ca` | `DemoPass123!@#` | viewer | Viewers | **SANDBOX** | demo-org |
 
 ## QuickBooks Configuration
 
@@ -37,9 +37,9 @@
 
 ### Sandbox Users (Demo Accounts)
 These users will **always** use QuickBooks **sandbox** environment:
-- ✅ `admin@plainledger.com`
-- ✅ `accountant@plainledger.com`
-- ✅ `demo@plainledger.com`
+- ✅ `admin@plainledger.ca`
+- ✅ `accountant@plainledger.ca`
+- ✅ `demo@plainledger.ca`
 
 ### Production Users
 All other users will use QuickBooks **production** environment:
@@ -51,15 +51,15 @@ All other users will use QuickBooks **production** environment:
 
 ```bash
 # Login as Admin
-Email: admin@plainledger.com
+Email: admin@plainledger.ca
 Password: AdminPass123!@#
 
 # Login as Accountant
-Email: accountant@plainledger.com
+Email: accountant@plainledger.ca
 Password: Accountant123!@#
 
 # Login as Demo User
-Email: demo@plainledger.com
+Email: demo@plainledger.ca
 Password: DemoPass123!@#
 ```
 

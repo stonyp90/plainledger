@@ -7,9 +7,9 @@
 
 // Default demo users that should use sandbox
 const SANDBOX_USERS = [
-  "admin@plainledger.com",
-  "accountant@plainledger.com",
-  "demo@plainledger.com",
+  "admin@plainledger.ca",
+  "accountant@plainledger.ca",
+  "demo@plainledger.ca",
 ];
 
 /**

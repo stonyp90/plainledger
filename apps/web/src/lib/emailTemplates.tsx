@@ -224,7 +224,7 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
                 ${isEn 
                   ? 'Having trouble? Contact us at '
                   : 'Des problèmes ? Contactez-nous à '}
-                <a href="mailto:support@plainledger.com" style="color: ${BRAND_COLORS.accent};">support@plainledger.com</a>
+                <a href="mailto:support@plainledger.ca" style="color: ${BRAND_COLORS.accent};">support@plainledger.ca</a>
               </p>
             </td>
           </tr>

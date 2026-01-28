@@ -118,7 +118,7 @@ const mockConnections: ConnectionSyncStatusDto[] = [
     accountsCount: 24,
     contactsCount: 15,
     transactionsCount: 156,
-    configuredBy: "admin@plainledger.com",
+    configuredBy: "admin@plainledger.ca",
     configuredAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -238,7 +238,7 @@ export class SyncAdminController {
     connection.syncFrequency = config.syncFrequency;
     connection.syncTimeUtc = config.syncTimeUtc;
     connection.syncEntities = config.syncEntities;
-    connection.configuredBy = "admin@plainledger.com"; // Would come from JWT
+    connection.configuredBy = "admin@plainledger.ca"; // Would come from JWT
     connection.configuredAt = new Date().toISOString();
 
     // Calculate next scheduled sync
@@ -278,7 +278,7 @@ export class SyncAdminController {
     }
 
     connection.autoSyncEnabled = !connection.autoSyncEnabled;
-    connection.configuredBy = "admin@plainledger.com";
+    connection.configuredBy = "admin@plainledger.ca";
     connection.configuredAt = new Date().toISOString();
 
     if (connection.autoSyncEnabled) {

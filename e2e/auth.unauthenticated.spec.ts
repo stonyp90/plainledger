@@ -80,8 +80,8 @@ test.describe('Authentication Flow', () => {
     await page.waitForURL(/localhost:8080/);
     
     // Enter valid credentials
-    await page.getByLabel('Courriel').fill('demo@plainledger.com');
-    await page.getByLabel('Mot de passe').fill('Demo123!');
+    await page.getByLabel('Courriel').fill('demo@plainledger.ca');
+    await page.getByLabel('Mot de passe').fill('DemoPass123!@#');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     
     // Should redirect to app

@@ -84,7 +84,7 @@ npm run dev
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Web App | http://localhost:5173 | demo@plainledger.ca / demo123 |
+| Web App | http://localhost:5173 | demo@plainledger.ca / DemoPass123!@# |
 | API | http://localhost:3000 | - |
 | Keycloak Admin | http://localhost:8080 | admin / admin |
 | MinIO Console | http://localhost:9001 | plainledger / plainledger_secret |

@@ -216,7 +216,7 @@ export default function PrivacyPolicy() {
                     <li><strong>Account Deletion:</strong> Delete your account and associated data through your account settings</li>
                   </ul>
                   <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    To exercise these rights, please contact us at privacy@plainledger.com.
+                    To exercise these rights, please contact us at privacy@plainledger.ca.
                   </p>
                 </section>
 
@@ -273,7 +273,7 @@ export default function PrivacyPolicy() {
                     If you have questions or concerns about this Privacy Policy or our data practices, please contact us at:
                   </p>
                   <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    Email: privacy@plainledger.com<br />
+                    Email: privacy@plainledger.ca<br />
                     Address: PlainLedger, Canada
                   </p>
                 </section>
@@ -414,7 +414,7 @@ export default function PrivacyPolicy() {
                     <li><strong>Suppression de compte :</strong> Supprimer votre compte et les données associées via les paramètres de votre compte</li>
                   </ul>
                   <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    Pour exercer ces droits, veuillez nous contacter à privacy@plainledger.com.
+                    Pour exercer ces droits, veuillez nous contacter à privacy@plainledger.ca.
                   </p>
                 </section>
 
@@ -471,7 +471,7 @@ export default function PrivacyPolicy() {
                     Si vous avez des questions ou des préoccupations concernant cette Politique de confidentialité ou nos pratiques en matière de données, veuillez nous contacter à :
                   </p>
                   <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    Courriel : privacy@plainledger.com<br />
+                    Courriel : privacy@plainledger.ca<br />
                     Adresse : PlainLedger, Canada
                   </p>
                 </section>

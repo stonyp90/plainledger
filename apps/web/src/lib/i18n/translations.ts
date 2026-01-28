@@ -1281,8 +1281,8 @@ export const translations = {
       fr: 'Utiliser une autre adresse courriel',
     },
     needHelp: {
-      en: 'Need help? Contact support@plainledger.com',
-      fr: 'Besoin d\'aide? Contactez support@plainledger.com',
+      en: 'Need help? Contact support@plainledger.ca',
+      fr: 'Besoin d\'aide? Contactez support@plainledger.ca',
     },
   },
 
