@@ -176,6 +176,25 @@ resource "aws_secretsmanager_secret_version" "novu" {
 }
 
 # ------------------------------------------------------------------------------
+# QuickBooks Integration Secret
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "quickbooks" {
+  name        = "${var.project}/${var.environment}/quickbooks"
+  description = "QuickBooks OAuth credentials for ${var.project}"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "quickbooks" {
+  secret_id = aws_secretsmanager_secret.quickbooks.id
+  secret_string = jsonencode({
+    client_id     = var.quickbooks_client_id
+    client_secret = var.quickbooks_client_secret
+    redirect_uri  = "https://${var.domain_name}/api/v1/datasources/oauth/quickbooks/callback"
+    environment   = var.quickbooks_environment  # "production" for real QBO data
+  })
+}
+
+# ------------------------------------------------------------------------------
 # Keycloak SMTP Secret
 # ------------------------------------------------------------------------------
 resource "aws_secretsmanager_secret" "keycloak_smtp" {
@@ -219,6 +238,7 @@ module "ecs" {
   stripe_secret_arn         = aws_secretsmanager_secret.stripe.arn
   novu_secret_arn           = aws_secretsmanager_secret.novu.arn
   keycloak_smtp_secret_arn  = aws_secretsmanager_secret.keycloak_smtp.arn
+  quickbooks_secret_arn     = aws_secretsmanager_secret.quickbooks.arn
   kms_key_arn               = module.database.kms_key_arn
 
   ecr_web_repository_url      = aws_ecr_repository.web.repository_url

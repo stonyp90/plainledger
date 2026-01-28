@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Save, Loader2, ChevronDown, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import {
@@ -19,13 +19,10 @@ import {
 import {
   createOptimisticScenario,
   createPessimisticScenario,
-  cloneScenario,
 } from '../lib/scenarioEngine';
 import QuickMetrics from '../components/strategic/QuickMetrics';
-import EnterpriseExpenseTimeline from '../components/strategic/EnterpriseExpenseTimeline';
 import LiveCashChart from '../components/strategic/LiveCashChart';
 import ExpenseDrawer from '../components/strategic/ExpenseDrawer';
-import type { ViewMode } from '../components/strategic/EnterpriseTimelineHeader';
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
 
@@ -40,9 +37,6 @@ export default function StrategicPlanning() {
   const [expenses, setExpenses] = useState<PlannedExpense[]>([]);
   const [showExpenseDrawer, setShowExpenseDrawer] = useState(false);
   const [editingExpense, setEditingExpense] = useState<PlannedExpense | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
 
   // Demo financial data for when no real data is available
   const DEMO_FINANCIAL = {
@@ -236,53 +230,6 @@ export default function StrategicPlanning() {
     handleExpenseAdd(duplicated);
   }, [handleExpenseAdd]);
 
-  const handleBulkDelete = useCallback((expenseIds: string[]) => {
-    const updated = expenses.filter(e => !expenseIds.includes(e.id));
-    setExpenses(updated);
-    saveToStorage(scenarios, activeScenarioId, updated);
-    setShowExpenseDrawer(false);
-    setEditingExpense(null);
-  }, [expenses, scenarios, activeScenarioId, saveToStorage]);
-
-  const handleSaveScenario = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      saveToStorage(scenarios, activeScenarioId, expenses);
-      setIsSaving(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-    }, 500);
-  };
-
-  const handleCreateScenario = () => {
-    const baseScenario = activeScenario || scenarios[0];
-    if (!baseScenario) {
-      // Create a new base scenario if none exists
-      const cashToUse = currentCash;
-      const revenueToUse = baseRevenue;
-      const expensesToUse = runwayData.monthlyBurnRate + revenueToUse;
-      const newBase = createBaseScenario(cashToUse, revenueToUse, expensesToUse);
-      const updated = [newBase];
-      setScenarios(updated);
-      setActiveScenarioId(newBase.id);
-      setExpenses([]);
-      saveToStorage(updated, newBase.id, []);
-      return;
-    }
-    
-    const newScenario = cloneScenario(baseScenario, {
-      name: 'Nouveau scénario',
-      nameEn: 'New Scenario',
-      type: 'custom',
-    });
-    
-    const updated = [...scenarios, newScenario];
-    setScenarios(updated);
-    setActiveScenarioId(newScenario.id);
-    setExpenses([]);
-    saveToStorage(updated, newScenario.id, []);
-  };
-
   if (dataLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -338,114 +285,8 @@ export default function StrategicPlanning() {
         zeroDate={runwayData.zeroDate}
       />
 
-      {/* Enterprise Expense Timeline */}
+      {/* Live Cash Chart */}
       <div className="p-4 sm:p-6">
-        <div className="card p-4 sm:p-6">
-          {/* Timeline Header with Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <div className="flex items-center gap-3">
-              {/* Scenario Selector */}
-              {scenarios.length > 0 && (
-                <div className="relative">
-                  <select
-                    value={activeScenarioId || scenarios[0]?.id || ''}
-                    onChange={(e) => {
-                      setActiveScenarioId(e.target.value);
-                      const scenario = scenarios.find(s => s.id === e.target.value);
-                      if (scenario) {
-                        setExpenses((scenario.initiatives || []).map(initiativeToExpense));
-                      }
-                      saveToStorage(scenarios, e.target.value, expenses);
-                    }}
-                    className="appearance-none pl-4 pr-10 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all hover:shadow-md"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-surface))',
-                      color: 'rgb(var(--color-text))',
-                      border: '2px solid rgb(var(--color-border))',
-                      minWidth: '200px',
-                    }}
-                  >
-                    {scenarios.map(scenario => (
-                      <option key={scenario.id} value={scenario.id}>
-                        {isEn ? scenario.nameEn : scenario.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" 
-                    style={{ color: 'rgb(var(--color-text-muted))' }} 
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {/* New Scenario */}
-              <button
-                onClick={handleCreateScenario}
-                className="group px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                style={{
-                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                  color: 'white',
-                  boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.3)',
-                }}
-              >
-                <Plus className="w-4 h-4" />
-                <span>{isEn ? 'New Scenario' : 'Nouveau scénario'}</span>
-              </button>
-              
-              {/* Save Button */}
-              <button
-                onClick={handleSaveScenario}
-                disabled={isSaving}
-                className="group px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-                style={{
-                  background: saveSuccess 
-                    ? 'linear-gradient(135deg, rgb(var(--color-success)) 0%, rgb(16 185 129) 100%)'
-                    : 'linear-gradient(135deg, rgb(var(--color-success)) 0%, rgb(34 197 94) 100%)',
-                  color: 'white',
-                  boxShadow: '0 4px 14px rgb(var(--color-success) / 0.3)',
-                }}
-              >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : saveSuccess ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                <span>
-                  {isSaving 
-                    ? (isEn ? 'Saving...' : 'Sauvegarde...') 
-                    : saveSuccess 
-                      ? (isEn ? 'Saved!' : 'Enregistré!')
-                      : (isEn ? 'Save' : 'Enregistrer')
-                  }
-                </span>
-              </button>
-            </div>
-          </div>
-          
-          <EnterpriseExpenseTimeline
-          expenses={expenses}
-          startDate={new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1)}
-          endDate={new Date(currentDate.getFullYear(), currentDate.getMonth() + 18, 0)}
-          onExpenseUpdate={handleExpenseUpdate}
-          onExpenseClick={(expense) => {
-            setEditingExpense(expense);
-            setShowExpenseDrawer(true);
-          }}
-          onExpenseAdd={handleExpenseAdd}
-          onExpenseDelete={handleExpenseDelete}
-          onExpenseDuplicate={handleExpenseDuplicate}
-          onBulkDelete={handleBulkDelete}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
-        </div>
-
-        {/* Live Cash Chart */}
         <LiveCashChart
           currentCash={currentCash}
           currentDate={currentDate}

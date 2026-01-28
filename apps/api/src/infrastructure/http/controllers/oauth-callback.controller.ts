@@ -45,9 +45,14 @@ export const connectedDataSources: Array<{
 export class OAuthCallbackController {
   private readonly logger = new Logger(OAuthCallbackController.name);
   private readonly quickbooksService: QuickBooksService;
+  private readonly useSandbox: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.quickbooksService = new QuickBooksService(configService);
+    // Read environment from config - default to sandbox for safety
+    const environment = this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
+    this.useSandbox = environment !== "production";
+    this.logger.log(`QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`);
   }
 
   /**
@@ -116,7 +121,7 @@ export class OAuthCallbackController {
           const companyInfo = await this.quickbooksService.getCompanyInfo(
             tokens.accessToken,
             realmId,
-            true, // Use sandbox
+            this.useSandbox,
           );
           companyName = companyInfo.companyName;
           this.logger.log(`Connected to QuickBooks company: ${companyName}`);
@@ -165,9 +170,9 @@ export class OAuthCallbackController {
     try {
       // Fetch data from QuickBooks
       const [accounts, customers, vendors] = await Promise.all([
-        this.quickbooksService.getAccounts(accessToken, realmId, true),
-        this.quickbooksService.getCustomers(accessToken, realmId, true),
-        this.quickbooksService.getVendors(accessToken, realmId, true),
+        this.quickbooksService.getAccounts(accessToken, realmId, this.useSandbox),
+        this.quickbooksService.getCustomers(accessToken, realmId, this.useSandbox),
+        this.quickbooksService.getVendors(accessToken, realmId, this.useSandbox),
       ]);
 
       this.logger.log(`Initial sync data fetched: ${accounts.length} accounts, ${customers.length} customers, ${vendors.length} vendors`);

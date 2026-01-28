@@ -1109,16 +1109,36 @@ function TourStep({
   );
 }
 
-// Step 7: Complete - ROI-centric messaging (email already collected in signup step)
+// Step: Complete - Account validation and registration
 function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () => void }) {
   const { language } = useI18n();
   const isEn = language === 'en';
   const [isValidating, setIsValidating] = useState(false);
+  const [validationStep, setValidationStep] = useState<'idle' | 'registering' | 'saving' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFinish = async () => {
     setIsValidating(true);
+    setValidationStep('registering');
+    setErrorMessage(null);
+
     try {
-      // Store onboarding data with email from signup step
+      // Step 1: Register user account with auth API
+      const registerResponse = await authApi.register({
+        email: data.email,
+        password: data.password,
+        firstName: data.companyName.split(' ')[0] || 'User',
+        lastName: data.companyName.split(' ').slice(1).join(' ') || '',
+        organizationName: data.companyName,
+      });
+
+      if (!registerResponse) {
+        throw new Error(isEn ? 'Failed to create account' : 'Échec de la création du compte');
+      }
+
+      // Step 2: Save onboarding data
+      setValidationStep('saving');
+      
       const response = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: {
@@ -1139,20 +1159,174 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save onboarding data');
+        console.warn('Failed to save onboarding data, but account was created');
       }
 
-      // Call the original onFinish
+      // Step 3: Success - redirect to app
+      setValidationStep('success');
+      
+      // Brief delay to show success state before redirecting
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
       onFinish();
     } catch (error) {
-      console.error('Error saving onboarding data:', error);
-      // Still proceed with onboarding completion even if API call fails
-      onFinish();
+      console.error('Error during account creation:', error);
+      setValidationStep('error');
+      
+      // Parse error message
+      if (error instanceof Error) {
+        if (error.message.includes('already exists') || error.message.includes('409')) {
+          setErrorMessage(isEn 
+            ? 'An account with this email already exists. Please try logging in instead.'
+            : 'Un compte avec cet email existe déjà. Veuillez vous connecter.'
+          );
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          setErrorMessage(isEn 
+            ? 'Network error. Please check your connection and try again.'
+            : 'Erreur réseau. Veuillez vérifier votre connexion et réessayer.'
+          );
+        } else {
+          setErrorMessage(error.message);
+        }
+      } else {
+        setErrorMessage(isEn 
+          ? 'An unexpected error occurred. Please try again.'
+          : 'Une erreur inattendue s\'est produite. Veuillez réessayer.'
+        );
+      }
     } finally {
-      setIsValidating(false);
+      if (validationStep !== 'success') {
+        setIsValidating(false);
+      }
     }
   };
 
+  // Validation progress UI
+  if (isValidating) {
+    return (
+      <div className="text-center max-w-md mx-auto">
+        <div className="mb-8">
+          {validationStep === 'success' ? (
+            <div 
+              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+            >
+              <Check className="w-10 h-10" style={{ color: 'rgb(var(--color-success))' }} />
+            </div>
+          ) : (
+            <div 
+              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <Loader2 className="w-10 h-10 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            </div>
+          )}
+          
+          <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+            {validationStep === 'success' 
+              ? (isEn ? 'Account Created!' : 'Compte créé!')
+              : (isEn ? 'Creating your account...' : 'Création de votre compte...')
+            }
+          </h2>
+          
+          <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {validationStep === 'registering' && (isEn ? 'Validating your credentials...' : 'Validation de vos identifiants...')}
+            {validationStep === 'saving' && (isEn ? 'Setting up your workspace...' : 'Configuration de votre espace...')}
+            {validationStep === 'success' && (isEn ? 'Redirecting to your dashboard...' : 'Redirection vers votre tableau de bord...')}
+          </p>
+        </div>
+
+        {/* Progress steps */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            {validationStep === 'registering' ? (
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            ) : (
+              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+            )}
+            <span style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Creating secure account' : 'Création du compte sécurisé'}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            {validationStep === 'registering' ? (
+              <div className="w-5 h-5 rounded-full border-2" style={{ borderColor: 'rgb(var(--color-border))' }} />
+            ) : validationStep === 'saving' ? (
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            ) : (
+              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+            )}
+            <span style={{ color: validationStep === 'registering' ? 'rgb(var(--color-text-muted))' : 'rgb(var(--color-text))' }}>
+              {isEn ? 'Configuring workspace' : 'Configuration de l\'espace'}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            {validationStep === 'success' ? (
+              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+            ) : (
+              <div className="w-5 h-5 rounded-full border-2" style={{ borderColor: 'rgb(var(--color-border))' }} />
+            )}
+            <span style={{ color: validationStep === 'success' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Launching dashboard' : 'Lancement du tableau de bord'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (validationStep === 'error' && errorMessage) {
+    return (
+      <div className="text-center max-w-md mx-auto">
+        <div className="mb-8">
+          <div 
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
+          >
+            <AlertTriangle className="w-10 h-10" style={{ color: 'rgb(var(--color-error))' }} />
+          </div>
+          
+          <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Account Creation Failed' : 'Échec de la création du compte'}
+          </h2>
+          
+          <div 
+            className="p-4 rounded-xl mb-6"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-error) / 0.1)',
+              border: '1px solid rgb(var(--color-error) / 0.2)'
+            }}
+          >
+            <p style={{ color: 'rgb(var(--color-error))' }}>
+              {errorMessage}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button 
+            onClick={handleFinish} 
+            className="btn-primary"
+          >
+            {isEn ? 'Try Again' : 'Réessayer'}
+            <ArrowRight className="w-5 h-5" />
+          </button>
+          
+          <a 
+            href="/login"
+            className="btn-secondary"
+          >
+            {isEn ? 'Go to Login' : 'Aller à la connexion'}
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Ready to create account
   return (
     <div className="text-center max-w-xl mx-auto">
       <div className="mb-8">
@@ -1163,12 +1337,12 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
           <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
         </div>
         <h1 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? "Your Data Intelligence Platform is Ready" : "Votre plateforme d'intelligence est prête"}
+          {isEn ? "You're all set!" : "Vous êtes prêt!"}
         </h1>
         <p className="text-lg mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
           {isEn 
-            ? `${data.companyName}'s AI-powered financial insights await.`
-            : `Les insights financiers IA de ${data.companyName} vous attendent.`}
+            ? `Let's create your account and launch ${data.companyName}'s dashboard.`
+            : `Créons votre compte et lançons le tableau de bord de ${data.companyName}.`}
         </p>
         <p className="text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
           {isEn 
@@ -1177,29 +1351,38 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         </p>
       </div>
       
-      {/* Account Summary */}
+      {/* Account to be created */}
       <div 
         className="mb-6 p-4 rounded-xl text-left"
         style={{ 
-          backgroundColor: 'rgb(var(--color-success) / 0.1)',
-          border: '1px solid rgb(var(--color-success) / 0.2)'
+          backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+          border: '1px solid rgb(var(--color-primary-500) / 0.2)'
         }}
       >
         <div className="flex items-center gap-3 mb-2">
-          <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+          <Shield className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Account created successfully' : 'Compte créé avec succès'}
+            {isEn ? 'Account details' : 'Détails du compte'}
           </span>
         </div>
-        <p className="text-sm ml-8" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {data.email}
-        </p>
+        <div className="ml-8 space-y-1">
+          <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            <span className="font-medium">{isEn ? 'Email:' : 'Courriel:'}</span> {data.email}
+          </p>
+          <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            <span className="font-medium">{isEn ? 'Organization:' : 'Organisation:'}</span> {data.companyName}
+          </p>
+          <p className="text-sm flex items-center gap-1" style={{ color: 'rgb(var(--color-success))' }}>
+            <Check className="w-3.5 h-3.5" />
+            {isEn ? 'Password validated' : 'Mot de passe validé'}
+          </p>
+        </div>
       </div>
 
-      {/* ROI Preview */}
+      {/* What happens next */}
       <div 
         className="p-6 rounded-xl text-left mb-6"
-        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.05)', border: '1px solid rgb(var(--color-primary-500) / 0.2)' }}
+        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
       >
         <h3 className="font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
           {isEn ? 'What happens next' : 'Ce qui se passe ensuite'}
@@ -1210,10 +1393,10 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
               style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>1</div>
             <div>
               <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'AI analyzes your data' : 'L\'IA analyse vos données'}
+                {isEn ? 'Secure account creation' : 'Création de compte sécurisée'}
               </span>
               <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Industry-specific anomaly detection starts immediately' : 'Détection d\'anomalies spécifique à l\'industrie démarre immédiatement'}
+                {isEn ? 'Your credentials are encrypted and validated' : 'Vos identifiants sont chiffrés et validés'}
               </p>
             </div>
           </div>
@@ -1222,10 +1405,10 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
               style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>2</div>
             <div>
               <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'KPIs calculated for your industry' : 'KPIs calculés pour votre industrie'}
+                {isEn ? 'Workspace configuration' : 'Configuration de l\'espace'}
               </span>
               <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Compare against benchmarks automatically' : 'Comparez automatiquement aux références'}
+                {isEn ? 'Industry KPIs and settings applied' : 'KPIs et paramètres de l\'industrie appliqués'}
               </p>
             </div>
           </div>
@@ -1234,10 +1417,10 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
               style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>3</div>
             <div>
               <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'See ROI within minutes' : 'Voyez le ROI en minutes'}
+                {isEn ? 'Launch your dashboard' : 'Lancez votre tableau de bord'}
               </span>
               <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Identify savings opportunities and potential errors' : 'Identifiez les opportunités d\'économies et erreurs potentielles'}
+                {isEn ? 'Start seeing AI-powered insights immediately' : 'Voyez les insights IA immédiatement'}
               </p>
             </div>
           </div>
@@ -1265,31 +1448,23 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
               </span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            {data.primarySource && !data.skipSource ? (
+          {data.teamEmails.length > 0 && (
+            <div className="flex items-center gap-2">
               <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-            ) : (
-              <X className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            )}
-            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {data.primarySource && !data.skipSource
-                ? (isEn ? `Source: ${data.primarySource}` : `Source: ${data.primarySource}`)
-                : (isEn ? 'Data source pending' : 'Source en attente')}
-            </span>
-          </div>
+              <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? `${data.teamEmails.length} team member(s) invited` : `${data.teamEmails.length} membre(s) invité(s)`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
       <button 
         onClick={handleFinish} 
         className="btn-primary btn-lg"
-        disabled={isValidating}
       >
-        {isValidating 
-          ? (isEn ? 'Creating your account...' : 'Création de votre compte...')
-          : (isEn ? 'Start Seeing Your ROI' : 'Commencez à voir votre ROI')
-        }
-        {!isValidating && <ArrowRight className="w-5 h-5" />}
+        {isEn ? 'Create Account & Launch' : 'Créer le compte et lancer'}
+        <ArrowRight className="w-5 h-5" />
       </button>
     </div>
   );

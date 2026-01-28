@@ -77,6 +77,12 @@ variable "keycloak_smtp_secret_arn" {
   type        = string
 }
 
+variable "quickbooks_secret_arn" {
+  description = "ARN of QuickBooks OAuth credentials secret"
+  type        = string
+  default     = ""
+}
+
 variable "kms_key_arn" {
   description = "KMS key ARN"
   type        = string

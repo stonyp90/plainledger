@@ -107,6 +107,25 @@ variable "novu_app_id" {
   type        = string
 }
 
+# QuickBooks
+variable "quickbooks_client_id" {
+  description = "QuickBooks OAuth Client ID"
+  type        = string
+  sensitive   = true
+}
+
+variable "quickbooks_client_secret" {
+  description = "QuickBooks OAuth Client Secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "quickbooks_environment" {
+  description = "QuickBooks environment (sandbox or production)"
+  type        = string
+  default     = "production"  # Production uses real QBO data
+}
+
 # Terraform Backend
 variable "terraform_state_bucket" {
   description = "S3 bucket for Terraform state"

@@ -37,6 +37,8 @@ const MOCK_USER: UserProfile = {
   locale: 'en',
   emailVerified: true,
   identityProvider: 'local',
+  // Professional avatar from DiceBear API
+  picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminUser&backgroundColor=b6e3f4&clothesColor=3c4f5c&clothingGraphic=bear&eyebrows=default&eyes=default&facialHair=blank&hairColor=2c1b18&mouth=smile&skinColor=f8d25c&top=shortHair',
 };
 
 // Singleton keycloak instance
@@ -370,7 +372,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         `• Change your password\n` +
         `• Configure two-factor authentication\n` +
         `• Manage active sessions\n` +
-        `• Link social accounts (Google, Microsoft)\n\n` +
+        `• Configure enterprise SSO\n\n` +
         `URL: ${url}\n\n` +
         `Note: Mock authentication is enabled for development.`
       );

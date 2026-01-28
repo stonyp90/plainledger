@@ -62,15 +62,9 @@
             </div>
         </#if>
     <#elseif section = "socialProviders">
-        <#if realm.password && social.providers??>
-            <div id="kc-social-providers">
-                <h4>${msg("identity-provider-login-label")}</h4>
-                <ul>
-                    <#list social.providers as p>
-                        <li><a id="social-${p.alias}" href="${p.loginUrl}"><span class="kc-social-icon-text">${p.displayName}</span></a></li>
-                    </#list>
-                </ul>
-            </div>
-        </#if>
+        <div id="kc-enterprise-sso">
+            <p>${msg("enterpriseSsoMessage")}</p>
+            <a href="mailto:support@plainledger.com">${msg("enterpriseSsoContact")}</a>
+        </div>
     </#if>
 </@layout.registrationLayout>

@@ -20,6 +20,7 @@ import {
   Unlink,
   Camera,
   Lock,
+  Mail,
 } from 'lucide-react';
 import { useAuth, useKeycloak } from '../lib/keycloak';
 import Avatar, { IDPBadge } from '../components/Avatar';
@@ -281,41 +282,55 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Connected Accounts / Identity Providers */}
+              {/* Enterprise SSO */}
               <div className="card">
-                <h3 className="section-title">Comptes connectés</h3>
+                <h3 className="section-title">Authentification entreprise</h3>
                 <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  Connectez des comptes tiers pour vous connecter plus facilement et synchroniser votre photo de profil.
+                  Connectez votre système d'authentification d'entreprise pour une connexion sécurisée et centralisée.
                 </p>
                 
-                <div className="space-y-3">
-                  {/* Google */}
-                  <IDPConnectionRow
-                    provider="google"
-                    name="Google"
-                    description="Connexion avec votre compte Google"
-                    icon={<GoogleIcon />}
-                    connected={user?.identityProvider === 'google'}
-                  />
-                  
-                  {/* Microsoft */}
-                  <IDPConnectionRow
-                    provider="microsoft"
-                    name="Microsoft"
-                    description="Azure AD / Microsoft 365"
-                    icon={<MicrosoftIcon />}
-                    connected={user?.identityProvider === 'microsoft'}
-                  />
-                  
-                  {/* Enterprise SSO */}
-                  <IDPConnectionRow
-                    provider="saml"
-                    name="SSO Entreprise"
-                    description="SAML / OpenID Connect"
-                    icon={<Key className="w-5 h-5" />}
-                    connected={user?.identityProvider === 'saml'}
-                    enterprise
-                  />
+                {/* Enterprise SSO Info */}
+                <div 
+                  className="p-4 rounded-xl mb-4"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                    border: '1px solid rgb(var(--color-primary-500) / 0.2)'
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                    >
+                      <Key className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>SSO Entreprise</p>
+                        <span className="badge-default text-[10px]">Enterprise</span>
+                      </div>
+                      <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        SAML 2.0, OpenID Connect, Azure AD, Okta, et plus
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact for SSO */}
+                <div 
+                  className="p-4 rounded-lg"
+                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                >
+                  <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    Pour configurer l'authentification unique (SSO) avec votre fournisseur d'identité d'entreprise, contactez notre équipe.
+                  </p>
+                  <a 
+                    href="mailto:enterprise@plainledger.ca?subject=Enterprise SSO Setup Request"
+                    className="btn-primary btn-sm inline-flex items-center gap-2"
+                  >
+                    <Mail className="w-4 h-4" />
+                    Contacter l'équipe Enterprise
+                  </a>
                 </div>
               </div>
             </div>
@@ -467,10 +482,10 @@ function SecuritySettings() {
     {
       id: 'linked',
       icon: Link2,
-      title: 'Comptes liés',
-      titleEn: 'Linked Accounts',
-      description: 'Connectez Google, Microsoft ou SSO entreprise',
-      descriptionEn: 'Connect Google, Microsoft or enterprise SSO',
+      title: 'SSO Entreprise',
+      titleEn: 'Enterprise SSO',
+      description: 'Configurez l\'authentification unique entreprise',
+      descriptionEn: 'Configure enterprise single sign-on',
       action: 'Gérer',
       actionEn: 'Manage',
       section: 'linked-accounts' as const,
@@ -585,10 +600,7 @@ function SecuritySettings() {
             <div className="flex justify-between py-2" style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}>
               <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>Méthode de connexion</span>
               <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {user.identityProvider === 'google' ? 'Google' :
-                 user.identityProvider === 'microsoft' ? 'Microsoft' :
-                 user.identityProvider === 'saml' ? 'SSO Entreprise' :
-                 'Email / Mot de passe'}
+                {user.identityProvider === 'saml' ? 'SSO Entreprise' : 'Email / Mot de passe'}
               </span>
             </div>
             <div className="flex justify-between py-2">
@@ -679,115 +691,5 @@ function IntegrationItem({ name, enabled, connected }: { name: string; enabled: 
         <button className="btn-secondary btn-sm" disabled>Upgrade</button>
       )}
     </div>
-  );
-}
-
-// Identity Provider Connection Row
-interface IDPConnectionRowProps {
-  provider: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  connected: boolean;
-  enterprise?: boolean;
-}
-
-function IDPConnectionRow({ provider, name, description, icon, connected, enterprise }: IDPConnectionRowProps) {
-  const { linkAccount, login } = useKeycloak();
-
-  const handleConnect = () => {
-    // For enterprise SSO, redirect to account linking page
-    // For social login, use IDP hint to start login flow
-    if (enterprise) {
-      linkAccount(provider);
-    } else {
-      login(provider);
-    }
-  };
-
-  return (
-    <div 
-      className="flex items-center justify-between p-4 rounded-lg"
-      style={{ 
-        backgroundColor: connected ? 'rgb(var(--color-success) / 0.05)' : 'rgb(var(--color-bg-muted))',
-        border: connected ? '1px solid rgb(var(--color-success) / 0.2)' : '1px solid rgb(var(--color-border))'
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <div 
-          className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-        >
-          {icon}
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{name}</p>
-            {connected && (
-              <span className="badge-success text-[10px]">Connecté</span>
-            )}
-            {enterprise && (
-              <span className="badge-default text-[10px]">Entreprise</span>
-            )}
-          </div>
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{description}</p>
-        </div>
-      </div>
-      
-      {connected ? (
-        <button 
-          className="btn-sm flex items-center gap-1.5 text-sm"
-          style={{ color: 'rgb(var(--color-text-muted))' }}
-          title="Déconnecter ce compte"
-        >
-          <Unlink className="w-4 h-4" />
-          Déconnecter
-        </button>
-      ) : (
-        <button 
-          onClick={handleConnect}
-          className="btn-secondary btn-sm flex items-center gap-1.5"
-        >
-          <Link2 className="w-4 h-4" />
-          Connecter
-        </button>
-      )}
-    </div>
-  );
-}
-
-// Google Icon
-function GoogleIcon() {
-  return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24">
-      <path
-        fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      />
-    </svg>
-  );
-}
-
-// Microsoft Icon
-function MicrosoftIcon() {
-  return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24">
-      <path fill="#F25022" d="M1 1h10v10H1z" />
-      <path fill="#00A4EF" d="M13 1h10v10H13z" />
-      <path fill="#7FBA00" d="M1 13h10v10H1z" />
-      <path fill="#FFB900" d="M13 13h10v10H13z" />
-    </svg>
   );
 }

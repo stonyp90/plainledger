@@ -3,7 +3,7 @@
  * Provides language context and translation utilities
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useRef } from 'react';
 import { Globe } from 'lucide-react';
 import { translations, Language } from './translations';
 
@@ -176,37 +176,129 @@ interface LanguageSelectorProps {
   className?: string;
 }
 
+// Quebec flag SVG component (blue with white cross and fleur-de-lis)
+const QuebecFlag = ({ className = "w-5 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Blue background */}
+    <rect width="24" height="16" rx="2" fill="#095797"/>
+    {/* White cross */}
+    <rect x="10" y="0" width="4" height="16" fill="white"/>
+    <rect x="0" y="6" width="24" height="4" fill="white"/>
+    {/* Simplified fleur-de-lis in each quadrant */}
+    <g fill="white">
+      {/* Top-left ⚜ */}
+      <path d="M5 2L5.8 3.5H4.2L5 2ZM3.5 3.5L5 5L6.5 3.5L5 4.5L3.5 3.5Z" />
+      {/* Top-right ⚜ */}
+      <path d="M19 2L19.8 3.5H18.2L19 2ZM17.5 3.5L19 5L20.5 3.5L19 4.5L17.5 3.5Z" />
+      {/* Bottom-left ⚜ */}
+      <path d="M5 11L5.8 12.5H4.2L5 11ZM3.5 12.5L5 14L6.5 12.5L5 13.5L3.5 12.5Z" />
+      {/* Bottom-right ⚜ */}
+      <path d="M19 11L19.8 12.5H18.2L19 11ZM17.5 12.5L19 14L20.5 12.5L19 13.5L17.5 12.5Z" />
+    </g>
+  </svg>
+);
+
+// Canada flag emoji wrapper for consistency
+const CanadaFlag = ({ className = "w-5 h-4" }: { className?: string }) => (
+  <span className={`inline-flex items-center justify-center ${className}`} style={{ fontSize: '1.1em', lineHeight: 1 }}>🇨🇦</span>
+);
+
 export function LanguageSelector({ className }: LanguageSelectorProps) {
   const { language, setLanguage } = useI18n();
+
+  const nextLang = language === 'en' ? 'Français' : 'English';
 
   return (
     <button
       onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${className}`}
-      style={{ 
-        backgroundColor: 'rgb(var(--color-bg-muted))',
-        color: 'rgb(var(--color-text))'
-      }}
-      title={language === 'en' ? 'Switch to French' : 'Passer en anglais'}
+      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all hover:opacity-80 active:scale-95 ${className}`}
+      style={{ color: 'rgb(var(--color-text))' }}
+      title={language === 'en' ? `Switch to ${nextLang}` : `Passer en ${nextLang}`}
     >
-      <Globe className="w-4 h-4" />
-      <span className="text-sm font-medium uppercase">{language}</span>
+      {language === 'en' ? <CanadaFlag /> : <QuebecFlag />}
+      <span className="text-xs font-semibold uppercase">{language}</span>
     </button>
   );
 }
 
-// Compact version for header
+// Compact version for header with flag dropdown
 export function LanguageToggle() {
   const { language, setLanguage } = useI18n();
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const languages = [
+    { code: 'en' as const, name: 'English' },
+    { code: 'fr' as const, name: 'Français' },
+  ];
 
   return (
-    <button
-      onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
-      className="icon-btn"
-      title={language === 'en' ? 'Switch to French' : 'Passer en anglais'}
-    >
-      <span className="text-xs font-bold uppercase">{language}</span>
-    </button>
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all hover:opacity-80 active:scale-95"
+        style={{ color: 'rgb(var(--color-text))' }}
+        title={language === 'en' ? 'Change language' : 'Changer de langue'}
+      >
+        {language === 'en' ? <CanadaFlag className="w-5 h-4" /> : <QuebecFlag className="w-5 h-4" />}
+        <span className="text-xs font-semibold uppercase">{language}</span>
+        <svg 
+          className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+          style={{ opacity: 0.5 }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div 
+          className="absolute right-0 mt-2 py-1.5 rounded-xl shadow-xl border z-50 min-w-[140px] overflow-hidden"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+            boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)'
+          }}
+        >
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => {
+                setLanguage(lang.code);
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-all hover:bg-black/5 dark:hover:bg-white/5"
+              style={{ 
+                color: language === lang.code ? 'rgb(var(--color-primary))' : 'rgb(var(--color-text))',
+                fontWeight: language === lang.code ? 600 : 400
+              }}
+            >
+              {lang.code === 'en' ? <CanadaFlag className="w-5 h-4" /> : <QuebecFlag className="w-5 h-4" />}
+              <span className="flex-1 text-left">{lang.name}</span>
+              {language === lang.code && (
+                <svg className="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

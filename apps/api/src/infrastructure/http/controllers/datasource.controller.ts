@@ -106,9 +106,14 @@ setInterval(() => {
 export class DataSourceController {
   private readonly logger = new Logger(DataSourceController.name);
   private readonly quickbooksService: QuickBooksService;
+  private readonly useSandbox: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.quickbooksService = new QuickBooksService(configService);
+    // Read environment from config - default to sandbox for safety
+    const environment = this.configService.get<string>("QUICKBOOKS_ENVIRONMENT") || "sandbox";
+    this.useSandbox = environment !== "production";
+    this.logger.log(`QuickBooks environment: ${environment} (sandbox: ${this.useSandbox})`);
   }
 
   @Get()
@@ -265,7 +270,7 @@ export class DataSourceController {
           const companyInfo = await this.quickbooksService.getCompanyInfo(
             tokens.accessToken,
             callback.realmId,
-            true, // Use sandbox
+            this.useSandbox,
           );
           companyName = companyInfo.companyName;
           this.logger.log(`Connected to QuickBooks company: ${companyName}`);
@@ -315,7 +320,7 @@ export class DataSourceController {
         tokens.realmId,
         "2020-01-01", // Wide date range
         new Date().toISOString().split("T")[0],
-        true, // Use sandbox
+        this.useSandbox,
       );
 
       // Update datasource stats

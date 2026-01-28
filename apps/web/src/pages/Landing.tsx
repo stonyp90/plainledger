@@ -748,6 +748,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '24.2%', target: '20-30%', status: 'good' },
         { metric: isEn ? 'Prime Cost %' : 'Coût principal %', yours: '52.7%', target: '55-65%', status: 'excellent' },
         { metric: isEn ? 'Net Margin' : 'Marge nette', yours: '8.2%', target: '6-9%', status: 'good' },
+        { metric: isEn ? 'Beverage Cost %' : 'Coût boissons %', yours: '18.4%', target: '18-24%', status: 'excellent' },
       ]
     },
     { 
@@ -892,7 +893,6 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
       status: isEn ? 'Planned' : 'Planifié'
     },
   ];
-  const [hoveredRoadmapItem, setHoveredRoadmapItem] = useState<number | null>(null);
 
   return (
     <div 
@@ -914,6 +914,15 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
+        </div>
+        
+        {/* User Avatar */}
+        <div className="w-7 h-7 rounded-full overflow-hidden border-2 shadow-sm" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)' }}>
+          <img 
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" 
+            alt="User" 
+            className="w-full h-full object-cover"
+          />
         </div>
         
         {/* Industry Selector Dropdown */}
@@ -1071,53 +1080,32 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             </div>
           </div>
           
-          {/* Industries Section */}
-          <div className="mt-auto pt-3 border-t" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
-            <div className="text-[8px] font-bold uppercase tracking-wider px-2 mb-2" style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}>
-              {isEn ? 'Your Industry' : 'Votre industrie'}
-            </div>
-            {industries.map((ind, i) => (
-              <div 
-                key={i}
-                onClick={() => setSelectedIndustry(i)}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] cursor-pointer transition-all ${
-                  selectedIndustry === i ? 'font-semibold' : ''
-                }`}
-                style={{ 
-                  backgroundColor: selectedIndustry === i ? `${ind.iconColor}12` : 'transparent',
-                  color: selectedIndustry === i ? ind.iconColor : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                }}
-              >
-                <div 
-                  className="w-5 h-5 rounded flex items-center justify-center text-[8px] font-bold"
-                  style={{ 
-                    backgroundColor: selectedIndustry === i ? `${ind.iconColor}25` : (isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'),
-                    color: selectedIndustry === i ? ind.iconColor : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                  }}
-                >
-                  {ind.icon}
-                </div>
-                {ind.name}
-              </div>
-            ))}
-          </div>
-          
           {/* AI Status */}
           <div 
-            className="mt-3 p-2 rounded-md"
+            className="mt-auto p-3 rounded-lg"
             style={{ 
-              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-              border: `1px solid ${theme.green}20`
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(248, 250, 252, 0.95)',
+              border: `1px solid ${theme.green}25`,
+              boxShadow: `0 2px 8px ${theme.green}10`
             }}
           >
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: theme.green }} />
-              <span className="text-[9px] font-semibold" style={{ color: theme.green }}>
-                {isEn ? 'AI Active' : 'IA Active'}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="relative">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.green }} />
+                <div className="absolute inset-0 w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: theme.green, opacity: 0.4 }} />
+              </div>
+              <span className="text-[10px] font-semibold" style={{ color: theme.green }}>
+                {isEn ? 'AI Insights' : 'IA Insights'}
               </span>
             </div>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-3 h-3" style={{ color: theme.gold }} />
+              <p className="text-[9px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)' }}>
+                {isEn ? '3 opportunities detected' : '3 opportunités détectées'}
+              </p>
+            </div>
             <p className="text-[8px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-              {isEn ? 'Analyzing your data in real-time' : 'Analyse en temps réel'}
+              {isEn ? 'Monitoring your metrics in real-time' : 'Surveillance de vos métriques en temps réel'}
             </p>
           </div>
         </div>
@@ -1168,46 +1156,28 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                   isDark={isDark}
                 />
                 
-                {/* Hover Tooltip */}
+                {/* Hover Tooltip - Slick & Compact */}
                 {hoveredKpi === i && kpi.threshold && (
                   <div 
-                    className="absolute top-full left-0 right-0 mt-2 p-3 rounded-lg shadow-xl z-20"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 rounded-lg shadow-xl z-20 whitespace-nowrap"
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `1px solid ${theme.green}30`,
-                      backdropFilter: 'blur(8px)',
+                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                      border: `1px solid ${theme.green}25`,
+                      backdropFilter: 'blur(12px)',
                     }}
                   >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                          {isEn ? 'Threshold' : 'Seuil'}
-                        </span>
-                        <span className="text-[9px] font-medium" style={{ color: theme.green }}>
-                          {kpi.threshold}
-                        </span>
+                    <div className="flex items-center gap-3 text-[9px]">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                        <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>{kpi.threshold}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                          {isEn ? 'Target' : 'Cible'}
-                        </span>
-                        <span className="text-[9px] font-medium" style={{ color: theme.gold }}>
-                          {kpi.target}
-                        </span>
+                      <div className="w-px h-3" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                        <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>{kpi.target}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                          {isEn ? 'Previous' : 'Précédent'}
-                        </span>
-                        <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                          {kpi.previous}
-                        </span>
-                      </div>
-                      <div className="pt-2 border-t" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
-                        <p className="text-[9px] font-medium" style={{ color: theme.green }}>
-                          {kpi.insight}
-                        </p>
-                      </div>
+                      <div className="w-px h-3" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
+                      <span className="font-medium" style={{ color: theme.green }}>{kpi.insight}</span>
                     </div>
                   </div>
                 )}
@@ -1293,62 +1263,22 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             {roadmapItems.map((item, i) => (
               <div 
                 key={i} 
-                className="flex items-center mb-2 relative group"
-                onMouseEnter={() => setHoveredRoadmapItem(i)}
-                onMouseLeave={() => setHoveredRoadmapItem(null)}
+                className="flex items-center mb-2"
               >
-                <div className="w-28 sm:w-36 text-[9px] sm:text-[10px] font-medium pr-2 truncate" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <div className="w-28 sm:w-36 text-[9px] sm:text-[10px] font-medium pr-2 text-left" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {item.plan}
                 </div>
-                <div className="flex-1 h-6 relative rounded overflow-hidden cursor-pointer" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)' }}>
+                <div className="flex-1 h-6 relative rounded overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)' }}>
                   <div 
                     className="absolute top-1 bottom-1 rounded transition-all duration-1000"
                     style={{ 
                       left: `${item.start}%`,
                       width: showElements ? `${item.end - item.start}%` : '0%',
                       backgroundColor: item.color,
-                      opacity: hoveredRoadmapItem === i ? 1 : 0.8,
                       transitionDelay: `${600 + i * 150}ms`
                     }}
                   />
                 </div>
-                
-                {/* Hover Tooltip */}
-                {hoveredRoadmapItem === i && (
-                  <div 
-                    className="absolute left-0 top-full mt-2 p-3 rounded-lg shadow-xl z-20 min-w-[200px]"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `1px solid ${item.color}30`,
-                      backdropFilter: 'blur(8px)',
-                    }}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                          {item.plan}
-                        </span>
-                        <span 
-                          className="text-[8px] px-1.5 py-0.5 rounded-full font-medium"
-                          style={{ 
-                            backgroundColor: `${item.color}15`,
-                            color: item.color
-                          }}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                      <p className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                        {item.details}
-                      </p>
-                      <div className="pt-2 border-t" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
-                        <span className="text-[9px] font-medium" style={{ color: item.color }}>
-                          {item.budget}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -1823,7 +1753,7 @@ export default function Landing() {
             className="mt-8 flex flex-col items-center gap-4"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 2, delay: 1, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.3, delay: 1, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="flex items-center -space-x-3">
               {[
@@ -1838,8 +1768,8 @@ export default function Landing() {
                   initial={{ opacity: 0, scale: 0.3, x: -40 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
                   transition={{ 
-                    duration: 1.8, 
-                    delay: 1.5 + idx * 0.4, 
+                    duration: 1, 
+                    delay: 0.8 + idx * 0.2, 
                     ease: [0.16, 1, 0.3, 1]
                   }}
                   whileHover={{ scale: 1.15, zIndex: 20, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
@@ -1860,7 +1790,7 @@ export default function Landing() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.3 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1.8, delay: 3.8, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 1, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
                 whileHover={{ scale: 1.1, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
                 className="w-11 h-11 rounded-full border-[3px] flex items-center justify-center text-xs font-bold shadow-lg cursor-pointer"
                 style={{ 
@@ -1877,7 +1807,7 @@ export default function Landing() {
             <motion.p 
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.8, delay: 4.2, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1, delay: 1.4, ease: [0.16, 1, 0.3, 1] }}
               className="text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
@@ -1910,17 +1840,13 @@ export default function Landing() {
           {/* Section Header */}
           <motion.div 
             className="text-center mb-12"
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6 }}
           >
-            <motion.div 
+            <div 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.4, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ 
                 background: `${theme.green}15`,
                 border: `1px solid ${theme.green}25`,
@@ -1929,29 +1855,21 @@ export default function Landing() {
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {isEn ? 'Exec Dashboard' : 'Tableau de bord exécutif'}
-            </motion.div>
-            <motion.h2 
+            </div>
+            <h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
               {isEn ? 'Strategic Intelligence at a Glance' : 'Intelligence stratégique en un coup d\'œil'}
-            </motion.h2>
-            <motion.p 
+            </h2>
+            <p 
               className="text-sm sm:text-base max-w-2xl mx-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
                 ? 'Real-time metrics, AI-powered insights, and strategic planning tools designed for executive decision-making.'
                 : 'Métriques en temps réel, insights alimentés par l\'IA et outils de planification stratégique conçus pour les décisions exécutives.'}
-            </motion.p>
+            </p>
           </motion.div>
 
           {/* Features Grid */}
@@ -2014,44 +1932,33 @@ export default function Landing() {
             ].map((feature, idx) => (
               <motion.div 
                 key={idx}
-                initial={{ opacity: 0, y: 70, scale: 0.92 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ 
-                  duration: 1.8, 
-                  delay: 0.25 * idx,
-                  ease: [0.16, 1, 0.3, 1]
+                  duration: 0.5, 
+                  delay: 0.1 * idx
                 }}
-                whileHover={{ y: -10, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
-                className="group p-5 rounded-xl transition-all duration-500 relative overflow-hidden"
+                className="group p-5 rounded-xl transition-all duration-300 relative overflow-hidden cursor-default"
                 style={{ 
                   backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
                   border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
               >
-                {/* Gradient overlay on hover */}
+                {/* Icon */}
                 <div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(135deg, ${feature.color}08 0%, transparent 100%)`
-                  }}
-                />
-                
-                {/* Icon with animation */}
-                <div 
-                  className="relative z-10 w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                   style={{ 
                     backgroundColor: `${feature.color}15`,
-                    boxShadow: `0 4px 12px ${feature.color}20`
                   }}
                 >
-                  <feature.icon className="w-6 h-6 transition-transform duration-300 group-hover:scale-110" style={{ color: feature.color }} />
+                  <feature.icon className="w-6 h-6" style={{ color: feature.color }} />
                 </div>
                 
                 {/* Title */}
                 <h3 
-                  className="relative z-10 text-base font-bold mb-2 transition-colors duration-300"
+                  className="text-base font-bold mb-2"
                   style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
                 >
                   {feature.title}
@@ -2059,7 +1966,7 @@ export default function Landing() {
                 
                 {/* Description */}
                 <p 
-                  className="relative z-10 text-xs leading-relaxed mb-3"
+                  className="text-xs leading-relaxed mb-3"
                   style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
                 >
                   {feature.desc}
@@ -2067,11 +1974,10 @@ export default function Landing() {
                 
                 {/* Highlight */}
                 <div 
-                  className="relative z-10 inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-300 group-hover:scale-105"
+                  className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full"
                   style={{ 
                     backgroundColor: `${feature.color}12`,
-                    color: feature.color,
-                    boxShadow: `0 2px 4px ${feature.color}15`
+                    color: feature.color
                   }}
                 >
                   <Check className="w-3 h-3" />
@@ -2083,25 +1989,23 @@ export default function Landing() {
 
           {/* Bottom CTA */}
           <motion.div 
-            className="text-center mt-10"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center mt-10 w-full"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.8, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
             <p 
-              className="text-sm mb-4 text-center"
+              className="text-sm mb-4 text-center w-full max-w-md mx-auto px-4"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
                 ? 'All features included in every plan. No hidden upgrades.'
                 : 'Toutes les fonctionnalités incluses dans chaque plan. Aucune mise à niveau cachée.'}
             </p>
-            <motion.button 
+            <button 
               onClick={() => register()}
-              whileHover={{ scale: 1.05, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm hover:opacity-90 transition-opacity"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 16px ${theme.green}35`
@@ -2109,14 +2013,15 @@ export default function Landing() {
             >
               {isEn ? 'Try the dashboard free' : 'Essayez le tableau de bord gratuitement'}
               <ArrowRight className="w-4 h-4" />
-            </motion.button>
+            </button>
           </motion.div>
         </div>
       </section>
 
+
       {/* Industry KPIs Section - Formulas & Benchmarks */}
       <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
-      <section id="industries" className="py-16 sm:py-20 lg:py-24 relative">
+      <section id="industries" className="relative">
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
@@ -2146,14 +2051,14 @@ export default function Landing() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.div 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ 
                 background: `${theme.green}15`,
                 border: `1px solid ${theme.green}25`,
@@ -2168,7 +2073,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
               {isEn ? 'Your Data Journey' : 'Le parcours de vos données'}
@@ -2178,7 +2083,7 @@ export default function Landing() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
@@ -2189,146 +2094,214 @@ export default function Landing() {
 
           {/* Pipeline Steps - Horizontal on Desktop */}
           <div className="relative">
-            {/* Animated Connection Line - Desktop */}
-            <div className="hidden lg:block absolute top-[52px] left-[12%] right-[12%] h-[2px] z-0">
-              <div 
-                className="h-full animate-pulse"
+            {/* Enhanced Animated Connection Line - Desktop */}
+            <div className="hidden lg:block absolute top-[120px] left-[14%] right-[14%] h-[3px] z-0 rounded-full overflow-hidden">
+              {/* Base gradient line */}
+              <motion.div 
+                className="h-full rounded-full"
                 style={{ 
-                  background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.green} 40%, ${theme.gold} 100%)`
+                  background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.green} 35%, ${theme.gold} 65%, ${theme.gold} 100%)`
+                }}
+                initial={{ scaleX: 0, opacity: 0 }}
+                whileInView={{ scaleX: 1, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.5, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              />
+              {/* Animated glow overlay */}
+              <motion.div 
+                className="absolute inset-0 rounded-full"
+                style={{ 
+                  background: `linear-gradient(90deg, transparent 0%, ${theme.green}60 20%, transparent 40%, ${theme.gold}60 80%, transparent 100%)`,
+                  filter: 'blur(4px)'
+                }}
+                animate={{ 
+                  x: ['-100%', '100%']
+                }}
+                transition={{ 
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "linear"
                 }}
               />
-              {/* Animated dots on line */}
-              <div 
-                className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-[moveRight_3s_ease-in-out_infinite]"
-                style={{ backgroundColor: theme.green, left: '0%' }}
-              />
+              {/* Multiple animated data particles */}
+              {[0, 1, 2].map((i) => (
+                <motion.div 
+                  key={i}
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
+                  style={{ 
+                    backgroundColor: i < 2 ? theme.green : theme.gold,
+                    boxShadow: `0 0 12px ${i < 2 ? theme.green : theme.gold}, 0 0 24px ${i < 2 ? theme.green : theme.gold}50`
+                  }}
+                  animate={{ 
+                    left: ['0%', '100%'],
+                    scale: [1, 1.3, 1],
+                    opacity: [0.8, 1, 0.8]
+                  }}
+                  transition={{ 
+                    duration: 4,
+                    delay: i * 1.3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              ))}
             </div>
             
-            {/* Steps Grid - Compact & Animated */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            {/* Steps Grid - Enhanced & Animated */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
               {[
                 { 
                   num: 1, 
                   icon: Database, 
                   title: isEn ? 'Connect' : 'Connecter',
-                  desc: isEn ? 'Link your accounting software' : 'Liez votre logiciel comptable',
+                  desc: isEn ? 'Link your accounting software securely' : 'Liez votre logiciel comptable de façon sécurisée',
                   tags: ['QuickBooks', 'Xero', 'Sage'],
                   color: theme.green,
+                  visual: 'connect',
                 },
                 { 
                   num: 2, 
                   icon: RefreshCw, 
                   title: isEn ? 'Clean & Store' : 'Nettoyer',
-                  desc: isEn ? 'Canadian data lake' : 'Data lake canadien',
-                  tags: [isEn ? 'Sanitized' : 'Assaini', isEn ? 'Validated' : 'Validé'],
+                  desc: isEn ? 'Transform & store in Canadian data lake' : 'Transformez et stockez au Canada',
+                  tags: [isEn ? 'Sanitized' : 'Assaini', isEn ? 'Validated' : 'Validé', 'CA'],
                   color: theme.green,
+                  visual: 'clean',
                 },
                 { 
                   num: 3, 
                   icon: Sparkles, 
                   title: isEn ? 'AI Analysis' : 'Analyse IA',
-                  desc: isEn ? 'Industry ML models' : 'Modèles ML sectoriels',
-                  tags: ['97%', isEn ? 'Accuracy' : 'Précision'],
+                  desc: isEn ? 'Industry-specific machine learning' : 'Apprentissage machine sectoriel',
+                  tags: ['97%', isEn ? 'Accuracy' : 'Précision', 'ML'],
                   color: theme.gold,
+                  visual: 'ai',
                 },
                 { 
                   num: 4, 
                   icon: TrendingUp, 
                   title: isEn ? 'Dashboard' : 'Tableau',
-                  desc: isEn ? 'Exec-ready insights' : 'Insights exécutifs',
-                  tags: ['KPIs', 'OKRs'],
+                  desc: isEn ? 'Executive-ready business insights' : 'Insights prêts pour dirigeants',
+                  tags: ['KPIs', 'OKRs', isEn ? 'Real-time' : 'Temps réel'],
                   color: theme.gold,
+                  visual: 'dashboard',
                 },
               ].map((step, idx) => (
                 <motion.div 
                   key={step.num}
                   className="group relative"
-                  initial={{ opacity: 0, x: -60, scale: 0.88 }}
-                  whileInView={{ opacity: 1, x: 0, scale: 1 }}
+                  initial={{ opacity: 0, y: 60, scale: 0.85 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ 
-                    duration: 2, 
-                    delay: 0.5 + idx * 0.4,
+                    duration: 1.0, 
+                    delay: 0.3 + idx * 0.15,
                     ease: [0.16, 1, 0.3, 1]
                   }}
                 >
-                  {/* Step Card */}
+                  {/* Step Card - Enhanced Design */}
                   <motion.div 
-                    className="relative p-3 sm:p-4 rounded-lg cursor-pointer overflow-hidden h-full"
+                    className="relative p-4 sm:p-5 rounded-xl cursor-pointer overflow-hidden h-full min-h-[280px] sm:min-h-[300px]"
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: isDark 
+                        ? `0 4px 24px -4px rgba(0,0,0,0.3), inset 0 1px 0 0 rgba(255,255,255,0.05)`
+                        : `0 4px 24px -4px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.8)`,
                     }}
                     whileHover={{ 
-                      y: -10,
-                      scale: 1.03,
-                      boxShadow: `0 25px 50px -15px ${step.color}35`,
-                      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+                      y: -12,
+                      scale: 1.02,
+                      boxShadow: isDark 
+                        ? `0 32px 64px -16px ${step.color}40, 0 16px 32px -8px rgba(0,0,0,0.4)`
+                        : `0 32px 64px -16px ${step.color}30, 0 16px 32px -8px rgba(0,0,0,0.1)`,
+                      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
                     }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {/* Top accent line with animation */}
+                    {/* Gradient top accent */}
                     <motion.div 
-                      className="absolute top-0 left-0 right-0 h-0.5"
-                      style={{ backgroundColor: step.color }}
-                      initial={{ scaleX: 0 }}
+                      className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
+                      style={{ 
+                        background: `linear-gradient(90deg, ${step.color}, ${step.color}80)`
+                      }}
+                      initial={{ scaleX: 0, transformOrigin: 'left' }}
                       whileInView={{ scaleX: 1 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.6, delay: idx * 0.1 + 0.3 }}
+                      transition={{ duration: 0.8, delay: idx * 0.15 + 0.5 }}
                     />
                     
-                    {/* Animated background pulse on hover */}
-                    <motion.div 
-                      className="absolute inset-0 pointer-events-none"
+                    {/* Subtle gradient background */}
+                    <div 
+                      className="absolute inset-0 opacity-[0.03] pointer-events-none"
                       style={{ 
-                        background: `radial-gradient(circle at center, ${step.color}10 0%, transparent 70%)`
+                        background: `radial-gradient(circle at top right, ${step.color} 0%, transparent 60%)`
+                      }}
+                    />
+                    
+                    {/* Animated glow on hover */}
+                    <motion.div 
+                      className="absolute inset-0 pointer-events-none rounded-xl"
+                      style={{ 
+                        background: `radial-gradient(circle at center, ${step.color}15 0%, transparent 70%)`
                       }}
                       initial={{ opacity: 0 }}
                       whileHover={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     />
                     
-                    {/* Step Number & Icon Row */}
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    {/* Step Number Badge & Icon */}
+                    <div className="flex items-center justify-between mb-3">
                       <motion.div 
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center text-sm sm:text-base font-bold"
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold relative overflow-hidden"
                         style={{ 
                           backgroundColor: `${step.color}15`,
-                          color: step.color
+                          color: step.color,
+                          border: `1px solid ${step.color}25`
                         }}
                         whileHover={{ 
-                          scale: 1.15,
-                          rotate: [0, -5, 5, 0],
-                          transition: { duration: 0.4 }
+                          scale: 1.1,
+                          backgroundColor: `${step.color}25`,
+                          transition: { duration: 0.3 }
                         }}
                       >
-                        {step.num}
+                        <motion.div
+                          className="absolute inset-0"
+                          style={{ background: `linear-gradient(135deg, ${step.color}20 0%, transparent 60%)` }}
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                        <span className="relative z-10">{step.num}</span>
                       </motion.div>
                       <motion.div 
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-md flex items-center justify-center"
-                        style={{ backgroundColor: `${step.color}10` }}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center"
+                        style={{ 
+                          backgroundColor: `${step.color}10`,
+                          border: `1px solid ${step.color}15`
+                        }}
                         animate={{ 
-                          rotate: [0, 5, -5, 0],
+                          rotate: step.visual === 'clean' ? [0, 360] : [0, 5, -5, 0],
                         }}
                         transition={{ 
-                          duration: 4,
+                          duration: step.visual === 'clean' ? 8 : 4,
                           repeat: Infinity,
-                          ease: "easeInOut",
+                          ease: step.visual === 'clean' ? "linear" : "easeInOut",
                           delay: idx * 0.5
                         }}
                         whileHover={{ 
-                          rotate: 180,
-                          scale: 1.1,
-                          transition: { duration: 0.4 }
+                          scale: 1.15,
+                          backgroundColor: `${step.color}20`,
+                          transition: { duration: 0.3 }
                         }}
                       >
-                        <step.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: step.color }} />
+                        <step.icon className="w-4 h-4" style={{ color: step.color }} />
                       </motion.div>
                     </div>
                     
                     {/* Title */}
                     <h4 
-                      className="text-sm sm:text-base font-bold mb-1"
+                      className="text-base sm:text-lg font-bold mb-1.5"
                       style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
                     >
                       {step.title}
@@ -2336,29 +2309,246 @@ export default function Landing() {
                     
                     {/* Description */}
                     <p 
-                      className="text-[10px] sm:text-xs mb-2 sm:mb-3 leading-relaxed line-clamp-2"
+                      className="text-xs sm:text-sm mb-3 leading-relaxed min-h-[2.5rem]"
                       style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
                     >
                       {step.desc}
                     </p>
                     
-                    {/* Tags with staggered animation */}
-                    <div className="flex flex-wrap gap-1">
+                    {/* Mini Visualization Area */}
+                    <div 
+                      className="relative h-16 sm:h-20 mb-3 rounded-lg overflow-hidden"
+                      style={{ 
+                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+                        border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.5)'}`
+                      }}
+                    >
+                      {step.visual === 'connect' && (
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 px-3">
+                          {/* Source icons */}
+                          <div className="flex flex-col gap-1.5">
+                            {['QB', 'XE', 'SA'].map((src, i) => (
+                              <motion.div
+                                key={src}
+                                className="w-7 h-5 rounded text-[9px] font-bold flex items-center justify-center"
+                                style={{ 
+                                  backgroundColor: `${step.color}20`,
+                                  color: step.color,
+                                  border: `1px solid ${step.color}30`
+                                }}
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: i * 0.2 + 1, duration: 0.5 }}
+                              >
+                                {src}
+                              </motion.div>
+                            ))}
+                          </div>
+                          {/* Animated connection lines */}
+                          <svg className="flex-1 h-full" viewBox="0 0 60 60">
+                            {[0, 1, 2].map((i) => (
+                              <motion.path
+                                key={i}
+                                d={`M0,${15 + i * 15} Q30,30 60,30`}
+                                fill="none"
+                                stroke={step.color}
+                                strokeWidth="1.5"
+                                strokeDasharray="4,4"
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                animate={{ pathLength: 1, opacity: 0.6 }}
+                                transition={{ delay: i * 0.3 + 1.5, duration: 1 }}
+                              />
+                            ))}
+                            <motion.circle
+                              cx="60" cy="30" r="5"
+                              fill={step.color}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: [0, 1.2, 1] }}
+                              transition={{ delay: 2.5, duration: 0.5 }}
+                            />
+                          </svg>
+                          {/* Target */}
+                          <motion.div 
+                            className="w-10 h-10 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: `${step.color}25`, border: `1px solid ${step.color}40` }}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 2.5, duration: 0.3 }}
+                          >
+                            <Database className="w-5 h-5" style={{ color: step.color }} />
+                          </motion.div>
+                        </div>
+                      )}
+                      
+                      {step.visual === 'clean' && (
+                        <div className="absolute inset-0 flex items-center justify-center px-3">
+                          {/* Data cleaning visualization */}
+                          <div className="flex items-center gap-3 w-full">
+                            {/* Messy data */}
+                            <div className="flex flex-col gap-1">
+                              {[1, 2, 3, 4].map((i) => (
+                                <motion.div
+                                  key={i}
+                                  className="h-2.5 rounded-full"
+                                  style={{ 
+                                    width: `${Math.random() * 20 + 12}px`,
+                                    backgroundColor: isDark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(100, 116, 139, 0.3)'
+                                  }}
+                                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                                />
+                              ))}
+                            </div>
+                            {/* Processing arrow */}
+                            <motion.div 
+                              className="flex-1 flex items-center justify-center"
+                              animate={{ x: [0, 5, 0] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
+                                <RefreshCw className="w-4 h-4" style={{ color: step.color }} />
+                              </div>
+                            </motion.div>
+                            {/* Clean data bars */}
+                            <div className="flex items-end gap-1.5 h-12">
+                              {[60, 80, 45, 90, 70].map((h, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="w-2.5 rounded-t"
+                                  style={{ backgroundColor: step.color }}
+                                  initial={{ height: 0 }}
+                                  animate={{ height: `${h}%` }}
+                                  transition={{ delay: i * 0.1 + 1.5, duration: 0.5 }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {step.visual === 'ai' && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          {/* AI neural network visualization */}
+                          <svg className="w-full h-full" viewBox="0 0 100 60">
+                            {/* Neural network nodes */}
+                            {[[15, 12], [15, 30], [15, 48], [50, 20], [50, 40], [85, 30]].map(([cx, cy], i) => (
+                              <motion.circle
+                                key={i}
+                                cx={cx} cy={cy} r="5"
+                                fill={step.color}
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: [0.5, 1, 0.5] }}
+                                transition={{ 
+                                  delay: i * 0.1 + 1,
+                                  opacity: { duration: 2, repeat: Infinity, delay: i * 0.2 }
+                                }}
+                              />
+                            ))}
+                            {/* Connection lines */}
+                            {[
+                              [15, 12, 50, 20], [15, 12, 50, 40],
+                              [15, 30, 50, 20], [15, 30, 50, 40],
+                              [15, 48, 50, 20], [15, 48, 50, 40],
+                              [50, 20, 85, 30], [50, 40, 85, 30]
+                            ].map(([x1, y1, x2, y2], i) => (
+                              <motion.line
+                                key={i}
+                                x1={x1} y1={y1} x2={x2} y2={y2}
+                                stroke={step.color}
+                                strokeWidth="1.5"
+                                strokeOpacity="0.4"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                transition={{ delay: i * 0.05 + 1.3, duration: 0.5 }}
+                              />
+                            ))}
+                            {/* Animated pulse */}
+                            <motion.circle
+                              cx="85" cy="30" r="8"
+                              fill="none"
+                              stroke={step.color}
+                              strokeWidth="2"
+                              animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                          </svg>
+                        </div>
+                      )}
+                      
+                      {step.visual === 'dashboard' && (
+                        <div className="absolute inset-0 flex items-center justify-center px-3 gap-3">
+                          {/* Mini dashboard preview */}
+                          <div className="flex flex-col gap-1.5 flex-1">
+                            {/* KPI card */}
+                            <motion.div 
+                              className="h-6 rounded flex items-center px-2 gap-1.5"
+                              style={{ backgroundColor: `${step.color}15`, border: `1px solid ${step.color}25` }}
+                              initial={{ width: 0 }}
+                              animate={{ width: '100%' }}
+                              transition={{ delay: 1.2, duration: 0.5 }}
+                            >
+                              <TrendingUp className="w-3 h-3" style={{ color: step.color }} />
+                              <span className="text-[9px] font-bold" style={{ color: step.color }}>+24%</span>
+                            </motion.div>
+                            {/* Chart bars */}
+                            <div className="flex items-end gap-1 h-8">
+                              {[40, 65, 45, 80, 55, 70, 90].map((h, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="flex-1 rounded-t"
+                                  style={{ backgroundColor: i === 6 ? step.color : `${step.color}50` }}
+                                  initial={{ height: 0 }}
+                                  animate={{ height: `${h}%` }}
+                                  transition={{ delay: i * 0.08 + 1.5, duration: 0.4 }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {/* Gauge */}
+                          <motion.div 
+                            className="w-12 h-12 relative"
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 2, duration: 0.4 }}
+                          >
+                            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                              <circle cx="18" cy="18" r="14" fill="none" stroke={isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'} strokeWidth="3" />
+                              <motion.circle 
+                                cx="18" cy="18" r="14" 
+                                fill="none" 
+                                stroke={step.color} 
+                                strokeWidth="3"
+                                strokeDasharray="88"
+                                initial={{ strokeDashoffset: 88 }}
+                                animate={{ strokeDashoffset: 22 }}
+                                transition={{ delay: 2.2, duration: 1 }}
+                              />
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: step.color }}>75%</span>
+                          </motion.div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Tags with enhanced styling */}
+                    <div className="flex flex-wrap gap-1.5 min-h-[1.75rem]">
                       {step.tags.map((tag, tagIdx) => (
                         <motion.span 
                           key={tag}
-                          className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded font-medium"
+                          className="text-[10px] px-2.5 py-1 rounded-md font-medium"
                           style={{ 
                             backgroundColor: `${step.color}12`,
                             color: step.color,
+                            border: `1px solid ${step.color}20`
                           }}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true }}
-                          transition={{ delay: idx * 0.1 + tagIdx * 0.05 + 0.4 }}
+                          transition={{ delay: idx * 0.1 + tagIdx * 0.08 + 0.6 }}
                           whileHover={{ 
-                            scale: 1.1,
+                            scale: 1.08,
                             backgroundColor: `${step.color}25`,
+                            y: -2
                           }}
                         >
                           {tag}
@@ -2366,28 +2556,38 @@ export default function Landing() {
                       ))}
                     </div>
                     
-                    {/* Animated corner indicator */}
+                    {/* Animated corner glow */}
                     <motion.div 
-                      className="absolute bottom-0 right-0 w-6 h-6 opacity-20"
+                      className="absolute -bottom-2 -right-2 w-16 h-16 rounded-full pointer-events-none"
                       style={{
-                        background: `linear-gradient(135deg, transparent 50%, ${step.color} 50%)`
+                        background: `radial-gradient(circle, ${step.color}20 0%, transparent 70%)`
                       }}
-                      whileHover={{ scale: 2, opacity: 0.3 }}
-                      transition={{ duration: 0.3 }}
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                      transition={{ duration: 3, repeat: Infinity, delay: idx * 0.5 }}
                     />
                   </motion.div>
                   
-                  {/* Connector Arrow - Desktop only */}
+                  {/* Enhanced Connector Arrow - Desktop only */}
                   {idx < 3 && (
                     <motion.div 
-                      className="hidden lg:flex absolute -right-2 top-1/2 -translate-y-1/2 z-10 items-center justify-center w-4 h-4"
-                      animate={{ x: [0, 3, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="hidden lg:flex absolute -right-3 top-[120px] -translate-y-1/2 z-10 items-center justify-center"
+                      initial={{ opacity: 0, scale: 0 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.2 + 1 }}
                     >
-                      <div 
-                        className="w-0 h-0 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent border-l-[6px]"
-                        style={{ borderLeftColor: step.color }}
-                      />
+                      <motion.div
+                        className="w-6 h-6 rounded-full flex items-center justify-center"
+                        style={{ 
+                          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                          border: `2px solid ${idx < 2 ? theme.green : theme.gold}`,
+                          boxShadow: `0 0 12px ${idx < 2 ? theme.green : theme.gold}40`
+                        }}
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <ArrowRight className="w-3 h-3" style={{ color: idx < 2 ? theme.green : theme.gold }} />
+                      </motion.div>
                     </motion.div>
                   )}
                 </motion.div>
@@ -2420,271 +2620,6 @@ export default function Landing() {
         `}</style>
       </section>
 
-      {/* AI & Security Features Section */}
-      <section 
-        id="integrations" 
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
-        style={{ 
-          background: isDark 
-            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%)' 
-            : 'linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 50%, rgba(240, 253, 244, 0.3) 100%)'
-        }}
-      >
-        {/* Decorative background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-20"
-            style={{ background: `radial-gradient(circle, ${theme.gold}40 0%, transparent 70%)` }}
-          />
-          <div 
-            className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-20"
-            style={{ background: `radial-gradient(circle, ${theme.green}40 0%, transparent 70%)` }}
-          />
-        </div>
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          {/* Section Header */}
-          <motion.div 
-            className="text-center mb-12 sm:mb-16"
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
-              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              style={{ 
-                backgroundColor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                color: theme.goldDark,
-                border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.2)' : 'rgba(251, 191, 36, 0.3)'}`
-              }}
-            >
-              <Sparkles className="w-4 h-4" />
-              {isEn ? 'Built for Modern Finance' : 'Conçu pour la finance moderne'}
-            </motion.div>
-            <motion.h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
-              initial={{ opacity: 0, y: 35 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isEn ? 'Powerful features, enterprise security' : 'Fonctionnalités puissantes, sécurité entreprise'}
-            </motion.h2>
-            <motion.p 
-              className="text-base sm:text-lg max-w-2xl mx-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 2, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
-            >
-              {isEn 
-                ? 'Leverage AI-powered insights while keeping your financial data protected with bank-grade security.'
-                : 'Profitez d\'insights alimentés par l\'IA tout en protégeant vos données avec une sécurité bancaire.'}
-            </motion.p>
-          </motion.div>
-
-          {/* Feature Cards Grid */}
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
-            {/* AI-Powered Intelligence Card */}
-            <motion.div 
-              className="group relative p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl"
-              initial={{ opacity: 0, x: -100 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ scale: 1.02, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }}
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.98)',
-                border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.2)' : 'rgba(251, 191, 36, 0.25)'}`,
-                boxShadow: isDark 
-                  ? '0 4px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
-                  : '0 4px 32px rgba(251, 191, 36, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05)'
-              }}
-            >
-              {/* Gradient accent bar */}
-              <div 
-                className="absolute top-0 left-8 right-8 h-1 rounded-b-full opacity-80"
-                style={{ background: `linear-gradient(90deg, ${theme.gold} 0%, ${theme.goldDark} 100%)` }}
-              />
-              
-              {/* Icon with glow effect */}
-              <div className="relative mb-6">
-                <div 
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${theme.gold}30 0%, ${theme.gold}15 100%)`,
-                    boxShadow: `0 8px 24px ${theme.gold}20`
-                  }}
-                >
-                  <Sparkles className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.goldDark }} />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="mb-8">
-                <h3 
-                  className="text-xl sm:text-2xl font-bold mb-2"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? 'AI-Optimized for Your Industry' : 'IA optimisée pour votre industrie'}
-                </h3>
-                <p 
-                  className="text-sm sm:text-base leading-relaxed"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn 
-                    ? 'Industry-specific machine learning models trained to deliver accurate, actionable insights for your business sector.'
-                    : 'Modèles d\'apprentissage automatique spécifiques à l\'industrie pour des insights précis et exploitables.'}
-                </p>
-              </div>
-
-              {/* Feature Pills */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {[
-                  { icon: TrendingUp, en: 'Strategic Projections', fr: 'Projections stratégiques', desc: isEn ? 'Forecast trends' : 'Prévisions' },
-                  { icon: Zap, en: 'Financial Modeling', fr: 'Montage financier', desc: isEn ? 'Scenario planning' : 'Scénarios' },
-                  { icon: Eye, en: 'KPIs & OKRs', fr: 'KPIs & OKRs', desc: isEn ? 'Track metrics' : 'Suivi métriques' },
-                  { icon: Cpu, en: 'Benchmarks', fr: 'Références', desc: isEn ? 'Compare peers' : 'Comparaison' },
-                ].map((item, index) => (
-                  <div 
-                    key={item.en}
-                    className="group/item relative p-3 sm:p-4 rounded-xl transition-all duration-300 hover:translate-y-[-2px]"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(251, 191, 36, 0.08)' : 'rgba(251, 191, 36, 0.06)',
-                      border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.15)'}`,
-                    }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-1">
-                      <div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(251, 191, 36, 0.12)' }}
-                      >
-                        <item.icon className="w-4 h-4" style={{ color: theme.goldDark }} />
-                      </div>
-                      <span 
-                        className="text-sm sm:text-base font-semibold"
-                        style={{ color: 'rgb(var(--color-text))' }}
-                      >
-                        {isEn ? item.en : item.fr}
-                      </span>
-                    </div>
-                    <p 
-                      className="text-xs pl-11"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
-                      {item.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Security & Compliance Card */}
-            <motion.div 
-              className="group relative p-6 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl"
-              initial={{ opacity: 0, x: 100 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ scale: 1.02, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }}
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.98)',
-                border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.25)'}`,
-                boxShadow: isDark 
-                  ? '0 4px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)' 
-                  : '0 4px 32px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05)'
-              }}
-            >
-              {/* Gradient accent bar */}
-              <div 
-                className="absolute top-0 left-8 right-8 h-1 rounded-b-full opacity-80"
-                style={{ background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.greenDark} 100%)` }}
-              />
-              
-              {/* Icon with glow effect */}
-              <div className="relative mb-6">
-                <div 
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${theme.green}30 0%, ${theme.green}15 100%)`,
-                    boxShadow: `0 8px 24px ${theme.green}20`
-                  }}
-                >
-                  <Shield className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.green }} />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="mb-8">
-                <h3 
-                  className="text-xl sm:text-2xl font-bold mb-2"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? 'Enterprise-Grade Security' : 'Sécurité de niveau entreprise'}
-                </h3>
-                <p 
-                  className="text-sm sm:text-base leading-relaxed"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn 
-                    ? 'Your financial data is protected with bank-level encryption and hosted exclusively in Canadian data centers.'
-                    : 'Vos données financières sont protégées par un chiffrement bancaire et hébergées exclusivement au Canada.'}
-                </p>
-              </div>
-
-              {/* Security Features */}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                {[
-                  { icon: Lock, en: 'AES-256 Encryption', fr: 'Chiffrement AES-256', desc: isEn ? 'Military grade' : 'Grade militaire' },
-                  { icon: Database, en: 'Canada Hosted', fr: 'Hébergé au Canada', desc: isEn ? 'Data sovereignty' : 'Souveraineté', flag: true },
-                  { icon: Shield, en: 'Role-Based Access', fr: 'Accès RBAC', desc: isEn ? 'Fine-grained' : 'Granulaire' },
-                  { icon: FileCheck, en: 'Audit Trail', fr: 'Piste d\'audit', desc: isEn ? 'Full history' : 'Historique complet' },
-                ].map((item) => (
-                  <div 
-                    key={item.en}
-                    className="group/item relative p-3 sm:p-4 rounded-xl transition-all duration-300 hover:translate-y-[-2px]"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)',
-                      border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.15)'}`,
-                    }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-1">
-                      <div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)' }}
-                      >
-                        <item.icon className="w-4 h-4" style={{ color: theme.green }} />
-                      </div>
-                      <span 
-                        className="text-sm sm:text-base font-semibold flex items-center gap-1.5"
-                        style={{ color: 'rgb(var(--color-text))' }}
-                      >
-                        {isEn ? item.en : item.fr}
-                        {item.flag && <span className="text-base">🇨🇦</span>}
-                      </span>
-                    </div>
-                    <p 
-                      className="text-xs pl-11"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
-                      {item.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-
-        </div>
-      </section>
-
       {/* Pricing Section */}
       <section 
         id="pricing" 
@@ -2697,17 +2632,17 @@ export default function Landing() {
       >
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.92 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.2 }}
+              transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? 'Simple, transparent pricing' : 'Tarification simple et transparente'}
@@ -2717,7 +2652,7 @@ export default function Landing() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.4 }}
+              transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
@@ -2756,18 +2691,18 @@ export default function Landing() {
             ].map((tier, idx) => (
               <motion.div 
                 key={tier.name}
-                initial={{ opacity: 0, y: 80, scale: 0.9 }}
+                initial={{ opacity: 0, y: 90, scale: 0.88 }}
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ 
                   duration: 1.3, 
-                  delay: 0.2 + idx * 0.2,
-                  ease: [0.25, 0.1, 0.25, 1]
+                  delay: 0.4 + idx * 0.35,
+                  ease: [0.16, 1, 0.3, 1]
                 }}
                 whileHover={{ 
-                  y: -12, 
+                  y: -15, 
                   scale: tier.highlighted ? 1.05 : 1.03,
-                  transition: { duration: 0.5 }
+                  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
                 }}
                 className="p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl text-left relative overflow-hidden"
                 style={{ 
@@ -2852,10 +2787,10 @@ export default function Landing() {
             {/* Avatar Stack with Badge */}
             <motion.div 
               className="flex flex-col items-center gap-4 mb-6"
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="flex items-center -space-x-2.5">
                 {[
@@ -2866,15 +2801,15 @@ export default function Landing() {
                 ].map((person, idx) => (
                   <motion.div
                     key={idx}
-                    initial={{ opacity: 0, scale: 0.3, x: -25 }}
+                    initial={{ opacity: 0, scale: 0.2, x: -35 }}
                     whileInView={{ opacity: 1, scale: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ 
-                      duration: 1.2, 
-                      delay: 0.4 + idx * 0.3, 
-                      ease: [0.25, 0.1, 0.25, 1]
+                      duration: 1, 
+                      delay: 0.3 + idx * 0.2, 
+                      ease: [0.16, 1, 0.3, 1]
                     }}
-                    whileHover={{ scale: 1.2, zIndex: 20, transition: { duration: 0.4 } }}
+                    whileHover={{ scale: 1.2, zIndex: 20, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
                     className="w-10 h-10 rounded-full border-2 border-white/40 overflow-hidden cursor-pointer"
                     style={{ 
                       zIndex: 10 - idx,
@@ -2890,10 +2825,10 @@ export default function Landing() {
                 ))}
               </div>
               <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                initial={{ opacity: 0, scale: 0.9, y: 15 }}
                 whileInView={{ opacity: 1, scale: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1.2, delay: 1.8 }}
+                transition={{ duration: 1, delay: 1, ease: [0.16, 1, 0.3, 1] }}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
                 style={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.15)',
@@ -2910,10 +2845,10 @@ export default function Landing() {
             {/* Heading */}
             <motion.h2 
               className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white leading-tight"
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.4, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
               {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
             </motion.h2>
@@ -2924,7 +2859,7 @@ export default function Landing() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.4, delay: 0.5 }}
+              transition={{ duration: 1.3, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
               {isEn 
                 ? 'Get the financial clarity you need to make confident decisions. Start your free trial today.'
@@ -2934,14 +2869,14 @@ export default function Landing() {
             {/* CTA Buttons */}
             <motion.div 
               className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.7 }}
+              transition={{ duration: 1.2, delay: 1, ease: [0.16, 1, 0.3, 1] }}
             >
               <motion.button 
                 onClick={() => register()}
-                whileHover={{ scale: 1.05, boxShadow: '0 8px 30px rgba(0,0,0,0.25)' }}
+                whileHover={{ scale: 1.05, boxShadow: '0 12px 40px rgba(0,0,0,0.3)', transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
                 whileTap={{ scale: 0.98 }}
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base"
                 style={{ 
@@ -2956,7 +2891,7 @@ export default function Landing() {
               
               <motion.button 
                 onClick={handleScheduleCall}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
                 whileTap={{ scale: 0.98 }}
                 className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base"
                 style={{ 
@@ -2977,7 +2912,7 @@ export default function Landing() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.4, delay: 0.9 }}
+              transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-white/70 text-sm">
                 {[
@@ -2988,10 +2923,10 @@ export default function Landing() {
                   <motion.span 
                     key={idx}
                     className="flex items-center gap-2"
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -30 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.8, delay: 1 + idx * 0.15 }}
+                    transition={{ duration: 1, delay: 0.8 + idx * 0.15, ease: [0.16, 1, 0.3, 1] }}
                   >
                     <Check className="w-4 h-4 text-green-300" />
                     {badge.text} {badge.flag && '🇨🇦'}

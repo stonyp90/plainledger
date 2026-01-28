@@ -44,12 +44,56 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
+  position: relative;
+}
+
+/* Bottom-left decorative glow */
+body::before {
+  content: "";
+  position: fixed;
+  bottom: -300px;
+  left: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Login Container */
 .login-pf {
   background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
   min-height: 100vh;
+  position: relative;
+}
+
+/* Background Overlay Pattern */
+.login-pf::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L30 60M0 30L60 30' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Floating accent shapes */
+.login-pf::after {
+  content: "";
+  position: fixed;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .login-pf body {
@@ -63,6 +107,8 @@ body {
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
+  position: relative;
+  z-index: 1;
 }
 
 #kc-container-wrapper {
@@ -88,14 +134,18 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .kc-logo-text::before {
-  content: "▢";
-  font-size: 48px;
-  color: var(--pl-gray-600);
-  line-height: 1;
+  content: "";
+  display: block;
+  width: 64px;
+  height: 64px;
+  background-image: url('../img/logo.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .kc-logo-text span {
@@ -327,7 +377,7 @@ a:hover {
   color: var(--pl-primary);
 }
 
-/* Registration Link */
+/* Registration Link & Back Link */
 #kc-registration {
   text-align: center;
   margin-top: 24px;
@@ -344,52 +394,67 @@ a:hover {
   color: var(--pl-primary);
   font-weight: 500;
   margin-left: 4px;
+  display: inline-block;
+  padding: 4px 0;
+  position: relative;
 }
 
-/* Social Login */
+#kc-registration span a:hover {
+  color: var(--pl-primary-hover);
+  text-decoration: none;
+}
+
+#kc-registration span a::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--pl-primary);
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+#kc-registration span a:hover::after {
+  transform: scaleX(1);
+}
+
+/* Back to login link (when standalone) */
+#kc-registration span:only-child a {
+  margin-left: 0;
+}
+
+/* Social Login (hidden) */
 #kc-social-providers {
+  display: none;
+}
+
+/* Enterprise SSO Section */
+#kc-enterprise-sso {
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid var(--pl-gray-200);
-}
-
-#kc-social-providers h4 {
   text-align: center;
-  font-size: 12px;
+}
+
+#kc-enterprise-sso p {
+  font-size: 13px;
   color: var(--pl-gray-500);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 16px;
+  margin: 0 0 8px;
 }
 
-#kc-social-providers ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-#kc-social-providers li a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px;
-  background: var(--pl-white);
-  border: 1px solid var(--pl-gray-300);
-  border-radius: var(--pl-radius);
-  font-size: 14px;
+#kc-enterprise-sso a {
+  font-size: 13px;
+  color: var(--pl-primary);
   font-weight: 500;
-  color: var(--pl-gray-900);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-#kc-social-providers li a:hover {
-  background: var(--pl-gray-100);
-  border-color: var(--pl-gray-400);
+#kc-enterprise-sso a:hover {
+  color: var(--pl-primary-hover);
+  text-decoration: underline;
 }
 
 /* Checkbox */
@@ -451,11 +516,9 @@ input[type="checkbox"] {
   border-top: 1px solid var(--pl-gray-200);
 }
 
-/* Locale Dropdown */
+/* Locale Dropdown - Hidden */
 #kc-locale {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  display: none !important;
 }
 
 #kc-locale-dropdown {

@@ -26,14 +26,6 @@ export { default as ExpenseCard } from './ExpenseCard';
 export { default as LiveCashChart } from './LiveCashChart';
 export { default as ExpenseDrawer } from './ExpenseDrawer';
 
-// Enterprise-grade components
-export { default as EnterpriseExpenseTimeline } from './EnterpriseExpenseTimeline';
-export { default as EnterpriseExpenseCard } from './EnterpriseExpenseCard';
-export { default as EnterpriseTimelineHeader } from './EnterpriseTimelineHeader';
-export { default as ExpenseContextMenu } from './ExpenseContextMenu';
-export type { ViewMode, Period } from './EnterpriseTimelineHeader';
-export type { ContextMenuAction, ContextMenuItem } from './ExpenseContextMenu';
-
 // Board Meeting Panel System
 export { default as BoardPanelPicker } from './BoardPanelPicker';
 export { default as BoardPanelRenderer } from './BoardPanelRenderer';

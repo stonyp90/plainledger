@@ -140,12 +140,13 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = [
+        Resource = compact([
           var.db_credentials_secret_arn,
           var.redis_auth_secret_arn,
           var.stripe_secret_arn,
-          var.novu_secret_arn
-        ]
+          var.novu_secret_arn,
+          var.quickbooks_secret_arn
+        ])
       },
       {
         Effect = "Allow"
@@ -614,7 +615,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "APP_URL", value = "https://${var.domain_name}" }
       ]
 
-      secrets = [
+      secrets = concat([
         {
           name      = "DB_HOST"
           valueFrom = "${var.db_credentials_secret_arn}:host::"
@@ -655,7 +656,24 @@ resource "aws_ecs_task_definition" "api" {
           name      = "STRIPE_PUBLISHABLE_KEY"
           valueFrom = "${var.stripe_secret_arn}:publishable_key::"
         }
-      ]
+      ], var.quickbooks_secret_arn != "" ? [
+        {
+          name      = "QUICKBOOKS_CLIENT_ID"
+          valueFrom = "${var.quickbooks_secret_arn}:client_id::"
+        },
+        {
+          name      = "QUICKBOOKS_CLIENT_SECRET"
+          valueFrom = "${var.quickbooks_secret_arn}:client_secret::"
+        },
+        {
+          name      = "QUICKBOOKS_REDIRECT_URI"
+          valueFrom = "${var.quickbooks_secret_arn}:redirect_uri::"
+        },
+        {
+          name      = "QUICKBOOKS_ENVIRONMENT"
+          valueFrom = "${var.quickbooks_secret_arn}:environment::"
+        }
+      ] : [])
 
       logConfiguration = {
         logDriver = "awslogs"
