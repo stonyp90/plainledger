@@ -19,11 +19,11 @@
     </image:image>
   </url>
   
-  <!-- Features Section (anchor) -->
+  <!-- Industries/Features Section (anchor) -->
   <url>
-    <loc>https://plainledger.io/#features</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://plainledger.io/#features" />
-    <xhtml:link rel="alternate" hreflang="fr-CA" href="https://plainledger.io/?lang=fr#features" />
+    <loc>https://plainledger.io/#industries</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://plainledger.io/#industries" />
+    <xhtml:link rel="alternate" hreflang="fr-CA" href="https://plainledger.io/?lang=fr#industries" />
     <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -75,14 +75,24 @@
     <priority>0.7</priority>
   </url>
   
-  <!-- Industry KPIs Section (anchor) -->
+  <!-- ROI Calculator Section (anchor) -->
   <url>
-    <loc>https://plainledger.io/#industry-kpis</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://plainledger.io/#industry-kpis" />
-    <xhtml:link rel="alternate" hreflang="fr-CA" href="https://plainledger.io/?lang=fr#industry-kpis" />
+    <loc>https://plainledger.io/#roi</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://plainledger.io/#roi" />
+    <xhtml:link rel="alternate" hreflang="fr-CA" href="https://plainledger.io/?lang=fr#roi" />
     <lastmod>2026-01-27</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Integrations Section (anchor) -->
+  <url>
+    <loc>https://plainledger.io/#integrations</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://plainledger.io/#integrations" />
+    <xhtml:link rel="alternate" hreflang="fr-CA" href="https://plainledger.io/?lang=fr#integrations" />
+    <lastmod>2026-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
 </urlset>

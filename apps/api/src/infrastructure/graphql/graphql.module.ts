@@ -27,8 +27,9 @@ import { join } from "path";
         const isProduction = configService.get<string>("NODE_ENV") === "production";
         
         return {
-          // Schema generation
-          autoSchemaFile: join(process.cwd(), "src/schema.gql"),
+          // Schema generation - use in-memory for production (no file system access needed)
+          // In development, write to src/schema.gql for IDE support
+          autoSchemaFile: isProduction ? true : join(process.cwd(), "src/schema.gql"),
           sortSchema: true,
           
           // Security settings

@@ -5,6 +5,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
+import { AnalyticsAnimation, DataFlowAnimation, ProcessingAnimation } from '../components/LottieAnimations';
 import { 
   ArrowRight,
   Check,
@@ -315,6 +316,40 @@ export default function Landing() {
           : 'linear-gradient(135deg, #fefefe 0%, #f0fdf4 25%, #f8fafc 50%, #fef3c7 75%, #fefefe 100%)'
       }}
     >
+      {/* Global Animation Styles */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-fade-up { animation: fadeInUp 0.8s ease-out forwards; }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+        .animate-scale-in { animation: scaleIn 0.6s ease-out forwards; }
+        .animate-slide-left { animation: slideInLeft 0.7s ease-out forwards; }
+        .animate-slide-right { animation: slideInRight 0.7s ease-out forwards; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+      `}</style>
+      
       {/* Decorative background gradients - Light theme */}
       {!isDark && (
         <>
@@ -464,11 +499,11 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-20 sm:pt-24 lg:pt-28 pb-8 sm:pb-12 px-4 sm:px-6 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 relative z-10 min-h-[85vh] flex items-center">
+        <div className="max-w-4xl mx-auto text-center w-full">
           {/* Main Headline */}
           <h1 
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 sm:mb-6 animate-fade-up"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {isEn ? (
@@ -490,8 +525,8 @@ export default function Landing() {
 
           {/* Tagline */}
           <p 
-            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-8 px-2"
-            style={{ color: 'rgb(var(--color-text-secondary))' }}
+            className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 px-2 animate-fade-up opacity-0"
+            style={{ color: 'rgb(var(--color-text-secondary))', animationDelay: '0.15s', animationFillMode: 'forwards' }}
           >
             {isEn 
               ? 'Exec-ready dashboards with industry KPIs, OKRs, strategic projections, and AI-optimized financial modeling. Built for Canadian businesses.'
@@ -499,507 +534,318 @@ export default function Landing() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8">
+          <div 
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-8 sm:mb-10 animate-fade-up opacity-0"
+            style={{ animationDelay: '0.25s', animationFillMode: 'forwards' }}
+          >
             <button 
               onClick={() => register()}
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all hover:scale-105 text-sm sm:text-base"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 text-base shadow-lg"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 color: 'white',
-                boxShadow: `0 4px 16px ${theme.green}4d`
+                boxShadow: `0 8px 24px ${theme.green}40`
               }}
             >
               {isEn ? 'Start free 21-day trial' : 'Essai gratuit de 21 jours'}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-5 h-5" />
             </button>
             <button 
               onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all hover:scale-105 text-sm sm:text-base"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold transition-all hover:scale-105 text-base"
               style={{ 
                 border: `2px solid ${theme.green}`,
                 color: isDark ? theme.green : theme.greenDark,
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.8)'
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)'
               }}
             >
-              <Play className="w-4 h-4" />
+              <Play className="w-5 h-5" />
               {isEn ? 'Watch demo' : 'Voir la démo'}
             </button>
           </div>
 
           {/* Trust badges */}
-          <div className="w-full flex justify-center">
-            <div className="inline-flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              <span className="flex items-center gap-1.5 sm:gap-2">
-                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+          <div 
+            className="w-full flex justify-center animate-fade-up opacity-0"
+            style={{ animationDelay: '0.35s', animationFillMode: 'forwards' }}
+          >
+            <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4" style={{ color: theme.green }} />
                 {isEn ? 'No credit card' : 'Sans carte de crédit'}
               </span>
-              <span className="flex items-center gap-1.5 sm:gap-2">
-                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4" style={{ color: theme.green }} />
                 {isEn ? '5 min setup' : '5 min config'}
               </span>
-              <span className="flex items-center gap-1.5 sm:gap-2">
-                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+              <span className="flex items-center gap-2">
+                <Check className="w-4 h-4" style={{ color: theme.green }} />
                 {isEn ? 'Data in Canada' : 'Données au Canada'} 🇨🇦
               </span>
+            </div>
+          </div>
+          
+          {/* Analytics Animation */}
+          <div 
+            className="mt-12 sm:mt-16 flex justify-center animate-fade-up opacity-0"
+            style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}
+          >
+            <div 
+              className="p-6 sm:p-8 rounded-2xl"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.3)' : `0 8px 40px ${theme.green}15`,
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : `${theme.green}20`}`
+              }}
+            >
+              <AnalyticsAnimation style={{ width: 200, height: 150 }} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Industry KPIs Section */}
-      <section id="industries" className="py-8 sm:py-12 lg:py-16">
+      {/* Industry KPIs Section - Multiple IDs for SEO compatibility */}
+      <span id="features" className="absolute" style={{ top: '-100px' }} />
+      <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
+      <section id="industries" className="py-16 sm:py-20 lg:py-24 relative">
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
       {/* Fair Value, Clear Returns - ROI Calculator */}
       <ROICalculatorSection isEn={isEn} isDark={isDark} theme={theme} onScheduleCall={handleScheduleCall} />
 
-      {/* How It Works - Interactive Timeline Pipeline */}
+      {/* How It Works - Compact Pipeline */}
       <section 
         id="pipeline" 
-        className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 relative overflow-hidden"
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
         style={{ 
           background: isDark 
             ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
-            : 'linear-gradient(180deg, #fafafa 0%, #f0fdf4 30%, #fefce8 70%, #fafafa 100%)'
+            : 'linear-gradient(180deg, #fafafa 0%, #f0fdf4 50%, #fafafa 100%)'
         }}
       >
-        <style>{`
-          @keyframes pulse-ring {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.8); opacity: 0; }
-          }
-          @keyframes data-flow {
-            0% { transform: translateY(0); opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { transform: translateY(100px); opacity: 0; }
-          }
-          @keyframes connector-pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-          }
-          @keyframes float-particle {
-            0%, 100% { transform: translateY(0) translateX(0); }
-            25% { transform: translateY(-10px) translateX(5px); }
-            50% { transform: translateY(-5px) translateX(-5px); }
-            75% { transform: translateY(-15px) translateX(3px); }
-          }
-          .timeline-step {
-            opacity: 0;
-            transform: translateX(-30px);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-          }
-          .timeline-step.visible {
-            opacity: 1;
-            transform: translateX(0);
-          }
-          .timeline-step:nth-child(even) {
-            transform: translateX(30px);
-          }
-          .timeline-step:nth-child(even).visible {
-            transform: translateX(0);
-          }
-          .timeline-connector {
-            transition: all 0.6s ease;
-          }
-          .timeline-connector.active {
-            height: 100%;
-          }
-          .step-node {
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-          .step-node:hover {
-            transform: scale(1.1);
-          }
-          .step-card {
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-          }
-          .step-card:hover {
-            transform: translateY(-8px) scale(1.02);
-          }
-          .data-particle {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            animation: float-particle 3s ease-in-out infinite;
-          }
-        `}</style>
 
-        <div className="max-w-5xl mx-auto relative z-10">
+        <div className="max-w-6xl mx-auto relative z-10">
           {/* Section Header */}
-          <div className="text-center mb-10 sm:mb-14 lg:mb-16">
+          <div className="text-center mb-10 sm:mb-12">
             <div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold mb-4"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3"
               style={{ 
-                background: `linear-gradient(135deg, ${theme.green}20 0%, ${theme.green}10 100%)`,
-                border: `1px solid ${theme.green}30`,
+                background: `${theme.green}15`,
+                border: `1px solid ${theme.green}25`,
                 color: theme.greenDark
               }}
             >
-              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Layers className="w-3.5 h-3.5" />
               {isEn ? 'How It Works' : 'Comment ça fonctionne'}
             </div>
             <h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? 'Your Data Journey' : 'Le parcours de vos données'}
             </h2>
             <p 
-              className="text-sm sm:text-base lg:text-lg max-w-xl mx-auto px-2"
+              className="text-sm sm:text-base max-w-lg mx-auto mb-6"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Watch your data transform through our intelligent pipeline'
-                : 'Suivez la transformation de vos données dans notre pipeline intelligent'}
+                ? 'From connection to insights in 4 simple steps'
+                : 'De la connexion aux insights en 4 étapes simples'}
             </p>
+            
+            {/* Data Flow Animation */}
+            <div className="flex justify-center">
+              <DataFlowAnimation style={{ width: 200, height: 40 }} />
+            </div>
           </div>
 
-          {/* Interactive Timeline */}
-          <div className="relative">
-            {/* Central Timeline Line */}
-            <div 
-              className="absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 hidden md:block"
-              style={{ 
-                background: `linear-gradient(180deg, ${theme.green} 0%, ${theme.green} 50%, ${theme.gold} 100%)`,
-                borderRadius: '4px'
-              }}
-            >
-              {/* Animated particles flowing down */}
-              {[0, 1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i}
-                  className="absolute left-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
-                  style={{ 
-                    background: i < 2 ? theme.green : theme.gold,
-                    boxShadow: `0 0 10px ${i < 2 ? theme.green : theme.gold}`,
-                    animation: `data-flow 4s linear infinite ${i * 0.8}s`
-                  }}
-                />
+          {/* Horizontal Steps - Desktop */}
+          <div className="hidden lg:block">
+            <div className="flex items-start justify-between gap-4 relative">
+              {/* Connector Line */}
+              <div 
+                className="absolute top-8 left-[12%] right-[12%] h-0.5"
+                style={{ 
+                  background: `linear-gradient(90deg, ${theme.green} 0%, ${theme.green} 50%, ${theme.gold} 100%)`
+                }}
+              />
+              
+              {[
+                { 
+                  num: 1, 
+                  icon: Database, 
+                  title: isEn ? 'Connect' : 'Connecter',
+                  desc: isEn ? 'Link your accounting software securely' : 'Liez votre logiciel comptable',
+                  tags: ['QuickBooks', 'Xero', 'Sage'],
+                  color: theme.green
+                },
+                { 
+                  num: 2, 
+                  icon: RefreshCw, 
+                  title: isEn ? 'Clean' : 'Nettoyer',
+                  desc: isEn ? 'Data sanitized in Canadian data lake' : 'Données nettoyées au Canada',
+                  tags: [isEn ? 'Normalized' : 'Normalisé', isEn ? 'Validated' : 'Validé'],
+                  color: theme.green
+                },
+                { 
+                  num: 3, 
+                  icon: Sparkles, 
+                  title: isEn ? 'Analyze' : 'Analyser',
+                  desc: isEn ? 'AI models optimized for your industry' : 'Modèles IA pour votre secteur',
+                  tags: ['97%', isEn ? 'Predictions' : 'Prédictions'],
+                  color: theme.gold
+                },
+                { 
+                  num: 4, 
+                  icon: TrendingUp, 
+                  title: isEn ? 'Dashboard' : 'Tableau',
+                  desc: isEn ? 'Exec-ready KPIs and strategic insights' : 'KPIs et insights stratégiques',
+                  tags: ['KPIs', 'OKRs'],
+                  color: theme.gold
+                },
+              ].map((step) => (
+                <div key={step.num} className="flex-1 flex flex-col items-center text-center transition-all duration-300 hover:scale-105">
+                  {/* Number Circle */}
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4 relative z-10"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${step.color} 0%, ${step.num <= 2 ? theme.greenDark : theme.goldDark} 100%)`,
+                      boxShadow: `0 4px 20px ${step.color}40`
+                    }}
+                  >
+                    <step.icon className="w-7 h-7 text-white" />
+                  </div>
+                  
+                  {/* Step Number Badge */}
+                  <span 
+                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-2"
+                    style={{ backgroundColor: `${step.color}15`, color: step.num <= 2 ? theme.greenDark : theme.goldDark }}
+                  >
+                    {isEn ? `Step ${step.num}` : `Étape ${step.num}`}
+                  </span>
+                  
+                  {/* Title */}
+                  <h4 className="text-base font-bold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                    {step.title}
+                  </h4>
+                  
+                  {/* Description */}
+                  <p className="text-xs mb-3 px-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {step.desc}
+                  </p>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap justify-center gap-1">
+                    {step.tags.map((tag) => (
+                      <span 
+                        key={tag}
+                        className="text-[10px] px-2 py-0.5 rounded-full"
+                        style={{ 
+                          backgroundColor: `${step.color}10`,
+                          color: step.num <= 2 ? theme.greenDark : theme.goldDark,
+                          border: `1px solid ${step.color}20`
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+          </div>
 
-            {/* Timeline Steps */}
-            <div className="space-y-6 md:space-y-0">
-              
-              {/* Step 1 - Connect */}
-              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center pb-6 md:pb-12 lg:pb-16">
-                <div className="md:text-right md:pr-8 lg:pr-12 order-1">
-                  <div 
-                    className="step-card inline-block p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl text-left md:text-right w-full"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `2px solid ${theme.green}30`,
-                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.green}15`
-                    }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-3 md:justify-end">
-                      <div 
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${theme.green}25 0%, ${theme.green}10 100%)`,
-                          border: `2px solid ${theme.green}30`
-                        }}
-                      >
-                        <Database className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.green }} />
-                      </div>
-                      <span 
-                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
-                        style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
-                      >
-                        {isEn ? 'Step 1' : 'Étape 1'}
-                      </span>
-                    </div>
-                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Connect Your Software' : 'Connectez votre logiciel'}
+          {/* Vertical Steps - Mobile/Tablet */}
+          <div className="lg:hidden space-y-4">
+            {[
+              { 
+                num: 1, 
+                icon: Database, 
+                title: isEn ? 'Connect Your Software' : 'Connectez votre logiciel',
+                desc: isEn ? 'Securely link your accounting software' : 'Liez votre logiciel comptable',
+                color: theme.green
+              },
+              { 
+                num: 2, 
+                icon: RefreshCw, 
+                title: isEn ? 'Data Lake & Sanitization' : 'Nettoyage des données',
+                desc: isEn ? 'Cleaned & stored in Canadian data lake' : 'Nettoyées & stockées au Canada',
+                color: theme.green
+              },
+              { 
+                num: 3, 
+                icon: Sparkles, 
+                title: isEn ? 'AI-Powered Analysis' : 'Analyse par l\'IA',
+                desc: isEn ? 'Industry-optimized ML models' : 'Modèles ML optimisés par secteur',
+                color: theme.gold
+              },
+              { 
+                num: 4, 
+                icon: TrendingUp, 
+                title: isEn ? 'Exec-Ready Dashboard' : 'Tableau de bord exécutif',
+                desc: isEn ? 'KPIs, OKRs & strategic projections' : 'KPIs, OKRs & projections',
+                color: theme.gold
+              },
+            ].map((step, idx) => (
+              <div 
+                key={step.num}
+                className="flex items-start gap-4 p-4 rounded-xl transition-all duration-300 hover:scale-[1.02]"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.9)',
+                  border: `1px solid ${step.color}25`
+                }}
+              >
+                {/* Number Circle */}
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${step.color} 0%, ${step.num <= 2 ? theme.greenDark : theme.goldDark} 100%)`,
+                    boxShadow: `0 2px 12px ${step.color}30`
+                  }}
+                >
+                  <step.icon className="w-5 h-5 text-white" />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span 
+                      className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                      style={{ backgroundColor: `${step.color}15`, color: step.num <= 2 ? theme.greenDark : theme.goldDark }}
+                    >
+                      {step.num}
+                    </span>
+                    <h4 className="text-sm font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                      {step.title}
                     </h4>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn 
-                        ? 'Securely link your accounting software with bank-level encryption.'
-                        : 'Liez votre logiciel comptable avec un chiffrement bancaire.'}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 md:justify-end">
-                      {['QuickBooks', 'Xero', 'Sage', 'Wave'].map((name) => (
-                        <span 
-                          key={name} 
-                          className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-medium"
-                          style={{ 
-                            backgroundColor: `${theme.green}10`,
-                            color: theme.greenDark,
-                            border: `1px solid ${theme.green}20`
-                          }}
-                        >
-                          {name}
-                        </span>
-                      ))}
-                    </div>
                   </div>
+                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {step.desc}
+                  </p>
                 </div>
-                {/* Node */}
-                <div className="hidden md:flex items-center justify-start order-2 relative">
+                
+                {/* Connector */}
+                {idx < 3 && (
                   <div 
-                    className="step-node absolute -left-6 w-12 h-12 rounded-full flex items-center justify-center z-10"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                      boxShadow: `0 0 20px ${theme.green}60`
-                    }}
-                  >
-                    <span className="text-white font-bold text-lg">1</span>
-                    {/* Pulse ring */}
-                    <div 
-                      className="absolute inset-0 rounded-full"
-                      style={{ 
-                        border: `2px solid ${theme.green}`,
-                        animation: 'pulse-ring 2s ease-out infinite'
-                      }}
-                    />
-                  </div>
-                </div>
+                    className="absolute left-10 mt-14 w-0.5 h-4"
+                    style={{ backgroundColor: `${step.color}30` }}
+                  />
+                )}
               </div>
-
-              {/* Step 2 - Sanitize */}
-              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center pb-6 md:pb-12 lg:pb-16">
-                {/* Node */}
-                <div className="hidden md:flex items-center justify-end order-1 relative">
-                  <div 
-                    className="step-node absolute -right-5 lg:-right-6 w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center z-10"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                      boxShadow: `0 0 20px ${theme.green}60`
-                    }}
-                  >
-                    <span className="text-white font-bold text-base lg:text-lg">2</span>
-                    <div 
-                      className="absolute inset-0 rounded-full"
-                      style={{ 
-                        border: `2px solid ${theme.green}`,
-                        animation: 'pulse-ring 2s ease-out infinite 0.5s'
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="md:pl-8 lg:pl-12 order-2">
-                  <div 
-                    className="step-card p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `2px solid ${theme.green}40`,
-                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.green}20`
-                    }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                      <div 
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${theme.green}30 0%, ${theme.green}15 100%)`,
-                          border: `2px solid ${theme.green}40`
-                        }}
-                      >
-                        <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.green }} />
-                      </div>
-                      <span 
-                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
-                        style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
-                      >
-                        {isEn ? 'Step 2' : 'Étape 2'}
-                      </span>
-                    </div>
-                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Data Lake & Sanitization' : 'Lac de données & Nettoyage'}
-                    </h4>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn 
-                        ? 'Data cleaned, normalized, and stored in our secure Canadian data lake.'
-                        : 'Données nettoyées, normalisées et stockées dans notre lac de données canadien.'}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                      {[
-                        { icon: FileCheck, en: 'Duplicate removal', fr: 'Suppression doublons' },
-                        { icon: Layers, en: 'Normalization', fr: 'Normalisation' },
-                        { icon: Shield, en: 'Validation', fr: 'Validation' },
-                        { icon: Lock, en: 'Encrypted', fr: 'Chiffré' },
-                      ].map((item) => (
-                        <div 
-                          key={item.en} 
-                          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-md sm:rounded-lg"
-                          style={{ backgroundColor: `${theme.green}08` }}
-                        >
-                          <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" style={{ color: theme.green }} />
-                          <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? item.en : item.fr}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 - AI Analysis */}
-              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center pb-6 md:pb-12 lg:pb-16">
-                <div className="md:text-right md:pr-8 lg:pr-12 order-1">
-                  <div 
-                    className="step-card inline-block p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl text-left md:text-right w-full"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `2px solid ${theme.gold}40`,
-                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.gold}20`
-                    }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-3 md:justify-end">
-                      <div 
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${theme.gold}30 0%, ${theme.gold}15 100%)`,
-                          border: `2px solid ${theme.gold}40`
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.goldDark }} />
-                      </div>
-                      <span 
-                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
-                        style={{ backgroundColor: `${theme.gold}15`, color: theme.goldDark }}
-                      >
-                        {isEn ? 'Step 3' : 'Étape 3'}
-                      </span>
-                    </div>
-                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'AI-Powered Analysis' : 'Analyse propulsée par l\'IA'}
-                    </h4>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn 
-                        ? 'ML models analyze your data to detect anomalies and predict trends.'
-                        : 'Modèles ML analysent vos données pour détecter anomalies et prédire tendances.'}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:justify-items-end">
-                      {[
-                        { icon: Zap, en: '97% accuracy', fr: 'Précision 97%' },
-                        { icon: TrendingUp, en: 'Predictions', fr: 'Prédictions' },
-                        { icon: Cpu, en: 'Industry AI', fr: 'IA sectorielle' },
-                        { icon: Eye, en: 'Patterns', fr: 'Motifs' },
-                      ].map((item) => (
-                        <div 
-                          key={item.en} 
-                          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-md sm:rounded-lg"
-                          style={{ backgroundColor: `${theme.gold}08` }}
-                        >
-                          <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" style={{ color: theme.goldDark }} />
-                          <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? item.en : item.fr}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                {/* Node */}
-                <div className="hidden md:flex items-center justify-start order-2 relative">
-                  <div 
-                    className="step-node absolute -left-6 w-12 h-12 rounded-full flex items-center justify-center z-10"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
-                      boxShadow: `0 0 20px ${theme.gold}60`
-                    }}
-                  >
-                    <span className="text-white font-bold text-lg">3</span>
-                    <div 
-                      className="absolute inset-0 rounded-full"
-                      style={{ 
-                        border: `2px solid ${theme.gold}`,
-                        animation: 'pulse-ring 2s ease-out infinite 1s'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4 - Dashboard */}
-              <div className="timeline-step visible md:grid md:grid-cols-2 md:gap-6 lg:gap-8 md:items-center">
-                {/* Node */}
-                <div className="hidden md:flex items-center justify-end order-1 relative">
-                  <div 
-                    className="step-node absolute -right-5 lg:-right-6 w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center z-10"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
-                      boxShadow: `0 0 20px ${theme.gold}60`
-                    }}
-                  >
-                    <span className="text-white font-bold text-base lg:text-lg">4</span>
-                    <div 
-                      className="absolute inset-0 rounded-full"
-                      style={{ 
-                        border: `2px solid ${theme.gold}`,
-                        animation: 'pulse-ring 2s ease-out infinite 1.5s'
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="md:pl-8 lg:pl-12 order-2">
-                  <div 
-                    className="step-card p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `2px solid ${theme.gold}50`,
-                      boxShadow: isDark ? `0 8px 32px rgba(0,0,0,0.3)` : `0 8px 40px ${theme.gold}25`
-                    }}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                      <div 
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${theme.gold}35 0%, ${theme.gold}20 100%)`,
-                          border: `2px solid ${theme.gold}50`
-                        }}
-                      >
-                        <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.goldDark }} />
-                      </div>
-                      <span 
-                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2 sm:px-3 py-1 rounded-full"
-                        style={{ backgroundColor: `${theme.gold}20`, color: theme.goldDark }}
-                      >
-                        {isEn ? 'Step 4' : 'Étape 4'}
-                      </span>
-                    </div>
-                    <h4 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Exec-Ready Dashboard' : 'Tableau de bord exécutif'}
-                    </h4>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn 
-                        ? 'KPIs, OKRs, and strategic projections ready for leadership.'
-                        : 'KPIs, OKRs et projections stratégiques prêts pour la direction.'}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                      {[
-                        { icon: Eye, en: 'KPIs & OKRs', fr: 'KPIs & OKRs' },
-                        { icon: TrendingUp, en: 'Strategic', fr: 'Stratégie' },
-                        { icon: Calculator, en: 'Montage fin.', fr: 'Montage fin.' },
-                        { icon: Sparkles, en: 'AI insights', fr: 'Insights IA' },
-                      ].map((item) => (
-                        <div 
-                          key={item.en} 
-                          className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs p-1.5 sm:p-2 rounded-md sm:rounded-lg"
-                          style={{ backgroundColor: `${theme.gold}10` }}
-                        >
-                          <item.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" style={{ color: theme.goldDark }} />
-                          <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? item.en : item.fr}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-8 sm:mt-12">
+          <div className="text-center mt-10">
             <button 
               onClick={() => setShowDemoModal(true)}
-              className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-white transition-all hover:scale-105 text-sm sm:text-base"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 text-sm"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 8px 24px ${theme.green}40`
+                boxShadow: `0 4px 16px ${theme.green}35`
               }}
             >
-              <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Play className="w-4 h-4" />
               {isEn ? 'See it in action' : 'Voir en action'}
             </button>
           </div>
@@ -1260,39 +1106,102 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
+      {/* Final CTA - Enhanced with Image */}
+      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden">
+        {/* Background Image with Overlay */}
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1553484771-371a605b060b?auto=format&fit=crop&w=2000&q=80)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
           <div 
-            className="text-center p-6 sm:p-10 lg:p-12 rounded-2xl sm:rounded-3xl relative overflow-hidden"
+            className="absolute inset-0"
             style={{ 
-              background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-              boxShadow: `0 8px 32px ${theme.green}40`
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)'
+                : `linear-gradient(135deg, ${theme.green}f2 0%, ${theme.greenDark}f5 100%)`
             }}
-          >
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4 text-white">
-              {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
-            </h2>
-            <p className="text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 text-white/90 max-w-lg mx-auto">
-              {isEn 
-                ? 'Join Canadian businesses who trust PlainLedger.'
-                : 'Rejoignez les entreprises canadiennes qui font confiance à PlainLedger.'}
-            </p>
-            <button 
-              onClick={() => register()}
-              className="inline-flex items-center gap-2 px-5 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base lg:text-lg transition-all hover:scale-105"
+          />
+        </div>
+        
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="text-center">
+            {/* Badge */}
+            <div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-6"
               style={{ 
-                background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
                 color: 'white',
-                boxShadow: `0 4px 16px ${theme.gold}66`
+                border: '1px solid rgba(255, 255, 255, 0.2)'
               }}
             >
-              {isEn ? 'Start free trial' : 'Essai gratuit'}
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <p className="text-xs sm:text-sm mt-3 sm:mt-4 text-white/80 text-center">
-              {isEn ? 'No credit card required' : 'Sans carte de crédit'}
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              {isEn ? 'Join 500+ Canadian businesses' : 'Rejoignez 500+ entreprises canadiennes'}
+            </div>
+            
+            {/* Heading */}
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white leading-tight">
+              {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
+            </h2>
+            
+            {/* Subheading */}
+            <p className="text-base sm:text-lg lg:text-xl mb-8 text-white/85 max-w-2xl mx-auto">
+              {isEn 
+                ? 'Get the financial clarity you need to make confident decisions. Start your free trial today.'
+                : 'Obtenez la clarté financière dont vous avez besoin pour prendre des décisions éclairées.'}
             </p>
+            
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <button 
+                onClick={() => register()}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base transition-all hover:scale-105 hover:shadow-xl"
+                style={{ 
+                  background: 'white',
+                  color: theme.greenDark,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                }}
+              >
+                {isEn ? 'Start free 21-day trial' : 'Essai gratuit 21 jours'}
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              
+              <button 
+                onClick={() => setShowDemoModal(true)}
+                className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(8px)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.25)'
+                }}
+              >
+                <Play className="w-5 h-5" />
+                {isEn ? 'Watch demo' : 'Voir démo'}
+              </button>
+            </div>
+            
+            {/* Trust Badges */}
+            <div className="w-full flex justify-center">
+              <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-white/70 text-sm">
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-300" />
+                  {isEn ? 'No credit card required' : 'Sans carte de crédit'}
+                </span>
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-300" />
+                  {isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min'}
+                </span>
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-300" />
+                  {isEn ? 'Data stays in Canada' : 'Données au Canada'} 🇨🇦
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
