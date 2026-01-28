@@ -1,6 +1,6 @@
 /**
  * Onboarding Controller
- * Handles onboarding completion and stores user/company data
+ * Handles onboarding completion and creates organization in database
  */
 
 import {
@@ -10,9 +10,11 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Req,
 } from "@nestjs/common";
-import { Public } from "nest-keycloak-connect";
+import { AuthenticatedUser } from "nest-keycloak-connect";
 import { NovuService } from "../../../notifications/novu.service";
+import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import {
   IsEmail,
   IsString,
@@ -23,12 +25,9 @@ import {
 } from "class-validator";
 
 export class OnboardingCompleteDto {
-  @IsEmail()
-  email: string;
-
   @IsOptional()
-  @IsString()
-  password?: string; // Password is validated on frontend, not stored here (handled by auth provider)
+  @IsEmail()
+  email?: string;
 
   @IsString()
   companyName: string;
@@ -67,47 +66,86 @@ export class OnboardingCompleteDto {
   skipTeam?: boolean;
 }
 
+interface KeycloakUser {
+  sub: string; // Keycloak user ID
+  email?: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  preferred_username?: string;
+}
+
 @Controller("onboarding")
-@Public() // Allow unauthenticated onboarding completion
 export class OnboardingController {
   private readonly logger = new Logger(OnboardingController.name);
 
-  constructor(private readonly novuService: NovuService) {}
+  constructor(
+    private readonly novuService: NovuService,
+    private readonly createOrganizationUseCase: CreateOrganizationUseCase,
+  ) {}
 
   @Post("complete")
   @HttpCode(HttpStatus.OK)
-  async completeOnboarding(@Body() dto: OnboardingCompleteDto) {
-    this.logger.log(`Onboarding completed for: ${dto.email}, Company: ${dto.companyName}`);
+  async completeOnboarding(
+    @Body() dto: OnboardingCompleteDto,
+    @AuthenticatedUser() user: KeycloakUser,
+  ) {
+    const userEmail = dto.email || user.email;
+    this.logger.log(`Onboarding completed for: ${userEmail}, Company: ${dto.companyName}, User ID: ${user.sub}`);
 
     try {
-      // Store onboarding data (for now, send notification - can be enhanced to store in DB)
-      await this.novuService.sendOnboardingCompleteNotification({
-        email: dto.email,
-        companyName: dto.companyName,
-        companySize: dto.companySize,
-        industry: dto.industry,
-        fiscalYearEnd: dto.fiscalYearEnd,
-        currency: dto.currency,
-        primarySource: dto.primarySource,
-        skipSource: dto.skipSource,
-        teamEmails: dto.teamEmails,
-        skipTeam: dto.skipTeam,
-      });
+      // Create organization in database using Keycloak user ID as tenant ID
+      let organization;
+      try {
+        organization = await this.createOrganizationUseCase.execute({
+          tenantId: user.sub, // Use Keycloak user ID as tenant ID
+          name: dto.companyName,
+          fiscalYearEndMonth: dto.fiscalYearEnd || 12,
+          currency: dto.currency || "CAD",
+          industry: dto.industry,
+        });
+        this.logger.log(`Organization created: ${organization.id} for tenant: ${organization.tenantId}`);
+      } catch (orgError) {
+        // If organization already exists (duplicate), that's okay - user might be re-onboarding
+        if (orgError.message?.includes("already exists") || orgError.name === "DuplicateEntityError") {
+          this.logger.log(`Organization already exists for tenant: ${user.sub}, continuing with onboarding`);
+        } else {
+          throw orgError;
+        }
+      }
 
-      // TODO: Store in database (create onboarding_data table or extend organization table)
-      // For now, the data is logged and sent via notification
+      // Send notification for onboarding completion
+      try {
+        await this.novuService.sendOnboardingCompleteNotification({
+          email: userEmail,
+          companyName: dto.companyName,
+          companySize: dto.companySize,
+          industry: dto.industry,
+          fiscalYearEnd: dto.fiscalYearEnd,
+          currency: dto.currency,
+          primarySource: dto.primarySource,
+          skipSource: dto.skipSource,
+          teamEmails: dto.teamEmails,
+          skipTeam: dto.skipTeam,
+        });
+      } catch (notifError) {
+        // Non-critical - log but don't fail
+        this.logger.warn(`Failed to send onboarding notification: ${notifError.message}`);
+      }
 
       return {
         success: true,
-        message: "Onboarding data saved successfully",
+        message: "Onboarding completed successfully",
+        organizationId: organization?.id,
       };
     } catch (error) {
-      this.logger.error(`Failed to save onboarding data: ${error.message}`);
+      this.logger.error(`Failed to complete onboarding: ${error.message}`, error.stack);
 
-      // Still return success to allow user to proceed
+      // Return error to inform user
       return {
-        success: true,
-        message: "Onboarding completed",
+        success: false,
+        message: "Failed to complete onboarding. Please try again.",
+        error: error.message,
       };
     }
   }

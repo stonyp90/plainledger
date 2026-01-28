@@ -16,7 +16,6 @@ import {
   Shield,
   BarChart3,
   Upload,
-  UserPlus,
   Mail,
   PartyPopper,
   Menu,
@@ -32,6 +31,7 @@ import {
   Heart,
   GraduationCap,
   Loader2,
+  UserPlus,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../lib/keycloak';
@@ -42,17 +42,11 @@ import { analytics, type OnboardingStep } from '../lib/analytics';
 import { crmService } from '../lib/crm';
 import { getAllIndustries, getIndustryTemplate, type IndustryTemplate } from '../lib/industries';
 import { getKPIsForIndustry } from '../lib/industryKPIs';
-import { authApi } from '../features/auth/api';
-
 // =====================================================
 // TYPES
 // =====================================================
 
 interface OnboardingData {
-  // Account credentials
-  email: string;
-  password: string;
-  confirmPassword: string;
   // Account type
   accountType: 'individual' | 'business' | 'enterprise';
   // Company info
@@ -70,9 +64,6 @@ interface OnboardingData {
 }
 
 const INITIAL_DATA: OnboardingData = {
-  email: '',
-  password: '',
-  confirmPassword: '',
   accountType: 'business',
   companyName: '',
   companySize: '',
@@ -109,271 +100,6 @@ const colors = {
   gold: '#C5A24D',
   goldDark: '#A68A3C',
 };
-
-// Password validation requirements
-const PASSWORD_REQUIREMENTS = {
-  minLength: 8,
-  requireUppercase: true,
-  requireLowercase: true,
-  requireNumber: true,
-  requireSpecial: true,
-};
-
-function validatePassword(password: string): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  if (password.length < PASSWORD_REQUIREMENTS.minLength) {
-    errors.push(`At least ${PASSWORD_REQUIREMENTS.minLength} characters`);
-  }
-  if (PASSWORD_REQUIREMENTS.requireUppercase && !/[A-Z]/.test(password)) {
-    errors.push('One uppercase letter');
-  }
-  if (PASSWORD_REQUIREMENTS.requireLowercase && !/[a-z]/.test(password)) {
-    errors.push('One lowercase letter');
-  }
-  if (PASSWORD_REQUIREMENTS.requireNumber && !/\d/.test(password)) {
-    errors.push('One number');
-  }
-  if (PASSWORD_REQUIREMENTS.requireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('One special character (!@#$%^&*)');
-  }
-  
-  return { valid: errors.length === 0, errors };
-}
-
-function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-// Step 0: Account Signup - Email and Password
-function SignupStep({ 
-  data, 
-  onChange, 
-  onNext, 
-}: { 
-  data: OnboardingData; 
-  onChange: (data: Partial<OnboardingData>) => void;
-  onNext: () => void;
-}) {
-  const { language } = useI18n();
-  const { resolvedTheme } = useTheme();
-  const { user } = useAuth();
-  const isEn = language === 'en';
-  const isDark = resolvedTheme === 'dark';
-  
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false });
-  
-  // Pre-fill email from auth if available
-  useEffect(() => {
-    if (user?.email && !data.email) {
-      onChange({ email: user.email });
-    }
-  }, [user?.email, data.email, onChange]);
-  
-  const emailValid = validateEmail(data.email);
-  const passwordValidation = validatePassword(data.password);
-  const passwordsMatch = data.password === data.confirmPassword;
-  
-  const isValid = emailValid && passwordValidation.valid && passwordsMatch && data.confirmPassword.length > 0;
-  
-  const handleBlur = (field: 'email' | 'password' | 'confirmPassword') => {
-    setTouched(prev => ({ ...prev, [field]: true }));
-  };
-
-  return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <div 
-          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-        >
-          <UserPlus className="w-8 h-8" style={{ color: 'rgb(var(--color-primary-500))' }} />
-        </div>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'Create your account' : 'Créez votre compte'}
-        </h2>
-        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn ? "Enter your email and create a secure password" : "Entrez votre courriel et créez un mot de passe sécurisé"}
-        </p>
-      </div>
-
-      <div className="space-y-5">
-        {/* Email */}
-        <div>
-          <label className="label">{isEn ? 'Email Address' : 'Adresse courriel'} *</label>
-          <div className="relative">
-            <Mail 
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
-              style={{ color: 'rgb(var(--color-text-muted))' }} 
-            />
-            <input
-              type="email"
-              value={data.email}
-              onChange={(e) => onChange({ email: e.target.value })}
-              onBlur={() => handleBlur('email')}
-              className="input pl-10"
-              placeholder={isEn ? 'you@company.com' : 'vous@entreprise.com'}
-              autoFocus
-              autoComplete="email"
-              style={{
-                borderColor: touched.email && !emailValid ? '#ef4444' : undefined,
-              }}
-            />
-          </div>
-          {touched.email && !emailValid && data.email && (
-            <p className="text-xs mt-1" style={{ color: '#ef4444' }}>
-              {isEn ? 'Please enter a valid email address' : 'Veuillez entrer une adresse courriel valide'}
-            </p>
-          )}
-        </div>
-
-        {/* Password */}
-        <div>
-          <label className="label">{isEn ? 'Password' : 'Mot de passe'} *</label>
-          <div className="relative">
-            <Shield 
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
-              style={{ color: 'rgb(var(--color-text-muted))' }} 
-            />
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={data.password}
-              onChange={(e) => onChange({ password: e.target.value })}
-              onBlur={() => handleBlur('password')}
-              className="input pl-10 pr-10"
-              placeholder={isEn ? 'Create a strong password' : 'Créez un mot de passe fort'}
-              autoComplete="new-password"
-              style={{
-                borderColor: touched.password && !passwordValidation.valid ? '#ef4444' : undefined,
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {showPassword ? (
-                <X className="w-4 h-4" />
-              ) : (
-                <Check className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-          
-          {/* Password Requirements */}
-          <div className="mt-3 space-y-1.5">
-            <p className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Password must contain:' : 'Le mot de passe doit contenir:'}
-            </p>
-            <div className="grid grid-cols-2 gap-1">
-              {[
-                { check: data.password.length >= 8, label: isEn ? '8+ characters' : '8+ caractères' },
-                { check: /[A-Z]/.test(data.password), label: isEn ? 'Uppercase letter' : 'Majuscule' },
-                { check: /[a-z]/.test(data.password), label: isEn ? 'Lowercase letter' : 'Minuscule' },
-                { check: /\d/.test(data.password), label: isEn ? 'Number' : 'Chiffre' },
-                { check: /[!@#$%^&*(),.?":{}|<>]/.test(data.password), label: isEn ? 'Special char' : 'Caractère spécial' },
-              ].map((req, idx) => (
-                <div 
-                  key={idx} 
-                  className="flex items-center gap-1.5 text-xs"
-                  style={{ 
-                    color: req.check 
-                      ? 'rgb(var(--color-success))' 
-                      : (touched.password && data.password ? '#ef4444' : 'rgb(var(--color-text-muted))')
-                  }}
-                >
-                  {req.check ? (
-                    <Check className="w-3.5 h-3.5" />
-                  ) : (
-                    <X className="w-3.5 h-3.5" />
-                  )}
-                  <span>{req.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Confirm Password */}
-        <div>
-          <label className="label">{isEn ? 'Confirm Password' : 'Confirmer le mot de passe'} *</label>
-          <div className="relative">
-            <Shield 
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" 
-              style={{ color: 'rgb(var(--color-text-muted))' }} 
-            />
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={data.confirmPassword}
-              onChange={(e) => onChange({ confirmPassword: e.target.value })}
-              onBlur={() => handleBlur('confirmPassword')}
-              className="input pl-10 pr-10"
-              placeholder={isEn ? 'Confirm your password' : 'Confirmez votre mot de passe'}
-              autoComplete="new-password"
-              style={{
-                borderColor: touched.confirmPassword && !passwordsMatch && data.confirmPassword ? '#ef4444' : undefined,
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {showConfirmPassword ? (
-                <X className="w-4 h-4" />
-              ) : (
-                <Check className="w-4 h-4" />
-              )}
-            </button>
-          </div>
-          {touched.confirmPassword && !passwordsMatch && data.confirmPassword && (
-            <p className="text-xs mt-1" style={{ color: '#ef4444' }}>
-              {isEn ? 'Passwords do not match' : 'Les mots de passe ne correspondent pas'}
-            </p>
-          )}
-          {touched.confirmPassword && passwordsMatch && data.confirmPassword && (
-            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'rgb(var(--color-success))' }}>
-              <Check className="w-3.5 h-3.5" />
-              {isEn ? 'Passwords match' : 'Les mots de passe correspondent'}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Security Note */}
-      <div 
-        className="mt-6 p-4 rounded-xl flex items-start gap-3"
-        style={{ 
-          backgroundColor: 'rgb(var(--color-success) / 0.1)',
-          border: '1px solid rgb(var(--color-success) / 0.2)'
-        }}
-      >
-        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-success))' }} />
-        <div className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Your data is secure' : 'Vos données sont sécurisées'}
-          </span>
-          <br />
-          {isEn 
-            ? 'Passwords are encrypted with AES-256 and never stored in plain text.'
-            : 'Les mots de passe sont chiffrés avec AES-256 et jamais stockés en clair.'}
-        </div>
-      </div>
-
-      <div className="flex justify-end mt-8">
-        <button onClick={onNext} className="btn-primary" disabled={!isValid}>
-          {isEn ? 'Continue' : 'Continuer'}
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // Step 1: Company Info
 function CompanyInfoStep({ 
@@ -1109,43 +835,28 @@ function TourStep({
   );
 }
 
-// Step: Complete - Account validation and registration
-function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () => void }) {
+// Step: Complete - Save onboarding data and launch dashboard
+function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish: () => void; user: { email?: string; name?: string; firstName?: string; lastName?: string } | null }) {
   const { language } = useI18n();
   const isEn = language === 'en';
   const [isValidating, setIsValidating] = useState(false);
-  const [validationStep, setValidationStep] = useState<'idle' | 'registering' | 'saving' | 'success' | 'error'>('idle');
+  const [validationStep, setValidationStep] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFinish = async () => {
     setIsValidating(true);
-    setValidationStep('registering');
+    setValidationStep('saving');
     setErrorMessage(null);
 
     try {
-      // Step 1: Register user account with auth API
-      const registerResponse = await authApi.register({
-        email: data.email,
-        password: data.password,
-        firstName: data.companyName.split(' ')[0] || 'User',
-        lastName: data.companyName.split(' ').slice(1).join(' ') || '',
-        organizationName: data.companyName,
-      });
-
-      if (!registerResponse) {
-        throw new Error(isEn ? 'Failed to create account' : 'Échec de la création du compte');
-      }
-
-      // Step 2: Save onboarding data
-      setValidationStep('saving');
-      
+      // Save onboarding data to backend (user is already authenticated via Keycloak)
       const response = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: data.email,
+          email: user?.email,
           companyName: data.companyName,
           companySize: data.companySize,
           industry: data.industry,
@@ -1159,10 +870,10 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
       });
 
       if (!response.ok) {
-        console.warn('Failed to save onboarding data, but account was created');
+        console.warn('Failed to save onboarding data');
       }
 
-      // Step 3: Success - redirect to app
+      // Success - redirect to app
       setValidationStep('success');
       
       // Brief delay to show success state before redirecting
@@ -1170,17 +881,11 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
       
       onFinish();
     } catch (error) {
-      console.error('Error during account creation:', error);
+      console.error('Error saving onboarding data:', error);
       setValidationStep('error');
       
-      // Parse error message
       if (error instanceof Error) {
-        if (error.message.includes('already exists') || error.message.includes('409')) {
-          setErrorMessage(isEn 
-            ? 'An account with this email already exists. Please try logging in instead.'
-            : 'Un compte avec cet email existe déjà. Veuillez vous connecter.'
-          );
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
           setErrorMessage(isEn 
             ? 'Network error. Please check your connection and try again.'
             : 'Erreur réseau. Veuillez vérifier votre connexion et réessayer.'
@@ -1224,14 +929,13 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
           
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
             {validationStep === 'success' 
-              ? (isEn ? 'Account Created!' : 'Compte créé!')
-              : (isEn ? 'Creating your account...' : 'Création de votre compte...')
+              ? (isEn ? 'Setup Complete!' : 'Configuration terminée!')
+              : (isEn ? 'Setting up your workspace...' : 'Configuration de votre espace...')
             }
           </h2>
           
           <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {validationStep === 'registering' && (isEn ? 'Validating your credentials...' : 'Validation de vos identifiants...')}
-            {validationStep === 'saving' && (isEn ? 'Setting up your workspace...' : 'Configuration de votre espace...')}
+            {validationStep === 'saving' && (isEn ? 'Configuring your workspace...' : 'Configuration de votre espace...')}
             {validationStep === 'success' && (isEn ? 'Redirecting to your dashboard...' : 'Redirection vers votre tableau de bord...')}
           </p>
         </div>
@@ -1239,25 +943,19 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         {/* Progress steps */}
         <div className="space-y-3">
           <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-            {validationStep === 'registering' ? (
+            <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+            <span style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Account verified' : 'Compte vérifié'}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            {validationStep === 'saving' ? (
               <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
             ) : (
               <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
             )}
             <span style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Creating secure account' : 'Création du compte sécurisé'}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-            {validationStep === 'registering' ? (
-              <div className="w-5 h-5 rounded-full border-2" style={{ borderColor: 'rgb(var(--color-border))' }} />
-            ) : validationStep === 'saving' ? (
-              <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            ) : (
-              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-            )}
-            <span style={{ color: validationStep === 'registering' ? 'rgb(var(--color-text-muted))' : 'rgb(var(--color-text))' }}>
               {isEn ? 'Configuring workspace' : 'Configuration de l\'espace'}
             </span>
           </div>
@@ -1290,7 +988,7 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
           </div>
           
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Account Creation Failed' : 'Échec de la création du compte'}
+            {isEn ? 'Setup Failed' : 'Échec de la configuration'}
           </h2>
           
           <div 
@@ -1315,18 +1013,18 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
             <ArrowRight className="w-5 h-5" />
           </button>
           
-          <a 
-            href="/login"
+          <button 
+            onClick={onFinish}
             className="btn-secondary"
           >
-            {isEn ? 'Go to Login' : 'Aller à la connexion'}
-          </a>
+            {isEn ? 'Skip and continue' : 'Passer et continuer'}
+          </button>
         </div>
       </div>
     );
   }
 
-  // Default: Ready to create account
+  // Default: Ready to complete setup
   return (
     <div className="text-center max-w-xl mx-auto">
       <div className="mb-8">
@@ -1341,8 +1039,8 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         </h1>
         <p className="text-lg mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
           {isEn 
-            ? `Let's create your account and launch ${data.companyName}'s dashboard.`
-            : `Créons votre compte et lançons le tableau de bord de ${data.companyName}.`}
+            ? `Let's launch ${data.companyName}'s dashboard.`
+            : `Lançons le tableau de bord de ${data.companyName}.`}
         </p>
         <p className="text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
           {isEn 
@@ -1351,7 +1049,7 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         </p>
       </div>
       
-      {/* Account to be created */}
+      {/* Account info */}
       <div 
         className="mb-6 p-4 rounded-xl text-left"
         style={{ 
@@ -1362,68 +1060,25 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         <div className="flex items-center gap-3 mb-2">
           <Shield className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Account details' : 'Détails du compte'}
+            {isEn ? 'Your account' : 'Votre compte'}
           </span>
         </div>
         <div className="ml-8 space-y-1">
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            <span className="font-medium">{isEn ? 'Email:' : 'Courriel:'}</span> {data.email}
+            <span className="font-medium">{isEn ? 'Email:' : 'Courriel:'}</span> {user?.email}
           </p>
+          {user?.name && (
+            <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <span className="font-medium">{isEn ? 'Name:' : 'Nom:'}</span> {user.name}
+            </p>
+          )}
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             <span className="font-medium">{isEn ? 'Organization:' : 'Organisation:'}</span> {data.companyName}
           </p>
           <p className="text-sm flex items-center gap-1" style={{ color: 'rgb(var(--color-success))' }}>
             <Check className="w-3.5 h-3.5" />
-            {isEn ? 'Password validated' : 'Mot de passe validé'}
+            {isEn ? 'Account verified' : 'Compte vérifié'}
           </p>
-        </div>
-      </div>
-
-      {/* What happens next */}
-      <div 
-        className="p-6 rounded-xl text-left mb-6"
-        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-      >
-        <h3 className="font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'What happens next' : 'Ce qui se passe ensuite'}
-        </h3>
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white" 
-              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>1</div>
-            <div>
-              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Secure account creation' : 'Création de compte sécurisée'}
-              </span>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Your credentials are encrypted and validated' : 'Vos identifiants sont chiffrés et validés'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white" 
-              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>2</div>
-            <div>
-              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Workspace configuration' : 'Configuration de l\'espace'}
-              </span>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Industry KPIs and settings applied' : 'KPIs et paramètres de l\'industrie appliqués'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white" 
-              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>3</div>
-            <div>
-              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Launch your dashboard' : 'Lancez votre tableau de bord'}
-              </span>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Start seeing AI-powered insights immediately' : 'Voyez les insights IA immédiatement'}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1463,7 +1118,7 @@ function CompleteStep({ data, onFinish }: { data: OnboardingData; onFinish: () =
         onClick={handleFinish} 
         className="btn-primary btn-lg"
       >
-        {isEn ? 'Create Account & Launch' : 'Créer le compte et lancer'}
+        {isEn ? 'Launch Dashboard' : 'Lancer le tableau de bord'}
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>
@@ -1480,12 +1135,13 @@ export default function Onboarding() {
   const { language } = useI18n();
   const isEn = language === 'en';
   
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('signup');
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>('company_info');
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [startTime] = useState(Date.now());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const steps: OnboardingStep[] = ['signup', 'company_info', 'industry_preview', 'invite_team', 'complete'];
+  // Simplified steps - user is already authenticated via Keycloak
+  const steps: OnboardingStep[] = ['company_info', 'industry_preview', 'invite_team', 'complete'];
   const currentIndex = steps.indexOf(currentStep);
 
   // Track step views
@@ -1747,11 +1403,8 @@ export default function Onboarding() {
 
       {/* Content */}
       <main className="flex-1 flex items-center justify-center p-6">
-        {currentStep === 'signup' && (
-          <SignupStep data={data} onChange={updateData} onNext={goNext} />
-        )}
         {currentStep === 'company_info' && (
-          <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
+          <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} />
         )}
         {currentStep === 'industry_preview' && (
           <IndustryPreviewStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
@@ -1760,7 +1413,7 @@ export default function Onboarding() {
           <InviteTeamStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
         )}
         {currentStep === 'complete' && (
-          <CompleteStep data={data} onFinish={handleFinish} />
+          <CompleteStep data={data} onFinish={handleFinish} user={user} />
         )}
       </main>
 
