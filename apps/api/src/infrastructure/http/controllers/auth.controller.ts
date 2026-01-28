@@ -24,10 +24,10 @@ import {
   Matches,
 } from "class-validator";
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+import { INotificationService } from "@application/ports/outbound/INotificationService";
 import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { ConfigService } from "@nestjs/config";
-import { EmailService } from "@infrastructure/email/email.service";
 import * as crypto from "crypto";
 
 // =====================================================
@@ -146,9 +146,10 @@ export class AuthController {
   constructor(
     @Inject("IKeycloakAdminService")
     private readonly keycloakAdminService: IKeycloakAdminService,
+    @Inject("INotificationService")
+    private readonly notificationService: INotificationService,
     private readonly userProfileRepository: PostgresUserProfileRepository,
     private readonly configService: ConfigService,
-    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -497,12 +498,12 @@ export class AuthController {
         const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
         const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
         
-        // Send password reset email via our email service
-        const emailSent = await this.emailService.sendPasswordResetEmail(
-          user.email,
+        // Send password reset email via notification service (Novu)
+        const emailSent = await this.notificationService.sendPasswordResetEmail({
+          to: user.email,
+          firstName: user.firstName,
           resetUrl,
-          user.firstName
-        );
+        });
         
         if (emailSent) {
           this.logger.log(`Password reset email sent to: ${dto.email}`);

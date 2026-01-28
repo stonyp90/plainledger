@@ -42,10 +42,13 @@ export interface NovuTriggerPayload {
 }
 
 // Workflow IDs - must match Novu Dashboard
-// Note: Keycloak handles email verification & password reset via SMTP (AWS SES)
-// These Novu workflows are for application-level notifications AFTER auth flow
 export const NovuWorkflows = {
-  // Account (triggered after Keycloak auth events)
+  // Auth Emails (Custom UI flow - sent via our app, not Keycloak)
+  PASSWORD_RESET: "password-reset", // Password reset link email
+  EMAIL_VERIFICATION: "email-verification", // Email verification link
+  MFA_ENABLED: "mfa-enabled", // MFA setup confirmation
+
+  // Account (triggered after auth events)
   WELCOME: "welcome", // After successful registration + email verification
   EMAIL_VERIFIED: "email-verified", // Confirmation that email was verified
   PASSWORD_CHANGED: "password-changed", // Security alert after password change
@@ -117,11 +120,23 @@ export const NovuWorkflows = {
 type WorkflowId = (typeof NovuWorkflows)[keyof typeof NovuWorkflows];
 
 // ============================================================================
+// Import Interface
+// ============================================================================
+
+import {
+  INotificationService,
+  NotificationRecipient,
+  PasswordResetEmailOptions,
+  VerificationEmailOptions,
+  MFAEnabledEmailOptions,
+} from "@application/ports/outbound/INotificationService";
+
+// ============================================================================
 // Service
 // ============================================================================
 
 @Injectable()
-export class NovuService implements OnModuleInit {
+export class NovuService implements OnModuleInit, INotificationService {
   private readonly logger = new Logger(NovuService.name);
   private apiKey: string;
   private appId: string;
@@ -139,9 +154,29 @@ export class NovuService implements OnModuleInit {
       this.logger.log("Novu notification service initialized");
     } else {
       this.logger.warn(
-        "Novu API key or App ID not configured - notifications disabled",
+        "Novu API key or App ID not configured - notifications will be logged only",
       );
     }
+  }
+
+  /**
+   * Check if notification service is available
+   */
+  isAvailable(): boolean {
+    return this.enabled;
+  }
+
+  /**
+   * Create or update a recipient (alias for upsertSubscriber)
+   */
+  async upsertRecipient(recipient: NotificationRecipient): Promise<void> {
+    await this.upsertSubscriber({
+      subscriberId: recipient.id,
+      email: recipient.email,
+      firstName: recipient.firstName,
+      lastName: recipient.lastName,
+      locale: recipient.locale,
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -220,6 +255,169 @@ export class NovuService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Failed to delete subscriber: ${error.message}`);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Auth Emails (INotificationService implementation)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Send password reset email with custom link
+   */
+  async sendPasswordResetEmail(options: PasswordResetEmailOptions): Promise<boolean> {
+    const { to, firstName, resetUrl } = options;
+
+    try {
+      // Create temporary subscriber for the email recipient
+      const subscriberId = `reset-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
+      
+      await this.upsertSubscriber({
+        subscriberId,
+        email: to,
+        firstName: firstName || "User",
+      });
+
+      await this.trigger({
+        workflowId: NovuWorkflows.PASSWORD_RESET,
+        to: subscriberId,
+        payload: {
+          firstName: firstName || "there",
+          resetUrl,
+          expiresIn: "15 minutes",
+          baseUrl: this.getBaseUrl(),
+        },
+      });
+
+      this.logger.log(`Password reset email sent to: ${to}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email: ${error.message}`);
+      
+      // Fallback: Log the reset URL for development
+      if (!this.enabled) {
+        this.logger.log(`[DEV] Password reset URL for ${to}: ${resetUrl}`);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Send email verification email with custom link
+   */
+  async sendVerificationEmail(options: VerificationEmailOptions): Promise<boolean> {
+    const { to, firstName, verifyUrl } = options;
+
+    try {
+      const subscriberId = `verify-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
+      
+      await this.upsertSubscriber({
+        subscriberId,
+        email: to,
+        firstName: firstName || "User",
+      });
+
+      await this.trigger({
+        workflowId: NovuWorkflows.EMAIL_VERIFICATION,
+        to: subscriberId,
+        payload: {
+          firstName: firstName || "there",
+          verifyUrl,
+          expiresIn: "24 hours",
+          baseUrl: this.getBaseUrl(),
+        },
+      });
+
+      this.logger.log(`Verification email sent to: ${to}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send verification email: ${error.message}`);
+      
+      if (!this.enabled) {
+        this.logger.log(`[DEV] Verification URL for ${to}: ${verifyUrl}`);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Send MFA enabled confirmation email
+   */
+  async sendMFAEnabledEmail(options: MFAEnabledEmailOptions): Promise<boolean> {
+    const { to, firstName, timestamp } = options;
+
+    try {
+      const subscriberId = `mfa-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
+      
+      await this.upsertSubscriber({
+        subscriberId,
+        email: to,
+        firstName: firstName || "User",
+      });
+
+      await this.trigger({
+        workflowId: NovuWorkflows.MFA_ENABLED,
+        to: subscriberId,
+        payload: {
+          firstName: firstName || "there",
+          timestamp: timestamp.toISOString(),
+          securityUrl: `${this.getBaseUrl()}/app/settings`,
+        },
+      });
+
+      this.logger.log(`MFA enabled email sent to: ${to}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send MFA enabled email: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Send welcome email (INotificationService implementation)
+   */
+  async sendWelcomeEmail(
+    userId: string,
+    data: { email: string; firstName: string; organizationName?: string }
+  ): Promise<void> {
+    await this.sendWelcome(userId, data);
+  }
+
+  /**
+   * Send login new device alert (INotificationService implementation)
+   */
+  async sendLoginNewDeviceAlert(
+    userId: string,
+    data: {
+      device: string;
+      browser: string;
+      ipAddress: string;
+      location?: string;
+      timestamp: Date;
+    }
+  ): Promise<void> {
+    await this.sendLoginNewDevice(userId, data);
+  }
+
+  /**
+   * Send payment failed notification (INotificationService implementation)
+   */
+  async sendPaymentFailedNotification(
+    userId: string,
+    data: { amount: string; currency: string; cardLast4: string }
+  ): Promise<void> {
+    await this.sendPaymentFailed(userId, data);
+  }
+
+  /**
+   * Send trial ending reminder (INotificationService implementation)
+   */
+  async sendTrialEndingReminder(
+    userId: string,
+    data: { daysLeft: number; trialEndDate: Date; planName: string }
+  ): Promise<void> {
+    await this.sendTrialEnding(userId, data);
   }
 
   // ---------------------------------------------------------------------------

@@ -64,10 +64,7 @@ import { PostgresUserProfileRepository } from "@infrastructure/persistence/postg
 import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
 
 // Notifications
-import { NovuModule } from "./infrastructure/notifications/novu.service";
-
-// Email
-import { EmailService } from "./infrastructure/email/email.service";
+import { NovuModule, NovuService } from "./infrastructure/notifications/novu.service";
 
 @Module({
   imports: [
@@ -210,7 +207,7 @@ import { EmailService } from "./infrastructure/email/email.service";
     PowerBIDatalakeService,
     DatalakeDataService,
     KeycloakAdminService,
-    EmailService,
+    NovuService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
@@ -231,6 +228,10 @@ import { EmailService } from "./infrastructure/email/email.service";
     {
       provide: "IKeycloakAdminService",
       useClass: KeycloakAdminService,
+    },
+    {
+      provide: "INotificationService",
+      useClass: NovuService,
     },
 
     // GraphQL Resolvers
