@@ -9,6 +9,7 @@ import OrganizationSwitcher from './OrganizationSwitcher';
 import SearchModal, { useSearchModal } from './SearchModal';
 import { crispUtils } from './CrispChat';
 import { HelpCenter } from './HelpCenter';
+import { PremiumBadge, type PremiumFeature } from './PremiumFeatureGate';
 import config from '../lib/config';
 import {
   LayoutDashboard,
@@ -31,6 +32,7 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -98,15 +100,21 @@ export default function Layout({ children }: LayoutProps) {
     };
   }, [isMobileMenuOpen]);
 
-  const navigation = [
-    { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' as const },
-    { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports' as const },
-    { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports' as const },
-    { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' as const },
-    { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' as const },
-    { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' as const },
-    { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports' as const },
-    { name: t('nav.settings'), href: '/app/settings', icon: Settings, permission: 'view:settings' as const },
+  const navigation: {
+    name: string;
+    href: string;
+    icon: typeof LayoutDashboard;
+    permission: 'view:dashboard' | 'view:reports' | 'view:connections' | 'view:settings';
+    premiumFeature?: PremiumFeature;
+  }[] = [
+    { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' },
+    { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports', premiumFeature: 'advancedAnalytics' },
+    { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports', premiumFeature: 'strategicPlanning' },
+    { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' },
+    { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
+    { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' },
+    { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports', premiumFeature: 'boardMeeting' },
+    { name: t('nav.settings'), href: '/app/settings', icon: Settings, permission: 'view:settings' },
   ];
 
   const isActive = (path: string) => {
@@ -247,6 +255,7 @@ export default function Layout({ children }: LayoutProps) {
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               <span className="flex-1 truncate">{item.name}</span>
+              {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} />}
               <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
             </Link>
           ))}
@@ -477,9 +486,15 @@ export default function Layout({ children }: LayoutProps) {
                 className={`nav-item ${isActive(item.href) ? 'active' : ''} ${
                   isSidebarCollapsed ? 'justify-center px-2 w-full' : ''
                 }`}
+                title={isSidebarCollapsed ? item.name : undefined}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!isSidebarCollapsed && <span>{item.name}</span>}
+                {!isSidebarCollapsed && (
+                  <>
+                    <span className="flex-1">{item.name}</span>
+                    {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} />}
+                  </>
+                )}
               </Link>
             ))}
           </div>

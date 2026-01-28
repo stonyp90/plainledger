@@ -34,6 +34,7 @@ import {
   Edit3,
   Copy,
   Eye,
+  BarChart3,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -66,11 +67,13 @@ import {
 } from '../lib/reportManagement';
 import ChartBuilder from '../components/ChartBuilder';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
+import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 
 export default function CustomDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, refresh } = useFinancialData();
+  const { hasAccess } = usePremiumFeature('advancedAnalytics');
   
   const [pinnedCharts, setPinnedCharts] = useState<PinnedChart[]>([]);
   const [showGallery, setShowGallery] = useState(false);
@@ -440,6 +443,59 @@ export default function CustomDashboard() {
     }
   };
   
+  // Show premium gate if user doesn't have access
+  if (!hasAccess) {
+    return (
+      <div className="space-y-6">
+        {/* Premium Upgrade Banner */}
+        <PremiumUpgradeBanner feature="advancedAnalytics" />
+        
+        {/* Grayed out preview */}
+        <PremiumFeatureGate feature="advancedAnalytics" showPreview={true}>
+          <div className="space-y-6">
+            {/* Header Card Preview */}
+            <div 
+              className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-700)) 0%, rgb(var(--color-primary-800)) 100%)',
+              }}
+            >
+              <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">
+                      {isEn ? 'Custom Visualizations' : 'Visualisations personnalisées'}
+                    </h1>
+                    <p className="text-xs sm:text-sm text-white/70 truncate">
+                      {isEn ? 'Build custom charts and dashboards' : 'Créez des graphiques et tableaux de bord personnalisés'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Sample Chart Placeholders */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div 
+                  key={i}
+                  className="h-64 rounded-xl border"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    borderColor: 'rgb(var(--color-border))'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </PremiumFeatureGate>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Success Toast - Enhanced */}

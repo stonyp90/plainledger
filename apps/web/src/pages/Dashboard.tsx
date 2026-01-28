@@ -13,6 +13,8 @@ import {
   Sparkles,
   BarChart2,
   Eye,
+  Lock,
+  Calendar,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tooltip } from '../components/Tooltip';
@@ -25,6 +27,7 @@ import {
   TrialBalanceSummary 
 } from '../components/AccountingWidgets';
 import AIQueryAssistant from '../components/AIQueryAssistant';
+import PremiumFeatureGate, { usePremiumFeature } from '../components/PremiumFeatureGate';
 import { useTenant } from '../contexts/TenantContext';
 import { useToast } from '../contexts/ToastContext';
 import { useI18n } from '../lib/i18n';
@@ -40,12 +43,16 @@ import { calculateVariance } from '../lib/financialData';
 // DASHBOARD COMPONENT
 // =====================================================
 
+// Calendly URL for upgrade calls
+const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { currentTenant } = useTenant();
   const toast = useToast();
   const { t, formatCurrency, language } = useI18n();
   const [selectedPeriod, setSelectedPeriod] = useState<'mtd' | 'qtd' | 'ytd'>('mtd');
+  const { hasAccess: hasAIAccess } = usePremiumFeature('aiInsights');
   
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
@@ -368,14 +375,39 @@ export default function Dashboard() {
               <span className="hidden md:inline">{isRefreshing ? t('common.refreshing') : t('common.refresh')}</span>
             </button>
 
-            <button
-              onClick={() => setShowAIAssistant(true)}
-              className="btn-primary btn-sm flex items-center gap-1.5 sm:gap-2 !px-2 sm:!px-3"
-              title={language === 'en' ? 'Ask James' : 'Demander à James'}
-            >
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden md:inline">{language === 'en' ? 'Ask James' : 'Demander'}</span>
-            </button>
+                    <button
+                      onClick={() => {
+                        if (hasAIAccess) {
+                          setShowAIAssistant(true);
+                        } else {
+                          window.open(CALENDLY_URL, '_blank');
+                        }
+                      }}
+                      className={`btn-sm flex items-center gap-1.5 sm:gap-2 !px-2 sm:!px-3 ${
+                        hasAIAccess ? 'btn-primary' : ''
+                      }`}
+                      style={!hasAIAccess ? {
+                        background: 'linear-gradient(135deg, rgb(var(--color-warning) / 0.15) 0%, rgb(var(--color-warning) / 0.1) 100%)',
+                        color: 'rgb(var(--color-warning))',
+                        border: '1px solid rgb(var(--color-warning) / 0.3)',
+                      } : undefined}
+                      title={hasAIAccess 
+                        ? (language === 'en' ? 'Ask James' : 'Demander à James')
+                        : (language === 'en' ? 'Upgrade to unlock AI' : 'Passez au niveau supérieur pour l\'IA')
+                      }
+                    >
+                      {hasAIAccess ? (
+                        <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      )}
+                      <span className="hidden md:inline">
+                        {hasAIAccess 
+                          ? (language === 'en' ? 'Ask James' : 'Demander')
+                          : (language === 'en' ? 'Upgrade' : 'Mise à niveau')
+                        }
+                      </span>
+                    </button>
           </div>
         </div>
       </div>
@@ -684,6 +716,79 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Upgrade CTA Section - Show for non-premium users */}
+      {!hasAIAccess && (
+        <div 
+          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-4 sm:p-6"
+          style={{ 
+            background: 'linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-800)) 100%)',
+            boxShadow: '0 10px 40px -10px rgb(var(--color-primary-500) / 0.3)',
+          }}
+        >
+          {/* Background Pattern */}
+          <div 
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.8) 1px, transparent 1px)`,
+              backgroundSize: '24px 24px',
+            }}
+          />
+          
+          <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+              >
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white mb-1">
+                  {language === 'en' ? 'Unlock Premium Features' : 'Débloquez les fonctionnalités Premium'}
+                </h3>
+                <p className="text-sm text-white/80 max-w-xl">
+                  {language === 'en' 
+                    ? 'Get AI-powered insights, strategic planning tools, board meeting presentations, and more.'
+                    : 'Obtenez des analyses propulsées par l\'IA, des outils de planification stratégique, des présentations de CA, et plus encore.'
+                  }
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {[
+                    language === 'en' ? 'AI Assistant' : 'Assistant IA',
+                    language === 'en' ? 'Strategic Planning' : 'Planification stratégique',
+                    language === 'en' ? 'Board Presentations' : 'Présentations CA',
+                    language === 'en' ? 'Custom Analytics' : 'Analytique personnalisée',
+                  ].map((feature, idx) => (
+                    <span 
+                      key={idx}
+                      className="px-2 py-1 rounded-full text-xs font-medium"
+                      style={{ 
+                        backgroundColor: 'rgba(255,255,255,0.15)',
+                        color: 'white',
+                      }}
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => window.open(CALENDLY_URL, '_blank')}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 flex-shrink-0"
+              style={{ 
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              <Calendar className="w-5 h-5" />
+              <span>{language === 'en' ? 'Schedule Demo' : 'Planifier une démo'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* AI Query Assistant Modal */}
       {showAIAssistant && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -695,10 +800,16 @@ export default function Dashboard() {
             className="relative w-full sm:max-w-2xl h-[85vh] sm:h-[600px] rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
-            <AIQueryAssistant 
-              isModal={true} 
-              onClose={() => setShowAIAssistant(false)} 
-            />
+            {hasAIAccess ? (
+              <AIQueryAssistant 
+                isModal={true} 
+                onClose={() => setShowAIAssistant(false)} 
+              />
+            ) : (
+              <PremiumFeatureGate feature="aiInsights" showPreview={false}>
+                <div />
+              </PremiumFeatureGate>
+            )}
           </div>
         </div>
       )}

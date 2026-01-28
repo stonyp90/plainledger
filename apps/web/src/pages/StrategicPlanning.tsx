@@ -23,6 +23,7 @@ import {
 import QuickMetrics from '../components/strategic/QuickMetrics';
 import LiveCashChart from '../components/strategic/LiveCashChart';
 import ExpenseDrawer from '../components/strategic/ExpenseDrawer';
+import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
 
@@ -30,6 +31,7 @@ export default function StrategicPlanning() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, isLoading: dataLoading } = useFinancialData();
+  const { hasAccess } = usePremiumFeature('strategicPlanning');
   
 
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -271,6 +273,40 @@ export default function StrategicPlanning() {
       <div className="card p-8 text-center">
         <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
         <h3 className="font-semibold text-lg mb-2">{isEn ? 'Calculating...' : 'Calcul en cours...'}</h3>
+      </div>
+    );
+  }
+
+  // If user doesn't have access, show premium gate with preview
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen">
+        {/* Premium Upgrade Banner */}
+        <PremiumUpgradeBanner feature="strategicPlanning" />
+        
+        {/* Grayed out preview */}
+        <PremiumFeatureGate feature="strategicPlanning" showPreview={true}>
+          <div className="space-y-6">
+            {/* Quick Metrics - Top bar style */}
+            <QuickMetrics
+              cash={currentCash}
+              burnRate={runwayData.monthlyBurnRate}
+              runwayMonths={runwayData.runwayMonths}
+              zeroDate={runwayData.zeroDate}
+            />
+
+            {/* Live Cash Chart */}
+            <div className="p-4 sm:p-6">
+              <LiveCashChart
+                currentCash={currentCash}
+                currentDate={currentDate}
+                expenses={expenses}
+                baseRevenue={baseRevenue}
+                months={24}
+              />
+            </div>
+          </div>
+        </PremiumFeatureGate>
       </div>
     );
   }

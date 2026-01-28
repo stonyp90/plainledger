@@ -56,6 +56,7 @@ import {
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import Toggle from '../components/Toggle';
+import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 import {
   boardMeetingService,
   generateExecutiveSummarySlides,
@@ -945,6 +946,7 @@ export default function BoardMeeting() {
   const isEn = language === 'en';
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { hasAccess } = usePremiumFeature('boardMeeting');
   
   const { data: financialData } = useFinancialData();
   
@@ -1301,6 +1303,65 @@ export default function BoardMeeting() {
     );
   }
   
+  // Show premium gate if user doesn't have access
+  if (!hasAccess) {
+    return (
+      <div className="h-[calc(100vh-4rem)] flex flex-col">
+        {/* Header */}
+        <div 
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Board Meeting' : 'Réunion du conseil'}
+            </h1>
+            <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Quarterly Financial Review' : 'Revue financière trimestrielle'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Premium Upgrade Banner */}
+        <div className="p-4">
+          <PremiumUpgradeBanner feature="boardMeeting" />
+        </div>
+        
+        {/* Grayed out preview */}
+        <div className="flex-1 p-4 overflow-hidden">
+          <PremiumFeatureGate feature="boardMeeting" showPreview={true}>
+            <div 
+              className="h-full rounded-xl border overflow-hidden"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                borderColor: 'rgb(var(--color-border))'
+              }}
+            >
+              {/* Preview of slides */}
+              <div className="p-8 text-center">
+                <div 
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+                >
+                  <Presentation className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Board Meeting Presentation' : 'Présentation du conseil'}
+                </h2>
+                <p className="text-lg mb-8" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn 
+                    ? 'Generate professional board presentations with financial summaries, KPIs, and charts.'
+                    : 'Générez des présentations professionnelles avec résumés financiers, KPIs et graphiques.'
+                  }
+                </p>
+              </div>
+            </div>
+          </PremiumFeatureGate>
+        </div>
+      </div>
+    );
+  }
+
   // Regular view with sidebar
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">

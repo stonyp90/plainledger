@@ -37,22 +37,7 @@
                 </div>
             </header>
 
-            <#if realm.internationalizationEnabled && locale.supported?size gt 1>
-                <div id="kc-locale">
-                    <div id="kc-locale-wrapper">
-                        <div id="kc-locale-dropdown" class="menu-button-links">
-                            <button tabindex="1" id="kc-current-locale-link" aria-label="${msg("languages")}" aria-haspopup="true" aria-expanded="false">
-                                ${locale.current}
-                            </button>
-                            <ul role="menu" tabindex="-1" aria-labelledby="kc-current-locale-link" aria-activedescendant="">
-                                <#list locale.supported as l>
-                                    <li role="none"><a role="menuitem" id="kc-locale-${l.languageTag}" href="${l.url}">${l.label}</a></li>
-                                </#list>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </#if>
+            <#-- Language selector removed - uses website language preference -->
 
             <div id="kc-content">
                 <div id="kc-content-wrapper">

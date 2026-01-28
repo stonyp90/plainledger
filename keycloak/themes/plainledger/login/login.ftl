@@ -58,13 +58,13 @@
     <#elseif section = "info">
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
             <div id="kc-registration">
-                <span>${msg("noAccount")} <a tabindex="6" href="${url.registrationUrl}">${msg("doRegister")}</a></span>
+                <span>${msg("noAccount")} <a tabindex="6" href="https://plainledger.ca/onboarding">${msg("doRegister")}</a></span>
             </div>
         </#if>
     <#elseif section = "socialProviders">
         <div id="kc-enterprise-sso">
             <p>${msg("enterpriseSsoMessage")}</p>
-            <a href="mailto:support@plainledger.com">${msg("enterpriseSsoContact")}</a>
+            <a href="mailto:support@plainledger.ca">${msg("enterpriseSsoContact")}</a>
         </div>
     </#if>
 </@layout.registrationLayout>

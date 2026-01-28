@@ -211,21 +211,63 @@ const PLAN_LIMITS: Record<Tenant['plan'], Omit<TenantLimits, 'currentUsage'>> = 
 // Storage keys
 const STORAGE_KEY = 'plainledger-current-tenant';
 
+// Feature settings for different plans
+const FREE_FEATURES: TenantSettings['features'] = {
+  powerBI: false,
+  aiInsights: false,
+  customReports: false,
+  apiAccess: false,
+  auditLogs: false,
+  webhooks: false,
+  sso: false,
+};
+
+const STARTER_FEATURES: TenantSettings['features'] = {
+  powerBI: false,
+  aiInsights: false,
+  customReports: false,
+  apiAccess: false,
+  auditLogs: false,
+  webhooks: false,
+  sso: false,
+};
+
+const PROFESSIONAL_FEATURES: TenantSettings['features'] = {
+  powerBI: false,
+  aiInsights: true,
+  customReports: true,
+  apiAccess: true,
+  auditLogs: false,
+  webhooks: false,
+  sso: false,
+};
+
+const ENTERPRISE_FEATURES: TenantSettings['features'] = {
+  powerBI: true,
+  aiInsights: true,
+  customReports: true,
+  apiAccess: true,
+  auditLogs: true,
+  webhooks: true,
+  sso: true,
+};
+
 // Mock data for development
 const MOCK_TENANTS: Tenant[] = [
   {
     id: 'tenant-1',
     name: 'Demo Corporation',
     slug: 'demo-corp',
-    plan: 'professional',
-    status: 'active',
+    plan: 'free', // Changed to free to test premium gates
+    status: 'trial',
+    trialEndsAt: '2026-02-15T23:59:59Z',
     createdAt: '2024-01-15T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS },
+    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES },
     limits: {
-      ...PLAN_LIMITS.professional,
-      currentUsage: { users: 3, connections: 2, reports: 15, storage: 450, apiCalls: 2500 },
+      ...PLAN_LIMITS.free,
+      currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 100 },
     },
-    members: 3,
+    members: 1,
     role: 'owner',
   },
   {
@@ -236,7 +278,7 @@ const MOCK_TENANTS: Tenant[] = [
     status: 'trial',
     trialEndsAt: '2026-02-15T23:59:59Z',
     createdAt: '2025-01-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, currency: 'USD' },
+    settings: { ...DEFAULT_SETTINGS, features: STARTER_FEATURES, currency: 'USD' },
     limits: {
       ...PLAN_LIMITS.starter,
       currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 150 },
@@ -246,18 +288,18 @@ const MOCK_TENANTS: Tenant[] = [
   },
   {
     id: 'tenant-3',
-    name: 'Test Organization',
-    slug: 'test-org',
-    plan: 'free',
+    name: 'Pro Organization',
+    slug: 'pro-org',
+    plan: 'professional',
     status: 'active',
     createdAt: '2025-12-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS },
+    settings: { ...DEFAULT_SETTINGS, features: PROFESSIONAL_FEATURES },
     limits: {
-      ...PLAN_LIMITS.free,
-      currentUsage: { users: 1, connections: 0, reports: 0, storage: 0, apiCalls: 0 },
+      ...PLAN_LIMITS.professional,
+      currentUsage: { users: 3, connections: 2, reports: 15, storage: 450, apiCalls: 2500 },
     },
-    members: 1,
-    role: 'member',
+    members: 3,
+    role: 'owner',
   },
 ];
 
