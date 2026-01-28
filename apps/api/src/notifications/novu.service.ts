@@ -112,7 +112,6 @@ export const NovuWorkflows = {
   // Contact
   CONTACT_FORM: "contact-form", // Contact form submission notification
   CONTACT_FORM_AUTO_REPLY: "contact-form-auto-reply", // Auto-reply to sender
-  ONBOARDING_COMPLETE: "onboarding-complete", // Onboarding completion notification
 } as const;
 
 type WorkflowId = (typeof NovuWorkflows)[keyof typeof NovuWorkflows];
