@@ -321,17 +321,53 @@ export default function Settings() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-primary">Paramètres</h2>
-          <p className="text-sm sm:text-base text-secondary">Gérez les paramètres de votre organisation</p>
+      {/* Header with Logo */}
+      <div 
+        className="p-4 sm:p-6 rounded-xl"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))'
+        }}
+      >
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Organization Logo */}
+          <div 
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center font-bold text-sm sm:text-lg overflow-hidden flex-shrink-0"
+            style={{ 
+              background: currentTenant?.logo 
+                ? 'rgb(var(--color-surface))'
+                : 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+              color: 'white',
+              border: currentTenant?.logo ? '1px solid rgb(var(--color-border))' : 'none',
+            }}
+          >
+            {currentTenant?.logo ? (
+              <img 
+                src={currentTenant.logo} 
+                alt={currentTenant.name} 
+                className="w-full h-full"
+                style={{ objectFit: 'contain', padding: '2px' }}
+              />
+            ) : (
+              currentTenant?.name?.charAt(0).toUpperCase() || 'O'
+            )}
+          </div>
+          
+          {/* Title & Description */}
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Settings' : 'Paramètres'}
+            </h2>
+            <p className="text-xs sm:text-sm truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {currentTenant?.name || (isEn ? 'Manage your organization' : 'Gérez votre organisation')}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Mobile Tab Selector */}
       <div className="lg:hidden">
-        <label className="sr-only">Sélectionner une section</label>
+        <label className="sr-only">{isEn ? 'Select a section' : 'Sélectionner une section'}</label>
         <select
           value={activeTab}
           onChange={(e) => handleTabChange(e.target.value)}

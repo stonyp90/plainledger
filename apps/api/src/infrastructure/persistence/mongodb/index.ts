@@ -24,25 +24,25 @@
  * ```
  */
 
-export { MongoDBModule, MongoDBService } from './mongodb.module';
+export { MongoDBModule, MongoDBService } from "./mongodb.module";
 export type {
   AnalyticsEvent,
   AuditLog,
   CustomerJourneyEvent,
-} from './mongodb.module';
+} from "./mongodb.module";
 
-export { AnalyticsRepository } from './analytics.repository';
+export { AnalyticsRepository } from "./analytics.repository";
 export type {
   TrackEventInput,
   EventQuery,
   EventCount,
   FunnelStep,
-} from './analytics.repository';
+} from "./analytics.repository";
 
-export { AuditRepository } from './audit.repository';
+export { AuditRepository } from "./audit.repository";
 export type {
   AuditAction,
   ResourceType,
   AuditInput,
   AuditQuery,
-} from './audit.repository';
+} from "./audit.repository";

@@ -16,8 +16,8 @@
  * - Integration actions (connected/disconnected data sources)
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { MongoDBService, AuditLog } from './mongodb.module';
+import { Injectable, Logger } from "@nestjs/common";
+import { MongoDBService, AuditLog } from "./mongodb.module";
 
 // ============================================================================
 // Types
@@ -25,78 +25,78 @@ import { MongoDBService, AuditLog } from './mongodb.module';
 
 export type AuditAction =
   // Authentication
-  | 'auth.login'
-  | 'auth.logout'
-  | 'auth.password_changed'
-  | 'auth.mfa_enabled'
-  | 'auth.mfa_disabled'
-  | 'auth.api_key_created'
-  | 'auth.api_key_revoked'
+  | "auth.login"
+  | "auth.logout"
+  | "auth.password_changed"
+  | "auth.mfa_enabled"
+  | "auth.mfa_disabled"
+  | "auth.api_key_created"
+  | "auth.api_key_revoked"
   // User management
-  | 'user.created'
-  | 'user.updated'
-  | 'user.deleted'
-  | 'user.invited'
-  | 'user.role_changed'
+  | "user.created"
+  | "user.updated"
+  | "user.deleted"
+  | "user.invited"
+  | "user.role_changed"
   // Organization
-  | 'organization.created'
-  | 'organization.updated'
-  | 'organization.deleted'
-  | 'organization.member_added'
-  | 'organization.member_removed'
-  | 'organization.settings_updated'
+  | "organization.created"
+  | "organization.updated"
+  | "organization.deleted"
+  | "organization.member_added"
+  | "organization.member_removed"
+  | "organization.settings_updated"
   // Data sources
-  | 'datasource.connected'
-  | 'datasource.disconnected'
-  | 'datasource.synced'
-  | 'datasource.error'
+  | "datasource.connected"
+  | "datasource.disconnected"
+  | "datasource.synced"
+  | "datasource.error"
   // Reports & dashboards
-  | 'report.viewed'
-  | 'report.exported'
-  | 'report.shared'
-  | 'dashboard.viewed'
-  | 'dashboard.created'
-  | 'dashboard.updated'
-  | 'dashboard.deleted'
+  | "report.viewed"
+  | "report.exported"
+  | "report.shared"
+  | "dashboard.viewed"
+  | "dashboard.created"
+  | "dashboard.updated"
+  | "dashboard.deleted"
   // Financial data
-  | 'financial_data.viewed'
-  | 'financial_data.exported'
-  | 'account.created'
-  | 'account.updated'
-  | 'account.deleted'
+  | "financial_data.viewed"
+  | "financial_data.exported"
+  | "account.created"
+  | "account.updated"
+  | "account.deleted"
   // Documents
-  | 'document.uploaded'
-  | 'document.downloaded'
-  | 'document.deleted'
-  | 'document.shared'
+  | "document.uploaded"
+  | "document.downloaded"
+  | "document.deleted"
+  | "document.shared"
   // Subscription
-  | 'subscription.started'
-  | 'subscription.upgraded'
-  | 'subscription.downgraded'
-  | 'subscription.cancelled'
-  | 'payment.succeeded'
-  | 'payment.failed'
+  | "subscription.started"
+  | "subscription.upgraded"
+  | "subscription.downgraded"
+  | "subscription.cancelled"
+  | "payment.succeeded"
+  | "payment.failed"
   // AI/Intelligence
-  | 'ai.query_executed'
-  | 'ai.recommendation_viewed'
-  | 'ai.recommendation_applied'
+  | "ai.query_executed"
+  | "ai.recommendation_viewed"
+  | "ai.recommendation_applied"
   // Admin
-  | 'admin.user_impersonated'
-  | 'admin.data_exported'
-  | 'admin.settings_changed';
+  | "admin.user_impersonated"
+  | "admin.data_exported"
+  | "admin.settings_changed";
 
 export type ResourceType =
-  | 'user'
-  | 'organization'
-  | 'datasource'
-  | 'report'
-  | 'dashboard'
-  | 'document'
-  | 'account'
-  | 'subscription'
-  | 'payment'
-  | 'ai_query'
-  | 'settings';
+  | "user"
+  | "organization"
+  | "datasource"
+  | "report"
+  | "dashboard"
+  | "document"
+  | "account"
+  | "subscription"
+  | "payment"
+  | "ai_query"
+  | "settings";
 
 export interface AuditInput {
   action: AuditAction | string;
@@ -193,7 +193,7 @@ export class AuditRepository {
       this.fallbackLogs.shift(); // Remove oldest
     }
     this.logger.warn(
-      'Audit log stored in fallback memory - MongoDB may be unavailable',
+      "Audit log stored in fallback memory - MongoDB may be unavailable",
     );
   }
 
@@ -205,7 +205,7 @@ export class AuditRepository {
    * Log a successful action
    */
   async logSuccess(
-    input: Omit<AuditInput, 'success' | 'errorMessage'>,
+    input: Omit<AuditInput, "success" | "errorMessage">,
   ): Promise<void> {
     await this.log({ ...input, success: true });
   }
@@ -214,7 +214,7 @@ export class AuditRepository {
    * Log a failed action
    */
   async logFailure(
-    input: Omit<AuditInput, 'success'> & { errorMessage: string },
+    input: Omit<AuditInput, "success"> & { errorMessage: string },
   ): Promise<void> {
     await this.log({ ...input, success: false });
   }
@@ -223,7 +223,7 @@ export class AuditRepository {
    * Log authentication event
    */
   async logAuth(
-    action: 'login' | 'logout' | 'password_changed',
+    action: "login" | "logout" | "password_changed",
     actorId: string,
     actorEmail: string,
     metadata?: {
@@ -238,7 +238,7 @@ export class AuditRepository {
       action: `auth.${action}`,
       actorId,
       actorEmail,
-      resourceType: 'user',
+      resourceType: "user",
       resourceId: actorId,
       ipAddress: metadata?.ipAddress,
       userAgent: metadata?.userAgent,
@@ -262,11 +262,11 @@ export class AuditRepository {
     userAgent?: string;
   }): Promise<void> {
     const action =
-      params.resourceType === 'report'
-        ? 'report.viewed'
-        : params.resourceType === 'dashboard'
-          ? 'dashboard.viewed'
-          : 'financial_data.viewed';
+      params.resourceType === "report"
+        ? "report.viewed"
+        : params.resourceType === "dashboard"
+          ? "dashboard.viewed"
+          : "financial_data.viewed";
 
     await this.log({
       action,
@@ -298,9 +298,9 @@ export class AuditRepository {
   }): Promise<void> {
     await this.log({
       action:
-        params.resourceType === 'report'
-          ? 'report.exported'
-          : 'financial_data.exported',
+        params.resourceType === "report"
+          ? "report.exported"
+          : "financial_data.exported",
       actorId: params.actorId,
       actorEmail: params.actorEmail,
       organizationId: params.organizationId,
@@ -320,7 +320,7 @@ export class AuditRepository {
    * Log data modification
    */
   async logModification(params: {
-    action: 'created' | 'updated' | 'deleted';
+    action: "created" | "updated" | "deleted";
     actorId: string;
     actorEmail?: string;
     organizationId?: string;
@@ -421,7 +421,8 @@ export class AuditRepository {
     }
 
     logs.sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
 
     const offset = query.offset || 0;
@@ -463,11 +464,11 @@ export class AuditRepository {
       { $match: match },
       {
         $group: {
-          _id: '$action',
+          _id: "$action",
           count: { $sum: 1 },
         },
       },
-      { $project: { action: '$_id', count: 1, _id: 0 } },
+      { $project: { action: "$_id", count: 1, _id: 0 } },
       { $sort: { count: -1 as const } },
     ];
 
@@ -494,7 +495,7 @@ export class AuditRepository {
     organizationId: string;
     startDate: Date;
     endDate: Date;
-    format?: 'json' | 'csv';
+    format?: "json" | "csv";
   }): Promise<AuditLog[]> {
     const collection = await this.mongoService.getAuditCollection();
     if (!collection) return [];

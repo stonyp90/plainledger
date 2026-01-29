@@ -30,6 +30,7 @@ import { useI18n } from '../lib/i18n';
 import { crispUtils } from './CrispChat';
 import config from '../lib/config';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ContactForm from './ContactForm';
 
 // =====================================================
 // HELP TOPICS
@@ -525,117 +526,138 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
 
           {activeTab === 'contact' && (
             <div role="tabpanel" id="help-tabpanel-contact" aria-labelledby="help-tab-contact">
-            <div className="space-y-4">
-              {/* Live Chat */}
-              <button
-                onClick={handleOpenChat}
-                className="w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-colors text-left"
-                style={{ 
-                  borderColor: 'rgb(var(--color-border))',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgb(var(--color-primary-500))'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgb(var(--color-border))'}
-              >
-                <div 
-                  className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-                >
-                  <MessageCircle className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                </div>
-                <div>
-                  <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Live Chat' : 'Chat en direct'}
-                  </p>
-                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn 
-                      ? 'Chat with our support team - Available 24/7' 
-                      : 'Discutez avec notre équipe de support - Disponible 24/7'}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
-                    {isEn ? '24/7 availability' : 'Disponibilité 24/7'}
-                  </p>
-                </div>
-              </button>
-
-              {/* Email */}
-              <a
-                href={`mailto:${config.support.email}`}
-                className="w-full p-4 rounded-xl border flex items-center gap-4 hover:bg-muted transition-colors"
+            <div className="space-y-6">
+              {/* Contact Form */}
+              <div 
+                className="p-4 rounded-xl border"
                 style={{ borderColor: 'rgb(var(--color-border))' }}
               >
-                <div 
-                  className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                <h3 
+                  className="font-semibold mb-4"
+                  style={{ color: 'rgb(var(--color-text))' }}
                 >
-                  <Mail className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  {isEn ? 'Send us a message' : 'Envoyez-nous un message'}
+                </h3>
+                <ContactForm source="help-center" onSuccess={onClose} />
+              </div>
+              
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" style={{ borderColor: 'rgb(var(--color-border))' }} />
                 </div>
-                <div>
-                  <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Email Support' : 'Support par courriel'}
-                  </p>
-                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {config.support.email}
-                  </p>
+                <div className="relative flex justify-center text-sm">
+                  <span 
+                    className="px-3"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      color: 'rgb(var(--color-text-muted))'
+                    }}
+                  >
+                    {isEn ? 'Or reach us directly' : 'Ou contactez-nous directement'}
+                  </span>
                 </div>
-                <ExternalLink className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              </a>
+              </div>
+              
+              {/* Quick Contact Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Live Chat */}
+                <button
+                  onClick={handleOpenChat}
+                  className="p-4 rounded-xl border flex items-center gap-3 transition-colors text-left hover:bg-muted"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
+                >
+                  <div 
+                    className="p-2.5 rounded-lg"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  >
+                    <MessageCircle className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Live Chat' : 'Chat en direct'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-success))' }}>
+                      {isEn ? '24/7 available' : 'Disponible 24/7'}
+                    </p>
+                  </div>
+                </button>
 
-              {/* Phone - or use Crisp live chat */}
-              <a
-                href={config.crisp.enabled ? '#' : `tel:${config.support.phoneTel}`}
-                onClick={(e) => {
-                  if (config.crisp.enabled) {
-                    e.preventDefault();
-                    crispUtils.open();
-                  }
-                }}
-                className="w-full p-4 rounded-xl border flex items-center gap-4 hover:bg-muted transition-colors"
-                style={{ borderColor: 'rgb(var(--color-border))' }}
-              >
-                <div 
-                  className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                {/* Email */}
+                <a
+                  href={`mailto:${config.support.email}`}
+                  className="p-4 rounded-xl border flex items-center gap-3 hover:bg-muted transition-colors"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
                 >
-                  <Phone className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                </div>
-                <div>
-                  <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Phone Support' : 'Support téléphonique'}
-                  </p>
-                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {config.support.phone}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
-                    {isEn ? 'Available 24/7' : 'Disponible 24/7'}
-                  </p>
-                </div>
-              </a>
+                  <div 
+                    className="p-2.5 rounded-lg"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  >
+                    <Mail className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Email' : 'Courriel'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {config.support.email}
+                    </p>
+                  </div>
+                </a>
 
-              {/* Knowledge Base */}
-              <button
-                onClick={() => {
-                  navigate('/help/knowledge-base');
-                  onClose();
-                }}
-                className="w-full p-4 rounded-xl border flex items-center gap-4 hover:bg-muted transition-colors text-left"
-                style={{ borderColor: 'rgb(var(--color-border))' }}
-              >
-                <div 
-                  className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                {/* Phone */}
+                <a
+                  href={config.crisp.enabled ? '#' : `tel:${config.support.phoneTel}`}
+                  onClick={(e) => {
+                    if (config.crisp.enabled) {
+                      e.preventDefault();
+                      crispUtils.open();
+                    }
+                  }}
+                  className="p-4 rounded-xl border flex items-center gap-3 hover:bg-muted transition-colors"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
                 >
-                  <Book className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                </div>
-                <div>
-                  <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Knowledge Base' : 'Base de connaissances'}
-                  </p>
-                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Browse our knowledge base' : 'Parcourez notre base de connaissances'}
-                  </p>
-                </div>
-                <ChevronRight className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              </button>
+                  <div 
+                    className="p-2.5 rounded-lg"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  >
+                    <Phone className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Phone' : 'Téléphone'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {config.support.phone}
+                    </p>
+                  </div>
+                </a>
+
+                {/* Knowledge Base */}
+                <button
+                  onClick={() => {
+                    navigate('/help/knowledge-base');
+                    onClose();
+                  }}
+                  className="p-4 rounded-xl border flex items-center gap-3 hover:bg-muted transition-colors text-left"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
+                >
+                  <div 
+                    className="p-2.5 rounded-lg"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  >
+                    <Book className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Knowledge Base' : 'Base de connaissances'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? 'Browse articles' : 'Parcourir les articles'}
+                    </p>
+                  </div>
+                </button>
+              </div>
             </div>
             </div>
           )}

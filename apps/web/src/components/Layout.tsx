@@ -51,7 +51,9 @@ import {
   Lock,
   Database,
   Share2,
+  LifeBuoy,
 } from 'lucide-react';
+import { HelpCenter } from './HelpCenter';
 
 interface LayoutProps {
   children: ReactNode;
@@ -164,6 +166,15 @@ const settingsSubmenuItems: SettingsSubmenuItem[] = [
     icon: Database, 
     show: (p) => p.isInternalStaff 
   },
+  { 
+    id: 'help-support', 
+    name: { en: 'Help & Support', fr: 'Aide & Support' }, 
+    description: { en: 'Contact us, FAQ, knowledge base', fr: 'Nous contacter, FAQ, base de connaissances' },
+    icon: LifeBuoy, 
+    show: () => true,
+    isLink: true,
+    href: 'help-center' // Special flag to open help center modal
+  },
 ];
 
 // Settings Submenu Button Component with Integrated Flyout (Desktop) - Opens flyout on hover, left-aligned
@@ -178,9 +189,10 @@ interface SettingsSubmenuProps {
     isInternalStaff: boolean;
     isAdmin: boolean;
   };
+  onOpenHelpCenter?: () => void;
 }
 
-function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: SettingsSubmenuProps) {
+function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onOpenHelpCenter }: SettingsSubmenuProps) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -203,7 +215,9 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
   };
 
   const handleItemClick = (item: SettingsSubmenuItem) => {
-    if (item.isLink && item.href) {
+    if (item.href === 'help-center') {
+      onOpenHelpCenter?.();
+    } else if (item.isLink && item.href) {
       navigate(item.href);
     } else {
       navigate(`/app/settings?tab=${item.id}`);
@@ -343,16 +357,19 @@ interface MobileSettingsSubmenuProps {
     isAdmin: boolean;
   };
   onNavigate: () => void;
+  onOpenHelpCenter?: () => void;
 }
 
-function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: MobileSettingsSubmenuProps) {
+function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate, onOpenHelpCenter }: MobileSettingsSubmenuProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
 
   const handleItemClick = (item: SettingsSubmenuItem) => {
-    if (item.isLink && item.href) {
+    if (item.href === 'help-center') {
+      onOpenHelpCenter?.();
+    } else if (item.isLink && item.href) {
       navigate(item.href);
     } else {
       navigate(`/app/settings?tab=${item.id}`);
@@ -409,6 +426,7 @@ export default function Layout({ children }: LayoutProps) {
   const { toggleTheme } = useTheme();
   const searchModal = useSearchModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     // Check localStorage for saved preference
     try {

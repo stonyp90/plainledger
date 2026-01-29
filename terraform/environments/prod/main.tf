@@ -234,6 +234,56 @@ resource "aws_secretsmanager_secret_version" "keycloak_client" {
 }
 
 # ------------------------------------------------------------------------------
+# MongoDB Atlas (Analytics & Audit Database)
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "mongodb" {
+  name        = "${var.project}/${var.environment}/mongodb"
+  description = "MongoDB Atlas connection for analytics and audit logging"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "mongodb" {
+  secret_id = aws_secretsmanager_secret.mongodb.id
+  secret_string = jsonencode({
+    uri      = var.mongodb_uri
+    database = var.mongodb_database
+  })
+}
+
+# ------------------------------------------------------------------------------
+# HubSpot CRM
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "hubspot" {
+  name        = "${var.project}/${var.environment}/hubspot"
+  description = "HubSpot CRM API credentials"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "hubspot" {
+  secret_id = aws_secretsmanager_secret.hubspot.id
+  secret_string = jsonencode({
+    access_token = var.hubspot_access_token
+  })
+}
+
+# ------------------------------------------------------------------------------
+# PostHog Analytics
+# ------------------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "posthog" {
+  name        = "${var.project}/${var.environment}/posthog"
+  description = "PostHog analytics API key"
+  kms_key_id  = module.database.kms_key_arn
+}
+
+resource "aws_secretsmanager_secret_version" "posthog" {
+  secret_id = aws_secretsmanager_secret.posthog.id
+  secret_string = jsonencode({
+    api_key = var.posthog_api_key
+    host    = var.posthog_host
+  })
+}
+
+# ------------------------------------------------------------------------------
 # ECS Module
 # ------------------------------------------------------------------------------
 module "ecs" {
@@ -258,6 +308,9 @@ module "ecs" {
   keycloak_smtp_secret_arn   = aws_secretsmanager_secret.keycloak_smtp.arn
   keycloak_client_secret_arn = aws_secretsmanager_secret.keycloak_client.arn
   quickbooks_secret_arn      = aws_secretsmanager_secret.quickbooks.arn
+  mongodb_secret_arn         = aws_secretsmanager_secret.mongodb.arn
+  hubspot_secret_arn         = aws_secretsmanager_secret.hubspot.arn
+  posthog_secret_arn         = aws_secretsmanager_secret.posthog.arn
   kms_key_arn                = module.database.kms_key_arn
 
   ecr_web_repository_url      = aws_ecr_repository.web.repository_url

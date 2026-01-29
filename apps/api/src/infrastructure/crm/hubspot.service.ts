@@ -19,10 +19,12 @@
  * - other -> churned
  */
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Client } from '@hubspot/api-client';
-import type { JourneyStage } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Client } from "@hubspot/api-client";
+import { FilterOperatorEnum } from "@hubspot/api-client/lib/codegen/crm/contacts";
+import { AssociationSpecAssociationCategoryEnum } from "@hubspot/api-client/lib/codegen/crm/associations/v4";
+import type { JourneyStage } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
 
 // ============================================================================
 // Types
@@ -56,7 +58,7 @@ export interface HubSpotDeal {
   associatedContactId?: string;
   // Custom properties
   subscriptionTier?: string;
-  billingCycle?: 'monthly' | 'yearly';
+  billingCycle?: "monthly" | "yearly";
 }
 
 // ============================================================================
@@ -71,29 +73,29 @@ export class HubSpotService implements OnModuleInit {
 
   // Map journey stages to HubSpot lifecycle stages
   private readonly lifecycleMap: Record<JourneyStage, string> = {
-    signup: 'subscriber',
-    onboarding: 'lead',
-    activated: 'marketingqualifiedlead',
-    engaged: 'salesqualifiedlead',
-    trial: 'opportunity',
-    converted: 'customer',
-    churned: 'other',
+    signup: "subscriber",
+    onboarding: "lead",
+    activated: "marketingqualifiedlead",
+    engaged: "salesqualifiedlead",
+    trial: "opportunity",
+    converted: "customer",
+    churned: "other",
   };
 
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
-    const accessToken = this.configService.get<string>('HUBSPOT_ACCESS_TOKEN');
+    const accessToken = this.configService.get<string>("HUBSPOT_ACCESS_TOKEN");
 
     if (!accessToken) {
-      this.logger.warn('HubSpot not configured - CRM sync disabled');
+      this.logger.warn("HubSpot not configured - CRM sync disabled");
       return;
     }
 
     try {
       this.client = new Client({ accessToken });
       this.enabled = true;
-      this.logger.log('HubSpot CRM integration initialized');
+      this.logger.log("HubSpot CRM integration initialized");
     } catch (error) {
       this.logger.error(`Failed to initialize HubSpot: ${error.message}`);
     }
@@ -128,16 +130,24 @@ export class HubSpotService implements OnModuleInit {
     if (contact.phone) properties.phone = contact.phone;
     if (contact.website) properties.website = contact.website;
     if (contact.industry) properties.industry = contact.industry;
-    if (contact.lifecycleStage) properties.lifecyclestage = contact.lifecycleStage;
+    if (contact.lifecycleStage)
+      properties.lifecyclestage = contact.lifecycleStage;
 
     // Map custom properties (must be created in HubSpot first)
-    if (contact.plainledgerId) properties.plainledger_id = contact.plainledgerId;
-    if (contact.organizationId) properties.plainledger_org_id = contact.organizationId;
-    if (contact.subscriptionTier) properties.plainledger_tier = contact.subscriptionTier;
-    if (contact.signupDate) properties.plainledger_signup_date = contact.signupDate;
-    if (contact.lastActivityDate) properties.plainledger_last_activity = contact.lastActivityDate;
+    if (contact.plainledgerId)
+      properties.plainledger_id = contact.plainledgerId;
+    if (contact.organizationId)
+      properties.plainledger_org_id = contact.organizationId;
+    if (contact.subscriptionTier)
+      properties.plainledger_tier = contact.subscriptionTier;
+    if (contact.signupDate)
+      properties.plainledger_signup_date = contact.signupDate;
+    if (contact.lastActivityDate)
+      properties.plainledger_last_activity = contact.lastActivityDate;
     if (contact.connectedSources !== undefined) {
-      properties.plainledger_connected_sources = String(contact.connectedSources);
+      properties.plainledger_connected_sources = String(
+        contact.connectedSources,
+      );
     }
     if (contact.totalReports !== undefined) {
       properties.plainledger_total_reports = String(contact.totalReports);
@@ -150,21 +160,23 @@ export class HubSpotService implements OnModuleInit {
           {
             filters: [
               {
-                propertyName: 'email',
-                operator: 'EQ',
+                propertyName: "email",
+                operator: FilterOperatorEnum.Eq,
                 value: contact.email,
               },
             ],
           },
         ],
-        properties: ['email'],
+        properties: ["email"],
         limit: 1,
       });
 
       if (searchResponse.results.length > 0) {
         // Update existing contact
         const contactId = searchResponse.results[0].id;
-        await this.client.crm.contacts.basicApi.update(contactId, { properties });
+        await this.client.crm.contacts.basicApi.update(contactId, {
+          properties,
+        });
         this.logger.debug(`Updated HubSpot contact: ${contact.email}`);
         return contactId;
       } else {
@@ -176,7 +188,9 @@ export class HubSpotService implements OnModuleInit {
         return createResponse.id;
       }
     } catch (error) {
-      this.logger.error(`Failed to upsert contact ${contact.email}: ${error.message}`);
+      this.logger.error(
+        `Failed to upsert contact ${contact.email}: ${error.message}`,
+      );
       return null;
     }
   }
@@ -198,24 +212,29 @@ export class HubSpotService implements OnModuleInit {
           {
             filters: [
               {
-                propertyName: 'email',
-                operator: 'EQ',
+                propertyName: "email",
+                operator: FilterOperatorEnum.Eq,
                 value: email,
               },
             ],
           },
         ],
-        properties: ['email'],
+        properties: ["email"],
         limit: 1,
       });
 
       if (searchResponse.results.length > 0) {
-        await this.client.crm.contacts.basicApi.update(searchResponse.results[0].id, {
-          properties: {
-            lifecyclestage: lifecycleStage,
+        await this.client.crm.contacts.basicApi.update(
+          searchResponse.results[0].id,
+          {
+            properties: {
+              lifecyclestage: lifecycleStage,
+            },
           },
-        });
-        this.logger.debug(`Updated lifecycle stage for ${email} to ${lifecycleStage}`);
+        );
+        this.logger.debug(
+          `Updated lifecycle stage for ${email} to ${lifecycleStage}`,
+        );
       }
     } catch (error) {
       this.logger.error(`Failed to update lifecycle stage: ${error.message}`);
@@ -234,22 +253,22 @@ export class HubSpotService implements OnModuleInit {
           {
             filters: [
               {
-                propertyName: 'email',
-                operator: 'EQ',
+                propertyName: "email",
+                operator: FilterOperatorEnum.Eq,
                 value: email,
               },
             ],
           },
         ],
         properties: [
-          'email',
-          'firstname',
-          'lastname',
-          'company',
-          'phone',
-          'website',
-          'industry',
-          'lifecyclestage',
+          "email",
+          "firstname",
+          "lastname",
+          "company",
+          "phone",
+          "website",
+          "industry",
+          "lifecyclestage",
         ],
         limit: 1,
       });
@@ -259,13 +278,13 @@ export class HubSpotService implements OnModuleInit {
       const props = searchResponse.results[0].properties;
       return {
         email: props.email || email,
-        firstName: props.firstname,
-        lastName: props.lastname,
-        company: props.company,
-        phone: props.phone,
-        website: props.website,
-        industry: props.industry,
-        lifecycleStage: props.lifecyclestage,
+        firstName: props.firstname ?? undefined,
+        lastName: props.lastname ?? undefined,
+        company: props.company ?? undefined,
+        phone: props.phone ?? undefined,
+        website: props.website ?? undefined,
+        industry: props.industry ?? undefined,
+        lifecycleStage: props.lifecyclestage ?? undefined,
       };
     } catch (error) {
       this.logger.error(`Failed to get contact ${email}: ${error.message}`);
@@ -280,7 +299,10 @@ export class HubSpotService implements OnModuleInit {
   /**
    * Create a deal (for trial/subscription)
    */
-  async createDeal(deal: HubSpotDeal, contactEmail?: string): Promise<string | null> {
+  async createDeal(
+    deal: HubSpotDeal,
+    contactEmail?: string,
+  ): Promise<string | null> {
     if (!this.client) return null;
 
     const properties: Record<string, string> = {
@@ -291,8 +313,10 @@ export class HubSpotService implements OnModuleInit {
     if (deal.amount) properties.amount = String(deal.amount);
     if (deal.pipeline) properties.pipeline = deal.pipeline;
     if (deal.closeDate) properties.closedate = deal.closeDate;
-    if (deal.subscriptionTier) properties.plainledger_tier = deal.subscriptionTier;
-    if (deal.billingCycle) properties.plainledger_billing_cycle = deal.billingCycle;
+    if (deal.subscriptionTier)
+      properties.plainledger_tier = deal.subscriptionTier;
+    if (deal.billingCycle)
+      properties.plainledger_billing_cycle = deal.billingCycle;
 
     try {
       const dealResponse = await this.client.crm.deals.basicApi.create({
@@ -300,15 +324,24 @@ export class HubSpotService implements OnModuleInit {
       });
 
       // Associate with contact if provided
+      // In HubSpot API v3/v13+, associations are created via the associations API
       if (contactEmail) {
         const contactId = await this.getContactId(contactEmail);
         if (contactId) {
-          await this.client.crm.deals.associationsApi.create(
-            dealResponse.id,
-            'contacts',
-            contactId,
-            [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }],
-          );
+          try {
+            await this.client.crm.associations.v4.basicApi.create(
+              "deals",
+              dealResponse.id,
+              "contacts",
+              contactId,
+              [{ associationCategory: AssociationSpecAssociationCategoryEnum.HubspotDefined, associationTypeId: 3 }],
+            );
+          } catch (assocError) {
+            // Log but don't fail if association fails
+            this.logger.warn(
+              `Failed to associate deal ${dealResponse.id} with contact ${contactId}: ${assocError.message}`,
+            );
+          }
         }
       }
 
@@ -356,10 +389,10 @@ export class HubSpotService implements OnModuleInit {
       firstName: user.firstName,
       lastName: user.lastName,
       company: user.organizationName,
-      lifecycleStage: 'subscriber',
+      lifecycleStage: "subscriber",
       plainledgerId: user.id,
       organizationId: user.organizationId,
-      subscriptionTier: 'free',
+      subscriptionTier: "free",
       signupDate: new Date().toISOString(),
     });
   }
@@ -374,7 +407,7 @@ export class HubSpotService implements OnModuleInit {
     if (contactId) {
       await this.client.crm.contacts.basicApi.update(contactId, {
         properties: {
-          lifecyclestage: 'marketingqualifiedlead',
+          lifecyclestage: "marketingqualifiedlead",
           plainledger_connected_sources: String(connectedSources),
           plainledger_last_activity: new Date().toISOString(),
         },
@@ -393,14 +426,15 @@ export class HubSpotService implements OnModuleInit {
     trialEndDate: Date;
   }): Promise<void> {
     // Update contact to opportunity stage
-    await this.updateLifecycleStage(user.email, 'trial');
+    await this.updateLifecycleStage(user.email, "trial");
 
     // Create a deal for the trial
     await this.createDeal(
       {
-        dealName: `${user.firstName || 'User'} ${user.lastName || ''} - ${user.tier} Trial`.trim(),
-        dealStage: 'qualifiedtobuy',
-        closeDate: user.trialEndDate.toISOString().split('T')[0],
+        dealName:
+          `${user.firstName || "User"} ${user.lastName || ""} - ${user.tier} Trial`.trim(),
+        dealStage: "qualifiedtobuy",
+        closeDate: user.trialEndDate.toISOString().split("T")[0],
         subscriptionTier: user.tier,
       },
       user.email,
@@ -414,9 +448,9 @@ export class HubSpotService implements OnModuleInit {
     email: string;
     tier: string;
     amount: number;
-    billingCycle: 'monthly' | 'yearly';
+    billingCycle: "monthly" | "yearly";
   }): Promise<void> {
-    await this.updateLifecycleStage(user.email, 'converted');
+    await this.updateLifecycleStage(user.email, "converted");
 
     // Update contact with subscription info
     const contactId = await this.getContactId(user.email);
@@ -433,7 +467,7 @@ export class HubSpotService implements OnModuleInit {
    * Sync churn
    */
   async syncChurn(email: string, reason?: string): Promise<void> {
-    await this.updateLifecycleStage(email, 'churned');
+    await this.updateLifecycleStage(email, "churned");
   }
 
   // --------------------------------------------------------------------------
@@ -449,14 +483,14 @@ export class HubSpotService implements OnModuleInit {
           {
             filters: [
               {
-                propertyName: 'email',
-                operator: 'EQ',
+                propertyName: "email",
+                operator: FilterOperatorEnum.Eq,
                 value: email,
               },
             ],
           },
         ],
-        properties: ['email'],
+        properties: ["email"],
         limit: 1,
       });
 

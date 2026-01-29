@@ -100,7 +100,12 @@ import { JourneyTrackingService } from "@application/services/journey-tracking.s
 import { CustomerJourneyJob } from "@infrastructure/jobs/customer-journey.job";
 
 // MongoDB (Analytics & Audit)
-import { MongoDBModule, MongoDBService, AnalyticsRepository, AuditRepository } from "@infrastructure/persistence/mongodb";
+import {
+  MongoDBModule,
+  MongoDBService,
+  AnalyticsRepository,
+  AuditRepository,
+} from "@infrastructure/persistence/mongodb";
 
 // CRM (HubSpot)
 import { HubSpotService } from "@infrastructure/crm/hubspot.service";

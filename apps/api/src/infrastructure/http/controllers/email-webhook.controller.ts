@@ -165,7 +165,8 @@ export class EmailWebhookController {
 
       const userId = customHeaders?.user;
       const workflowId = customHeaders?.workflow;
-      const category = customHeaders?.category as EmailEventEntity["emailCategory"];
+      const category =
+        customHeaders?.category as EmailEventEntity["emailCategory"];
 
       // Process based on event type
       switch (event.eventType) {
@@ -193,7 +194,10 @@ export class EmailWebhookController {
 
       return { status: "processed" };
     } catch (error) {
-      this.logger.error(`Failed to process SES event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to process SES event: ${error.message}`,
+        error.stack,
+      );
       // Return 200 anyway to prevent SNS retries
       return { status: "error" };
     }
@@ -407,7 +411,9 @@ export class EmailWebhookController {
 
   private async unsubscribeFromMarketing(email: string): Promise<void> {
     try {
-      const user = await this.userProfileRepository.findOne({ where: { email } });
+      const user = await this.userProfileRepository.findOne({
+        where: { email },
+      });
       if (user) {
         const prefs = user.emailPreferences || {
           marketingOptIn: true,
@@ -418,10 +424,15 @@ export class EmailWebhookController {
         prefs.marketingOptIn = false;
         prefs.unsubscribedAt = new Date().toISOString();
         prefs.unsubscribeReason = "spam_complaint";
-        await this.userProfileRepository.update({ email }, { emailPreferences: prefs });
+        await this.userProfileRepository.update(
+          { email },
+          { emailPreferences: prefs },
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to unsubscribe from marketing: ${error.message}`);
+      this.logger.error(
+        `Failed to unsubscribe from marketing: ${error.message}`,
+      );
     }
   }
 

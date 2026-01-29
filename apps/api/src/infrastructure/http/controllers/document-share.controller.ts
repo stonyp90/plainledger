@@ -147,8 +147,7 @@ export class DocumentShareController {
     }
 
     // For local dev testing, use fallback UUID values if no auth
-    const userId =
-      req.user?.sub || "00000000-0000-0000-0000-000000000001";
+    const userId = req.user?.sub || "00000000-0000-0000-0000-000000000001";
     const organizationId =
       req.user?.tenant_id ||
       req.user?.organization ||
@@ -202,8 +201,7 @@ export class DocumentShareController {
   async listMyShares(@Req() req: AuthenticatedRequest): Promise<ShareInfo[]> {
     // For local dev testing, use fallback values if no auth
     // Using a valid UUID for dev testing
-    const userId =
-      req.user?.sub || "00000000-0000-0000-0000-000000000001";
+    const userId = req.user?.sub || "00000000-0000-0000-0000-000000000001";
 
     return this.documentShareService.listUserShares(userId);
   }

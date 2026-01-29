@@ -98,7 +98,7 @@ export class EmailEventEntity {
   @Column({ type: "jsonb", nullable: true })
   metadata?: {
     // Bounce details
-    bounceType?: "Permanent" | "Transient";
+    bounceType?: "Permanent" | "Transient" | "Undetermined";
     bounceSubType?: string;
     diagnosticCode?: string;
     // Complaint details

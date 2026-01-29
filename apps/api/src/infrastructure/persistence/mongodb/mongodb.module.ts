@@ -16,9 +16,9 @@
  * @see https://www.mongodb.com/docs/drivers/node/current/
  */
 
-import { Module, Global, OnModuleDestroy, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { MongoClient, Db, Collection } from 'mongodb';
+import { Module, Global, OnModuleDestroy, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { MongoClient, Db, Collection } from "mongodb";
 
 // ============================================================================
 // Types
@@ -128,9 +128,11 @@ export class MongoDBService implements OnModuleDestroy {
       return this.db;
     }
 
-    const uri = this.configService.get<string>('MONGODB_URI');
+    const uri = this.configService.get<string>("MONGODB_URI");
     if (!uri) {
-      this.logger.warn('MongoDB URI not configured - analytics will be stored in PostgreSQL only');
+      this.logger.warn(
+        "MongoDB URI not configured - analytics will be stored in PostgreSQL only",
+      );
       return null;
     }
 
@@ -145,12 +147,14 @@ export class MongoDBService implements OnModuleDestroy {
         socketTimeoutMS: 45000,
         serverSelectionTimeoutMS: 10000,
         retryWrites: true,
-        w: 'majority',
+        w: "majority",
       });
 
       await this.client.connect();
 
-      const dbName = this.configService.get<string>('MONGODB_DATABASE') || 'plainledger_analytics';
+      const dbName =
+        this.configService.get<string>("MONGODB_DATABASE") ||
+        "plainledger_analytics";
       this.db = this.client.db(dbName);
 
       // Create indexes
@@ -176,7 +180,7 @@ export class MongoDBService implements OnModuleDestroy {
       this.client = null;
       this.db = null;
       this.connected = false;
-      this.logger.log('Disconnected from MongoDB');
+      this.logger.log("Disconnected from MongoDB");
     }
   }
 
@@ -185,38 +189,46 @@ export class MongoDBService implements OnModuleDestroy {
 
     try {
       // Analytics events indexes
-      const analyticsCollection = this.db.collection('analytics_events');
+      const analyticsCollection = this.db.collection("analytics_events");
       await analyticsCollection.createIndexes([
-        { key: { timestamp: -1 }, name: 'timestamp_desc' },
-        { key: { userId: 1, timestamp: -1 }, name: 'user_timestamp' },
-        { key: { organizationId: 1, timestamp: -1 }, name: 'org_timestamp' },
-        { key: { eventName: 1, timestamp: -1 }, name: 'event_timestamp' },
-        { key: { sessionId: 1 }, name: 'session_id' },
+        { key: { timestamp: -1 }, name: "timestamp_desc" },
+        { key: { userId: 1, timestamp: -1 }, name: "user_timestamp" },
+        { key: { organizationId: 1, timestamp: -1 }, name: "org_timestamp" },
+        { key: { eventName: 1, timestamp: -1 }, name: "event_timestamp" },
+        { key: { sessionId: 1 }, name: "session_id" },
         // TTL index to auto-delete old events (365 days for free tier)
-        { key: { timestamp: 1 }, name: 'ttl_365_days', expireAfterSeconds: 365 * 24 * 60 * 60 },
+        {
+          key: { timestamp: 1 },
+          name: "ttl_365_days",
+          expireAfterSeconds: 365 * 24 * 60 * 60,
+        },
       ]);
 
       // Audit logs indexes
-      const auditCollection = this.db.collection('audit_logs');
+      const auditCollection = this.db.collection("audit_logs");
       await auditCollection.createIndexes([
-        { key: { timestamp: -1 }, name: 'timestamp_desc' },
-        { key: { actorId: 1, timestamp: -1 }, name: 'actor_timestamp' },
-        { key: { organizationId: 1, timestamp: -1 }, name: 'org_timestamp' },
-        { key: { resourceType: 1, resourceId: 1 }, name: 'resource' },
-        { key: { action: 1, timestamp: -1 }, name: 'action_timestamp' },
+        { key: { timestamp: -1 }, name: "timestamp_desc" },
+        { key: { actorId: 1, timestamp: -1 }, name: "actor_timestamp" },
+        { key: { organizationId: 1, timestamp: -1 }, name: "org_timestamp" },
+        { key: { resourceType: 1, resourceId: 1 }, name: "resource" },
+        { key: { action: 1, timestamp: -1 }, name: "action_timestamp" },
         // Keep audit logs for 7 years (compliance requirement)
-        { key: { timestamp: 1 }, name: 'ttl_7_years', expireAfterSeconds: 7 * 365 * 24 * 60 * 60 },
+        {
+          key: { timestamp: 1 },
+          name: "ttl_7_years",
+          expireAfterSeconds: 7 * 365 * 24 * 60 * 60,
+        },
       ]);
 
       // Customer journey indexes
-      const journeyCollection = this.db.collection('customer_journey');
+      const journeyCollection = this.db.collection("customer_journey");
       await journeyCollection.createIndexes([
-        { key: { userId: 1, timestamp: -1 }, name: 'user_timestamp' },
-        { key: { stage: 1, timestamp: -1 }, name: 'stage_timestamp' },
-        { key: { organizationId: 1, stage: 1 }, name: 'org_stage' },
+        { key: { userId: 1, timestamp: -1 }, name: "user_timestamp" },
+        { key: { stage: 1, timestamp: -1 }, name: "stage_timestamp" },
+        { key: { organizationId: 1, stage: 1 }, name: "org_stage" },
       ]);
 
-      this.logger.log('MongoDB indexes created');
+      this.logger.log("MongoDB indexes created");
     } catch (error) {
       this.logger.error(`Failed to create indexes: ${error.message}`);
     }
@@ -228,17 +240,17 @@ export class MongoDBService implements OnModuleDestroy {
 
   async getAnalyticsCollection(): Promise<Collection<AnalyticsEvent> | null> {
     const db = await this.connect();
-    return db?.collection<AnalyticsEvent>('analytics_events') || null;
+    return db?.collection<AnalyticsEvent>("analytics_events") || null;
   }
 
   async getAuditCollection(): Promise<Collection<AuditLog> | null> {
     const db = await this.connect();
-    return db?.collection<AuditLog>('audit_logs') || null;
+    return db?.collection<AuditLog>("audit_logs") || null;
   }
 
   async getJourneyCollection(): Promise<Collection<CustomerJourneyEvent> | null> {
     const db = await this.connect();
-    return db?.collection<CustomerJourneyEvent>('customer_journey') || null;
+    return db?.collection<CustomerJourneyEvent>("customer_journey") || null;
   }
 
   // --------------------------------------------------------------------------
@@ -263,7 +275,7 @@ export class MongoDBService implements OnModuleDestroy {
   // --------------------------------------------------------------------------
 
   isConfigured(): boolean {
-    return !!this.configService.get<string>('MONGODB_URI');
+    return !!this.configService.get<string>("MONGODB_URI");
   }
 
   isConnected(): boolean {

@@ -146,7 +146,10 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
           var.stripe_secret_arn,
           var.novu_secret_arn,
           var.quickbooks_secret_arn,
-          var.keycloak_client_secret_arn
+          var.keycloak_client_secret_arn,
+          var.mongodb_secret_arn,
+          var.hubspot_secret_arn,
+          var.posthog_secret_arn
         ])
       },
       {
@@ -703,6 +706,29 @@ resource "aws_ecs_task_definition" "api" {
         {
           name      = "QUICKBOOKS_ENVIRONMENT"
           valueFrom = "${var.quickbooks_secret_arn}:environment::"
+        }
+      ] : [], var.mongodb_secret_arn != "" ? [
+        {
+          name      = "MONGODB_URI"
+          valueFrom = "${var.mongodb_secret_arn}:uri::"
+        },
+        {
+          name      = "MONGODB_DATABASE"
+          valueFrom = "${var.mongodb_secret_arn}:database::"
+        }
+      ] : [], var.hubspot_secret_arn != "" ? [
+        {
+          name      = "HUBSPOT_ACCESS_TOKEN"
+          valueFrom = "${var.hubspot_secret_arn}:access_token::"
+        }
+      ] : [], var.posthog_secret_arn != "" ? [
+        {
+          name      = "POSTHOG_API_KEY"
+          valueFrom = "${var.posthog_secret_arn}:api_key::"
+        },
+        {
+          name      = "POSTHOG_HOST"
+          valueFrom = "${var.posthog_secret_arn}:host::"
         }
       ] : [])
 

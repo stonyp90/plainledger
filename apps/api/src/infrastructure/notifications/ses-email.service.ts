@@ -25,7 +25,11 @@ import * as crypto from "crypto";
 // Types
 // ============================================================================
 
-export type EmailCategory = "transactional" | "marketing" | "journey" | "security";
+export type EmailCategory =
+  | "transactional"
+  | "marketing"
+  | "journey"
+  | "security";
 
 export interface SESEmailOptions {
   to: string;
@@ -132,7 +136,10 @@ export class SESEmailService implements OnModuleInit {
       t: Date.now(),
     };
     const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
-    const secret = this.configService.get<string>("UNSUBSCRIBE_SECRET", "plainledger-secret");
+    const secret = this.configService.get<string>(
+      "UNSUBSCRIBE_SECRET",
+      "plainledger-secret",
+    );
     const signature = crypto
       .createHmac("sha256", secret)
       .update(data)
@@ -147,7 +154,11 @@ export class SESEmailService implements OnModuleInit {
   private buildRawEmail(options: SESEmailOptions): string {
     const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(2)}`;
     const unsubscribeToken = options.userId
-      ? this.generateUnsubscribeToken(options.userId, options.to, options.category)
+      ? this.generateUnsubscribeToken(
+          options.userId,
+          options.to,
+          options.category,
+        )
       : null;
     const unsubscribeUrl = unsubscribeToken
       ? `${this.baseUrl}/api/unsubscribe?token=${unsubscribeToken}`
@@ -167,7 +178,11 @@ export class SESEmailService implements OnModuleInit {
 
     // Add List-Unsubscribe headers for marketing/journey emails (RFC 8058)
     // Required by Gmail/Yahoo for bulk senders
-    if (options.includeUnsubscribe || options.category === "marketing" || options.category === "journey") {
+    if (
+      options.includeUnsubscribe ||
+      options.category === "marketing" ||
+      options.category === "journey"
+    ) {
       headers.push(`List-Unsubscribe: <${unsubscribeUrl}>`);
       headers.push(`List-Unsubscribe-Post: List-Unsubscribe=One-Click`);
     }

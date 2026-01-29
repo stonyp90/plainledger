@@ -79,8 +79,10 @@ export class JourneyTrackingService {
    * Record user signup
    */
   async recordSignup(userId: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
-    
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
+
     const now = new Date().toISOString();
     const journeyData: JourneyData = {
       signupAt: now,
@@ -121,17 +123,16 @@ export class JourneyTrackingService {
    * Record email verification
    */
   async recordEmailVerified(userId: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = this.updateJourneyData(user.journeyData, {
       emailVerifiedAt: new Date().toISOString(),
     });
 
-    await this.userProfileRepository.update(
-      { id: userId },
-      { journeyData },
-    );
+    await this.userProfileRepository.update({ id: userId }, { journeyData });
 
     this.logger.log(`Journey: User ${userId} verified email`);
   }
@@ -140,7 +141,9 @@ export class JourneyTrackingService {
    * Record onboarding started
    */
   async recordOnboardingStarted(userId: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = this.updateJourneyData(user.journeyData, {
@@ -162,17 +165,16 @@ export class JourneyTrackingService {
    * Record onboarding completed
    */
   async recordOnboardingCompleted(userId: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = this.updateJourneyData(user.journeyData, {
       onboardingCompletedAt: new Date().toISOString(),
     });
 
-    await this.userProfileRepository.update(
-      { id: userId },
-      { journeyData },
-    );
+    await this.userProfileRepository.update({ id: userId }, { journeyData });
 
     this.logger.log(`Journey: User ${userId} completed onboarding`);
   }
@@ -180,8 +182,13 @@ export class JourneyTrackingService {
   /**
    * Record first connection (data source connected)
    */
-  async recordFirstConnection(userId: string, providerName: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+  async recordFirstConnection(
+    userId: string,
+    providerName: string,
+  ): Promise<void> {
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     // Only update if this is truly the first connection
@@ -209,24 +216,32 @@ export class JourneyTrackingService {
         providerName,
       });
     } catch (error) {
-      this.logger.error(`Failed to send first connection notification: ${error.message}`);
+      this.logger.error(
+        `Failed to send first connection notification: ${error.message}`,
+      );
     }
 
     // Sync activation to HubSpot CRM
     try {
       await this.hubspotService.syncActivation(user.email, 1);
     } catch (error) {
-      this.logger.error(`Failed to sync activation to HubSpot: ${error.message}`);
+      this.logger.error(
+        `Failed to sync activation to HubSpot: ${error.message}`,
+      );
     }
 
-    this.logger.log(`Journey: User ${userId} connected first data source (${providerName})`);
+    this.logger.log(
+      `Journey: User ${userId} connected first data source (${providerName})`,
+    );
   }
 
   /**
    * Record first report generated
    */
   async recordFirstReport(userId: string, reportType: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     // Only update if this is truly the first report
@@ -247,14 +262,22 @@ export class JourneyTrackingService {
       },
     );
 
-    this.logger.log(`Journey: User ${userId} generated first report (${reportType})`);
+    this.logger.log(
+      `Journey: User ${userId} generated first report (${reportType})`,
+    );
   }
 
   /**
    * Record trial started
    */
-  async recordTrialStarted(userId: string, trialDays: number = 14, tier: string = 'pro'): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+  async recordTrialStarted(
+    userId: string,
+    trialDays: number = 14,
+    tier: string = "pro",
+  ): Promise<void> {
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const now = new Date();
@@ -286,14 +309,25 @@ export class JourneyTrackingService {
       this.logger.error(`Failed to sync trial to HubSpot: ${error.message}`);
     }
 
-    this.logger.log(`Journey: User ${userId} started trial (ends ${trialEnds.toISOString()})`);
+    this.logger.log(
+      `Journey: User ${userId} started trial (ends ${trialEnds.toISOString()})`,
+    );
   }
 
   /**
    * Record conversion (paid subscription)
    */
-  async recordConversion(userId: string, subscription?: { tier: string; amount: number; billingCycle: 'monthly' | 'yearly' }): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+  async recordConversion(
+    userId: string,
+    subscription?: {
+      tier: string;
+      amount: number;
+      billingCycle: "monthly" | "yearly";
+    },
+  ): Promise<void> {
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = this.updateJourneyData(user.journeyData, {
@@ -318,7 +352,9 @@ export class JourneyTrackingService {
           billingCycle: subscription.billingCycle,
         });
       } catch (error) {
-        this.logger.error(`Failed to sync conversion to HubSpot: ${error.message}`);
+        this.logger.error(
+          `Failed to sync conversion to HubSpot: ${error.message}`,
+        );
       }
     }
 
@@ -329,7 +365,9 @@ export class JourneyTrackingService {
    * Record churn (cancellation or inactivity)
    */
   async recordChurn(userId: string, reason?: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = this.updateJourneyData(user.journeyData, {
@@ -362,7 +400,9 @@ export class JourneyTrackingService {
    * Record user activity (login, page view, etc.)
    */
   async recordActivity(userId: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = user.journeyData || this.getDefaultJourneyData();
@@ -376,17 +416,16 @@ export class JourneyTrackingService {
     journeyData.daysActive = daysActive;
     journeyData.sessionsCount = (journeyData.sessionsCount || 0) + 1;
 
-    await this.userProfileRepository.update(
-      { id: userId },
-      { journeyData },
-    );
+    await this.userProfileRepository.update({ id: userId }, { journeyData });
   }
 
   /**
    * Record feature usage
    */
   async recordFeatureUsage(userId: string, feature: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = user.journeyData || this.getDefaultJourneyData();
@@ -394,10 +433,7 @@ export class JourneyTrackingService {
       journeyData.featuresUsed.push(feature);
     }
 
-    await this.userProfileRepository.update(
-      { id: userId },
-      { journeyData },
-    );
+    await this.userProfileRepository.update({ id: userId }, { journeyData });
   }
 
   // ---------------------------------------------------------------------------
@@ -434,7 +470,8 @@ export class JourneyTrackingService {
       // Check last email sent (prevent over-emailing)
       if (journeyData.lastJourneyEmailSentAt) {
         const hoursSinceLastEmail =
-          (now.getTime() - new Date(journeyData.lastJourneyEmailSentAt).getTime()) /
+          (now.getTime() -
+            new Date(journeyData.lastJourneyEmailSentAt).getTime()) /
           (60 * 60 * 1000);
         if (hoursSinceLastEmail < 24) {
           continue; // Don't send more than once per day
@@ -477,13 +514,22 @@ export class JourneyTrackingService {
     if (stage === "signup" || stage === "onboarding") {
       if (!data.firstConnectionAt) {
         // No connection yet
-        if (daysSinceSignup === 1 && !data.journeyEmailsSent.includes("journey_day_1")) {
+        if (
+          daysSinceSignup === 1 &&
+          !data.journeyEmailsSent.includes("journey_day_1")
+        ) {
           return "journey_day_1"; // "Connect your accounting software"
         }
-        if (daysSinceSignup === 3 && !data.journeyEmailsSent.includes("journey_day_3")) {
+        if (
+          daysSinceSignup === 3 &&
+          !data.journeyEmailsSent.includes("journey_day_3")
+        ) {
           return "journey_day_3"; // "Schedule onboarding call"
         }
-        if (daysSinceSignup === 7 && !data.journeyEmailsSent.includes("journey_day_7")) {
+        if (
+          daysSinceSignup === 7 &&
+          !data.journeyEmailsSent.includes("journey_day_7")
+        ) {
           return "journey_day_7"; // "Need help? Book a demo"
         }
       }
@@ -492,7 +538,10 @@ export class JourneyTrackingService {
     // Activated stage - connected but no report
     if (stage === "activated") {
       if (!data.firstReportAt) {
-        if (daysSinceSignup >= 2 && !data.journeyEmailsSent.includes("journey_first_dashboard")) {
+        if (
+          daysSinceSignup >= 2 &&
+          !data.journeyEmailsSent.includes("journey_first_dashboard")
+        ) {
           return "journey_first_dashboard"; // "Your dashboard is ready"
         }
       }
@@ -505,10 +554,16 @@ export class JourneyTrackingService {
         (trialEnds.getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000),
       );
 
-      if (daysUntilTrialEnds === 3 && !data.journeyEmailsSent.includes("journey_trial_reminder_3")) {
+      if (
+        daysUntilTrialEnds === 3 &&
+        !data.journeyEmailsSent.includes("journey_trial_reminder_3")
+      ) {
         return "journey_trial_reminder_3"; // "3 days left"
       }
-      if (daysUntilTrialEnds === 1 && !data.journeyEmailsSent.includes("journey_trial_reminder_1")) {
+      if (
+        daysUntilTrialEnds === 1 &&
+        !data.journeyEmailsSent.includes("journey_trial_reminder_1")
+      ) {
         return "journey_trial_reminder_1"; // "Last day!"
       }
     }
@@ -519,7 +574,10 @@ export class JourneyTrackingService {
       (new Date().getTime() - lastActive.getTime()) / (24 * 60 * 60 * 1000),
     );
 
-    if (daysSinceActive >= 14 && !data.journeyEmailsSent.includes("journey_winback")) {
+    if (
+      daysSinceActive >= 14 &&
+      !data.journeyEmailsSent.includes("journey_winback")
+    ) {
       return "journey_winback"; // "We miss you"
     }
 
@@ -529,8 +587,13 @@ export class JourneyTrackingService {
   /**
    * Mark journey email as sent
    */
-  async markJourneyEmailSent(userId: string, workflowId: string): Promise<void> {
-    const user = await this.userProfileRepository.findOne({ where: { id: userId } });
+  async markJourneyEmailSent(
+    userId: string,
+    workflowId: string,
+  ): Promise<void> {
+    const user = await this.userProfileRepository.findOne({
+      where: { id: userId },
+    });
     if (!user) return;
 
     const journeyData = user.journeyData || this.getDefaultJourneyData();

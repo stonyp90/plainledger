@@ -89,6 +89,24 @@ variable "quickbooks_secret_arn" {
   default     = ""
 }
 
+variable "mongodb_secret_arn" {
+  description = "ARN of MongoDB Atlas connection secret"
+  type        = string
+  default     = ""
+}
+
+variable "hubspot_secret_arn" {
+  description = "ARN of HubSpot CRM API secret"
+  type        = string
+  default     = ""
+}
+
+variable "posthog_secret_arn" {
+  description = "ARN of PostHog analytics API secret"
+  type        = string
+  default     = ""
+}
+
 variable "kms_key_arn" {
   description = "KMS key ARN"
   type        = string

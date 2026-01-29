@@ -24,9 +24,7 @@ import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
 import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
-import {
-  EmailEventEntity,
-} from "@infrastructure/persistence/postgres/entities/email-event.entity";
+import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
 import { EmailCategory } from "@infrastructure/notifications/ses-email.service";
 
 // ============================================================================
@@ -75,7 +73,11 @@ export class UnsubscribeController {
       throw new BadRequestException("Invalid or expired unsubscribe token");
     }
 
-    await this.processUnsubscribe(decoded.userId, decoded.email, decoded.category);
+    await this.processUnsubscribe(
+      decoded.userId,
+      decoded.email,
+      decoded.category,
+    );
 
     return {
       status: "success",
@@ -109,7 +111,11 @@ export class UnsubscribeController {
 
     // If confirm=1, process unsubscribe and show success page
     if (confirm === "1") {
-      await this.processUnsubscribe(decoded.userId, decoded.email, decoded.category);
+      await this.processUnsubscribe(
+        decoded.userId,
+        decoded.email,
+        decoded.category,
+      );
 
       // Redirect to confirmation page
       return res.redirect(
@@ -245,9 +251,7 @@ export class UnsubscribeController {
         },
       });
 
-      this.logger.log(
-        `User ${email} unsubscribed from ${category} emails`,
-      );
+      this.logger.log(`User ${email} unsubscribed from ${category} emails`);
     } catch (error) {
       this.logger.error(`Failed to process unsubscribe: ${error.message}`);
       throw error;

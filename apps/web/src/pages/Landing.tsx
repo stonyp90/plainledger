@@ -8,6 +8,7 @@ import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
 import FlywheelVisualization from '../components/FlywheelVisualization';
 import AITechnologyStack, { AIMetricsRow } from '../components/AITechnologyStack';
+import ContactForm from '../components/ContactForm';
 import { 
   ArrowRight,
   Check,
@@ -1637,6 +1638,9 @@ export default function Landing() {
               <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View pricing' : 'Voir les tarifs'}>
                 {isEn ? 'Pricing' : 'Tarifs'}
               </a>
+              <a href="#contact" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Contact us' : 'Nous contacter'}>
+                Contact
+              </a>
             </nav>
 
             {/* Desktop Actions */}
@@ -1700,6 +1704,9 @@ export default function Landing() {
                 </a>
                 <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View pricing' : 'Voir les tarifs'}>
                   {isEn ? 'Pricing' : 'Tarifs'}
+                </a>
+                <a href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Contact us' : 'Nous contacter'}>
+                  Contact
                 </a>
                 
                 {/* Mobile Auth Actions */}
@@ -3779,6 +3786,162 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Contact Section */}
+      <section 
+        id="contact"
+        className="py-16 sm:py-24 px-4 sm:px-6"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          borderTop: `1px solid ${theme.green}15`,
+        }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <motion.div 
+            className="text-center mb-10 sm:mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h2 
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Get in Touch' : 'Contactez-nous'}
+            </h2>
+            <p 
+              className="text-base sm:text-lg max-w-2xl mx-auto"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn 
+                ? 'Have questions? Want a personalized demo? Our team is here to help.'
+                : 'Des questions? Vous voulez une démo personnalisée? Notre équipe est là pour vous aider.'}
+            </p>
+          </motion.div>
+          
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Contact Info */}
+            <div className="space-y-6">
+              <div 
+                className="p-6 rounded-2xl"
+                style={{ 
+                  backgroundColor: `${theme.green}08`,
+                  border: `1px solid ${theme.green}20`,
+                }}
+              >
+                <h3 
+                  className="text-lg font-semibold mb-4"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn ? 'Contact Information' : 'Coordonnées'}
+                </h3>
+                <div className="space-y-4">
+                  <a 
+                    href="mailto:info@plainledger.ca" 
+                    className="flex items-center gap-3 transition-colors group"
+                  >
+                    <div 
+                      className="p-2.5 rounded-lg"
+                      style={{ backgroundColor: `${theme.green}15` }}
+                    >
+                      <Mail className="w-5 h-5" style={{ color: theme.green }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                        {isEn ? 'Email' : 'Courriel'}
+                      </p>
+                      <p 
+                        className="text-sm group-hover:underline"
+                        style={{ color: theme.green }}
+                      >
+                        info@plainledger.ca
+                      </p>
+                    </div>
+                  </a>
+                  
+                  <button
+                    onClick={handleScheduleCall}
+                    className="flex items-center gap-3 transition-colors group w-full text-left"
+                  >
+                    <div 
+                      className="p-2.5 rounded-lg"
+                      style={{ backgroundColor: `${theme.green}15` }}
+                    >
+                      <Calendar className="w-5 h-5" style={{ color: theme.green }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                        {isEn ? 'Schedule a Call' : 'Planifier un appel'}
+                      </p>
+                      <p 
+                        className="text-sm group-hover:underline"
+                        style={{ color: theme.green }}
+                      >
+                        {isEn ? 'Book a 15-min demo' : 'Réservez une démo de 15 min'}
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Response Time Badge */}
+              <div 
+                className="flex items-center gap-3 p-4 rounded-xl"
+                style={{ 
+                  backgroundColor: `${theme.green}08`,
+                  border: `1px solid ${theme.green}15`,
+                }}
+              >
+                <div className="flex-shrink-0">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.green}15` }}
+                  >
+                    <Check className="w-5 h-5" style={{ color: theme.green }} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Quick Response' : 'Réponse rapide'}
+                  </p>
+                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn 
+                      ? 'We typically respond within 24 hours'
+                      : 'Nous répondons généralement dans les 24 heures'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Contact Form */}
+            <div 
+              className="p-6 sm:p-8 rounded-2xl"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: `1px solid ${theme.green}20`,
+                boxShadow: `0 4px 30px ${theme.green}08`,
+              }}
+            >
+              <ContactForm 
+                source="website" 
+                landingStyle={true}
+                theme={{
+                  green: theme.green,
+                  greenDark: theme.greenDark,
+                  greenLight: theme.greenLight,
+                }}
+              />
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer 
         className="py-6 sm:py-8 px-4 sm:px-6 border-t"
@@ -3803,7 +3966,7 @@ export default function Landing() {
           <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
             <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
-            <a href="mailto:info@plainledger.ca" className="transition-colors hover:underline">Contact</a>
+            <a href="#contact" className="transition-colors hover:underline">Contact</a>
           </div>
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             © 2026 PlainLedger 🇨🇦

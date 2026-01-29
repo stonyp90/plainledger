@@ -12,12 +12,12 @@
  * Backend -> MongoDB (secondary, for custom analytics)
  */
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import {
   MongoDBService,
   AnalyticsEvent,
   CustomerJourneyEvent,
-} from './mongodb.module';
+} from "./mongodb.module";
 
 // ============================================================================
 // Types
@@ -96,10 +96,10 @@ export class AnalyticsRepository implements OnModuleInit {
         () => this.flushBuffer(),
         this.FLUSH_INTERVAL_MS,
       );
-      this.logger.log('Analytics repository initialized with MongoDB');
+      this.logger.log("Analytics repository initialized with MongoDB");
     } else {
       this.logger.warn(
-        'MongoDB not configured - using in-memory buffer only (events will not persist)',
+        "MongoDB not configured - using in-memory buffer only (events will not persist)",
       );
     }
   }
@@ -236,8 +236,8 @@ export class AnalyticsRepository implements OnModuleInit {
 
     const pipeline = [
       { $match: match },
-      { $group: { _id: '$eventName', count: { $sum: 1 } } },
-      { $project: { eventName: '$_id', count: 1, _id: 0 } },
+      { $group: { _id: "$eventName", count: { $sum: 1 } } },
+      { $project: { eventName: "$_id", count: 1, _id: 0 } },
       { $sort: { count: -1 as const } },
     ];
 
@@ -282,14 +282,14 @@ export class AnalyticsRepository implements OnModuleInit {
       { $match: match },
       {
         $group: {
-          _id: '$eventName',
-          users: { $addToSet: { $ifNull: ['$userId', '$anonymousId'] } },
+          _id: "$eventName",
+          users: { $addToSet: { $ifNull: ["$userId", "$anonymousId"] } },
         },
       },
       {
         $project: {
-          eventName: '$_id',
-          count: { $size: '$users' },
+          eventName: "$_id",
+          count: { $size: "$users" },
           _id: 0,
         },
       },
@@ -335,9 +335,7 @@ export class AnalyticsRepository implements OnModuleInit {
     try {
       await collection.insertOne(event);
     } catch (error) {
-      this.logger.error(
-        `Failed to record journey event: ${error.message}`,
-      );
+      this.logger.error(`Failed to record journey event: ${error.message}`);
     }
   }
 
@@ -348,10 +346,7 @@ export class AnalyticsRepository implements OnModuleInit {
     const collection = await this.mongoService.getJourneyCollection();
     if (!collection) return [];
 
-    return collection
-      .find({ userId })
-      .sort({ timestamp: 1 })
-      .toArray();
+    return collection.find({ userId }).sort({ timestamp: 1 }).toArray();
   }
 
   /**
@@ -369,11 +364,11 @@ export class AnalyticsRepository implements OnModuleInit {
       { $sort: { timestamp: -1 as const } },
       {
         $group: {
-          _id: '$userId',
-          latestEvent: { $first: '$$ROOT' },
+          _id: "$userId",
+          latestEvent: { $first: "$$ROOT" },
         },
       },
-      { $replaceRoot: { newRoot: '$latestEvent' } },
+      { $replaceRoot: { newRoot: "$latestEvent" } },
       { $match: { stage } },
       { $limit: limit },
     ];
@@ -388,10 +383,7 @@ export class AnalyticsRepository implements OnModuleInit {
   /**
    * Get GTM funnel metrics (Signup -> Activated -> Converted)
    */
-  async getGTMFunnel(params: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<{
+  async getGTMFunnel(params: { startDate?: Date; endDate?: Date }): Promise<{
     signups: number;
     activated: number;
     converted: number;
@@ -399,7 +391,7 @@ export class AnalyticsRepository implements OnModuleInit {
     conversionRate: number;
   }> {
     return this.calculateFunnel({
-      steps: ['signup_completed', 'first_connection', 'subscription_started'],
+      steps: ["signup_completed", "first_connection", "subscription_started"],
       startDate: params.startDate,
       endDate: params.endDate,
     }).then((funnel) => {

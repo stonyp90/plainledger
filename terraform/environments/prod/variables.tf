@@ -134,6 +134,42 @@ variable "keycloak_client_secret" {
   default     = ""  # Can be empty initially, update via AWS console
 }
 
+# MongoDB Atlas (Analytics & Audit)
+variable "mongodb_uri" {
+  description = "MongoDB Atlas connection URI"
+  type        = string
+  sensitive   = true
+  default     = ""  # Set via terraform.tfvars or environment
+}
+
+variable "mongodb_database" {
+  description = "MongoDB database name"
+  type        = string
+  default     = "plainledger_analytics"
+}
+
+# HubSpot CRM
+variable "hubspot_access_token" {
+  description = "HubSpot Private App access token"
+  type        = string
+  sensitive   = true
+  default     = ""  # Set via terraform.tfvars or environment
+}
+
+# PostHog Analytics
+variable "posthog_api_key" {
+  description = "PostHog API key for server-side tracking"
+  type        = string
+  sensitive   = true
+  default     = ""  # Set via terraform.tfvars or environment
+}
+
+variable "posthog_host" {
+  description = "PostHog API host"
+  type        = string
+  default     = "https://us.i.posthog.com"
+}
+
 # Terraform Backend
 variable "terraform_state_bucket" {
   description = "S3 bucket for Terraform state"

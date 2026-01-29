@@ -54,7 +54,9 @@ export class CustomerJourneyJob {
 
       // Get candidates for journey emails
       const candidates = await this.journeyService.getJourneyEmailCandidates();
-      this.logger.log(`Found ${candidates.length} candidates for journey emails`);
+      this.logger.log(
+        `Found ${candidates.length} candidates for journey emails`,
+      );
 
       for (const candidate of candidates) {
         processed++;
@@ -131,7 +133,9 @@ export class CustomerJourneyJob {
     timeZone: "America/New_York",
   })
   async processWeeklyDigest(): Promise<void> {
-    this.logger.log("Weekly digest emails are handled by Novu scheduled workflows");
+    this.logger.log(
+      "Weekly digest emails are handled by Novu scheduled workflows",
+    );
     // Weekly digests are best handled by Novu's built-in scheduling
     // to allow users to choose their preferred day/time
   }
