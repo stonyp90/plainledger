@@ -13,6 +13,8 @@ import {
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
 import { AccountEntity } from "@infrastructure/persistence/postgres/entities/account.entity";
 import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
+import { OrganizationSettingsEntity } from "@infrastructure/persistence/postgres/entities/organization-settings.entity";
+import { UserSettingsEntity } from "@infrastructure/persistence/postgres/entities/user-settings.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -29,14 +31,21 @@ import { TeamController } from "@infrastructure/http/controllers/team.controller
 import { AuthController } from "@infrastructure/http/controllers/auth.controller";
 import { SyncAdminController } from "@infrastructure/http/controllers/sync-admin.controller";
 import { KeycloakAdminController } from "@infrastructure/http/controllers/keycloak-admin.controller";
+import { UploadController } from "@infrastructure/http/controllers/upload.controller";
+import { SettingsController } from "@infrastructure/http/controllers/settings.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
+
+// Infrastructure - Storage
+import { FileStorageService } from "@infrastructure/storage/file-storage.service";
 import { AIService } from "@infrastructure/ai/ai.service";
 import { PowerBIService } from "@infrastructure/services/powerbi.service";
 import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
 import { PowerBIDatalakeService } from "@infrastructure/services/powerbi-datalake.service";
 import { DatalakeDataService } from "@infrastructure/services/datalake-data.service";
+import { SettingsService } from "@infrastructure/services/settings.service";
+import { CacheService } from "@infrastructure/cache/cache.service";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 
 // Infrastructure - GraphQL
@@ -61,10 +70,16 @@ import { PostgresAccountRepository } from "@infrastructure/persistence/postgres/
 import { PostgresAnalyticsReportRepository } from "@infrastructure/persistence/postgres/postgres-analytics-report.repository";
 import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persistence/postgres/postgres-organization-features.repository";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
+import { PostgresOrganizationSettingsRepository } from "@infrastructure/persistence/postgres/postgres-organization-settings.repository";
+import { PostgresUserSettingsRepository } from "@infrastructure/persistence/postgres/postgres-user-settings.repository";
 import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
 
 // Notifications
-import { NovuModule, NovuService } from "./infrastructure/notifications/novu.service";
+import {
+  NovuModule,
+  NovuService,
+} from "./infrastructure/notifications/novu.service";
+import { SESEmailService } from "./infrastructure/notifications/ses-email.service";
 
 // Email Templates
 import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
@@ -87,7 +102,13 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
         username: configService.get<string>("DB_USERNAME") || "postgres",
         password: configService.get<string>("DB_PASSWORD") || "postgres",
         database: configService.get<string>("DB_NAME") || "plainledger",
-        entities: [OrganizationEntity, AccountEntity, UserProfileEntity],
+        entities: [
+          OrganizationEntity,
+          AccountEntity,
+          UserProfileEntity,
+          OrganizationSettingsEntity,
+          UserSettingsEntity,
+        ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
           process.env.SYNC_DB === "true" ||
@@ -137,6 +158,8 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
       OrganizationEntity,
       AccountEntity,
       UserProfileEntity,
+      OrganizationSettingsEntity,
+      UserSettingsEntity,
     ]),
 
     // Keycloak Authentication
@@ -177,6 +200,8 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
     AuthController,
     SyncAdminController,
     KeycloakAdminController,
+    UploadController,
+    SettingsController,
   ],
   providers: [
     // Guards
@@ -211,7 +236,11 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
     DatalakeDataService,
     KeycloakAdminService,
     NovuService,
+    CacheService,
+    SettingsService,
+    SESEmailService,
     EmailTemplatesService,
+    FileStorageService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
@@ -263,6 +292,8 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
       useClass: PostgresOrganizationFeaturesRepository,
     },
     PostgresUserProfileRepository,
+    PostgresOrganizationSettingsRepository,
+    PostgresUserSettingsRepository,
     DatabaseInitializerService,
   ],
 })

@@ -73,10 +73,10 @@ export default function OKRPanel({
                     </span>
                   </div>
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    okr.status === 'active' ? 'bg-green-100 text-green-700' :
-                    okr.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                    okr.status === 'draft' ? 'bg-gray-100 text-gray-700' :
-                    'bg-red-100 text-red-700'
+                    okr.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                    okr.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                    okr.status === 'draft' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' :
+                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                   }`}>
                     {isEn ? okr.status : 
                       okr.status === 'active' ? 'Actif' :
@@ -196,10 +196,10 @@ export default function OKRPanel({
                             {isEn ? 'Due' : 'Échéance'}: {new Date(kr.dueDate).toLocaleDateString()}
                           </span>
                           <span className={`px-1.5 py-0.5 rounded ${
-                            kr.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            kr.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                            kr.status === 'at_risk' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
+                            kr.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            kr.status === 'in_progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                            kr.status === 'at_risk' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                           }`}>
                             {isEn ? kr.status.replace('_', ' ') : 
                               kr.status === 'completed' ? 'Terminé' :

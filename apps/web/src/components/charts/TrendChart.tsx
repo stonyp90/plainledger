@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { AlertTriangle, TrendingUp, TrendingDown, Settings2 } from 'lucide-react';
 import { 
   DEFAULT_THRESHOLDS, 
@@ -21,9 +21,12 @@ interface TrendChartProps {
   showThresholdBands?: boolean;
   showMovingAverage?: boolean;
   movingAveragePeriod?: number;
+  /** Chart height in pixels - responsive by default */
   height?: number;
   color?: string;
   isEn?: boolean;
+  /** Compact mode for smaller containers */
+  compact?: boolean;
 }
 
 export default function TrendChart({
@@ -38,15 +41,61 @@ export default function TrendChart({
   showThresholdBands = true,
   showMovingAverage = true,
   movingAveragePeriod = 3,
-  height = 200,
+  height: propHeight,
   color = 'rgb(var(--color-text))',
   isEn = false,
+  compact = false,
 }: TrendChartProps) {
+  // Responsive height: use prop if provided, otherwise responsive defaults
+  const height = propHeight ?? (compact ? 160 : 200);
   const [showBands, setShowBands] = useState(showThresholdBands);
   const [showMA, setShowMA] = useState(showMovingAverage);
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const chartRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHoveringRef = useRef(false);
+
+  // Debounced hover handlers to prevent flickering
+  const handlePointEnter = useCallback((index: number, e: React.MouseEvent) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    isHoveringRef.current = true;
+    setHoveredPointIndex(index);
+    setTooltipPosition({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handlePointMove = useCallback((e: React.MouseEvent) => {
+    if (isHoveringRef.current) {
+      setTooltipPosition({ x: e.clientX, y: e.clientY });
+    }
+  }, []);
+
+  const handlePointLeave = useCallback(() => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    // Use a short delay to allow moving between points
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!isHoveringRef.current) return;
+      isHoveringRef.current = false;
+      setHoveredPointIndex(null);
+    }, 100);
+  }, []);
+
+  // Handle chart area mouse leave to ensure tooltip clears
+  const handleChartLeave = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      isHoveringRef.current = false;
+      setHoveredPointIndex(null);
+    }, 150);
+  }, []);
 
   const { 
     processedData, 
@@ -386,7 +435,12 @@ export default function TrendChart({
       </div>
 
       {/* Chart */}
-      <div ref={chartRef} className="relative" style={{ height: `${height}px` }}>
+      <div 
+        ref={chartRef} 
+        className="relative" 
+        style={{ height: `${height}px` }}
+        onMouseLeave={handleChartLeave}
+      >
         <svg 
           viewBox={`0 0 100 ${height}`} 
           preserveAspectRatio="none"
@@ -540,15 +594,11 @@ export default function TrendChart({
                 top: `${yPercent}%`,
                 transform: 'translate(-50%, -50%)',
                 zIndex: isHovered ? 20 : isAnomaly ? 10 : 1,
+                pointerEvents: 'auto',
               }}
-              onMouseEnter={(e) => {
-                setHoveredPointIndex(i);
-                setTooltipPosition({ x: e.clientX, y: e.clientY });
-              }}
-              onMouseMove={(e) => {
-                setTooltipPosition({ x: e.clientX, y: e.clientY });
-              }}
-              onMouseLeave={() => setHoveredPointIndex(null)}
+              onMouseEnter={(e) => handlePointEnter(i, e)}
+              onMouseMove={handlePointMove}
+              onMouseLeave={handlePointLeave}
             >
               {/* Hover hit area - larger for easier interaction */}
               <div 

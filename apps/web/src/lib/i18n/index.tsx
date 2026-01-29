@@ -267,7 +267,7 @@ export function LanguageToggle() {
       {/* Dropdown */}
       {isOpen && (
         <div 
-          className="absolute right-0 mt-2 py-1.5 rounded-xl shadow-xl border z-50 min-w-[140px] overflow-hidden"
+          className="absolute left-0 top-full mt-2 py-1.5 rounded-xl shadow-xl border z-50 min-w-[140px] overflow-hidden"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
             borderColor: 'rgb(var(--color-border))',

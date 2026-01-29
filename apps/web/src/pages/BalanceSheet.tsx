@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, Printer, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { InfoBanner } from '../components/HelpTooltip';
 import { useBalanceSheet } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import ShareModal from '../components/ShareModal';
 
 // Date preset type
 type DatePreset = 'today' | 'month_end' | 'quarter_end' | 'year_end' | 'last_month_end' | 'last_quarter_end' | 'last_year_end' | 'custom';
@@ -49,7 +49,7 @@ export default function BalanceSheet() {
   const [datePreset, setDatePreset] = useState<DatePreset>('today');
   const [customDate, setCustomDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [showComparison, setShowComparison] = useState(true);
-  const [showHelp, setShowHelp] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Calculate actual date based on preset
   const asOfDate = getPresetDate(datePreset, customDate);
@@ -83,18 +83,7 @@ export default function BalanceSheet() {
   };
 
   const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({
-        title: language === 'en' 
-          ? `Balance Sheet as of ${new Date(asOfDate).toLocaleDateString('en-CA')}`
-          : `Bilan au ${new Date(asOfDate).toLocaleDateString('fr-CA')}`,
-        url: url,
-      });
-    } else {
-      navigator.clipboard.writeText(url);
-      alert(language === 'en' ? 'Link copied to clipboard!' : 'Lien copié dans le presse-papier!');
-    }
+    setShowShareModal(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -296,19 +285,6 @@ export default function BalanceSheet() {
           </button>
         </div>
       </div>
-
-      {/* Help banner */}
-      {showHelp && (
-        <InfoBanner
-          type="info"
-          title={isEn ? 'How to read this balance sheet' : 'Comment lire ce bilan'}
-          description={isEn 
-            ? 'The balance sheet presents the financial position at a specific date. Assets (what you own) must equal liabilities + equity (what you owe). Green variances indicate improvement, red indicates deterioration.'
-            : 'Le bilan présente la situation financière à une date donnée. L\'actif (ce que vous possédez) doit égaler le passif + capitaux propres (ce que vous devez). Les variances en vert indiquent une amélioration, en rouge une détérioration.'}
-          dismissible
-          onDismiss={() => setShowHelp(false)}
-        />
-      )}
 
       {/* Controls */}
       <div className="card">
@@ -554,6 +530,16 @@ export default function BalanceSheet() {
           </p>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="Bilan"
+        titleEn="Balance Sheet"
+        subtitle={new Date(asOfDate).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+        contentType="report"
+        showDownloadOption={true}
+      />
     </div>
   );
 }

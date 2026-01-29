@@ -135,7 +135,6 @@ export type ActivityType =
   | 'meeting'
   | 'task'
   | 'signup'
-  | 'trial_started'
   | 'subscription_started'
   | 'feature_used';
 
@@ -342,31 +341,6 @@ class CRMService {
     }
 
     return contact;
-  }
-
-  /**
-   * Track trial start
-   */
-  async trackTrialStart(email: string, trialDays: number, plan: string): Promise<void> {
-    await this.upsertContact({
-      email,
-      lifecycleStage: 'marketing_qualified_lead',
-      properties: {
-        trial_start_date: new Date().toISOString(),
-        trial_end_date: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString(),
-        trial_plan: plan,
-      },
-    });
-
-    const contact = await this.getContactByEmail(email);
-    if (contact?.id) {
-      await this.logActivity({
-        type: 'trial_started',
-        subject: 'Trial started',
-        body: `Started ${trialDays}-day trial for ${plan} plan`,
-        contactId: contact.id,
-      });
-    }
   }
 
   /**

@@ -123,16 +123,22 @@ export default function Login() {
         analytics.track('login_success', { userId: data.user.id });
         
         // Store tokens in sessionStorage for Keycloak client to pick up
-        // Then reload to trigger Keycloak initialization with these tokens
+        // The Keycloak provider will detect these on next render/initialization
         sessionStorage.setItem('kc_token', data.accessToken);
         sessionStorage.setItem('kc_refresh_token', data.refreshToken || '');
         if (data.idToken) {
           sessionStorage.setItem('kc_id_token', data.idToken);
         }
         
-        // Reload page - Keycloak client will initialize with stored tokens
-        // This ensures proper session establishment and SSO
+        // Store user info temporarily for Keycloak provider to use
+        sessionStorage.setItem('kc_user', JSON.stringify(data.user));
+        
+        // Force Keycloak provider to re-initialize with stored tokens
+        // by triggering a page reload - this ensures proper session establishment
         const redirectTo = searchParams.get('redirect') || '/app';
+        
+        // Use window.location to ensure Keycloak provider picks up tokens on reload
+        // The provider checks sessionStorage on initialization
         window.location.href = redirectTo;
       } else {
         throw new Error('Invalid response from server');

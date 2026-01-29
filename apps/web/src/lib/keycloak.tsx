@@ -139,7 +139,99 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     if (initCalled.current) return;
     initCalled.current = true;
 
-    // Mock authentication mode for development/testing
+    // FIRST: Check for stored tokens from custom login BEFORE any other initialization
+    // This ensures we use real tokens even if mock auth is enabled
+    const storedToken = sessionStorage.getItem('kc_token');
+    const storedRefreshToken = sessionStorage.getItem('kc_refresh_token');
+    const storedIdToken = sessionStorage.getItem('kc_id_token');
+    
+    // If we have real tokens from login, use them instead of mock auth
+    if (storedToken && storedRefreshToken) {
+      const initKeycloak = async () => {
+        try {
+          // We have tokens from custom login - set them in Keycloak client
+          // Try to parse the access token first, fall back to id token
+          let tokenToParse = storedToken;
+          if (storedIdToken) {
+            tokenToParse = storedIdToken;
+          }
+          
+          const tokenParts = tokenToParse.split('.');
+          if (tokenParts.length === 3) {
+            // Decode base64 token payload
+            const base64Url = tokenParts[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split('')
+                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+            );
+            const tokenPayload = JSON.parse(jsonPayload);
+            
+            // Set tokens in Keycloak client
+            (keycloak as any).token = storedToken;
+            (keycloak as any).refreshToken = storedRefreshToken;
+            (keycloak as any).idToken = storedIdToken || storedToken;
+            (keycloak as any).authenticated = true;
+            (keycloak as any).tokenParsed = tokenPayload;
+            (keycloak as any).subject = tokenPayload.sub;
+            (keycloak as any).realmAccess = tokenPayload.realm_access || {};
+            (keycloak as any).resourceAccess = tokenPayload.resource_access || {};
+            
+            // Extract user profile
+            const tokenParsed = tokenPayload as Record<string, unknown>;
+            setAuthenticated(true);
+            setInitialized(true);
+            setUser(extractUserProfile(keycloak, tokenParsed));
+            
+            // Expose keycloak to window for other modules to access token
+            (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
+            
+            // Set up token refresh
+            keycloak.onTokenExpired = async () => {
+              try {
+                await keycloak.updateToken(30);
+                // Update stored tokens
+                sessionStorage.setItem('kc_token', keycloak.token || '');
+                sessionStorage.setItem('kc_refresh_token', keycloak.refreshToken || '');
+                if (keycloak.idToken) {
+                  sessionStorage.setItem('kc_id_token', keycloak.idToken);
+                }
+              } catch (error) {
+                console.warn('Failed to refresh token, logging out');
+                sessionStorage.removeItem('kc_token');
+                sessionStorage.removeItem('kc_refresh_token');
+                sessionStorage.removeItem('kc_id_token');
+                keycloak.logout();
+              }
+            };
+            
+            // Clear stored tokens after successful initialization (they're now in Keycloak client)
+            sessionStorage.removeItem('kc_token');
+            sessionStorage.removeItem('kc_refresh_token');
+            sessionStorage.removeItem('kc_id_token');
+            sessionStorage.removeItem('kc_user');
+            
+            console.log('✅ Keycloak initialized with stored tokens from custom login');
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to parse stored token:', e);
+          // Clear invalid tokens
+          sessionStorage.removeItem('kc_token');
+          sessionStorage.removeItem('kc_refresh_token');
+          sessionStorage.removeItem('kc_id_token');
+          sessionStorage.removeItem('kc_user');
+          // Fall through - will continue with normal Keycloak init below
+        }
+      };
+      
+      initKeycloak();
+      return; // Exit early - we've handled token-based login
+    }
+
+    // Mock authentication mode for development/testing (only if no stored tokens)
     if (MOCK_AUTH_ENABLED) {
       // Check if user explicitly logged out - respect that choice
       const isLoggedOut = localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY) === 'true';
@@ -168,64 +260,6 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
     const initKeycloak = async () => {
       try {
-        // Check for stored tokens from custom login
-        const storedToken = sessionStorage.getItem('kc_token');
-        const storedRefreshToken = sessionStorage.getItem('kc_refresh_token');
-        
-        if (storedToken && storedRefreshToken) {
-          // We have tokens from custom login - set them in Keycloak client
-          try {
-            const tokenParts = storedToken.split('.');
-            if (tokenParts.length === 3) {
-              const tokenPayload = JSON.parse(atob(tokenParts[1]));
-              
-              // Set tokens in Keycloak client
-              (keycloak as any).token = storedToken;
-              (keycloak as any).refreshToken = storedRefreshToken;
-              (keycloak as any).idToken = sessionStorage.getItem('kc_id_token') || storedToken;
-              (keycloak as any).authenticated = true;
-              (keycloak as any).tokenParsed = tokenPayload;
-              (keycloak as any).subject = tokenPayload.sub;
-              (keycloak as any).realmAccess = tokenPayload.realm_access || {};
-              (keycloak as any).resourceAccess = tokenPayload.resource_access || {};
-              
-              // Extract user profile
-              const tokenParsed = tokenPayload as Record<string, unknown>;
-              setAuthenticated(true);
-              setInitialized(true);
-              setUser(extractUserProfile(keycloak, tokenParsed));
-              
-              // Set up token refresh
-              keycloak.onTokenExpired = async () => {
-                try {
-                  await keycloak.updateToken(30);
-                  // Update stored tokens
-                  sessionStorage.setItem('kc_token', keycloak.token || '');
-                  sessionStorage.setItem('kc_refresh_token', keycloak.refreshToken || '');
-                } catch (error) {
-                  console.warn('Failed to refresh token, logging out');
-                  sessionStorage.removeItem('kc_token');
-                  sessionStorage.removeItem('kc_refresh_token');
-                  sessionStorage.removeItem('kc_id_token');
-                  keycloak.logout();
-                }
-              };
-              
-              // Clear stored tokens after successful initialization
-              sessionStorage.removeItem('kc_token');
-              sessionStorage.removeItem('kc_refresh_token');
-              sessionStorage.removeItem('kc_id_token');
-              
-              return;
-            }
-          } catch (e) {
-            console.warn('Failed to parse stored token:', e);
-            // Clear invalid tokens
-            sessionStorage.removeItem('kc_token');
-            sessionStorage.removeItem('kc_refresh_token');
-            sessionStorage.removeItem('kc_id_token');
-          }
-        }
         
         // Check if already initialized
         if (keycloak.authenticated !== undefined) {
@@ -256,6 +290,9 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         clearTimeout(timeoutId);
         setAuthenticated(auth);
         setInitialized(true);
+
+        // Expose keycloak to window for other modules to access token
+        (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
 
         if (auth && keycloak.tokenParsed) {
           const tokenParsed = keycloak.tokenParsed as Record<string, unknown>;

@@ -28,14 +28,21 @@ export class EmailTemplatesService {
   private currentYear: number;
 
   constructor(private configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>("APP_URL", "https://plainledger.ca");
+    this.baseUrl = this.configService.get<string>(
+      "APP_URL",
+      "https://plainledger.ca",
+    );
     this.currentYear = new Date().getFullYear();
   }
 
   /**
    * Generate password reset email HTML
    */
-  passwordReset(data: { firstName: string; resetUrl: string; expiresIn: string }): string {
+  passwordReset(data: {
+    firstName: string;
+    resetUrl: string;
+    expiresIn: string;
+  }): string {
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
         Reset Your Password
@@ -72,7 +79,11 @@ export class EmailTemplatesService {
   /**
    * Generate email verification email HTML
    */
-  emailVerification(data: { firstName: string; verifyUrl: string; expiresIn: string }): string {
+  emailVerification(data: {
+    firstName: string;
+    verifyUrl: string;
+    expiresIn: string;
+  }): string {
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
         Verify Your Email
@@ -151,7 +162,11 @@ export class EmailTemplatesService {
   /**
    * Generate password changed security alert email HTML
    */
-  passwordChanged(data: { firstName: string; timestamp: string; ipAddress?: string }): string {
+  passwordChanged(data: {
+    firstName: string;
+    timestamp: string;
+    ipAddress?: string;
+  }): string {
     const formattedDate = new Date(data.timestamp).toLocaleString("en-CA", {
       dateStyle: "full",
       timeStyle: "short",
@@ -170,11 +185,15 @@ export class EmailTemplatesService {
         <p style="margin: 0 0 8px 0; font-size: 14px; color: #64748b;">
           <strong>Changed on:</strong> ${formattedDate}
         </p>
-        ${data.ipAddress ? `
+        ${
+          data.ipAddress
+            ? `
         <p style="margin: 0; font-size: 14px; color: #64748b;">
           <strong>IP Address:</strong> ${data.ipAddress}
         </p>
-        ` : ""}
+        `
+            : ""
+        }
       </div>
       
       <div style="font-size: 14px; color: #92400e; background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
@@ -205,8 +224,8 @@ export class EmailTemplatesService {
       <p>Welcome to PlainLedger${data.organizationName ? ` for ${data.organizationName}` : ""}! We're thrilled to have you on board.</p>
       
       <div style="font-size: 14px; color: #64748b; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #10b981; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
-        <strong style="color: #059669;">Your 7-day free trial has started!</strong><br>
-        You have full access to all features. No credit card required.
+        <strong style="color: #059669;">Your free account is ready!</strong><br>
+        Explore PlainLedger with demo data. Subscribe to connect your accounting software and see your real data.
       </div>
       
       <p><strong>Here's how to get started:</strong></p>

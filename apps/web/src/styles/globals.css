@@ -541,6 +541,25 @@
     background-color: rgb(var(--color-error));
   }
 
+  .btn-danger-outline {
+    @apply btn;
+    background-color: transparent;
+    color: rgb(var(--color-error));
+    border: 1px solid rgb(var(--color-error) / 0.3);
+  }
+  .btn-danger-outline:hover:not(:disabled) {
+    background-color: rgb(var(--color-error) / 0.1);
+    border-color: rgb(var(--color-error) / 0.5);
+  }
+  .dark .btn-danger-outline {
+    color: rgb(var(--color-error-light));
+    border-color: rgb(var(--color-error-light) / 0.3);
+  }
+  .dark .btn-danger-outline:hover:not(:disabled) {
+    background-color: rgb(var(--color-error-light) / 0.1);
+    border-color: rgb(var(--color-error-light) / 0.5);
+  }
+
   .btn-success {
     @apply btn;
     background-color: rgb(var(--color-success-dark));
@@ -714,6 +733,15 @@
     background-color: rgb(var(--color-bg-muted));
     color: rgb(var(--color-text-secondary));
     letter-spacing: 0.01em;
+  }
+
+  .badge-default {
+    background-color: rgb(var(--color-primary-500) / 0.1);
+    color: rgb(var(--color-primary-700));
+  }
+  .dark .badge-default {
+    background-color: rgb(var(--color-primary-500) / 0.15);
+    color: rgb(var(--color-primary-300));
   }
   
   .badge-primary {
@@ -897,6 +925,21 @@
   @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 0 0 rgb(var(--color-primary-500) / 0.4); }
     50% { box-shadow: 0 0 20px 5px rgb(var(--color-primary-500) / 0.2); }
+  }
+  
+  @keyframes pulse-subtle {
+    0%, 100% { 
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.85;
+      transform: scale(1.02);
+    }
+  }
+  
+  .animate-pulse-subtle {
+    animation: pulse-subtle 3s ease-in-out infinite;
   }
   
   @keyframes gradient-shift {
@@ -1187,33 +1230,53 @@
   @apply text-lg sm:text-xl;
 }
 
-/* Toast notifications */
+/* Toast notifications - Design system colors */
 .toast-container {
   @apply fixed bottom-6 right-6 z-50 flex flex-col gap-3;
+}
+@media (max-width: 640px) {
+  .toast-container {
+    @apply bottom-4 right-4 left-4;
+  }
 }
 .toast {
   @apply flex items-start gap-3 p-4 rounded-xl animate-slide-in min-w-[320px] max-w-md;
   background-color: rgb(var(--color-surface));
   border: 1px solid rgb(var(--color-border));
   box-shadow: var(--shadow-xl);
+  transition: all var(--transition-normal);
+}
+@media (max-width: 640px) {
+  .toast {
+    min-width: auto;
+    max-width: 100%;
+  }
+}
+.toast:hover {
+  box-shadow: var(--shadow-2xl);
+  transform: translateY(-1px);
 }
 .toast.exiting {
   animation: slideOut 150ms ease-out forwards;
 }
 .toast-error {
   border-left: 4px solid rgb(var(--color-error));
+  background-color: rgb(var(--color-error) / 0.03);
 }
 .toast-success {
   border-left: 4px solid rgb(var(--color-success));
+  background-color: rgb(var(--color-success) / 0.03);
 }
 .toast-warning {
   border-left: 4px solid rgb(var(--color-warning));
+  background-color: rgb(var(--color-warning) / 0.03);
 }
 .toast-info {
   border-left: 4px solid rgb(var(--color-info));
+  background-color: rgb(var(--color-info) / 0.03);
 }
 
-/* Notification panel - Mobile optimized */
+/* Notification panel - Mobile optimized with design system colors */
 .notification-panel {
   @apply fixed right-0 left-0 sm:left-auto sm:right-0 sm:absolute rounded-b-xl sm:rounded-xl overflow-hidden animate-scale-in z-50;
   top: 64px; /* Match header height */
@@ -1225,6 +1288,7 @@
   max-height: calc(100dvh - 5rem); /* Dynamic viewport height for mobile */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  backdrop-filter: blur(8px);
 }
 @media (min-width: 640px) {
   .notification-panel {
@@ -1233,37 +1297,50 @@
     margin-top: 0.5rem;
     width: 24rem;
     border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-2xl);
   }
 }
 .notification-item {
   @apply flex gap-3 p-4 cursor-pointer;
   border-bottom: 1px solid rgb(var(--color-border-subtle));
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-normal);
 }
 .notification-item:last-child {
   border-bottom: none;
 }
 .notification-item:hover {
   background-color: rgb(var(--color-bg-subtle));
+  transform: translateX(2px);
 }
 .notification-item.unread {
   background-color: rgb(var(--color-primary-500) / 0.05);
+  border-left: 3px solid rgb(var(--color-primary-500));
+  padding-left: calc(1rem - 3px);
+}
+.notification-item.unread:hover {
+  background-color: rgb(var(--color-primary-500) / 0.08);
 }
 .notification-icon {
-  @apply w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0;
+  @apply w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0;
   background-color: rgb(var(--color-bg-muted));
+  transition: transform var(--transition-fast);
+}
+.notification-item:hover .notification-icon {
+  transform: scale(1.05);
 }
 .notification-title {
   @apply text-sm font-semibold;
   color: rgb(var(--color-text));
+  letter-spacing: -0.01em;
 }
 .notification-message {
   @apply text-sm line-clamp-2;
-  color: rgb(var(--color-text-muted));
+  color: rgb(var(--color-text-secondary));
+  line-height: 1.5;
 }
 .notification-time {
-  @apply text-xs;
-  color: rgb(var(--color-text-subtle));
+  @apply text-xs font-medium;
+  color: rgb(var(--color-text-muted));
 }
 
 /* Notification action button */
@@ -1720,4 +1797,112 @@ kbd {
   @apply p-4 rounded-xl;
   background-color: rgb(var(--color-accent-500) / 0.1);
   border: 1px solid rgb(var(--color-accent-500) / 0.3);
+}
+
+/* ============================================================================
+   THRESHOLD SETTINGS - Custom Range Input Styling
+   ============================================================================ */
+
+/* Range input base styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgb(var(--color-border-strong));
+  outline: none;
+  cursor: pointer;
+}
+
+/* Range thumb - WebKit (Chrome, Safari, Edge) */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgb(var(--color-surface));
+  border: 3px solid rgb(var(--color-primary-500));
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+  transition: all 150ms ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 10px rgb(var(--color-primary-500) / 0.4);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+
+/* Range thumb - Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgb(var(--color-surface));
+  border: 3px solid rgb(var(--color-primary-500));
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+  transition: all 150ms ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 10px rgb(var(--color-primary-500) / 0.4);
+}
+
+/* Range track - Firefox */
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgb(var(--color-border-strong));
+}
+
+/* Focus state */
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgb(var(--color-primary-500) / 0.2);
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgb(var(--color-primary-500) / 0.2);
+}
+
+/* Dark mode adjustments for range inputs */
+.dark input[type="range"] {
+  background: rgb(var(--color-gray-700));
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: rgb(var(--color-gray-800));
+  border-color: rgb(var(--color-primary-400));
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background: rgb(var(--color-gray-800));
+  border-color: rgb(var(--color-primary-400));
+}
+
+.dark input[type="range"]::-moz-range-track {
+  background: rgb(var(--color-gray-700));
+}
+
+/* ============================================================================
+   HELP CENTER - Article Link Hover Effect
+   ============================================================================ */
+.help-article-link {
+  color: rgb(var(--color-text-secondary));
+  transition: color var(--transition-fast);
+}
+.help-article-link:hover {
+  color: rgb(var(--color-primary-600));
+}
+.dark .help-article-link:hover {
+  color: rgb(var(--color-primary-400));
 }

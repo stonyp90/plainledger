@@ -28,11 +28,9 @@ import { join } from "path";
           configService.get<string>("NODE_ENV") === "production";
 
         return {
-          // Schema generation - use in-memory for production (no file system access needed)
-          // In development, write to src/schema.gql for IDE support
-          autoSchemaFile: isProduction
-            ? true
-            : join(process.cwd(), "src/schema.gql"),
+          // Schema generation - use in-memory (no file system access needed in Docker)
+          // Write to /tmp in development if file system access is needed
+          autoSchemaFile: isProduction ? true : join("/tmp", "schema.gql"),
           sortSchema: true,
 
           // Security settings

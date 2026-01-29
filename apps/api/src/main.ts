@@ -3,6 +3,7 @@ import { ValidationPipe, BadRequestException } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { DomainExceptionFilter } from "@infrastructure/http/filters/domain-exception.filter";
+import { FileStorageService } from "@infrastructure/storage/file-storage.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -81,6 +82,18 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api/docs", app, document);
+
+  // Initialize file storage (create uploads bucket if needed)
+  try {
+    const fileStorage = app.get(FileStorageService);
+    await fileStorage.initialize();
+    console.log("[Storage] File storage initialized successfully");
+  } catch (error) {
+    console.warn(
+      "[Storage] Failed to initialize file storage:",
+      error instanceof Error ? error.message : error,
+    );
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

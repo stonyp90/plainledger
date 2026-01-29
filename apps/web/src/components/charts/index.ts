@@ -18,4 +18,7 @@ export {
   DebtToEquityCard,
   GrossProfitMarginCard,
   NetProfitMarginCard,
+  INDUSTRY_BENCHMARKS,
+  INDUSTRY_LABELS,
 } from './RatioCard';
+export type { IndustryType } from './RatioCard';

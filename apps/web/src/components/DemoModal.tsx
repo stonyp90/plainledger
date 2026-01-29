@@ -36,7 +36,7 @@ interface DemoModalProps {
   isOpen: boolean;
   onClose: () => void;
   isEn: boolean;
-  onStartTrial: () => void;
+  onGetStarted: () => void;
 }
 
 // =====================================================
@@ -1406,8 +1406,8 @@ function ROISummaryMockup({ isEn }: { isEn: boolean }) {
       >
         <p className="text-xs italic mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
           "{isEn 
-            ? 'PlainLedger caught a $45K duplicate payment in our first week. The platform paid for itself before our trial ended.'
-            : 'PlainLedger a détecté un paiement en double de 45 000$ la première semaine. La plateforme s\'est rentabilisée avant la fin de l\'essai.'}"
+            ? 'PlainLedger caught a $45K duplicate payment in our first week. The platform paid for itself immediately.'
+            : 'PlainLedger a détecté un paiement en double de 45 000$ la première semaine. La plateforme s\'est rentabilisée immédiatement.'}"
         </p>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
@@ -1613,7 +1613,7 @@ function CostSavingsMockup({ isEn }: { isEn: boolean }) {
 // MAIN DEMO MODAL COMPONENT
 // =====================================================
 
-export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoModalProps) {
+export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoModalProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   
@@ -1836,10 +1836,10 @@ export default function DemoModal({ isOpen, onClose, isEn, onStartTrial }: DemoM
             
             {/* Right: CTA */}
             <button
-              onClick={onStartTrial}
+              onClick={onGetStarted}
               className="btn-primary text-xs sm:text-sm px-4 sm:px-6 py-2.5 group"
             >
-              {isEn ? 'Start free trial' : 'Essai gratuit'}
+              {isEn ? 'Get started free' : 'Commencer gratuitement'}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>

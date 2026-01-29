@@ -353,12 +353,10 @@ export default function SubscriptionManagement() {
           <div className="flex flex-wrap gap-2">
             <span 
               className={`px-3 py-1 rounded-full text-sm font-medium ${
-                subscription?.status === 'active' ? 'badge-success' : 
-                subscription?.status === 'trialing' ? 'badge-info' : 'badge-warning'
+                subscription?.status === 'active' ? 'badge-success' : 'badge-warning'
               }`}
             >
               {subscription?.status === 'active' ? (isEn ? 'Active' : 'Actif') :
-               subscription?.status === 'trialing' ? (isEn ? 'Trial' : 'Essai') :
                (isEn ? 'Attention needed' : 'Attention requise')}
             </span>
             {subscription?.cancelAtPeriodEnd && (
@@ -435,65 +433,74 @@ export default function SubscriptionManagement() {
         </div>
       </div>
       
-      {/* Pricing Plans */}
+      {/* Calendly CTA */}
       {showAllPlans && (
-        <div className="space-y-6">
-          {/* Interval Toggle */}
-          <div className="flex justify-center">
-            <div 
-              className="inline-flex p-1 rounded-lg"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-            >
-              <button
-                onClick={() => setInterval('month')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  interval === 'month' ? '' : ''
-                }`}
-                style={{
-                  backgroundColor: interval === 'month' ? 'rgb(var(--color-surface))' : 'transparent',
-                  color: interval === 'month' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-                  boxShadow: interval === 'month' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                }}
-              >
-                {isEn ? 'Monthly' : 'Mensuel'}
-              </button>
-              <button
-                onClick={() => setInterval('year')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                  interval === 'year' ? '' : ''
-                }`}
-                style={{
-                  backgroundColor: interval === 'year' ? 'rgb(var(--color-surface))' : 'transparent',
-                  color: interval === 'year' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-                  boxShadow: interval === 'year' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                }}
-              >
-                {isEn ? 'Yearly' : 'Annuel'}
-                <span 
-                  className="px-2 py-0.5 rounded-full text-xs"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-success) / 0.1)',
-                    color: 'rgb(var(--color-success))'
-                  }}
-                >
-                  -20%
-                </span>
-              </button>
-            </div>
-          </div>
+        <div 
+          className="card relative overflow-hidden"
+          style={{
+            border: '1px solid rgb(var(--color-primary-500) / 0.2)',
+            background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, rgb(var(--color-bg-subtle)) 50%, rgb(var(--color-primary-500) / 0.03) 100%)',
+          }}
+        >
+          {/* Decorative gradient overlay */}
+          <div 
+            className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-30"
+            style={{
+              background: 'radial-gradient(circle, rgb(var(--color-primary-500)) 0%, transparent 70%)',
+            }}
+          />
           
-          {/* Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            {plans.map((plan) => (
-              <PricingCard
-                key={plan.id}
-                plan={plan}
-                interval={interval}
-                isCurrentPlan={plan.id === currentPlan?.id}
-                onSelect={handleSelectPlan}
-                isEn={isEn}
-              />
-            ))}
+          <div className="relative text-center space-y-6 py-10 px-6">
+            {/* Icon */}
+            <div className="flex justify-center">
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.35)',
+                }}
+              >
+                <Calendar className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="space-y-3">
+              <h3 
+                className="text-2xl font-bold"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {isEn ? 'Schedule a Consultation' : 'Planifier une consultation'}
+              </h3>
+              <p 
+                className="text-sm max-w-md mx-auto leading-relaxed"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn 
+                  ? 'Book a call with our team to discuss the best plan for your business needs.'
+                  : 'Réservez un appel avec notre équipe pour discuter du meilleur plan pour les besoins de votre entreprise.'}
+              </p>
+            </div>
+            
+            {/* CTA Button */}
+            <button
+              onClick={() => window.open('https://calendly.com/anthonypaquet1508', '_blank')}
+              className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 6px 20px rgb(var(--color-primary-500) / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 14px rgb(var(--color-primary-500) / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.1)';
+              }}
+            >
+              <Calendar className="w-5 h-5" />
+              {isEn ? 'Book a Call' : 'Réserver un appel'}
+              <ExternalLink className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -599,8 +606,8 @@ export default function SubscriptionManagement() {
                     </p>
                     <span 
                       className={`text-xs ${
-                        invoice.status === 'paid' ? 'text-green-600' : 
-                        invoice.status === 'open' ? 'text-yellow-600' : 'text-red-600'
+                        invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' : 
+                        invoice.status === 'open' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
                       }`}
                     >
                       {invoice.status === 'paid' ? (isEn ? 'Paid' : 'Payé') :
@@ -666,28 +673,6 @@ export default function SubscriptionManagement() {
         </div>
       )}
       
-      {/* Trial Warning */}
-      {subscription?.status === 'trialing' && subscription.trialEnd && (
-        <div 
-          className="p-4 rounded-xl flex items-start gap-3"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-warning) / 0.05)',
-            border: '1px solid rgb(var(--color-warning) / 0.2)'
-          }}
-        >
-          <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-warning))' }} />
-          <div>
-            <p className="font-medium" style={{ color: 'rgb(var(--color-warning))' }}>
-              {isEn ? 'Trial Period Ending Soon' : 'Période d\'essai se termine bientôt'}
-            </p>
-            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn 
-                ? `Your trial ends on ${new Date(subscription.trialEnd).toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' })}. Add a payment method to continue using PlainLedger.`
-                : `Votre essai se termine le ${new Date(subscription.trialEnd).toLocaleDateString('fr-CA', { month: 'long', day: 'numeric', year: 'numeric' })}. Ajoutez une méthode de paiement pour continuer.`}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

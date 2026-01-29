@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n, LanguageToggle } from '../lib/i18n';
+import { useTheme } from '../contexts/ThemeContext';
 import NotificationPanel from './NotificationPanel';
 import ThemeToggle from './ThemeToggle';
 import OrganizationSwitcher from './OrganizationSwitcher';
@@ -21,9 +22,6 @@ import {
   Search,
   MessageCircle,
   AlertTriangle,
-  Crown,
-  Shield,
-  AlertCircle,
   Command,
   Menu,
   X,
@@ -32,7 +30,7 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
-  Lock,
+  Building2,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -61,8 +59,9 @@ function HelpCenterButton() {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { currentTenant, isOwner, isAdmin, hasPermission, isInternalStaff } = useTenant();
-  const { t, language, formatDate } = useI18n();
+  const { currentTenant, hasPermission, isInternalStaff } = useTenant();
+  const { t, language, setLanguage, formatDate } = useI18n();
+  const { toggleTheme } = useTheme();
   const searchModal = useSearchModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -124,14 +123,8 @@ export default function Layout({ children }: LayoutProps) {
 
   const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
 
-  const getRoleLabel = () => {
-    if (isOwner) return t('settings.team.roles.owner');
-    if (isAdmin) return t('settings.team.roles.admin');
-    return currentTenant?.role || '';
-  };
-
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row overflow-x-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
+    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
       {/* Mobile Header - Optimized for touch */}
       <header 
         className="lg:hidden sticky top-0 z-50 flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b safe-area-top"
@@ -148,30 +141,45 @@ export default function Layout({ children }: LayoutProps) {
           <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        <Link to="/app/dashboard" className="flex items-center gap-1.5 sm:gap-2 min-w-0 group">
+        <div className="flex items-center gap-2 min-w-0">
+          <Link to="/app/dashboard" className="flex items-center gap-1.5 sm:gap-2 min-w-0 group">
+            <div 
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+              style={{ 
+                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+              }}
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>
+          {/* Mobile Industry KPI Badge - Compact */}
           <div 
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md"
             style={{ 
-              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+              background: 'rgb(var(--color-primary-600))',
+              animation: 'pulse-subtle 3s ease-in-out infinite',
             }}
           >
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-              <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-              <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Building2 
+              className="w-3 h-3" 
+              style={{ color: 'white' }} 
+            />
+            <span 
+              className="text-[10px] font-semibold hidden sm:inline"
+              style={{ color: 'white' }}
+            >
+              {language === 'en' ? 'Real Estate KPIs' : 'KPIs Immobilier'}
+            </span>
           </div>
-          <span 
-            className="font-semibold text-sm sm:text-base tracking-tight truncate transition-colors"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
-            Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
-          </span>
-        </Link>
+        </div>
 
         <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
           <ThemeToggle />
@@ -255,7 +263,7 @@ export default function Layout({ children }: LayoutProps) {
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               <span className="flex-1 truncate">{item.name}</span>
-              {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} />}
+              {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
               <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
             </Link>
           ))}
@@ -332,7 +340,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Desktop Sidebar */}
       <aside 
-        className={`hidden lg:flex flex-col border-r flex-shrink-0 transition-all duration-300 sticky top-0 h-screen ${
+        className={`hidden lg:flex flex-col border-r flex-shrink-0 transition-all duration-300 h-full ${
           isSidebarCollapsed ? 'w-16' : 'w-64'
         }`}
         style={{ 
@@ -437,45 +445,11 @@ export default function Layout({ children }: LayoutProps) {
         {!isSidebarCollapsed && (
           <div className="p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
             <OrganizationSwitcher />
-            
-            {currentTenant && (
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span 
-                  className="badge text-[10px]"
-                  style={{ 
-                    backgroundColor: currentTenant.plan === 'enterprise' 
-                      ? 'rgb(var(--color-warning) / 0.2)'
-                      : currentTenant.plan === 'professional'
-                      ? 'rgb(var(--color-success) / 0.2)'
-                      : undefined,
-                    color: currentTenant.plan === 'enterprise'
-                      ? 'rgb(var(--color-warning))'
-                      : currentTenant.plan === 'professional'
-                      ? 'rgb(var(--color-success))'
-                      : undefined
-                  }}
-                >
-                  {currentTenant.plan}
-                </span>
-                
-                <span className="badge text-[10px] flex items-center gap-1">
-                  {isOwner ? <Crown className="w-3 h-3" /> : isAdmin ? <Shield className="w-3 h-3" /> : null}
-                  {getRoleLabel()}
-                </span>
-                
-                {currentTenant.status === 'trial' && currentTenant.trialEndsAt && (
-                  <span className="badge badge-warning text-[10px] flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {t('organization.trial')} {Math.ceil((new Date(currentTenant.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}{language === 'en' ? 'd' : 'j'}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         )}
 
         {/* Navigation */}
-        <nav className={`flex-1 overflow-y-auto transition-all ${
+        <nav className={`flex-1 overflow-y-auto transition-all min-h-0 ${
           isSidebarCollapsed ? 'p-2' : 'p-4'
         }`}>
           <div className="space-y-1">
@@ -492,7 +466,7 @@ export default function Layout({ children }: LayoutProps) {
                 {!isSidebarCollapsed && (
                   <>
                     <span className="flex-1">{item.name}</span>
-                    {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} />}
+                    {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
                   </>
                 )}
               </Link>
@@ -502,87 +476,90 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* User Menu - Bottom Left */}
         {!isSidebarCollapsed && (
-          <div className="p-3 sm:p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            {/* User Info */}
-            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+          <div 
+            className="p-3 sm:p-4 border-t flex-shrink-0 mt-auto"
+            style={{ 
+              borderColor: 'rgb(var(--color-border))',
+              backgroundColor: 'rgb(var(--color-surface))',
+            }}
+          >
+            {/* User Info - Clickable row */}
+            <Link
+              to="/app/settings?tab=profile"
+              className="flex items-center gap-3 mb-2 min-w-0 p-2 -mx-2 rounded-lg transition-all cursor-pointer"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
               {/* User Avatar */}
               <div 
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105"
+                className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all"
                 style={{ 
                   backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
                   borderColor: 'rgb(var(--color-border))'
                 }}
               >
-              {user?.picture ? (
-                <img 
-                  src={user.picture} 
-                  alt={user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback to initials if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      const fallback = document.createElement('span');
-                      fallback.className = 'font-semibold text-xs sm:text-sm';
-                      fallback.style.color = 'rgb(var(--color-text-secondary))';
-                      const initials = (user?.firstName?.[0] || '') + (user?.lastName?.[0] || '');
-                      fallback.textContent = initials || user?.name?.[0] || 'U';
-                      parent.appendChild(fallback);
-                    }
-                  }}
-                />
-              ) : (
-                <span className="font-semibold text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
-                </span>
-              )}
-            </div>
+                {user?.picture ? (
+                  <img 
+                    src={user.picture} 
+                    alt={user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('span');
+                        fallback.className = 'font-semibold text-sm';
+                        fallback.style.color = 'rgb(var(--color-text-secondary))';
+                        const initials = (user?.firstName?.[0] || '') + (user?.lastName?.[0] || '');
+                        fallback.textContent = initials || user?.name?.[0] || 'U';
+                        parent.appendChild(fallback);
+                      }
+                    }}
+                  />
+                ) : (
+                  <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
+                  </span>
+                )}
+              </div>
+              
+              {/* User Details */}
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                  {user?.name || user?.firstName || (language === 'en' ? 'User' : 'Utilisateur')}
+                </p>
+                <p className="text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {user?.email || ''}
+                </p>
+              </div>
+            </Link>
             
-            {/* User Details */}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs sm:text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                {user?.name || user?.firstName || (language === 'en' ? 'User' : 'Utilisateur')}
-              </p>
-              <p className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {user?.email || ''}
-              </p>
-            </div>
+            {/* Logout Button */}
+            <button
+              onClick={logout}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all active:scale-[0.98]"
+              style={{ 
+                color: 'rgb(var(--color-error))',
+                backgroundColor: 'rgb(var(--color-error) / 0.05)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.05)';
+              }}
+            >
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <span className="font-medium">{t('nav.logout')}</span>
+            </button>
           </div>
-          
-          {/* Controls Row */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-3 flex-wrap">
-            {/* Language Toggle */}
-            <div className="flex-shrink-0">
-              <LanguageToggle />
-            </div>
-            
-            {/* Theme Toggle */}
-            <div className="flex-shrink-0">
-              <ThemeToggle />
-            </div>
-          </div>
-          
-          {/* Logout Button */}
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ 
-              color: 'rgb(var(--color-error))',
-              backgroundColor: 'rgb(var(--color-error) / 0.05)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgb(var(--color-error) / 0.05)';
-            }}
-          >
-            <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="font-medium">{t('nav.logout')}</span>
-          </button>
-        </div>
         )}
         
         {/* Collapsed User Avatar */}
@@ -614,8 +591,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content */}
       <main 
-        className="flex-1 flex flex-col min-w-0 w-full lg:w-auto"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+        className="flex-1 flex flex-col min-w-0 w-full lg:w-auto h-full overflow-hidden"
+        style={{ backgroundColor: 'rgb(var(--color-surface))' }}
       >
         {/* Desktop Header */}
         <header 
@@ -629,22 +606,49 @@ export default function Layout({ children }: LayoutProps) {
             <h1 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
               {navigation.find((n) => isActive(n.href))?.name || 'PlainLedger'}
             </h1>
+            
+            {/* Industry KPI Badge - Real Estate Focus */}
+            <div 
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md group cursor-default"
+              style={{ 
+                background: 'rgb(var(--color-primary-600))',
+                animation: 'pulse-subtle 3s ease-in-out infinite',
+              }}
+            >
+              <Building2 
+                className="w-3.5 h-3.5 transition-transform group-hover:scale-110" 
+                style={{ color: 'white' }} 
+              />
+              <span 
+                className="text-xs font-semibold"
+                style={{ color: 'white' }}
+              >
+                {language === 'en' ? 'Real Estate KPIs' : 'KPIs Immobilier'}
+              </span>
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
             {/* Search */}
             <button 
               onClick={searchModal.open}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border hover:shadow-sm"
               style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
+                backgroundColor: 'transparent',
+                borderColor: 'rgb(var(--color-border))',
                 color: 'rgb(var(--color-text-muted))'
               }}
-              title={t('common.search')}
+              title={`${t('common.search')} (⌘K)`}
             >
               <Search className="w-4 h-4" />
-              <span className="text-sm">{t('common.search')}</span>
-              <kbd className="hidden xl:flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px]" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
+              <span className="text-sm hidden sm:inline">{t('common.search')}</span>
+              <kbd 
+                className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] border"
+                style={{ 
+                  borderColor: 'rgb(var(--color-border))',
+                  color: 'rgb(var(--color-text-muted))'
+                }}
+              >
                 <Command className="w-3 h-3" />K
               </kbd>
             </button>
@@ -695,7 +699,7 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page Content - Responsive padding */}
-        <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
           {children}
         </div>
       </main>

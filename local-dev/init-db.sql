@@ -188,12 +188,18 @@ CREATE INDEX idx_data_sources_org ON integration.data_sources(organization_id);
 CREATE INDEX idx_sync_jobs_source ON integration.sync_jobs(data_source_id);
 
 -- ============================================
--- SEED DATA - Demo Organization
+-- SEED DATA - Demo Organizations
 -- ============================================
 
--- Insert demo organization
+-- Insert demo organization (for existing demo users)
 INSERT INTO accounting.organizations (tenant_id, name, legal_name, tax_number, fiscal_year_end_month, currency, industry)
-VALUES ('demo-org', 'Demo Corp', 'Demo Corporation Inc.', '123456789RT0001', 12, 'USD', 'Technology');
+VALUES ('demo-org', 'Demo Corp', 'Demo Corporation Inc.', '123456789RT0001', 12, 'USD', 'Technology')
+ON CONFLICT (tenant_id) DO NOTHING;
+
+-- Insert demo-signup organization (for new signups - everything locked)
+INSERT INTO accounting.organizations (tenant_id, name, legal_name, tax_number, fiscal_year_end_month, currency, industry)
+VALUES ('demo-signup', 'Demo Account', 'Demo Account - Contact Us to Unlock', NULL, 12, 'CAD', 'Demo')
+ON CONFLICT (tenant_id) DO NOTHING;
 
 -- Insert standard chart of accounts
 INSERT INTO accounting.accounts (organization_id, code, name, name_fr, account_type, account_subtype, display_order)
@@ -233,6 +239,45 @@ CROSS JOIN (VALUES
     ('8000', 'Income Tax Expense', 'Impots sur le revenu', 'EXPENSE', 'TAX', 700)
 ) AS a(code, name, name_fr, account_type, account_subtype, display_order)
 WHERE o.tenant_id = 'demo-org';
+
+-- Insert standard chart of accounts for demo-signup organization
+INSERT INTO accounting.accounts (organization_id, code, name, name_fr, account_type, account_subtype, display_order)
+SELECT 
+    o.id,
+    a.code,
+    a.name,
+    a.name_fr,
+    a.account_type,
+    a.account_subtype,
+    a.display_order
+FROM accounting.organizations o
+CROSS JOIN (VALUES
+    ('1000', 'Cash and Cash Equivalents', 'Encaisse et equivalents', 'ASSET', 'CURRENT', 10),
+    ('1100', 'Accounts Receivable', 'Comptes clients', 'ASSET', 'CURRENT', 20),
+    ('1200', 'Inventory', 'Stocks', 'ASSET', 'CURRENT', 30),
+    ('1300', 'Prepaid Expenses', 'Frais payes d''avance', 'ASSET', 'CURRENT', 40),
+    ('1500', 'Property and Equipment', 'Immobilisations', 'ASSET', 'FIXED', 50),
+    ('1600', 'Accumulated Depreciation', 'Amortissement cumule', 'ASSET', 'FIXED', 60),
+    ('2000', 'Accounts Payable', 'Comptes fournisseurs', 'LIABILITY', 'CURRENT', 100),
+    ('2100', 'Accrued Liabilities', 'Charges a payer', 'LIABILITY', 'CURRENT', 110),
+    ('2200', 'Current Portion of Long-term Debt', 'Portion courante dette LT', 'LIABILITY', 'CURRENT', 120),
+    ('2500', 'Long-term Debt', 'Dette a long terme', 'LIABILITY', 'LONG_TERM', 150),
+    ('3000', 'Share Capital', 'Capital-actions', 'EQUITY', 'CAPITAL', 200),
+    ('3100', 'Retained Earnings', 'Benefices non repartis', 'EQUITY', 'RETAINED', 210),
+    ('4000', 'Revenue', 'Revenus', 'REVENUE', 'OPERATING', 300),
+    ('4100', 'Service Revenue', 'Revenus de services', 'REVENUE', 'OPERATING', 310),
+    ('4200', 'Other Income', 'Autres revenus', 'REVENUE', 'OTHER', 320),
+    ('5000', 'Cost of Goods Sold', 'Cout des ventes', 'EXPENSE', 'COGS', 400),
+    ('6000', 'Salaries and Wages', 'Salaires', 'EXPENSE', 'OPERATING', 500),
+    ('6100', 'Rent Expense', 'Loyer', 'EXPENSE', 'OPERATING', 510),
+    ('6200', 'Utilities', 'Services publics', 'EXPENSE', 'OPERATING', 520),
+    ('6300', 'Professional Fees', 'Honoraires professionnels', 'EXPENSE', 'OPERATING', 530),
+    ('6400', 'Depreciation Expense', 'Amortissement', 'EXPENSE', 'OPERATING', 540),
+    ('6500', 'Office Supplies', 'Fournitures de bureau', 'EXPENSE', 'OPERATING', 550),
+    ('7000', 'Interest Expense', 'Charges d''interets', 'EXPENSE', 'OTHER', 600),
+    ('8000', 'Income Tax Expense', 'Impots sur le revenu', 'EXPENSE', 'TAX', 700)
+) AS a(code, name, name_fr, account_type, account_subtype, display_order)
+WHERE o.tenant_id = 'demo-signup';
 
 -- Insert default report templates
 INSERT INTO reporting.report_templates (name, name_fr, report_type, template_config, is_system, is_ibcs_compliant)

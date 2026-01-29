@@ -1,24 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
-  ArrowRight, 
   AlertTriangle, 
   CheckCircle,
   RefreshCw,
   ChevronRight,
-  ArrowUpRight,
-  ArrowDownRight,
   FileText,
   Link2,
   Loader2,
   Sparkles,
   BarChart2,
-  Eye,
   Lock,
   Calendar,
+  Building2,
+  Home,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Percent,
+  Target,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Tooltip } from '../components/Tooltip';
-import { HealthScoreGauge, TrendChart, WaterfallChart } from '../components/charts';
+import { TrendChart, WaterfallChart } from '../components/charts';
 import { 
   AgingWidget, 
   BankReconciliationWidget, 
@@ -28,9 +31,12 @@ import {
 } from '../components/AccountingWidgets';
 import AIQueryAssistant from '../components/AIQueryAssistant';
 import PremiumFeatureGate, { usePremiumFeature } from '../components/PremiumFeatureGate';
+import DemoBanner from '../components/DemoBanner';
+import DemoSignupWelcome from '../components/DemoSignupWelcome';
 import { useTenant } from '../contexts/TenantContext';
 import { useToast } from '../contexts/ToastContext';
 import { useDemoMode } from '../contexts/DemoModeContext';
+import { useAuth } from '../lib/keycloak';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { 
@@ -38,7 +44,6 @@ import {
   DEFAULT_THRESHOLDS,
   type AccountBalance,
 } from '../lib/anomalyDetection';
-import { calculateVariance } from '../lib/financialData';
 
 // =====================================================
 // DASHBOARD COMPONENT
@@ -48,13 +53,21 @@ import { calculateVariance } from '../lib/financialData';
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { currentTenant } = useTenant();
+  const { user } = useAuth();
   const toast = useToast();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
-  const { t, formatCurrency, language } = useI18n();
+  const { isDemoMode, enableDemoMode } = useDemoMode();
+  const { t, language } = useI18n();
   const [selectedPeriod, setSelectedPeriod] = useState<'mtd' | 'qtd' | 'ytd'>('mtd');
   const { hasAccess: hasAIAccess } = usePremiumFeature('aiInsights');
+  
+  // Auto-enable demo mode for demo-signup users
+  const isDemoSignupUser = user?.organization === 'demo-signup';
+  useEffect(() => {
+    if (isDemoSignupUser && !isDemoMode) {
+      enableDemoMode();
+    }
+  }, [isDemoSignupUser, isDemoMode, enableDemoMode]);
   
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
@@ -71,23 +84,41 @@ export default function Dashboard() {
     }));
   }, [financialData]);
 
-  // Get revenue trend data
+  // Helper to filter data by period - show enough data points for meaningful visualization
+  const filterDataByPeriod = <T,>(data: T[], period: 'mtd' | 'qtd' | 'ytd'): T[] => {
+    if (!data.length) return [];
+    switch (period) {
+      case 'mtd':
+        // Show last 4 months for context even in "month" view
+        // This provides enough data points for trend analysis while focusing on recent period
+        return data.slice(-4);
+      case 'qtd':
+        // Show last 6 months for quarterly context
+        return data.slice(-6);
+      case 'ytd':
+      default:
+        return data; // All 12 months
+    }
+  };
+
+  // Get revenue trend data filtered by period
   const revenueData = useMemo(() => {
     if (!financialData) return [];
-    return financialData.trends.revenue.data;
-  }, [financialData]);
+    return filterDataByPeriod(financialData.trends.revenue.data, selectedPeriod);
+  }, [financialData, selectedPeriod]);
 
-  // Get cash flow trend data
+  // Get cash flow trend data filtered by period
   const cashFlowData = useMemo(() => {
     if (!financialData) return [];
-    return financialData.trends.cashFlow.data;
-  }, [financialData]);
+    return filterDataByPeriod(financialData.trends.cashFlow.data, selectedPeriod);
+  }, [financialData, selectedPeriod]);
 
-  // Get budget data
+  // Get budget data filtered by period
   const revenueBudget = useMemo(() => {
     if (!financialData) return [];
-    return financialData.trends.revenue.budget || [];
-  }, [financialData]);
+    const budget = financialData.trends.revenue.budget || [];
+    return filterDataByPeriod(budget, selectedPeriod);
+  }, [financialData, selectedPeriod]);
 
   // Get waterfall data
   const cashFlowWaterfallData = useMemo(() => {
@@ -102,125 +133,6 @@ export default function Dashboard() {
     return runFullAnalysis(accountsData, revenueData, DEFAULT_THRESHOLDS);
   }, [accountsData, revenueData]);
 
-  // Calculate health metrics for the gauge
-  const healthMetrics = useMemo(() => {
-    if (!financialData) return undefined;
-
-    const { metrics, summary } = financialData;
-    
-    // Liquidity score based on current ratio (target 2.0)
-    const liquidityScore = Math.min(100, Math.round((metrics.currentRatio / 2.0) * 100));
-    const liquidityStatus = liquidityScore >= 75 ? 'good' : liquidityScore >= 50 ? 'warning' : 'critical';
-    
-    // Profitability score based on gross margin (target 40%)
-    const profitScore = Math.min(100, Math.round((metrics.grossMargin / 40) * 100));
-    const profitStatus = profitScore >= 75 ? 'good' : profitScore >= 50 ? 'warning' : 'critical';
-    
-    // Cash flow score based on whether net cash flow is positive
-    const cashFlowPositive = summary.cashFlow.net > 0;
-    const cashFlowScore = cashFlowPositive ? 80 : 30;
-    const cashFlowStatus = cashFlowScore >= 60 ? 'good' : cashFlowScore >= 40 ? 'warning' : 'critical';
-    
-    // Receivables score based on DSO (target 45 days)
-    const dsoScore = Math.min(100, Math.max(0, Math.round(100 - ((metrics.daysReceivable - 45) / 45) * 50)));
-    const dsoStatus = metrics.daysReceivable <= 45 ? 'good' : metrics.daysReceivable <= 60 ? 'warning' : 'critical';
-    
-    // Runway score based on months of runway
-    const runwayScore = Math.min(100, Math.round((summary.cash.runway / 6) * 100));
-    const runwayStatus = summary.cash.runway >= 6 ? 'good' : summary.cash.runway >= 3 ? 'warning' : 'critical';
-
-    return [
-      {
-        id: 'liquidity',
-        name: 'Liquidité',
-        nameEn: 'Liquidity',
-        value: liquidityScore,
-        status: liquidityStatus as 'good' | 'warning' | 'critical',
-        description: `Ratio de liquidité à ${metrics.currentRatio.toFixed(2)}x`,
-        descriptionEn: `Current ratio at ${metrics.currentRatio.toFixed(2)}x`,
-      },
-      {
-        id: 'profitability',
-        name: 'Rentabilité',
-        nameEn: 'Profitability',
-        value: profitScore,
-        status: profitStatus as 'good' | 'warning' | 'critical',
-        description: `Marge brute de ${metrics.grossMargin.toFixed(1)}%`,
-        descriptionEn: `Gross margin of ${metrics.grossMargin.toFixed(1)}%`,
-      },
-      {
-        id: 'cashflow',
-        name: 'Flux de trésorerie',
-        nameEn: 'Cash Flow',
-        value: cashFlowScore,
-        status: cashFlowStatus as 'good' | 'warning' | 'critical',
-        description: cashFlowPositive ? 'Flux net positif' : 'Flux net négatif',
-        descriptionEn: cashFlowPositive ? 'Positive net flow' : 'Negative net flow',
-      },
-      {
-        id: 'receivables',
-        name: 'Créances (DSO)',
-        nameEn: 'Receivables (DSO)',
-        value: dsoScore,
-        status: dsoStatus as 'good' | 'warning' | 'critical',
-        description: `DSO de ${Math.round(metrics.daysReceivable)} jours`,
-        descriptionEn: `DSO of ${Math.round(metrics.daysReceivable)} days`,
-      },
-      {
-        id: 'runway',
-        name: 'Autonomie',
-        nameEn: 'Cash Runway',
-        value: runwayScore,
-        status: runwayStatus as 'good' | 'warning' | 'critical',
-        description: `${summary.cash.runway} mois de runway`,
-        descriptionEn: `${summary.cash.runway} months runway`,
-      },
-    ];
-  }, [financialData]);
-
-  const kpis = useMemo(() => {
-    if (!financialData) {
-      return {
-        revenue: { current: 0, prior: 0, change: 0 },
-        cash: { current: 0, prior: 0, change: 0 },
-        cashFlow: { current: 0 },
-        workingCapital: { current: 0, ar: 0, inventory: 0 },
-        ratios: { current: 0, quick: 0 },
-        runway: 0,
-      };
-    }
-
-    const { summary, metrics } = financialData;
-    
-    return {
-      revenue: {
-        current: summary.revenue.current,
-        prior: summary.revenue.prior,
-        change: calculateVariance(summary.revenue.current, summary.revenue.prior),
-      },
-      cash: {
-        current: summary.cash.current,
-        prior: summary.cash.prior,
-        change: calculateVariance(summary.cash.current, summary.cash.prior),
-      },
-      cashFlow: {
-        current: summary.cashFlow.net,
-      },
-      workingCapital: {
-        current: metrics.workingCapital,
-        ar: summary.receivables.current,
-        inventory: financialData.balanceSheet.assets.currentAssets.find(a => a.code === '1200')?.current || 0,
-      },
-      ratios: {
-        current: metrics.currentRatio,
-        quick: metrics.quickRatio,
-      },
-      runway: summary.cash.runway,
-      // Additional metrics for accountants
-      grossMargin: metrics.grossMargin,
-      dso: metrics.daysReceivable,
-    };
-  }, [financialData]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -336,6 +248,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Demo Signup Welcome Banner - Shows for new signups */}
+      <DemoSignupWelcome />
+      
+      {/* Demo Banner */}
+      <DemoBanner />
+      
       {/* Header */}
       <div className="flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
@@ -377,29 +295,7 @@ export default function Dashboard() {
               <span className="hidden md:inline">{isRefreshing ? t('common.refreshing') : t('common.refresh')}</span>
             </button>
 
-            {/* Demo Mode Toggle - Only show for trial users */}
-            {currentTenant?.status === 'trial' && (
-              <button
-                onClick={toggleDemoMode}
-                className={`btn-sm flex items-center gap-1.5 sm:gap-2 !px-2 sm:!px-3 ${
-                  isDemoMode ? 'btn-primary' : 'btn-secondary'
-                }`}
-                title={isDemoMode 
-                  ? (language === 'en' ? 'Disable demo mode' : 'Désactiver le mode démo')
-                  : (language === 'en' ? 'Enable demo mode with sample data' : 'Activer le mode démo avec données d\'exemple')
-                }
-              >
-                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden md:inline">
-                  {isDemoMode 
-                    ? (language === 'en' ? 'Demo' : 'Démo')
-                    : (language === 'en' ? 'Try Demo' : 'Essayer démo')
-                  }
-                </span>
-              </button>
-            )}
-
-                    <button
+            <button
                       onClick={() => {
                         if (hasAIAccess) {
                           setShowAIAssistant(true);
@@ -436,109 +332,210 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Alerts Banner - Only show if there are critical issues */}
-      {analysis.summary.critical > 0 && (
-        <Link
-          to="/app/anomalies"
-          className="alert alert-error hover:opacity-90 transition-all"
+      {/* Anomalies List - With severity breakdown and notification CTA */}
+      {analysis.summary.total > 0 && (
+        <div 
+          className="rounded-xl p-4 sm:p-5"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: analysis.summary.critical > 0 
+              ? '1px solid rgb(var(--color-error) / 0.3)' 
+              : '1px solid rgb(var(--color-border))',
+          }}
         >
-          <div className="alert-icon">
-            <AlertTriangle className="w-5 h-5" />
+          <Link 
+            to="/app/anomalies"
+            className="block hover:opacity-90 transition-all cursor-pointer group"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div 
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ 
+                  backgroundColor: analysis.summary.critical > 0 
+                    ? 'rgb(var(--color-error) / 0.1)' 
+                    : 'rgb(var(--color-warning) / 0.1)',
+                }}
+              >
+                <AlertTriangle 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: analysis.summary.critical > 0 
+                      ? 'rgb(var(--color-error))' 
+                      : 'rgb(var(--color-warning))',
+                  }}
+                />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {analysis.summary.total} {language === 'en' ? 'anomalies detected' : 'anomalies détectées'}
+                </h3>
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {language === 'en' ? 'Action required - Click to review' : 'Action requise - Cliquez pour examiner'}
+                </p>
+              </div>
+              <ChevronRight 
+                className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" 
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              />
+            </div>
+            
+            {/* Severity breakdown badges */}
+            <div className="flex items-center gap-2 flex-wrap ml-[52px]">
+              {analysis.summary.critical > 0 && (
+                <span 
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                    color: 'rgb(var(--color-error))',
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-error))' }} />
+                  {analysis.summary.critical} {language === 'en' ? 'critical' : 'critique'}{analysis.summary.critical > 1 ? 's' : ''}
+                </span>
+              )}
+              {analysis.summary.warning > 0 && (
+                <span 
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                    color: 'rgb(var(--color-warning))',
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-warning))' }} />
+                  {analysis.summary.warning} {language === 'en' ? 'warning' : 'avertissement'}{analysis.summary.warning > 1 ? 's' : ''}
+                </span>
+              )}
+              {analysis.summary.info > 0 && (
+                <span 
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-info) / 0.1)',
+                    color: 'rgb(var(--color-info))',
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-info))' }} />
+                  {analysis.summary.info} info
+                </span>
+              )}
+            </div>
+          </Link>
+          
+          {/* Notification setup CTA */}
+          <div 
+            className="mt-3 pt-3 flex items-center justify-between gap-3 flex-wrap"
+            style={{ borderTop: '1px solid rgb(var(--color-border))' }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {language === 'en' ? 'Get notified via:' : 'Recevoir les alertes via:'}
+              </span>
+              <div className="flex items-center gap-1">
+                {/* Slack - Brand colors */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: '#4A154B15' }}
+                  title="Slack"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52z" fill="#E01E5A"/>
+                    <path d="M6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z" fill="#E01E5A"/>
+                    <path d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834z" fill="#36C5F0"/>
+                    <path d="M8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z" fill="#36C5F0"/>
+                    <path d="M18.958 8.834a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834z" fill="#2EB67D"/>
+                    <path d="M17.687 8.834a2.528 2.528 0 0 1-2.521 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.166 0a2.528 2.528 0 0 1 2.521 2.522v6.312z" fill="#2EB67D"/>
+                    <path d="M15.166 18.958a2.528 2.528 0 0 1 2.521 2.52A2.528 2.528 0 0 1 15.166 24a2.528 2.528 0 0 1-2.521-2.522v-2.52h2.521z" fill="#ECB22E"/>
+                    <path d="M15.166 17.687a2.528 2.528 0 0 1-2.521-2.521 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 15.166a2.528 2.528 0 0 1-2.522 2.521h-6.312z" fill="#ECB22E"/>
+                  </svg>
+                </div>
+                {/* Microsoft Teams - Clean brand logo */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: '#5059C915' }}
+                  title="Microsoft Teams"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                    {/* Background person (smaller, behind) */}
+                    <circle cx="19" cy="5.5" r="2" fill="#5059C9"/>
+                    <path d="M22 9h-6c-.6 0-1 .4-1 1v5c0 2.2 1.8 4 4 4s4-1.8 4-4v-5c0-.6-.4-1-1-1z" fill="#5059C9"/>
+                    {/* Foreground person (larger, in front) */}
+                    <circle cx="13" cy="4" r="3" fill="#7B83EB"/>
+                    <path d="M17 8H4c-.6 0-1 .4-1 1v7c0 3.3 2.7 6 6 6h2c3.3 0 6-2.7 6-6V9c0-.6-.4-1-1-1z" fill="#7B83EB"/>
+                    {/* T letter */}
+                    <path d="M6.5 11h7v1.5h-2.5v5h-2v-5H6.5V11z" fill="#fff"/>
+                  </svg>
+                </div>
+                {/* Google Chat - Brand color */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: '#00AC4715' }}
+                  title="Google Chat"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                    <path d="M6 4h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4l-4 4v-4H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#00AC47"/>
+                    <circle cx="8" cy="10" r="1" fill="#fff"/>
+                    <circle cx="12" cy="10" r="1" fill="#fff"/>
+                    <circle cx="16" cy="10" r="1" fill="#fff"/>
+                  </svg>
+                </div>
+                {/* Discord - Brand color */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: '#5865F215' }}
+                  title="Discord"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#5865F2">
+                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                  </svg>
+                </div>
+                {/* Email - Theme primary color */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  title="Email"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                  </svg>
+                </div>
+                {/* SMS - Success green color */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+                  title="SMS"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgb(var(--color-success))' }}>
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </div>
+                {/* Webhook - Accent color */}
+                <div 
+                  className="w-6 h-6 rounded flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                  style={{ backgroundColor: 'rgb(var(--color-accent-500) / 0.1)' }}
+                  title="Webhook"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'rgb(var(--color-accent-600))' }}>
+                    <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2" />
+                    <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06" />
+                    <path d="m12 6 3.13 5.73c.53.97 1.74 1.43 2.88 1.1A4 4 0 1 1 19.5 21" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/app/settings?tab=notifications"
+              className="text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                color: 'rgb(var(--color-primary-500))',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {language === 'en' ? 'Set up alerts' : 'Configurer les alertes'}
+            </Link>
           </div>
-          <div className="flex-1">
-            <p className="alert-title">
-              {analysis.summary.critical} {analysis.summary.critical > 1 
-                ? t('dashboard.alerts.criticalAnomalies') 
-                : t('dashboard.alerts.criticalAnomaly')}
-            </p>
-            <p className="alert-message">
-              {t('dashboard.alerts.actionRequired')}
-            </p>
-          </div>
-          <ArrowRight className="w-5 h-5" style={{ color: 'rgb(var(--color-error))' }} />
-        </Link>
+        </div>
       )}
-
-      {/* Health Score + Key Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Health Score - Compact */}
-        <div className="lg:col-span-1 order-2 lg:order-1">
-          <HealthScoreGauge
-            score={analysis.healthScore}
-            criticalCount={analysis.summary.critical}
-            warningCount={analysis.summary.warning}
-            infoCount={analysis.summary.info}
-            size="sm"
-            isEn={language === 'en'}
-            onClick={() => navigate('/app/anomalies')}
-            metrics={healthMetrics}
-          />
-        </div>
-
-        {/* KPI Cards */}
-        <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 order-1 lg:order-2">
-          <KPICard
-            title={t('dashboard.kpi.revenue')}
-            value={formatCurrency(kpis.revenue.current)}
-            change={kpis.revenue.change}
-            trend={kpis.revenue.change >= 0 ? 'up' : 'down'}
-            vsPriorLabel={t('dashboard.kpi.vsPrior')}
-          />
-          <KPICard
-            title={t('dashboard.kpi.cash')}
-            value={formatCurrency(kpis.cash.current)}
-            change={kpis.cash.change}
-            trend={kpis.cash.change >= 0 ? 'up' : 'down'}
-            badge={`${kpis.runway} ${t('dashboard.kpi.runway')}`}
-            vsPriorLabel={t('dashboard.kpi.vsPrior')}
-          />
-          <KPICard
-            title={t('dashboard.kpi.netCashFlow')}
-            value={formatCurrency(kpis.cashFlow.current)}
-            subtitle={t('dashboard.kpi.thisMonth')}
-            trend="up"
-          />
-          <KPICard
-            title={t('dashboard.kpi.workingCapital')}
-            value={formatCurrency(kpis.workingCapital.current)}
-            subtitle={t('dashboard.kpi.assetsMinusLiabilities')}
-            trend="up"
-          />
-        </div>
-      </div>
-
-      {/* Ratios Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <RatioCard
-          label={t('dashboard.ratios.currentRatio')}
-          value={kpis.ratios.current}
-          benchmark={2.0}
-          format="ratio"
-          vsLabel={t('dashboard.ratios.vs')}
-        />
-        <RatioCard
-          label={t('dashboard.ratios.quickRatio')}
-          value={kpis.ratios.quick}
-          benchmark={1.5}
-          format="ratio"
-          vsLabel={t('dashboard.ratios.vs')}
-        />
-        <RatioCard
-          label={t('dashboard.ratios.grossMargin')}
-          value={42.5}
-          benchmark={35}
-          format="percent"
-          vsLabel={t('dashboard.ratios.vs')}
-        />
-        <RatioCard
-          label={t('dashboard.ratios.dso')}
-          value={38}
-          benchmark={45}
-          format="days"
-          lowerIsBetter
-          vsLabel={t('dashboard.ratios.vs')}
-        />
-      </div>
 
       {/* Charts - Revenue & Cash Flow Trends */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -546,10 +543,22 @@ export default function Dashboard() {
           data={revenueData}
           title={t('dashboard.charts.revenue')}
           titleEn="Revenue"
-          subtitle={t('dashboard.charts.last12Months')}
-          subtitleEn="Last 12 months - vs budget"
+          subtitle={
+            selectedPeriod === 'mtd' 
+              ? (language === 'en' ? 'Last 4 months - vs budget' : '4 derniers mois - vs budget')
+              : selectedPeriod === 'qtd'
+                ? (language === 'en' ? 'Last 6 months - vs budget' : '6 derniers mois - vs budget')
+                : t('dashboard.charts.last12Months')
+          }
+          subtitleEn={
+            selectedPeriod === 'mtd' 
+              ? 'Last 4 months - vs budget'
+              : selectedPeriod === 'qtd'
+                ? 'Last 6 months - vs budget'
+                : 'Last 12 months - vs budget'
+          }
           budget={revenueBudget}
-          color="#3B82F6"
+          color="rgb(var(--color-primary-500))"
           height={200}
           isEn={language === 'en'}
         />
@@ -557,9 +566,21 @@ export default function Dashboard() {
           data={cashFlowData}
           title={t('dashboard.charts.cashFlow')}
           titleEn="Net Cash Flow"
-          subtitle={t('dashboard.charts.operational')}
-          subtitleEn="Operational - monthly"
-          color="#8B5CF6"
+          subtitle={
+            selectedPeriod === 'mtd' 
+              ? (language === 'en' ? 'Last 4 months' : '4 derniers mois')
+              : selectedPeriod === 'qtd'
+                ? (language === 'en' ? 'Last 6 months' : '6 derniers mois')
+                : t('dashboard.charts.operational')
+          }
+          subtitleEn={
+            selectedPeriod === 'mtd' 
+              ? 'Last 4 months'
+              : selectedPeriod === 'qtd'
+                ? 'Last 6 months'
+                : 'Operational - monthly'
+          }
+          color="rgb(var(--color-primary-500))"
           height={200}
           isEn={language === 'en'}
         />
@@ -575,6 +596,9 @@ export default function Dashboard() {
         isEn={language === 'en'}
         height={260}
       />
+
+      {/* Real Estate Industry KPIs Section - Temporarily disabled */}
+      {/* <RealEstateKPISection isEn={language === 'en'} /> */}
 
       {/* Trial Balance Status */}
       {financialData?.summary.trialBalance && (
@@ -640,56 +664,6 @@ export default function Dashboard() {
           accounts={financialData.summary.bankAccounts}
           isEn={language === 'en'}
         />
-      )}
-
-      {/* Anomalies List */}
-      {analysis.summary.total > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-primary">
-              {t('dashboard.alerts.attentionPoints')}
-            </h3>
-            <Link 
-              to="/app/anomalies"
-              className="text-sm flex items-center gap-1 text-muted hover:text-secondary"
-            >
-              {t('common.viewAll')} <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-          
-          <div className="space-y-2">
-            {analysis.anomalies.slice(0, 4).map((anomaly, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 p-3 rounded-lg ${
-                  anomaly.severity === 'critical' ? 'bg-[rgb(var(--color-error)/0.08)]' : 'bg-muted'
-                }`}
-              >
-                <AlertTriangle 
-                  className={`w-4 h-4 flex-shrink-0 ${
-                    anomaly.severity === 'critical' ? 'text-error' : 'text-muted'
-                  }`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-primary">
-                    {anomaly.title}
-                  </p>
-                  <Tooltip content={anomaly.description} position="bottom" delay={300}>
-                    <p className="text-xs truncate text-muted cursor-help">
-                      {anomaly.description}
-                    </p>
-                  </Tooltip>
-                </div>
-                <Link
-                  to="/app/anomalies"
-                  className="icon-btn"
-                >
-                  <Eye className="w-4 h-4" />
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {/* No Anomalies State */}
@@ -845,264 +819,6 @@ export default function Dashboard() {
 // SUB-COMPONENTS
 // =====================================================
 
-interface KPICardProps {
-  title: string;
-  value: string;
-  change?: number;
-  subtitle?: string;
-  trend: 'up' | 'down' | 'neutral';
-  badge?: string;
-  vsPriorLabel?: string;
-  sparkline?: number[];
-}
-
-function KPICard({ title, value, change, subtitle, trend, badge, vsPriorLabel = 'vs prior', sparkline }: KPICardProps) {
-  // Generate random sparkline data if not provided
-  const sparkData = sparkline || Array.from({ length: 12 }, () => Math.random() * 100);
-  const maxVal = Math.max(...sparkData);
-  const minVal = Math.min(...sparkData);
-  const range = maxVal - minVal || 1;
-  
-  return (
-    <div 
-      className="group relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
-      style={{ 
-        backgroundColor: 'rgb(var(--color-surface))',
-        border: '1px solid rgb(var(--color-border))',
-      }}
-    >
-      {/* Animated gradient border on hover */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          background: trend === 'up' 
-            ? 'linear-gradient(135deg, rgb(var(--color-success) / 0.1) 0%, transparent 50%)'
-            : trend === 'down'
-            ? 'linear-gradient(135deg, rgb(var(--color-error) / 0.1) 0%, transparent 50%)'
-            : 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, transparent 50%)',
-        }}
-      />
-      
-      {/* Live indicator pulse */}
-      <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
-        <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
-          <span 
-            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-            style={{ backgroundColor: 'rgb(var(--color-success))' }}
-          />
-          <span 
-            className="relative inline-flex rounded-full h-1.5 w-1.5 sm:h-2 sm:w-2"
-            style={{ backgroundColor: 'rgb(var(--color-success))' }}
-          />
-        </span>
-      </div>
-      
-      <div className="relative p-3 sm:p-4 lg:p-5">
-        <div className="flex items-start justify-between gap-1 sm:gap-2 mb-2 sm:mb-3">
-          <span className="text-[9px] sm:text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-muted leading-tight line-clamp-1">
-            {title}
-          </span>
-          {badge && (
-            <span 
-              className="px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] lg:text-[10px] font-medium whitespace-nowrap flex-shrink-0"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                color: 'rgb(var(--color-primary-600))',
-              }}
-            >
-              {badge}
-            </span>
-          )}
-        </div>
-        
-        {/* Value with animated counter effect */}
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p 
-              className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold tabular-nums tracking-tight"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {value}
-            </p>
-            
-            {change !== undefined ? (
-              <div className="flex items-center gap-1 sm:gap-1.5 mt-1 sm:mt-2">
-                <div 
-                  className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] lg:text-xs font-semibold ${
-                    trend === 'up' ? 'text-success' : trend === 'down' ? 'text-error' : 'text-muted'
-                  }`}
-                  style={{
-                    backgroundColor: trend === 'up' 
-                      ? 'rgb(var(--color-success) / 0.1)'
-                      : trend === 'down'
-                      ? 'rgb(var(--color-error) / 0.1)'
-                      : 'rgb(var(--color-bg-muted))',
-                  }}
-                >
-                  {trend === 'up' ? (
-                    <ArrowUpRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                  ) : trend === 'down' ? (
-                    <ArrowDownRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                  ) : null}
-                  {change >= 0 ? '+' : ''}{change.toFixed(1)}%
-                </div>
-                <span className="text-[9px] sm:text-[10px] lg:text-xs text-muted hidden md:inline">
-                  {vsPriorLabel}
-                </span>
-              </div>
-            ) : subtitle ? (
-              <p className="text-[9px] sm:text-[10px] lg:text-xs mt-1 sm:mt-2 text-muted line-clamp-1">
-                {subtitle}
-              </p>
-            ) : null}
-          </div>
-          
-          {/* Mini sparkline chart - hidden on very small screens */}
-          <div className="hidden xs:block w-12 sm:w-16 lg:w-20 h-8 sm:h-10 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <svg viewBox="0 0 80 40" className="w-full h-full overflow-visible">
-              {/* Area fill */}
-              <path
-                d={`M 0 40 ${sparkData.map((v, i) => `L ${(i / (sparkData.length - 1)) * 80} ${40 - ((v - minVal) / range) * 35}`).join(' ')} L 80 40 Z`}
-                fill={trend === 'up' ? 'rgb(var(--color-success) / 0.2)' : trend === 'down' ? 'rgb(var(--color-error) / 0.2)' : 'rgb(var(--color-primary-500) / 0.2)'}
-              />
-              {/* Line */}
-              <path
-                d={`M ${sparkData.map((v, i) => `${(i / (sparkData.length - 1)) * 80} ${40 - ((v - minVal) / range) * 35}`).join(' L ')}`}
-                fill="none"
-                stroke={trend === 'up' ? 'rgb(var(--color-success))' : trend === 'down' ? 'rgb(var(--color-error))' : 'rgb(var(--color-primary-500))'}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* End dot */}
-              <circle
-                cx={80}
-                cy={40 - ((sparkData[sparkData.length - 1] - minVal) / range) * 35}
-                r="3"
-                fill={trend === 'up' ? 'rgb(var(--color-success))' : trend === 'down' ? 'rgb(var(--color-error))' : 'rgb(var(--color-primary-500))'}
-                className="animate-pulse"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface RatioCardProps {
-  label: string;
-  value: number;
-  benchmark: number;
-  format: 'ratio' | 'percent' | 'days';
-  lowerIsBetter?: boolean;
-  vsLabel?: string;
-}
-
-function RatioCard({ label, value, benchmark, format, lowerIsBetter, vsLabel = 'vs' }: RatioCardProps) {
-  const isGood = lowerIsBetter ? value <= benchmark : value >= benchmark;
-  const progress = lowerIsBetter 
-    ? Math.min(100, (benchmark / value) * 100)
-    : Math.min(100, (value / benchmark) * 100);
-  
-  const formatValue = () => {
-    switch (format) {
-      case 'ratio': return `${value.toFixed(2)}x`;
-      case 'percent': return `${value.toFixed(1)}%`;
-      case 'days': return `${Math.round(value)}d`;
-    }
-  };
-
-  const formatBenchmark = () => {
-    switch (format) {
-      case 'ratio': return `${benchmark}x`;
-      case 'percent': return `${benchmark}%`;
-      case 'days': return `${benchmark}d`;
-    }
-  };
-
-  return (
-    <div 
-      className="group relative p-3 sm:p-4 lg:p-5 rounded-lg sm:rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md cursor-default"
-      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-    >
-      {/* Background progress indicator */}
-      <div 
-        className="absolute inset-0 transition-all duration-700 ease-out"
-        style={{ 
-          background: `linear-gradient(90deg, ${isGood ? 'rgb(var(--color-success) / 0.08)' : 'rgb(var(--color-warning) / 0.08)'} ${Math.min(progress, 100)}%, transparent ${Math.min(progress, 100)}%)`,
-        }}
-      />
-      
-      <div className="relative">
-        <div className="flex items-start justify-between mb-1.5 sm:mb-2 gap-1">
-          <p className="text-[9px] sm:text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-muted leading-tight line-clamp-1">
-            {label}
-          </p>
-          {/* Status icon */}
-          <div 
-            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-              isGood ? 'bg-success/20' : 'bg-warning/20'
-            }`}
-          >
-            {isGood ? (
-              <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-success" />
-            ) : (
-              <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-warning" />
-            )}
-          </div>
-        </div>
-        
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0">
-            <span 
-              className="text-lg sm:text-xl lg:text-2xl font-bold tabular-nums"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {formatValue()}
-            </span>
-            <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 sm:mt-1">
-              <span className={`text-[9px] sm:text-[10px] lg:text-xs font-medium ${isGood ? 'text-success' : 'text-warning'}`}>
-                {isGood ? '✓' : '!'} {vsLabel} {formatBenchmark()}
-              </span>
-            </div>
-          </div>
-          
-          {/* Circular progress indicator - smaller on mobile */}
-          <div className="relative w-8 h-8 sm:w-10 sm:h-10 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-              <circle
-                cx="18"
-                cy="18"
-                r="14"
-                fill="none"
-                stroke="rgb(var(--color-border))"
-                strokeWidth="3"
-              />
-              <circle
-                cx="18"
-                cy="18"
-                r="14"
-                fill="none"
-                stroke={isGood ? 'rgb(var(--color-success))' : 'rgb(var(--color-warning))'}
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeDasharray={`${progress * 0.88} 88`}
-                className="transition-all duration-700 ease-out"
-              />
-            </svg>
-            <span 
-              className="absolute inset-0 flex items-center justify-center text-[7px] sm:text-[8px] font-bold"
-              style={{ color: isGood ? 'rgb(var(--color-success))' : 'rgb(var(--color-warning))' }}
-            >
-              {Math.round(progress)}%
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface QuickActionProps {
   to: string;
@@ -1116,38 +832,23 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
   return (
     <Link
       to={to}
-      className="group relative overflow-hidden rounded-lg sm:rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+      className="relative overflow-hidden rounded-lg sm:rounded-xl"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: `1px solid ${hasAttention ? 'rgb(var(--color-error) / 0.4)' : 'rgb(var(--color-border))'}`,
       }}
     >
-      {/* Hover gradient effect */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{
-          background: hasAttention
-            ? 'linear-gradient(135deg, rgb(var(--color-error) / 0.05) 0%, transparent 60%)'
-            : 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, transparent 60%)',
-        }}
-      />
-      
-      {/* Animated arrow on hover - hidden on mobile */}
-      <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300 hidden sm:block">
-        <ChevronRight 
-          className="w-4 h-4 sm:w-5 sm:h-5" 
-          style={{ color: hasAttention ? 'rgb(var(--color-error))' : 'rgb(var(--color-primary-500))' }}
-        />
-      </div>
-      
       <div className="relative flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
         <div 
-          className={`relative w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${
-            hasAttention 
-              ? 'bg-error/10 text-error' 
-              : 'bg-muted'
-          }`}
-          style={{ color: hasAttention ? undefined : 'rgb(var(--color-text-muted))' }}
+          className="relative w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ 
+            backgroundColor: hasAttention 
+              ? 'rgb(var(--color-error) / 0.1)' 
+              : 'rgb(var(--color-primary-500) / 0.1)',
+            color: hasAttention 
+              ? 'rgb(var(--color-error))' 
+              : 'rgb(var(--color-primary-500))'
+          }}
         >
           <span className="[&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{icon}</span>
           {/* Pulse effect for attention items */}
@@ -1161,7 +862,7 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
         <div className="min-w-0 flex-1">
           <Tooltip content={title} position="top" delay={400}>
             <p 
-              className="font-semibold text-xs sm:text-sm group-hover:text-primary-600 transition-colors truncate cursor-help"
+              className="font-semibold text-xs sm:text-sm truncate cursor-help"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {title}
@@ -1175,5 +876,233 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
         </div>
       </div>
     </Link>
+  );
+}
+
+// =====================================================
+// REAL ESTATE KPI SECTION
+// =====================================================
+
+interface RealEstateKPISectionProps {
+  isEn: boolean;
+}
+
+function RealEstateKPISection({ isEn }: RealEstateKPISectionProps) {
+  // Mock real estate specific data - in production this would come from financialData
+  const realEstateKPIs = {
+    occupancyRate: { current: 94.2, target: 92, trend: 'up' as const, change: 2.1 },
+    noi: { current: 185000, target: 170000, trend: 'up' as const, change: 8.8 },
+    capRate: { current: 6.2, target: 6.0, trend: 'stable' as const, change: 0.1 },
+    cashOnCash: { current: 10.5, target: 10.0, trend: 'up' as const, change: 0.5 },
+    rentPerSqft: { current: 18.50, target: 17.00, trend: 'up' as const, change: 8.8 },
+    vacancyLoss: { current: 12500, prior: 18200, trend: 'down' as const, change: -31.3 },
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const getStatusColor = (trend: 'up' | 'down' | 'stable', isGoodWhenDown = false) => {
+    if (trend === 'stable') return 'rgb(var(--color-warning))';
+    if (isGoodWhenDown) {
+      return trend === 'down' ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))';
+    }
+    return trend === 'up' ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))';
+  };
+
+  const kpiCards = [
+    {
+      id: 'occupancy',
+      icon: Home,
+      label: isEn ? 'Occupancy Rate' : 'Taux d\'occupation',
+      value: `${realEstateKPIs.occupancyRate.current}%`,
+      target: `${isEn ? 'Target' : 'Cible'}: ${realEstateKPIs.occupancyRate.target}%`,
+      change: `+${realEstateKPIs.occupancyRate.change}%`,
+      trend: realEstateKPIs.occupancyRate.trend,
+      color: 'rgb(var(--color-primary-500))',
+      bgColor: 'rgb(var(--color-primary-500) / 0.1)',
+    },
+    {
+      id: 'noi',
+      icon: DollarSign,
+      label: isEn ? 'Net Operating Income' : 'Résultat net d\'exploitation',
+      value: formatCurrency(realEstateKPIs.noi.current),
+      target: `${isEn ? 'Target' : 'Cible'}: ${formatCurrency(realEstateKPIs.noi.target)}`,
+      change: `+${realEstateKPIs.noi.change}%`,
+      trend: realEstateKPIs.noi.trend,
+      color: 'rgb(var(--color-success))',
+      bgColor: 'rgb(var(--color-success) / 0.1)',
+    },
+    {
+      id: 'caprate',
+      icon: Percent,
+      label: isEn ? 'Cap Rate' : 'Taux de capitalisation',
+      value: `${realEstateKPIs.capRate.current}%`,
+      target: `${isEn ? 'Benchmark' : 'Référence'}: 4-8%`,
+      change: `${realEstateKPIs.capRate.change > 0 ? '+' : ''}${realEstateKPIs.capRate.change}%`,
+      trend: realEstateKPIs.capRate.trend,
+      color: 'rgb(var(--color-accent-600))',
+      bgColor: 'rgb(var(--color-accent-500) / 0.1)',
+    },
+    {
+      id: 'cashoncash',
+      icon: TrendingUp,
+      label: isEn ? 'Cash-on-Cash Return' : 'Rendement cash-on-cash',
+      value: `${realEstateKPIs.cashOnCash.current}%`,
+      target: `${isEn ? 'Target' : 'Cible'}: ${realEstateKPIs.cashOnCash.target}%`,
+      change: `+${realEstateKPIs.cashOnCash.change}%`,
+      trend: realEstateKPIs.cashOnCash.trend,
+      color: 'rgb(var(--color-info))',
+      bgColor: 'rgb(var(--color-info) / 0.1)',
+    },
+  ];
+
+  return (
+    <div 
+      className="rounded-xl p-4 sm:p-5"
+      style={{ 
+        backgroundColor: 'rgb(var(--color-surface))',
+        border: '1px solid rgb(var(--color-border))',
+      }}
+    >
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
+            <Building2 className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          </div>
+          <div>
+            <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Real Estate KPIs' : 'KPIs Immobilier'}
+            </h3>
+            <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Property performance metrics' : 'Métriques de performance immobilière'}
+            </p>
+          </div>
+        </div>
+        <div 
+          className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-success) / 0.1)',
+            color: 'rgb(var(--color-success))',
+          }}
+        >
+          <Target className="w-3 h-3" />
+          {isEn ? 'On Track' : 'Dans la cible'}
+        </div>
+      </div>
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpiCards.map((kpi) => {
+          const IconComponent = kpi.icon;
+          return (
+            <div 
+              key={kpi.id}
+              className="p-3 rounded-lg transition-all hover:scale-[1.02]"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                border: '1px solid rgb(var(--color-border) / 0.5)',
+              }}
+            >
+              {/* Icon and Label */}
+              <div className="flex items-center gap-2 mb-2">
+                <div 
+                  className="w-7 h-7 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: kpi.bgColor }}
+                >
+                  <IconComponent className="w-3.5 h-3.5" style={{ color: kpi.color }} />
+                </div>
+                <span className="text-[10px] font-medium truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {kpi.label}
+                </span>
+              </div>
+
+              {/* Value */}
+              <p className="text-lg sm:text-xl font-bold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                {kpi.value}
+              </p>
+
+              {/* Target and Change */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {kpi.target}
+                </span>
+                <span 
+                  className="flex items-center gap-0.5 text-[10px] font-medium"
+                  style={{ color: getStatusColor(kpi.trend) }}
+                >
+                  {kpi.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : 
+                   kpi.trend === 'down' ? <TrendingDown className="w-3 h-3" /> : null}
+                  {kpi.change}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Additional Metrics Row */}
+      <div 
+        className="mt-4 pt-4 flex flex-wrap gap-4 items-center justify-between"
+        style={{ borderTop: '1px solid rgb(var(--color-border))' }}
+      >
+        <div className="flex items-center gap-6 flex-wrap">
+          {/* Rent per sqft */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Rent/sqft:' : 'Loyer/pi²:'}
+            </span>
+            <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              ${realEstateKPIs.rentPerSqft.current.toFixed(2)}
+            </span>
+            <span 
+              className="text-[10px] font-medium"
+              style={{ color: 'rgb(var(--color-success))' }}
+            >
+              +{realEstateKPIs.rentPerSqft.change}%
+            </span>
+          </div>
+
+          {/* Vacancy Loss */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Vacancy Loss:' : 'Perte vacance:'}
+            </span>
+            <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              {formatCurrency(realEstateKPIs.vacancyLoss.current)}
+            </span>
+            <span 
+              className="text-[10px] font-medium"
+              style={{ color: 'rgb(var(--color-success))' }}
+            >
+              {realEstateKPIs.vacancyLoss.change}%
+            </span>
+          </div>
+        </div>
+
+        {/* Property Type Badge */}
+        <div 
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-bg-muted))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          <Building2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn ? 'Multi-Family Residential' : 'Multi-logements résidentiel'}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

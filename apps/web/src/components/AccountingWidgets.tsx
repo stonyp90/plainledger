@@ -74,12 +74,17 @@ export function AgingWidget({
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          {type === 'receivable' ? (
-            <Users className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          ) : (
-            <Building2 className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          )}
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
+            {type === 'receivable' ? (
+              <Users className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            ) : (
+              <Building2 className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            )}
+          </div>
           <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? titleEn : title}
           </h3>
@@ -198,8 +203,13 @@ export function BankReconciliationWidget({ accounts, isEn }: BankReconciliationW
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between"
       >
-        <div className="flex items-center gap-2">
-          <Landmark className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
+            <Landmark className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          </div>
           <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Bank Reconciliation' : 'Rapprochement bancaire'}
           </h3>
@@ -321,8 +331,13 @@ export function BudgetWidget({ data, isEn }: BudgetWidgetProps) {
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
+            <DollarSign className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          </div>
           <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Budget vs Actual' : 'Budget vs Réel'}
           </h3>
@@ -418,25 +433,34 @@ interface DeadlinesWidgetProps {
 }
 
 export function DeadlinesWidget({ deadlines, isEn }: DeadlinesWidgetProps) {
-  const getTypeIcon = (type: AccountingDeadline['type']) => {
+  const hasOverdue = deadlines.some(d => d.status === 'overdue');
+  
+  const getTypeIcon = (type: AccountingDeadline['type'], status: AccountingDeadline['status']) => {
+    // Only use semantic colors for overdue items - otherwise use primary
+    const iconColor = status === 'overdue' 
+      ? 'rgb(var(--color-error))' 
+      : 'rgb(var(--color-primary-500))';
+    
     switch (type) {
-      case 'tax': return <DollarSign className="w-4 h-4" />;
-      case 'filing': return <FileText className="w-4 h-4" />;
-      case 'payment': return <Landmark className="w-4 h-4" />;
-      case 'audit': return <AlertTriangle className="w-4 h-4" />;
-      case 'report': return <FileText className="w-4 h-4" />;
-      default: return <Calendar className="w-4 h-4" />;
+      case 'tax': return <DollarSign className="w-4 h-4" style={{ color: iconColor }} />;
+      case 'filing': return <FileText className="w-4 h-4" style={{ color: iconColor }} />;
+      case 'payment': return <Landmark className="w-4 h-4" style={{ color: iconColor }} />;
+      case 'audit': return <AlertTriangle className="w-4 h-4" style={{ color: iconColor }} />;
+      case 'report': return <FileText className="w-4 h-4" style={{ color: iconColor }} />;
+      default: return <Calendar className="w-4 h-4" style={{ color: iconColor }} />;
     }
   };
 
   const getStatusStyle = (status: AccountingDeadline['status']) => {
     switch (status) {
       case 'overdue':
-        return { bg: 'rgb(var(--color-error) / 0.1)', text: 'rgb(var(--color-error))' };
+        // Red for overdue - semantic color for urgency
+        return { bg: 'rgb(var(--color-error) / 0.08)', text: 'rgb(var(--color-error))' };
       case 'upcoming':
-        return { bg: 'rgb(var(--color-warning) / 0.1)', text: 'rgb(var(--color-warning))' };
+        // Use subtle primary tint instead of warning to reduce color noise
+        return { bg: 'rgb(var(--color-primary-500) / 0.06)', text: 'rgb(var(--color-primary-600))' };
       case 'completed':
-        return { bg: 'rgb(var(--color-success) / 0.1)', text: 'rgb(var(--color-success))' };
+        return { bg: 'rgb(var(--color-success) / 0.08)', text: 'rgb(var(--color-success))' };
       default:
         return { bg: 'rgb(var(--color-bg-muted))', text: 'rgb(var(--color-text-muted))' };
     }
@@ -459,13 +483,29 @@ export function DeadlinesWidget({ deadlines, isEn }: DeadlinesWidgetProps) {
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ 
+              backgroundColor: hasOverdue 
+                ? 'rgb(var(--color-error) / 0.1)' 
+                : 'rgb(var(--color-primary-500) / 0.1)' 
+            }}
+          >
+            <Calendar 
+              className="w-5 h-5" 
+              style={{ 
+                color: hasOverdue 
+                  ? 'rgb(var(--color-error))' 
+                  : 'rgb(var(--color-primary-500))' 
+              }} 
+            />
+          </div>
           <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Upcoming Deadlines' : 'Échéances à venir'}
           </h3>
         </div>
-        {deadlines.some(d => d.status === 'overdue') && (
+        {hasOverdue && (
           <span className="badge-error text-xs">
             {deadlines.filter(d => d.status === 'overdue').length} {isEn ? 'overdue' : 'en retard'}
           </span>
@@ -485,9 +525,13 @@ export function DeadlinesWidget({ deadlines, isEn }: DeadlinesWidgetProps) {
             >
               <div 
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+                style={{ 
+                  backgroundColor: deadline.status === 'overdue' 
+                    ? 'rgb(var(--color-error) / 0.12)' 
+                    : 'rgb(var(--color-surface))',
+                }}
               >
-                {getTypeIcon(deadline.type)}
+                {getTypeIcon(deadline.type, deadline.status)}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate" style={{ color: 'rgb(var(--color-text))' }}>
@@ -552,23 +596,30 @@ export function TrialBalanceSummary({ totalDebits, totalCredits, isBalanced, isE
 
   return (
     <div 
-      className="p-4 rounded-xl flex items-center justify-between"
+      className="p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
       style={{ 
-        backgroundColor: isBalanced ? 'rgb(var(--color-success) / 0.1)' : 'rgb(var(--color-error) / 0.1)',
-        border: `1px solid ${isBalanced ? 'rgb(var(--color-success) / 0.2)' : 'rgb(var(--color-error) / 0.2)'}`
+        backgroundColor: isBalanced ? 'rgb(var(--color-success) / 0.08)' : 'rgb(var(--color-error) / 0.08)',
+        border: `2px solid ${isBalanced ? 'rgb(var(--color-success) / 0.25)' : 'rgb(var(--color-error) / 0.25)'}`
       }}
     >
       <div className="flex items-center gap-3">
-        {isBalanced ? (
-          <CheckCircle className="w-6 h-6" style={{ color: 'rgb(var(--color-success))' }} />
-        ) : (
-          <AlertTriangle className="w-6 h-6" style={{ color: 'rgb(var(--color-error))' }} />
-        )}
+        <div 
+          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ 
+            backgroundColor: isBalanced ? 'rgb(var(--color-success) / 0.15)' : 'rgb(var(--color-error) / 0.15)',
+          }}
+        >
+          {isBalanced ? (
+            <CheckCircle className="w-6 h-6" style={{ color: 'rgb(var(--color-success))' }} />
+          ) : (
+            <AlertTriangle className="w-6 h-6" style={{ color: 'rgb(var(--color-error))' }} />
+          )}
+        </div>
         <div>
-          <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+          <p className="font-semibold text-base" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Trial Balance' : 'Balance de vérification'}
           </p>
-          <p className="text-sm" style={{ color: isBalanced ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+          <p className="text-sm font-medium" style={{ color: isBalanced ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
             {isBalanced 
               ? (isEn ? 'Balanced' : 'Équilibré')
               : (isEn ? `Out of balance by ${formatCurrency(difference)}` : `Déséquilibré de ${formatCurrency(difference)}`)}

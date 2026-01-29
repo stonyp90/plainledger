@@ -4,7 +4,7 @@
  * Perfect for understanding cash flow movements, profit/loss composition
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
 
@@ -41,6 +41,27 @@ export default function WaterfallChart({
 }: WaterfallChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced hover handlers to prevent flickering
+  const handleBarEnter = useCallback((index: number, e: React.MouseEvent) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    setHoveredIndex(index);
+    const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
+    setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.top });
+  }, []);
+
+  const handleBarMove = useCallback((e: React.MouseEvent) => {
+    setTooltipPosition({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const handleBarLeave = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredIndex(null);
+    }, 50);
+  }, []);
 
   const {
     processedData,
@@ -239,15 +260,10 @@ export default function WaterfallChart({
               <g 
                 key={item.label}
                 className="cursor-pointer"
-                onMouseEnter={(e) => {
-                  setHoveredIndex(index);
-                  const rect = (e.target as SVGElement).getBoundingClientRect();
-                  setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.top });
-                }}
-                onMouseMove={(e) => {
-                  setTooltipPosition({ x: e.clientX, y: e.clientY });
-                }}
-                onMouseLeave={() => setHoveredIndex(null)}
+                style={{ pointerEvents: 'bounding-box' }}
+                onMouseEnter={(e) => handleBarEnter(index, e)}
+                onMouseMove={handleBarMove}
+                onMouseLeave={handleBarLeave}
               >
                 {/* Hover background */}
                 <rect
@@ -332,7 +348,10 @@ export default function WaterfallChart({
           <div className="min-w-[200px]">
             {/* Header */}
             <div className="flex items-center justify-between gap-3 mb-2">
-              <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+              <span 
+                className="text-xs font-medium uppercase tracking-wide"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
                 {processedData[hoveredIndex].type === 'start' 
                   ? (isEn ? 'Starting Balance' : 'Solde initial')
                   : processedData[hoveredIndex].type === 'end'
@@ -345,12 +364,15 @@ export default function WaterfallChart({
                 }
               </span>
               {significantItems.includes(processedData[hoveredIndex]) && (
-                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                <AlertTriangle className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
               )}
             </div>
             
             {/* Label */}
-            <p className="text-white font-medium mb-3">
+            <p 
+              className="font-medium mb-3"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               {isEn && processedData[hoveredIndex].labelEn 
                 ? processedData[hoveredIndex].labelEn 
                 : processedData[hoveredIndex].label}
@@ -359,10 +381,16 @@ export default function WaterfallChart({
             {/* Values */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-gray-400 text-sm">{isEn ? 'Amount' : 'Montant'}</span>
-                <span className={`font-bold flex items-center gap-1 ${
-                  processedData[hoveredIndex].value >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
+                <span 
+                  className="text-sm"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
+                  {isEn ? 'Amount' : 'Montant'}
+                </span>
+                <span 
+                  className="font-bold flex items-center gap-1"
+                  style={{ color: processedData[hoveredIndex].value >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}
+                >
                   {processedData[hoveredIndex].value >= 0 
                     ? <TrendingUp className="w-3 h-3" /> 
                     : <TrendingDown className="w-3 h-3" />}
@@ -373,17 +401,36 @@ export default function WaterfallChart({
               {processedData[hoveredIndex].type !== 'start' && (
                 <>
                   <div className="flex justify-between">
-                    <span className="text-gray-400 text-sm">{isEn ? 'Running Total' : 'Total cumulé'}</span>
-                    <span className="text-white font-mono">
+                    <span 
+                      className="text-sm"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {isEn ? 'Running Total' : 'Total cumulé'}
+                    </span>
+                    <span 
+                      className="font-mono"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    >
                       {formatValue(processedData[hoveredIndex].cumulative)}
                     </span>
                   </div>
                   
                   {/* Percentage of total change */}
                   {totalChange !== 0 && processedData[hoveredIndex].type !== 'end' && processedData[hoveredIndex].type !== 'subtotal' && (
-                    <div className="flex justify-between pt-2 border-t border-gray-700">
-                      <span className="text-gray-400 text-sm">{isEn ? '% of Net Change' : '% du changement net'}</span>
-                      <span className="text-gray-300 font-mono">
+                    <div 
+                      className="flex justify-between pt-2"
+                      style={{ borderTop: '1px solid rgb(var(--color-border))' }}
+                    >
+                      <span 
+                        className="text-sm"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
+                        {isEn ? '% of Net Change' : '% du changement net'}
+                      </span>
+                      <span 
+                        className="font-mono"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
                         {Math.abs((processedData[hoveredIndex].value / totalChange) * 100).toFixed(1)}%
                       </span>
                     </div>
@@ -393,16 +440,32 @@ export default function WaterfallChart({
               
               {/* Category if available */}
               {processedData[hoveredIndex].category && (
-                <div className="flex justify-between pt-2 border-t border-gray-700">
-                  <span className="text-gray-400 text-sm">{isEn ? 'Category' : 'Catégorie'}</span>
-                  <span className="text-gray-300">{processedData[hoveredIndex].category}</span>
+                <div 
+                  className="flex justify-between pt-2"
+                  style={{ borderTop: '1px solid rgb(var(--color-border))' }}
+                >
+                  <span 
+                    className="text-sm"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {isEn ? 'Category' : 'Catégorie'}
+                  </span>
+                  <span style={{ color: 'rgb(var(--color-text))' }}>
+                    {processedData[hoveredIndex].category}
+                  </span>
                 </div>
               )}
             </div>
             
             {/* Significant indicator */}
             {significantItems.includes(processedData[hoveredIndex]) && (
-              <div className="mt-3 pt-2 border-t border-gray-700 text-xs text-amber-400">
+              <div 
+                className="mt-3 pt-2 text-xs"
+                style={{ 
+                  borderTop: '1px solid rgb(var(--color-border))',
+                  color: 'rgb(var(--color-warning))'
+                }}
+              >
                 ⚠️ {isEn 
                   ? `Significant: >${showVarianceThreshold}% of net change`
                   : `Significatif: >${showVarianceThreshold}% du changement net`}

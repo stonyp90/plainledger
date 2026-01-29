@@ -12,7 +12,7 @@ interface AvatarProps {
   name?: string;
   firstName?: string;
   lastName?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
   showBadge?: boolean;
   badgeContent?: React.ReactNode;
@@ -24,7 +24,8 @@ const sizeClasses = {
   sm: 'w-8 h-8 text-xs',
   md: 'w-10 h-10 text-sm',
   lg: 'w-12 h-12 text-base',
-  xl: 'w-16 h-16 text-xl',
+  xl: 'w-20 h-20 text-2xl',
+  '2xl': 'w-24 h-24 text-3xl',
 };
 
 const badgeSizes = {
@@ -33,6 +34,7 @@ const badgeSizes = {
   md: 'w-3 h-3 -right-0.5 -bottom-0.5',
   lg: 'w-3.5 h-3.5 -right-1 -bottom-1',
   xl: 'w-4 h-4 -right-1 -bottom-1',
+  '2xl': 'w-5 h-5 -right-1 -bottom-1',
 };
 
 export default function Avatar({
@@ -153,7 +155,7 @@ interface AvatarGroupProps {
     lastName?: string;
   }>;
   max?: number;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export function AvatarGroup({ users, max = 4, size = 'sm' }: AvatarGroupProps) {
@@ -165,6 +167,7 @@ export function AvatarGroup({ users, max = 4, size = 'sm' }: AvatarGroupProps) {
     sm: '-ml-2',
     md: '-ml-2.5',
     lg: '-ml-3',
+    xl: '-ml-4',
   };
 
   return (

@@ -309,15 +309,90 @@ interface SecretCardProps {
   isEn: boolean;
 }
 
+// Action Button with Tooltip component
+interface ActionButtonWithTooltipProps {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  onClick: () => void;
+  variant?: 'default' | 'danger';
+}
+
+function ActionButtonWithTooltip({ icon, label, description, onClick, variant = 'default' }: ActionButtonWithTooltipProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  return (
+    <div className="relative">
+      <button 
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`p-2.5 rounded-xl border transition-all duration-200 ${
+          variant === 'danger' 
+            ? 'hover:bg-error/10 hover:border-error/50 hover:scale-105' 
+            : 'hover:bg-primary/10 hover:border-primary/30 hover:scale-105'
+        }`}
+        style={{ 
+          borderColor: variant === 'danger' ? 'rgb(var(--color-error) / 0.3)' : 'rgb(var(--color-border))',
+          color: variant === 'danger' ? 'rgb(var(--color-error))' : 'rgb(var(--color-text-secondary))',
+          backgroundColor: 'rgb(var(--color-surface))',
+        }}
+      >
+        {icon}
+      </button>
+      
+      {/* Tooltip with CTA */}
+      <div 
+        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 transition-all duration-200 pointer-events-none ${
+          isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+        }`}
+      >
+        <div 
+          className="px-3 py-2 rounded-xl shadow-lg text-center whitespace-nowrap"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+            boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+          }}
+        >
+          <p className="font-semibold text-sm" style={{ color: variant === 'danger' ? 'rgb(var(--color-error))' : 'rgb(var(--color-text))' }}>
+            {label}
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {description}
+          </p>
+        </div>
+        {/* Arrow */}
+        <div 
+          className="absolute left-1/2 -translate-x-1/2 -bottom-1.5 w-3 h-3 rotate-45"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderRight: '1px solid rgb(var(--color-border))',
+            borderBottom: '1px solid rgb(var(--color-border))',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function SecretCard({ secret, onRotate, onRevoke, onValidate, isEn }: SecretCardProps) {
   const [showValue, setShowValue] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isCardHovered, setIsCardHovered] = useState(false);
   
   const statusColors = {
     active: 'rgb(var(--color-success))',
     expired: 'rgb(var(--color-error))',
     revoked: 'rgb(var(--color-error))',
     pending_rotation: 'rgb(var(--color-warning))',
+  };
+
+  const statusLabels = {
+    active: isEn ? 'active' : 'actif',
+    expired: isEn ? 'expired' : 'expiré',
+    revoked: isEn ? 'revoked' : 'révoqué',
+    pending_rotation: isEn ? 'pending' : 'en attente',
   };
   
   const handleCopyId = () => {
@@ -328,116 +403,137 @@ function SecretCard({ secret, onRotate, onRevoke, onValidate, isEn }: SecretCard
   
   return (
     <div 
-      className="card p-4 transition-shadow hover:shadow-md"
-      style={{ borderLeft: `4px solid ${statusColors[secret.status]}` }}
+      className="card p-4 transition-all duration-300 group"
+      style={{ 
+        borderLeft: `4px solid ${statusColors[secret.status]}`,
+        boxShadow: isCardHovered 
+          ? '0 10px 40px -10px rgb(var(--color-primary-500) / 0.15), 0 4px 20px -8px rgb(0 0 0 / 0.1)' 
+          : undefined,
+        transform: isCardHovered ? 'translateY(-2px)' : undefined,
+      }}
+      onMouseEnter={() => setIsCardHovered(true)}
+      onMouseLeave={() => setIsCardHovered(false)}
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Secret Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Key className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            <h4 className="font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+            <Key className="w-4 h-4 flex-shrink-0 transition-transform duration-300 group-hover:rotate-12" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            <h4 className="font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
               {secret.name}
             </h4>
             <span 
-              className="px-2 py-0.5 rounded-full text-xs font-medium"
+              className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide"
               style={{ 
-                backgroundColor: statusColors[secret.status] + '20',
+                backgroundColor: statusColors[secret.status] + '15',
                 color: statusColors[secret.status]
               }}
             >
-              {secret.status}
+              {statusLabels[secret.status]}
             </span>
           </div>
           
-          <p className="text-sm text-muted mb-2 truncate">
+          <p className="text-sm mb-2 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {secret.description}
           </p>
           
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-            <span className="flex items-center gap-1">
-              <span className="font-medium">{isEn ? 'Provider:' : 'Fournisseur:'}</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+              <span className="font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>{isEn ? 'Provider:' : 'Fournisseur:'}</span>
               {secretsService.getProviderDisplayName(secret.provider)}
             </span>
-            <span className="flex items-center gap-1">
-              <span className="font-medium">{isEn ? 'Type:' : 'Type:'}</span>
+            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+              <span className="font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>{isEn ? 'Type:' : 'Type:'}</span>
               {secretsService.getTypeDisplayName(secret.type, isEn)}
             </span>
-            <span className="flex items-center gap-1">
-              <span className="font-medium">{isEn ? 'Environment:' : 'Environnement:'}</span>
+            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+              <span className="font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>{isEn ? 'Environment:' : 'Environnement:'}</span>
               {secret.environment}
             </span>
           </div>
         </div>
         
         {/* Masked Value */}
-        <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2">
-          <code className="text-sm font-mono" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+        <div 
+          className="flex items-center gap-2 rounded-xl px-4 py-2.5 transition-all duration-200"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-bg))',
+            border: '1px solid rgb(var(--color-border-subtle))',
+          }}
+        >
+          <code className="text-sm font-mono tracking-wider" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {showValue ? secret.maskedValue : '••••••••••••••••'}
           </code>
-          <button 
-            onClick={() => setShowValue(!showValue)}
-            className="p-1 hover:bg-muted/50 rounded"
-            title={isEn ? 'Toggle visibility' : 'Basculer la visibilité'}
-          >
-            {showValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-          <button 
-            onClick={handleCopyId}
-            className="p-1 hover:bg-muted/50 rounded"
-            title={isEn ? 'Copy ID' : 'Copier l\'ID'}
-          >
-            {copied ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1 ml-2 pl-2" style={{ borderLeft: '1px solid rgb(var(--color-border-subtle))' }}>
+            <button 
+              onClick={() => setShowValue(!showValue)}
+              className="p-1.5 rounded-lg transition-all duration-200 hover:bg-primary/10 hover:scale-110"
+              title={isEn ? 'Toggle visibility' : 'Basculer la visibilité'}
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {showValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+            <button 
+              onClick={handleCopyId}
+              className="p-1.5 rounded-lg transition-all duration-200 hover:bg-primary/10 hover:scale-110"
+              title={isEn ? 'Copy ID' : 'Copier l\'ID'}
+              style={{ color: copied ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))' }}
+            >
+              {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
         
-        {/* Actions */}
+        {/* Actions with Tooltips */}
         <div className="flex items-center gap-2">
-          <button 
+          <ActionButtonWithTooltip
+            icon={<CheckCircle className="w-4 h-4" />}
+            label={isEn ? 'Validate' : 'Valider'}
+            description={isEn ? 'Test if this secret is working' : 'Tester si ce secret fonctionne'}
             onClick={onValidate}
-            className="btn-secondary p-2"
-            title={isEn ? 'Validate secret' : 'Valider le secret'}
-          >
-            <CheckCircle className="w-4 h-4" />
-          </button>
-          <button 
+          />
+          <ActionButtonWithTooltip
+            icon={<RefreshCw className="w-4 h-4" />}
+            label={isEn ? 'Rotate' : 'Rotation'}
+            description={isEn ? 'Generate a new secret value' : 'Générer une nouvelle valeur'}
             onClick={onRotate}
-            className="btn-secondary p-2"
-            title={isEn ? 'Rotate secret' : 'Faire une rotation'}
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button 
+          />
+          <ActionButtonWithTooltip
+            icon={<Trash2 className="w-4 h-4" />}
+            label={isEn ? 'Revoke' : 'Révoquer'}
+            description={isEn ? 'Permanently disable this secret' : 'Désactiver ce secret définitivement'}
             onClick={onRevoke}
-            className="p-2 rounded-lg border transition-colors hover:bg-error/10"
-            style={{ 
-              borderColor: 'rgb(var(--color-error) / 0.3)',
-              color: 'rgb(var(--color-error))'
-            }}
-            title={isEn ? 'Revoke secret' : 'Révoquer le secret'}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+            variant="danger"
+          />
         </div>
       </div>
       
       {/* Footer Info */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 pt-3 text-xs text-muted" style={{ borderTop: '1px solid rgb(var(--color-border-subtle))' }}>
-        <span className="flex items-center gap-1">
-          <Clock className="w-3 h-3" />
+      <div 
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 pt-3 text-xs" 
+        style={{ 
+          borderTop: '1px solid rgb(var(--color-border-subtle))',
+          color: 'rgb(var(--color-text-muted))',
+        }}
+      >
+        <span className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5" />
           {isEn ? 'Created:' : 'Créé:'} {new Date(secret.createdAt).toLocaleDateString()}
         </span>
         {secret.lastRotated && (
-          <span className="flex items-center gap-1">
-            <RefreshCw className="w-3 h-3" />
+          <span className="flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" />
             {isEn ? 'Last rotated:' : 'Dernière rotation:'} {new Date(secret.lastRotated).toLocaleDateString()}
           </span>
         )}
-        <span>
+        <span className="font-medium">
           {isEn ? 'Access count:' : 'Nombre d\'accès:'} {secret.accessCount.toLocaleString()}
         </span>
         {secret.expiresAt && (
-          <span className={secret.isExpired ? 'text-error' : ''}>
+          <span 
+            className="font-semibold"
+            style={{ color: secret.isExpired ? 'rgb(var(--color-error))' : undefined }}
+          >
             {isEn ? 'Expires:' : 'Expire:'} {new Date(secret.expiresAt).toLocaleDateString()}
           </span>
         )}
@@ -774,17 +870,29 @@ function AuditLogModal({ logs, onClose, isEn }: AuditLogModalProps) {
     revoked: { en: 'Revoked', fr: 'Révoqué' },
     deleted: { en: 'Deleted', fr: 'Supprimé' },
   };
+
+  const getActionBadgeClass = (action: SecretAuditLog['action']): string => {
+    const badgeMap: Record<SecretAuditLog['action'], string> = {
+      created: 'badge-success',
+      updated: 'badge-info',
+      accessed: 'badge-default',
+      rotated: 'badge-warning',
+      revoked: 'badge-error',
+      deleted: 'badge-error',
+    };
+    return badgeMap[action] || 'badge-default';
+  };
   
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center p-4"
+      className="fixed inset-0 flex items-center justify-center p-4 animate-fade-in"
       style={{ zIndex: 9999 }}
     >
-      {/* Backdrop - fully opaque */}
+      {/* Backdrop */}
       <div 
         className="absolute inset-0"
         style={{ 
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backgroundColor: 'rgb(0 0 0 / 0.6)',
           backdropFilter: 'blur(4px)',
         }}
         onClick={onClose} 
@@ -792,79 +900,169 @@ function AuditLogModal({ logs, onClose, isEn }: AuditLogModalProps) {
       
       {/* Modal Content */}
       <div 
-        className="relative w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col animate-scale-in"
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxShadow: 'var(--shadow-2xl)',
           border: '1px solid rgb(var(--color-border))',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+        {/* Header */}
+        <div 
+          className="p-6 border-b flex-shrink-0"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              <h3 
+                className="text-xl font-semibold mb-1"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {isEn ? 'Secret Audit Log' : 'Journal d\'audit des secrets'}
               </h3>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p 
+                className="text-sm"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
                 {isEn ? 'All secret access and modifications are logged' : 'Tous les accès et modifications sont journalisés'}
               </p>
             </div>
             <button 
               onClick={onClose} 
-              className="p-2 rounded-lg transition-colors"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+              className="icon-btn"
+              aria-label={isEn ? 'Close' : 'Fermer'}
             >
               <XCircle className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
             </button>
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto p-6">
+        {/* Content */}
+        <div 
+          className="flex-1 overflow-y-auto p-6"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {logs.length === 0 ? (
-            <p className="text-center text-muted py-8">
-              {isEn ? 'No audit logs found' : 'Aucun journal d\'audit trouvé'}
-            </p>
+            <div className="empty-state">
+              <History 
+                className="empty-state-icon"
+                style={{ color: 'rgb(var(--color-text-subtle))' }}
+              />
+              <h4 className="empty-state-title">
+                {isEn ? 'No audit logs found' : 'Aucun journal d\'audit trouvé'}
+              </h4>
+              <p className="empty-state-description">
+                {isEn 
+                  ? 'Audit logs will appear here when secrets are accessed or modified.'
+                  : 'Les journaux d\'audit apparaîtront ici lorsque les secrets seront consultés ou modifiés.'}
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {logs.map((log) => (
                 <div 
                   key={log.id}
-                  className="flex items-start gap-4 p-3 rounded-lg"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  className="card card-interactive"
+                  style={{
+                    transition: 'all var(--transition-normal)',
+                  }}
                 >
-                  <div 
-                    className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-                    style={{ backgroundColor: actionColors[log.action] }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span 
-                        className="font-medium text-sm"
-                        style={{ color: actionColors[log.action] }}
-                      >
-                        {actionLabels[log.action][isEn ? 'en' : 'fr']}
-                      </span>
-                      <span className="text-xs text-muted">•</span>
-                      <span className="text-xs text-muted truncate">
-                        {log.secretId}
-                      </span>
+                  <div className="flex items-start gap-4">
+                    {/* Status indicator */}
+                    <div 
+                      className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0"
+                      style={{ 
+                        backgroundColor: actionColors[log.action],
+                        boxShadow: `0 0 0 3px ${actionColors[log.action]}20`,
+                      }}
+                    />
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className={`badge ${getActionBadgeClass(log.action)}`}>
+                          {actionLabels[log.action][isEn ? 'en' : 'fr']}
+                        </span>
+                        <span 
+                          className="text-xs font-mono truncate max-w-[200px] sm:max-w-none"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
+                        >
+                          {log.secretId}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <p 
+                          className="text-sm"
+                          style={{ color: 'rgb(var(--color-text-secondary))' }}
+                        >
+                          <span className="font-medium">{isEn ? 'By' : 'Par'}</span>{' '}
+                          <span className="font-mono">{log.performedBy}</span>
+                          {log.ipAddress && (
+                            <>
+                              {' '}
+                              <span 
+                                className="text-xs"
+                                style={{ color: 'rgb(var(--color-text-muted))' }}
+                              >
+                                ({log.ipAddress})
+                              </span>
+                            </>
+                          )}
+                        </p>
+                        
+                        {log.details && (
+                          <p 
+                            className="text-xs leading-relaxed"
+                            style={{ color: 'rgb(var(--color-text-muted))' }}
+                          >
+                            {log.details}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center gap-2 mt-2">
+                          <Clock className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-subtle))' }} />
+                          <time 
+                            className="text-xs font-mono tabular-nums"
+                            style={{ color: 'rgb(var(--color-text-muted))' }}
+                            dateTime={log.performedAt}
+                          >
+                            {new Date(log.performedAt).toLocaleString()}
+                          </time>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn ? 'By' : 'Par'} {log.performedBy}
-                      {log.ipAddress && ` (${log.ipAddress})`}
-                    </p>
-                    {log.details && (
-                      <p className="text-xs text-muted mt-1">{log.details}</p>
-                    )}
-                    <p className="text-xs text-muted mt-1">
-                      {new Date(log.performedAt).toLocaleString()}
-                    </p>
+                    
+                    {/* Success/Error indicator */}
+                    <div className="flex-shrink-0 mt-1">
+                      {log.success ? (
+                        <div 
+                          className="w-5 h-5 rounded-full flex items-center justify-center"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                            color: 'rgb(var(--color-success))',
+                          }}
+                          title={isEn ? 'Success' : 'Succès'}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </div>
+                      ) : (
+                        <div 
+                          className="w-5 h-5 rounded-full flex items-center justify-center"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                            color: 'rgb(var(--color-error))',
+                          }}
+                          title={isEn ? 'Failed' : 'Échec'}
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {log.success ? (
-                    <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-error flex-shrink-0" />
-                  )}
                 </div>
               ))}
             </div>

@@ -280,12 +280,19 @@ export default function StrategicPlanning() {
   // If user doesn't have access, show premium gate with preview
   if (!hasAccess) {
     return (
-      <div className="min-h-screen">
+      <div className="space-y-6">
         {/* Premium Upgrade Banner */}
         <PremiumUpgradeBanner feature="strategicPlanning" />
         
-        {/* Grayed out preview */}
-        <PremiumFeatureGate feature="strategicPlanning" showPreview={true}>
+        {/* Grayed out preview with fixed height for better scrolling */}
+        <PremiumFeatureGate 
+          feature="strategicPlanning" 
+          showPreview={false}
+          description={isEn 
+            ? "Plan your cash runway with confidence. Model expenses, forecast scenarios, and visualize how strategic decisions impact your financial future. Make data-driven choices for sustainable growth."
+            : "Planifiez votre trésorerie en toute confiance. Modélisez vos dépenses, prévoyez des scénarios et visualisez l'impact de vos décisions stratégiques sur votre avenir financier."
+          }
+        >
           <div className="space-y-6">
             {/* Quick Metrics - Top bar style */}
             <QuickMetrics

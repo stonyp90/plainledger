@@ -192,7 +192,7 @@ export default function UpgradeRequestForm({
 
   // Full form mode
   return (
-    <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}>
+    <div className="rounded-xl p-6 text-left" style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}>
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -208,8 +208,8 @@ export default function UpgradeRequestForm({
         </div>
         <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {description || (isEn 
-            ? 'Fill out the form below and we\'ll send you detailed pricing and feature information.'
-            : 'Remplissez le formulaire ci-dessous et nous vous enverrons des informations détaillées sur les prix et les fonctionnalités.')}
+            ? 'Fill out the form below and we\'ll send you detailed feature information and schedule a demo call.'
+            : 'Remplissez le formulaire ci-dessous et nous vous enverrons des informations détaillées sur les fonctionnalités et planifierons un appel de démonstration.')}
         </p>
       </div>
 
@@ -224,9 +224,9 @@ export default function UpgradeRequestForm({
               type="text"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg text-sm"
+              className="w-full px-4 py-2.5 rounded-lg text-sm"
               style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
+                backgroundColor: 'transparent',
                 color: 'rgb(var(--color-text))',
                 border: '1px solid rgb(var(--color-border))'
               }}
@@ -241,9 +241,9 @@ export default function UpgradeRequestForm({
               type="text"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg text-sm"
+              className="w-full px-4 py-2.5 rounded-lg text-sm"
               style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
+                backgroundColor: 'transparent',
                 color: 'rgb(var(--color-text))',
                 border: '1px solid rgb(var(--color-border))'
               }}
@@ -260,9 +260,9 @@ export default function UpgradeRequestForm({
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             required
-            className="w-full px-4 py-2 rounded-lg text-sm"
+            className="w-full px-4 py-2.5 rounded-lg text-sm"
             style={{ 
-              backgroundColor: 'rgb(var(--color-bg-muted))',
+              backgroundColor: 'transparent',
               color: 'rgb(var(--color-text))',
               border: '1px solid rgb(var(--color-border))'
             }}
@@ -278,9 +278,9 @@ export default function UpgradeRequestForm({
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              className="w-full px-4 py-2 rounded-lg text-sm"
+              className="w-full px-4 py-2.5 rounded-lg text-sm"
               style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
+                backgroundColor: 'transparent',
                 color: 'rgb(var(--color-text))',
                 border: '1px solid rgb(var(--color-border))'
               }}
@@ -296,9 +296,9 @@ export default function UpgradeRequestForm({
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               placeholder={isEn ? 'e.g., CFO, Controller' : 'ex: DAF, Contrôleur'}
-              className="w-full px-4 py-2 rounded-lg text-sm"
+              className="w-full px-4 py-2.5 rounded-lg text-sm"
               style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
+                backgroundColor: 'transparent',
                 color: 'rgb(var(--color-text))',
                 border: '1px solid rgb(var(--color-border))'
               }}
@@ -315,9 +315,9 @@ export default function UpgradeRequestForm({
             onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}
             rows={3}
             placeholder={isEn ? 'Tell us about your needs...' : 'Parlez-nous de vos besoins...'}
-            className="w-full px-4 py-2 rounded-lg text-sm resize-none"
+            className="w-full px-4 py-2.5 rounded-lg text-sm resize-none"
             style={{ 
-              backgroundColor: 'rgb(var(--color-bg-muted))',
+              backgroundColor: 'transparent',
               color: 'rgb(var(--color-text))',
               border: '1px solid rgb(var(--color-border))'
             }}
@@ -330,11 +330,11 @@ export default function UpgradeRequestForm({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             type="submit"
             disabled={status === 'loading'}
-            className="flex-1 px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:scale-105"
+            className="px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:opacity-90"
             style={{ 
               backgroundColor: 'rgb(var(--color-primary-500))',
               color: 'white',
@@ -349,7 +349,7 @@ export default function UpgradeRequestForm({
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                {isEn ? 'Request Information' : 'Demander des informations'}
+                {isEn ? 'Request Information' : 'Demander des infos'}
               </>
             )}
           </button>
@@ -358,9 +358,9 @@ export default function UpgradeRequestForm({
             <button
               type="button"
               onClick={handleCalendlyClick}
-              className="px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:scale-105"
+              className="px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:opacity-90"
               style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
+                backgroundColor: 'transparent',
                 color: 'rgb(var(--color-text))',
                 border: '1px solid rgb(var(--color-border))'
               }}

@@ -502,7 +502,7 @@ export default function FormulaEditor({
                           {ex.description}
                         </span>
                         {copiedExample === ex.formula ? (
-                          <CheckIcon size={12} className="text-green-600" />
+                          <CheckIcon size={12} className="text-green-600 dark:text-green-400" />
                         ) : (
                           <Copy size={12} className="text-amber-400 opacity-0 group-hover:opacity-100" />
                         )}

@@ -656,7 +656,7 @@ export default function GanttChart({
                               onClick={(e) => e.stopPropagation()}
                             />
                             <button onClick={(e) => { e.stopPropagation(); saveEdit(); }} className="p-0.5">
-                              <Check className="w-3.5 h-3.5 text-green-600" />
+                              <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                             </button>
                             <button onClick={(e) => { e.stopPropagation(); cancelEdit(); }} className="p-0.5">
                               <X className="w-3.5 h-3.5 text-red-500" />

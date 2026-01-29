@@ -5,17 +5,18 @@
 
 import { TenantMember } from '../contexts/TenantContext';
 
-// Corporate brand colors (RGB values)
+// Corporate brand colors - Using PlainLedger green theme
 const BRAND_COLORS = {
-  primary: '#0f172a',      // Corporate navy
-  primaryLight: '#1e293b', // Lighter navy
+  primary: '#059669',      // PlainLedger green (emerald-600)
+  primaryLight: '#10b981', // Lighter green (emerald-500)
+  primaryDark: '#047857',  // Darker green (emerald-700)
   accent: '#3b82f6',       // Blue accent
   text: '#0f172a',         // Dark text
   textMuted: '#64748b',    // Muted text
   border: '#e2e8f0',       // Border gray
   background: '#f8fafc',   // Light background
   white: '#ffffff',
-  success: '#16a34a',
+  success: '#059669',      // Use primary green for success
   warning: '#ca8a04',
 };
 
@@ -28,6 +29,7 @@ interface InvitationEmailParams {
   inviteUrl: string;
   expiresAt: string;
   sectionAccess?: SectionAccess;
+  customMessage?: string;
 }
 
 interface SectionAccess {
@@ -70,6 +72,7 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
     inviteUrl,
     expiresAt,
     sectionAccess,
+    customMessage,
   } = params;
   
   const isEn = language === 'en';
@@ -94,6 +97,28 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${isEn ? 'Invitation to PlainLedger' : 'Invitation à PlainLedger'}</title>
+  <style type="text/css">
+    /* Email-safe styles */
+    .email-button {
+      display: inline-block;
+      background-color: ${BRAND_COLORS.primary};
+      color: ${BRAND_COLORS.white};
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 36px;
+      border-radius: 8px;
+      letter-spacing: -0.01em;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+    }
+    /* Hover effect for supported clients */
+    @media screen and (min-width: 600px) {
+      .email-button:hover {
+        background-color: ${BRAND_COLORS.primaryDark};
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+      }
+    }
+  </style>
   <!--[if mso]>
   <noscript>
     <xml>
@@ -143,6 +168,15 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
                         : `<strong>${inviterName}</strong> vous invite à rejoindre <strong>${organizationName}</strong> sur PlainLedger.`}
                     </p>
                     
+                    ${customMessage ? `
+                    <!-- Custom Message -->
+                    <div style="margin-bottom: 24px; padding: 16px; background-color: ${BRAND_COLORS.background}; border-left: 4px solid ${BRAND_COLORS.primary}; border-radius: 6px;">
+                      <p style="margin: 0; font-size: 14px; color: ${BRAND_COLORS.text}; line-height: 1.6; font-style: italic;">
+                        "${customMessage}"
+                      </p>
+                    </div>
+                    ` : ''}
+                    
                     <!-- Role Badge -->
                     <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
                       <tr>
@@ -150,15 +184,15 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
                           <table role="presentation" cellspacing="0" cellpadding="0">
                             <tr>
                               <td style="padding-right: 12px; vertical-align: top;">
-                                <span style="display: inline-block; width: 36px; height: 36px; background-color: ${BRAND_COLORS.primary}; border-radius: 6px; text-align: center; line-height: 36px; color: ${BRAND_COLORS.white}; font-size: 14px;">
+                                <span style="display: inline-block; width: 40px; height: 40px; background-color: ${BRAND_COLORS.primary}; border-radius: 8px; text-align: center; line-height: 40px; color: ${BRAND_COLORS.white}; font-size: 16px; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);">
                                   ${role === 'admin' ? '🛡️' : role === 'member' ? '👤' : '👁️'}
                                 </span>
                               </td>
                               <td>
-                                <p style="margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: ${BRAND_COLORS.textMuted};">
+                                <p style="margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: ${BRAND_COLORS.textMuted}; font-weight: 500;">
                                   ${isEn ? 'Your Role' : 'Votre rôle'}
                                 </p>
-                                <p style="margin: 0; font-size: 16px; font-weight: 600; color: ${BRAND_COLORS.primary};">
+                                <p style="margin: 0; font-size: 17px; font-weight: 700; color: ${BRAND_COLORS.primary}; letter-spacing: -0.02em;">
                                   ${roleLabel}
                                 </p>
                               </td>
@@ -177,9 +211,9 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
                       <table role="presentation" cellspacing="0" cellpadding="0" style="width: 100%;">
                         ${accessibleSections.map(section => `
                         <tr>
-                          <td style="padding: 6px 0; font-size: 14px; color: ${BRAND_COLORS.text};">
-                            <span style="color: ${BRAND_COLORS.success}; margin-right: 8px;">✓</span>
-                            ${section}
+                          <td style="padding: 8px 0; font-size: 14px; color: ${BRAND_COLORS.text};">
+                            <span style="color: ${BRAND_COLORS.primary}; margin-right: 10px; font-weight: 700; font-size: 16px;">✓</span>
+                            <span style="font-weight: 500;">${section}</span>
                           </td>
                         </tr>
                         `).join('')}
@@ -192,7 +226,8 @@ export function generateInvitationEmail(params: InvitationEmailParams, language:
                       <tr>
                         <td style="text-align: center;">
                           <a href="${inviteUrl}" 
-                             style="display: inline-block; background-color: ${BRAND_COLORS.primary}; color: ${BRAND_COLORS.white}; text-decoration: none; font-size: 14px; font-weight: 500; padding: 12px 32px; border-radius: 6px; letter-spacing: -0.006em;">
+                             class="email-button"
+                             style="display: inline-block; background-color: ${BRAND_COLORS.primary}; color: ${BRAND_COLORS.white}; text-decoration: none; font-size: 15px; font-weight: 600; padding: 14px 36px; border-radius: 8px; letter-spacing: -0.01em; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);">
                             ${isEn ? 'Accept Invitation' : 'Accepter l\'invitation'}
                           </a>
                         </td>
@@ -271,6 +306,7 @@ export function generateInvitationEmailText(params: InvitationEmailParams, langu
     inviteUrl,
     expiresAt,
     sectionAccess,
+    customMessage,
   } = params;
   
   const isEn = language === 'en';
@@ -297,7 +333,7 @@ ${inviterName} has invited you to join ${organizationName} on PlainLedger.
 
 Your Role: ${roleLabel}
 
-${accessibleSections ? `You will have access to:
+${customMessage ? `\nPersonal Message:\n"${customMessage}"\n\n` : ''}${accessibleSections ? `You will have access to:
 ${accessibleSections.map(s => `• ${s}`).join('\n')}
 
 ` : ''}Accept your invitation by visiting:
@@ -324,7 +360,7 @@ ${inviterName} vous invite à rejoindre ${organizationName} sur PlainLedger.
 
 Votre rôle : ${roleLabel}
 
-${accessibleSections ? `Vous aurez accès à :
+${customMessage ? `\nMessage personnalisé :\n"${customMessage}"\n\n` : ''}${accessibleSections ? `Vous aurez accès à :
 ${accessibleSections.map(s => `• ${s}`).join('\n')}
 
 ` : ''}Acceptez votre invitation en visitant :
@@ -434,7 +470,8 @@ export function generateWelcomeEmail(
                       <tr>
                         <td style="text-align: center;">
                           <a href="${loginUrl}" 
-                             style="display: inline-block; background-color: ${BRAND_COLORS.primary}; color: ${BRAND_COLORS.white}; text-decoration: none; font-size: 14px; font-weight: 500; padding: 12px 32px; border-radius: 6px; letter-spacing: -0.006em;">
+                             class="email-button"
+                             style="display: inline-block; background-color: ${BRAND_COLORS.primary}; color: ${BRAND_COLORS.white}; text-decoration: none; font-size: 15px; font-weight: 600; padding: 14px 36px; border-radius: 8px; letter-spacing: -0.01em; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);">
                             ${isEn ? 'Go to Dashboard' : 'Accéder au tableau de bord'}
                           </a>
                         </td>

@@ -1,7 +1,7 @@
 /**
  * Notification Service Port (Interface)
  * Defines the contract for sending notifications across channels
- * 
+ *
  * Clean Architecture: This is an OUTPUT PORT in the application layer
  * Implementation: NovuService in infrastructure layer
  */
@@ -73,7 +73,7 @@ export interface INotificationService {
    */
   sendPasswordChangedEmail(
     userId: string,
-    data: { email: string; firstName: string; timestamp: Date }
+    data: { email: string; firstName: string; timestamp: Date },
   ): Promise<void>;
 
   // =========================================================================
@@ -85,7 +85,7 @@ export interface INotificationService {
    */
   sendWelcomeEmail(
     userId: string,
-    data: { email: string; firstName: string; organizationName?: string }
+    data: { email: string; firstName: string; organizationName?: string },
   ): Promise<void>;
 
   /**
@@ -93,7 +93,11 @@ export interface INotificationService {
    */
   sendOnboardingComplete(
     userId: string,
-    data: { firstName: string; organizationName: string; connectionsCount: number }
+    data: {
+      firstName: string;
+      organizationName: string;
+      connectionsCount: number;
+    },
   ): Promise<void>;
 
   // =========================================================================
@@ -111,7 +115,7 @@ export interface INotificationService {
       ipAddress: string;
       location?: string;
       timestamp: Date;
-    }
+    },
   ): Promise<void>;
 
   // =========================================================================
@@ -123,14 +127,6 @@ export interface INotificationService {
    */
   sendPaymentFailedNotification(
     userId: string,
-    data: { amount: string; currency: string; cardLast4: string }
-  ): Promise<void>;
-
-  /**
-   * Send trial ending reminder
-   */
-  sendTrialEndingReminder(
-    userId: string,
-    data: { daysLeft: number; trialEndDate: Date; planName: string }
+    data: { amount: string; currency: string; cardLast4: string },
   ): Promise<void>;
 }

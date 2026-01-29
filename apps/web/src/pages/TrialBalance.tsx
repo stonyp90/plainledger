@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, AlertTriangle, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import ShareModal from '../components/ShareModal';
 
 interface TrialBalanceAccount {
   code: string;
@@ -23,7 +23,7 @@ export default function TrialBalance() {
   const [asOfDate, setAsOfDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
-  const [showHelp, setShowHelp] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,13 +45,7 @@ export default function TrialBalance() {
   const handlePrint = () => window.print();
   
   const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: isEn ? 'Trial Balance' : 'Balance de vérification', url });
-    } else {
-      navigator.clipboard.writeText(url);
-      alert(isEn ? 'Link copied!' : 'Lien copié!');
-    }
+    setShowShareModal(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -215,18 +209,6 @@ export default function TrialBalance() {
           </button>
         </div>
       </div>
-
-      {showHelp && (
-        <InfoBanner
-          type="info"
-          title={isEn ? 'About the Trial Balance' : 'À propos de la balance de vérification'}
-          description={isEn 
-            ? 'The trial balance lists all accounts with their debit and credit balances. Total debits must equal total credits - any difference indicates an error in the accounting records.'
-            : 'La balance de vérification liste tous les comptes avec leurs soldes débiteurs et créditeurs. Le total des débits doit égaler le total des crédits - toute différence indique une erreur.'}
-          dismissible
-          onDismiss={() => setShowHelp(false)}
-        />
-      )}
 
       {/* Controls */}
       <div className="card">
@@ -402,6 +384,16 @@ export default function TrialBalance() {
           );
         })}
       </div>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="Balance de vérification"
+        titleEn="Trial Balance"
+        subtitle={new Date(asOfDate).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+        contentType="report"
+        showDownloadOption={true}
+      />
     </div>
   );
 }

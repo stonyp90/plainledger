@@ -28,6 +28,12 @@ import {
   Info,
   AlertCircle,
   CheckCircle,
+  Bell,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Hash,
+  Users,
 } from 'lucide-react';
 
 // =====================================================
@@ -1690,7 +1696,7 @@ export default function Landing() {
                 boxShadow: `0 8px 24px ${theme.green}40`
               }}
             >
-              {isEn ? 'Start free 7-day trial' : 'Essai gratuit de 7 jours'}
+              {isEn ? 'Get started free' : 'Commencer gratuitement'}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button 
@@ -1998,6 +2004,318 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* AI-Powered Anomaly Detection Section */}
+      <section 
+        id="ai-anomalies" 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' 
+            : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, #f0fdf4 100%)'
+        }}
+      >
+        {/* Background pattern */}
+        <div 
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `radial-gradient(${theme.gold}15 1px, transparent 1px)`,
+            backgroundSize: '32px 32px'
+          }}
+        />
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          {/* Section Header */}
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              style={{ 
+                background: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`,
+                color: theme.gold
+              }}
+            >
+              <Brain className="w-3.5 h-3.5" />
+              <Sparkles className="w-3 h-3" />
+              {isEn ? 'AI-Powered' : 'Propulsé par l\'IA'}
+            </div>
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
+              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+            >
+              {isEn ? 'Intelligent Anomaly Detection' : 'Détection Intelligente d\'Anomalies'}
+            </h2>
+            <p 
+              className="text-sm sm:text-base max-w-2xl mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'Our AI continuously monitors your financial data, detecting unusual patterns, potential errors, and risks before they impact your business.'
+                : 'Notre IA surveille vos données financières en continu, détectant les schémas inhabituels, erreurs potentielles et risques avant qu\'ils n\'impactent votre entreprise.'}
+            </p>
+          </motion.div>
+
+          {/* Two-column layout: AI Features & Notification Platforms */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+            
+            {/* Left Column - AI Detection Capabilities */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="p-6 rounded-2xl"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(0,0,0,0.06)',
+              }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${theme.gold}20 0%, ${theme.gold}10 100%)`,
+                    border: `1px solid ${theme.gold}30`
+                  }}
+                >
+                  <Brain className="w-6 h-6" style={{ color: theme.gold }} />
+                </div>
+                <div>
+                  <h3 
+                    className="text-lg font-bold"
+                    style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                  >
+                    {isEn ? 'AI-Optimized Detection' : 'Détection Optimisée par IA'}
+                  </h3>
+                  <p className="text-xs" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                    {isEn ? 'Machine learning that learns your business' : 'Apprentissage automatique adapté à votre entreprise'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  {
+                    title: isEn ? 'Unusual Transaction Patterns' : 'Transactions inhabituelles',
+                    desc: isEn ? 'Detects spending spikes, duplicate payments, and irregular vendor activity' : 'Détecte les pics de dépenses, paiements en double et activité fournisseur irrégulière',
+                  },
+                  {
+                    title: isEn ? 'Cash Flow Anomalies' : 'Anomalies de trésorerie',
+                    desc: isEn ? 'Identifies unexpected cash flow variations and potential shortfalls' : 'Identifie les variations de trésorerie inattendues et déficits potentiels',
+                  },
+                  {
+                    title: isEn ? 'Seasonal Pattern Deviations' : 'Écarts de saisonnalité',
+                    desc: isEn ? 'Compares against historical data to spot unusual seasonal trends' : 'Compare aux données historiques pour repérer les tendances saisonnières inhabituelles',
+                  },
+                  {
+                    title: isEn ? 'Industry Benchmark Alerts' : 'Alertes de référence sectorielle',
+                    desc: isEn ? 'Flags when your KPIs deviate from industry standards' : 'Alerte quand vos KPIs s\'écartent des standards sectoriels',
+                  },
+                ].map((item, idx) => (
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.2 + idx * 0.1 }}
+                    className="flex items-start gap-3 p-3 rounded-lg transition-colors"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+                    }}
+                  >
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      style={{ backgroundColor: `${theme.gold}15` }}
+                    >
+                      <Check className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+                    </div>
+                    <div>
+                      <p 
+                        className="text-sm font-medium"
+                        style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                      >
+                        {item.title}
+                      </p>
+                      <p 
+                        className="text-xs mt-0.5"
+                        style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                      >
+                        {item.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Accuracy badge */}
+              <div 
+                className="mt-5 flex items-center justify-center gap-2 py-2.5 rounded-lg"
+                style={{ 
+                  background: `linear-gradient(135deg, ${theme.gold}10 0%, ${theme.green}10 100%)`,
+                  border: `1px solid ${theme.gold}20`
+                }}
+              >
+                <Sparkles className="w-4 h-4" style={{ color: theme.gold }} />
+                <span 
+                  className="text-sm font-semibold"
+                  style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                >
+                  97% {isEn ? 'detection accuracy' : 'précision de détection'}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Right Column - Notification Platforms */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="p-6 rounded-2xl"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(0,0,0,0.06)',
+              }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${theme.green}20 0%, ${theme.green}10 100%)`,
+                    border: `1px solid ${theme.green}30`
+                  }}
+                >
+                  <Bell className="w-6 h-6" style={{ color: theme.green }} />
+                </div>
+                <div>
+                  <h3 
+                    className="text-lg font-bold"
+                    style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                  >
+                    {isEn ? 'Alerts Where You Work' : 'Alertes là où vous travaillez'}
+                  </h3>
+                  <p className="text-xs" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                    {isEn ? 'Multi-platform notification support' : 'Support de notifications multi-plateformes'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Notification platforms grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+                {[
+                  { icon: Mail, name: 'Email', color: theme.green, desc: isEn ? 'Detailed reports' : 'Rapports détaillés' },
+                  { icon: Smartphone, name: isEn ? 'Push' : 'Push', color: '#8B5CF6', desc: isEn ? 'Mobile alerts' : 'Alertes mobiles' },
+                  { icon: MessageSquare, name: 'SMS', color: '#06B6D4', desc: isEn ? 'Critical alerts' : 'Alertes critiques' },
+                  { icon: Hash, name: 'Slack', color: '#E11D48', desc: isEn ? 'Team channels' : 'Canaux d\'équipe' },
+                  { icon: Users, name: 'Teams', color: '#6366F1', desc: isEn ? 'Microsoft 365' : 'Microsoft 365' },
+                  { icon: Bell, name: isEn ? 'In-App' : 'In-App', color: theme.gold, desc: isEn ? 'Dashboard alerts' : 'Alertes tableau de bord' },
+                ].map((platform, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.3 + idx * 0.08 }}
+                    className="group p-3 rounded-xl text-center transition-all duration-300 cursor-default"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.9)',
+                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
+                    }}
+                  >
+                    <div 
+                      className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center mb-2 transition-transform group-hover:scale-110"
+                      style={{ backgroundColor: `${platform.color}15` }}
+                    >
+                      <platform.icon className="w-5 h-5" style={{ color: platform.color }} />
+                    </div>
+                    <p 
+                      className="text-sm font-semibold"
+                      style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                    >
+                      {platform.name}
+                    </p>
+                    <p 
+                      className="text-[10px] mt-0.5"
+                      style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                    >
+                      {platform.desc}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Features list */}
+              <div 
+                className="p-4 rounded-xl"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+                }}
+              >
+                <p 
+                  className="text-xs font-semibold mb-3"
+                  style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                >
+                  {isEn ? 'NOTIFICATION FEATURES' : 'FONCTIONNALITÉS'}
+                </p>
+                <div className="space-y-2">
+                  {[
+                    isEn ? 'Customizable alert thresholds' : 'Seuils d\'alerte personnalisables',
+                    isEn ? 'Priority-based routing' : 'Routage par priorité',
+                    isEn ? 'Scheduled digest summaries' : 'Résumés planifiés',
+                    isEn ? 'Role-based notifications' : 'Notifications par rôle',
+                  ].map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.green }} />
+                      <span 
+                        className="text-xs"
+                        style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)' }}
+                      >
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom CTA */}
+          <motion.div 
+            className="text-center mt-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <p 
+              className="text-sm mb-4"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'Stay ahead of issues with intelligent, real-time monitoring'
+                : 'Restez en avance sur les problèmes avec une surveillance intelligente en temps réel'}
+            </p>
+            <button 
+              onClick={() => register()}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm hover:opacity-90 transition-opacity"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.gold}dd 100%)`,
+                boxShadow: `0 4px 16px ${theme.gold}35`
+              }}
+            >
+              {isEn ? 'Get AI-Powered Alerts' : 'Obtenez des alertes IA'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Industry KPIs Section - Formulas & Benchmarks */}
       <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
@@ -2641,103 +2959,54 @@ export default function Landing() {
             </motion.p>
           </motion.div>
 
-          {/* Pricing Cards */}
-          <div className="grid sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-            {[
-              {
-                name: 'Essentiel',
-                descEn: 'Growing businesses',
-                descFr: 'Entreprises en croissance',
-                featuresEn: ['Industry KPIs', 'Anomaly detection', 'Monthly reports'],
-                featuresFr: ['KPIs sectoriels', 'Détection anomalies', 'Rapports mensuels'],
-                highlighted: false,
-              },
-              {
-                name: 'Pro',
-                descEn: 'Mid-market companies',
-                descFr: 'Entreprises moyennes',
-                featuresEn: ['All Essentiel +', 'Custom dashboards', 'Priority support'],
-                featuresFr: ['Tout Essentiel +', 'Dashboards custom', 'Support prioritaire'],
-                highlighted: true,
-              },
-              {
-                name: 'Premium',
-                descEn: 'Established enterprises',
-                descFr: 'Entreprises établies',
-                featuresEn: ['All Pro +', 'Dedicated manager', 'Custom integrations'],
-                featuresFr: ['Tout Pro +', 'Gestionnaire dédié', 'Intégrations custom'],
-                highlighted: false,
-              },
-            ].map((tier, idx) => (
-              <motion.div 
-                key={tier.name}
-                initial={{ opacity: 0, y: 90, scale: 0.88 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ 
-                  duration: 1.3, 
-                  delay: 0.4 + idx * 0.35,
-                  ease: [0.16, 1, 0.3, 1]
-                }}
-                whileHover={{ 
-                  y: -15, 
-                  scale: tier.highlighted ? 1.05 : 1.03,
-                  transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
-                }}
-                className="p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl text-left relative overflow-hidden"
-                style={{ 
-                  background: tier.highlighted 
-                    ? `linear-gradient(135deg, ${theme.green}0d 0%, ${theme.gold}0d 100%)`
-                    : isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.8)',
-                  border: tier.highlighted 
-                    ? `2px solid ${theme.green}`
-                    : isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)',
-                }}
-              >
-                {tier.highlighted && (
-                  <div 
-                    className="absolute top-0 right-0 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold"
-                    style={{ 
-                      backgroundColor: theme.green,
-                      color: 'white',
-                      borderBottomLeftRadius: '6px'
-                    }}
-                  >
-                    {isEn ? 'Popular' : 'Populaire'}
-                  </div>
-                )}
-                <h3 className="font-semibold text-base sm:text-lg mb-0.5 sm:mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                  {tier.name}
-                </h3>
-                <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? tier.descEn : tier.descFr}
-                </p>
-                <ul className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6">
-                  {(isEn ? tier.featuresEn : tier.featuresFr).map((feature) => (
-                    <li key={feature} className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <motion.button 
-                  onClick={handleScheduleCall}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold"
-                  style={{ 
-                    background: tier.highlighted 
-                      ? `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`
-                      : 'transparent',
-                    color: tier.highlighted ? 'white' : isDark ? theme.green : theme.greenDark,
-                    border: tier.highlighted ? 'none' : `2px solid ${theme.green}`,
-                  }}
+          {/* Features Grid */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="p-6 sm:p-8 lg:p-10 rounded-2xl"
+            style={{ 
+              background: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)',
+              border: isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)',
+            }}
+          >
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[
+                { en: 'Industry KPIs', fr: 'KPIs sectoriels' },
+                { en: 'Anomaly detection', fr: 'Détection d\'anomalies' },
+                { en: 'Monthly reports', fr: 'Rapports mensuels' },
+                { en: 'Custom dashboards', fr: 'Tableaux de bord personnalisés' },
+                { en: 'Priority CPA support', fr: 'Support CPA prioritaire' },
+                { en: 'Cash flow forecasting', fr: 'Prévisions de trésorerie' },
+                { en: 'Budget vs Actual', fr: 'Budget vs Réel' },
+                { en: 'Multi-entity consolidation', fr: 'Consolidation multi-entités' },
+                { en: 'Export (PDF/Excel)', fr: 'Export (PDF/Excel)' },
+                { en: 'API access', fr: 'Accès API' },
+                { en: 'Slack & Teams alerts', fr: 'Alertes Slack & Teams' },
+                { en: 'Board reports', fr: 'Rapports pour CA' },
+              ].map((feature, idx) => (
+                <motion.div 
+                  key={feature.en}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.1 * idx, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center gap-3"
                 >
-                  {isEn ? 'Get quote' : 'Soumission'}
-                </motion.button>
-              </motion.div>
-            ))}
-          </div>
+                  <div 
+                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: `${theme.green}20` }}
+                  >
+                    <Check className="w-3.5 h-3.5" style={{ color: theme.green }} />
+                  </div>
+                  <span className="text-sm sm:text-base" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn ? feature.en : feature.fr}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -2842,7 +3111,7 @@ export default function Landing() {
               transition={{ duration: 1.3, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
               {isEn 
-                ? 'Get the financial clarity you need to make confident decisions. Start your free trial today.'
+                ? 'Get the financial clarity you need to make confident decisions. Start exploring today.'
                 : 'Obtenez la clarté financière dont vous avez besoin pour prendre des décisions éclairées.'}
             </motion.p>
             
@@ -2865,7 +3134,7 @@ export default function Landing() {
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                 }}
               >
-                {isEn ? 'Start free 21-day trial' : 'Essai gratuit 21 jours'}
+                {isEn ? 'Get started free' : 'Commencer gratuitement'}
                 <ArrowRight className="w-5 h-5" />
               </motion.button>
               
@@ -2908,7 +3177,7 @@ export default function Landing() {
                     viewport={{ once: true }}
                     transition={{ duration: 1, delay: 0.8 + idx * 0.15, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Check className="w-4 h-4 text-green-300" />
+                    <Check className="w-4 h-4 text-green-400" />
                     {badge.text} {badge.flag && '🇨🇦'}
                   </motion.span>
                 ))}
@@ -2955,7 +3224,7 @@ export default function Landing() {
         isOpen={showDemoModal}
         onClose={() => setShowDemoModal(false)}
         isEn={isEn}
-        onStartTrial={() => {
+        onGetStarted={() => {
           setShowDemoModal(false);
           register();
         }}

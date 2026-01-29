@@ -367,7 +367,7 @@ function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => 
         {/* CTAs - Green primary, Gold accent */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <button onClick={handleCTA} className="btn-primary btn-lg group">
-            {isEn ? 'Start free 7-day trial' : 'Essai gratuit de 7 jours'}
+            {isEn ? 'Get started free' : 'Commencer gratuitement'}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <button onClick={handleWatchDemo} className="btn-accent btn-lg flex items-center gap-2">
@@ -961,7 +961,7 @@ function CTASection({ isEn }: { isEn: boolean }) {
             }}
             className="store-cta-button group"
           >
-            {isEn ? 'Start your free trial' : 'Commencer l\'essai gratuit'}
+            {isEn ? 'Get started free' : 'Commencer gratuitement'}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <p className="text-sm mt-4 text-white/70">
@@ -1098,8 +1098,8 @@ export default function Store() {
     setLanguage(isEn ? 'fr' : 'en');
   };
 
-  const handleStartTrial = () => {
-    analytics.track('demo_modal_cta_clicked', { action: 'start_trial' });
+  const handleGetStarted = () => {
+    analytics.track('demo_modal_cta_clicked', { action: 'start_free' });
     setShowDemoModal(false);
     navigate('/signup');
   };
@@ -1128,7 +1128,7 @@ export default function Store() {
         isOpen={showDemoModal}
         onClose={() => setShowDemoModal(false)}
         isEn={isEn}
-        onStartTrial={handleStartTrial}
+        onGetStarted={handleGetStarted}
       />
     </div>
   );

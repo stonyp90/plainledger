@@ -16,7 +16,6 @@ import {
   Loader2,
   ArrowRight,
   Shield,
-  Building2,
   Mail,
   User,
   Lock,
@@ -273,12 +272,22 @@ export default function Signup() {
     >
       {/* Header */}
       <header className="px-4 py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 group">
           <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+            style={{ 
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+            }}
           >
-            <Building2 className="w-5 h-5 text-white" />
+            <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+              <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+              <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
           <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
             PlainLedger
@@ -304,8 +313,8 @@ export default function Signup() {
             </h1>
             <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {isEn 
-                ? 'Start your 7-day free trial. No credit card required.'
-                : 'Commencez votre essai gratuit de 21 jours. Aucune carte de crédit requise.'}
+                ? 'Get started for free. No credit card required.'
+                : 'Commencez gratuitement. Aucune carte de crédit requise.'}
             </p>
           </div>
 

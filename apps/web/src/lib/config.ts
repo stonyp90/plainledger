@@ -113,6 +113,8 @@ export const config = {
   support: {
     email: import.meta.env.VITE_SUPPORT_EMAIL || 'support@plainledger.ca',
     infoEmail: import.meta.env.VITE_INFO_EMAIL || 'info@plainledger.ca',
+    phone: import.meta.env.VITE_SUPPORT_PHONE || '418-564-6162',
+    phoneTel: import.meta.env.VITE_SUPPORT_PHONE_TEL || '+14185646162',
     docsUrl: import.meta.env.VITE_DOCS_URL || 'https://docs.plainledger.ca',
     statusUrl: import.meta.env.VITE_STATUS_URL || 'https://status.plainledger.ca',
   },

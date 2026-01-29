@@ -168,10 +168,10 @@ function DraggableElement({
             </span>
             {element.content.trend && (
               <div className="flex items-center gap-1 mt-1">
-                {element.content.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-500" />}
-                {element.content.trend === 'down' && <TrendingDown className="w-4 h-4 text-red-500" />}
+                {element.content.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-500 dark:text-green-400" />}
+                {element.content.trend === 'down' && <TrendingDown className="w-4 h-4 text-red-500 dark:text-red-400" />}
                 {element.content.trend === 'neutral' && <Minus className="w-4 h-4 text-gray-500" />}
-                <span className={`text-xs ${element.content.trend === 'up' ? 'text-green-500' : element.content.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>
+                <span className={`text-xs ${element.content.trend === 'up' ? 'text-green-500 dark:text-green-400' : element.content.trend === 'down' ? 'text-red-500 dark:text-red-400' : 'text-gray-500'}`}>
                   {element.content.trendValue}
                 </span>
               </div>

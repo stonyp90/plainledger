@@ -21,16 +21,12 @@ export class DatabaseInitializerService implements OnModuleInit {
 
     try {
       for (const schema of schemas) {
-        await this.dataSource.query(
-          `CREATE SCHEMA IF NOT EXISTS ${schema}`,
-        );
+        await this.dataSource.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
         this.logger.log(`Schema '${schema}' ensured`);
       }
 
       // Create uuid extension if not exists
-      await this.dataSource.query(
-        `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
-      );
+      await this.dataSource.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
       this.logger.log("UUID extension ensured");
     } catch (error) {
       this.logger.error(`Failed to create schemas: ${error.message}`);

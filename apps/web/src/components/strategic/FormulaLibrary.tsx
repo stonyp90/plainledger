@@ -729,7 +729,7 @@ export default function FormulaLibrary({ onSelectFormula, onClose, currentFormul
                                 title={isEn ? 'Copy' : 'Copier'}
                               >
                                 {copiedId === formula.id ? (
-                                  <CheckCircle className="w-4 h-4 text-green-500" />
+                                  <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400" />
                                 ) : (
                                   <Copy className="w-4 h-4" />
                                 )}

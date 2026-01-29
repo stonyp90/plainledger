@@ -9,8 +9,7 @@ export interface Tenant {
   logo?: string;
   primaryColor?: string;
   plan: 'free' | 'starter' | 'professional' | 'enterprise';
-  status: 'active' | 'suspended' | 'trial';
-  trialEndsAt?: string;
+  status: 'active' | 'suspended';
   createdAt: string;
   settings: TenantSettings;
   limits: TenantLimits;
@@ -25,6 +24,7 @@ export interface TenantSettings {
   fiscalYearEnd: string; // MM-DD format
   dateFormat: string;
   numberFormat: string;
+  demoMode?: boolean; // Demo mode enabled
   features: {
     powerBI: boolean;
     aiInsights: boolean;
@@ -252,17 +252,6 @@ const ENTERPRISE_FEATURES: TenantSettings['features'] = {
   sso: true,
 };
 
-// Trial features - explicitly excludes AI features
-// Used for all trial accounts regardless of plan tier
-const TRIAL_FEATURES: TenantSettings['features'] = {
-  powerBI: false,
-  aiInsights: false,  // No AI features in trial
-  customReports: false,
-  apiAccess: false,
-  auditLogs: false,
-  webhooks: false,
-  sso: false,
-};
 
 // Mock data for development
 const MOCK_TENANTS: Tenant[] = [
@@ -270,11 +259,10 @@ const MOCK_TENANTS: Tenant[] = [
     id: 'tenant-1',
     name: 'Demo Corporation',
     slug: 'demo-corp',
-    plan: 'free', // Changed to free to test premium gates
-    status: 'trial',
-    trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    plan: 'free',
+    status: 'active',
     createdAt: '2024-01-15T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: TRIAL_FEATURES },
+    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES, demoMode: true },
     limits: {
       ...PLAN_LIMITS.free,
       currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 100 },
@@ -287,10 +275,9 @@ const MOCK_TENANTS: Tenant[] = [
     name: 'Acme Inc.',
     slug: 'acme-inc',
     plan: 'starter',
-    status: 'trial',
-    trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'active',
     createdAt: '2025-01-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: TRIAL_FEATURES, currency: 'USD' },
+    settings: { ...DEFAULT_SETTINGS, features: STARTER_FEATURES, currency: 'USD' },
     limits: {
       ...PLAN_LIMITS.starter,
       currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 150 },
@@ -378,6 +365,37 @@ export function TenantProvider({ children }: TenantProviderProps) {
     setError(null);
     
     try {
+      // Check if user is in demo-signup organization
+      const isDemoSignupUser = user?.organization === 'demo-signup';
+      
+      if (isDemoSignupUser) {
+        // Create locked demo tenant for new signups (free users only see demo data)
+        const demoSignupTenant: Tenant = {
+          id: 'demo-signup',
+          name: 'Demo Account',
+          slug: 'demo-signup',
+          plan: 'free',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          settings: { 
+            ...DEFAULT_SETTINGS, 
+            features: FREE_FEATURES, // All features locked
+            demoMode: true, // Demo mode enabled - free users only see demo data
+          },
+          limits: {
+            ...PLAN_LIMITS.free,
+            currentUsage: { users: 1, connections: 0, reports: 0, storage: 0, apiCalls: 0 },
+          },
+          members: 1,
+          role: 'viewer',
+        };
+        
+        setTenants([demoSignupTenant]);
+        setCurrentTenantState(demoSignupTenant);
+        setIsLoading(false);
+        return;
+      }
+      
       // In production, fetch from API
       // const response = await api.get('/tenants');
       // const data = response.data;
@@ -436,10 +454,9 @@ export function TenantProvider({ children }: TenantProviderProps) {
       name: data.name,
       slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
       plan: 'free',
-      status: 'trial',
-      trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'active',
       createdAt: new Date().toISOString(),
-      settings: { ...DEFAULT_SETTINGS, ...data.settings, features: TRIAL_FEATURES },
+      settings: { ...DEFAULT_SETTINGS, ...data.settings, features: FREE_FEATURES, demoMode: true },
       limits: {
         ...PLAN_LIMITS.free,
         currentUsage: { users: 1, connections: 0, reports: 0, storage: 0, apiCalls: 0 },

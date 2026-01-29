@@ -39,6 +39,11 @@ export type NotificationType =
   | 'api_key_created'
   | 'api_key_revoked'
   | 'suspicious_activity'
+  | 'api_key_rotation_recommended'
+  | 'api_key_rotation_required'
+  | 'oauth_token_rotation_recommended'
+  | 'oauth_token_rotation_required'
+  | 'integration_credentials_expiring'
   
   // Billing notifications
   | 'subscription_created'
@@ -50,7 +55,6 @@ export type NotificationType =
   | 'payment_failed'
   | 'payment_method_expiring'
   | 'invoice_created'
-  | 'trial_ending'
   | 'usage_limit_warning'
   | 'usage_limit_reached'
   
@@ -262,6 +266,66 @@ export const notificationTemplates: Record<NotificationType, NotificationTemplat
     title: 'Clé API révoquée',
     message: 'La clé API "{keyName}" a été révoquée.',
   },
+  api_key_rotation_recommended: {
+    type: 'api_key_rotation_recommended',
+    category: 'security',
+    priority: 'high',
+    channels: ['in_app', 'email'],
+    title: 'Rotation de clé API recommandée',
+    message: 'La clé API pour {provider} devrait être rotée pour des raisons de sécurité. Elle a été créée il y a {daysOld} jours.',
+    emailSubject: 'Action recommandée: Rotation de clé API {provider}',
+    emailTemplate: 'api_key_rotation_recommended',
+    actionUrl: '/app/connections',
+    actionLabel: 'Gérer les connexions',
+  },
+  api_key_rotation_required: {
+    type: 'api_key_rotation_required',
+    category: 'security',
+    priority: 'urgent',
+    channels: ['in_app', 'email', 'slack', 'teams'],
+    title: 'Rotation de clé API requise',
+    message: 'La clé API pour {provider} doit être rotée immédiatement pour des raisons de sécurité. Elle a été créée il y a {daysOld} jours.',
+    emailSubject: 'URGENT: Rotation de clé API requise pour {provider}',
+    emailTemplate: 'api_key_rotation_required',
+    actionUrl: '/app/connections',
+    actionLabel: 'Rotater maintenant',
+  },
+  oauth_token_rotation_recommended: {
+    type: 'oauth_token_rotation_recommended',
+    category: 'security',
+    priority: 'high',
+    channels: ['in_app', 'email'],
+    title: 'Rotation de token OAuth recommandée',
+    message: 'Le token OAuth pour {provider} devrait être roté pour des raisons de sécurité. Il a été créé il y a {daysOld} jours.',
+    emailSubject: 'Action recommandée: Rotation de token OAuth {provider}',
+    emailTemplate: 'oauth_token_rotation_recommended',
+    actionUrl: '/app/connections',
+    actionLabel: 'Gérer les connexions',
+  },
+  oauth_token_rotation_required: {
+    type: 'oauth_token_rotation_required',
+    category: 'security',
+    priority: 'urgent',
+    channels: ['in_app', 'email', 'slack', 'teams'],
+    title: 'Rotation de token OAuth requise',
+    message: 'Le token OAuth pour {provider} doit être roté immédiatement pour des raisons de sécurité. Il a été créé il y a {daysOld} jours.',
+    emailSubject: 'URGENT: Rotation de token OAuth requise pour {provider}',
+    emailTemplate: 'oauth_token_rotation_required',
+    actionUrl: '/app/connections',
+    actionLabel: 'Reconnecter maintenant',
+  },
+  integration_credentials_expiring: {
+    type: 'integration_credentials_expiring',
+    category: 'security',
+    priority: 'high',
+    channels: ['in_app', 'email'],
+    title: 'Identifiants d\'intégration expirant bientôt',
+    message: 'Les identifiants pour {provider} expireront dans {daysRemaining} jours. Veuillez les renouveler.',
+    emailSubject: 'Identifiants {provider} expirant bientôt',
+    emailTemplate: 'integration_credentials_expiring',
+    actionUrl: '/app/connections',
+    actionLabel: 'Renouveler',
+  },
   suspicious_activity: {
     type: 'suspicious_activity',
     category: 'security',
@@ -373,18 +437,6 @@ export const notificationTemplates: Record<NotificationType, NotificationTemplat
     emailTemplate: 'invoice_created',
     actionUrl: '/app/settings',
     actionLabel: 'Voir la facture',
-  },
-  trial_ending: {
-    type: 'trial_ending',
-    category: 'billing',
-    priority: 'high',
-    channels: ['in_app', 'email'],
-    title: 'Période d\'essai se termine',
-    message: 'Votre période d\'essai se termine dans {daysLeft} jours.',
-    emailSubject: 'Votre essai PlainLedger se termine bientôt',
-    emailTemplate: 'trial_ending',
-    actionUrl: '/app/settings',
-    actionLabel: 'S\'abonner',
   },
   usage_limit_warning: {
     type: 'usage_limit_warning',
@@ -862,4 +914,150 @@ export function getRelativeTime(date: string): string {
     day: 'numeric',
     month: 'short',
   });
+}
+
+// ============================================================================
+// API Key Rotation Utilities
+// Following security best practices for credential rotation
+// ============================================================================
+
+/**
+ * Rotation periods following industry best practices:
+ * - API Keys: 90 days (3 months) - recommended by NIST, OWASP
+ * - OAuth Tokens: 180 days (6 months) - longer due to refresh token mechanism
+ * - Client Secrets: 90 days
+ * 
+ * Warning thresholds:
+ * - Recommended: 75% of rotation period (67 days for API keys, 135 days for OAuth)
+ * - Required: 90% of rotation period (81 days for API keys, 162 days for OAuth)
+ */
+export const ROTATION_PERIODS = {
+  apiKey: 90, // days
+  oauthToken: 180, // days
+  clientSecret: 90, // days
+} as const;
+
+export const ROTATION_THRESHOLDS = {
+  recommended: 0.75, // 75% of period
+  required: 0.90, // 90% of period
+} as const;
+
+export interface CredentialRotationCheck {
+  needsRotation: boolean;
+  rotationType: 'recommended' | 'required' | null;
+  daysOld: number;
+  daysUntilRequired: number;
+  credentialType: 'apiKey' | 'oauthToken' | 'clientSecret';
+}
+
+/**
+ * Check if credentials need rotation based on their age
+ * @param createdAt - ISO date string when credentials were created
+ * @param credentialType - Type of credential (apiKey, oauthToken, clientSecret)
+ * @returns Rotation check result
+ */
+export function checkCredentialRotation(
+  createdAt: string,
+  credentialType: 'apiKey' | 'oauthToken' | 'clientSecret' = 'apiKey'
+): CredentialRotationCheck {
+  const now = new Date();
+  const createdDate = new Date(createdAt);
+  const daysOld = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  const rotationPeriod = ROTATION_PERIODS[credentialType];
+  const recommendedThreshold = Math.floor(rotationPeriod * ROTATION_THRESHOLDS.recommended);
+  const requiredThreshold = Math.floor(rotationPeriod * ROTATION_THRESHOLDS.required);
+  
+  const daysUntilRequired = Math.max(0, requiredThreshold - daysOld);
+  
+  let rotationType: 'recommended' | 'required' | null = null;
+  let needsRotation = false;
+  
+  if (daysOld >= requiredThreshold) {
+    rotationType = 'required';
+    needsRotation = true;
+  } else if (daysOld >= recommendedThreshold) {
+    rotationType = 'recommended';
+    needsRotation = true;
+  }
+  
+  return {
+    needsRotation,
+    rotationType,
+    daysOld,
+    daysUntilRequired,
+    credentialType,
+  };
+}
+
+/**
+ * Get notification type for credential rotation
+ */
+export function getRotationNotificationType(
+  credentialType: 'apiKey' | 'oauthToken' | 'clientSecret',
+  rotationType: 'recommended' | 'required'
+): NotificationType {
+  if (credentialType === 'apiKey') {
+    return rotationType === 'required' 
+      ? 'api_key_rotation_required' 
+      : 'api_key_rotation_recommended';
+  } else {
+    return rotationType === 'required'
+      ? 'oauth_token_rotation_required'
+      : 'oauth_token_rotation_recommended';
+  }
+}
+
+/**
+ * Check all connections for rotation needs
+ * This should be called periodically (e.g., daily) to check for credentials needing rotation
+ */
+export interface ConnectionRotationCheck {
+  connectionId: string;
+  provider: string;
+  credentialType: 'apiKey' | 'oauthToken' | 'clientSecret';
+  check: CredentialRotationCheck;
+  createdAt: string;
+}
+
+export function checkConnectionsForRotation(
+  connections: Array<{
+    id: string;
+    provider: string;
+    authMethod: 'oauth2' | 'apiKey' | 'basicAuth';
+    createdAt: string;
+    connectedAt?: string;
+  }>
+): ConnectionRotationCheck[] {
+  const results: ConnectionRotationCheck[] = [];
+  
+  for (const connection of connections) {
+    // Use connectedAt if available, otherwise createdAt
+    const credentialDate = connection.connectedAt || connection.createdAt;
+    
+    // Determine credential type based on auth method
+    let credentialType: 'apiKey' | 'oauthToken' | 'clientSecret' = 'apiKey';
+    if (connection.authMethod === 'oauth2') {
+      credentialType = 'oauthToken';
+    } else if (connection.authMethod === 'apiKey') {
+      credentialType = 'apiKey';
+    } else {
+      // Skip basicAuth and other types that don't need rotation
+      continue;
+    }
+    
+    const check = checkCredentialRotation(credentialDate, credentialType);
+    
+    if (check.needsRotation) {
+      results.push({
+        connectionId: connection.id,
+        provider: connection.provider,
+        credentialType,
+        check,
+        createdAt: credentialDate,
+      });
+    }
+  }
+  
+  return results;
 }

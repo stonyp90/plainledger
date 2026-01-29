@@ -8,7 +8,7 @@
  * - Contact options
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   HelpCircle, 
   MessageCircle, 
@@ -24,6 +24,7 @@ import {
   Link2,
   AlertTriangle,
   Settings,
+  ExternalLink,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { crispUtils } from './CrispChat';
@@ -187,9 +188,45 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'topics' | 'faq' | 'contact'>('topics');
+  const modalRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Get suggested topic based on current page
   const suggestedTopicId = PAGE_TOPIC_MAP[location.pathname];
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Focus search input when modal opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      // Small delay to ensure modal is rendered
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
 
   // Filter topics based on search
   const filteredTopics = HELP_TOPICS.filter(topic => {
@@ -238,17 +275,26 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="help-center-title"
+      aria-describedby="help-center-description"
+    >
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       
       {/* Modal */}
       <div 
+        ref={modalRef}
         className="relative w-full max-w-2xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div 
@@ -256,16 +302,25 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
           <div>
-            <h2 className="text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+            <h2 
+              id="help-center-title"
+              className="text-xl font-bold" 
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               {isEn ? 'Help Center' : 'Centre d\'aide'}
             </h2>
-            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p 
+              id="help-center-description"
+              className="text-sm mt-1" 
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
               {isEn ? 'Find answers and get support' : 'Trouvez des réponses et obtenez du support'}
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-muted transition-colors"
+            aria-label={isEn ? 'Close help center' : 'Fermer le centre d\'aide'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -279,18 +334,25 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
           >
             <Search className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder={isEn ? 'Search help articles...' : 'Rechercher dans l\'aide...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 bg-transparent outline-none text-sm"
               style={{ color: 'rgb(var(--color-text))' }}
+              aria-label={isEn ? 'Search help articles' : 'Rechercher dans l\'aide'}
             />
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+        <div 
+          className="flex border-b" 
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+          role="tablist"
+          aria-label={isEn ? 'Help center sections' : 'Sections du centre d\'aide'}
+        >
           {[
             { id: 'topics', label: { en: 'Topics', fr: 'Sujets' }, icon: Book },
             { id: 'faq', label: { en: 'FAQ', fr: 'FAQ' }, icon: HelpCircle },
@@ -299,14 +361,19 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`help-tabpanel-${tab.id}`}
+              id={`help-tab-${tab.id}`}
               className={`
                 flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium
-                border-b-2 transition-colors
+                border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
               `}
               style={{
                 borderColor: activeTab === tab.id ? 'rgb(var(--color-primary-500))' : 'transparent',
                 color: activeTab === tab.id ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
-              }}
+                '--tw-ring-color': 'rgb(var(--color-primary-500))',
+              } as React.CSSProperties}
             >
               <tab.icon className="w-4 h-4" />
               {isEn ? tab.label.en : tab.label.fr}
@@ -317,32 +384,33 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'topics' && (
+            <div role="tabpanel" id="help-tabpanel-topics" aria-labelledby="help-tab-topics">
             <div className="space-y-4">
               {/* Suggested topic */}
               {suggestedTopicId && !searchQuery && (
-                <div 
-                  className="p-4 rounded-xl border-2 mb-6"
-                  style={{ 
-                    borderColor: 'rgb(var(--color-primary-500) / 0.3)',
-                    backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
-                  }}
-                >
-                  <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                <div className="mb-6">
+                  <p className="text-xs font-medium mb-3" style={{ color: 'rgb(var(--color-primary-600))' }}>
                     {isEn ? 'Suggested for this page' : 'Suggéré pour cette page'}
                   </p>
                   {HELP_TOPICS.filter(t => t.id === suggestedTopicId).map((topic) => (
                     <button
                       key={topic.id}
                       onClick={() => setSelectedTopic(topic.id)}
-                      className="flex items-center gap-3 w-full text-left"
+                      className="flex items-center gap-3 w-full p-4 rounded-xl text-left transition-all hover:scale-[1.01]"
+                      style={{ 
+                        borderColor: 'rgb(var(--color-primary-500))',
+                        backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                        borderWidth: '1px',
+                        borderStyle: 'solid',
+                      }}
                     >
                       <div 
                         className="p-2 rounded-lg"
-                        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.15)' }}
                       >
                         <topic.icon className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                           {isEn ? topic.title.en : topic.title.fr}
                         </p>
@@ -350,7 +418,7 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                           {isEn ? topic.description.en : topic.description.fr}
                         </p>
                       </div>
-                      <ChevronRight className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                      <ChevronRight className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-primary-500))' }} />
                     </button>
                   ))}
                 </div>
@@ -393,11 +461,14 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                           className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-muted transition-colors text-left text-sm group"
                           style={{ color: 'rgb(var(--color-text-secondary))' }}
                         >
-                          <FileText className="w-4 h-4" />
-                          <span className="group-hover:text-primary transition-colors">
+                          <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          <span className="help-article-link">
                             {isEn ? article.title.en : article.title.fr}
                           </span>
-                          <ExternalLink className="w-3 h-3 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" />
+                          <ExternalLink 
+                            className="w-3 h-3 ml-auto opacity-50 group-hover:opacity-100 transition-opacity" 
+                            style={{ color: 'rgb(var(--color-primary-500))' }}
+                          />
                         </button>
                       ))}
                     </div>
@@ -413,9 +484,11 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                 </div>
               )}
             </div>
+            </div>
           )}
 
           {activeTab === 'faq' && (
+            <div role="tabpanel" id="help-tabpanel-faq" aria-labelledby="help-tab-faq">
             <div className="space-y-4">
               {filteredFAQ.map((item, idx) => (
                 <div 
@@ -440,15 +513,21 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                 </div>
               )}
             </div>
+            </div>
           )}
 
           {activeTab === 'contact' && (
+            <div role="tabpanel" id="help-tabpanel-contact" aria-labelledby="help-tab-contact">
             <div className="space-y-4">
               {/* Live Chat */}
               <button
                 onClick={handleOpenChat}
-                className="w-full p-4 rounded-xl border-2 flex items-center gap-4 hover:border-primary transition-colors text-left"
-                style={{ borderColor: 'rgb(var(--color-border))' }}
+                className="w-full p-4 rounded-xl border-2 flex items-center gap-4 transition-colors text-left"
+                style={{ 
+                  borderColor: 'rgb(var(--color-border))',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgb(var(--color-primary-500))'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgb(var(--color-border))'}
               >
                 <div 
                   className="p-3 rounded-xl"
@@ -494,9 +573,15 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                 <ExternalLink className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }} />
               </a>
 
-              {/* Phone */}
+              {/* Phone - or use Crisp live chat */}
               <a
-                href="tel:+15143391234"
+                href={config.crisp.enabled ? '#' : `tel:${config.support.phoneTel}`}
+                onClick={(e) => {
+                  if (config.crisp.enabled) {
+                    e.preventDefault();
+                    crispUtils.open();
+                  }
+                }}
                 className="w-full p-4 rounded-xl border flex items-center gap-4 hover:bg-muted transition-colors"
                 style={{ borderColor: 'rgb(var(--color-border))' }}
               >
@@ -511,10 +596,12 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                     {isEn ? 'Phone Support' : 'Support téléphonique'}
                   </p>
                   <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    +1 (514) 339-1234
+                    {config.support.phone}
                   </p>
                   <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Mon-Fri, 9am-5pm EST' : 'Lun-Ven, 9h-17h HE'}
+                    {config.crisp.enabled 
+                      ? (isEn ? 'Live chat available' : 'Chat en direct disponible')
+                      : (isEn ? 'Mon-Fri, 9am-5pm EST' : 'Lun-Ven, 9h-17h HE')}
                   </p>
                 </div>
               </a>
@@ -543,6 +630,7 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                 </div>
                 <ExternalLink className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }} />
               </a>
+            </div>
             </div>
           )}
         </div>

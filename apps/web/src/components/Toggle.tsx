@@ -219,6 +219,8 @@ interface ToggleGroupOption {
   value: string;
   label: string;
   icon?: React.ReactNode;
+  badge?: string;
+  disabled?: boolean;
 }
 
 interface ToggleGroupProps {
@@ -252,23 +254,24 @@ export function ToggleGroup({
     >
       {options.map((option) => {
         const isSelected = value === option.value;
+        const isOptionDisabled = disabled || option.disabled;
         return (
           <button
             key={option.value}
             type="button"
             role="radio"
             aria-checked={isSelected}
-            disabled={disabled}
-            onClick={() => !disabled && onChange(option.value)}
+            disabled={isOptionDisabled}
+            onClick={() => !isOptionDisabled && onChange(option.value)}
             className={`
               flex items-center justify-center gap-1.5 rounded-lg font-medium
               transition-all duration-200 ease-in-out
               ${sizes[size]}
               ${fullWidth ? 'flex-1' : ''}
-              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              ${isOptionDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
               ${isSelected 
                 ? 'shadow-sm' 
-                : 'hover:bg-white/50 dark:hover:bg-white/10'
+                : isOptionDisabled ? '' : 'hover:bg-white/50 dark:hover:bg-white/10'
               }
             `}
             style={{
@@ -279,6 +282,17 @@ export function ToggleGroup({
           >
             {option.icon}
             {option.label}
+            {option.badge && (
+              <span 
+                className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                }}
+              >
+                {option.badge}
+              </span>
+            )}
           </button>
         );
       })}

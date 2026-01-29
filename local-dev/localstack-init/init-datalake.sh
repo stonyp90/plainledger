@@ -35,6 +35,24 @@ awslocal s3api put-bucket-versioning \
 echo "Creating Athena results bucket..."
 awslocal s3 mb s3://plainledger-athena-results || true
 
+# Create Uploads bucket (logos, avatars, etc.)
+echo "Creating Uploads bucket..."
+awslocal s3 mb s3://plainledger-uploads || true
+# Set CORS for web access
+awslocal s3api put-bucket-cors \
+    --bucket plainledger-uploads \
+    --cors-configuration '{
+        "CORSRules": [
+            {
+                "AllowedHeaders": ["*"],
+                "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+                "AllowedOrigins": ["*"],
+                "ExposeHeaders": ["ETag"],
+                "MaxAgeSeconds": 3600
+            }
+        ]
+    }' || true
+
 # Create folder structure in buckets
 echo "Creating folder structure..."
 echo "" | awslocal s3 cp - s3://plainledger-bronze/quickbooks/ || true
@@ -60,4 +78,5 @@ echo "  - plainledger-bronze (raw data)"
 echo "  - plainledger-silver (cleansed data)"
 echo "  - plainledger-gold (analytics-ready)"
 echo "  - plainledger-athena-results"
+echo "  - plainledger-uploads (logos, avatars)"
 echo "=========================================="

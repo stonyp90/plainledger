@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import ShareModal from '../components/ShareModal';
 import {
   Play,
   Pause,
@@ -52,6 +53,15 @@ import {
   FileDown,
   Layers,
   GripVertical,
+  Rocket,
+  Bell,
+  Link2,
+  Globe,
+  Hand,
+  Mic,
+  Video,
+  Building2,
+  Bookmark,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -77,6 +87,10 @@ import {
 import BoardPanelPicker from '../components/strategic/BoardPanelPicker';
 import BoardPanelRenderer from '../components/strategic/BoardPanelRenderer';
 import SlideEditor from '../components/strategic/SlideEditor';
+import TrendChart from '../components/charts/TrendChart';
+import WaterfallChart from '../components/charts/WaterfallChart';
+import HealthScoreGauge from '../components/charts/HealthScoreGauge';
+import { CurrentRatioCard, DebtToEquityCard } from '../components/charts/RatioCard';
 
 // Slide components
 function TitleSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
@@ -376,7 +390,7 @@ function TableSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
                 {row.map((cell: string, j: number) => (
                   <td 
                     key={j}
-                    className={`px-6 py-4 ${j === 0 ? 'font-medium' : ''} ${cell.startsWith('+') ? 'text-green-500' : cell.startsWith('-') ? 'text-red-500' : ''}`}
+                    className={`px-6 py-4 ${j === 0 ? 'font-medium' : ''} ${cell.startsWith('+') ? 'text-green-500 dark:text-green-400' : cell.startsWith('-') ? 'text-red-500 dark:text-red-400' : ''}`}
                     style={{ color: cell.startsWith('+') || cell.startsWith('-') ? undefined : 'rgb(var(--color-text))' }}
                   >
                     {cell}
@@ -630,41 +644,143 @@ function HealthSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
   );
 }
 
-// Share Modal Component
-interface ShareModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+// Industry-specific action templates
+const INDUSTRY_ACTIONS = {
+  healthcare: [
+    { id: 'hipaa-compliance', label: 'HIPAA Compliance Review', labelFr: 'Revue conformité HIPAA' },
+    { id: 'patient-metrics', label: 'Patient Financial Metrics', labelFr: 'Métriques financières patients' },
+    { id: 'equipment-depreciation', label: 'Medical Equipment Depreciation', labelFr: 'Amortissement équipement médical' },
+  ],
+  manufacturing: [
+    { id: 'inventory-turnover', label: 'Inventory Turnover Analysis', labelFr: 'Analyse rotation des stocks' },
+    { id: 'capex-review', label: 'CapEx Review', labelFr: 'Revue des investissements' },
+    { id: 'cost-variance', label: 'Cost Variance Report', labelFr: 'Rapport des écarts de coûts' },
+  ],
+  retail: [
+    { id: 'same-store-sales', label: 'Same-Store Sales Analysis', labelFr: 'Analyse ventes magasins comparables' },
+    { id: 'inventory-shrinkage', label: 'Inventory Shrinkage', labelFr: 'Perte de stock' },
+    { id: 'seasonal-forecast', label: 'Seasonal Forecasting', labelFr: 'Prévisions saisonnières' },
+  ],
+  technology: [
+    { id: 'arr-mrr', label: 'ARR/MRR Analysis', labelFr: 'Analyse ARR/MRR' },
+    { id: 'customer-acquisition', label: 'Customer Acquisition Cost', labelFr: 'Coût d\'acquisition client' },
+    { id: 'burn-rate', label: 'Burn Rate & Runway', labelFr: 'Taux de consommation et piste' },
+  ],
+  professional_services: [
+    { id: 'utilization', label: 'Utilization Rates', labelFr: 'Taux d\'utilisation' },
+    { id: 'billable-hours', label: 'Billable Hours Analysis', labelFr: 'Analyse heures facturables' },
+    { id: 'project-profitability', label: 'Project Profitability', labelFr: 'Rentabilité des projets' },
+  ],
+  nonprofit: [
+    { id: 'program-ratio', label: 'Program Expense Ratio', labelFr: 'Ratio dépenses programmes' },
+    { id: 'donor-retention', label: 'Donor Retention Metrics', labelFr: 'Métriques rétention donateurs' },
+    { id: 'grant-compliance', label: 'Grant Compliance Status', labelFr: 'Statut conformité subventions' },
+  ],
+};
+
+// Upcoming features for Board Ready Experience
+const UPCOMING_FEATURES = [
+  {
+    icon: Mic,
+    title: 'Live Transcript',
+    titleFr: 'Transcription en direct',
+    description: 'Real-time AI-powered transcription with speaker identification',
+    descriptionFr: 'Transcription en temps réel avec identification des intervenants',
+    status: 'in_development',
+  },
+  {
+    icon: MessageSquare,
+    title: 'Live Chat with Editing',
+    titleFr: 'Chat en direct avec édition',
+    description: 'Collaborative chat with document co-editing during presentations',
+    descriptionFr: 'Chat collaboratif avec co-édition de documents',
+    status: 'in_development',
+  },
+  {
+    icon: Hand,
+    title: 'Hand Raise & Queue',
+    titleFr: 'Lever la main',
+    description: 'Digital hand raising with speaker queue management',
+    descriptionFr: 'Lever de main numérique avec gestion de file d\'attente',
+    status: 'planned',
+  },
+  {
+    icon: Target,
+    title: 'Industry Key Actions',
+    titleFr: 'Actions clés par industrie',
+    description: 'Pre-built actions based on industry best practices',
+    descriptionFr: 'Actions prédéfinies basées sur les meilleures pratiques',
+    status: 'in_development',
+  },
+  {
+    icon: Video,
+    title: 'Video Conferencing',
+    titleFr: 'Vidéoconférence',
+    description: 'Built-in video conferencing with screen sharing',
+    descriptionFr: 'Vidéoconférence intégrée avec partage d\'écran',
+    status: 'planned',
+  },
+  {
+    icon: Edit3,
+    title: 'Resolution Drafting',
+    titleFr: 'Rédaction de résolutions',
+    description: 'AI-assisted board resolution drafting',
+    descriptionFr: 'Rédaction de résolutions assistée par IA',
+    status: 'planned',
+  },
+];
+
+// Board Ready Share Content Component
+interface BoardReadyShareContentProps {
   isEn: boolean;
   meetingTitle: string;
 }
 
-function ShareModal({ isOpen, onClose, isEn, meetingTitle }: ShareModalProps) {
+function BoardReadyShareContent({ isEn, meetingTitle }: BoardReadyShareContentProps) {
+  const [emails, setEmails] = useState('');
   const [password, setPassword] = useState('');
-  const [generatePassword, setGeneratePassword] = useState(true);
+  const [usePassword, setUsePassword] = useState(true);
+  const [autoGeneratePassword, setAutoGeneratePassword] = useState(true);
   const [expiresIn, setExpiresIn] = useState('7d');
   const [allowDownload, setAllowDownload] = useState(true);
-  const [requireAuth, setRequireAuth] = useState(false);
-  const [emails, setEmails] = useState('');
+  const [notifyOnView, setNotifyOnView] = useState(true);
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [notifySubmitted, setNotifySubmitted] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<keyof typeof INDUSTRY_ACTIONS>('technology');
+  const [selectedSections, setSelectedSections] = useState(['executive_summary', 'financials', 'kpis']);
   
   // Generate random password
   useEffect(() => {
-    if (generatePassword) {
+    if (autoGeneratePassword) {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
       let pwd = '';
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 12; i++) {
         pwd += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       setPassword(pwd);
     }
-  }, [generatePassword]);
+  }, [autoGeneratePassword]);
   
-  const shareUrl = `https://app.plainledger.ca/meeting/share/abc123?p=${password}`;
+  // Generate share URL
+  useEffect(() => {
+    const baseUrl = 'https://app.plainledger.ca/board-ready/share';
+    const params = new URLSearchParams();
+    if (usePassword) {
+      params.set('protected', '1');
+    }
+    setShareUrl(`${baseUrl}/br_${Date.now().toString(36)}${params.toString() ? '?' + params.toString() : ''}`);
+  }, [usePassword]);
   
   const handleCopy = () => {
-    navigator.clipboard.writeText(`${shareUrl}\n\n${isEn ? 'Password' : 'Mot de passe'}: ${password}`);
+    const textToCopy = usePassword 
+      ? `${shareUrl}\n\n${isEn ? 'Password' : 'Mot de passe'}: ${password}`
+      : shareUrl;
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -672,246 +788,477 @@ function ShareModal({ isOpen, onClose, isEn, meetingTitle }: ShareModalProps) {
   const handleSendEmails = async () => {
     if (!emails.trim()) return;
     setSending(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     setSending(false);
     setSent(true);
     setTimeout(() => setSent(false), 3000);
   };
   
-  if (!isOpen) return null;
+  const handleNotifySubmit = async () => {
+    if (!notifyEmail.trim()) return;
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setNotifySubmitted(true);
+    setTimeout(() => {
+      setShowNotifyModal(false);
+      setNotifySubmitted(false);
+      setNotifyEmail('');
+    }, 2000);
+  };
+  
+  const availableSections = [
+    { id: 'executive_summary', label: 'Executive Summary', labelFr: 'Résumé exécutif', icon: FileText },
+    { id: 'financials', label: 'Financial Statements', labelFr: 'États financiers', icon: BarChart3 },
+    { id: 'kpis', label: 'Key Performance Indicators', labelFr: 'Indicateurs clés', icon: Target },
+    { id: 'cash_flow', label: 'Cash Flow Analysis', labelFr: 'Analyse flux de trésorerie', icon: Activity },
+    { id: 'anomalies', label: 'Anomaly Report', labelFr: 'Rapport d\'anomalies', icon: AlertCircle },
+    { id: 'forecast', label: 'Financial Forecast', labelFr: 'Prévisions financières', icon: TrendingUp },
+    { id: 'action_items', label: 'Action Items', labelFr: 'Points d\'action', icon: CheckCircle },
+  ];
   
   return (
-    <div 
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
-    >
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Under Development Banner */}
       <div 
-        className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
-        style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+        className="flex items-center gap-3 p-4 rounded-xl"
+        style={{ 
+          background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.15) 0%, rgb(var(--color-primary-500) / 0.05) 100%)',
+          border: '1px solid rgb(var(--color-primary-500) / 0.3)',
+        }}
       >
-        {/* Header */}
         <div 
-          className="p-6 border-b flex items-center justify-between"
-          style={{ borderColor: 'rgb(var(--color-border))' }}
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.2)' }}
         >
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-            >
-              <Share2 className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Share Presentation' : 'Partager la présentation'}
-              </h2>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {meetingTitle}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 transition-colors">
-            <X className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-          </button>
+          <Rocket className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
         </div>
-        
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Shareable Link */}
-          <div>
-            <label className="text-sm font-medium mb-2 block" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Shareable Link' : 'Lien de partage'}
-            </label>
-            <div 
-              className="flex items-center gap-2 p-3 rounded-xl border"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                borderColor: 'rgb(var(--color-border))',
-              }}
-            >
-              <Link className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              <input
-                type="text"
-                value={shareUrl}
-                readOnly
-                className="flex-1 bg-transparent text-sm outline-none"
-                style={{ color: 'rgb(var(--color-text))' }}
-              />
-              <button
-                onClick={handleCopy}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
-                style={{ 
-                  backgroundColor: copied ? 'rgb(var(--color-success))' : 'rgb(var(--color-primary-500))',
-                  color: 'white',
-                }}
-              >
-                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? (isEn ? 'Copied!' : 'Copié!') : (isEn ? 'Copy' : 'Copier')}
-              </button>
-            </div>
-          </div>
-          
-          {/* Password Protection */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
-                <Lock className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                {isEn ? 'Password Protection' : 'Protection par mot de passe'}
-              </label>
-              <Toggle
-                checked={generatePassword}
-                onChange={setGeneratePassword}
-                label={isEn ? 'Auto-generate' : 'Auto-générer'}
-                labelPosition="left"
-                size="sm"
-              />
-            </div>
-            <div 
-              className="flex items-center gap-2 p-3 rounded-xl border"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                borderColor: 'rgb(var(--color-border))',
-              }}
-            >
-              <Shield className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              <input
-                type="text"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setGeneratePassword(false); }}
-                placeholder={isEn ? 'Enter password' : 'Entrer le mot de passe'}
-                className="flex-1 bg-transparent text-sm outline-none font-mono"
-                style={{ color: 'rgb(var(--color-text))' }}
-              />
-            </div>
-          </div>
-          
-          {/* Options Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Link Expires' : 'Expiration'}
-              </label>
-              <select
-                value={expiresIn}
-                onChange={(e) => setExpiresIn(e.target.value)}
-                className="w-full p-3 rounded-xl border text-sm"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  borderColor: 'rgb(var(--color-border))',
-                  color: 'rgb(var(--color-text))',
-                }}
-              >
-                <option value="1d">{isEn ? '1 day' : '1 jour'}</option>
-                <option value="7d">{isEn ? '7 days' : '7 jours'}</option>
-                <option value="30d">{isEn ? '30 days' : '30 jours'}</option>
-                <option value="never">{isEn ? 'Never' : 'Jamais'}</option>
-              </select>
+        <div className="flex-1">
+          <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Under Active Development' : 'En développement actif'}
+          </h3>
+          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn 
+              ? 'We\'re actively building the Board Ready Experience with exciting collaborative features. Preview available below.'
+              : 'Nous développons activement l\'expérience Board Ready avec des fonctionnalités collaboratives. Aperçu disponible ci-dessous.'
+            }
+          </p>
+        </div>
+        <button
+          onClick={() => setShowNotifyModal(true)}
+          className="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 flex-shrink-0"
+          style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}
+        >
+          <Bell className="w-4 h-4" />
+          <span className="hidden sm:inline">{isEn ? 'Notify Me' : 'Me notifier'}</span>
+        </button>
+      </div>
+      
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Sharing Options */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Share Link Card */}
+          <div 
+            className="rounded-2xl p-6 space-y-5"
+            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+                <Link2 className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Create Shareable Link' : 'Créer un lien partageable'}
+                </h2>
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Generate a secure link for board members' : 'Générez un lien sécurisé pour le conseil'}
+                </p>
+              </div>
             </div>
             
+            {/* Shareable Link */}
+            <div>
+              <label className="text-sm font-medium mb-2 block" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Shareable Link' : 'Lien de partage'}
+              </label>
+              <div 
+                className="flex items-center gap-2 p-3 rounded-xl border"
+                style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))' }}
+              >
+                <Globe className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                <input
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  className="flex-1 bg-transparent text-sm outline-none font-mono"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                />
+                <button
+                  onClick={handleCopy}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                  style={{ backgroundColor: copied ? 'rgb(var(--color-success))' : 'rgb(var(--color-primary-500))', color: 'white' }}
+                >
+                  {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (isEn ? 'Copied!' : 'Copié!') : (isEn ? 'Copy' : 'Copier')}
+                </button>
+              </div>
+            </div>
+            
+            {/* Password Protection */}
             <div className="space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={allowDownload}
-                  onChange={(e) => setAllowDownload(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Allow PDF download' : 'Autoriser téléchargement PDF'}
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={requireAuth}
-                  onChange={(e) => setRequireAuth(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Require login' : 'Connexion requise'}
-                </span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  <Lock className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  {isEn ? 'Password Protection' : 'Protection par mot de passe'}
+                </label>
+                <Toggle checked={usePassword} onChange={setUsePassword} size="sm" />
+              </div>
+              
+              {usePassword && (
+                <div className="space-y-3 pl-6 border-l-2" style={{ borderColor: 'rgb(var(--color-primary-500) / 0.3)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? 'Auto-generate secure password' : 'Auto-générer mot de passe'}
+                    </span>
+                    <Toggle checked={autoGeneratePassword} onChange={setAutoGeneratePassword} size="sm" />
+                  </div>
+                  
+                  <div 
+                    className="flex items-center gap-2 p-3 rounded-xl border"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))' }}
+                  >
+                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <input
+                      type="text"
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setAutoGeneratePassword(false); }}
+                      placeholder={isEn ? 'Enter password' : 'Entrer le mot de passe'}
+                      className="flex-1 bg-transparent text-sm outline-none font-mono"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Link Expires' : 'Expiration'}
+                </label>
+                <select
+                  value={expiresIn}
+                  onChange={(e) => setExpiresIn(e.target.value)}
+                  className="w-full p-3 rounded-xl border text-sm"
+                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
+                >
+                  <option value="1d">{isEn ? '1 day' : '1 jour'}</option>
+                  <option value="7d">{isEn ? '7 days' : '7 jours'}</option>
+                  <option value="30d">{isEn ? '30 days' : '30 jours'}</option>
+                  <option value="never">{isEn ? 'Never' : 'Jamais'}</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2 pt-6">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={allowDownload} onChange={(e) => setAllowDownload(e.target.checked)} className="w-4 h-4 rounded" />
+                  <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Allow PDF download' : 'Autoriser PDF'}</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={notifyOnView} onChange={(e) => setNotifyOnView(e.target.checked)} className="w-4 h-4 rounded" />
+                  <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Notify when viewed' : 'Notifier à la consultation'}</span>
+                </label>
+              </div>
             </div>
           </div>
           
           {/* Send by Email */}
           <div 
-            className="p-4 rounded-xl border"
-            style={{ borderColor: 'rgb(var(--color-border))' }}
+            className="rounded-2xl p-6 space-y-4"
+            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
           >
-            <label className="text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
-              <Mail className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              {isEn ? 'Send by Email' : 'Envoyer par courriel'}
-            </label>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}>
+                <Mail className="w-5 h-5" style={{ color: 'rgb(var(--color-info))' }} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Send by Email' : 'Envoyer par courriel'}
+                </h2>
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Directly email to recipients' : 'Envoyer directement par courriel'}
+                </p>
+              </div>
+            </div>
+            
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={emails}
                 onChange={(e) => setEmails(e.target.value)}
-                placeholder={isEn ? 'Enter email addresses (comma separated)' : 'Entrer les courriels (séparés par virgule)'}
+                placeholder={isEn ? 'Enter emails (comma separated)' : 'Courriels (séparés par virgule)'}
                 className="flex-1 p-3 rounded-xl border text-sm"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  borderColor: 'rgb(var(--color-border))',
-                  color: 'rgb(var(--color-text))',
-                }}
+                style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
               />
               <button
                 onClick={handleSendEmails}
                 disabled={!emails.trim() || sending}
-                className="px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
-                style={{ 
-                  backgroundColor: sent ? 'rgb(var(--color-success))' : 'rgb(var(--color-primary-500))',
-                  color: 'white',
-                }}
+                className="px-5 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
+                style={{ backgroundColor: sent ? 'rgb(var(--color-success))' : 'rgb(var(--color-primary-500))', color: 'white' }}
               >
-                {sending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : sent ? (
-                  <CheckCircle className="w-4 h-4" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : sent ? <CheckCircle className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                 {sent ? (isEn ? 'Sent!' : 'Envoyé!') : (isEn ? 'Send' : 'Envoyer')}
               </button>
             </div>
-            <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn 
-                ? 'Recipients will receive an email with the link and password'
-                : 'Les destinataires recevront un courriel avec le lien et le mot de passe'}
-            </p>
+          </div>
+          
+          {/* Content Selection */}
+          <div 
+            className="rounded-2xl p-6 space-y-4"
+            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
+                <Bookmark className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Select Content' : 'Sélectionner le contenu'}
+                </h2>
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Choose sections to include' : 'Choisir les sections'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {availableSections.map((section) => {
+                const isSelected = selectedSections.includes(section.id);
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setSelectedSections(prev => 
+                      isSelected ? prev.filter(s => s !== section.id) : [...prev, section.id]
+                    )}
+                    className="flex items-center gap-3 p-3 rounded-xl border transition-all text-left"
+                    style={{
+                      backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))',
+                      borderColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-border))',
+                    }}
+                  >
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-border))' }}
+                    >
+                      <section.icon className="w-4 h-4" style={{ color: isSelected ? 'white' : 'rgb(var(--color-text-muted))' }} />
+                    </div>
+                    <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? section.label : section.labelFr}
+                    </span>
+                    {isSelected && <CheckCircle className="w-4 h-4 ml-auto" style={{ color: 'rgb(var(--color-primary-500))' }} />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
         
-        {/* Footer */}
-        <div 
-          className="p-4 border-t flex justify-end gap-3"
-          style={{ 
-            borderColor: 'rgb(var(--color-border))',
-            backgroundColor: 'rgb(var(--color-bg-muted))',
-          }}
-        >
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{ color: 'rgb(var(--color-text))' }}
+        {/* Right Column - Upcoming Features */}
+        <div className="space-y-6">
+          {/* Upcoming Features */}
+          <div 
+            className="rounded-2xl overflow-hidden"
+            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
           >
-            {isEn ? 'Close' : 'Fermer'}
-          </button>
-          <button
-            onClick={handleCopy}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white',
-            }}
+            <div 
+              className="p-4 border-b"
+              style={{ background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, transparent 100%)', borderColor: 'rgb(var(--color-border))' }}
+            >
+              <h2 className="font-bold flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                <Sparkles className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                {isEn ? 'Coming Soon' : 'Bientôt disponible'}
+              </h2>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              {UPCOMING_FEATURES.map((feature, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                  <div 
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: feature.status === 'in_development' ? 'rgb(var(--color-warning) / 0.1)' : 'rgb(var(--color-info) / 0.1)' }}
+                  >
+                    <feature.icon className="w-4 h-4" style={{ color: feature.status === 'in_development' ? 'rgb(var(--color-warning))' : 'rgb(var(--color-info))' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                        {isEn ? feature.title : feature.titleFr}
+                      </h3>
+                      <span 
+                        className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase"
+                        style={{ 
+                          backgroundColor: feature.status === 'in_development' ? 'rgb(var(--color-warning) / 0.15)' : 'rgb(var(--color-info) / 0.15)',
+                          color: feature.status === 'in_development' ? 'rgb(var(--color-warning))' : 'rgb(var(--color-info))',
+                        }}
+                      >
+                        {feature.status === 'in_development' ? (isEn ? 'Building' : 'En cours') : (isEn ? 'Planned' : 'Planifié')}
+                      </span>
+                    </div>
+                    <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? feature.description : feature.descriptionFr}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <button
+                onClick={() => setShowNotifyModal(true)}
+                className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)', color: 'rgb(var(--color-primary-600))' }}
+              >
+                <Bell className="w-4 h-4" />
+                {isEn ? 'Get notified when ready' : 'Être notifié au lancement'}
+              </button>
+            </div>
+          </div>
+          
+          {/* Industry Actions Preview */}
+          <div 
+            className="rounded-2xl overflow-hidden"
+            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
           >
-            <Copy className="w-4 h-4" />
-            {isEn ? 'Copy Link & Password' : 'Copier lien et mot de passe'}
-          </button>
+            <div className="p-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <h2 className="font-bold flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                <Building2 className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
+                {isEn ? 'Industry Key Actions' : 'Actions par industrie'}
+              </h2>
+            </div>
+            
+            <div className="p-4">
+              <select
+                value={selectedIndustry}
+                onChange={(e) => setSelectedIndustry(e.target.value as keyof typeof INDUSTRY_ACTIONS)}
+                className="w-full p-2.5 rounded-xl border text-sm mb-4"
+                style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
+              >
+                <option value="technology">{isEn ? 'Technology / SaaS' : 'Technologie / SaaS'}</option>
+                <option value="healthcare">{isEn ? 'Healthcare' : 'Santé'}</option>
+                <option value="manufacturing">{isEn ? 'Manufacturing' : 'Manufacturier'}</option>
+                <option value="retail">{isEn ? 'Retail' : 'Commerce'}</option>
+                <option value="professional_services">{isEn ? 'Professional Services' : 'Services professionnels'}</option>
+                <option value="nonprofit">{isEn ? 'Non-Profit' : 'OSBL'}</option>
+              </select>
+              
+              <div className="space-y-2">
+                {INDUSTRY_ACTIONS[selectedIndustry].map((action) => (
+                  <div 
+                    key={action.id}
+                    className="flex items-center gap-3 p-3 rounded-xl opacity-60"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-border))' }}>
+                      <Target className="w-3 h-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    </div>
+                    <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? action.label : action.labelFr}
+                    </span>
+                    <Lock className="w-3 h-3 ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-4 p-3 rounded-xl text-center" style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)', border: '1px dashed rgb(var(--color-warning) / 0.3)' }}>
+                <p className="text-xs font-medium" style={{ color: 'rgb(var(--color-warning))' }}>
+                  {isEn ? 'Available in upcoming release' : 'Disponible prochainement'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* Notify Modal */}
+      {showNotifyModal && (
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+                  <Bell className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                </div>
+                <div>
+                  <h2 className="font-bold" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Get Notified' : 'Être notifié'}</h2>
+                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'When features launch' : 'Au lancement'}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowNotifyModal(false)} className="p-2 rounded-lg hover:bg-black/5 transition-colors">
+                <X className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {notifySubmitted ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
+                    <CheckCircle className="w-8 h-8" style={{ color: 'rgb(var(--color-success))' }} />
+                  </div>
+                  <h3 className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? "You're on the list!" : 'Vous êtes inscrit!'}
+                  </h3>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn 
+                      ? 'Enter your email to be notified when live transcript, chat, and collaborative features launch.'
+                      : 'Entrez votre courriel pour être notifié au lancement des fonctionnalités collaboratives.'
+                    }
+                  </p>
+                  <input
+                    type="email"
+                    value={notifyEmail}
+                    onChange={(e) => setNotifyEmail(e.target.value)}
+                    placeholder={isEn ? 'Enter your email' : 'Votre courriel'}
+                    className="w-full p-3 rounded-xl border text-sm"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
+                  />
+                  <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                    <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn ? 'Features included:' : 'Fonctionnalités incluses:'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Live Transcript', 'Live Chat', 'Hand Raise', 'Industry Actions'].map((f) => (
+                        <span key={f} className="text-[10px] px-2 py-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)', color: 'rgb(var(--color-primary-600))' }}>
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            {!notifySubmitted && (
+              <div className="p-4 border-t flex justify-end gap-3" style={{ borderColor: 'rgb(var(--color-border))', backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                <button onClick={() => setShowNotifyModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Cancel' : 'Annuler'}
+                </button>
+                <button
+                  onClick={handleNotifySubmit}
+                  disabled={!notifyEmail.trim()}
+                  className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}
+                >
+                  <Bell className="w-4 h-4" />
+                  {isEn ? 'Notify Me' : 'Me notifier'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -965,7 +1312,7 @@ export default function BoardMeeting() {
   const [isDownloading, setIsDownloading] = useState(false);
   
   // Panel system state
-  const [viewMode, setViewMode] = useState<'slides' | 'panels'>('slides');
+  const [viewMode, setViewMode] = useState<'slides' | 'panels' | 'share'>('slides');
   const [showPanelPicker, setShowPanelPicker] = useState(false);
   const [boardPanels, setBoardPanels] = useState<BoardPanel[]>(() => {
     try {
@@ -1303,7 +1650,7 @@ export default function BoardMeeting() {
     );
   }
   
-  // Show premium gate if user doesn't have access
+  // Show development section for users without access
   if (!hasAccess) {
     return (
       <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -1322,41 +1669,213 @@ export default function BoardMeeting() {
           </div>
         </div>
         
-        {/* Premium Upgrade Banner */}
-        <div className="p-4">
-          <PremiumUpgradeBanner feature="boardMeeting" />
-        </div>
-        
-        {/* Grayed out preview */}
-        <div className="flex-1 p-4 overflow-hidden">
-          <PremiumFeatureGate feature="boardMeeting" showPreview={true}>
+        {/* Coming Soon Section with Visualizations */}
+        <div className="flex-1 p-6">
+          <div className="w-full max-w-7xl mx-auto space-y-6">
+            {/* Hero Section */}
             <div 
-              className="h-full rounded-xl border overflow-hidden"
+              className="rounded-2xl p-8 md:p-12 relative overflow-hidden border-2"
               style={{ 
                 backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))'
+                borderColor: 'rgb(var(--color-primary-500) / 0.3)',
+                boxShadow: '0 4px 20px rgb(var(--color-primary-500) / 0.15)'
               }}
             >
-              {/* Preview of slides */}
-              <div className="p-8 text-center">
-                <div 
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
-                >
-                  <Presentation className="w-10 h-10 text-white" />
+              {/* Green gradient background decoration */}
+              <div className="absolute top-0 right-0 w-96 h-96 opacity-5 pointer-events-none">
+                <div className="w-full h-full rounded-full blur-3xl" style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 50%, rgb(var(--color-primary-500)) 100%)'
+                }}></div>
+              </div>
+              {/* Subtle green overlay */}
+              <div 
+                className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                style={{
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 50%, rgb(var(--color-primary-500)) 100%)'
+                }}
+              />
+              
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+                  {/* Left side - Info */}
+                  <div className="flex-1">
+                    {/* Badge */}
+                    <div className="flex justify-start mb-4">
+                      <span 
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold border"
+                        style={{ 
+                          backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                          color: '#D4AF37',
+                          borderColor: 'rgba(212, 175, 55, 0.3)'
+                        }}
+                      >
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: '#D4AF37' }}></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: '#D4AF37' }}></span>
+                        </span>
+                        {isEn ? 'Under Active Development' : 'En développement actif'}
+                      </span>
+                    </div>
+                    
+                    {/* Title */}
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ 
+                      color: 'rgb(var(--color-primary-600))',
+                      textShadow: '0 2px 4px rgb(var(--color-primary-500) / 0.2)'
+                    }}>
+                      {isEn ? 'Board Meeting Tools' : 'Outils de réunion CA'}
+                    </h2>
+                    
+                    {/* Description */}
+                    <p className="text-lg mb-8 leading-relaxed" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn 
+                        ? 'We\'re building powerful board presentation tools. Create executive summaries, financial highlights, and key metrics automatically with beautiful visualizations.'
+                        : 'Nous développons des outils puissants pour les réunions du conseil. Créez des résumés exécutifs, points financiers et métriques clés automatiquement avec de magnifiques visualisations.'
+                      }
+                    </p>
+                    
+                    {/* CTA Button */}
+                    <button
+                      onClick={() => window.open('https://calendly.com/anthonypaquet1508', '_blank')}
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-semibold text-white transition-all hover:opacity-90 hover:scale-[1.02] shadow-lg border"
+                      style={{ 
+                        background: 'linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-500)) 50%, rgb(var(--color-primary-600)) 100%)',
+                        borderColor: 'rgb(var(--color-primary-500) / 0.3)',
+                        boxShadow: '0 4px 15px rgb(var(--color-primary-500) / 0.4)'
+                      }}
+                    >
+                      <Calendar className="w-5 h-5" />
+                      {isEn ? 'Get Early Access' : 'Obtenir un accès anticipé'}
+                    </button>
+                  </div>
+                  
+                  {/* Right side - Features */}
+                  <div className="w-full lg:w-80 flex-shrink-0">
+                    <div 
+                      className="rounded-xl p-6 border relative overflow-hidden"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)',
+                        borderColor: 'rgb(var(--color-primary-500) / 0.2)'
+                      }}
+                    >
+                      {/* Green accent stripe */}
+                      <div 
+                        className="absolute top-0 left-0 right-0 h-1"
+                        style={{
+                          background: 'linear-gradient(90deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-500)) 50%, rgb(var(--color-primary-600)) 100%)'
+                        }}
+                      />
+                      <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                        {isEn ? 'Coming Features' : 'Fonctionnalités à venir'}
+                      </h3>
+                      <div className="space-y-3">
+                        {[
+                          { icon: Presentation, en: 'Auto-generate board presentations', fr: 'Générer des présentations automatiquement' },
+                          { icon: Users, en: 'Secure board member access', fr: 'Accès sécurisé pour les membres' },
+                          { icon: Activity, en: 'Live financial analytics', fr: 'Analyses financières en direct' },
+                          { icon: FileText, en: 'Executive summary reports', fr: 'Rapports de synthèse exécutive' },
+                          { icon: Share2, en: 'Easy sharing & collaboration', fr: 'Partage et collaboration faciles' },
+                        ].map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div 
+                              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
+                              style={{ 
+                                backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                                borderColor: 'rgb(var(--color-primary-500) / 0.2)'
+                              }}
+                            >
+                              <item.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                            </div>
+                            <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                              {isEn ? item.en : item.fr}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h2 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Board Meeting Presentation' : 'Présentation du conseil'}
-                </h2>
-                <p className="text-lg mb-8" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn 
-                    ? 'Generate professional board presentations with financial summaries, KPIs, and charts.'
-                    : 'Générez des présentations professionnelles avec résumés financiers, KPIs et graphiques.'
-                  }
-                </p>
               </div>
             </div>
-          </PremiumFeatureGate>
+
+            {/* Preview Visualizations Section */}
+            <div className="space-y-6">
+              {/* Presentation Preview */}
+              <div 
+                className="rounded-xl p-8 border-2 border-dashed relative overflow-hidden"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)',
+                  borderColor: 'rgb(var(--color-primary-600))',
+                  boxShadow: '0 4px 20px rgb(var(--color-primary-500) / 0.2)'
+                }}
+              >
+                {/* Green gradient overlay */}
+                <div 
+                  className="absolute inset-0 opacity-5 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-500)) 50%, rgb(var(--color-primary-600)) 100%)'
+                  }}
+                />
+                <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+                      <Presentation className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                      <h4 className="text-xl font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                        {isEn ? 'Automated Presentation Generation' : 'Génération automatique de présentations'}
+                      </h4>
+                    </div>
+                    <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn 
+                        ? 'Create professional board meeting presentations with one click. All your financial data, visualizations, and insights automatically formatted and ready to present.'
+                        : 'Créez des présentations professionnelles pour les réunions du conseil en un clic. Toutes vos données financières, visualisations et insights formatés automatiquement et prêts à présenter.'
+                      }
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                      {[
+                        { icon: FileText, label: isEn ? 'Executive Summary' : 'Résumé exécutif' },
+                        { icon: BarChart3, label: isEn ? 'Financial Charts' : 'Graphiques financiers' },
+                        { icon: Shield, label: isEn ? 'Secure Sharing' : 'Partage sécurisé' },
+                        { icon: Download, label: isEn ? 'PDF Export' : 'Export PDF' },
+                      ].map((feature, idx) => (
+                        <div 
+                          key={idx}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                            borderColor: 'rgb(var(--color-primary-500) / 0.3)'
+                          }}
+                        >
+                          <feature.icon className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                          <span style={{ color: 'rgb(var(--color-primary-600))' }}>{feature.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="w-full md:w-64 flex-shrink-0">
+                    <div 
+                      className="rounded-lg p-4 shadow-lg border"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-surface))',
+                        borderColor: 'rgb(var(--color-primary-500) / 0.2)',
+                        boxShadow: '0 4px 15px rgb(var(--color-primary-500) / 0.1)'
+                      }}
+                    >
+                      <div className="aspect-video rounded bg-gradient-to-br flex items-center justify-center mb-3 border" style={{ 
+                        background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.15) 0%, rgb(var(--color-primary-400) / 0.1) 100%)',
+                        borderColor: 'rgb(var(--color-primary-500) / 0.3)'
+                      }}>
+                        <Presentation className="w-12 h-12" style={{ color: '#D4AF37' }} />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}></div>
+                        <div className="h-2 rounded-full w-3/4" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}></div>
+                        <div className="h-2 rounded-full w-1/2" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1421,6 +1940,19 @@ export default function BoardMeeting() {
                 )}
               </span>
             </button>
+            <button
+              onClick={() => setViewMode('share')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                viewMode === 'share' ? 'shadow-sm' : ''
+              }`}
+              style={{
+                backgroundColor: viewMode === 'share' ? 'rgb(var(--color-surface))' : 'transparent',
+                color: viewMode === 'share' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
+              }}
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">{isEn ? 'Share' : 'Partager'}</span>
+            </button>
           </div>
           
           {/* Add Section Button (only in panels view) */}
@@ -1475,16 +2007,6 @@ export default function BoardMeeting() {
               <span className="hidden sm:inline">{isEn ? 'Present' : 'Présenter'}</span>
             </button>
           )}
-          
-          {/* Share Button */}
-          <button
-            onClick={() => setShowShareModal(true)}
-            className="btn-secondary flex items-center gap-2"
-            title={isEn ? 'Share presentation' : 'Partager la présentation'}
-          >
-            <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">{isEn ? 'Share' : 'Partager'}</span>
-          </button>
           
           {/* Download PDF Button */}
           <button
@@ -1596,6 +2118,13 @@ export default function BoardMeeting() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Share View - Board Ready Experience */}
+        {viewMode === 'share' && (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <BoardReadyShareContent isEn={isEn} meetingTitle={isEn ? 'Board Meeting - Quarterly Financial Review' : 'Réunion CA - Revue financière trimestrielle'} />
           </div>
         )}
         
@@ -1965,8 +2494,10 @@ export default function BoardMeeting() {
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        isEn={isEn}
-        meetingTitle={isEn ? 'Board Meeting - Quarterly Financial Review' : 'Réunion CA - Revue financière trimestrielle'}
+        title="Réunion CA - Revue financière trimestrielle"
+        titleEn="Board Meeting - Quarterly Financial Review"
+        contentType="presentation"
+        showDownloadOption={true}
       />
     </div>
   );

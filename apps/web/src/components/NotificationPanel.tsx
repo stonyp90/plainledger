@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
@@ -14,6 +14,7 @@ import {
   Shield,
   User,
   Megaphone,
+  Loader2,
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Notification, NotificationCategory, getRelativeTime } from '../lib/notifications';
@@ -30,16 +31,16 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   marketing: Megaphone,
 };
 
-// Category colors mapping using CSS variables
+// Category colors mapping using CSS variables - Design system colors
 const categoryStyles: Record<NotificationCategory, { bg: string; color: string }> = {
   account: { bg: 'rgb(var(--color-info) / 0.1)', color: 'rgb(var(--color-info))' },
   security: { bg: 'rgb(var(--color-error) / 0.1)', color: 'rgb(var(--color-error))' },
   billing: { bg: 'rgb(var(--color-success) / 0.1)', color: 'rgb(var(--color-success))' },
-  data_sync: { bg: 'rgb(var(--color-accent) / 0.15)', color: 'rgb(var(--color-accent-dark))' },
+  data_sync: { bg: 'rgb(var(--color-primary-500) / 0.1)', color: 'rgb(var(--color-primary-600))' },
   reports: { bg: 'rgb(var(--color-warning) / 0.1)', color: 'rgb(var(--color-warning))' },
   connections: { bg: 'rgb(var(--color-primary-500) / 0.1)', color: 'rgb(var(--color-primary-600))' },
   system: { bg: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' },
-  marketing: { bg: 'rgb(var(--color-accent) / 0.1)', color: 'rgb(var(--color-accent))' },
+  marketing: { bg: 'rgb(var(--color-accent-500) / 0.1)', color: 'rgb(var(--color-accent-600))' },
 };
 
 export default function NotificationPanel() {
@@ -47,6 +48,7 @@ export default function NotificationPanel() {
     notifications,
     unreadCount,
     isPanelOpen,
+    isLoading,
     togglePanel,
     closePanel,
     markAsRead,
@@ -57,6 +59,29 @@ export default function NotificationPanel() {
   const panelRef = useRef<HTMLDivElement>(null);
   const isClickInsideRef = useRef(false);
   const navigate = useNavigate();
+  const viewedNotificationsRef = useRef<Set<string>>(new Set());
+
+  // Auto-mark notifications as read when panel opens and they become visible
+  useEffect(() => {
+    if (!isPanelOpen) {
+      viewedNotificationsRef.current = new Set();
+      return;
+    }
+
+    // Mark unread notifications as read after they've been visible for 2 seconds
+    const unreadNotifs = notifications.filter(n => !n.read && !viewedNotificationsRef.current.has(n.id));
+    
+    if (unreadNotifs.length === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      unreadNotifs.forEach(notification => {
+        markAsRead(notification.id);
+        viewedNotificationsRef.current.add(notification.id);
+      });
+    }, 2000); // 2 second delay before marking as read
+
+    return () => clearTimeout(timeoutId);
+  }, [isPanelOpen, notifications, markAsRead]);
 
   // Track clicks inside the panel
   const handlePanelMouseDown = useCallback(() => {
@@ -132,8 +157,12 @@ export default function NotificationPanel() {
         <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
         {unreadCount > 0 && (
           <span 
-            className="absolute -top-0.5 -right-0.5 sm:top-0 sm:right-0 w-4 h-4 sm:w-5 sm:h-5 text-[10px] sm:text-xs font-medium rounded-full flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-error))', color: 'white' }}
+            className="absolute -top-0.5 -right-0.5 sm:top-0 sm:right-0 w-4 h-4 sm:w-5 sm:h-5 text-[10px] sm:text-xs font-semibold rounded-full flex items-center justify-center shadow-sm"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-600))', 
+              color: 'white',
+              boxShadow: '0 2px 4px rgb(var(--color-primary-600) / 0.3)'
+            }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -156,18 +185,22 @@ export default function NotificationPanel() {
         <div className="notification-panel z-50">
           {/* Header */}
           <div 
-            className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b sticky top-0"
+            className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b sticky top-0 backdrop-blur-sm"
             style={{ 
               borderColor: 'rgb(var(--color-border))',
-              backgroundColor: 'rgb(var(--color-surface))',
+              backgroundColor: 'rgb(var(--color-surface) / 0.95)',
             }}
           >
             <h3 className="font-semibold text-sm sm:text-base" style={{ color: 'rgb(var(--color-text))' }}>
               Notifications
               {unreadCount > 0 && (
                 <span 
-                  className="ml-2 px-1.5 py-0.5 text-[10px] sm:text-xs rounded-full"
-                  style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)', color: 'rgb(var(--color-error))' }}
+                  className="ml-2 px-1.5 py-0.5 text-[10px] sm:text-xs rounded-full font-medium"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.1)', 
+                    color: 'rgb(var(--color-primary-700))',
+                    border: '1px solid rgb(var(--color-primary-500) / 0.2)'
+                  }}
                 >
                   {unreadCount}
                 </span>
@@ -219,10 +252,21 @@ export default function NotificationPanel() {
             className="max-h-[60vh] sm:max-h-[400px] overflow-y-auto"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            {notifications.length === 0 ? (
+            {isLoading ? (
               <div className="py-10 sm:py-12 text-center">
-                <Bell className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3" style={{ color: 'rgb(var(--color-text-subtle))' }} />
-                <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>Aucune notification</p>
+                <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 sm:mb-3 animate-spin" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                <p className="text-xs sm:text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="py-10 sm:py-12 text-center">
+                <div 
+                  className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 sm:mb-4 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <Bell className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                </div>
+                <p className="text-sm sm:text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>Aucune notification</p>
+                <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>Vous êtes à jour!</p>
               </div>
             ) : (
               notifications.map((notification) => (
@@ -254,8 +298,10 @@ export default function NotificationPanel() {
                   closePanel();
                   setTimeout(() => navigate('/app/settings'), 0);
                 }}
-                className="text-xs sm:text-sm font-medium block text-center sm:text-left w-full"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
+                className="text-xs sm:text-sm font-semibold block text-center sm:text-left w-full transition-colors"
+                style={{ color: 'rgb(var(--color-primary-600))' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(var(--color-primary-700))'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'rgb(var(--color-primary-600))'}
               >
                 Voir toutes les notifications
               </button>
@@ -307,10 +353,15 @@ function NotificationItem({ notification, onRead, onArchive, onClose, onNavigate
     const url = notification.actionUrl;
     if (url) {
       onClose();
-      // Use setTimeout to ensure state updates before navigation
-      setTimeout(() => {
-        onNavigate(url);
-      }, 0);
+      // Check if it's an external URL
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        // Use setTimeout to ensure state updates before navigation
+        setTimeout(() => {
+          onNavigate(url);
+        }, 0);
+      }
     }
   };
 
@@ -334,12 +385,13 @@ function NotificationItem({ notification, onRead, onArchive, onClose, onNavigate
     >
       {/* Icon - Smaller on mobile */}
       <div 
-        className="notification-icon flex-shrink-0"
+        className="notification-icon flex-shrink-0 transition-all"
         style={{ 
           backgroundColor: styles.bg, 
           color: styles.color,
           width: '36px',
           height: '36px',
+          borderRadius: 'var(--radius-lg)',
         }}
       >
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -356,8 +408,19 @@ function NotificationItem({ notification, onRead, onArchive, onClose, onNavigate
           {notification.actionUrl && (
             <button
               onClick={handleActionLinkClick}
-              className="text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md cursor-pointer transition-all hover:bg-primary-500/10 active:scale-95"
-              style={{ color: 'rgb(var(--color-primary-500))' }}
+              className="text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-md cursor-pointer transition-all active:scale-95"
+              style={{ 
+                color: 'rgb(var(--color-primary-600))',
+                backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.15)';
+                e.currentTarget.style.color = 'rgb(var(--color-primary-700))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                e.currentTarget.style.color = 'rgb(var(--color-primary-600))';
+              }}
             >
               {notification.actionLabel || 'Voir'}
             </button>
@@ -405,8 +468,12 @@ export function NotificationBell() {
       <Bell className="w-5 h-5" />
       {unreadCount > 0 && (
         <span 
-          className="absolute top-0 right-0 w-5 h-5 text-xs font-medium rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1"
-          style={{ backgroundColor: 'rgb(var(--color-error))', color: 'white' }}
+          className="absolute top-0 right-0 w-5 h-5 text-xs font-semibold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1 shadow-sm"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-primary-600))', 
+            color: 'white',
+            boxShadow: '0 2px 4px rgb(var(--color-primary-600) / 0.3)'
+          }}
         >
           {unreadCount > 9 ? '9+' : unreadCount}
         </span>

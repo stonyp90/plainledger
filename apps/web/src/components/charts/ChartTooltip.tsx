@@ -3,7 +3,7 @@
  * Provides beautiful hover effects and data display
  */
 
-import { useState, useRef, useEffect, ReactNode } from 'react';
+import { useState, useRef, useEffect, ReactNode, useCallback } from 'react';
 import { TrendingUp, TrendingDown, Minus, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 
 // =====================================================
@@ -57,7 +57,6 @@ export function ChartTooltip({ visible, position, children, className = '' }: Ch
       ref={tooltipRef}
       className={`
         fixed z-50 pointer-events-none
-        bg-gray-900 dark:bg-gray-800 text-white
         rounded-xl shadow-2xl
         px-4 py-3
         text-sm
@@ -68,12 +67,16 @@ export function ChartTooltip({ visible, position, children, className = '' }: Ch
         left: adjustedPosition.x,
         top: adjustedPosition.y,
         transform: 'translate(10px, -50%)',
+        backgroundColor: 'rgb(var(--color-surface))',
+        color: 'rgb(var(--color-text))',
+        border: '1px solid rgb(var(--color-border))',
+        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)',
       }}
     >
       {/* Arrow */}
       <div 
-        className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2
-          border-8 border-transparent border-r-gray-900 dark:border-r-gray-800"
+        className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 border-8 border-transparent"
+        style={{ borderRightColor: 'rgb(var(--color-surface))' }}
       />
       {children}
     </div>
@@ -130,13 +133,19 @@ export function DataPointTooltip({
     : null;
 
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
-  const trendColor = trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-gray-400';
+  
+  // Use CSS variable-based colors for theme consistency
+  const getTrendStyle = () => {
+    if (trend === 'up') return { color: 'rgb(var(--color-success))' };
+    if (trend === 'down') return { color: 'rgb(var(--color-error))' };
+    return { color: 'rgb(var(--color-text-muted))' };
+  };
 
   const statusConfig = {
-    normal: { color: 'text-gray-400', icon: null },
-    warning: { color: 'text-amber-400', icon: AlertTriangle },
-    critical: { color: 'text-red-400', icon: AlertTriangle },
-    success: { color: 'text-green-400', icon: CheckCircle },
+    normal: { style: { color: 'rgb(var(--color-text-muted))' }, icon: null },
+    warning: { style: { color: 'rgb(var(--color-warning))' }, icon: AlertTriangle },
+    critical: { style: { color: 'rgb(var(--color-error))' }, icon: AlertTriangle },
+    success: { style: { color: 'rgb(var(--color-success))' }, icon: CheckCircle },
   };
 
   const StatusIcon = status ? statusConfig[status].icon : null;
@@ -145,27 +154,36 @@ export function DataPointTooltip({
     <div className="min-w-[180px]">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-2">
-        <span className="text-gray-400 text-xs font-medium uppercase tracking-wide">
+        <span 
+          className="text-xs font-medium uppercase tracking-wide"
+          style={{ color: 'rgb(var(--color-text-muted))' }}
+        >
           {label}
         </span>
         {StatusIcon && (
-          <StatusIcon className={`w-4 h-4 ${statusConfig[status!].color}`} />
+          <StatusIcon className="w-4 h-4" style={statusConfig[status!].style} />
         )}
       </div>
 
       {/* Value */}
       <div className="flex items-baseline gap-2">
-        <span className="text-xl font-bold text-white">
+        <span 
+          className="text-xl font-bold"
+          style={{ color: 'rgb(var(--color-text))' }}
+        >
           {formatValue(value)}
         </span>
         {trend && (
-          <TrendIcon className={`w-4 h-4 ${trendColor}`} />
+          <TrendIcon className="w-4 h-4" style={getTrendStyle()} />
         )}
       </div>
 
       {/* Change from previous */}
       {percentChange !== null && (
-        <div className={`flex items-center gap-1 mt-1 text-xs ${percentChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+        <div 
+          className="flex items-center gap-1 mt-1 text-xs"
+          style={{ color: percentChange >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}
+        >
           {percentChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
           <span>{percentChange >= 0 ? '+' : ''}{percentChange.toFixed(1)}% vs précédent</span>
         </div>
@@ -173,11 +191,14 @@ export function DataPointTooltip({
 
       {/* Additional info */}
       {additionalInfo && additionalInfo.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-gray-700 space-y-1.5">
+        <div 
+          className="mt-3 pt-3 space-y-1.5"
+          style={{ borderTop: '1px solid rgb(var(--color-border))' }}
+        >
           {additionalInfo.map((info, i) => (
             <div key={i} className="flex justify-between text-xs">
-              <span className="text-gray-400">{info.label}</span>
-              <span className="text-gray-200 font-medium">{info.value}</span>
+              <span style={{ color: 'rgb(var(--color-text-muted))' }}>{info.label}</span>
+              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{info.value}</span>
             </div>
           ))}
         </div>
@@ -201,18 +222,33 @@ export function HoverCard({ children, tooltip, className = '', disabled = false 
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseEnter = useCallback(() => {
+    if (disabled) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    setIsHovered(true);
+  }, [disabled]);
+
+  const handleMouseLeave = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 50);
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (disabled) return;
     setPosition({ x: e.clientX, y: e.clientY });
-  };
+  }, [disabled]);
 
   return (
     <div
       ref={containerRef}
       className={`relative ${className}`}
-      onMouseEnter={() => !disabled && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
     >
       {children}
@@ -404,9 +440,9 @@ export function StatCard({
   // Determine if trend is positive based on context
   const isTrendPositive = trend === 'up' ? trendIsGood : trend === 'down' ? !trendIsGood : null;
   const trendColor = isTrendPositive === true 
-    ? 'text-green-500' 
+    ? 'text-green-500 dark:text-green-400' 
     : isTrendPositive === false 
-      ? 'text-red-500' 
+      ? 'text-red-500 dark:text-red-400' 
       : 'text-gray-400';
 
   return (
@@ -508,6 +544,7 @@ export function MiniSparkline({
 }: MiniSparklineProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<TooltipPosition>({ x: 0, y: 0 });
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (data.length < 2) return null;
 
@@ -525,12 +562,21 @@ export function MiniSparkline({
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const index = Math.round((x / width) * (data.length - 1));
     const clampedIndex = Math.max(0, Math.min(data.length - 1, index));
     setHoveredIndex(clampedIndex);
     setTooltipPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredIndex(null);
+    }, 50);
   };
 
   return (
@@ -540,7 +586,7 @@ export function MiniSparkline({
         height={height}
         className="cursor-crosshair"
         onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHoveredIndex(null)}
+        onMouseLeave={handleMouseLeave}
       >
         {/* Gradient fill */}
         <defs>
@@ -585,9 +631,19 @@ export function MiniSparkline({
         <ChartTooltip visible={true} position={tooltipPos}>
           <div className="text-center">
             {labels && labels[hoveredIndex] && (
-              <div className="text-xs text-gray-400 mb-1">{labels[hoveredIndex]}</div>
+              <div 
+                className="text-xs mb-1"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {labels[hoveredIndex]}
+              </div>
             )}
-            <div className="text-lg font-bold">{data[hoveredIndex].toLocaleString()}</div>
+            <div 
+              className="text-lg font-bold"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {data[hoveredIndex].toLocaleString()}
+            </div>
           </div>
         </ChartTooltip>
       )}

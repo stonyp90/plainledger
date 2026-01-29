@@ -5,6 +5,7 @@ import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import ShareModal from '../components/ShareModal';
 
 export default function IncomeStatement() {
   const { currentTenant } = useTenant();
@@ -15,7 +16,7 @@ export default function IncomeStatement() {
   const [periodStart, setPeriodStart] = useState(`${currentYear}-01-01`);
   const [periodEnd, setPeriodEnd] = useState(`${currentYear}-12-31`);
   const [showComparison, setShowComparison] = useState(true);
-  const [showHelp, setShowHelp] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -39,18 +40,7 @@ export default function IncomeStatement() {
   };
 
   const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({
-        title: isEn 
-          ? `Income Statement for ${periodEnd}`
-          : `État des résultats au ${periodEnd}`,
-        url: url,
-      });
-    } else {
-      navigator.clipboard.writeText(url);
-      alert(isEn ? 'Link copied to clipboard!' : 'Lien copié dans le presse-papier!');
-    }
+    setShowShareModal(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -281,19 +271,6 @@ export default function IncomeStatement() {
         </div>
       </div>
 
-      {/* Help banner */}
-      {showHelp && (
-        <InfoBanner
-          type="info"
-          title={isEn ? 'How to read this statement' : 'Comment lire cet état'}
-          description={isEn 
-            ? 'The income statement shows your company\'s financial performance over a period. Revenue minus expenses equals net income (profit or loss).'
-            : 'L\'état des résultats présente la performance financière sur une période. Les revenus moins les dépenses égalent le résultat net (bénéfice ou perte).'}
-          dismissible
-          onDismiss={() => setShowHelp(false)}
-        />
-      )}
-
       {/* Controls */}
       <div className="card">
         <div className="flex flex-wrap items-center gap-6">
@@ -467,6 +444,16 @@ export default function IncomeStatement() {
           </div>
         </div>
       </div>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="État des résultats"
+        titleEn="Income Statement"
+        subtitle={`${periodStart} - ${periodEnd}`}
+        contentType="report"
+        showDownloadOption={true}
+      />
     </div>
   );
 }

@@ -140,22 +140,6 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
   };
 
   const getStatusBadge = (tenant: Tenant) => {
-    if (tenant.status === 'trial') {
-      const daysLeft = tenant.trialEndsAt 
-        ? Math.ceil((new Date(tenant.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-        : 0;
-      return (
-        <span 
-          className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
-            color: 'rgb(var(--color-warning))'
-          }}
-        >
-          Essai • {daysLeft}j
-        </span>
-      );
-    }
     if (tenant.status === 'suspended') {
       return (
         <span 
@@ -212,34 +196,6 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
     );
   };
 
-  if (isLoading) {
-    return (
-      <div 
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl"
-        style={{ 
-          backgroundColor: 'rgb(var(--color-surface))',
-          border: '1px solid rgb(var(--color-border))'
-        }}
-      >
-        <div 
-          className="w-8 h-8 rounded-lg animate-pulse"
-          style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-        />
-        <div className="flex-1 space-y-1.5">
-          <div 
-            className="h-3.5 w-24 rounded animate-pulse"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          />
-          <div 
-            className="h-2.5 w-16 rounded animate-pulse"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          />
-        </div>
-        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
-      </div>
-    );
-  }
-
   // Get role color for visual distinction
   const getRoleColor = (role: Tenant['role']) => {
     switch (role) {
@@ -250,324 +206,226 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="px-2 py-1">
+        <div 
+          className="flex items-center gap-2.5 p-2 rounded-lg"
+          style={{ backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)' }}
+        >
+          <div 
+            className="w-8 h-8 rounded-lg animate-pulse"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          />
+          <div className="flex-1 space-y-1.5">
+            <div 
+              className="h-3 w-20 rounded animate-pulse"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            />
+            <div 
+              className="h-2 w-12 rounded animate-pulse"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Trigger button - Enhanced with theme accent and visual hierarchy */}
+      {/* Sleek trigger button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`
-          w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-          hover:shadow-md active:scale-[0.98] group
-          ${isOpen ? 'shadow-md' : 'hover:border-opacity-80'}
-        `}
-        style={{ 
-          backgroundColor: 'rgb(var(--color-surface))',
-          border: `1.5px solid ${isOpen ? 'rgb(var(--color-primary-500) / 0.5)' : 'rgb(var(--color-border))'}`,
-          boxShadow: isOpen ? '0 0 0 3px rgb(var(--color-primary-500) / 0.1)' : undefined,
-        }}
+        className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-all duration-150 hover:bg-[rgb(var(--color-bg-muted))] active:scale-[0.98] group"
         title={currentTenant?.name || 'Sélectionner une organisation'}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          {/* Organization avatar with gradient and ring indicator */}
-          <div className="relative flex-shrink-0">
-            <div 
-              className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm transition-transform group-hover:scale-105"
-              style={{ 
-                background: currentTenant 
-                  ? 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
-                  : 'rgb(var(--color-bg-muted))',
-                color: currentTenant ? 'white' : 'rgb(var(--color-text-muted))',
-                boxShadow: currentTenant ? '0 2px 8px rgb(var(--color-primary-500) / 0.3)' : 'none'
-              }}
-            >
-              {currentTenant ? currentTenant.name.charAt(0).toUpperCase() : <Building2 className="w-4 h-4" />}
-            </div>
-            {/* Role indicator dot */}
-            {currentTenant && (
-              <div 
-                className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center"
-                style={{ 
-                  backgroundColor: `rgb(${getRoleColor(currentTenant.role)})`,
-                  borderColor: 'rgb(var(--color-surface))'
-                }}
-                title={getRoleLabel(currentTenant.role)}
-              >
-                {currentTenant.role === 'owner' && <Crown className="w-2 h-2 text-white" />}
-              </div>
-            )}
-          </div>
-          {!compact && (
-            <div className="min-w-0 text-left flex-1">
+        {/* Organization avatar */}
+        <div 
+          className="w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-xs flex-shrink-0 overflow-hidden"
+          style={{ 
+            background: currentTenant?.logo 
+              ? 'transparent'
+              : currentTenant 
+                ? 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)'
+                : 'rgb(var(--color-bg-muted))',
+            color: currentTenant ? 'white' : 'rgb(var(--color-text-muted))',
+          }}
+        >
+          {currentTenant?.logo ? (
+            <img src={currentTenant.logo} alt={currentTenant.name} className="w-full h-full object-cover" />
+          ) : currentTenant ? (
+            currentTenant.name.charAt(0).toUpperCase()
+          ) : (
+            <Building2 className="w-3.5 h-3.5" />
+          )}
+        </div>
+        
+        {!compact && (
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-1.5">
               <span 
-                className="text-sm font-semibold truncate block leading-tight"
+                className="text-sm font-medium truncate"
                 style={{ color: 'rgb(var(--color-text))' }}
               >
                 {currentTenant?.name || 'Sélectionner...'}
               </span>
-              {currentTenant && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span 
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-bg-muted))',
-                      color: 'rgb(var(--color-text-muted))'
-                    }}
-                  >
-                    {currentTenant.plan}
-                  </span>
-                  <span 
-                    className="text-[10px] truncate"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  >
-                    {getRoleLabel(currentTenant.role)}
-                  </span>
-                </div>
+              {currentTenant?.plan && (
+                <span 
+                  className="text-[9px] px-1 py-0.5 rounded font-medium uppercase tracking-wide flex-shrink-0"
+                  style={{ 
+                    backgroundColor: currentTenant.plan === 'free' 
+                      ? 'rgb(var(--color-bg-muted))' 
+                      : 'rgb(var(--color-primary-500) / 0.1)',
+                    color: currentTenant.plan === 'free' 
+                      ? 'rgb(var(--color-text-muted))' 
+                      : 'rgb(var(--color-primary-500))'
+                  }}
+                >
+                  {currentTenant.plan}
+                </span>
               )}
             </div>
-          )}
-        </div>
-        <div 
-          className={`
-            w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-200
-            ${isOpen ? 'rotate-180' : ''}
-          `}
-          style={{ 
-            backgroundColor: isOpen ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))',
-            color: isOpen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))'
-          }}
-        >
-          <ChevronDown className="w-4 h-4" />
-        </div>
+          </div>
+        )}
+        
+        <ChevronDown 
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+          style={{ color: 'rgb(var(--color-text-muted))' }}
+        />
       </button>
 
-      {/* Dropdown - Enhanced with better visual hierarchy */}
+      {/* Sleek dropdown */}
       {isOpen && (
         <div 
-          className="absolute left-0 right-0 mt-2 rounded-2xl z-50 overflow-hidden animate-scale-in"
+          className="absolute left-0 right-0 mt-1 rounded-xl z-50 overflow-hidden animate-scale-in"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
             border: '1px solid rgb(var(--color-border))',
-            boxShadow: '0 20px 50px rgb(var(--color-primary-500) / 0.15), 0 8px 20px rgb(0 0 0 / 0.12)',
+            boxShadow: '0 10px 40px rgb(0 0 0 / 0.12)',
           }}
           role="listbox"
           aria-label="Sélectionner une organisation"
         >
-          {/* Header with accent bar */}
-          <div 
-            className="relative px-4 py-3.5 border-b"
-            style={{ 
-              borderColor: 'rgb(var(--color-border))',
-              backgroundColor: 'rgb(var(--color-surface))',
-            }}
-          >
-            {/* Top accent line */}
-            <div 
-              className="absolute top-0 left-4 right-4 h-0.5 rounded-full"
-              style={{ 
-                background: 'linear-gradient(90deg, rgb(var(--color-primary-500)), rgb(var(--color-primary-400)), transparent)'
-              }}
-            />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-6 h-6 rounded-md flex items-center justify-center"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                    color: 'rgb(var(--color-primary-500))'
-                  }}
-                >
-                  <Building2 className="w-3.5 h-3.5" />
-                </div>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  Organisations
-                </p>
-              </div>
-              <span 
-                className="text-[11px] px-2.5 py-1 rounded-full font-semibold"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-500))',
-                  color: 'white'
-                }}
-              >
-                {tenants.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Tenant list - Touch-optimized with better spacing */}
-          <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto py-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {tenants.length === 0 ? (
-              <div className="px-4 py-10 text-center">
-                <div 
-                  className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                  style={{ 
-                    background: 'linear-gradient(135deg, rgb(var(--color-bg-muted)) 0%, rgb(var(--color-bg-subtle)) 100%)'
-                  }}
-                >
-                  <Building2 className="w-8 h-8" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                </div>
-                <p className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+          {/* Current organization - compact */}
+          <div className="p-2">
+            {!currentTenant ? (
+              <div className="px-3 py-6 text-center">
+                <Building2 className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                   Aucune organisation
                 </p>
-                <p className="text-xs mt-1.5 max-w-[200px] mx-auto" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  Créez votre première organisation pour commencer
+                <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  Créez votre première organisation
                 </p>
               </div>
             ) : (
-              <div className="space-y-1">
-                {tenants.map((tenant) => {
-                  const RoleIcon = getRoleIcon(tenant.role);
-                  const isSelected = tenant.id === currentTenant?.id;
-                  const roleColor = getRoleColor(tenant.role);
-                  
-                  return (
-                    <button
-                      key={tenant.id}
-                      onClick={() => handleSwitchTenant(tenant)}
-                      className={`
-                        w-full flex items-center gap-3 px-3 py-3 text-left transition-all duration-150
-                        rounded-xl active:scale-[0.98]
-                        ${tenant.status === 'suspended' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                      `}
-                      style={{
-                        backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
-                        border: isSelected ? '1.5px solid rgb(var(--color-primary-500) / 0.3)' : '1.5px solid transparent',
+              <div
+                className="flex items-center gap-3 p-2.5 rounded-lg"
+                style={{
+                  backgroundColor: 'rgb(var(--color-primary-500) / 0.08)',
+                }}
+              >
+                {/* Avatar */}
+                <div className="relative flex-shrink-0">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm overflow-hidden"
+                    style={{ 
+                      background: currentTenant.logo 
+                        ? 'transparent'
+                        : 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                      color: 'white',
+                    }}
+                  >
+                    {currentTenant.logo ? (
+                      <img src={currentTenant.logo} alt={currentTenant.name} className="w-full h-full object-cover" />
+                    ) : (
+                      currentTenant.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  {/* Role badge */}
+                  <div 
+                    className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: `rgb(${getRoleColor(currentTenant.role)})`,
+                    }}
+                  >
+                    {(() => {
+                      const RoleIcon = getRoleIcon(currentTenant.role);
+                      return <RoleIcon className="w-2 h-2 text-white" />;
+                    })()}
+                  </div>
+                </div>
+                
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <span 
+                    className="font-medium text-sm block truncate"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
+                    {currentTenant.name}
+                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span 
+                      className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-bg-muted))',
+                        color: 'rgb(var(--color-text-muted))'
                       }}
-                      onMouseEnter={(e) => {
-                        if (!isSelected && tenant.status !== 'suspended') {
-                          e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
-                          e.currentTarget.style.borderColor = 'rgb(var(--color-border))';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.borderColor = 'transparent';
-                        }
-                      }}
-                      disabled={tenant.status === 'suspended'}
-                      role="option"
-                      aria-selected={isSelected}
                     >
-                      {/* Avatar with role color ring */}
-                      <div className="relative flex-shrink-0">
-                        <div 
-                          className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm transition-all"
-                          style={{ 
-                            background: isSelected 
-                              ? 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
-                              : 'rgb(var(--color-bg-muted))',
-                            color: isSelected 
-                              ? 'white'
-                              : 'rgb(var(--color-text-secondary))',
-                            boxShadow: isSelected ? '0 4px 12px rgb(var(--color-primary-500) / 0.35)' : 'none'
-                          }}
-                        >
-                          {tenant.name.charAt(0).toUpperCase()}
-                        </div>
-                        {/* Role indicator */}
-                        <div 
-                          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                          style={{ 
-                            backgroundColor: `rgb(${roleColor})`,
-                            borderColor: isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-surface))'
-                          }}
-                        >
-                          <RoleIcon className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span 
-                            className="font-semibold text-sm truncate"
-                            style={{ 
-                              color: tenant.status === 'suspended' 
-                                ? 'rgb(var(--color-text-muted))'
-                                : 'rgb(var(--color-text))'
-                            }}
-                          >
-                            {tenant.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          {getPlanBadge(tenant.plan)}
-                          {getStatusBadge(tenant)}
-                        </div>
-                      </div>
+                      {currentTenant.plan}
+                    </span>
+                  </div>
+                </div>
 
-                      {/* Selection indicator */}
-                      <div 
-                        className={`
-                          w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all
-                          ${isSelected ? 'scale-100' : 'scale-0'}
-                        `}
-                        style={{ 
-                          backgroundColor: 'rgb(var(--color-primary-500))',
-                          boxShadow: isSelected ? '0 2px 6px rgb(var(--color-primary-500) / 0.4)' : 'none'
-                        }}
-                      >
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    </button>
-                  );
-                })}
+                {/* Check */}
+                <Check className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
               </div>
             )}
           </div>
 
-          {/* Footer actions - Clean modern design */}
+          {/* Actions - minimal */}
           <div 
-            className="border-t p-2.5"
+            className="flex items-center gap-1 px-2 py-2 border-t"
             style={{ 
               borderColor: 'rgb(var(--color-border))',
               backgroundColor: 'rgb(var(--color-bg-subtle))'
             }}
           >
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => {
-                  setShowCreateModal(true);
-                  setIsOpen(false);
-                }}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-md active:scale-[0.97]"
-                style={{ 
-                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                  color: 'white',
-                  boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
-                }}
+            <button
+              disabled
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium cursor-not-allowed opacity-40"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+              title="Bientôt disponible"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Créer
+            </button>
+            
+            <div className="w-px h-4" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
+            
+            {currentTenant ? (
+              <a
+                href="/app/settings"
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+                onClick={() => setIsOpen(false)}
               >
-                <Plus className="w-4 h-4" />
-                <span>Créer</span>
+                <Settings className="w-3.5 h-3.5" />
+                Paramètres
+              </a>
+            ) : (
+              <button
+                disabled
+                className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium cursor-not-allowed opacity-40"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                <Settings className="w-3.5 h-3.5" />
+                Paramètres
               </button>
-              
-              {currentTenant && (
-                <a
-                  href="/app/settings"
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-sm active:scale-[0.97]"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-surface))',
-                    color: 'rgb(var(--color-text-secondary))',
-                    border: '1px solid rgb(var(--color-border))'
-                  }}
-                  onClick={() => setIsOpen(false)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
-                    e.currentTarget.style.borderColor = 'rgb(var(--color-border-strong))';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
-                    e.currentTarget.style.borderColor = 'rgb(var(--color-border))';
-                  }}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Paramètres</span>
-                </a>
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -815,6 +673,128 @@ const SECTION_DEFINITIONS = [
   },
 ];
 
+// Role dropdown component with better UI
+interface RoleDropdownProps {
+  value: 'admin' | 'member' | 'viewer';
+  onChange: (role: 'admin' | 'member' | 'viewer') => void;
+}
+
+function RoleDropdown({ value, onChange }: RoleDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { language } = useI18n();
+  const isEn = language === 'en';
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const roles = [
+    { 
+      id: 'admin' as const, 
+      icon: Shield, 
+      labelEn: 'Administrator', 
+      labelFr: 'Administrateur',
+      color: { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-600))', border: 'rgb(var(--color-primary-500) / 0.3)' }
+    },
+    { 
+      id: 'member' as const, 
+      icon: User, 
+      labelEn: 'Member', 
+      labelFr: 'Membre',
+      color: { bg: 'rgb(var(--color-primary-100))', text: 'rgb(var(--color-primary-700))', border: 'rgb(var(--color-primary-200))' }
+    },
+    { 
+      id: 'viewer' as const, 
+      icon: Eye, 
+      labelEn: 'Viewer', 
+      labelFr: 'Lecteur',
+      color: { bg: 'rgb(var(--color-bg-muted))', text: 'rgb(var(--color-text-muted))', border: 'rgb(var(--color-border))' }
+    },
+  ];
+
+  const currentRole = roles.find(r => r.id === value) || roles[1];
+  const CurrentIcon = currentRole.icon;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-all min-w-[140px]"
+        style={{ 
+          backgroundColor: currentRole.color.bg,
+          borderColor: currentRole.color.border,
+        }}
+      >
+        <CurrentIcon className="w-4 h-4" style={{ color: currentRole.color.text }} />
+        <span 
+          className="text-sm font-medium flex-1 text-left"
+          style={{ color: currentRole.color.text }}
+        >
+          {isEn ? currentRole.labelEn : currentRole.labelFr}
+        </span>
+        <ChevronDown 
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          style={{ color: currentRole.color.text }}
+        />
+      </button>
+
+      {isOpen && (
+        <div 
+          className="absolute right-0 mt-1 w-48 rounded-xl z-50 overflow-hidden shadow-lg"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          {roles.map((role) => {
+            const RoleIcon = role.icon;
+            const isSelected = value === role.id;
+            
+            return (
+              <button
+                key={role.id}
+                onClick={() => {
+                  onChange(role.id);
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+                style={{
+                  backgroundColor: isSelected ? 'rgb(var(--color-bg-subtle))' : 'transparent',
+                }}
+              >
+                <div 
+                  className="w-7 h-7 rounded-md flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: role.color.bg,
+                  }}
+                >
+                  <RoleIcon className="w-4 h-4" style={{ color: role.color.text }} />
+                </div>
+                <span 
+                  className="text-sm font-medium flex-1"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn ? role.labelEn : role.labelFr}
+                </span>
+                {isSelected && (
+                  <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Team members component for settings
 export function TeamMembersSection() {
   const { 
@@ -843,6 +823,7 @@ export function TeamMembersSection() {
   const [sectionAccess, setSectionAccess] = useState<SectionAccess>(DEFAULT_SECTION_ACCESS.member);
   const [isInviting, setIsInviting] = useState(false);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [customMessage, setCustomMessage] = useState('');
 
   useEffect(() => {
     loadMembers();
@@ -876,6 +857,7 @@ export function TeamMembersSection() {
     setInviteRole('member');
     setSectionAccess(DEFAULT_SECTION_ACCESS.member);
     setShowEmailPreview(false);
+    setCustomMessage('');
   };
 
   const handleInvite = async () => {
@@ -895,6 +877,7 @@ export function TeamMembersSection() {
         inviteUrl: `${window.location.origin}/invite/${invitation.id}`,
         expiresAt: invitation.expiresAt,
         sectionAccess,
+        customMessage: customMessage || undefined,
       }, language);
       
       console.log('Generated email HTML:', emailHtml);
@@ -1029,23 +1012,27 @@ export function TeamMembersSection() {
         )}
       </div>
 
-      {/* Role Legend */}
-      <div 
-        className="p-3 rounded-lg flex items-start gap-2 mb-4"
-        style={{ 
-          backgroundColor: 'rgb(var(--color-bg-subtle))',
-          border: '1px solid rgb(var(--color-border))'
-        }}
+      {/* Role info hint */}
+      <p 
+        className="text-xs mb-4"
+        style={{ color: 'rgb(var(--color-text-muted))' }}
       >
-        <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-        <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          <span className="font-medium">{isEn ? 'Roles:' : 'Rôles :'}</span>{' '}
-          <span className="inline-flex items-center gap-1"><Crown className="w-3 h-3" /> {isEn ? 'Owner' : 'Propriétaire'}</span> = {isEn ? 'full access' : 'accès total'} |{' '}
-          <span className="inline-flex items-center gap-1"><Shield className="w-3 h-3" /> Admin</span> = {isEn ? 'connect systems' : 'peut connecter systèmes'} |{' '}
-          <span className="inline-flex items-center gap-1"><User className="w-3 h-3" /> {isEn ? 'Member' : 'Membre'}</span> = {isEn ? 'create reports' : 'peut créer rapports'} |{' '}
-          <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" /> {isEn ? 'Viewer' : 'Lecteur'}</span> = {isEn ? 'read-only' : 'lecture seule'}
-        </div>
-      </div>
+        {isEn 
+          ? 'Manage permissions and create custom groups in '
+          : 'Gérez les permissions et créez des groupes personnalisés dans '}
+        <a 
+          href="/app/settings" 
+          onClick={(e) => {
+            e.preventDefault();
+            // Navigate to roles tab via Settings
+            window.location.href = '/app/settings?tab=roles';
+          }}
+          className="font-medium underline-offset-2 hover:underline"
+          style={{ color: 'rgb(var(--color-interactive))' }}
+        >
+          {isEn ? 'Roles & Access' : 'Rôles & Accès'}
+        </a>
+      </p>
 
       {/* Pending Invitations */}
       {pendingInvitations.length > 0 && canManageMembers && (
@@ -1113,11 +1100,11 @@ export function TeamMembersSection() {
           const canEdit = canManageMembers && member.role !== 'owner';
           const roleInfo = ROLE_DEFINITIONS[member.role as keyof typeof ROLE_DEFINITIONS];
           
-          // Determine role color
+          // Determine role color - using app's primary green palette
           const roleColors: Record<string, { bg: string; text: string; border: string }> = {
-            owner: { bg: 'rgb(var(--color-warning) / 0.1)', text: 'rgb(var(--color-warning))', border: 'rgb(var(--color-warning) / 0.3)' },
-            admin: { bg: 'rgb(var(--color-info) / 0.1)', text: 'rgb(var(--color-info))', border: 'rgb(var(--color-info) / 0.3)' },
-            member: { bg: 'rgb(var(--color-success) / 0.1)', text: 'rgb(var(--color-success))', border: 'rgb(var(--color-success) / 0.3)' },
+            owner: { bg: 'rgb(var(--color-accent-500) / 0.1)', text: 'rgb(var(--color-accent-600))', border: 'rgb(var(--color-accent-500) / 0.3)' },
+            admin: { bg: 'rgb(var(--color-primary-500) / 0.1)', text: 'rgb(var(--color-primary-600))', border: 'rgb(var(--color-primary-500) / 0.3)' },
+            member: { bg: 'rgb(var(--color-primary-100))', text: 'rgb(var(--color-primary-700))', border: 'rgb(var(--color-primary-200))' },
             viewer: { bg: 'rgb(var(--color-bg-muted))', text: 'rgb(var(--color-text-muted))', border: 'rgb(var(--color-border))' },
           };
           const colors = roleColors[member.role] || roleColors.viewer;
@@ -1125,15 +1112,15 @@ export function TeamMembersSection() {
           return (
             <div
               key={member.id}
-              className="flex items-center justify-between p-4 rounded-lg transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg transition-colors"
               style={{ 
                 backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))'
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div 
-                  className="w-11 h-11 rounded-full flex items-center justify-center font-semibold text-lg"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-semibold text-base sm:text-lg flex-shrink-0"
                   style={{ 
                     backgroundColor: 'rgb(var(--color-primary-500) / 0.15)',
                     color: 'rgb(var(--color-primary-500))'
@@ -1141,13 +1128,13 @@ export function TeamMembersSection() {
                 >
                   {member.name.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                    <span className="font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
                       {member.name}
                     </span>
                     <div 
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0"
                       style={{ 
                         backgroundColor: colors.bg,
                         color: colors.text,
@@ -1155,48 +1142,31 @@ export function TeamMembersSection() {
                       }}
                       title={roleInfo?.descFr || ''}
                     >
-                      <RoleIcon className="w-3.5 h-3.5" />
-                      {member.role === 'owner' ? 'Propriétaire' :
-                       member.role === 'admin' ? 'Administrateur' :
-                       member.role === 'member' ? 'Membre' : 'Lecteur'}
-                    </div>
-                    {/* Show if user can manage connections */}
-                    {(member.role === 'owner' || member.role === 'admin') && (
-                      <span 
-                        className="text-[10px] px-1.5 py-0.5 rounded"
-                        style={{ 
-                          backgroundColor: 'rgb(var(--color-bg-muted))',
-                          color: 'rgb(var(--color-text-muted))'
-                        }}
-                        title="Peut connecter des systèmes comptables"
-                      >
-                        <Database className="w-3 h-3 inline-block mr-0.5" />
-                        Connexions
+                      <RoleIcon className="w-3 h-3" />
+                      <span className="hidden xs:inline">
+                        {member.role === 'owner' ? (isEn ? 'Owner' : 'Propriétaire') :
+                         member.role === 'admin' ? (isEn ? 'Admin' : 'Admin') :
+                         member.role === 'member' ? (isEn ? 'Member' : 'Membre') : (isEn ? 'Viewer' : 'Lecteur')}
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <p className="text-sm mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <p className="text-sm truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {member.email}
                   </p>
                 </div>
               </div>
               
               {canEdit && (
-                <div className="flex items-center gap-2">
-                  <select
-                    value={member.role}
-                    onChange={(e) => updateMemberRole(member.id, e.target.value as 'admin' | 'member' | 'viewer')}
-                    className="select text-sm py-1.5"
-                    title="Changer le rôle"
-                  >
-                    <option value="admin">🛡️ Administrateur</option>
-                    <option value="member">👤 Membre</option>
-                    <option value="viewer">👁️ Lecteur</option>
-                  </select>
+                <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                  <RoleDropdown
+                    value={member.role as 'admin' | 'member' | 'viewer'}
+                    onChange={(role) => updateMemberRole(member.id, role)}
+                  />
                   <button
                     onClick={() => handleRemoveMember(member.id, member.name)}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Retirer le membre"
+                    className="p-2 rounded-lg transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+                    style={{ color: 'rgb(var(--color-error))' }}
+                    title={isEn ? 'Remove member' : 'Retirer le membre'}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1421,20 +1391,17 @@ export function TeamMembersSection() {
 
               {/* Step 3: Preview */}
               {inviteStep === 'preview' && (
-                <div className="space-y-4">
-                  {/* Summary */}
-                  <div 
-                    className="p-4 rounded-lg"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-bg-subtle))',
-                      border: '1px solid rgb(var(--color-border))'
-                    }}
-                  >
+                <div className="space-y-5">
+                  {/* Summary - Clean layout without gray background */}
+                  <div>
                     <h4 className="font-medium mb-3" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn ? 'Invitation Summary' : 'Résumé de l\'invitation'}
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
+                    <div className="space-y-3 text-sm">
+                      <div 
+                        className="flex justify-between items-center py-2"
+                        style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}
+                      >
                         <span style={{ color: 'rgb(var(--color-text-muted))' }}>
                           {isEn ? 'Email' : 'Courriel'}
                         </span>
@@ -1442,7 +1409,10 @@ export function TeamMembersSection() {
                           {inviteEmail}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div 
+                        className="flex justify-between items-center py-2"
+                        style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}
+                      >
                         <span style={{ color: 'rgb(var(--color-text-muted))' }}>
                           {isEn ? 'Role' : 'Rôle'}
                         </span>
@@ -1450,7 +1420,10 @@ export function TeamMembersSection() {
                           {ROLE_DEFINITIONS[inviteRole]?.[isEn ? 'nameEn' : 'nameFr']}
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div 
+                        className="flex justify-between items-center py-2"
+                        style={{ borderBottom: '1px solid rgb(var(--color-border-subtle))' }}
+                      >
                         <span style={{ color: 'rgb(var(--color-text-muted))' }}>
                           {isEn ? 'Organization' : 'Organisation'}
                         </span>
@@ -1472,7 +1445,7 @@ export function TeamMembersSection() {
                         .map(section => (
                           <span 
                             key={section.id}
-                            className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium"
                             style={{ 
                               backgroundColor: 'rgb(var(--color-success) / 0.1)',
                               color: 'rgb(var(--color-success))'
@@ -1483,6 +1456,69 @@ export function TeamMembersSection() {
                           </span>
                         ))}
                     </div>
+                  </div>
+
+                  {/* Invitation Link Preview */}
+                  <div>
+                    <h4 className="font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Invitation Link' : 'Lien d\'invitation'}
+                    </h4>
+                    <div 
+                      className="flex items-center gap-2 p-3 rounded-lg"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                        border: '1px solid rgb(var(--color-primary-500) / 0.2)'
+                      }}
+                    >
+                      <Link2 className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                      <code 
+                        className="flex-1 text-xs truncate font-mono"
+                        style={{ color: 'rgb(var(--color-primary-700))' }}
+                      >
+                        {`${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=xxxxx`}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`);
+                          showToast({
+                            type: 'success',
+                            title: isEn ? 'Link copied!' : 'Lien copié !',
+                          });
+                        }}
+                        className="flex-shrink-0 p-1.5 rounded hover:bg-[rgb(var(--color-primary-500)/0.1)] transition-colors"
+                        title={isEn ? 'Copy link' : 'Copier le lien'}
+                      >
+                        <Copy className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
+                      </button>
+                    </div>
+                    <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn 
+                        ? 'This link will be included in the invitation email and expires in 7 days.'
+                        : 'Ce lien sera inclus dans le courriel d\'invitation et expire dans 7 jours.'}
+                    </p>
+                  </div>
+
+                  {/* Custom Message (optional) */}
+                  <div>
+                    <h4 className="font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Personal Message' : 'Message personnalisé'}
+                      <span className="text-xs font-normal ml-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        ({isEn ? 'optional' : 'optionnel'})
+                      </span>
+                    </h4>
+                    <textarea
+                      value={customMessage}
+                      onChange={(e) => setCustomMessage(e.target.value)}
+                      placeholder={isEn 
+                        ? 'Add a personal note to your invitation...'
+                        : 'Ajoutez une note personnelle à votre invitation...'}
+                      className="input w-full resize-none"
+                      rows={3}
+                      maxLength={500}
+                    />
+                    <p className="text-xs mt-1 text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {customMessage.length}/500
+                    </p>
                   </div>
 
                   {/* Email preview toggle */}
@@ -1507,61 +1543,115 @@ export function TeamMembersSection() {
                         <div 
                           className="px-3 py-2 flex items-center justify-between"
                           style={{ 
-                            backgroundColor: 'rgb(var(--color-bg-muted))',
-                            borderBottom: '1px solid rgb(var(--color-border))'
+                            borderBottom: '1px solid rgb(var(--color-border))',
+                            backgroundColor: 'rgb(var(--color-bg-subtle))'
                           }}
                         >
                           <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
                             {isEn ? 'Email Preview' : 'Aperçu du courriel'}
                           </span>
-                          <button
-                            onClick={() => {
-                              const emailText = generateInvitationEmailText({
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                const emailHtml = generateInvitationEmail({
+                                  inviterName: 'Admin User',
+                                  inviterEmail: 'admin@plainledger.ca',
+                                  organizationName: currentTenant?.name || '',
+                                  recipientEmail: inviteEmail,
+                                  role: inviteRole,
+                                  inviteUrl: `${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`,
+                                  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                                  sectionAccess,
+                                  customMessage: customMessage || undefined,
+                                }, language);
+                                navigator.clipboard.writeText(emailHtml);
+                                showToast({
+                                  type: 'success',
+                                  title: isEn ? 'HTML Copied!' : 'HTML copié !',
+                                  message: isEn ? 'Email HTML copied to clipboard' : 'HTML du courriel copié dans le presse-papiers',
+                                });
+                              }}
+                              className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-white/50 transition-colors"
+                              style={{ color: 'rgb(var(--color-interactive))' }}
+                              title={isEn ? 'Copy HTML' : 'Copier le HTML'}
+                            >
+                              <Copy className="w-3 h-3" />
+                              HTML
+                            </button>
+                            <button
+                              onClick={() => {
+                                const emailText = generateInvitationEmailText({
+                                  inviterName: 'Admin User',
+                                  inviterEmail: 'admin@plainledger.ca',
+                                  organizationName: currentTenant?.name || '',
+                                  recipientEmail: inviteEmail,
+                                  role: inviteRole,
+                                  inviteUrl: `${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`,
+                                  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                                  sectionAccess,
+                                  customMessage: customMessage || undefined,
+                                }, language);
+                                navigator.clipboard.writeText(emailText);
+                                showToast({
+                                  type: 'success',
+                                  title: isEn ? 'Text Copied!' : 'Texte copié !',
+                                  message: isEn ? 'Plain text version copied' : 'Version texte copiée',
+                                });
+                              }}
+                              className="text-xs flex items-center gap-1 px-2 py-1 rounded hover:bg-white/50 transition-colors"
+                              style={{ color: 'rgb(var(--color-interactive))' }}
+                              title={isEn ? 'Copy plain text' : 'Copier le texte'}
+                            >
+                              <Copy className="w-3 h-3" />
+                              {isEn ? 'Text' : 'Texte'}
+                            </button>
+                          </div>
+                        </div>
+                        <div 
+                          className="relative"
+                          style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+                        >
+                          <div 
+                            className="overflow-auto"
+                            style={{ 
+                              maxHeight: '500px',
+                              backgroundColor: '#f8fafc'
+                            }}
+                          >
+                            <iframe
+                              srcDoc={generateInvitationEmail({
                                 inviterName: 'Admin User',
                                 inviterEmail: 'admin@plainledger.ca',
                                 organizationName: currentTenant?.name || '',
                                 recipientEmail: inviteEmail,
                                 role: inviteRole,
-                                inviteUrl: `${window.location.origin}/invite/preview`,
+                                inviteUrl: `${window.location.origin}/invite/${currentTenant?.slug || 'org'}?token=preview`,
                                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
                                 sectionAccess,
-                              }, language);
-                              navigator.clipboard.writeText(emailText);
-                              showToast({
-                                type: 'success',
-                                title: isEn ? 'Copied!' : 'Copié !',
-                              });
+                                customMessage: customMessage || undefined,
+                              }, language)}
+                              className="w-full border-0"
+                              style={{ 
+                                minHeight: '400px',
+                                backgroundColor: '#f8fafc'
+                              }}
+                              title={isEn ? 'Email Preview' : 'Aperçu du courriel'}
+                            />
+                          </div>
+                          <div 
+                            className="px-3 py-2 text-xs"
+                            style={{ 
+                              borderTop: '1px solid rgb(var(--color-border))',
+                              backgroundColor: 'rgb(var(--color-surface))',
+                              color: 'rgb(var(--color-text-muted))'
                             }}
-                            className="text-xs flex items-center gap-1"
-                            style={{ color: 'rgb(var(--color-interactive))' }}
                           >
-                            <Copy className="w-3 h-3" />
-                            {isEn ? 'Copy' : 'Copier'}
-                          </button>
-                        </div>
-                        <div 
-                          className="p-4 text-sm max-h-64 overflow-y-auto"
-                          style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-                        >
-                          <div className="space-y-2">
-                            <p><strong>{isEn ? 'To:' : 'À :'}</strong> {inviteEmail}</p>
-                            <p><strong>{isEn ? 'Subject:' : 'Objet :'}</strong> {isEn ? 'You\'re invited to join ' : 'Invitation à rejoindre '}{currentTenant?.name}</p>
-                            <hr style={{ borderColor: 'rgb(var(--color-border))' }} />
-                            <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                              {isEn 
-                                ? `Admin User has invited you to join ${currentTenant?.name} on PlainLedger as ${ROLE_DEFINITIONS[inviteRole]?.nameEn}.`
-                                : `Admin User vous invite à rejoindre ${currentTenant?.name} sur PlainLedger en tant que ${ROLE_DEFINITIONS[inviteRole]?.nameFr}.`}
+                            <p className="mb-1">
+                              <strong>{isEn ? 'To:' : 'À :'}</strong> {inviteEmail || 'collegue@exemple.com'}
                             </p>
-                            <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                              {isEn ? 'You will have access to:' : 'Vous aurez accès à :'}
+                            <p>
+                              <strong>{isEn ? 'Subject:' : 'Objet :'}</strong> {isEn ? 'You\'re invited to join ' : 'Invitation à rejoindre '}{currentTenant?.name || 'Your Organization'}
                             </p>
-                            <ul className="list-disc list-inside" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                              {SECTION_DEFINITIONS
-                                .filter(section => sectionAccess[section.id])
-                                .map(section => (
-                                  <li key={section.id}>{isEn ? section.nameEn : section.nameFr}</li>
-                                ))}
-                            </ul>
                           </div>
                         </div>
                       </div>

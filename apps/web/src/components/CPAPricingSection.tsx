@@ -10,7 +10,7 @@ import { CPA_PARTNER_TIERS } from '../lib/pricing';
 import { analytics } from '../lib/analytics';
 
 interface CPAPricingSectionProps {
-  onCTAClick?: (tierId: string, action: 'trial' | 'contact') => void;
+  onCTAClick?: (tierId: string, action: 'signup' | 'contact') => void;
 }
 
 export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps) {
@@ -50,7 +50,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
     });
   }, [clientCount]);
 
-  const handleCTAClick = (tier: CPAPartnerPricing, action: 'trial' | 'contact') => {
+  const handleCTAClick = (tier: CPAPartnerPricing, action: 'signup' | 'contact') => {
     analytics.track('cpa_pricing_cta_clicked', {
       tier: tier.id,
       action,
@@ -321,7 +321,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
 
                 {/* CTA */}
                 <button
-                  onClick={() => handleCTAClick(tier, tier.id === 'cpa_enterprise' ? 'contact' : 'trial')}
+                  onClick={() => handleCTAClick(tier, tier.id === 'cpa_enterprise' ? 'contact' : 'signup')}
                   disabled={!qualifies}
                   className={`w-full py-2.5 rounded-full font-medium transition-all ${
                     isRecommended && qualifies
@@ -346,7 +346,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
                     ? (isEn ? `Requires ${tier.minimumClients}+ clients` : `Nécessite ${tier.minimumClients}+ clients`)
                     : tier.id === 'cpa_enterprise'
                       ? (isEn ? 'Contact Sales' : 'Contacter les ventes')
-                      : (isEn ? 'Start Free Trial' : 'Essai gratuit')
+                      : (isEn ? 'Get Started' : 'Commencer')
                   }
                 </button>
               </div>
@@ -386,8 +386,8 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
             <Award className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
             <span>
               {isEn 
-                ? '7-day free trial • No credit card required • Cancel anytime'
-                : 'Essai gratuit 14 jours • Aucune carte de crédit requise • Annulez à tout moment'
+                ? 'No credit card required • Cancel anytime'
+                : 'Aucune carte de crédit requise • Annulez à tout moment'
               }
             </span>
           </div>

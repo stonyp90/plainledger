@@ -2,6 +2,7 @@
  * Auth Controller
  * Public endpoints for user registration and authentication flows
  * Uses Keycloak Admin API to create users programmatically
+ * Uses AWS SES for auth emails (verification, password reset)
  */
 
 import {
@@ -24,10 +25,10 @@ import {
   Matches,
 } from "class-validator";
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
-import { INotificationService } from "@application/ports/outbound/INotificationService";
 import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { ConfigService } from "@nestjs/config";
+import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
 import * as crypto from "crypto";
 
 // =====================================================
@@ -135,6 +136,11 @@ export class ResetPasswordDto {
   password: string;
 }
 
+export class VerifyEmailDto {
+  @IsString()
+  token: string;
+}
+
 // =====================================================
 // CONTROLLER
 // =====================================================
@@ -146,8 +152,7 @@ export class AuthController {
   constructor(
     @Inject("IKeycloakAdminService")
     private readonly keycloakAdminService: IKeycloakAdminService,
-    @Inject("INotificationService")
-    private readonly notificationService: INotificationService,
+    private readonly sesEmailService: SESEmailService,
     private readonly userProfileRepository: PostgresUserProfileRepository,
     private readonly configService: ConfigService,
   ) {}
@@ -199,8 +204,8 @@ export class AuthController {
       params.append("client_secret", clientSecret);
       params.append("username", dto.email.toLowerCase().trim());
       params.append("password", dto.password);
-      // Request all necessary scopes to include email_verified, profile, and roles in tokens
-      params.append("scope", "openid email profile roles");
+      // Don't specify scope - use Keycloak client default scopes
+      // Default scopes include: openid, profile, email, roles
 
       const response = await fetch(tokenUrl, {
         method: "POST",
@@ -222,7 +227,7 @@ export class AuthController {
           const existingUser = await this.keycloakAdminService.findUserByEmail(
             dto.email.toLowerCase().trim(),
           );
-          
+
           if (existingUser && !existingUser.emailVerified) {
             this.logger.log(`Login blocked for unverified email: ${dto.email}`);
             // Return a specific error that frontend can handle
@@ -249,24 +254,77 @@ export class AuthController {
 
       const tokenData = await response.json();
 
-      // Get user info from Keycloak
-      const user = await this.keycloakAdminService.findUserByEmail(
-        dto.email.toLowerCase().trim(),
-      );
+      // Decode token to get user info (fallback if Admin API unavailable)
+      let userInfo: {
+        id?: string;
+        email: string;
+        firstName?: string;
+        lastName?: string;
+        emailVerified: boolean;
+      } | null = null;
 
-      if (!user || !user.enabled) {
-        throw new UnauthorizedException(
-          "Your account is disabled. Please contact support.",
+      try {
+        // Try to get user info from Keycloak Admin API
+        const user = await this.keycloakAdminService.findUserByEmail(
+          dto.email.toLowerCase().trim(),
         );
+
+        if (user) {
+          if (!user.enabled) {
+            throw new UnauthorizedException(
+              "Your account is disabled. Please contact support.",
+            );
+          }
+
+          if (!user.emailVerified) {
+            throw new UnauthorizedException(
+              "Please verify your email address before logging in.",
+            );
+          }
+
+          userInfo = {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            emailVerified: user.emailVerified,
+          };
+        }
+      } catch (adminError) {
+        // If Admin API fails, decode from token (less info but allows login)
+        this.logger.warn(
+          `Keycloak Admin API unavailable, using token data: ${adminError.message}`,
+        );
+
+        try {
+          const tokenParts =
+            tokenData.id_token?.split(".") || tokenData.access_token.split(".");
+          if (tokenParts.length === 3) {
+            const tokenPayload = JSON.parse(
+              Buffer.from(tokenParts[1], "base64").toString(),
+            );
+            userInfo = {
+              id: tokenPayload.sub,
+              email: tokenPayload.email || dto.email.toLowerCase().trim(),
+              firstName: tokenPayload.given_name,
+              lastName: tokenPayload.family_name,
+              emailVerified: tokenPayload.email_verified !== false,
+            };
+          }
+        } catch (tokenError) {
+          this.logger.error(`Failed to decode token: ${tokenError.message}`);
+        }
       }
 
-      if (!user.emailVerified) {
-        throw new UnauthorizedException(
-          "Please verify your email address before logging in.",
-        );
+      if (!userInfo) {
+        // Fallback to minimal user info
+        userInfo = {
+          email: dto.email.toLowerCase().trim(),
+          emailVerified: true,
+        };
       }
 
-      this.logger.log(`User logged in successfully: ${user.id}`);
+      this.logger.log(`User logged in successfully: ${userInfo.email}`);
 
       return {
         success: true,
@@ -276,13 +334,7 @@ export class AuthController {
         expiresIn: tokenData.expires_in,
         refreshExpiresIn: tokenData.refresh_expires_in,
         tokenType: tokenData.token_type,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          emailVerified: user.emailVerified,
-        },
+        user: userInfo,
       };
     } catch (error) {
       // Re-throw known exceptions
@@ -330,7 +382,9 @@ export class AuthController {
         );
       }
 
-      // Create user in Keycloak
+      // Create user in Keycloak (WITHOUT Keycloak sending verification email)
+      // We'll send our own branded email via SES
+      // New signups are assigned to demo-signup organization with demo mode enabled
       const user = await this.keycloakAdminService.createUser({
         email: dto.email.toLowerCase().trim(),
         firstName: dto.firstName.trim(),
@@ -338,15 +392,21 @@ export class AuthController {
         password: dto.password,
         temporaryPassword: false, // User set their own password
         emailVerified: false,
-        sendVerificationEmail: true,
+        sendVerificationEmail: false, // We'll send our own email via SES
         attributes: {
-          ...(dto.organizationName
-            ? { organizationName: [dto.organizationName] }
-            : {}),
+          // Assign to demo-signup organization (locked demo account)
+          organization: ["demo-signup"],
+          organizationName: dto.organizationName?.trim()
+            ? [dto.organizationName.trim()]
+            : ["Demo Account"],
           ...(dto.industry ? { industry: [dto.industry] } : {}),
           province: [dto.province],
           registrationSource: ["web-signup"],
           registeredAt: [new Date().toISOString()],
+          // Enable demo mode by default for new signups (free users only see demo data)
+          demoMode: ["true"],
+          plan: ["free"],
+          accountStatus: ["active"],
         },
         roles: ["viewer"], // Default role
       });
@@ -371,6 +431,29 @@ export class AuthController {
         this.logger.warn(
           `Failed to save user profile to database: ${dbError.message}`,
         );
+      }
+
+      // Send verification email via SES (our branded email)
+      const verificationToken = this.generateVerificationToken(
+        user.id,
+        user.email,
+      );
+      const frontendUrl = this.configService.get<string>(
+        "FRONTEND_URL",
+        "https://plainledger.ca",
+      );
+      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+      const emailSent = await this.sesEmailService.sendVerificationEmail(
+        user.email,
+        dto.firstName.trim(),
+        verifyUrl,
+      );
+
+      if (emailSent) {
+        this.logger.log(`Verification email sent via SES to: ${user.email}`);
+      } else {
+        this.logger.warn(`Failed to send verification email to: ${user.email}`);
       }
 
       return {
@@ -408,64 +491,83 @@ export class AuthController {
   }
 
   // =====================================================
-  // PASSWORD RESET TOKEN HELPERS
+  // TOKEN GENERATION HELPERS
   // =====================================================
 
   /**
+   * Get the secret used for signing tokens
+   */
+  private getTokenSecret(): string {
+    return (
+      this.configService.get<string>("TOKEN_SECRET") ||
+      this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
+      "plainledger-default-secret-change-me"
+    );
+  }
+
+  /**
    * Generate a secure password reset token
-   * Format: base64(userId:email:expiry):signature
+   * Format: base64(userId:email:expiry).signature
+   * Expiry: 15 minutes
    */
   private generateResetToken(userId: string, email: string): string {
-    const secret = this.configService.get<string>("PASSWORD_RESET_SECRET") || 
-                   this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
-                   "plainledger-default-secret-change-me";
-    
-    // Token expires in 15 minutes
-    const expiry = Date.now() + 15 * 60 * 1000;
-    const payload = Buffer.from(`${userId}:${email}:${expiry}`).toString("base64url");
-    
+    const secret = this.getTokenSecret();
+    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString(
+      "base64url",
+    );
+
     const signature = crypto
       .createHmac("sha256", secret)
       .update(payload)
       .digest("base64url");
-    
+
     return `${payload}.${signature}`;
   }
 
   /**
    * Verify and decode a password reset token
    */
-  private verifyResetToken(token: string): { userId: string; email: string } | null {
+  private verifyResetToken(
+    token: string,
+  ): { userId: string; email: string } | null {
     try {
-      const secret = this.configService.get<string>("PASSWORD_RESET_SECRET") || 
-                     this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
-                     "plainledger-default-secret-change-me";
-      
+      const secret = this.getTokenSecret();
+
       const [payload, signature] = token.split(".");
       if (!payload || !signature) return null;
-      
+
       // Verify signature
       const expectedSignature = crypto
         .createHmac("sha256", secret)
         .update(payload)
         .digest("base64url");
-      
+
       if (signature !== expectedSignature) {
         this.logger.warn("Invalid password reset token signature");
         return null;
       }
-      
+
       // Decode payload
       const decoded = Buffer.from(payload, "base64url").toString();
-      const [userId, email, expiryStr] = decoded.split(":");
+      const parts = decoded.split(":");
+
+      // Handle both old format (userId:email:expiry) and new format (reset:userId:email:expiry)
+      let userId: string, email: string, expiryStr: string;
+      if (parts[0] === "reset") {
+        [, userId, email, expiryStr] = parts;
+      } else {
+        [userId, email, expiryStr] = parts;
+      }
+
       const expiry = parseInt(expiryStr, 10);
-      
+
       // Check expiry
       if (Date.now() > expiry) {
         this.logger.warn("Password reset token has expired");
         return null;
       }
-      
+
       return { userId, email };
     } catch (error) {
       this.logger.error(`Failed to verify reset token: ${error.message}`);
@@ -474,8 +576,78 @@ export class AuthController {
   }
 
   /**
+   * Generate a secure email verification token
+   * Format: base64(verify:userId:email:expiry).signature
+   * Expiry: 24 hours
+   */
+  private generateVerificationToken(userId: string, email: string): string {
+    const secret = this.getTokenSecret();
+    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString(
+      "base64url",
+    );
+
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url");
+
+    return `${payload}.${signature}`;
+  }
+
+  /**
+   * Verify and decode an email verification token
+   */
+  private verifyVerificationToken(
+    token: string,
+  ): { userId: string; email: string } | null {
+    try {
+      const secret = this.getTokenSecret();
+
+      const [payload, signature] = token.split(".");
+      if (!payload || !signature) return null;
+
+      // Verify signature
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(payload)
+        .digest("base64url");
+
+      if (signature !== expectedSignature) {
+        this.logger.warn("Invalid verification token signature");
+        return null;
+      }
+
+      // Decode payload
+      const decoded = Buffer.from(payload, "base64url").toString();
+      const [type, userId, email, expiryStr] = decoded.split(":");
+
+      // Verify token type
+      if (type !== "verify") {
+        this.logger.warn("Invalid verification token type");
+        return null;
+      }
+
+      const expiry = parseInt(expiryStr, 10);
+
+      // Check expiry
+      if (Date.now() > expiry) {
+        this.logger.warn("Verification token has expired");
+        return null;
+      }
+
+      return { userId, email };
+    } catch (error) {
+      this.logger.error(
+        `Failed to verify verification token: ${error.message}`,
+      );
+      return null;
+    }
+  }
+
+  /**
    * Request password reset
-   * Public endpoint - generates custom token and sends email via our email service
+   * Public endpoint - generates custom token and sends email via AWS SES
    */
   @Post("forgot-password")
   @Public()
@@ -495,20 +667,25 @@ export class AuthController {
       if (user) {
         // Generate custom reset token
         const token = this.generateResetToken(user.id, user.email);
-        const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
+        const frontendUrl = this.configService.get<string>(
+          "FRONTEND_URL",
+          "https://plainledger.ca",
+        );
         const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
-        
-        // Send password reset email via notification service (Novu)
-        const emailSent = await this.notificationService.sendPasswordResetEmail({
-          to: user.email,
-          firstName: user.firstName,
+
+        // Send password reset email via SES
+        const emailSent = await this.sesEmailService.sendPasswordResetEmail(
+          user.email,
+          user.firstName || "there",
           resetUrl,
-        });
-        
+        );
+
         if (emailSent) {
-          this.logger.log(`Password reset email sent to: ${dto.email}`);
+          this.logger.log(`Password reset email sent via SES to: ${dto.email}`);
         } else {
-          this.logger.warn(`Failed to send password reset email to: ${dto.email}`);
+          this.logger.warn(
+            `Failed to send password reset email to: ${dto.email}`,
+          );
         }
       } else {
         // Don't reveal whether email exists or not (security)
@@ -547,17 +724,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async validateResetToken(@Body() dto: ValidateResetTokenDto) {
     const tokenData = this.verifyResetToken(dto.token);
-    
+
     if (!tokenData) {
       return { valid: false };
     }
-    
+
     // Verify user still exists
-    const user = await this.keycloakAdminService.findUserByEmail(tokenData.email);
+    const user = await this.keycloakAdminService.findUserByEmail(
+      tokenData.email,
+    );
     if (!user || user.id !== tokenData.userId) {
       return { valid: false };
     }
-    
+
     return { valid: true, email: tokenData.email };
   }
 
@@ -587,7 +766,9 @@ export class AuthController {
 
     try {
       // Verify user exists
-      const user = await this.keycloakAdminService.findUserByEmail(tokenData.email);
+      const user = await this.keycloakAdminService.findUserByEmail(
+        tokenData.email,
+      );
       if (!user || user.id !== tokenData.userId) {
         throw new BadRequestException(
           "Invalid password reset link. Please request a new one.",
@@ -597,8 +778,10 @@ export class AuthController {
       // Set new password using Keycloak Admin API
       // We need to add this method to the service
       await this.setUserPassword(tokenData.userId, dto.password);
-      
-      this.logger.log(`Password successfully reset for user: ${tokenData.email}`);
+
+      this.logger.log(
+        `Password successfully reset for user: ${tokenData.email}`,
+      );
 
       return {
         success: true,
@@ -608,7 +791,7 @@ export class AuthController {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       this.logger.error(`Password reset failed: ${error.message}`, error.stack);
       throw new BadRequestException(
         "Failed to reset password. Please try again.",
@@ -619,26 +802,38 @@ export class AuthController {
   /**
    * Set user password using Keycloak Admin REST API directly
    */
-  private async setUserPassword(userId: string, password: string): Promise<void> {
-    const keycloakUrl = this.configService.get<string>("KEYCLOAK_URL") || "http://localhost:8080";
-    const realm = this.configService.get<string>("KEYCLOAK_REALM") || "plainledger";
-    const clientId = this.configService.get<string>("KEYCLOAK_ADMIN_CLIENT_ID") || "plainledger-api";
-    const clientSecret = this.configService.get<string>("KEYCLOAK_CLIENT_SECRET");
+  private async setUserPassword(
+    userId: string,
+    password: string,
+  ): Promise<void> {
+    const keycloakUrl =
+      this.configService.get<string>("KEYCLOAK_URL") || "http://localhost:8080";
+    const realm =
+      this.configService.get<string>("KEYCLOAK_REALM") || "plainledger";
+    const clientId =
+      this.configService.get<string>("KEYCLOAK_ADMIN_CLIENT_ID") ||
+      "plainledger-api";
+    const clientSecret = this.configService.get<string>(
+      "KEYCLOAK_CLIENT_SECRET",
+    );
 
     if (!clientSecret) {
       throw new Error("Keycloak client secret not configured");
     }
 
     // Get admin token
-    const tokenResponse = await fetch(`${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: clientId,
-        client_secret: clientSecret,
-      }).toString(),
-    });
+    const tokenResponse = await fetch(
+      `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        }).toString(),
+      },
+    );
 
     if (!tokenResponse.ok) {
       throw new Error("Failed to obtain admin token");
@@ -654,26 +849,104 @@ export class AuthController {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${adminToken}`,
+          Authorization: `Bearer ${adminToken}`,
         },
         body: JSON.stringify({
           type: "password",
           value: password,
           temporary: false,
         }),
-      }
+      },
     );
 
     if (!resetResponse.ok) {
       const errorText = await resetResponse.text();
-      this.logger.error(`Keycloak password reset failed: ${resetResponse.status} - ${errorText}`);
+      this.logger.error(
+        `Keycloak password reset failed: ${resetResponse.status} - ${errorText}`,
+      );
       throw new Error("Failed to reset password in Keycloak");
     }
   }
 
   /**
+   * Verify email using token
+   * Public endpoint - verifies email and updates Keycloak
+   */
+  @Post("verify-email")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    this.logger.log("Email verification attempt with token");
+
+    if (!this.keycloakAdminService.isAvailable()) {
+      throw new BadRequestException(
+        "Email verification is temporarily unavailable. Please try again later.",
+      );
+    }
+
+    // Verify token
+    const tokenData = this.verifyVerificationToken(dto.token);
+    if (!tokenData) {
+      throw new BadRequestException(
+        "Invalid or expired verification link. Please request a new one.",
+      );
+    }
+
+    try {
+      // Verify user exists and matches token
+      const user = await this.keycloakAdminService.findUserByEmail(
+        tokenData.email,
+      );
+      if (!user || user.id !== tokenData.userId) {
+        throw new BadRequestException(
+          "Invalid verification link. Please request a new one.",
+        );
+      }
+
+      // Check if already verified
+      if (user.emailVerified) {
+        return {
+          success: true,
+          message: "Your email is already verified. You can sign in.",
+          alreadyVerified: true,
+        };
+      }
+
+      // Update email verified status in Keycloak
+      await this.keycloakAdminService.setEmailVerified(tokenData.userId, true);
+
+      this.logger.log(
+        `Email successfully verified for user: ${tokenData.email}`,
+      );
+
+      // Send welcome email
+      await this.sesEmailService.sendWelcomeEmail(
+        user.email,
+        user.firstName || "there",
+      );
+
+      return {
+        success: true,
+        message: "Email verified successfully! You can now sign in.",
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `Email verification failed: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(
+        "Failed to verify email. Please try again.",
+      );
+    }
+  }
+
+  /**
    * Resend verification email
-   * Public endpoint - resends email verification
+   * Public endpoint - resends email verification via SES
    */
   @Post("resend-verification")
   @Public()
@@ -699,9 +972,30 @@ export class AuthController {
           };
         }
 
-        // Send verification email
-        await this.keycloakAdminService.sendVerificationEmail(user.id);
-        this.logger.log(`Verification email resent to: ${dto.email}`);
+        // Generate new verification token and send via SES
+        const verificationToken = this.generateVerificationToken(
+          user.id,
+          user.email,
+        );
+        const frontendUrl = this.configService.get<string>(
+          "FRONTEND_URL",
+          "https://plainledger.ca",
+        );
+        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+        const emailSent = await this.sesEmailService.sendVerificationEmail(
+          user.email,
+          user.firstName || "there",
+          verifyUrl,
+        );
+
+        if (emailSent) {
+          this.logger.log(`Verification email resent via SES to: ${dto.email}`);
+        } else {
+          this.logger.warn(
+            `Failed to send verification email to: ${dto.email}`,
+          );
+        }
       } else {
         this.logger.log(
           `Verification requested for non-existent email: ${dto.email}`,
@@ -759,10 +1053,10 @@ export class AuthController {
     const secret = this.generateTOTPSecret();
     const issuer = "PlainLedger";
     const accountName = "user@example.com"; // Would get from authenticated user
-    
+
     // Generate otpauth:// URI for QR code
     const otpauthUri = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
-    
+
     // Generate QR code as data URL (using a simple approach)
     // In production, use a QR code library like 'qrcode'
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUri)}`;
@@ -783,7 +1077,7 @@ export class AuthController {
   async mfaVerifySetup(@Body() dto: { code: string }) {
     // Validate the OTP code against the secret
     // In production, this would verify with Keycloak and enable MFA
-    
+
     if (!dto.code || dto.code.length !== 6) {
       throw new BadRequestException("Invalid code format");
     }
@@ -814,8 +1108,10 @@ export class AuthController {
     // 1. Retrieve the pending authentication session
     // 2. Verify the OTP code
     // 3. Complete the authentication and return tokens
-    
-    this.logger.log(`MFA verification for session: ${dto.sessionId} with code: ${dto.code}`);
+
+    this.logger.log(
+      `MFA verification for session: ${dto.sessionId} with code: ${dto.code}`,
+    );
 
     // For demo, return mock tokens
     // In production, complete the Keycloak authentication flow
@@ -831,11 +1127,11 @@ export class AuthController {
     const buffer = crypto.randomBytes(20);
     const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     let secret = "";
-    
+
     for (let i = 0; i < buffer.length; i++) {
       secret += base32Chars[buffer[i] % 32];
     }
-    
+
     // Format as groups of 4 for readability
     return secret.match(/.{1,4}/g)?.join("") || secret;
   }

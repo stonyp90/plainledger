@@ -153,66 +153,83 @@ graph TB
 
 ### Local Development Setup
 
-#### 1. Clone Repository
+#### Quick Start (Recommended)
 
 ```bash
-git clone https://github.com/stonyp90/plainledger.git
-cd plainledger
-```
+# 1. Start infrastructure services (Docker)
+npm run dev:infra
 
-#### 2. Start Infrastructure Services
+# 2. Install dependencies (first time only)
+npm run install:all
 
-```bash
-# Start PostgreSQL, Redis, Keycloak, MinIO
-chmod +x local-dev/start.sh
-./local-dev/start.sh
-```
-
-This starts:
-- **PostgreSQL** on port `5432`
-- **Redis** on port `6379`
-- **Keycloak** on port `8080` (Admin: `admin/admin`)
-- **MinIO** on port `9000` (Console: `9001`, Credentials: `plainledger/plainledger_secret`)
-
-#### 3. Configure Environment
-
-```bash
-# API Configuration
-cd apps/api
-cp env.example .env.local
-
-# Edit .env.local with your settings
-# Default values work for local development
-
-# Web Configuration
-cd ../web
-cp env.example .env.local
-```
-
-#### 4. Install Dependencies & Start
-
-```bash
-# Terminal 1 - API Server
-cd apps/api
-npm install
-npm run start:dev
-# API runs on http://localhost:3000
-
-# Terminal 2 - Web Application
-cd apps/web
-npm install
+# 3. Start API and Web locally (hot reload enabled)
 npm run dev
-# Web app runs on http://localhost:5173
 ```
 
-#### 5. Access Application
+This will:
+- Start PostgreSQL, Redis, Keycloak, MinIO in Docker
+- Run API locally on `http://localhost:3000` (hot reload)
+- Run Web app locally on `http://localhost:5173` (hot reload)
 
-| Service | URL | Default Credentials |
-|---------|-----|---------------------|
-| **Web App** | http://localhost:5173 | `demo@plainledger.ca` / `DemoPass123!@#` |
+#### Manual Setup
+
+**1. Start Infrastructure Services**
+
+```bash
+# Start PostgreSQL, Redis, Keycloak, MinIO, LocalStack
+docker-compose up -d keycloak-db app-db redis keycloak localstack minio
+```
+
+**2. Install Dependencies**
+
+```bash
+# Install API dependencies
+cd apps/api && npm install && cd ../..
+
+# Install Web dependencies
+cd apps/web && npm install && cd ../..
+```
+
+**3. Start Development Servers**
+
+```bash
+# Terminal 1 - API (hot reload)
+cd apps/api && npm run start:dev
+
+# Terminal 2 - Web (hot reload)
+cd apps/web && npm run dev
+```
+
+#### Access Points
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **Web App** | http://localhost:5173 | `demo@plainledger.com` / `DemoPass123!@#` |
 | **API** | http://localhost:3000 | N/A |
 | **Keycloak Admin** | http://localhost:8080 | `admin` / `admin` |
 | **MinIO Console** | http://localhost:9001 | `plainledger` / `plainledger_secret` |
+
+#### Development Commands
+
+```bash
+# Start infrastructure only
+npm run dev:infra
+
+# Start API locally
+npm run dev:api
+
+# Start Web locally
+npm run dev:web
+
+# Start both API and Web
+npm run dev
+
+# Stop all services
+npm run dev:stop
+
+# View logs
+npm run dev:logs
+```
 
 ---
 
@@ -246,9 +263,7 @@ npm run dev
 - 📋 **PCI DSS Level 1** (Payment Card Industry Data Security Standard) - Planned Q2 2027
 - 📋 **NIST Cybersecurity Framework** - Planned Q2 2027
 - 📋 **CIS Controls** (Center for Internet Security) - Planned Q3 2027
-- 📋 **SOC 1 Type II** (Service Organization Control) - Planned Q4 2027
-- 📋 **SOC 2 Type II** (Security, Availability, Processing Integrity) - Planned Q1 2028
-- 📋 **HIPAA** (Health Insurance Portability and Accountability Act) - Planned Q2 2028
+- 📋 **HIPAA** (Health Insurance Portability and Accountability Act) - Planned Q4 2027
 - 📋 **FedRAMP** (Federal Risk and Authorization Management Program) - Planned Q3 2028
 
 ---

@@ -819,25 +819,36 @@ function RoleModal({ role, onSave, onClose, existingRoles, isEn }: RoleModalProp
           
           {/* Copy from existing role */}
           <div 
-            className="p-3 rounded-lg flex flex-col sm:flex-row sm:items-center gap-3"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            className="p-4 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700/30"
           >
-            <Copy className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Copy permissions from:' : 'Copier les permissions de:'}
-            </span>
-            <select
-              value={copyFromRole}
-              onChange={(e) => handleCopyPermissions(e.target.value)}
-              className="select flex-1 sm:flex-none sm:w-48"
-            >
-              <option value="">{isEn ? 'Select a role...' : 'Sélectionner un rôle...'}</option>
-              {existingRoles.map(r => (
-                <option key={r.id} value={r.id}>
-                  {r.badge} {isEn ? r.nameEn : r.nameFr}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary-100 dark:bg-primary-800/40 flex-shrink-0">
+                <Copy className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+              </div>
+              <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+                {isEn ? 'Copy permissions from:' : 'Copier les permissions de:'}
+              </span>
+            </div>
+            <div className="relative sm:w-56">
+              <select
+                value={copyFromRole}
+                onChange={(e) => handleCopyPermissions(e.target.value)}
+                className="w-full appearance-none px-4 py-2.5 pr-10 rounded-lg text-sm font-medium cursor-pointer transition-all
+                  bg-white dark:bg-gray-800 
+                  border-2 border-primary-300 dark:border-primary-600
+                  text-primary-700 dark:text-primary-300
+                  hover:border-primary-400 dark:hover:border-primary-500
+                  focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+              >
+                <option value="">{isEn ? 'Select a role...' : 'Sélectionner un rôle...'}</option>
+                {existingRoles.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.badge} {isEn ? r.nameEn : r.nameFr}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-500 pointer-events-none" />
+            </div>
           </div>
           
           {/* Permissions */}
@@ -1033,18 +1044,23 @@ export default function RolesPermissionsSection() {
       {/* Info Banner */}
       {canManageMembers && (
         <div 
-          className="p-3 sm:p-4 rounded-lg flex items-start gap-3"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-bg-muted))',
-            border: '1px solid rgb(var(--color-border))'
-          }}
+          className="p-3 sm:p-4 rounded-xl flex items-start gap-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700/30"
         >
-          <Info className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-          <div>
-            <p className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+          <div 
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary-100 dark:bg-primary-800/40"
+          >
+            <Lock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-primary-700 dark:text-primary-300">
               {isEn 
-                ? 'System roles (Owner, Admin, Member, Viewer) cannot be modified. Create custom roles to define specific permissions for your team.'
-                : 'Les rôles système (Propriétaire, Admin, Membre, Lecteur) ne peuvent pas être modifiés. Créez des rôles personnalisés pour définir des permissions spécifiques.'}
+                ? 'System roles are protected'
+                : 'Les rôles système sont protégés'}
+            </p>
+            <p className="text-sm mt-0.5 text-primary-600/80 dark:text-primary-400/80">
+              {isEn 
+                ? 'Owner, Admin, Member, and Viewer roles cannot be modified. Create custom roles to define specific permissions for your team.'
+                : 'Les rôles Propriétaire, Admin, Membre et Lecteur ne peuvent pas être modifiés. Créez des rôles personnalisés pour définir des permissions spécifiques.'}
             </p>
           </div>
         </div>
@@ -1053,7 +1069,7 @@ export default function RolesPermissionsSection() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
             value={searchQuery}
@@ -1062,17 +1078,25 @@ export default function RolesPermissionsSection() {
             className="input pl-10 w-full"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center bg-primary-100 dark:bg-primary-800/40">
+            <Shield className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+          </div>
           <select
             value={selectedRoleFilter}
             onChange={(e) => setSelectedRoleFilter(e.target.value)}
-            className="select"
+            className="appearance-none pl-14 pr-10 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all
+              bg-white dark:bg-gray-800 
+              border-2 border-primary-200 dark:border-primary-700/50
+              text-primary-700 dark:text-primary-300
+              hover:border-primary-300 dark:hover:border-primary-600
+              focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400"
           >
             <option value="all">{isEn ? 'All roles' : 'Tous les rôles'}</option>
             <option value="system">{isEn ? 'System roles' : 'Rôles système'}</option>
             <option value="custom">{isEn ? 'Custom roles' : 'Rôles personnalisés'}</option>
           </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary-500 pointer-events-none" />
         </div>
       </div>
 

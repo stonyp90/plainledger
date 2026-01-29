@@ -1100,8 +1100,8 @@ export const translations = {
         fr: 'Connectez votre logiciel comptable, détectez les anomalies automatiquement et générez des rapports financiers clairs en quelques minutes.',
       },
       cta: {
-        en: 'Start free trial',
-        fr: 'Essai gratuit',
+        en: 'Get started free',
+        fr: 'Commencer gratuitement',
       },
       ctaSecondary: {
         en: 'Watch demo',
@@ -1376,13 +1376,9 @@ export const translations = {
       en: 'Plan',
       fr: 'Forfait',
     },
-    trial: {
-      en: 'Trial',
-      fr: 'Essai',
-    },
-    trialDaysLeft: {
-      en: 'days left in trial',
-      fr: 'jours restants d\'essai',
+    free: {
+      en: 'Free',
+      fr: 'Gratuit',
     },
   },
 } as const;

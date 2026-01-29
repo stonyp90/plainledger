@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import Toggle from './Toggle';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useDemoMode } from '../contexts/DemoModeContext';
+import { useTenant } from '../contexts/TenantContext';
 import type { NotificationCategory, SlackIntegration, TeamsIntegration, NotificationPriority } from '../lib/notifications';
 
 // Category labels in French with icons
@@ -228,10 +230,13 @@ function IntegrationSetupWizard({ type, isOpen, onClose, onComplete }: SetupWiza
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
+    >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0"
         onClick={handleClose}
       />
       
@@ -434,8 +439,9 @@ function IntegrationSetupWizard({ type, isOpen, onClose, onComplete }: SetupWiza
                       placeholder={isSlack ? 'https://hooks.slack.com/services/...' : 'https://...webhook.office.com/...'}
                       className="input w-full pr-10"
                       style={{
-                        backgroundColor: 'rgb(var(--color-bg-muted))',
+                        backgroundColor: 'transparent',
                         borderColor: webhookUrl && !validateWebhookUrl() ? 'rgb(var(--color-error))' : 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
                       }}
                     />
                     {webhookUrl && validateWebhookUrl() && (
@@ -464,8 +470,9 @@ function IntegrationSetupWizard({ type, isOpen, onClose, onComplete }: SetupWiza
                     placeholder={isSlack ? 'Mon Workspace' : 'Mon Équipe'}
                     className="input w-full"
                     style={{
-                      backgroundColor: 'rgb(var(--color-bg-muted))',
+                      backgroundColor: 'transparent',
                       borderColor: 'rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))',
                     }}
                   />
                 </div>
@@ -489,8 +496,9 @@ function IntegrationSetupWizard({ type, isOpen, onClose, onComplete }: SetupWiza
                       placeholder="finance-alerts"
                       className="input w-full pl-7"
                       style={{
-                        backgroundColor: 'rgb(var(--color-bg-muted))',
+                        backgroundColor: 'transparent',
                         borderColor: 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
                       }}
                     />
                   </div>
@@ -556,7 +564,7 @@ function IntegrationSetupWizard({ type, isOpen, onClose, onComplete }: SetupWiza
               {/* Configuration Summary */}
               <div 
                 className="p-4 rounded-xl space-y-3"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                style={{ border: '1px solid rgb(var(--color-border))' }}
               >
                 <h4 className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
                   Récapitulatif
@@ -656,11 +664,8 @@ function IntegrationSetupWizard({ type, isOpen, onClose, onComplete }: SetupWiza
         >
           <button
             onClick={step === 1 ? handleClose : () => setStep(s => s - 1)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{ 
-              color: 'rgb(var(--color-text-secondary))',
-              backgroundColor: 'rgb(var(--color-bg-muted))'
-            }}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-black/5"
+            style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
             {step === 1 ? 'Annuler' : 'Retour'}
           </button>
@@ -758,15 +763,22 @@ function NotificationCheckbox({
 
 export default function NotificationSettings() {
   const { preferences, updatePreferences, showToast } = useNotifications();
+  const { isDemoMode } = useDemoMode();
+  const { canManageSettings } = useTenant();
   const [localPrefs, setLocalPrefs] = useState(preferences);
   const [isSaving, setIsSaving] = useState(false);
   const [slackWizardOpen, setSlackWizardOpen] = useState(false);
   const [teamsWizardOpen, setTeamsWizardOpen] = useState(false);
+  
+  // Read-only mode: users without manage settings permission can view but not modify
+  // Demo mode users can also only view (to prevent sending real notifications based on demo data)
+  const isReadOnly = !canManageSettings || isDemoMode;
 
   const handleToggleChannel = (
     category: NotificationCategory,
     channel: 'in_app' | 'email' | 'push' | 'sms' | 'slack' | 'teams'
   ) => {
+    if (isReadOnly) return;
     setLocalPrefs(prev => ({
       ...prev,
       channels: {
@@ -780,6 +792,7 @@ export default function NotificationSettings() {
   };
 
   const handleToggleGlobal = () => {
+    if (isReadOnly) return;
     setLocalPrefs(prev => ({
       ...prev,
       enabled: !prev.enabled,
@@ -787,6 +800,7 @@ export default function NotificationSettings() {
   };
 
   const handleToggleQuietHours = () => {
+    if (isReadOnly) return;
     setLocalPrefs(prev => ({
       ...prev,
       quietHoursEnabled: !prev.quietHoursEnabled,
@@ -794,6 +808,7 @@ export default function NotificationSettings() {
   };
 
   const handleEmailDigestChange = (value: 'none' | 'daily' | 'weekly') => {
+    if (isReadOnly) return;
     setLocalPrefs(prev => ({
       ...prev,
       emailDigest: value,
@@ -801,6 +816,14 @@ export default function NotificationSettings() {
   };
 
   const handleSave = async () => {
+    if (isReadOnly) return;
+    
+    // Don't actually save if in demo mode - just show success message
+    if (isDemoMode) {
+      showToast('info', 'Mode démo: Les préférences ne sont pas enregistrées.');
+      return;
+    }
+    
     setIsSaving(true);
     try {
       updatePreferences(localPrefs);
@@ -842,6 +865,10 @@ export default function NotificationSettings() {
 
   // Handle Slack connection - opens wizard
   const handleConnectSlack = () => {
+    if (isDemoMode) {
+      showToast('info', 'Mode démo: Les intégrations ne peuvent pas être configurées en mode démonstration. Un abonnement est requis.');
+      return;
+    }
     setSlackWizardOpen(true);
   };
 
@@ -902,6 +929,10 @@ export default function NotificationSettings() {
 
   // Handle Teams connection - opens wizard
   const handleConnectTeams = () => {
+    if (isDemoMode) {
+      showToast('info', 'Mode démo: Les intégrations ne peuvent pas être configurées en mode démonstration. Un abonnement est requis.');
+      return;
+    }
     setTeamsWizardOpen(true);
   };
 
@@ -964,8 +995,46 @@ export default function NotificationSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Read-only warning banner for demo mode or users without permission */}
+      {isReadOnly && (
+        <div 
+          className="p-4 rounded-xl flex items-start gap-3"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+            border: '1px solid rgb(var(--color-warning) / 0.2)'
+          }}
+        >
+          <Info className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-warning))' }} />
+          <div>
+            <p className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+              {isDemoMode ? 'Mode démonstration' : 'Accès en lecture seule'}
+            </p>
+            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              {isDemoMode 
+                ? 'Les paramètres de notification ne peuvent pas être modifiés en mode démo pour éviter l\'envoi de notifications basées sur des données de démonstration. Un abonnement est requis pour activer pleinement cette fonctionnalité.'
+                : 'Vous n\'avez pas les permissions nécessaires pour modifier les paramètres de notification. Contactez votre administrateur pour obtenir l\'accès.'
+              }
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Global Toggle */}
       <div className="card">
+        {isDemoMode && (
+          <div 
+            className="mb-4 p-3 rounded-lg flex items-start gap-2"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-warning) / 0.08)',
+              border: '1px solid rgb(var(--color-warning) / 0.15)'
+            }}
+          >
+            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-warning))' }} />
+            <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <strong style={{ color: 'rgb(var(--color-text))' }}>Mode démonstration:</strong> Cette section est en lecture seule. Un abonnement est requis pour activer pleinement les notifications.
+            </p>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div 
@@ -987,6 +1056,7 @@ export default function NotificationSettings() {
             checked={localPrefs.enabled}
             onChange={handleToggleGlobal}
             size="lg"
+            disabled={isReadOnly}
           />
         </div>
       </div>
@@ -995,6 +1065,20 @@ export default function NotificationSettings() {
         <>
           {/* Email Digest */}
           <div className="card">
+            {isDemoMode && (
+              <div 
+                className="mb-4 p-3 rounded-lg flex items-start gap-2"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-warning) / 0.08)',
+                  border: '1px solid rgb(var(--color-warning) / 0.15)'
+                }}
+              >
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-warning))' }} />
+                <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <strong style={{ color: 'rgb(var(--color-text))' }}>Mode démonstration:</strong> Les résumés par courriel ne peuvent pas être configurés en mode démo. Un abonnement est requis pour activer cette fonctionnalité.
+                </p>
+              </div>
+            )}
             <div className="flex items-center gap-3 mb-4">
               <div 
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -1020,9 +1104,11 @@ export default function NotificationSettings() {
                 <button
                   key={option.value}
                   onClick={() => handleEmailDigestChange(option.value as 'none' | 'daily' | 'weekly')}
+                  disabled={isReadOnly}
                   className={`
                     flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm
                     transition-all duration-200
+                    ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}
                   `}
                   style={{
                     backgroundColor: localPrefs.emailDigest === option.value
@@ -1044,6 +1130,20 @@ export default function NotificationSettings() {
           </div>
 
           {/* Messaging Integrations - Slack & Teams */}
+          {isDemoMode && (
+            <div 
+              className="mb-4 p-3 rounded-lg flex items-start gap-2"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-warning) / 0.08)',
+                border: '1px solid rgb(var(--color-warning) / 0.15)'
+              }}
+            >
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-warning))' }} />
+              <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <strong style={{ color: 'rgb(var(--color-text))' }}>Mode démonstration:</strong> Les intégrations de messagerie (Slack, Teams) ne peuvent pas être configurées en mode démo. Un abonnement est requis pour activer ces intégrations.
+              </p>
+            </div>
+          )}
           <MessagingIntegrations 
             slack={localPrefs.integrations?.slack || null}
             teams={localPrefs.integrations?.teams || null}
@@ -1053,10 +1153,25 @@ export default function NotificationSettings() {
             onTeamsDisconnect={() => handleDisconnectTeams()}
             onSlackUpdate={(updates) => handleUpdateSlack(updates)}
             onTeamsUpdate={(updates) => handleUpdateTeams(updates)}
+            isReadOnly={isReadOnly}
           />
 
           {/* Quiet Hours */}
           <div className="card">
+            {isDemoMode && (
+              <div 
+                className="mb-4 p-3 rounded-lg flex items-start gap-2"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-warning) / 0.08)',
+                  border: '1px solid rgb(var(--color-warning) / 0.15)'
+                }}
+              >
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-warning))' }} />
+                <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <strong style={{ color: 'rgb(var(--color-text))' }}>Mode démonstration:</strong> Les heures de silence ne peuvent pas être configurées en mode démo. Un abonnement est requis pour activer cette fonctionnalité.
+                </p>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div 
@@ -1078,6 +1193,7 @@ export default function NotificationSettings() {
                 checked={localPrefs.quietHoursEnabled}
                 onChange={handleToggleQuietHours}
                 size="lg"
+                disabled={isReadOnly}
               />
             </div>
             
@@ -1091,8 +1207,9 @@ export default function NotificationSettings() {
                   <input
                     type="time"
                     value={localPrefs.quietHoursStart}
-                    onChange={(e) => setLocalPrefs(prev => ({ ...prev, quietHoursStart: e.target.value }))}
-                    className="input w-full"
+                    onChange={(e) => !isReadOnly && setLocalPrefs(prev => ({ ...prev, quietHoursStart: e.target.value }))}
+                    className={`input w-full ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    disabled={isReadOnly}
                     style={{
                       backgroundColor: 'rgb(var(--color-bg-muted))',
                       borderColor: 'rgb(var(--color-border))',
@@ -1111,8 +1228,9 @@ export default function NotificationSettings() {
                   <input
                     type="time"
                     value={localPrefs.quietHoursEnd}
-                    onChange={(e) => setLocalPrefs(prev => ({ ...prev, quietHoursEnd: e.target.value }))}
-                    className="input w-full"
+                    onChange={(e) => !isReadOnly && setLocalPrefs(prev => ({ ...prev, quietHoursEnd: e.target.value }))}
+                    className={`input w-full ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    disabled={isReadOnly}
                     style={{
                       backgroundColor: 'rgb(var(--color-bg-muted))',
                       borderColor: 'rgb(var(--color-border))',
@@ -1126,6 +1244,20 @@ export default function NotificationSettings() {
 
           {/* Category Preferences */}
           <div className="card overflow-hidden">
+            {isDemoMode && (
+              <div 
+                className="mb-4 p-3 rounded-lg flex items-start gap-2"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-warning) / 0.08)',
+                  border: '1px solid rgb(var(--color-warning) / 0.15)'
+                }}
+              >
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-warning))' }} />
+                <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <strong style={{ color: 'rgb(var(--color-text))' }}>Mode démonstration:</strong> Les préférences par catégorie ne peuvent pas être modifiées en mode démo. Un abonnement est requis pour personnaliser les notifications par catégorie.
+                </p>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
@@ -1334,25 +1466,27 @@ export default function NotificationSettings() {
           </div>
 
           {/* Save Button */}
-          <div className="flex justify-end">
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="btn-primary flex items-center gap-2"
-            >
-              {isSaving ? (
-                <>
-                  <div className="loading-spinner w-4 h-4" />
-                  Enregistrement...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Enregistrer les préférences
-                </>
-              )}
-            </button>
-          </div>
+          {!isReadOnly && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="btn-primary flex items-center gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="loading-spinner w-4 h-4" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Enregistrer les préférences
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -1386,6 +1520,7 @@ interface MessagingIntegrationsProps {
   onTeamsDisconnect: () => void;
   onSlackUpdate: (updates: Partial<SlackIntegration>) => void;
   onTeamsUpdate: (updates: Partial<TeamsIntegration>) => void;
+  isReadOnly?: boolean;
 }
 
 function MessagingIntegrations({
@@ -1397,11 +1532,12 @@ function MessagingIntegrations({
   onTeamsDisconnect,
   onSlackUpdate,
   onTeamsUpdate,
+  isReadOnly = false,
 }: MessagingIntegrationsProps) {
   const [expandedIntegration, setExpandedIntegration] = useState<'slack' | 'teams' | null>(null);
 
   return (
-    <div className="card">
+    <div className="card" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
       <div className="flex items-center gap-3 mb-6">
         <div 
           className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -1433,11 +1569,13 @@ function MessagingIntegrations({
           onToggleExpand={() => setExpandedIntegration(expandedIntegration === 'slack' ? null : 'slack')}
           onConnect={onSlackConnect}
           onDisconnect={onSlackDisconnect}
+          isReadOnly={isReadOnly}
         >
           {slack?.connected && (
             <SlackSettings
               integration={slack}
               onUpdate={onSlackUpdate}
+              isReadOnly={isReadOnly}
             />
           )}
         </IntegrationCard>
@@ -1456,11 +1594,13 @@ function MessagingIntegrations({
           onToggleExpand={() => setExpandedIntegration(expandedIntegration === 'teams' ? null : 'teams')}
           onConnect={onTeamsConnect}
           onDisconnect={onTeamsDisconnect}
+          isReadOnly={isReadOnly}
         >
           {teams?.connected && (
             <TeamsSettings
               integration={teams}
               onUpdate={onTeamsUpdate}
+              isReadOnly={isReadOnly}
             />
           )}
         </IntegrationCard>
@@ -1557,6 +1697,7 @@ interface IntegrationCardProps {
   onToggleExpand: () => void;
   onConnect: () => void;
   onDisconnect: () => void;
+  isReadOnly?: boolean;
   children?: React.ReactNode;
 }
 
@@ -1573,13 +1714,14 @@ function IntegrationCard({
   onToggleExpand,
   onConnect,
   onDisconnect,
+  isReadOnly = false,
   children,
 }: IntegrationCardProps) {
   return (
     <div 
       className="rounded-xl overflow-hidden transition-all"
       style={{ 
-        backgroundColor: connected ? 'rgb(var(--color-success) / 0.03)' : 'rgb(var(--color-bg-muted))',
+        backgroundColor: connected ? 'rgb(var(--color-success) / 0.03)' : 'rgb(var(--color-surface))',
         border: connected ? '1px solid rgb(var(--color-success) / 0.2)' : '1px solid rgb(var(--color-border))',
       }}
     >
@@ -1648,7 +1790,8 @@ function IntegrationCard({
                 </button>
                 <button
                   onClick={onDisconnect}
-                  className="btn-sm flex items-center gap-1.5 hover:bg-error/10"
+                  disabled={isReadOnly}
+                  className={`btn-sm flex items-center gap-1.5 hover:bg-error/10 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{ color: 'rgb(var(--color-error))' }}
                 >
                   <Unlink className="w-4 h-4" />
@@ -1657,7 +1800,8 @@ function IntegrationCard({
             ) : (
               <button
                 onClick={onConnect}
-                className="btn-primary btn-sm flex items-center gap-1.5"
+                disabled={isReadOnly}
+                className={`btn-primary btn-sm flex items-center gap-1.5 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Link2 className="w-4 h-4" />
                 Connecter
@@ -1689,9 +1833,10 @@ function IntegrationCard({
 interface SlackSettingsProps {
   integration: SlackIntegration;
   onUpdate: (updates: Partial<SlackIntegration>) => void;
+  isReadOnly?: boolean;
 }
 
-function SlackSettings({ integration, onUpdate }: SlackSettingsProps) {
+function SlackSettings({ integration, onUpdate, isReadOnly = false }: SlackSettingsProps) {
   return (
     <div className="space-y-6">
       {/* Daily Summary */}
@@ -1705,7 +1850,8 @@ function SlackSettings({ integration, onUpdate }: SlackSettingsProps) {
           </div>
           <Toggle
             checked={integration.dailySummary}
-            onChange={() => onUpdate({ dailySummary: !integration.dailySummary })}
+            onChange={() => !isReadOnly && onUpdate({ dailySummary: !integration.dailySummary })}
+            disabled={isReadOnly}
           />
         </div>
         {integration.dailySummary && (
@@ -1716,8 +1862,9 @@ function SlackSettings({ integration, onUpdate }: SlackSettingsProps) {
             <input
               type="time"
               value={integration.dailySummaryTime}
-              onChange={(e) => onUpdate({ dailySummaryTime: e.target.value })}
-              className="input w-32"
+              onChange={(e) => !isReadOnly && onUpdate({ dailySummaryTime: e.target.value })}
+              disabled={isReadOnly}
+              className={`input w-32 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
               style={{
                 backgroundColor: 'rgb(var(--color-bg-muted))',
                 borderColor: 'rgb(var(--color-border))',
@@ -1738,7 +1885,8 @@ function SlackSettings({ integration, onUpdate }: SlackSettingsProps) {
           </div>
           <Toggle
             checked={integration.alertsEnabled}
-            onChange={() => onUpdate({ alertsEnabled: !integration.alertsEnabled })}
+            onChange={() => !isReadOnly && onUpdate({ alertsEnabled: !integration.alertsEnabled })}
+            disabled={isReadOnly}
           />
         </div>
         {integration.alertsEnabled && (
@@ -1750,13 +1898,15 @@ function SlackSettings({ integration, onUpdate }: SlackSettingsProps) {
               {(['low', 'medium', 'high', 'urgent'] as NotificationPriority[]).map((priority) => (
                 <button
                   key={priority}
+                  disabled={isReadOnly}
                   onClick={() => {
+                    if (isReadOnly) return;
                     const newPriorities = integration.alertPriorities.includes(priority)
                       ? integration.alertPriorities.filter(p => p !== priority)
                       : [...integration.alertPriorities, priority];
                     onUpdate({ alertPriorities: newPriorities });
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                   style={{
                     backgroundColor: integration.alertPriorities.includes(priority)
                       ? getPriorityColor(priority)
@@ -1794,9 +1944,10 @@ function SlackSettings({ integration, onUpdate }: SlackSettingsProps) {
 interface TeamsSettingsProps {
   integration: TeamsIntegration;
   onUpdate: (updates: Partial<TeamsIntegration>) => void;
+  isReadOnly?: boolean;
 }
 
-function TeamsSettings({ integration, onUpdate }: TeamsSettingsProps) {
+function TeamsSettings({ integration, onUpdate, isReadOnly = false }: TeamsSettingsProps) {
   return (
     <div className="space-y-6">
       {/* Daily Summary */}
@@ -1810,7 +1961,8 @@ function TeamsSettings({ integration, onUpdate }: TeamsSettingsProps) {
           </div>
           <Toggle
             checked={integration.dailySummary}
-            onChange={() => onUpdate({ dailySummary: !integration.dailySummary })}
+            onChange={() => !isReadOnly && onUpdate({ dailySummary: !integration.dailySummary })}
+            disabled={isReadOnly}
           />
         </div>
         {integration.dailySummary && (
@@ -1821,8 +1973,9 @@ function TeamsSettings({ integration, onUpdate }: TeamsSettingsProps) {
             <input
               type="time"
               value={integration.dailySummaryTime}
-              onChange={(e) => onUpdate({ dailySummaryTime: e.target.value })}
-              className="input w-32"
+              onChange={(e) => !isReadOnly && onUpdate({ dailySummaryTime: e.target.value })}
+              disabled={isReadOnly}
+              className={`input w-32 ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
               style={{
                 backgroundColor: 'rgb(var(--color-bg-muted))',
                 borderColor: 'rgb(var(--color-border))',
@@ -1843,7 +1996,8 @@ function TeamsSettings({ integration, onUpdate }: TeamsSettingsProps) {
           </div>
           <Toggle
             checked={integration.alertsEnabled}
-            onChange={() => onUpdate({ alertsEnabled: !integration.alertsEnabled })}
+            onChange={() => !isReadOnly && onUpdate({ alertsEnabled: !integration.alertsEnabled })}
+            disabled={isReadOnly}
           />
         </div>
         {integration.alertsEnabled && (
@@ -1855,13 +2009,15 @@ function TeamsSettings({ integration, onUpdate }: TeamsSettingsProps) {
               {(['low', 'medium', 'high', 'urgent'] as NotificationPriority[]).map((priority) => (
                 <button
                   key={priority}
+                  disabled={isReadOnly}
                   onClick={() => {
+                    if (isReadOnly) return;
                     const newPriorities = integration.alertPriorities.includes(priority)
                       ? integration.alertPriorities.filter(p => p !== priority)
                       : [...integration.alertPriorities, priority];
                     onUpdate({ alertPriorities: newPriorities });
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isReadOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
                   style={{
                     backgroundColor: integration.alertPriorities.includes(priority)
                       ? getPriorityColor(priority)

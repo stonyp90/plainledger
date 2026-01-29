@@ -20,19 +20,19 @@ import {
   Sparkles,
   Brain,
   Zap,
-  HelpCircle,
 } from 'lucide-react';
 import { 
   HealthScoreGauge, 
-  VarianceChart, 
   TrendChart,
   CurrentRatioCard,
   QuickRatioCard,
   DebtToEquityCard,
+  INDUSTRY_LABELS,
 } from '../components/charts';
-import { InfoBanner } from '../components/HelpTooltip';
+import type { IndustryType } from '../components/charts';
 import { AnomalyTooltip, Tooltip, InfoTooltip } from '../components/Tooltip';
 import Toggle, { ToggleGroup } from '../components/Toggle';
+import { usePremiumFeature } from '../components/PremiumFeatureGate';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -101,8 +101,9 @@ export default function AnomalyDashboard() {
   const [expandedAnomalies, setExpandedAnomalies] = useState<Set<string>>(new Set());
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showTip, setShowTip] = useState(true);
-  const [useAIDetection, setUseAIDetection] = useState(true);
+  const [useAIDetection, setUseAIDetection] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryType>('real_estate');
+  const { hasAccess: hasAIAccess } = usePremiumFeature('advancedAnalytics');
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
   const { showToast } = useNotifications();
@@ -357,18 +358,18 @@ export default function AnomalyDashboard() {
               <InfoTooltip
                 title="Détection d'anomalies"
                 titleEn="Anomaly Detection"
-                content="Notre système analyse automatiquement vos données financières pour détecter les incohérences, valeurs aberrantes, et patterns inhabituels."
-                contentEn="Our system automatically analyzes your financial data to detect inconsistencies, outliers, and unusual patterns."
-                example="Variance soudaine de 50% sur un compte, solde négatif sur un actif, ratio de liquidité en baisse continue."
-                exampleEn="Sudden 50% variance on an account, negative balance on an asset, continuously declining liquidity ratio."
-                impact="La détection précoce permet de corriger les erreurs avant la clôture et d'identifier les risques potentiels."
-                impactEn="Early detection helps correct errors before closing and identify potential risks."
+                content="Détecte automatiquement les incohérences, valeurs aberrantes et patterns inhabituels dans vos données financières."
+                contentEn="Automatically detects inconsistencies, outliers, and unusual patterns in your financial data."
+                example="Variance de 50%, solde négatif sur actif, ratio de liquidité en baisse."
+                exampleEn="50% variance, negative asset balance, declining liquidity ratio."
+                impact="Permet de corriger les erreurs avant la clôture et d'identifier les risques."
+                impactEn="Helps correct errors before closing and identify potential risks."
               />
             </div>
             <p className="text-xs sm:text-sm mt-1 hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn 
-                ? 'Analyze inconsistencies and anomalies in your financial data'
-                : 'Analysez les incohérences et anomalies dans vos données financières'}
+                ? 'Detect and analyze financial data anomalies'
+                : 'Détectez et analysez les anomalies dans vos données financières'}
             </p>
           </div>
           
@@ -394,19 +395,36 @@ export default function AnomalyDashboard() {
                   value: 'ai', 
                   label: isEn ? 'AI Analysis' : 'Analyse IA',
                   icon: <Sparkles className="w-3.5 h-3.5" />,
+                  badge: !hasAIAccess ? 'PRO' : undefined,
+                  disabled: !hasAIAccess,
                 },
               ]}
               value={useAIDetection ? 'ai' : 'standard'}
-              onChange={(val) => setUseAIDetection(val === 'ai')}
+              onChange={(val) => {
+                if (val === 'ai' && !hasAIAccess) return;
+                setUseAIDetection(val === 'ai');
+              }}
               size="sm"
             />
             <InfoTooltip
               title="Mode d'analyse"
               titleEn="Analysis Mode"
-              content="Standard: Détection basée sur des seuils configurables. IA: Algorithmes avancés incluant saisonnalité, corrélations, loi de Benford, et plus."
-              contentEn="Standard: Threshold-based detection. AI: Advanced algorithms including seasonality, correlations, Benford's Law, and more."
-              impact="Le mode IA offre une meilleure précision mais utilise plus de ressources."
-              impactEn="AI mode offers better accuracy but uses more resources."
+              content={hasAIAccess 
+                ? "Standard: Détection basée sur des seuils configurables. IA: Algorithmes avancés incluant saisonnalité, corrélations, loi de Benford, et plus."
+                : "Standard: Détection basée sur des seuils configurables. IA: Disponible avec le plan Professional ou Enterprise."
+              }
+              contentEn={hasAIAccess 
+                ? "Standard: Threshold-based detection. AI: Advanced algorithms including seasonality, correlations, Benford's Law, and more."
+                : "Standard: Threshold-based detection. AI: Available with Professional or Enterprise plan."
+              }
+              impact={hasAIAccess 
+                ? "Le mode IA offre une meilleure précision mais utilise plus de ressources."
+                : "Passez au plan Professional pour débloquer l'analyse IA avancée."
+              }
+              impactEn={hasAIAccess 
+                ? "AI mode offers better accuracy but uses more resources."
+                : "Upgrade to Professional to unlock advanced AI analysis."
+              }
               size="sm"
             />
           </div>
@@ -423,7 +441,7 @@ export default function AnomalyDashboard() {
               onClick={handleRefresh}
               disabled={isRefreshing || isAIAnalyzing}
               className="btn-secondary flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 sm:py-2"
-              title={isEn ? 'Rerun analysis to detect new anomalies' : 'Relancer l\'analyse pour détecter les nouvelles anomalies'}
+              title={isEn ? 'Refresh analysis' : 'Actualiser l\'analyse'}
             >
               <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing || isAIAnalyzing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">
@@ -433,7 +451,7 @@ export default function AnomalyDashboard() {
             <Link 
               to="/app/settings?tab=anomalies" 
               className="btn-secondary flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 sm:py-2"
-              title={isEn ? 'Customize anomaly detection thresholds' : 'Personnaliser les seuils de détection d\'anomalies'}
+              title={isEn ? 'Configure thresholds' : 'Configurer les seuils'}
             >
               <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{isEn ? 'Configure' : 'Configurer'}</span>
@@ -495,220 +513,67 @@ export default function AnomalyDashboard() {
         </div>
       )}
 
-      {/* Helpful tip banner */}
-      {showTip && analysis.summary.total > 0 && (
-        <InfoBanner
-          type="tip"
-          title="Comment utiliser cette page"
-          description="Les anomalies sont classées par sévérité: Critique (action immédiate requise), Attention (à surveiller), Info (pour information). Cliquez sur une anomalie pour voir les détails et la recommandation."
-          dismissible
-          onDismiss={() => setShowTip(false)}
-        />
-      )}
-
-      {/* Health Score & Summary - Optimized 3-column layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {/* Health Score Card */}
-        <div className="md:col-span-1">
-          <HealthScoreGauge
-            score={combinedAnalysis.healthScore}
-            criticalCount={combinedAnalysis.summary.critical}
-            warningCount={combinedAnalysis.summary.warning}
-            infoCount={combinedAnalysis.summary.info}
-            size="md"
-            isEn={isEn}
-            onClick={scrollToAnomalyList}
-          />
-        </div>
-        
-        {/* Summary Card */}
-        <div className="md:col-span-1 card">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Summary' : 'Résumé'}
-            </h3>
-            <InfoTooltip
-              title="Résumé des anomalies"
-              titleEn="Anomaly Summary"
-              content="Vue d'ensemble des anomalies détectées, groupées par niveau de sévérité."
-              contentEn="Overview of detected anomalies, grouped by severity level."
-              size="sm"
-            />
-          </div>
-          
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Total anomalies' : 'Total anomalies'}
-            </span>
-            <span className="font-bold text-2xl tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
-              {combinedAnalysis.summary.total}
-            </span>
-          </div>
-          
-          <div 
-            className="h-2.5 rounded-full overflow-hidden flex mb-4"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            {combinedAnalysis.summary.total > 0 && (
-              <>
-                {combinedAnalysis.summary.critical > 0 && (
-                  <div 
-                    className="h-full transition-all duration-500"
-                    style={{ 
-                      width: `${(combinedAnalysis.summary.critical / combinedAnalysis.summary.total) * 100}%`,
-                      backgroundColor: 'rgb(var(--color-error))'
-                    }}
-                  />
-                )}
-                {combinedAnalysis.summary.warning > 0 && (
-                  <div 
-                    className="h-full transition-all duration-500"
-                    style={{ 
-                      width: `${(combinedAnalysis.summary.warning / combinedAnalysis.summary.total) * 100}%`,
-                      backgroundColor: 'rgb(var(--color-warning))'
-                    }}
-                  />
-                )}
-                {combinedAnalysis.summary.info > 0 && (
-                  <div 
-                    className="h-full transition-all duration-500"
-                    style={{ 
-                      width: `${(combinedAnalysis.summary.info / combinedAnalysis.summary.total) * 100}%`,
-                      backgroundColor: 'rgb(var(--color-info))'
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-3 gap-2">
-            <div 
-              className="text-center p-2 rounded-lg transition-transform hover:scale-105"
-              style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-            >
-              <div className="font-bold text-lg" style={{ color: 'rgb(var(--color-error))' }}>
-                {combinedAnalysis.summary.critical}
-              </div>
-              <div className="text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Critical' : 'Critiques'}
-              </div>
-            </div>
-            <div 
-              className="text-center p-2 rounded-lg transition-transform hover:scale-105"
-              style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
-            >
-              <div className="font-bold text-lg" style={{ color: 'rgb(var(--color-warning))' }}>
-                {combinedAnalysis.summary.warning}
-              </div>
-              <div className="text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                Attention
-              </div>
-            </div>
-            <div 
-              className="text-center p-2 rounded-lg transition-transform hover:scale-105"
-              style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
-            >
-              <div className="font-bold text-lg" style={{ color: 'rgb(var(--color-info))' }}>
-                {combinedAnalysis.summary.info}
-              </div>
-              <div className="text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>Info</div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Top Risks Card */}
-        <div className="md:col-span-2 xl:col-span-1 card">
-          <p className="text-base font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Top Risks' : 'Risques principaux'}
-          </p>
-          {combinedAnalysis.summary.topRisks && combinedAnalysis.summary.topRisks.length > 0 ? (
-            <ul className="space-y-2">
-              {combinedAnalysis.summary.topRisks.slice(0, 5).map((risk, idx) => (
-                <Tooltip key={idx} content={risk} position="bottom" delay={300}>
-                  <li 
-                    className="text-sm flex items-start gap-2 p-2 rounded-lg cursor-help hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                    style={{ 
-                      color: 'rgb(var(--color-text-secondary))' 
-                    }}
-                  >
-                    <span 
-                      className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                      style={{ backgroundColor: idx < 2 ? 'rgb(var(--color-error))' : 'rgb(var(--color-warning))' }}
-                    />
-                    <span className="line-clamp-2 break-words min-w-0">{risk}</span>
-                  </li>
-                </Tooltip>
-              ))}
-            </ul>
-          ) : (
-            <div 
-              className="flex items-center justify-center h-28 rounded-xl"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-            >
-              <div className="text-center">
-                <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
-                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? 'No critical risks' : 'Aucun risque critique'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Consolidated Grid: Ratios + Charts - Better space utilization */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Ratios - More compact */}
-        <div className="lg:col-span-1">
-          <h3 className="text-base font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Financial Ratios' : 'Ratios financiers'}
-          </h3>
-          <div className="space-y-3">
-            <CurrentRatioCard value={ratios.currentRatio} />
-            <QuickRatioCard value={ratios.quickRatio} />
-            <DebtToEquityCard value={ratios.debtToEquity} />
-          </div>
-        </div>
-
-        {/* Right: Trend Charts - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <h3 className="text-base font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Trend Analysis' : 'Analyse des tendances'}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <TrendChart
-              data={revenueData}
-              title={isEn ? "Revenue Trend" : "Évolution des revenus"}
-              titleEn="Revenue Trend"
-              subtitle={isEn ? "Automatic outlier detection" : "Détection automatique des valeurs aberrantes"}
-              subtitleEn="Automatic outlier detection"
-              isEn={isEn}
-            />
-            <TrendChart
-              data={expenseData}
-              title={isEn ? "Expense Trend" : "Évolution des dépenses"}
-              titleEn="Expense Trend"
-              subtitle={isEn ? "Trend and alert thresholds" : "Tendance et seuils d'alerte"}
-              subtitleEn="Trend and alert thresholds"
-              color="rgb(var(--color-error))"
-              isEn={isEn}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Variance Chart - Full Width */}
-      <VarianceChart
-        data={accountsData.slice(0, 8).map(a => ({
-          label: a.name,
-          current: a.current,
-          prior: a.prior,
-          code: a.code,
+      {/* Health Score & Top Risks - Merged responsive card */}
+      <HealthScoreGauge
+        score={combinedAnalysis.healthScore}
+        criticalCount={combinedAnalysis.summary.critical}
+        warningCount={combinedAnalysis.summary.warning}
+        infoCount={combinedAnalysis.summary.info}
+        size="md"
+        isEn={isEn}
+        onClick={scrollToAnomalyList}
+        topRisks={combinedAnalysis.summary.topRisks}
+        anomalies={combinedAnalysis.anomalies.map(a => ({
+          id: a.id,
+          title: a.title,
+          severity: a.severity,
+          description: a.description,
         }))}
-        title={isEn ? "Account Variance Analysis" : "Analyse des variances par compte"}
-        thresholds={thresholds}
+        industry={INDUSTRY_LABELS[selectedIndustry]}
       />
+
+      {/* Financial Analysis Section - Responsive grid */}
+      <div className="space-y-4">
+        {/* Section header */}
+        <h3 className="text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+          {isEn ? 'Financial Analysis' : 'Analyse financière'}
+        </h3>
+
+        {/* Ratios + Trends Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+          {/* Financial Ratios - 4 columns on XL */}
+          <div className="xl:col-span-4 space-y-3">
+            <CurrentRatioCard value={ratios.currentRatio} industry={selectedIndustry} isEn={isEn} />
+            <QuickRatioCard value={ratios.quickRatio} industry={selectedIndustry} isEn={isEn} />
+            <DebtToEquityCard value={ratios.debtToEquity} industry={selectedIndustry} isEn={isEn} />
+          </div>
+
+          {/* Trend Charts - 8 columns on XL, stacked on mobile */}
+          <div className="xl:col-span-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TrendChart
+                data={revenueData}
+                title={isEn ? "Rental Income" : "Revenus locatifs"}
+                titleEn="Rental Income"
+                subtitle={isEn ? "Monthly rent collection analysis" : "Analyse mensuelle des loyers perçus"}
+                subtitleEn="Monthly rent collection analysis"
+                height={220}
+                isEn={isEn}
+              />
+              <TrendChart
+                data={expenseData}
+                title={isEn ? "Operating Expenses" : "Charges d'exploitation"}
+                titleEn="Operating Expenses"
+                subtitle={isEn ? "Maintenance, taxes, insurance" : "Entretien, taxes, assurances"}
+                subtitleEn="Maintenance, taxes, insurance"
+                color="rgb(var(--color-text-muted))"
+                height={220}
+                isEn={isEn}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Anomaly List - Responsive */}
       <div ref={anomalyListRef} className="card">
@@ -718,7 +583,7 @@ export default function AnomalyDashboard() {
               {isEn ? 'Detected Anomalies' : 'Anomalies détectées'}
             </h3>
             <p className="text-[10px] sm:text-xs hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Click on an anomaly to see details and recommendation' : 'Cliquez sur une anomalie pour voir les détails'}
+              {isEn ? 'Click an anomaly for details' : 'Cliquez sur une anomalie pour les détails'}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -754,10 +619,10 @@ export default function AnomalyDashboard() {
               style={{ color: 'rgb(var(--color-success))' }}
             />
             <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-              Aucune anomalie détectée
+              {isEn ? 'No anomalies detected' : 'Aucune anomalie détectée'}
             </p>
             <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              Vos données financières sont cohérentes
+              {isEn ? 'Your financial data is consistent' : 'Vos données financières sont cohérentes'}
             </p>
           </div>
         ) : (

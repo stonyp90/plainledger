@@ -16,10 +16,731 @@ import {
   Shield,
   Lock,
   Eye,
+  MousePointerClick,
+  FileCheck,
+  BarChart3,
+  Headphones,
+  Sparkles,
+  Users,
+  Calendar,
+  Crown,
+  Check,
+  Mail,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { InfoBanner } from '../components/HelpTooltip';
 import { useTenant, useCanPerform } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import UpgradeRequestForm from '../components/UpgradeRequestForm';
+
+// Calendly link for upgrade consultations
+const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
+
+// Step type definition
+type StepType = {
+  number: number;
+  titleEn: string;
+  titleFr: string;
+  descEn: string;
+  descFr: string;
+  icon: any;
+  benefitsEn: string[];
+  benefitsFr: string[];
+};
+
+// Interactive Timeline Component
+function InteractiveTimeline({ steps, isEn, onSelectProvider }: { 
+  steps: StepType[]; 
+  isEn: boolean;
+  onSelectProvider: () => void;
+}) {
+  const [activeStep, setActiveStep] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const handlePrevious = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setActiveStep((prev) => (prev === 0 ? steps.length - 1 : prev - 1));
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 300);
+  };
+
+  const handleNext = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setActiveStep((prev) => (prev === steps.length - 1 ? 0 : prev + 1));
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 300);
+  };
+
+  const handleStepClick = (index: number) => {
+    if (index === activeStep) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setActiveStep(index);
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 300);
+  };
+
+  const currentStep = steps[activeStep];
+
+  return (
+    <div className="mb-10">
+
+      {/* Progress Timeline */}
+      <div className="mb-8 max-w-4xl mx-auto w-full">
+        <div className="flex items-center justify-between relative">
+          {/* Progress Line Background */}
+          <div 
+            className="absolute top-5 left-0 right-0 h-1 rounded-full z-0"
+            style={{ backgroundColor: 'rgb(var(--color-border))' }}
+          />
+          
+          {/* Progress Line Fill */}
+          <div 
+            className="absolute top-5 left-0 h-1 rounded-full z-10 transition-all duration-500 ease-out"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-600))',
+              width: `${((activeStep + 1) / steps.length) * 100}%`,
+            }}
+          />
+          
+          {/* Step Indicators - Clickable for Navigation */}
+          {steps.map((step, index) => {
+            const isActive = index === activeStep;
+            const isCompleted = index < activeStep;
+            
+            return (
+              <button
+                key={step.number}
+                onClick={() => handleStepClick(index)}
+                className="relative z-20 flex flex-col items-center flex-1 group cursor-pointer"
+                aria-label={isEn ? `Go to step ${step.number}: ${step.titleEn}` : `Aller à l'étape ${step.number}: ${step.titleFr}`}
+              >
+                <div 
+                  className={`w-14 h-14 rounded-full flex items-center justify-center text-base font-bold transition-all duration-300 shadow-lg group-hover:scale-110 ${
+                    isActive ? 'scale-125 ring-4' : 'scale-100'
+                  }`}
+                  style={{ 
+                    backgroundColor: isActive || isCompleted
+                      ? 'rgb(var(--color-primary-600))'
+                      : 'rgb(var(--color-bg-muted))',
+                    color: isActive || isCompleted ? 'white' : 'rgb(var(--color-text-muted))',
+                    border: isActive ? '3px solid rgb(var(--color-primary-400))' : '2px solid transparent',
+                    ringColor: isActive ? 'rgb(var(--color-primary-200))' : 'transparent',
+                  }}
+                >
+                  {isCompleted ? (
+                    <Check className="w-7 h-7" />
+                  ) : (
+                    step.number
+                  )}
+                </div>
+                <span 
+                  className={`mt-2 text-xs font-medium text-center max-w-[120px] hidden sm:block transition-all ${
+                    isActive ? 'font-bold scale-105' : 'group-hover:font-semibold'
+                  }`}
+                  style={{ 
+                    color: isActive 
+                      ? 'rgb(var(--color-primary-600))' 
+                      : 'rgb(var(--color-text-secondary))' 
+                  }}
+                >
+                  {isEn ? step.titleEn : step.titleFr}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Active Step Display with Zoom Effect */}
+      <div id="timeline-content" className="max-w-4xl mx-auto">
+        <div
+          className={`rounded-2xl p-8 relative overflow-hidden transition-all duration-500 shadow-2xl ${
+            isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+          }`}
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '3px solid rgb(var(--color-primary-600))',
+          }}
+        >
+          {/* Background gradient */}
+          <div 
+            className="absolute inset-0 opacity-5"
+            style={{ 
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-700)) 100%)',
+            }}
+          />
+
+          <div className="relative">
+            {/* Navigation Arrows - Top Right */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <button
+                onClick={handlePrevious}
+                className="p-2 rounded-lg transition-all hover:scale-110 hover:shadow-md"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text))',
+                }}
+                aria-label={isEn ? 'Previous step' : 'Étape précédente'}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="p-2 rounded-lg transition-all hover:scale-110 hover:shadow-md"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text))',
+                }}
+                aria-label={isEn ? 'Next step' : 'Étape suivante'}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Step Header */}
+            <div className="flex items-start gap-6 mb-6">
+              {/* Icon - Clickable */}
+              <button
+                onClick={() => handleStepClick((activeStep + 1) % steps.length)}
+                className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transition-all hover:scale-110 hover:rotate-3 cursor-pointer"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-600))',
+                }}
+                aria-label={isEn ? 'Go to next step' : 'Aller à l\'étape suivante'}
+              >
+                <currentStep.icon className="w-10 h-10 text-white" />
+              </button>
+
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <span 
+                    className="px-3 py-1 rounded-full text-xs font-bold"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-primary-100))',
+                      color: 'rgb(var(--color-primary-700))',
+                    }}
+                  >
+                    {isEn ? `Step ${currentStep.number}` : `Étape ${currentStep.number}`}
+                  </span>
+                  <span 
+                    className="text-sm font-medium"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {activeStep + 1} / {steps.length}
+                  </span>
+                </div>
+                <h3 
+                  className="text-2xl sm:text-3xl font-bold mb-3"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn ? currentStep.titleEn : currentStep.titleFr}
+                </h3>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p 
+              className="text-base sm:text-lg mb-6 leading-relaxed"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? currentStep.descEn : currentStep.descFr}
+            </p>
+
+            {/* Benefits */}
+            <div className="flex flex-wrap gap-3">
+              {(isEn ? currentStep.benefitsEn : currentStep.benefitsFr).map((benefit, idx) => (
+                <span 
+                  key={idx}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                    color: 'rgb(var(--color-success))',
+                    border: '1px solid rgb(var(--color-success) / 0.2)',
+                  }}
+                >
+                  <Check className="w-4 h-4" />
+                  {benefit}
+                </span>
+              ))}
+            </div>
+
+            {/* CTA for last step */}
+            {activeStep === steps.length - 1 && (
+              <div className="mt-8 pt-6 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                <button
+                  onClick={onSelectProvider}
+                  className="group flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-lg mx-auto"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-600))',
+                    color: 'white',
+                  }}
+                >
+                  {isEn ? 'Get Started' : 'Commencer'}
+                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Full-page subscription gate for free users
+function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  
+  const steps = [
+    {
+      number: 1,
+      titleEn: 'Select your software',
+      titleFr: 'Sélectionnez votre logiciel',
+      descEn: 'Choose from QuickBooks, Xero, Sage, FreshBooks, Wave, or upload a CSV. No technical skills required — just pick your accounting system and we\'ll handle the rest.',
+      descFr: 'Choisissez parmi QuickBooks, Xero, Sage, FreshBooks, Wave, ou téléchargez un CSV. Aucune compétence technique requise — choisissez simplement votre système comptable et nous nous occupons du reste.',
+      icon: MousePointerClick,
+      benefitsEn: ['6+ supported platforms', 'CSV import fallback', 'No coding needed'],
+      benefitsFr: ['6+ plateformes supportées', 'Import CSV disponible', 'Aucun code requis'],
+    },
+    {
+      number: 2,
+      titleEn: 'Authorize securely',
+      titleFr: 'Autorisez en toute sécurité',
+      descEn: 'Click one button to grant read-only access. Your data stays encrypted with AES-256. We never modify your accounting records — only read.',
+      descFr: 'Cliquez sur un bouton pour accorder l\'accès en lecture seule. Vos données restent chiffrées avec AES-256. Nous ne modifions jamais vos données — lecture seule.',
+      icon: Shield,
+      benefitsEn: ['Read-only access', 'AES-256 encryption', 'Bank-level security'],
+      benefitsFr: ['Accès lecture seule', 'Chiffrement AES-256', 'Sécurité bancaire'],
+    },
+    {
+      number: 3,
+      titleEn: 'Automatic sync',
+      titleFr: 'Synchronisation automatique',
+      descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed — ever. Set it once and always have up-to-date financial insights.',
+      descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire — jamais. Configurez une fois et ayez toujours des insights à jour.',
+      icon: RefreshCw,
+      benefitsEn: ['Daily auto-sync', 'Zero manual work', 'Real-time updates'],
+      benefitsFr: ['Sync auto quotidien', 'Zéro travail manuel', 'Mises à jour en temps réel'],
+    },
+    {
+      number: 4,
+      titleEn: 'Get insights instantly',
+      titleFr: 'Obtenez des insights instantanément',
+      descEn: 'View board-ready reports, detect anomalies, and track your financial health in plain language. Everything is automatic — no accounting degree required.',
+      descFr: 'Consultez des rapports prêts pour le conseil, détectez les anomalies et suivez votre santé financière en langage clair. Tout est automatique — aucun diplôme en comptabilité requis.',
+      icon: BarChart3,
+      benefitsEn: ['Board-ready reports', 'Anomaly detection', 'Plain language insights'],
+      benefitsFr: ['Rapports prêts pour le CA', 'Détection d\'anomalies', 'Insights en langage clair'],
+    },
+  ];
+
+  const handleUpgradeClick = () => {
+    window.open(CALENDLY_URL, '_blank');
+  };
+
+  return (
+    <div className="min-h-[calc(100vh-200px)] flex flex-col">
+      {/* Enhanced Header with Actionable Banner */}
+      <div className="text-center mb-8">
+        {/* Actionable Subscription Banner */}
+        <div 
+          className="inline-flex flex-col sm:flex-row items-center justify-center gap-3 px-5 py-3 rounded-xl mb-6 max-w-2xl mx-auto transition-all hover:shadow-md"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+            border: '2px solid rgb(var(--color-warning) / 0.3)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5" style={{ color: 'rgb(var(--color-warning))' }} />
+            <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-warning))' }}>
+              {isEn ? 'Subscription Required' : 'Abonnement requis'}
+            </span>
+          </div>
+          <div className="hidden sm:block w-px h-6" style={{ backgroundColor: 'rgb(var(--color-warning) / 0.3)' }} />
+          <button
+            onClick={() => setShowEmailForm(true)}
+            className="group flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-warning))',
+              color: 'white',
+            }}
+          >
+            {isEn ? 'Upgrade Now' : 'Mettre à niveau'}
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+          </button>
+        </div>
+        
+        <h1 
+          className="text-3xl sm:text-4xl font-bold mb-4"
+          style={{ color: 'rgb(var(--color-text))' }}
+        >
+          {isEn ? 'Connect Your Accounting Software' : 'Connectez votre logiciel comptable'}
+        </h1>
+        <p 
+          className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
+          style={{ color: 'rgb(var(--color-text-muted))' }}
+        >
+          {isEn 
+            ? 'Unlock powerful financial insights in just 4 simple steps. Upgrade to a paid plan to get started.'
+            : 'Débloquez des insights financiers puissants en seulement 4 étapes simples. Passez à un plan payant pour commencer.'}
+        </p>
+      </div>
+
+      {/* Interactive Timeline */}
+      <InteractiveTimeline 
+        steps={steps} 
+        isEn={isEn}
+        onSelectProvider={() => setShowEmailForm(true)}
+      />
+
+      {/* Enhanced Upgrade CTA Section - No Green Background */}
+      <div 
+        className="rounded-2xl p-8 sm:p-10 text-center relative overflow-hidden shadow-lg"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))',
+        }}
+      >
+        {/* Animated background decoration */}
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `radial-gradient(circle at 30% 20%, white 2px, transparent 2px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)`,
+            backgroundSize: '60px 60px, 40px 40px',
+          }}
+        />
+        
+        {/* Sparkle accents - Subtle */}
+        <Sparkles className="absolute top-6 left-6 w-6 h-6 animate-pulse" style={{ color: 'rgb(var(--color-primary-300) / 0.3)' }} />
+        <Sparkles className="absolute bottom-6 right-6 w-5 h-5 animate-pulse" style={{ color: 'rgb(var(--color-primary-300) / 0.3)', animationDelay: '1s' }} />
+
+        <div className="relative">
+          {/* Enhanced Crown icon with animation */}
+          <div 
+            className="w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+            style={{ backgroundColor: 'rgb(var(--color-primary-100))' }}
+            onClick={() => setShowEmailForm(true)}
+          >
+            <Crown className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-600))' }} />
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Ready to unlock the full power of PlainLedger?' : 'Prêt à débloquer toute la puissance de PlainLedger?'}
+          </h2>
+          <p className="mb-8 max-w-xl mx-auto text-base leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn 
+              ? 'Subscribe now and connect your accounting software in minutes. Our team is here to help you every step of the way.'
+              : 'Abonnez-vous maintenant et connectez votre logiciel comptable en quelques minutes. Notre équipe est là pour vous aider à chaque étape.'}
+          </p>
+
+          {/* What's included */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            {[
+              isEn ? 'Unlimited connections' : 'Connexions illimitées',
+              isEn ? 'Daily auto-sync' : 'Sync auto quotidien',
+              isEn ? 'Board-ready reports' : 'Rapports prêts pour le CA',
+              isEn ? 'Priority support' : 'Support prioritaire',
+            ].map((item, idx) => (
+              <span 
+                key={idx}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-100))',
+                  color: 'rgb(var(--color-primary-700))',
+                }}
+              >
+                <Check className="w-4 h-4" />
+                {item}
+              </span>
+            ))}
+          </div>
+
+          {/* Enhanced CTA Buttons */}
+          {showEmailForm ? (
+            <div 
+              className="max-w-md mx-auto rounded-xl p-6 text-left shadow-xl"
+              style={{ backgroundColor: 'white' }}
+            >
+              <UpgradeRequestForm
+                feature="customReports"
+                compact={false}
+                showCalendlyOption={true}
+                onSubmitted={() => setShowEmailForm(false)}
+                title={isEn ? 'Connect Accounting Software' : 'Connecter un logiciel comptable'}
+                description={isEn ? 'We\'ll get back to you within 24 hours.' : 'Nous vous répondrons dans les 24 heures.'}
+              />
+              <button
+                onClick={() => setShowEmailForm(false)}
+                className="mt-4 text-sm underline opacity-70 hover:opacity-100 transition-opacity"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn ? '← Back to options' : '← Retour aux options'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <button
+                onClick={() => setShowEmailForm(true)}
+                className="group flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-lg border-2"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-100))',
+                  color: 'rgb(var(--color-primary-700))',
+                  borderColor: 'rgb(var(--color-primary-300))',
+                }}
+              >
+                <Mail className="w-5 h-5" />
+                {isEn ? 'Request Information' : 'Demander des infos'}
+              </button>
+              <button
+                onClick={handleUpgradeClick}
+                className="group flex items-center gap-2 px-10 py-3.5 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-2xl shadow-lg"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-600))',
+                  color: 'white',
+                }}
+              >
+                <Calendar className="w-5 h-5" />
+                {isEn ? 'Schedule a Call' : 'Planifier un appel'}
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          )}
+          
+          {/* Quick action hint */}
+          {!showEmailForm && (
+            <p className="text-sm mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? '✨ Start your journey in under 5 minutes' : '✨ Commencez votre parcours en moins de 5 minutes'}
+            </p>
+          )}
+
+          {/* Trust badges */}
+          <div className="mt-8 flex flex-wrap justify-center gap-6 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              {isEn ? 'AES-256 Encryption' : 'Chiffrement AES-256'}
+            </div>
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              {isEn ? 'Bank-Level Security' : 'Sécurité bancaire'}
+            </div>
+            <div className="flex items-center gap-2">
+              <Headphones className="w-4 h-4" />
+              {isEn ? 'Customer Success Support' : 'Support client dédié'}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Interactive onboarding steps component
+function OnboardingSteps({ isEn, onSelectProvider }: { isEn: boolean; onSelectProvider: () => void }) {
+  const [activeStep, setActiveStep] = useState(1);
+  
+  const steps = [
+    {
+      number: 1,
+      titleEn: 'Select your software',
+      titleFr: 'Sélectionnez votre logiciel',
+      descEn: 'Choose from QuickBooks, Xero, Sage, FreshBooks, Wave, or upload a CSV. No technical skills required.',
+      descFr: 'Choisissez parmi QuickBooks, Xero, Sage, FreshBooks, Wave, ou téléchargez un CSV. Aucune compétence technique requise.',
+      icon: MousePointerClick,
+      actionEn: 'Browse integrations below',
+      actionFr: 'Parcourir les intégrations ci-dessous',
+    },
+    {
+      number: 2,
+      titleEn: 'Authorize securely',
+      titleFr: 'Autorisez en toute sécurité',
+      descEn: 'Click one button to grant read-only access. Your data stays encrypted with AES-256 and we never modify your records.',
+      descFr: 'Cliquez sur un bouton pour accorder l\'accès en lecture seule. Vos données restent chiffrées avec AES-256 et nous ne modifions jamais vos enregistrements.',
+      icon: Shield,
+      actionEn: 'One-click authorization',
+      actionFr: 'Autorisation en un clic',
+    },
+    {
+      number: 3,
+      titleEn: 'Automatic sync',
+      titleFr: 'Synchronisation automatique',
+      descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed—ever.',
+      descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire.',
+      icon: RefreshCw,
+      actionEn: 'Set it and forget it',
+      actionFr: 'Configurez et oubliez',
+    },
+    {
+      number: 4,
+      titleEn: 'Get insights instantly',
+      titleFr: 'Obtenez des insights instantanément',
+      descEn: 'View board-ready reports, detect anomalies, and track your financial health in plain language.',
+      descFr: 'Consultez des rapports prêts pour le conseil, détectez les anomalies et suivez votre santé financière en langage clair.',
+      icon: BarChart3,
+      actionEn: 'Start analyzing',
+      actionFr: 'Commencer l\'analyse',
+    },
+  ];
+
+  return (
+    <div className="mb-8">
+      {/* Main onboarding card */}
+      <div 
+        className="rounded-xl overflow-hidden"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))',
+        }}
+      >
+        {/* Header - thin and elegant */}
+        <div 
+          className="px-5 py-3 sm:px-6 sm:py-3"
+          style={{ 
+            background: 'rgb(var(--color-primary-600))',
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-4 h-4 text-yellow-300" />
+              <span className="text-xs font-medium text-white/70 uppercase tracking-wide">
+                {isEn ? 'Get Started in Minutes' : 'Démarrez en quelques minutes'}
+              </span>
+              <span className="text-white/40">•</span>
+              <h2 className="text-sm sm:text-base font-semibold text-white">
+                {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
+              </h2>
+            </div>
+            <div 
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
+            >
+              <Headphones className="w-3.5 h-3.5 text-white/80" />
+              <span className="text-xs text-white/80 font-medium">
+                {isEn ? 'Support included with every plan' : 'Support inclus avec chaque plan'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Steps navigation */}
+        <div className="px-5 py-3 sm:px-6 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {steps.map((step, index) => (
+              <button
+                key={step.number}
+                onClick={() => setActiveStep(step.number)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all duration-200 min-w-fit"
+                style={{ 
+                  backgroundColor: activeStep === step.number 
+                    ? 'rgb(var(--color-primary-600))' 
+                    : 'transparent',
+                  color: activeStep === step.number 
+                    ? 'white' 
+                    : 'rgb(var(--color-text-secondary))',
+                }}
+              >
+                <div 
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                  style={{ 
+                    backgroundColor: activeStep === step.number 
+                      ? 'white' 
+                      : 'rgb(var(--color-bg-muted))',
+                    color: activeStep === step.number 
+                      ? 'rgb(var(--color-primary-600))' 
+                      : 'rgb(var(--color-text-secondary))',
+                  }}
+                >
+                  {step.number}
+                </div>
+                <span className="font-medium text-xs hidden sm:inline">
+                  {isEn ? step.titleEn : step.titleFr}
+                </span>
+                {index < steps.length - 1 && (
+                  <ArrowRight 
+                    className="w-3.5 h-3.5 hidden lg:block ml-1" 
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Active step content */}
+        <div className="p-5 sm:p-6">
+          {steps.map((step) => (
+            <div 
+              key={step.number}
+              className={`transition-all duration-300 ${activeStep === step.number ? 'block' : 'hidden'}`}
+            >
+              <div className="flex items-start gap-4">
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-600))',
+                  }}
+                >
+                  <step.icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 
+                    className="text-sm font-semibold mb-1"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
+                    {isEn ? `Step ${step.number}: ${step.titleEn}` : `Étape ${step.number}: ${step.titleFr}`}
+                  </h3>
+                  <p 
+                    className="text-sm leading-relaxed"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    {isEn ? step.descEn : step.descFr}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Customer success banner */}
+        <div 
+          className="px-5 py-3 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          style={{ 
+            borderTop: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
+            <p 
+              className="text-xs"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? 'Need help? Our team is here for you' : 'Besoin d\'aide? Notre équipe est là pour vous'}
+              <span style={{ color: 'rgb(var(--color-text-muted))' }}> — </span>
+              {isEn 
+                ? 'Customer success support included with every plan—no extra cost' 
+                : 'Support client inclus avec chaque plan—sans frais supplémentaires'}
+            </p>
+          </div>
+          <button
+            onClick={onSelectProvider}
+            className="px-4 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center gap-1.5 hover:opacity-90"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-600))',
+              color: 'white',
+            }}
+          >
+            {isEn ? 'Get Started' : 'Commencer'}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Provider types
 interface Provider {
@@ -233,195 +954,222 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalSta
   
   return (
     <div 
-      className="group rounded-2xl p-5 sm:p-6 transition-all duration-300 cursor-pointer relative overflow-hidden"
+      className="group rounded-xl transition-all duration-200 cursor-pointer relative"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: isConnected 
-          ? `2px solid ${provider.color}` 
+          ? '1px solid rgb(var(--color-primary-400))' 
           : '1px solid rgb(var(--color-border))',
-        boxShadow: isHovered ? `0 8px 30px ${provider.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
-        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: isHovered 
+          ? '0 4px 12px rgba(0,0,0,0.08)' 
+          : 'none',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Gradient accent bar */}
+      {/* Top accent line - thin and subtle */}
       <div 
-        className="absolute top-0 left-0 right-0 h-1 transition-all duration-300"
+        className="h-0.5 rounded-t-xl transition-all duration-200"
         style={{ 
-          background: `linear-gradient(90deg, ${provider.color}, ${provider.color}80)`,
-          opacity: isHovered || isConnected ? 1 : 0,
+          backgroundColor: isConnected 
+            ? 'rgb(var(--color-primary-500))' 
+            : isHovered 
+              ? 'rgb(var(--color-primary-400))' 
+              : 'rgb(var(--color-primary-200))',
         }}
       />
       
-      {/* Header - Logo, Name, Status */}
-      <div className="flex items-start gap-4 mb-5">
-        <div 
-          className="relative p-2 rounded-xl transition-all duration-300"
-          style={{ 
-            backgroundColor: `${provider.color}15`,
-            transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-          }}
-        >
-          <ProviderLogo provider={provider} size="md" />
-          {isConnected && (
-            <div 
-              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-success))',
-                borderColor: 'rgb(var(--color-surface))'
-              }}
-            >
-              <CheckCircle2 className="w-3 h-3 text-white" />
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 
-              className="font-bold text-base sm:text-lg truncate"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {provider.name}
-            </h3>
+      {/* Card content */}
+      <div className="p-4 sm:p-5">
+        {/* Header - Logo, Name, Status */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className="relative p-2 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            <ProviderLogo provider={provider} size="md" />
+            {isConnected && (
+              <div 
+                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  borderColor: 'rgb(var(--color-surface))'
+                }}
+              >
+                <CheckCircle2 className="w-3 h-3 text-white" />
+              </div>
+            )}
           </div>
-          <p 
-            className="text-sm line-clamp-2 leading-relaxed"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            {isEn ? provider.description : provider.descriptionFr}
-          </p>
-        </div>
-      </div>
-      
-      {/* Connected Stats */}
-      {isConnected && (
-        <div 
-          className="mb-5 p-4 rounded-xl"
-          style={{ backgroundColor: `${provider.color}08` }}
-        >
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="space-y-1">
-              <p 
-                className="text-xl sm:text-2xl font-bold"
-                style={{ color: provider.color }}
-              >
-                {provider.accountsCount || 0}
-              </p>
-              <p 
-                className="text-xs font-medium uppercase tracking-wide"
-                style={{ color: 'rgb(var(--color-text-muted))' }}
-              >
-                {isEn ? 'Accounts' : 'Comptes'}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p 
-                className="text-xl sm:text-2xl font-bold"
-                style={{ color: provider.color }}
-              >
-                {provider.transactionsCount?.toLocaleString() || 0}
-              </p>
-              <p 
-                className="text-xs font-medium uppercase tracking-wide"
-                style={{ color: 'rgb(var(--color-text-muted))' }}
-              >
-                {isEn ? 'Transactions' : 'Transactions'}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p 
-                className="text-sm sm:text-base font-semibold flex items-center justify-center gap-1.5"
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 
+                className="font-semibold text-sm truncate"
                 style={{ color: 'rgb(var(--color-text))' }}
               >
-                <Clock className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
-                <span className="truncate">{provider.lastSync || (isEn ? 'Never' : 'Jamais')}</span>
-              </p>
-              <p 
-                className="text-xs font-medium uppercase tracking-wide"
-                style={{ color: 'rgb(var(--color-text-muted))' }}
-              >
-                {isEn ? 'Last sync' : 'Dernière sync'}
-              </p>
+                {provider.name}
+              </h3>
+              {isConnected && (
+                <span 
+                  className="px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-100))',
+                    color: 'rgb(var(--color-primary-700))',
+                  }}
+                >
+                  {isEn ? 'Connected' : 'Connecté'}
+                </span>
+              )}
             </div>
+            <p 
+              className="text-xs line-clamp-2"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn ? provider.description : provider.descriptionFr}
+            </p>
           </div>
         </div>
-      )}
-      
-      {/* Actions */}
-      <div className="flex items-center gap-3">
-        {!isConnected ? (
-          readOnly ? (
-            <div 
-              className="flex-1 px-5 py-3 rounded-xl font-medium flex items-center justify-center gap-2 text-sm"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                color: 'rgb(var(--color-text-muted))'
-              }}
+        
+        {/* Security badge for non-connected */}
+        {!isConnected && (
+          <div 
+            className="mb-4 flex items-center gap-2"
+          >
+            <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            <p 
+              className="text-xs"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
             >
-              <Lock className="w-4 h-4" />
-              {isEn ? 'Admin required' : 'Admin requis'}
+              {isEn 
+                ? 'Read-only • AES-256 encryption' 
+                : 'Lecture seule • Chiffrement AES-256'}
+            </p>
+          </div>
+        )}
+        
+        {/* Connected Stats */}
+        {isConnected && (
+          <div 
+            className="mb-4 p-3 rounded-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+            }}
+          >
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p 
+                  className="text-base font-semibold"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {provider.accountsCount || 0}
+                </p>
+                <p 
+                  className="text-xs"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
+                  {isEn ? 'Accounts' : 'Comptes'}
+                </p>
+              </div>
+              <div>
+                <p 
+                  className="text-base font-semibold"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {provider.transactionsCount?.toLocaleString() || 0}
+                </p>
+                <p 
+                  className="text-xs"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
+                  {isEn ? 'Transactions' : 'Transactions'}
+                </p>
+              </div>
+              <div>
+                <p 
+                  className="text-xs font-semibold flex items-center justify-center gap-1"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  <Clock className="w-3 h-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  <span className="truncate">{provider.lastSync || (isEn ? 'Never' : 'Jamais')}</span>
+                </p>
+                <p 
+                  className="text-xs"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
+                  {isEn ? 'Last sync' : 'Dernière sync'}
+                </p>
+              </div>
             </div>
-          ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); onConnect(provider.id); }}
-              className="flex-1 px-5 py-3.5 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 text-sm group/btn relative overflow-hidden"
-              style={{ 
-                backgroundColor: provider.color,
-                color: 'white',
-                boxShadow: isHovered ? `0 4px 15px ${provider.color}40` : 'none',
-              }}
-            >
-              <span className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-              <Link2 className="w-4 h-4 relative z-10" />
-              <span className="relative z-10">{isEn ? 'Connect' : 'Connecter'}</span>
-              <ArrowRight className="w-4 h-4 relative z-10 opacity-0 -translate-x-2 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all duration-200" />
-            </button>
-          )
-        ) : (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); onSync(provider.id); }}
-              disabled={isSyncing || readOnly}
-              className="flex-1 px-4 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
-              style={{ 
-                backgroundColor: readOnly ? 'rgb(var(--color-bg-muted))' : `${provider.color}15`,
-                color: readOnly ? 'rgb(var(--color-text-muted))' : provider.color,
-                border: `1px solid ${readOnly ? 'transparent' : provider.color}30`,
-              }}
-              title={readOnly ? (isEn ? 'Admin only' : 'Admin seulement') : ''}
-            >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? (isEn ? 'Syncing...' : 'Sync...') : (isEn ? 'Sync Now' : 'Synchroniser')}</span>
-            </button>
-            {isInternalStaff && (
-              <button
-                onClick={(e) => { e.stopPropagation(); }}
-                className="p-3 rounded-xl transition-all duration-200 hover:scale-105"
+          </div>
+        )}
+        
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {!isConnected ? (
+            readOnly ? (
+              <div 
+                className="flex-1 px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-xs"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text-muted))' 
+                  color: 'rgb(var(--color-text-muted))'
                 }}
-                title={isEn ? 'Advanced settings (staff only)' : 'Paramètres avancés (staff uniquement)'}
               >
-                <Settings className="w-4 h-4" />
-              </button>
-            )}
-            {!readOnly && (
+                <Lock className="w-3.5 h-3.5" />
+                {isEn ? 'Admin required' : 'Admin requis'}
+              </div>
+            ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); onDisconnect(provider.id); }}
-                className="p-3 rounded-xl transition-all duration-200 hover:scale-105 hover:bg-red-100 dark:hover:bg-red-900/20"
+                onClick={(e) => { e.stopPropagation(); onConnect(provider.id); }}
+                className="flex-1 px-3 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 text-xs hover:opacity-90"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-error) / 0.08)',
-                  color: 'rgb(var(--color-error))' 
+                  backgroundColor: 'rgb(var(--color-primary-600))',
+                  color: 'white',
                 }}
-                title={isEn ? 'Disconnect' : 'Déconnecter'}
               >
-                <Trash2 className="w-4 h-4" />
+                <Link2 className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Connect' : 'Connecter'}</span>
               </button>
-            )}
-          </>
-        )}
+            )
+          ) : (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onSync(provider.id); }}
+                disabled={isSyncing || readOnly}
+                className="flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 text-xs"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-secondary))',
+                }}
+                title={readOnly ? (isEn ? 'Admin only' : 'Admin seulement') : ''}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? (isEn ? 'Syncing...' : 'Sync...') : (isEn ? 'Sync Now' : 'Synchroniser')}</span>
+              </button>
+              {isInternalStaff && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-bg-muted))',
+                    color: 'rgb(var(--color-text-muted))' 
+                  }}
+                  title={isEn ? 'Advanced settings (staff only)' : 'Paramètres avancés (staff uniquement)'}
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!readOnly && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDisconnect(provider.id); }}
+                  className="p-2 rounded-lg transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-bg-muted))',
+                    color: 'rgb(var(--color-text-muted))' 
+                  }}
+                  title={isEn ? 'Disconnect' : 'Déconnecter'}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1924,9 +2672,11 @@ export default function Connections() {
   const [providerList, setProviderList] = useState(providers);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [showHelp, setShowHelp] = useState(true);
   
   const connectedCount = providerList.filter(p => p.status === 'connected').length;
+  
+  // Check if user is on free plan - show subscription gate
+  const isFreePlan = currentTenant?.plan === 'free';
   
   // Show permission notice for non-admin users
   const showReadOnlyNotice = !canManageConnections;
@@ -1972,6 +2722,11 @@ export default function Connections() {
     }, 3000);
   };
   
+  // Show subscription gate for free users (not internal staff)
+  if (isFreePlan && !isInternalStaff) {
+    return <FreeUserSubscriptionGate isEn={isEn} />;
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
@@ -2096,63 +2851,43 @@ export default function Connections() {
         </div>
       )}
 
-      {/* Step-by-step explanation */}
-      {showHelp && !isInternalStaff && (
-        <InfoBanner
-          type="info"
-          title={isEn ? 'How it works' : 'Comment ça fonctionne'}
-          description={isEn 
-            ? '1. Choose your accounting software below → 2. Authorize read-only access → 3. Your data syncs automatically → 4. Generate your financial reports'
-            : '1. Choisissez votre logiciel comptable ci-dessous → 2. Autorisez l\'accès en lecture seule → 3. Vos données se synchronisent automatiquement → 4. Générez vos rapports financiers'}
-          dismissible
-          onDismiss={() => setShowHelp(false)}
+      {/* Interactive Onboarding Steps */}
+      {connectedCount === 0 && !isInternalStaff && (
+        <OnboardingSteps 
+          isEn={isEn} 
+          onSelectProvider={() => {
+            const firstProvider = providerList[0];
+            if (firstProvider) {
+              setSelectedProvider(firstProvider);
+              setShowModal(true);
+            }
+          }}
         />
       )}
       
-      {/* Getting Started Banner */}
-      {connectedCount === 0 && (
-        <div 
-          className="rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-info) / 0.05)',
-            border: '1px solid rgb(var(--color-info) / 0.2)'
-          }}
-        >
-          <div 
-            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
+      {/* Section title for integrations */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <h3 
+            className="text-lg font-semibold"
+            style={{ color: 'rgb(var(--color-text))' }}
           >
-            <Link2 className="w-5 h-5" style={{ color: 'rgb(var(--color-info))' }} />
-          </div>
-          <div>
-            <h3 
-              className="font-semibold text-sm sm:text-base"
-              style={{ color: 'rgb(var(--color-info))' }}
-            >
-              {isEn ? 'Step 1: Connect your accounting software' : 'Étape 1: Connectez votre logiciel comptable'}
-            </h3>
-            <p 
-              className="text-sm mt-1"
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
-            >
-              {isEn 
-                ? 'PlainLedger syncs with your existing data to detect anomalies and generate clear financial reports.'
-                : 'PlainLedger se synchronise avec vos données existantes pour détecter les anomalies et générer des rapports financiers clairs.'}
-            </p>
-            <p 
-              className="text-sm font-medium mt-2"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isEn 
-                ? 'Your data remains read-only and encrypted with AES-256.'
-                : 'Vos données restent en lecture seule et sont chiffrées avec AES-256.'}
-            </p>
-          </div>
+            {isEn ? 'Available Integrations' : 'Intégrations disponibles'}
+          </h3>
+          <span 
+            className="px-2.5 py-1 rounded-full text-xs font-medium"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-100))',
+              color: 'rgb(var(--color-primary-700))'
+            }}
+          >
+            {providerList.length} {isEn ? 'options' : 'options'}
+          </span>
         </div>
-      )}
+      </div>
       
       {/* Provider Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {providerList.map((provider) => (
           <ProviderCard
             key={provider.id}
@@ -2170,31 +2905,25 @@ export default function Connections() {
       {/* Quick Start Demo Card */}
       {connectedCount === 0 && (
         <div 
-          className="rounded-2xl p-6 sm:p-8 relative overflow-hidden"
+          className="mt-6 rounded-xl p-4 sm:p-5"
           style={{ 
-            background: 'linear-gradient(135deg, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))',
+            backgroundColor: 'rgb(var(--color-primary-600))',
           }}
         >
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: 'white', transform: 'translate(30%, -30%)' }} />
-          <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10" style={{ background: 'white', transform: 'translate(-30%, 30%)' }} />
-          
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-5 h-5 text-yellow-300" />
-                <span className="text-sm font-semibold text-white/80 uppercase tracking-wide">
-                  {isEn ? 'Quick Start' : 'Démarrage rapide'}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1 flex items-center gap-3">
+              <Zap className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+              <div>
+                <span className="text-sm font-medium text-white">
+                  {isEn ? 'Try PlainLedger instantly' : 'Essayez PlainLedger instantanément'}
+                </span>
+                <span className="text-white/60 mx-2">—</span>
+                <span className="text-sm text-white/70">
+                  {isEn 
+                    ? 'Load demo data to explore all features'
+                    : 'Chargez des données démo pour explorer toutes les fonctionnalités'}
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
-                {isEn ? 'Try PlainLedger instantly' : 'Essayez PlainLedger instantanément'}
-              </h3>
-              <p className="text-white/80 text-sm sm:text-base">
-                {isEn 
-                  ? 'No accounting software? No problem. Load demo data to explore all features with realistic financial data.'
-                  : 'Pas de logiciel comptable? Pas de problème. Chargez des données démo pour explorer toutes les fonctionnalités.'}
-              </p>
             </div>
             <button
               onClick={() => {
@@ -2204,16 +2933,14 @@ export default function Connections() {
                   setShowModal(true);
                 }
               }}
-              className="px-6 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 whitespace-nowrap hover:scale-105"
+              className="px-4 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap hover:opacity-90"
               style={{ 
                 backgroundColor: 'white',
                 color: 'rgb(var(--color-primary-700))',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
               }}
             >
-              <Zap className="w-4 h-4" />
+              <Zap className="w-3.5 h-3.5" />
               {isEn ? 'Load Demo Data' : 'Charger données démo'}
-              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

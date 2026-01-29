@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "PlainLedger - Financial Reporting SaaS Platform",
   "scripts": {
+    "install:all": "cd apps/api && npm install && cd ../web && npm install && cd ../..",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:infra": "docker-compose up -d keycloak-db app-db redis keycloak localstack minio",
+    "dev:api": "cd apps/api && npm run start:dev",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:stop": "pkill -f 'nest start' && pkill -f 'vite'",
+    "dev:logs": "tail -f /tmp/plainledger-api.log /tmp/plainledger-web.log",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -12,6 +19,7 @@
     "test:e2e:chromium": "playwright test --project=chromium"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.0"
+    "@playwright/test": "^1.58.0",
+    "concurrently": "^8.2.2"
   }
 }

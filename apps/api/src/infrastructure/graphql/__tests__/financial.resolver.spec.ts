@@ -169,6 +169,108 @@ describe("FinancialResolver", () => {
       get: jest.fn().mockReturnValue(undefined),
     };
 
+    const mockDatalakeDataService = {
+      getDashboardData: jest.fn().mockResolvedValue({
+        organizationId: "org-123",
+        organizationName: "Test Company",
+        asOfDate: "2026-01-27",
+        dataSource: "test",
+        lastUpdated: "2026-01-27T12:00:00Z",
+        accounts: [
+          {
+            account_key: "acc-1",
+            account_code: "1000",
+            account_name: "Cash",
+            account_type: "ASSET",
+            is_active: true,
+          },
+          {
+            account_key: "acc-2",
+            account_code: "1100",
+            account_name: "Accounts Receivable",
+            account_type: "ASSET",
+            is_active: true,
+          },
+          {
+            account_key: "acc-3",
+            account_code: "2000",
+            account_name: "Accounts Payable",
+            account_type: "LIABILITY",
+            is_active: true,
+          },
+          {
+            account_key: "acc-4",
+            account_code: "4000",
+            account_name: "Revenue",
+            account_type: "REVENUE",
+            is_active: true,
+          },
+          {
+            account_key: "acc-5",
+            account_code: "5000",
+            account_name: "Expenses",
+            account_type: "EXPENSE",
+            is_active: true,
+          },
+        ],
+        contacts: [],
+        transactions: [
+          {
+            transaction_key: "txn-1",
+            transaction_date: "2026-01-15",
+            amount: 5000,
+            memo: "Invoice #001",
+            reference_number: "INV-001",
+            currency_code: "CAD",
+            posting_date: "2026-01-15",
+          },
+          {
+            transaction_key: "txn-2",
+            transaction_date: "2026-01-16",
+            amount: 3000,
+            memo: "Payment received",
+            reference_number: "PMT-001",
+            currency_code: "CAD",
+            posting_date: "2026-01-16",
+          },
+          {
+            transaction_key: "txn-3",
+            transaction_date: "2026-01-17",
+            amount: 1500,
+            memo: "Office supplies",
+            reference_number: "EXP-001",
+            currency_code: "CAD",
+            posting_date: "2026-01-17",
+          },
+        ],
+        balances: [],
+        summary: {
+          totalAssets: 70000,
+          totalLiabilities: 15000,
+          totalEquity: 55000,
+          totalRevenue: 150000,
+          totalExpenses: 95000,
+          netIncome: 55000,
+          cashBalance: 45000,
+          accountsReceivable: 25000,
+          accountsPayable: 15000,
+        },
+        trends: {
+          revenue: [
+            { period: "2026-01", value: 45000 },
+            { period: "2026-02", value: 48000 },
+            { period: "2026-03", value: 52000 },
+          ],
+          expenses: [
+            { period: "2026-01", value: 30000 },
+            { period: "2026-02", value: 32000 },
+            { period: "2026-03", value: 33000 },
+          ],
+          cashFlow: [],
+        },
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FinancialResolver,
@@ -179,6 +281,10 @@ describe("FinancialResolver", () => {
         {
           provide: GenerateBalanceSheetUseCase,
           useValue: mockBalanceSheetUseCase,
+        },
+        {
+          provide: "IDatalakeDataService",
+          useValue: mockDatalakeDataService,
         },
       ],
     }).compile();
@@ -420,6 +526,36 @@ describe("FinancialResolver Security", () => {
       get: jest.fn().mockReturnValue(undefined),
     };
 
+    const mockDatalakeDataService = {
+      getDashboardData: jest.fn().mockResolvedValue({
+        organizationId: "org-123",
+        organizationName: "Test Company",
+        asOfDate: "2026-01-27",
+        dataSource: "test",
+        lastUpdated: "2026-01-27T12:00:00Z",
+        accounts: [],
+        contacts: [],
+        transactions: [],
+        balances: [],
+        summary: {
+          totalAssets: 0,
+          totalLiabilities: 0,
+          totalEquity: 0,
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netIncome: 0,
+          cashBalance: 0,
+          accountsReceivable: 0,
+          accountsPayable: 0,
+        },
+        trends: {
+          revenue: [],
+          expenses: [],
+          cashFlow: [],
+        },
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FinancialResolver,
@@ -430,6 +566,10 @@ describe("FinancialResolver Security", () => {
         {
           provide: GenerateBalanceSheetUseCase,
           useValue: mockBalanceSheetUseCase,
+        },
+        {
+          provide: "IDatalakeDataService",
+          useValue: mockDatalakeDataService,
         },
       ],
     }).compile();

@@ -22,6 +22,8 @@ import {
   Mail,
   Eye,
   EyeOff,
+  Loader2,
+  ChevronLeft,
 } from 'lucide-react';
 import { useAuth, useKeycloak } from '../lib/keycloak';
 import Avatar, { IDPBadge } from '../components/Avatar';
@@ -38,6 +40,14 @@ import { TeamMembersSection } from '../components/OrganizationSwitcher';
 import RolesPermissionsSection from '../components/RolesPermissions';
 import SubscriptionManagement from '../components/SubscriptionManagement';
 import SecretsManagement from '../components/SecretsManagement';
+import DemoModeBanner from '../components/DemoModeBanner';
+import { 
+  uploadLogo, 
+  deleteLogo, 
+  uploadProfilePicture, 
+  deleteProfilePicture, 
+  validateImageFile 
+} from '../lib/uploads';
 
 // Mock subscription data - would come from API
 const mockSubscription = {
@@ -52,11 +62,161 @@ const mockSubscription = {
 
 export default function Settings() {
   const { user } = useAuth();
-  const { currentTenant, canManageSettings, canManageMembers, canManageBilling, isInternalStaff } = useTenant();
+  const { currentTenant, canManageSettings, canManageMembers, canManageBilling, isInternalStaff, updateTenantSettings, setCurrentTenant } = useTenant();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const [activeTab, setActiveTab] = useState('organization');
   const [subscription] = useState(mockSubscription);
   const entitlements = getEntitlements(currentTenant?.plan || subscription.tier);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [userPicture, setUserPicture] = useState<string | undefined>(user?.picture);
+  // Menu visibility state: 'expanded' | 'collapsed'
+  const [isSettingsMenuCollapsed, setIsSettingsMenuCollapsed] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('pl-settings-menu-state');
+      if (saved === 'collapsed') return true;
+      if (saved === 'expanded') return false;
+      // Legacy migration
+      if (localStorage.getItem('pl-settings-menu-collapsed') === 'true') {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSettingsMenu = () => {
+    const newState = !isSettingsMenuCollapsed;
+    setIsSettingsMenuCollapsed(newState);
+    try {
+      localStorage.setItem('pl-settings-menu-state', newState ? 'collapsed' : 'expanded');
+    } catch {}
+  };
+
+  // Handle logo upload
+  const handleLogoUpload = async (file: File) => {
+    // Validate the file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+    
+    if (!currentTenant) {
+      alert('Aucune organisation sélectionnée');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    
+    try {
+      const result = await uploadLogo(file, currentTenant.id);
+      
+      if (result.success && result.url) {
+        // Update tenant with new logo URL
+        setCurrentTenant({
+          ...currentTenant,
+          logo: result.url,
+        });
+        // Also update via settings for persistence
+        updateTenantSettings({
+          branding: {
+            ...currentTenant.settings.branding,
+            logo: result.url,
+          },
+        });
+      } else {
+        alert(result.error || 'Échec du téléversement du logo');
+      }
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      alert('Une erreur est survenue lors du téléversement');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  // Handle logo delete
+  const handleLogoDelete = async () => {
+    if (!currentTenant) return;
+    
+    if (!confirm('Voulez-vous vraiment supprimer le logo?')) {
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    
+    try {
+      await deleteLogo(currentTenant.id);
+      
+      // Update tenant to remove logo
+      setCurrentTenant({
+        ...currentTenant,
+        logo: undefined,
+      });
+      updateTenantSettings({
+        branding: {
+          ...currentTenant.settings.branding,
+          logo: undefined,
+        },
+      });
+    } catch (error) {
+      console.error('Logo delete error:', error);
+      alert('Une erreur est survenue lors de la suppression');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  // Handle profile picture upload
+  const handleProfilePictureUpload = async (file: File) => {
+    // Validate the file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    
+    try {
+      const result = await uploadProfilePicture(file);
+      
+      if (result.success && result.url) {
+        // Update local state with new picture URL
+        setUserPicture(result.url);
+        alert('Photo de profil mise à jour avec succès!');
+      } else {
+        alert(result.error || 'Échec du téléversement de la photo');
+      }
+    } catch (error) {
+      console.error('Profile picture upload error:', error);
+      alert('Une erreur est survenue lors du téléversement');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  // Handle profile picture delete
+  const handleProfilePictureDelete = async () => {
+    if (!confirm('Voulez-vous vraiment supprimer votre photo de profil?')) {
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    
+    try {
+      await deleteProfilePicture();
+      setUserPicture(undefined);
+      alert('Photo de profil supprimée!');
+    } catch (error) {
+      console.error('Profile picture delete error:', error);
+      alert('Une erreur est survenue lors de la suppression');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   // Build tabs based on permissions
   // Technical configuration tabs are hidden from customers - only visible to internal staff
@@ -88,32 +248,6 @@ export default function Settings() {
           <h2 className="text-xl sm:text-2xl font-bold text-primary">Paramètres</h2>
           <p className="text-sm sm:text-base text-secondary">Gérez les paramètres de votre organisation</p>
         </div>
-        
-        {/* Demo Mode Toggle - Only show for trial users */}
-        {currentTenant?.status === 'trial' && (
-          <button
-            onClick={toggleDemoMode}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isDemoMode ? 'btn-primary' : 'btn-secondary'
-            }`}
-            title={isDemoMode 
-              ? 'Désactiver le mode démo'
-              : 'Activer le mode démo avec données d\'exemple'
-            }
-          >
-            {isDemoMode ? (
-              <>
-                <EyeOff className="w-4 h-4" />
-                <span>Mode démo activé</span>
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4" />
-                <span>Essayer avec données d'exemple</span>
-              </>
-            )}
-          </button>
-        )}
       </div>
 
       {/* Mobile Tab Selector */}
@@ -132,18 +266,62 @@ export default function Settings() {
         </select>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-        {/* Desktop Sidebar Tabs */}
-        <div className="hidden lg:block w-56 xl:w-64 flex-shrink-0">
-          <nav className="space-y-1 sticky top-20">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-start">
+        {/* Desktop Sidebar Tabs - Fixed/Sticky with Collapse Toggle */}
+        <div 
+          className={`hidden lg:block flex-shrink-0 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto transition-all duration-300 ${
+            isSettingsMenuCollapsed ? 'w-14' : 'w-56 xl:w-64'
+          }`}
+        >
+          <nav 
+            className="space-y-1 p-2 rounded-xl relative"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))'
+            }}
+          >
+            {/* Menu Toggle Button with Arrow */}
+            <button
+              onClick={toggleSettingsMenu}
+              className="w-full flex items-center justify-center gap-2 p-2 mb-1 rounded-lg transition-all group relative"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)',
+                color: 'rgb(var(--color-text-muted))'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                e.currentTarget.style.color = 'rgb(var(--color-primary-600))';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted) / 0.5)';
+                e.currentTarget.style.color = 'rgb(var(--color-text-muted))';
+              }}
+              title={isSettingsMenuCollapsed ? 'Afficher le menu' : 'Réduire le menu'}
+            >
+              {isSettingsMenuCollapsed ? (
+                <ChevronLeft 
+                  className="w-4 h-4 transition-transform duration-300" 
+                  style={{ transform: 'rotate(180deg)' }}
+                />
+              ) : (
+                <>
+                  <ChevronLeft className="w-4 h-4 transition-transform duration-300" />
+                  <span className="text-xs font-medium">Réduire</span>
+                </>
+              )}
+            </button>
+            
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`nav-item w-full text-left ${activeTab === tab.id ? 'active' : ''}`}
+                className={`nav-item w-full text-left ${activeTab === tab.id ? 'active' : ''} ${
+                  isSettingsMenuCollapsed ? 'justify-center px-2' : ''
+                }`}
+                title={isSettingsMenuCollapsed ? tab.name : undefined}
               >
-                <tab.icon className="w-5 h-5" />
-                <span className="text-sm">{tab.name}</span>
+                <tab.icon className="w-5 h-5 flex-shrink-0" />
+                {!isSettingsMenuCollapsed && <span className="text-sm">{tab.name}</span>}
               </button>
             ))}
           </nav>
@@ -151,9 +329,141 @@ export default function Settings() {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Demo Mode Banner - Visible on all tabs */}
+          <DemoModeBanner />
+          
           {activeTab === 'organization' && (
             <div className="card">
               <h3 className="section-title">Informations de l'organisation</h3>
+              
+              {/* Organization Logo/Picture Section */}
+              <div 
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 p-4 rounded-xl"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                  border: '1px solid rgb(var(--color-primary-500) / 0.1)'
+                }}
+              >
+                <div className="relative group">
+                  <div 
+                    className="w-24 h-24 rounded-xl flex items-center justify-center font-bold text-2xl overflow-hidden border-2"
+                    style={{ 
+                      background: currentTenant?.logo 
+                        ? 'rgb(var(--color-surface))'
+                        : 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                      color: 'white',
+                      borderColor: currentTenant?.logo ? 'rgb(var(--color-border))' : 'transparent',
+                      boxShadow: currentTenant?.logo ? '0 2px 8px rgb(0 0 0 / 0.1)' : '0 4px 12px rgb(var(--color-primary-500) / 0.3)'
+                    }}
+                  >
+                    {currentTenant?.logo ? (
+                      <img 
+                        src={currentTenant.logo} 
+                        alt={currentTenant.name} 
+                        className="w-full h-full"
+                        style={{ objectFit: 'contain', padding: '4px' }}
+                      />
+                    ) : (
+                      currentTenant?.name?.charAt(0).toUpperCase() || 'O'
+                    )}
+                  </div>
+                  {/* Upload overlay on hover */}
+                  <label 
+                    className={`absolute inset-0 rounded-xl flex items-center justify-center transition-opacity cursor-pointer ${isUploadingLogo ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    style={{
+                      backgroundColor: 'rgb(var(--color-text-inverted) / 0.5)'
+                    }}
+                  >
+                    {isUploadingLogo ? (
+                      <Loader2 
+                        className="w-6 h-6 animate-spin" 
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      />
+                    ) : (
+                      <Camera 
+                        className="w-6 h-6" 
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      />
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      disabled={isUploadingLogo}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleLogoUpload(file);
+                        }
+                        // Reset input value to allow uploading same file again
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                    {currentTenant?.name || 'Organisation'}
+                  </p>
+                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    Logo de l'organisation
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  <label 
+                    className={`btn-primary btn-sm flex items-center justify-center gap-2 cursor-pointer ${isUploadingLogo ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
+                    {isUploadingLogo ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
+                    {isUploadingLogo ? 'Téléversement...' : 'Changer le logo'}
+                    <input 
+                      type="file" 
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="hidden"
+                      disabled={isUploadingLogo}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleLogoUpload(file);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  {currentTenant?.logo && (
+                    <button
+                      className="btn-danger-outline btn-sm"
+                      onClick={handleLogoDelete}
+                      disabled={isUploadingLogo}
+                    >
+                      Supprimer
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Logo Guidelines */}
+              <div 
+                className="p-3 rounded-lg mb-6 text-xs"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                  border: '1px solid rgb(var(--color-primary-500) / 0.15)'
+                }}
+              >
+                <p className="font-medium mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                  Recommandations pour le logo
+                </p>
+                <ul className="space-y-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <li>• Dimensions recommandées: 200×200 px minimum (carré ou proche)</li>
+                  <li>• Formats acceptés: JPG, PNG, GIF, WebP</li>
+                  <li>• Taille maximale: 5 Mo</li>
+                  <li>• Fond transparent (PNG) recommandé pour meilleur rendu</li>
+                </ul>
+              </div>
+              
               <form className="space-y-4">
                 <div>
                   <label className="label">Nom de l'organisation</label>
@@ -233,24 +543,82 @@ export default function Settings() {
                 <h3 className="section-title">Informations du profil</h3>
                 <div className="space-y-4">
                   {/* Profile Picture Section */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="relative">
-                      <Avatar
-                        src={user?.picture}
-                        name={user?.name}
-                        firstName={user?.firstName}
-                        lastName={user?.lastName}
-                        size="xl"
-                      />
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 p-4 rounded-xl" style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                    border: '1px solid rgb(var(--color-primary-500) / 0.1)'
+                  }}>
+                    <div className="relative group">
+                      {/* Profile Picture Container - Larger for better visibility */}
+                      <div 
+                        className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-3"
+                        style={{ 
+                          backgroundColor: (userPicture || user?.picture) ? 'transparent' : 'rgb(var(--color-primary-500) / 0.1)',
+                          borderColor: 'rgb(var(--color-border))',
+                          borderWidth: '3px',
+                          boxShadow: '0 2px 12px rgb(0 0 0 / 0.1)'
+                        }}
+                      >
+                        {(userPicture || user?.picture) ? (
+                          <img 
+                            src={userPicture || user?.picture} 
+                            alt={user?.name || 'Profile'} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <span 
+                            className="font-bold text-2xl"
+                            style={{ color: 'rgb(var(--color-primary-600))' }}
+                          >
+                            {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
+                          </span>
+                        )}
+                      </div>
                       {user?.identityProvider && (
                         <div className="absolute -bottom-1 -right-1">
                           <IDPBadge provider={user.identityProvider} size="md" />
                         </div>
                       )}
+                      {/* Upload overlay on hover */}
+                      <label 
+                        className={`absolute inset-0 rounded-full flex items-center justify-center transition-opacity cursor-pointer ${isUploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                        style={{
+                          backgroundColor: 'rgb(var(--color-text-inverted) / 0.5)'
+                        }}
+                      >
+                        {isUploadingAvatar ? (
+                          <Loader2 
+                            className="w-6 h-6 animate-spin" 
+                            style={{ color: 'rgb(var(--color-text))' }}
+                          />
+                        ) : (
+                          <Camera 
+                            className="w-6 h-6" 
+                            style={{ color: 'rgb(var(--color-text))' }}
+                          />
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          className="hidden"
+                          disabled={isUploadingAvatar}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleProfilePictureUpload(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>{user?.name}</p>
-                      <p style={{ color: 'rgb(var(--color-text-muted))' }}>{user?.email}</p>
+                      <p className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>{user?.name}</p>
+                      <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{user?.email}</p>
                       {user?.identityProvider && (
                         <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
                           Connecté via {user.identityProvider === 'google' ? 'Google' : 
@@ -261,16 +629,59 @@ export default function Settings() {
                         </p>
                       )}
                     </div>
-                    {!user?.picture && (
-                      <button 
-                        className="btn-secondary btn-sm flex items-center gap-2"
-                        title="Connectez un compte social pour utiliser votre photo de profil"
-                        onClick={() => alert('Pour ajouter une photo de profil:\n\n1. Connectez un compte Google ou Microsoft dans la section "Comptes connectés" ci-dessous\n\n2. Votre photo de profil sera automatiquement synchronisée')}
+                    <div className="flex flex-col gap-2 w-full sm:w-auto">
+                      <label 
+                        className={`btn-primary btn-sm flex items-center justify-center gap-2 cursor-pointer ${isUploadingAvatar ? 'opacity-50 pointer-events-none' : ''}`}
                       >
-                        <Camera className="w-4 h-4" />
-                        Ajouter photo
-                      </button>
-                    )}
+                        {isUploadingAvatar ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Camera className="w-4 h-4" />
+                        )}
+                        {isUploadingAvatar ? 'Téléversement...' : (userPicture || user?.picture) ? 'Changer photo' : 'Ajouter photo'}
+                        <input 
+                          type="file" 
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          className="hidden"
+                          disabled={isUploadingAvatar}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleProfilePictureUpload(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                      {(userPicture || user?.picture) && (
+                        <button 
+                          className="btn-danger-outline btn-sm"
+                          onClick={handleProfilePictureDelete}
+                          disabled={isUploadingAvatar}
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Photo Guidelines */}
+                  <div 
+                    className="p-3 rounded-lg text-xs"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                      border: '1px solid rgb(var(--color-primary-500) / 0.15)'
+                    }}
+                  >
+                    <p className="font-medium mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                      Recommandations pour la photo de profil
+                    </p>
+                    <ul className="space-y-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <li>• Dimensions recommandées: 200×200 px minimum (carré)</li>
+                      <li>• L'image sera automatiquement recadrée en cercle</li>
+                      <li>• Formats acceptés: JPG, PNG, GIF, WebP</li>
+                      <li>• Taille maximale: 5 Mo</li>
+                    </ul>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -350,7 +761,10 @@ export default function Settings() {
                 {/* Contact for SSO */}
                 <div 
                   className="p-4 rounded-lg"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                    border: '1px solid rgb(var(--color-primary-500) / 0.1)'
+                  }}
                 >
                   <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     Pour configurer l'authentification unique (SSO) avec votre fournisseur d'identité d'entreprise, contactez notre équipe.
@@ -388,12 +802,12 @@ export default function Settings() {
                   <div 
                     className="p-4 rounded-xl border"
                     style={{ 
-                      backgroundColor: 'rgb(var(--color-info) / 0.05)',
-                      borderColor: 'rgb(var(--color-info) / 0.2)'
+                      backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+                      borderColor: 'rgb(var(--color-primary-500) / 0.2)'
                     }}
                   >
                     <div className="flex items-start gap-3">
-                      <Zap className="w-5 h-5 mt-0.5" style={{ color: 'rgb(var(--color-info))' }} />
+                      <Zap className="w-5 h-5 mt-0.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
                       <div>
                         <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>Technical Configuration</p>
                         <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
@@ -508,7 +922,7 @@ function SecuritySettings() {
       action: 'Gérer',
       actionEn: 'Manage',
       section: 'device-activity' as const,
-      color: 'info' as const,
+      color: 'default' as const,
     },
     {
       id: 'linked',
@@ -589,11 +1003,11 @@ function SecuritySettings() {
       <div 
         className="p-4 rounded-xl flex items-start gap-3"
         style={{ 
-          backgroundColor: 'rgb(var(--color-info) / 0.05)',
-          border: '1px solid rgb(var(--color-info) / 0.2)'
+          backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+          border: '1px solid rgb(var(--color-primary-500) / 0.2)'
         }}
       >
-        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-info))' }} />
+        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
         <div>
           <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
             Sécurité gérée par Keycloak
@@ -657,10 +1071,10 @@ interface SecurityCardProps {
 
 function SecurityCard({ icon: Icon, title, description, action, color, onClick }: SecurityCardProps) {
   const colors = {
-    default: { bg: 'rgb(var(--color-bg-muted))', fg: 'rgb(var(--color-text-secondary))' },
+    default: { bg: 'rgb(var(--color-primary-500) / 0.1)', fg: 'rgb(var(--color-primary-600))' },
     success: { bg: 'rgb(var(--color-success) / 0.1)', fg: 'rgb(var(--color-success))' },
-    info: { bg: 'rgb(var(--color-info) / 0.1)', fg: 'rgb(var(--color-info))' },
-    accent: { bg: 'rgb(var(--color-accent) / 0.15)', fg: 'rgb(var(--color-accent-dark))' },
+    info: { bg: 'rgb(var(--color-primary-500) / 0.1)', fg: 'rgb(var(--color-primary-600))' },
+    accent: { bg: 'rgb(var(--color-primary-500) / 0.1)', fg: 'rgb(var(--color-primary-600))' },
   };
 
   return (
@@ -701,9 +1115,9 @@ function IntegrationItem({ name, enabled, connected }: { name: string; enabled: 
       <div className="flex items-center gap-4">
         <div 
           className="w-12 h-12 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
         >
-          <span className="font-bold text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <span className="font-bold text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
             {name.substring(0, 2).toUpperCase()}
           </span>
         </div>

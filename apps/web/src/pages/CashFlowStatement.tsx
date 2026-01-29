@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, TrendingUp, TrendingDown, Printer, Share2, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
+import ShareModal from '../components/ShareModal';
 
 // Period presets type
 type PeriodPreset = 'mtd' | 'qtd' | 'ytd' | 'last_month' | 'last_quarter' | 'last_year' | 'custom';
@@ -75,7 +75,7 @@ export default function CashFlowStatement() {
   const [customStart, setCustomStart] = useState(`${currentYear}-01-01`);
   const [customEnd, setCustomEnd] = useState(`${currentYear}-12-31`);
   const [showComparison, setShowComparison] = useState(true);
-  const [showHelp, setShowHelp] = useState(true);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Calculate actual dates based on preset
   const { start: periodStart, end: periodEnd } = getDateRange(
@@ -117,13 +117,7 @@ export default function CashFlowStatement() {
   const handlePrint = () => window.print();
   
   const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: isEn ? 'Cash Flow Statement' : 'Flux de trésorerie', url });
-    } else {
-      navigator.clipboard.writeText(url);
-      alert(isEn ? 'Link copied!' : 'Lien copié!');
-    }
+    setShowShareModal(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -407,18 +401,6 @@ export default function CashFlowStatement() {
           </button>
         </div>
       </div>
-
-      {showHelp && (
-        <InfoBanner
-          type="info"
-          title={isEn ? 'Understanding Cash Flow' : 'Comprendre les flux de trésorerie'}
-          description={isEn 
-            ? 'The cash flow statement shows how cash moves in and out of your business through operations, investments, and financing activities.'
-            : 'Le flux de trésorerie montre comment l\'argent entre et sort de votre entreprise à travers les opérations, investissements et activités de financement.'}
-          dismissible
-          onDismiss={() => setShowHelp(false)}
-        />
-      )}
 
       {/* Controls */}
       <div className="card">
@@ -722,6 +704,16 @@ export default function CashFlowStatement() {
           })}
         </div>
       </div>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title="Flux de trésorerie"
+        titleEn="Cash Flow Statement"
+        subtitle={`${periodStart} - ${periodEnd}`}
+        contentType="report"
+        showDownloadOption={true}
+      />
     </div>
   );
 }

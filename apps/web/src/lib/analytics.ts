@@ -44,7 +44,6 @@ export interface UserTraits {
   organizationId?: string;
   organizationName?: string;
   subscriptionTier?: string;
-  trialEndsAt?: string;
   connectedSources?: number;
   teamSize?: number;
 }
@@ -79,7 +78,6 @@ export type ConversionEvent =
   | 'pricing_viewed'
   | 'signup_started'
   | 'signup_completed'
-  | 'trial_started'
   | 'first_source_connected'
   | 'first_report_generated'
   | 'subscription_started'
@@ -405,13 +403,6 @@ class Analytics {
 
   trackSignupCompleted(userId: string, plan: string): void {
     this.track('signup_completed', { userId, plan });
-  }
-
-  trackTrialStarted(trialDays: number): void {
-    this.track('trial_started', {
-      trialDays,
-      trialEndsAt: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString(),
-    });
   }
 
   trackSubscription(event: 'started' | 'upgraded' | 'downgraded' | 'cancelled', data: {

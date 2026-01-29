@@ -15,7 +15,6 @@ import {
   Search,
   CheckCircle,
 } from 'lucide-react';
-import { InfoBanner } from '../components/HelpTooltip';
 import { useI18n } from '../lib/i18n';
 import { useToast } from '../contexts/ToastContext';
 
@@ -60,7 +59,7 @@ function ReportPreviewModal({
           {/* Operating Activities */}
           <div className="rounded-lg p-4" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
             <h5 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400" />
               {isEn ? 'Operating Activities' : 'Activités d\'exploitation'}
             </h5>
             <div className="space-y-2 text-sm">
@@ -78,7 +77,7 @@ function ReportPreviewModal({
               </div>
               <div className="flex justify-between pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
                 <span className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Net Cash from Operations' : 'Flux net d\'exploitation'}</span>
-                <span className="font-bold text-green-500">{formatCurrency(131500)}</span>
+                <span className="font-bold text-green-500 dark:text-green-400">{formatCurrency(131500)}</span>
               </div>
             </div>
           </div>
@@ -136,7 +135,7 @@ function ReportPreviewModal({
               <span className="font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Net Change in Cash' : 'Variation nette de trésorerie'}
               </span>
-              <span className="text-xl font-bold text-green-500">{formatCurrency(39500)}</span>
+              <span className="text-xl font-bold text-green-500 dark:text-green-400">{formatCurrency(39500)}</span>
             </div>
           </div>
         </div>
@@ -155,7 +154,7 @@ function ReportPreviewModal({
           
           <div className="rounded-lg p-4" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between font-semibold text-green-500">
+              <div className="flex justify-between font-semibold text-green-500 dark:text-green-400">
                 <span>{isEn ? 'Revenue' : 'Revenus'}</span>
                 <span>{formatCurrency(485000)}</span>
               </div>
@@ -194,7 +193,7 @@ function ReportPreviewModal({
               <span className="font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Net Income' : 'Bénéfice net'}
               </span>
-              <span className="text-xl font-bold text-green-500">{formatCurrency(125000)}</span>
+              <span className="text-xl font-bold text-green-500 dark:text-green-400">{formatCurrency(125000)}</span>
             </div>
           </div>
         </div>
@@ -312,8 +311,8 @@ function ReportPreviewModal({
           </div>
 
           <div className="flex items-center justify-center gap-2 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="font-medium text-green-500">{isEn ? 'Balanced' : 'Équilibré'}</span>
+            <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />
+            <span className="font-medium text-green-500 dark:text-green-400">{isEn ? 'Balanced' : 'Équilibré'}</span>
           </div>
         </div>
       );
@@ -331,7 +330,7 @@ function ReportPreviewModal({
 
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: isEn ? 'Total Revenue' : 'Revenus totaux', value: formatCurrency(485000), color: 'text-green-500' },
+            { label: isEn ? 'Total Revenue' : 'Revenus totaux', value: formatCurrency(485000), color: 'text-green-500 dark:text-green-400' },
             { label: isEn ? 'Total Expenses' : 'Dépenses totales', value: formatCurrency(360000), color: 'text-red-500' },
             { label: isEn ? 'Net Result' : 'Résultat net', value: formatCurrency(125000), color: 'text-blue-500' },
           ].map((stat, i) => (
@@ -504,7 +503,7 @@ function AllReportsModal({
               placeholder={isEn ? 'Search reports...' : 'Rechercher...'}
               className="w-full pl-10 pr-4 py-2 rounded-lg text-sm"
               style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted))',
+                backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))',
                 color: 'rgb(var(--color-text))'
               }}
@@ -515,7 +514,7 @@ function AllReportsModal({
             onChange={(e) => setFilterType(e.target.value)}
             className="px-3 py-2 rounded-lg text-sm"
             style={{ 
-              backgroundColor: 'rgb(var(--color-bg-muted))',
+              backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
               color: 'rgb(var(--color-text))'
             }}
@@ -535,14 +534,17 @@ function AllReportsModal({
               <div
                 key={report.id}
                 className="flex items-center justify-between p-3 rounded-lg"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: '1px solid rgb(var(--color-border))'
+                }}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div 
                     className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                   >
-                    <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                   </div>
                   <div className="min-w-0">
                     <p className="font-medium text-sm truncate" style={{ color: 'rgb(var(--color-text))' }}>
@@ -558,8 +560,8 @@ function AllReportsModal({
                   <span 
                     className="px-2 py-0.5 text-xs font-medium rounded"
                     style={{ 
-                      backgroundColor: 'rgb(var(--color-bg-emphasis))',
-                      color: 'rgb(var(--color-text-secondary))'
+                      backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                      color: 'rgb(var(--color-primary-500))'
                     }}
                   >
                     {report.format}
@@ -614,7 +616,6 @@ export default function Reports() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const toast = useToast();
-  const [showTip, setShowTip] = useState(true);
   const [previewReport, setPreviewReport] = useState<any | null>(null);
   const [showAllReports, setShowAllReports] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -781,19 +782,6 @@ export default function Reports() {
         </p>
       </div>
 
-      {/* Helpful tip */}
-      {showTip && (
-        <InfoBanner
-          type="tip"
-          title={isEn ? 'Optimized reports' : 'Rapports optimisés'}
-          description={isEn 
-            ? 'Our reports are designed for maximum readability with automatic highlighting of anomalies and significant variations. Choose a report type below to get started.'
-            : 'Nos rapports sont conçus pour une lisibilité maximale avec mise en évidence automatique des anomalies et variations significatives. Choisissez un type de rapport ci-dessous pour commencer.'}
-          dismissible
-          onDismiss={() => setShowTip(false)}
-        />
-      )}
-
       {/* Report Types Grid - Unified monochromatic icons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {reportTypes.map((report) => (
@@ -809,11 +797,11 @@ export default function Reports() {
             <div className="flex items-start gap-4">
               <div 
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
               >
                 <report.icon 
                   className="w-5 h-5" 
-                  style={{ color: 'rgb(var(--color-text-secondary))' }} 
+                  style={{ color: 'rgb(var(--color-primary-500))' }} 
                 />
               </div>
               <div className="flex-1 min-w-0">
@@ -869,7 +857,7 @@ export default function Reports() {
           <button 
             onClick={() => setShowAllReports(true)}
             className="text-sm font-medium flex items-center gap-1 hover:underline"
-            style={{ color: 'rgb(var(--color-interactive))' }}
+            style={{ color: 'rgb(var(--color-primary-500))' }}
           >
             {isEn ? 'View all' : 'Voir tous'}
             <ArrowRight className="w-4 h-4" />
@@ -882,16 +870,19 @@ export default function Reports() {
               <div
                 key={report.id}
                 className="flex items-center justify-between p-3 rounded-lg"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: '1px solid rgb(var(--color-border))'
+                }}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div 
                     className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                   >
                     <FileText 
                       className="w-4 h-4" 
-                      style={{ color: 'rgb(var(--color-text-muted))' }} 
+                      style={{ color: 'rgb(var(--color-primary-500))' }} 
                     />
                   </div>
                   <div className="min-w-0">
@@ -914,8 +905,8 @@ export default function Reports() {
                   <span 
                     className="px-2 py-0.5 text-xs font-medium rounded"
                     style={{ 
-                      backgroundColor: 'rgb(var(--color-bg-emphasis))',
-                      color: 'rgb(var(--color-text-secondary))'
+                      backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                      color: 'rgb(var(--color-primary-500))'
                     }}
                   >
                     {report.format}
@@ -970,16 +961,16 @@ export default function Reports() {
       <div 
         className="rounded-xl p-4 sm:p-5"
         style={{ 
-          backgroundColor: 'rgb(var(--color-bg-muted))',
+          backgroundColor: 'rgb(var(--color-surface))',
           border: '1px solid rgb(var(--color-border))'
         }}
       >
         <div className="flex items-start gap-4">
           <div 
             className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'rgb(var(--color-text))' }}
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
           >
-            <Sparkles className="w-5 h-5" style={{ color: 'rgb(var(--color-bg))' }} />
+            <Sparkles className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
           </div>
           <div>
             <h4 
@@ -999,7 +990,7 @@ export default function Reports() {
             <Link
               to="/app/anomalies"
               className="text-sm font-medium mt-2 inline-flex items-center gap-1"
-              style={{ color: 'rgb(var(--color-interactive))' }}
+              style={{ color: 'rgb(var(--color-primary-500))' }}
             >
               {isEn ? 'View anomalies dashboard' : 'Voir le tableau de bord anomalies'}
               <ArrowRight className="w-4 h-4" />

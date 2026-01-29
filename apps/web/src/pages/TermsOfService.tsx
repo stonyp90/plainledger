@@ -5,7 +5,7 @@
 
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, ArrowLeft, Shield, FileText } from 'lucide-react';
+import { ArrowLeft, Shield, FileText } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n, LanguageToggle } from '../lib/i18n';
 import ThemeToggle from '../components/ThemeToggle';
@@ -21,12 +21,22 @@ export default function TermsOfService() {
     >
       {/* Header */}
       <header className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 group">
           <div 
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
+            style={{ 
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+            }}
           >
-            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+              <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+              <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
           <span className="font-semibold text-base sm:text-lg" style={{ color: 'rgb(var(--color-text))' }}>
             PlainLedger
@@ -118,10 +128,10 @@ export default function TermsOfService() {
 
                 <section className="space-y-3 sm:space-y-4">
                   <h2 className="text-lg sm:text-xl font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    4. Free Trial
+                    4. Free Plan
                   </h2>
                   <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    PlainLedger offers a 7-day free trial period. During this trial, you have access to core features (AI features are not included). No credit card is required to start your trial. At the end of the trial period, you may choose to subscribe to a paid plan or your access will be limited.
+                    PlainLedger offers a free plan with access to demo data. Free users can explore the platform with sample data to understand its features. To connect your accounting software and see your real financial data, you must subscribe to a paid plan.
                   </p>
                 </section>
 
@@ -130,7 +140,7 @@ export default function TermsOfService() {
                     5. Subscription and Billing
                   </h2>
                   <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    If you choose to subscribe after your free trial, you agree to pay the subscription fees as specified in your selected plan. Subscriptions are billed in advance on a monthly or annual basis. You may cancel your subscription at any time, but no refunds will be provided for the current billing period.
+                    When you subscribe to a paid plan, you agree to pay the subscription fees as specified in your selected plan. Subscriptions are billed in advance on a monthly or annual basis. You may cancel your subscription at any time, but no refunds will be provided for the current billing period.
                   </p>
                 </section>
 

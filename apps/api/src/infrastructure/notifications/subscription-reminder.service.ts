@@ -1,18 +1,15 @@
 /**
  * PlainLedger Subscription Reminder Service
- * Handles trial reminders, conversion emails, and feature unlock notifications
+ * Handles conversion emails and feature unlock notifications for free users
  *
- * Email Schedule:
- * - Day 7: Trial half-way reminder with usage stats
- * - Day 12: Feature highlight based on usage patterns
- * - Day 14: Trial ending soon (1 day left) with special offer
- * - Day 15: Trial expired with win-back offer
- * - Day 20: Last chance win-back offer
+ * Note: Trial concept has been removed. Free users now have demo-only access
+ * until they subscribe. This service handles:
  *
  * Usage-based triggers:
  * - After 5 reports generated: Feature unlock email
  * - After 10 anomalies detected: AI features highlight
  * - After first month: Usage milestone celebration
+ * - Win-back offers for inactive users
  */
 
 import { Injectable, Logger } from "@nestjs/common";
@@ -222,37 +219,8 @@ export class SubscriptionReminderService {
   // Scheduled Jobs
   // ---------------------------------------------------------------------------
 
-  /**
-   * Run daily at 9 AM to send trial reminders
-   */
-  @Cron("0 9 * * *")
-  async processTrialReminders(): Promise<void> {
-    this.logger.log("Processing trial reminders...");
-
-    try {
-      const trialUsers = await this.getTrialUsers();
-
-      for (const user of trialUsers) {
-        const daysSinceStart = this.getDaysSinceTrialStart(user);
-
-        if (daysSinceStart === REMINDER_SCHEDULE.HALF_WAY) {
-          await this.sendHalfwayReminder(user);
-        } else if (daysSinceStart === REMINDER_SCHEDULE.FEATURE_HIGHLIGHT) {
-          await this.sendFeatureHighlight(user);
-        } else if (daysSinceStart === REMINDER_SCHEDULE.ENDING_SOON) {
-          await this.sendTrialEndingSoon(user);
-        } else if (daysSinceStart === REMINDER_SCHEDULE.EXPIRED) {
-          await this.sendTrialExpired(user);
-        } else if (daysSinceStart === REMINDER_SCHEDULE.LAST_CHANCE) {
-          await this.sendLastChanceOffer(user);
-        }
-      }
-
-      this.logger.log(`Processed ${trialUsers.length} trial users`);
-    } catch (error) {
-      this.logger.error(`Failed to process trial reminders: ${error.message}`);
-    }
-  }
+  // Trial reminders have been removed - free users only see demo data
+  // and need to subscribe to access real data. No time-limited trial period.
 
   /**
    * Run hourly to check for usage milestones

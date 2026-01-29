@@ -197,7 +197,7 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: plainledger
       KEYCLOAK_CLIENT_ID: plainledger-api
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me-in-production}
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -209,6 +209,7 @@ services:
       S3_BUCKET_BRONZE: ${S3_BUCKET_BRONZE:-plainledger-bronze}
       S3_BUCKET_SILVER: ${S3_BUCKET_SILVER:-plainledger-silver}
       S3_BUCKET_GOLD: ${S3_BUCKET_GOLD:-plainledger-gold}
+      S3_BUCKET_UPLOADS: ${S3_BUCKET_UPLOADS:-plainledger-uploads}
       # Legacy MinIO support
       MINIO_ACCESS_KEY: plainledger
       MINIO_SECRET_KEY: plainledger_secret

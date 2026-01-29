@@ -459,6 +459,11 @@ function App() {
           </ProtectedRoute>
         }
       />
+      {/* Board Ready redirects to Board Meeting with share tab */}
+      <Route
+        path="/app/board-ready"
+        element={<Navigate to="/app/board-meeting" replace />}
+      />
       <Route
         path="/app/strategic-planning"
         element={

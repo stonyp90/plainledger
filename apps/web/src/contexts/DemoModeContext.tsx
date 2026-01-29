@@ -4,6 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useAuth } from '../lib/keycloak';
 
 // Storage key for demo mode preference
 const DEMO_MODE_STORAGE_KEY = 'plainledger-demo-mode';
@@ -22,11 +23,27 @@ interface DemoModeProviderProps {
 }
 
 export function DemoModeProvider({ children }: DemoModeProviderProps) {
-  // Load demo mode preference from localStorage
+  const { user } = useAuth();
+  
+  // Check if user is in demo-signup organization - auto-enable demo mode
+  const isDemoSignupUser = user?.organization === 'demo-signup';
+  
+  // Load demo mode preference from localStorage or auto-enable for demo-signup users
   const [isDemoMode, setIsDemoModeState] = useState<boolean>(() => {
+    // Auto-enable for demo-signup users
+    if (isDemoSignupUser) {
+      return true;
+    }
     const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
     return saved === 'true';
   });
+  
+  // Auto-enable demo mode when user is in demo-signup org
+  useEffect(() => {
+    if (isDemoSignupUser && !isDemoMode) {
+      setIsDemoModeState(true);
+    }
+  }, [isDemoSignupUser, isDemoMode]);
 
   // Save to localStorage whenever it changes
   useEffect(() => {

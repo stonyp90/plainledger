@@ -11,10 +11,15 @@
 
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import KcAdminClient from "@keycloak/keycloak-admin-client";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+
+// Dynamic import for ESM module compatibility
+// The @keycloak/keycloak-admin-client v26+ is ESM-only
+type KcAdminClientType = import("@keycloak/keycloak-admin-client").default;
+type UserRepresentation =
+  import("@keycloak/keycloak-admin-client/lib/defs/userRepresentation").default;
+type RoleRepresentation =
+  import("@keycloak/keycloak-admin-client/lib/defs/roleRepresentation").default;
 
 // Re-export interface for convenience
 export { IKeycloakAdminService };
@@ -63,7 +68,8 @@ export class KeycloakAdminService
   implements IKeycloakAdminService, OnModuleInit
 {
   private readonly logger = new Logger(KeycloakAdminService.name);
-  private adminClient: KcAdminClient;
+  // Use definite assignment assertion since we check isConfigured before any use
+  private adminClient!: KcAdminClientType;
   private realm: string;
   private isConfigured = false;
 
@@ -85,6 +91,7 @@ export class KeycloakAdminService
 
   /**
    * Initialize Keycloak Admin Client with service account credentials
+   * Uses dynamic import for ESM module compatibility
    */
   private async initializeClient(): Promise<void> {
     const baseUrl = this.configService.get<string>(
@@ -107,6 +114,17 @@ export class KeycloakAdminService
     }
 
     try {
+      // Dynamic import for ESM module
+      // Use Function constructor to prevent TypeScript from transforming import() to require()
+      const dynamicImport = new Function(
+        "specifier",
+        "return import(specifier)",
+      );
+      const KcAdminClientModule = await dynamicImport(
+        "@keycloak/keycloak-admin-client",
+      );
+      const KcAdminClient = KcAdminClientModule.default;
+
       this.adminClient = new KcAdminClient({
         baseUrl,
         realmName: this.realm,
@@ -142,11 +160,13 @@ export class KeycloakAdminService
     setInterval(
       async () => {
         try {
-          await this.adminClient.auth({
-            grantType: "client_credentials",
-            clientId,
-            clientSecret,
-          });
+          if (this.adminClient) {
+            await this.adminClient.auth({
+              grantType: "client_credentials",
+              clientId,
+              clientSecret,
+            });
+          }
         } catch (error) {
           this.logger.error(
             `Failed to refresh Keycloak Admin token: ${error.message}`,
@@ -232,15 +252,15 @@ export class KeycloakAdminService
               realm: this.realm,
               id: userId,
             });
-            this.logger.log(`Cleaned up user ${userId} after password setting failure`);
+            this.logger.log(
+              `Cleaned up user ${userId} after password setting failure`,
+            );
           } catch (deleteError) {
             this.logger.error(
               `Failed to clean up user ${userId} after password error: ${deleteError.message}`,
             );
           }
-          throw new Error(
-            `Failed to set password: ${passwordError.message}`,
-          );
+          throw new Error(`Failed to set password: ${passwordError.message}`);
         }
       }
 
@@ -458,7 +478,10 @@ export class KeycloakAdminService
    * Uses executeActionsEmail with VERIFY_EMAIL action for better control
    * Redirects user back to our app after verification
    */
-  async sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
+  async sendVerificationEmail(
+    userId: string,
+    redirectUri?: string,
+  ): Promise<void> {
     if (!this.isConfigured) {
       throw new Error("Keycloak Admin Service not configured");
     }
@@ -466,9 +489,15 @@ export class KeycloakAdminService
     try {
       // Use executeActionsEmail instead of sendVerifyEmail to support redirectUri
       // This allows us to redirect users back to our app after verification
-      const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
-      const clientId = this.configService.get<string>("KEYCLOAK_WEB_CLIENT_ID", "plainledger-web");
-      
+      const frontendUrl = this.configService.get<string>(
+        "FRONTEND_URL",
+        "https://plainledger.ca",
+      );
+      const clientId = this.configService.get<string>(
+        "KEYCLOAK_WEB_CLIENT_ID",
+        "plainledger-web",
+      );
+
       await this.adminClient.users.executeActionsEmail({
         realm: this.realm,
         id: userId,
@@ -477,7 +506,9 @@ export class KeycloakAdminService
         lifespan: 86400, // 24 hours in seconds
         actions: ["VERIFY_EMAIL"],
       });
-      this.logger.log(`Verification email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`);
+      this.logger.log(
+        `Verification email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`,
+      );
     } catch (error) {
       this.logger.error(`Failed to send verification email: ${error.message}`);
       throw error;
@@ -488,7 +519,10 @@ export class KeycloakAdminService
    * Directly set email as verified for a user (Admin action)
    * Use this for admin-initiated verification or when user verification link fails
    */
-  async setEmailVerified(userId: string, verified: boolean = true): Promise<void> {
+  async setEmailVerified(
+    userId: string,
+    verified: boolean = true,
+  ): Promise<void> {
     if (!this.isConfigured) {
       throw new Error("Keycloak Admin Service not configured");
     }
@@ -498,9 +532,13 @@ export class KeycloakAdminService
         { realm: this.realm, id: userId },
         { emailVerified: verified },
       );
-      this.logger.log(`Email verified status set to ${verified} for user: ${userId}`);
+      this.logger.log(
+        `Email verified status set to ${verified} for user: ${userId}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to set email verified status: ${error.message}`);
+      this.logger.error(
+        `Failed to set email verified status: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -509,15 +547,24 @@ export class KeycloakAdminService
    * Send password reset email to user
    * Uses executeActionsEmail with redirectUri to redirect back to our app after password update
    */
-  async sendPasswordResetEmail(userId: string, redirectUri?: string): Promise<void> {
+  async sendPasswordResetEmail(
+    userId: string,
+    redirectUri?: string,
+  ): Promise<void> {
     if (!this.isConfigured) {
       throw new Error("Keycloak Admin Service not configured");
     }
 
     try {
-      const frontendUrl = this.configService.get<string>("FRONTEND_URL", "https://plainledger.ca");
-      const clientId = this.configService.get<string>("KEYCLOAK_WEB_CLIENT_ID", "plainledger-web");
-      
+      const frontendUrl = this.configService.get<string>(
+        "FRONTEND_URL",
+        "https://plainledger.ca",
+      );
+      const clientId = this.configService.get<string>(
+        "KEYCLOAK_WEB_CLIENT_ID",
+        "plainledger-web",
+      );
+
       await this.adminClient.users.executeActionsEmail({
         realm: this.realm,
         id: userId,
@@ -526,7 +573,9 @@ export class KeycloakAdminService
         lifespan: 900, // 15 minutes in seconds
         actions: ["UPDATE_PASSWORD"],
       });
-      this.logger.log(`Password reset email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`);
+      this.logger.log(
+        `Password reset email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to send password reset email: ${error.message}`,

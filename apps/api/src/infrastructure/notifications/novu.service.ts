@@ -78,13 +78,10 @@ export const NovuWorkflows = {
   PAYMENT_FAILED: "payment-failed",
   PAYMENT_METHOD_EXPIRING: "payment-method-expiring",
   INVOICE_CREATED: "invoice-created",
-  TRIAL_ENDING: "trial-ending",
   USAGE_LIMIT_WARNING: "usage-limit-warning",
   USAGE_LIMIT_REACHED: "usage-limit-reached",
 
-  // Trial & Conversion
-  TRIAL_REMINDER: "trial-reminder",
-  TRIAL_EXPIRED: "trial-expired",
+  // Conversion
   FEATURE_UNLOCK: "feature-unlock",
   USAGE_MILESTONE: "usage-milestone",
   WINBACK_OFFER: "winback-offer",
@@ -268,7 +265,9 @@ export class NovuService implements OnModuleInit, INotificationService {
   /**
    * Send password reset email with custom link
    */
-  async sendPasswordResetEmail(options: PasswordResetEmailOptions): Promise<boolean> {
+  async sendPasswordResetEmail(
+    options: PasswordResetEmailOptions,
+  ): Promise<boolean> {
     const { to, firstName, resetUrl } = options;
     const expiresIn = "15 minutes";
 
@@ -281,8 +280,8 @@ export class NovuService implements OnModuleInit, INotificationService {
 
     try {
       // Create temporary subscriber for the email recipient
-      const subscriberId = `reset-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
-      
+      const subscriberId = `reset-${Date.now()}-${to.replace(/[^a-z0-9]/gi, "")}`;
+
       await this.upsertSubscriber({
         subscriberId,
         email: to,
@@ -304,8 +303,10 @@ export class NovuService implements OnModuleInit, INotificationService {
       this.logger.log(`Password reset email sent to: ${to}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to send password reset email: ${error.message}`);
-      
+      this.logger.error(
+        `Failed to send password reset email: ${error.message}`,
+      );
+
       // Fallback: Log the reset URL for development
       if (!this.enabled) {
         this.logger.log(`[DEV] Password reset URL for ${to}: ${resetUrl}`);
@@ -318,7 +319,9 @@ export class NovuService implements OnModuleInit, INotificationService {
   /**
    * Send email verification email with custom link
    */
-  async sendVerificationEmail(options: VerificationEmailOptions): Promise<boolean> {
+  async sendVerificationEmail(
+    options: VerificationEmailOptions,
+  ): Promise<boolean> {
     const { to, firstName, verifyUrl } = options;
     const expiresIn = "24 hours";
 
@@ -330,8 +333,8 @@ export class NovuService implements OnModuleInit, INotificationService {
     });
 
     try {
-      const subscriberId = `verify-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
-      
+      const subscriberId = `verify-${Date.now()}-${to.replace(/[^a-z0-9]/gi, "")}`;
+
       await this.upsertSubscriber({
         subscriberId,
         email: to,
@@ -354,7 +357,7 @@ export class NovuService implements OnModuleInit, INotificationService {
       return true;
     } catch (error) {
       this.logger.error(`Failed to send verification email: ${error.message}`);
-      
+
       if (!this.enabled) {
         this.logger.log(`[DEV] Verification URL for ${to}: ${verifyUrl}`);
         return true;
@@ -376,8 +379,8 @@ export class NovuService implements OnModuleInit, INotificationService {
     });
 
     try {
-      const subscriberId = `mfa-${Date.now()}-${to.replace(/[^a-z0-9]/gi, '')}`;
-      
+      const subscriberId = `mfa-${Date.now()}-${to.replace(/[^a-z0-9]/gi, "")}`;
+
       await this.upsertSubscriber({
         subscriberId,
         email: to,
@@ -408,7 +411,7 @@ export class NovuService implements OnModuleInit, INotificationService {
    */
   async sendPasswordChangedEmail(
     userId: string,
-    data: { email: string; firstName: string; timestamp: Date }
+    data: { email: string; firstName: string; timestamp: Date },
   ): Promise<void> {
     // Generate branded HTML template
     const htmlContent = this.emailTemplates?.passwordChanged({
@@ -428,7 +431,7 @@ export class NovuService implements OnModuleInit, INotificationService {
    */
   async sendWelcomeEmail(
     userId: string,
-    data: { email: string; firstName: string; organizationName?: string }
+    data: { email: string; firstName: string; organizationName?: string },
   ): Promise<void> {
     await this.sendWelcome(userId, data);
   }
@@ -444,7 +447,7 @@ export class NovuService implements OnModuleInit, INotificationService {
       ipAddress: string;
       location?: string;
       timestamp: Date;
-    }
+    },
   ): Promise<void> {
     await this.sendLoginNewDevice(userId, data);
   }
@@ -454,19 +457,9 @@ export class NovuService implements OnModuleInit, INotificationService {
    */
   async sendPaymentFailedNotification(
     userId: string,
-    data: { amount: string; currency: string; cardLast4: string }
+    data: { amount: string; currency: string; cardLast4: string },
   ): Promise<void> {
     await this.sendPaymentFailed(userId, data);
-  }
-
-  /**
-   * Send trial ending reminder (INotificationService implementation)
-   */
-  async sendTrialEndingReminder(
-    userId: string,
-    data: { daysLeft: number; trialEndDate: Date; planName: string }
-  ): Promise<void> {
-    await this.sendTrialEnding(userId, data);
   }
 
   // ---------------------------------------------------------------------------
@@ -673,91 +666,9 @@ export class NovuService implements OnModuleInit, INotificationService {
     });
   }
 
-  async sendTrialEnding(
-    userId: string,
-    data: {
-      daysLeft: number;
-      trialEndDate: Date;
-      planName: string;
-    },
-  ): Promise<void> {
-    await this.trigger({
-      workflowId: NovuWorkflows.TRIAL_ENDING,
-      to: userId,
-      payload: {
-        daysLeft: data.daysLeft,
-        trialEndDate: data.trialEndDate.toISOString(),
-        planName: data.planName,
-        subscribeUrl: `${this.getBaseUrl()}/app/settings`,
-      },
-    });
-  }
-
   // ---------------------------------------------------------------------------
-  // Trial & Conversion Notifications
+  // Conversion Notifications
   // ---------------------------------------------------------------------------
-
-  async sendTrialReminder(
-    userId: string,
-    data: {
-      firstName: string;
-      daysLeft: number;
-      reportsGenerated: number;
-      anomaliesDetected: number;
-      planName: string;
-      price: number;
-      specialOfferCode?: string;
-      specialOfferDiscount?: number;
-    },
-  ): Promise<void> {
-    await this.trigger({
-      workflowId: NovuWorkflows.TRIAL_REMINDER,
-      to: userId,
-      payload: {
-        firstName: data.firstName,
-        daysLeft: data.daysLeft,
-        reportsGenerated: data.reportsGenerated,
-        anomaliesDetected: data.anomaliesDetected,
-        timeSaved: Math.round(data.reportsGenerated * 0.5),
-        planName: data.planName,
-        price: data.price,
-        specialOfferCode: data.specialOfferCode,
-        specialOfferDiscount: data.specialOfferDiscount,
-        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription${data.specialOfferCode ? `&code=${data.specialOfferCode}` : ""}`,
-      },
-    });
-  }
-
-  async sendTrialExpiredNotification(
-    userId: string,
-    data: {
-      firstName: string;
-      reportsGenerated: number;
-      anomaliesDetected: number;
-      planName: string;
-      winbackCode: string;
-      winbackDiscount: number;
-      winbackMonths: number;
-      expiresAt: Date;
-    },
-  ): Promise<void> {
-    await this.trigger({
-      workflowId: NovuWorkflows.TRIAL_EXPIRED,
-      to: userId,
-      payload: {
-        firstName: data.firstName,
-        reportsGenerated: data.reportsGenerated,
-        anomaliesDetected: data.anomaliesDetected,
-        moneySaved: Math.round(data.anomaliesDetected * 500),
-        planName: data.planName,
-        winbackCode: data.winbackCode,
-        winbackDiscount: data.winbackDiscount,
-        winbackMonths: data.winbackMonths,
-        expiresAt: data.expiresAt.toISOString(),
-        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription&code=${data.winbackCode}`,
-      },
-    });
-  }
 
   async sendFeatureUnlock(
     userId: string,
