@@ -1,4 +1,4 @@
-<!-- Usage Milestone Email - Celebrate user achievements and encourage upgrade -->
+<!-- Usage Milestone Email - Celebrate user achievements -->
 
 <h1 class="email-title">
   {{#if isEn}}
@@ -17,12 +17,12 @@
 </p>
 
 <!-- Milestone Banner -->
-<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%); border-radius: 16px; padding: 32px; margin: 24px 0; text-align: center;">
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 50%, #10b981 100%); border-radius: 16px; padding: 32px; margin: 24px 0; text-align: center;">
   <div style="font-size: 48px; margin-bottom: 8px;">🏆</div>
-  <div style="font-size: 14px; color: #92400e; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
+  <div style="font-size: 14px; color: #047857; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
     {{#if isEn}}Achievement Unlocked{{else}}Accomplissement débloqué{{/if}}
   </div>
-  <div style="font-size: 28px; font-weight: bold; color: #78350f;">
+  <div style="font-size: 28px; font-weight: bold; color: #065f46;">
     {{milestoneValue}} {{#if isEn}}{{milestoneLabel}}{{else}}{{milestoneLabelFr}}{{/if}}
   </div>
 </div>
@@ -39,20 +39,20 @@
 <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
   <tr>
     <td style="width: 33%; padding: 16px; text-align: center; background: #f0fdf4; border-radius: 12px 0 0 12px;">
-      <div style="font-size: 24px; font-weight: bold; color: #166534;">{{impact.timeSaved}}</div>
-      <div style="font-size: 11px; color: #4d7c0f; margin-top: 4px;">
+      <div style="font-size: 24px; font-weight: bold; color: #059669;">{{impact.timeSaved}}</div>
+      <div style="font-size: 11px; color: #047857; margin-top: 4px;">
         {{#if isEn}}Hours Saved{{else}}Heures économisées{{/if}}
       </div>
     </td>
-    <td style="width: 33%; padding: 16px; text-align: center; background: #eff6ff;">
-      <div style="font-size: 24px; font-weight: bold; color: #1d4ed8;">{{impact.issuesFound}}</div>
-      <div style="font-size: 11px; color: #1e40af; margin-top: 4px;">
+    <td style="width: 33%; padding: 16px; text-align: center; background: #ecfdf5;">
+      <div style="font-size: 24px; font-weight: bold; color: #059669;">{{impact.issuesFound}}</div>
+      <div style="font-size: 11px; color: #047857; margin-top: 4px;">
         {{#if isEn}}Issues Caught{{else}}Problèmes détectés{{/if}}
       </div>
     </td>
-    <td style="width: 33%; padding: 16px; text-align: center; background: #fdf4ff; border-radius: 0 12px 12px 0;">
-      <div style="font-size: 24px; font-weight: bold; color: #7e22ce;">${{impact.moneySaved}}</div>
-      <div style="font-size: 11px; color: #6b21a8; margin-top: 4px;">
+    <td style="width: 33%; padding: 16px; text-align: center; background: #fffbeb; border-radius: 0 12px 12px 0;">
+      <div style="font-size: 24px; font-weight: bold; color: #d97706;">${{impact.moneySaved}}</div>
+      <div style="font-size: 11px; color: #b45309; margin-top: 4px;">
         {{#if isEn}}Est. Savings{{else}}Économies est.{{/if}}
       </div>
     </td>
@@ -60,6 +60,7 @@
 </table>
 
 <!-- Next Level Teaser -->
+{{#if showUpgrade}}
 <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; margin: 24px 0;">
   <p style="font-weight: 600; color: #334155; margin: 0 0 12px 0;">
     {{#if isEn}}
@@ -94,6 +95,7 @@
     {{/if}}
   </a>
 </div>
+{{/if}}
 
 <!-- Share achievement -->
 <p style="text-align: center; font-size: 13px; color: #94a3b8;">
@@ -102,6 +104,10 @@
   {{else}}
     Partagez votre accomplissement :
   {{/if}}
-  <a href="{{shareUrl.linkedin}}" style="color: #0077b5; margin: 0 8px;">LinkedIn</a>
-  <a href="{{shareUrl.twitter}}" style="color: #1da1f2; margin: 0 8px;">Twitter</a>
+  <a href="{{shareUrl.linkedin}}" style="color: #059669; margin: 0 8px;">LinkedIn</a>
+  <a href="{{shareUrl.twitter}}" style="color: #059669; margin: 0 8px;">Twitter</a>
 </p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Congratulations again{{else}}Encore une fois, félicitations{{/if}}!<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

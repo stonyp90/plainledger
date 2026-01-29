@@ -15,7 +15,6 @@ import { Injectable, Logger } from "@nestjs/common";
 import {
   IntegrationProvider,
   EntityMapping,
-  FieldMapping,
   DEFAULT_PROVIDERS,
 } from "@domain/entities/IntegrationProvider";
 

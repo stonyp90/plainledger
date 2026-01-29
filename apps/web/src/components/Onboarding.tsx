@@ -32,6 +32,7 @@ import {
   GraduationCap,
   Loader2,
   UserPlus,
+  Wheat,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../lib/keycloak';
@@ -45,7 +46,7 @@ import { getKPIsForIndustry } from '../lib/industryKPIs';
 // TYPES
 // =====================================================
 
-interface OnboardingData {
+export interface OnboardingData {
   // Account type
   accountType: 'individual' | 'business' | 'enterprise';
   // Company info
@@ -88,9 +89,14 @@ const INDUSTRY_ICONS: Record<string, React.ComponentType<{ className?: string; s
   restaurant: UtensilsCrossed,
   professional_services: Briefcase,
   manufacturing: Factory,
+  agriculture: Wheat,
   transportation: Truck,
+  transport: Truck,
   healthcare: Heart,
   education: GraduationCap,
+  wholesale: ShoppingBag,
+  automotive: Truck,
+  beauty_wellness: Heart,
 };
 
 const colors = {
@@ -101,7 +107,7 @@ const colors = {
 };
 
 // Step 1: Company Info
-function CompanyInfoStep({ 
+export function CompanyInfoStep({ 
   data, 
   onChange, 
   onNext,
@@ -469,7 +475,7 @@ function ConnectSourceStep({
 }
 
 // Step 5: Invite Team
-function InviteTeamStep({ 
+export function InviteTeamStep({ 
   data, 
   onChange, 
   onNext, 
@@ -588,7 +594,7 @@ function InviteTeamStep({
 }
 
 // Step 2: Industry KPIs Preview
-function IndustryPreviewStep({
+export function IndustryPreviewStep({
   data,
   onChange: _onChange,
   onNext,
@@ -1251,7 +1257,7 @@ export default function Onboarding() {
                   <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                   <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                   <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
               <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>

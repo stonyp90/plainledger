@@ -2,33 +2,31 @@
  * PlainLedger Subscription Reminder Service
  * Handles conversion emails and feature unlock notifications for free users
  *
- * Note: Trial concept has been removed. Free users now have demo-only access
- * until they subscribe. This service handles:
+ * Free users have demo-only access until they subscribe.
+ * This service handles:
  *
  * Usage-based triggers:
  * - After 5 reports generated: Feature unlock email
  * - After 10 anomalies detected: AI features highlight
- * - After first month: Usage milestone celebration
+ * - Usage milestone celebrations
  * - Win-back offers for inactive users
  */
 
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { NotificationService, sendNotification } from "./notification.service";
-import { NovuService, NovuWorkflows } from "./novu.service";
+import { sendNotification } from "./notification.service";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface TrialUser {
+export interface FreeUser {
   id: string;
   email: string;
   firstName: string;
   lastName?: string;
   organizationName: string;
-  trialStartDate: Date;
-  trialEndDate: Date;
+  registeredAt: Date;
   locale: "en" | "fr";
   currentPlan: string;
   usage: UserUsageStats;
@@ -64,16 +62,6 @@ export interface PlanFeature {
 // ============================================================================
 // Constants
 // ============================================================================
-
-const TRIAL_DURATION_DAYS = 7;
-
-const REMINDER_SCHEDULE = {
-  HALF_WAY: 3, // Day 3 - half-way through trial
-  FEATURE_HIGHLIGHT: 5, // Day 5 - 2 days before end
-  ENDING_SOON: 6, // Day 6 - 1 day before end
-  EXPIRED: 8, // Day 8 - 1 day after end
-  LAST_CHANCE: 12, // Day 12 - final win-back attempt
-};
 
 const USAGE_MILESTONES = {
   REPORTS_THRESHOLD: 5,
@@ -173,12 +161,6 @@ const PLANS: Record<string, SubscriptionPlan> = {
   },
 };
 
-const SPECIAL_OFFERS = {
-  trial_ending: { discount: 20, code: "TRIAL20", validDays: 7 },
-  expired: { discount: 30, code: "COMEBACK30", validDays: 14, months: 3 },
-  last_chance: { discount: 40, code: "LASTCHANCE40", validDays: 7, months: 6 },
-};
-
 const TESTIMONIALS = [
   {
     author: "Marie Tremblay",
@@ -210,18 +192,6 @@ const TESTIMONIALS = [
 export class SubscriptionReminderService {
   private readonly logger = new Logger(SubscriptionReminderService.name);
 
-  constructor(
-    private notificationService: NotificationService,
-    private novuService: NovuService,
-  ) {}
-
-  // ---------------------------------------------------------------------------
-  // Scheduled Jobs
-  // ---------------------------------------------------------------------------
-
-  // Trial reminders have been removed - free users only see demo data
-  // and need to subscribe to access real data. No time-limited trial period.
-
   /**
    * Run hourly to check for usage milestones
    */
@@ -243,52 +213,9 @@ export class SubscriptionReminderService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Send halfway through trial reminder (Day 7)
+   * Send feature highlight based on usage patterns
    */
-  async sendHalfwayReminder(user: TrialUser): Promise<void> {
-    const isEn = user.locale === "en";
-    const plan = PLANS.professional;
-    const offer = SPECIAL_OFFERS.trial_ending;
-    const testimonial = this.getRandomTestimonial();
-
-    const payload = {
-      isEn,
-      firstName: user.firstName,
-      daysLeft: TRIAL_DURATION_DAYS - 3,
-      stage: "halfway through",
-      stageFr: "est à mi-chemin",
-      reportsGenerated: user.usage.reportsGenerated,
-      anomaliesDetected: user.usage.anomaliesDetected,
-      timeSaved: Math.round(user.usage.reportsGenerated * 0.5), // Estimate 30 min per report
-      planName: isEn ? plan.name : plan.nameFr,
-      price: plan.price,
-      features: plan.features.map((f) => ({
-        name: f.nameFr,
-        nameEn: f.name,
-        locked: f.locked,
-      })),
-      upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
-      baseUrl: this.getBaseUrl(),
-      testimonial: {
-        author: testimonial.author,
-        company: testimonial.company,
-        quote: isEn ? testimonial.quote : testimonial.quoteFr,
-      },
-    };
-
-    await this.sendEmailNotification(user, "trial_reminder", payload, {
-      subject: isEn
-        ? `${user.firstName}, 3 days left in your trial`
-        : `${user.firstName}, il reste 7 jours à votre essai`,
-    });
-
-    this.logger.log(`Sent halfway reminder to ${user.email}`);
-  }
-
-  /**
-   * Send feature highlight based on usage patterns (Day 12)
-   */
-  async sendFeatureHighlight(user: TrialUser): Promise<void> {
+  async sendFeatureHighlight(user: FreeUser): Promise<void> {
     const isEn = user.locale === "en";
     const feature = this.getRecommendedFeature(user);
     const plan = PLANS.professional;
@@ -322,135 +249,10 @@ export class SubscriptionReminderService {
   }
 
   /**
-   * Send trial ending soon reminder (Day 13 - 1 day left)
-   */
-  async sendTrialEndingSoon(user: TrialUser): Promise<void> {
-    const isEn = user.locale === "en";
-    const plan = PLANS.professional;
-    const offer = SPECIAL_OFFERS.trial_ending;
-    const testimonial = this.getRandomTestimonial();
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + offer.validDays);
-
-    const payload = {
-      isEn,
-      firstName: user.firstName,
-      daysLeft: 1,
-      stage: "ending tomorrow",
-      stageFr: "se termine demain",
-      reportsGenerated: user.usage.reportsGenerated,
-      anomaliesDetected: user.usage.anomaliesDetected,
-      timeSaved: Math.round(user.usage.reportsGenerated * 0.5),
-      planName: isEn ? plan.name : plan.nameFr,
-      price: plan.price,
-      features: plan.features.map((f) => ({
-        name: f.nameFr,
-        nameEn: f.name,
-        locked: f.locked,
-      })),
-      specialOffer: {
-        discount: offer.discount,
-        code: offer.code,
-        expiresAt: expiresAt.toLocaleDateString(isEn ? "en-CA" : "fr-CA"),
-      },
-      upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription&code=${offer.code}`,
-      baseUrl: this.getBaseUrl(),
-      testimonial: {
-        author: testimonial.author,
-        company: testimonial.company,
-        quote: isEn ? testimonial.quote : testimonial.quoteFr,
-      },
-    };
-
-    await this.sendEmailNotification(user, "trial_reminder", payload, {
-      subject: isEn
-        ? `⏰ ${user.firstName}, your trial ends tomorrow - ${offer.discount}% off inside`
-        : `⏰ ${user.firstName}, votre essai se termine demain - ${offer.discount}% de rabais`,
-    });
-
-    this.logger.log(`Sent trial ending soon to ${user.email}`);
-  }
-
-  /**
-   * Send trial expired notification with win-back offer (Day 15)
-   */
-  async sendTrialExpired(user: TrialUser): Promise<void> {
-    const isEn = user.locale === "en";
-    const plan = PLANS.professional;
-    const offer = SPECIAL_OFFERS.expired;
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + offer.validDays);
-
-    const payload = {
-      isEn,
-      firstName: user.firstName,
-      reportsGenerated: user.usage.reportsGenerated,
-      anomaliesDetected: user.usage.anomaliesDetected,
-      moneySaved: Math.round(user.usage.anomaliesDetected * 500), // Estimate $500 per anomaly caught
-      planName: isEn ? plan.name : plan.nameFr,
-      winbackOffer: {
-        discount: offer.discount,
-        code: offer.code,
-        months: offer.months,
-        expiresAt: expiresAt.toLocaleDateString(isEn ? "en-CA" : "fr-CA"),
-      },
-      upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
-      baseUrl: this.getBaseUrl(),
-    };
-
-    await this.sendEmailNotification(user, "trial_expired", payload, {
-      subject: isEn
-        ? `Your trial has ended - ${offer.discount}% off to come back`
-        : `Votre essai est terminé - ${offer.discount}% de rabais pour revenir`,
-    });
-
-    this.logger.log(`Sent trial expired to ${user.email}`);
-  }
-
-  /**
-   * Send last chance win-back offer (Day 20)
-   */
-  async sendLastChanceOffer(user: TrialUser): Promise<void> {
-    const isEn = user.locale === "en";
-    const plan = PLANS.professional;
-    const offer = SPECIAL_OFFERS.last_chance;
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + offer.validDays);
-
-    const payload = {
-      isEn,
-      firstName: user.firstName,
-      reportsGenerated: user.usage.reportsGenerated,
-      anomaliesDetected: user.usage.anomaliesDetected,
-      moneySaved: Math.round(user.usage.anomaliesDetected * 500),
-      planName: isEn ? plan.name : plan.nameFr,
-      winbackOffer: {
-        discount: offer.discount,
-        code: offer.code,
-        months: offer.months,
-        expiresAt: expiresAt.toLocaleDateString(isEn ? "en-CA" : "fr-CA"),
-      },
-      upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
-      baseUrl: this.getBaseUrl(),
-    };
-
-    await this.sendEmailNotification(user, "trial_expired", payload, {
-      subject: isEn
-        ? `🔥 Final offer: ${offer.discount}% off for ${offer.months} months`
-        : `🔥 Dernière offre: ${offer.discount}% de rabais pour ${offer.months} mois`,
-    });
-
-    this.logger.log(`Sent last chance offer to ${user.email}`);
-  }
-
-  /**
    * Send usage milestone celebration
    */
   async sendUsageMilestone(
-    user: TrialUser,
+    user: FreeUser,
     milestone: { value: number; label: string; labelFr: string },
   ): Promise<void> {
     const isEn = user.locale === "en";
@@ -462,6 +264,7 @@ export class SubscriptionReminderService {
       milestoneValue: milestone.value,
       milestoneLabel: milestone.label,
       milestoneLabelFr: milestone.labelFr,
+      showUpgrade: user.currentPlan === "free",
       impact: {
         timeSaved: Math.round(milestone.value * 0.5),
         issuesFound: user.usage.anomaliesDetected,
@@ -504,7 +307,7 @@ export class SubscriptionReminderService {
   // ---------------------------------------------------------------------------
 
   private async sendEmailNotification(
-    user: TrialUser,
+    user: FreeUser,
     template: string,
     payload: Record<string, unknown>,
     options: { subject: string },
@@ -521,13 +324,7 @@ export class SubscriptionReminderService {
     });
   }
 
-  private getDaysSinceTrialStart(user: TrialUser): number {
-    const now = new Date();
-    const diff = now.getTime() - user.trialStartDate.getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  }
-
-  private getRecommendedFeature(user: TrialUser): PlanFeature {
+  private getRecommendedFeature(user: FreeUser): PlanFeature {
     // Recommend features based on usage patterns
     if (user.usage.reportsGenerated >= 5) {
       return PLANS.professional.features.find(
@@ -545,7 +342,7 @@ export class SubscriptionReminderService {
 
   private getFeatureBenefits(
     featureId: string,
-    isEn: boolean,
+    _isEn: boolean,
   ): Array<{
     icon: string;
     title: string;
@@ -638,7 +435,7 @@ export class SubscriptionReminderService {
 
   private getFeatureUseCase(
     featureId: string,
-    isEn: boolean,
+    _isEn: boolean,
   ): { text: string; textEn: string; author: string; role: string } {
     const useCases: Record<
       string,
@@ -670,23 +467,34 @@ export class SubscriptionReminderService {
     return TESTIMONIALS[Math.floor(Math.random() * TESTIMONIALS.length)];
   }
 
-  private async checkAndSendMilestoneEmail(user: TrialUser): Promise<void> {
+  private async checkAndSendMilestoneEmail(user: FreeUser): Promise<void> {
     // Check for report milestone
     if (user.usage.reportsGenerated === USAGE_MILESTONES.REPORTS_THRESHOLD) {
-      await this.sendUsageMilestone(user, {
-        value: USAGE_MILESTONES.REPORTS_THRESHOLD,
-        label: "Reports Generated",
-        labelFr: "rapports générés",
-      });
+      const alreadySent = await this.hasMilestoneBeenSent(user.id, "reports_5");
+      if (!alreadySent) {
+        await this.sendUsageMilestone(user, {
+          value: USAGE_MILESTONES.REPORTS_THRESHOLD,
+          label: "Reports Generated",
+          labelFr: "rapports générés",
+        });
+        await this.markMilestoneSent(user.id, "reports_5");
+      }
     }
 
     // Check for anomaly detection milestone
     if (user.usage.anomaliesDetected === USAGE_MILESTONES.ANOMALIES_THRESHOLD) {
-      await this.sendUsageMilestone(user, {
-        value: USAGE_MILESTONES.ANOMALIES_THRESHOLD,
-        label: "Anomalies Detected",
-        labelFr: "anomalies détectées",
-      });
+      const alreadySent = await this.hasMilestoneBeenSent(
+        user.id,
+        "anomalies_10",
+      );
+      if (!alreadySent) {
+        await this.sendUsageMilestone(user, {
+          value: USAGE_MILESTONES.ANOMALIES_THRESHOLD,
+          label: "Anomalies Detected",
+          labelFr: "anomalies détectées",
+        });
+        await this.markMilestoneSent(user.id, "anomalies_10");
+      }
     }
   }
 
@@ -698,29 +506,23 @@ export class SubscriptionReminderService {
   // Database Methods (Stubs - implement with actual database)
   // ---------------------------------------------------------------------------
 
-  private async getTrialUsers(): Promise<TrialUser[]> {
-    // In real implementation, fetch from database:
-    // SELECT * FROM users WHERE plan = 'trial' AND trial_end_date > NOW() - INTERVAL 20 days
-    return [];
-  }
-
-  private async getUsersWithRecentActivity(): Promise<TrialUser[]> {
+  private async getUsersWithRecentActivity(): Promise<FreeUser[]> {
     // In real implementation, fetch users with recent activity
     // SELECT * FROM users WHERE last_active_at > NOW() - INTERVAL 1 hour
     return [];
   }
 
   private async markMilestoneSent(
-    userId: string,
-    milestone: string,
+    _userId: string,
+    _milestone: string,
   ): Promise<void> {
     // In real implementation, mark milestone as sent to avoid duplicates
     // INSERT INTO user_milestones (user_id, milestone, sent_at) VALUES (...)
   }
 
   private async hasMilestoneBeenSent(
-    userId: string,
-    milestone: string,
+    _userId: string,
+    _milestone: string,
   ): Promise<boolean> {
     // In real implementation, check if milestone email was already sent
     // SELECT COUNT(*) FROM user_milestones WHERE user_id = ? AND milestone = ?

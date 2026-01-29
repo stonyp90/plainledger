@@ -25,14 +25,14 @@
 </p>
 
 <!-- Feature Spotlight -->
-<div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
-  <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+  <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
     <img src="{{baseUrl}}/email-assets/{{featureIcon}}.png" alt="" width="32" height="32" style="display: block;" />
   </div>
-  <h2 style="font-size: 20px; color: #4c1d95; margin: 0 0 8px 0;">
+  <h2 style="font-size: 20px; color: #047857; margin: 0 0 8px 0;">
     {{#if isEn}}{{featureName}}{{else}}{{featureNameFr}}{{/if}}
   </h2>
-  <p style="font-size: 14px; color: #6b21a8; margin: 0;">
+  <p style="font-size: 14px; color: #059669; margin: 0;">
     {{#if isEn}}{{featureDescription}}{{else}}{{featureDescriptionFr}}{{/if}}
   </p>
 </div>
@@ -50,7 +50,7 @@
   {{#each benefits}}
   <tr>
     <td style="padding: 12px; vertical-align: top; width: 40px;">
-      <div style="width: 32px; height: 32px; background: #ddd6fe; border-radius: 8px; text-align: center; line-height: 32px; font-size: 16px;">
+      <div style="width: 32px; height: 32px; background: #d1fae5; border-radius: 8px; text-align: center; line-height: 32px; font-size: 16px;">
         {{icon}}
       </div>
     </td>
@@ -67,7 +67,7 @@
 </table>
 
 <!-- Use Case Example -->
-<div style="background: #f8fafc; border-left: 4px solid #7c3aed; padding: 16px 20px; margin: 24px 0;">
+<div class="info-box">
   <p style="font-size: 13px; color: #475569; margin: 0 0 8px 0; font-weight: 600;">
     {{#if isEn}}💡 Example use case:{{else}}💡 Exemple d'utilisation :{{/if}}
   </p>
@@ -81,7 +81,7 @@
 
 <!-- CTA -->
 <div style="text-align: center; margin: 32px 0;">
-  <a href="{{upgradeUrl}}" class="email-button" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
+  <a href="{{upgradeUrl}}" class="email-button">
     {{#if isEn}}
       Unlock {{featureName}} Now
     {{else}}
@@ -101,7 +101,11 @@
 
 <!-- See all features link -->
 <p style="text-align: center; margin-top: 24px;">
-  <a href="{{featuresUrl}}" style="font-size: 13px; color: #7c3aed; text-decoration: underline;">
+  <a href="{{featuresUrl}}" style="font-size: 13px; color: #059669; text-decoration: underline;">
     {{#if isEn}}See all premium features →{{else}}Voir toutes les fonctionnalités premium →{{/if}}
   </a>
 </p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

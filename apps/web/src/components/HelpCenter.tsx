@@ -44,6 +44,7 @@ interface HelpTopic {
     id: string;
     title: { en: string; fr: string };
     url?: string;
+    kbUrl?: string; // Knowledge base URL
   }[];
 }
 
@@ -54,9 +55,9 @@ const HELP_TOPICS: HelpTopic[] = [
     title: { en: 'Getting Started', fr: 'Démarrage' },
     description: { en: 'Learn the basics of PlainLedger', fr: 'Apprenez les bases de PlainLedger' },
     articles: [
-      { id: 'quick-start', title: { en: 'Quick Start Guide', fr: 'Guide de démarrage rapide' }, url: '/app' },
-      { id: 'first-connection', title: { en: 'Connect Your First Data Source', fr: 'Connecter votre première source' }, url: '/app/connections' },
-      { id: 'dashboard-overview', title: { en: 'Dashboard Overview', fr: 'Aperçu du tableau de bord' }, url: '/app' },
+      { id: 'quick-start', title: { en: 'Quick Start Guide', fr: 'Guide de démarrage rapide' }, url: '/app', kbUrl: '/help/knowledge-base/getting-started/quick-start' },
+      { id: 'first-connection', title: { en: 'Connect Your First Data Source', fr: 'Connecter votre première source' }, url: '/app/connections', kbUrl: '/help/knowledge-base/getting-started/first-connection' },
+      { id: 'dashboard-overview', title: { en: 'Dashboard Overview', fr: 'Aperçu du tableau de bord' }, url: '/app', kbUrl: '/help/knowledge-base/getting-started/dashboard-overview' },
     ],
   },
   {
@@ -65,10 +66,10 @@ const HELP_TOPICS: HelpTopic[] = [
     title: { en: 'Financial Reports', fr: 'Rapports financiers' },
     description: { en: 'Generate and customize reports', fr: 'Générer et personnaliser les rapports' },
     articles: [
-      { id: 'balance-sheet', title: { en: 'Balance Sheet Report', fr: 'Rapport de bilan' }, url: '/app/reports/balance-sheet' },
-      { id: 'income-statement', title: { en: 'Income Statement', fr: 'Compte de résultat' }, url: '/app/reports/income-statement' },
-      { id: 'cash-flow', title: { en: 'Cash Flow Statement', fr: 'Flux de trésorerie' }, url: '/app/reports/cash-flow' },
-      { id: 'export-reports', title: { en: 'Exporting Reports', fr: 'Exporter les rapports' }, url: '/app/reports' },
+      { id: 'balance-sheet', title: { en: 'Balance Sheet Report', fr: 'Rapport de bilan' }, url: '/app/reports/balance-sheet', kbUrl: '/help/knowledge-base/reports/balance-sheet' },
+      { id: 'income-statement', title: { en: 'Income Statement', fr: 'Compte de résultat' }, url: '/app/reports/income-statement', kbUrl: '/help/knowledge-base/reports/income-statement' },
+      { id: 'cash-flow', title: { en: 'Cash Flow Statement', fr: 'Flux de trésorerie' }, url: '/app/reports/cash-flow', kbUrl: '/help/knowledge-base/reports/cash-flow' },
+      { id: 'export-reports', title: { en: 'Exporting Reports', fr: 'Exporter les rapports' }, url: '/app/reports', kbUrl: '/help/knowledge-base/reports/export-reports' },
     ],
   },
   {
@@ -77,10 +78,10 @@ const HELP_TOPICS: HelpTopic[] = [
     title: { en: 'Data Connections', fr: 'Connexions de données' },
     description: { en: 'Connect and manage data sources', fr: 'Connecter et gérer les sources' },
     articles: [
-      { id: 'connect-quickbooks', title: { en: 'Connect QuickBooks', fr: 'Connecter QuickBooks' }, url: '/app/connections' },
-      { id: 'connect-xero', title: { en: 'Connect Xero', fr: 'Connecter Xero' }, url: '/app/connections' },
-      { id: 'connect-sage', title: { en: 'Connect Sage', fr: 'Connecter Sage' }, url: '/app/connections' },
-      { id: 'import-csv', title: { en: 'Import CSV Data', fr: 'Importer des données CSV' }, url: '/app/connections' },
+      { id: 'connect-quickbooks', title: { en: 'Connect QuickBooks', fr: 'Connecter QuickBooks' }, url: '/app/connections', kbUrl: '/help/knowledge-base/connections/connect-quickbooks' },
+      { id: 'connect-xero', title: { en: 'Connect Xero', fr: 'Connecter Xero' }, url: '/app/connections', kbUrl: '/help/knowledge-base/connections/connect-xero' },
+      { id: 'connect-sage', title: { en: 'Connect Sage', fr: 'Connecter Sage' }, url: '/app/connections', kbUrl: '/help/knowledge-base/connections/connect-sage' },
+      { id: 'import-csv', title: { en: 'Import CSV Data', fr: 'Importer des données CSV' }, url: '/app/connections', kbUrl: '/help/knowledge-base/connections/import-csv' },
     ],
   },
   {
@@ -89,9 +90,9 @@ const HELP_TOPICS: HelpTopic[] = [
     title: { en: 'Anomaly Detection', fr: 'Détection d\'anomalies' },
     description: { en: 'Understand and resolve anomalies', fr: 'Comprendre et résoudre les anomalies' },
     articles: [
-      { id: 'anomaly-types', title: { en: 'Types of Anomalies', fr: 'Types d\'anomalies' }, url: '/app/anomalies' },
-      { id: 'threshold-config', title: { en: 'Configure Thresholds', fr: 'Configurer les seuils' }, url: '/app/settings?tab=anomalies' },
-      { id: 'false-positives', title: { en: 'Managing False Positives', fr: 'Gérer les faux positifs' }, url: '/app/anomalies' },
+      { id: 'anomaly-types', title: { en: 'Types of Anomalies', fr: 'Types d\'anomalies' }, url: '/app/anomalies', kbUrl: '/help/knowledge-base/anomalies/anomaly-types' },
+      { id: 'threshold-config', title: { en: 'Configure Thresholds', fr: 'Configurer les seuils' }, url: '/app/settings?tab=anomalies', kbUrl: '/help/knowledge-base/anomalies/threshold-config' },
+      { id: 'false-positives', title: { en: 'Managing False Positives', fr: 'Gérer les faux positifs' }, url: '/app/anomalies', kbUrl: '/help/knowledge-base/anomalies/false-positives' },
     ],
   },
   {
@@ -100,9 +101,9 @@ const HELP_TOPICS: HelpTopic[] = [
     title: { en: 'Dashboard & Analytics', fr: 'Tableau de bord & Analyses' },
     description: { en: 'Understand your financial metrics', fr: 'Comprendre vos métriques' },
     articles: [
-      { id: 'health-score', title: { en: 'Financial Health Score', fr: 'Score de santé financière' }, url: '/app/anomalies' },
-      { id: 'kpi-explained', title: { en: 'KPIs Explained', fr: 'KPIs expliqués' }, url: '/app' },
-      { id: 'trends', title: { en: 'Understanding Trends', fr: 'Comprendre les tendances' }, url: '/app/visualizations' },
+      { id: 'health-score', title: { en: 'Financial Health Score', fr: 'Score de santé financière' }, url: '/app/anomalies', kbUrl: '/help/knowledge-base/dashboard/health-score' },
+      { id: 'kpi-explained', title: { en: 'KPIs Explained', fr: 'KPIs expliqués' }, url: '/app', kbUrl: '/help/knowledge-base/dashboard/kpi-explained' },
+      { id: 'trends', title: { en: 'Understanding Trends', fr: 'Comprendre les tendances' }, url: '/app/visualizations', kbUrl: '/help/knowledge-base/dashboard/trends' },
     ],
   },
   {
@@ -111,9 +112,9 @@ const HELP_TOPICS: HelpTopic[] = [
     title: { en: 'Account & Settings', fr: 'Compte & Paramètres' },
     description: { en: 'Manage your account and team', fr: 'Gérer votre compte et équipe' },
     articles: [
-      { id: 'team-management', title: { en: 'Team Management', fr: 'Gestion d\'équipe' }, url: '/app/settings?tab=organization' },
-      { id: 'billing', title: { en: 'Billing & Subscriptions', fr: 'Facturation & Abonnements' }, url: '/app/settings?tab=billing' },
-      { id: 'security', title: { en: 'Security Settings', fr: 'Paramètres de sécurité' }, url: '/app/settings?tab=security' },
+      { id: 'team-management', title: { en: 'Team Management', fr: 'Gestion d\'équipe' }, url: '/app/settings?tab=organization', kbUrl: '/help/knowledge-base/settings/team-management' },
+      { id: 'billing', title: { en: 'Billing & Subscriptions', fr: 'Facturation & Abonnements' }, url: '/app/settings?tab=billing', kbUrl: '/help/knowledge-base/settings/billing' },
+      { id: 'security', title: { en: 'Security Settings', fr: 'Paramètres de sécurité' }, url: '/app/settings?tab=security', kbUrl: '/help/knowledge-base/settings/security' },
     ],
   },
 ];
@@ -258,7 +259,13 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
     }
   };
 
-  const handleArticleClick = (articleId: string, url?: string) => {
+  const handleArticleClick = (articleId: string, url?: string, kbUrl?: string) => {
+    // Prefer knowledge base URL if available
+    if (kbUrl) {
+      navigate(kbUrl);
+      onClose();
+      return;
+    }
     // If article has a URL, navigate to it
     if (url) {
       navigate(url);
@@ -329,8 +336,8 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
         {/* Search */}
         <div className="px-6 py-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
           <div 
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl border"
+            style={{ borderColor: 'rgb(var(--color-border))' }}
           >
             <Search className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
             <input
@@ -433,9 +440,9 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                   >
                     <div 
                       className="p-2 rounded-lg"
-                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                      style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                     >
-                      <topic.icon className="w-5 h-5" style={{ color: 'rgb(var(--color-text-secondary))' }} />
+                      <topic.icon className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
@@ -457,11 +464,11 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                       {topic.articles.map((article) => (
                         <button
                           key={article.id}
-                          onClick={() => handleArticleClick(article.id, article.url)}
+                          onClick={() => handleArticleClick(article.id, article.url, article.kbUrl)}
                           className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-muted transition-colors text-left text-sm group"
                           style={{ color: 'rgb(var(--color-text-secondary))' }}
                         >
-                          <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                           <span className="help-article-link">
                             {isEn ? article.title.en : article.title.fr}
                           </span>
@@ -541,11 +548,11 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                   </p>
                   <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn 
-                      ? 'Chat with our Canadian support team' 
-                      : 'Discutez avec notre équipe de support canadienne'}
+                      ? 'Chat with our support team - Available 24/7' 
+                      : 'Discutez avec notre équipe de support - Disponible 24/7'}
                   </p>
                   <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
-                    {isEn ? 'Typically responds in < 2 hours' : 'Répond généralement en < 2 heures'}
+                    {isEn ? '24/7 availability' : 'Disponibilité 24/7'}
                   </p>
                 </div>
               </button>
@@ -558,9 +565,9 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
               >
                 <div 
                   className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                 >
-                  <Mail className="w-6 h-6" style={{ color: 'rgb(var(--color-text-secondary))' }} />
+                  <Mail className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
                 </div>
                 <div>
                   <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
@@ -587,9 +594,9 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
               >
                 <div 
                   className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                 >
-                  <Phone className="w-6 h-6" style={{ color: 'rgb(var(--color-text-secondary))' }} />
+                  <Phone className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
                 </div>
                 <div>
                   <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
@@ -598,38 +605,37 @@ export function HelpCenter({ isOpen, onClose }: HelpCenterProps) {
                   <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {config.support.phone}
                   </p>
-                  <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {config.crisp.enabled 
-                      ? (isEn ? 'Live chat available' : 'Chat en direct disponible')
-                      : (isEn ? 'Mon-Fri, 9am-5pm EST' : 'Lun-Ven, 9h-17h HE')}
+                  <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
+                    {isEn ? 'Available 24/7' : 'Disponible 24/7'}
                   </p>
                 </div>
               </a>
 
-              {/* Documentation */}
-              <a
-                href={config.support.docsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full p-4 rounded-xl border flex items-center gap-4 hover:bg-muted transition-colors"
+              {/* Knowledge Base */}
+              <button
+                onClick={() => {
+                  navigate('/help/knowledge-base');
+                  onClose();
+                }}
+                className="w-full p-4 rounded-xl border flex items-center gap-4 hover:bg-muted transition-colors text-left"
                 style={{ borderColor: 'rgb(var(--color-border))' }}
               >
                 <div 
                   className="p-3 rounded-xl"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                 >
-                  <Book className="w-6 h-6" style={{ color: 'rgb(var(--color-text-secondary))' }} />
+                  <Book className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
                 </div>
                 <div>
                   <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Documentation' : 'Documentation'}
+                    {isEn ? 'Knowledge Base' : 'Base de connaissances'}
                   </p>
                   <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Browse our full documentation' : 'Parcourez notre documentation complète'}
+                    {isEn ? 'Browse our knowledge base' : 'Parcourez notre base de connaissances'}
                   </p>
                 </div>
-                <ExternalLink className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              </a>
+                <ChevronRight className="w-5 h-5 ml-auto" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              </button>
             </div>
             </div>
           )}

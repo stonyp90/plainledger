@@ -622,10 +622,11 @@ export default function Dashboard() {
             averageDays={financialData.summary.receivables.averageDaysOutstanding}
             type="receivable"
             isEn={language === 'en'}
+            hasData={financialData.summary.receivables.hasData}
           />
         )}
 
-        {/* AP Aging */}
+        {/* AP Aging - Shows empty state if no bills tracked */}
         {financialData?.summary.payables && (
           <AgingWidget
             title="Comptes fournisseurs"
@@ -635,6 +636,7 @@ export default function Dashboard() {
             averageDays={financialData.summary.payables.averageDaysPayable}
             type="payable"
             isEn={language === 'en'}
+            hasData={financialData.summary.payables.hasData}
           />
         )}
       </div>

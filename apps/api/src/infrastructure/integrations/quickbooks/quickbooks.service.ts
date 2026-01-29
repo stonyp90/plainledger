@@ -18,6 +18,7 @@ import {
   QuickBooksCustomer,
   QuickBooksVendor,
   QuickBooksInvoice,
+  QuickBooksBill,
   QuickBooksJournalEntry,
 } from "@domain/datalake/provider-types";
 
@@ -355,6 +356,30 @@ export class QuickBooksService {
   }
 
   /**
+   * Get bills (vendor invoices) within a date range
+   */
+  async getBills(
+    accessToken: string,
+    realmId: string,
+    startDate: string,
+    endDate: string,
+    useSandbox = true,
+  ): Promise<QuickBooksBill[]> {
+    const query = `SELECT * FROM Bill WHERE TxnDate >= '${startDate}' AND TxnDate <= '${endDate}' MAXRESULTS 1000`;
+
+    const response = await this.apiRequest<{
+      QueryResponse: { Bill: QuickBooksBill[] };
+    }>(
+      accessToken,
+      realmId,
+      "/query?query=" + encodeURIComponent(query),
+      useSandbox,
+    );
+
+    return response.QueryResponse.Bill || [];
+  }
+
+  /**
    * Get all data for full sync
    */
   async getFullSync(
@@ -369,6 +394,7 @@ export class QuickBooksService {
     customers: QuickBooksCustomer[];
     vendors: QuickBooksVendor[];
     invoices: QuickBooksInvoice[];
+    bills: QuickBooksBill[];
     journalEntries: QuickBooksJournalEntry[];
   }> {
     this.logger.log(`Starting full sync for realm ${realmId}`);
@@ -379,6 +405,7 @@ export class QuickBooksService {
       customers,
       vendors,
       invoices,
+      bills,
       journalEntries,
     ] = await Promise.all([
       this.getCompanyInfo(accessToken, realmId, useSandbox),
@@ -386,6 +413,7 @@ export class QuickBooksService {
       this.getCustomers(accessToken, realmId, useSandbox),
       this.getVendors(accessToken, realmId, useSandbox),
       this.getInvoices(accessToken, realmId, startDate, endDate, useSandbox),
+      this.getBills(accessToken, realmId, startDate, endDate, useSandbox),
       this.getJournalEntries(
         accessToken,
         realmId,
@@ -396,7 +424,7 @@ export class QuickBooksService {
     ]);
 
     this.logger.log(
-      `Full sync complete: ${accounts.length} accounts, ${customers.length} customers, ${vendors.length} vendors, ${invoices.length} invoices, ${journalEntries.length} journal entries`,
+      `Full sync complete: ${accounts.length} accounts, ${customers.length} customers, ${vendors.length} vendors, ${invoices.length} invoices, ${bills.length} bills, ${journalEntries.length} journal entries`,
     );
 
     return {
@@ -405,6 +433,7 @@ export class QuickBooksService {
       customers,
       vendors,
       invoices,
+      bills,
       journalEntries,
     };
   }

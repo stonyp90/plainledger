@@ -5,6 +5,7 @@ import { useBalanceSheet } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
+import Toggle from '../components/Toggle';
 
 // Date preset type
 type DatePreset = 'today' | 'month_end' | 'quarter_end' | 'year_end' | 'last_month_end' | 'last_quarter_end' | 'last_year_end' | 'custom';
@@ -348,19 +349,12 @@ export default function BalanceSheet() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2 pb-1">
-              <input
-                type="checkbox"
-                id="showComparison"
-                checked={showComparison}
-                onChange={(e) => setShowComparison(e.target.checked)}
-                className="w-4 h-4 rounded"
-                style={{ accentColor: 'rgb(var(--color-primary-500))' }}
-              />
-              <label htmlFor="showComparison" className="text-sm whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Show Prior Year' : 'Afficher année précédente'}
-              </label>
-            </div>
+            <Toggle
+              checked={showComparison}
+              onChange={setShowComparison}
+              label={isEn ? 'Show Prior Year' : 'Afficher année précédente'}
+              size="sm"
+            />
           </div>
 
           {/* Selected Date Summary */}

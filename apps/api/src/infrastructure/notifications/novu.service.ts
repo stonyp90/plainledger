@@ -115,7 +115,7 @@ export const NovuWorkflows = {
   CONTACT_FORM_AUTO_REPLY: "contact-form-auto-reply", // Auto-reply to sender
 } as const;
 
-type WorkflowId = (typeof NovuWorkflows)[keyof typeof NovuWorkflows];
+type _WorkflowId = (typeof NovuWorkflows)[keyof typeof NovuWorkflows];
 
 // ============================================================================
 // Import Interface
@@ -414,7 +414,7 @@ export class NovuService implements OnModuleInit, INotificationService {
     data: { email: string; firstName: string; timestamp: Date },
   ): Promise<void> {
     // Generate branded HTML template
-    const htmlContent = this.emailTemplates?.passwordChanged({
+    const _htmlContent = this.emailTemplates?.passwordChanged({
       firstName: data.firstName || "there",
       timestamp: data.timestamp.toISOString(),
     });

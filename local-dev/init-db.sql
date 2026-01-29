@@ -124,6 +124,71 @@ CREATE TABLE reporting.generated_reports (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Shared Report Links
+CREATE TABLE reporting.shared_report_links (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    report_id UUID REFERENCES reporting.generated_reports(id),
+    organization_id UUID NOT NULL REFERENCES accounting.organizations(id),
+    share_token VARCHAR(255) NOT NULL UNIQUE,
+    share_url VARCHAR(500) NOT NULL,
+    password_hash VARCHAR(255),
+    expires_in VARCHAR(20) DEFAULT '7d' CHECK (expires_in IN ('1d', '7d', '30d', '90d', 'never')),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    allow_download BOOLEAN DEFAULT true,
+    require_auth BOOLEAN DEFAULT false,
+    created_by UUID,
+    access_count INTEGER DEFAULT 0,
+    last_accessed_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_shared_report_links_token ON reporting.shared_report_links(share_token);
+CREATE INDEX idx_shared_report_links_report ON reporting.shared_report_links(report_id);
+CREATE INDEX idx_shared_report_links_org ON reporting.shared_report_links(organization_id);
+
+-- Tax Credit Eligibility Tracking
+CREATE TABLE reporting.tax_credit_eligibility (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID NOT NULL REFERENCES accounting.organizations(id),
+    tax_credit_id VARCHAR(100) NOT NULL,
+    fiscal_year INTEGER NOT NULL,
+    eligibility_status VARCHAR(20) CHECK (eligibility_status IN ('likely', 'possible', 'unlikely', 'needs_review')),
+    eligibility_score INTEGER CHECK (eligibility_score BETWEEN 0 AND 100),
+    criteria_evaluation JSONB NOT NULL DEFAULT '{}',
+    estimated_benefit_min DECIMAL(15, 2),
+    estimated_benefit_max DECIMAL(15, 2),
+    partner_referral_sent BOOLEAN DEFAULT false,
+    partner_referral_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(organization_id, tax_credit_id, fiscal_year)
+);
+
+CREATE INDEX idx_tax_credit_eligibility_org ON reporting.tax_credit_eligibility(organization_id);
+CREATE INDEX idx_tax_credit_eligibility_status ON reporting.tax_credit_eligibility(eligibility_status);
+CREATE INDEX idx_tax_credit_eligibility_credit ON reporting.tax_credit_eligibility(tax_credit_id);
+
+-- Partner Referral Leads
+CREATE TABLE reporting.tax_credit_leads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID NOT NULL REFERENCES accounting.organizations(id),
+    tax_credit_id VARCHAR(100) NOT NULL,
+    partner_id VARCHAR(100),
+    lead_status VARCHAR(20) DEFAULT 'pending' CHECK (lead_status IN ('pending', 'contacted', 'qualified', 'converted', 'rejected')),
+    contact_email VARCHAR(255),
+    contact_phone VARCHAR(50),
+    contact_name VARCHAR(255),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_tax_credit_leads_org ON reporting.tax_credit_leads(organization_id);
+CREATE INDEX idx_tax_credit_leads_status ON reporting.tax_credit_leads(lead_status);
+CREATE INDEX idx_tax_credit_leads_credit ON reporting.tax_credit_leads(tax_credit_id);
+
 -- ============================================
 -- INTEGRATION SCHEMA - External Connections
 -- ============================================
@@ -286,6 +351,68 @@ VALUES
     ('Income Statement', 'Etat des resultats', 'INCOME_STATEMENT', '{"sections": ["revenue", "expenses", "net_income"], "format": "IBCS"}', true, true),
     ('Cash Flow Statement', 'Etat des flux de tresorerie', 'CASH_FLOW', '{"sections": ["operating", "investing", "financing"], "format": "IBCS"}', true, true),
     ('Trial Balance', 'Balance de verification', 'TRIAL_BALANCE', '{"columns": ["debit", "credit"], "format": "STANDARD"}', true, false);
+
+-- ============================================
+-- REPORTING SCHEMA - Industry Benchmarks
+-- ============================================
+
+-- Industry Benchmarks (from ISED and Statistics Canada)
+CREATE TABLE reporting.industry_benchmarks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    industry_id VARCHAR(50) NOT NULL,              -- PlainLedger industry ID (e.g., 'restaurant', 'construction')
+    naics_code VARCHAR(10) NOT NULL,               -- NAICS code (e.g., '7225', '23')
+    data_source VARCHAR(20) NOT NULL CHECK (data_source IN ('ised', 'statscan')),
+    reference_year INTEGER,                        -- For ISED annual data (e.g., 2022)
+    reference_quarter VARCHAR(10),                 -- For Stats Can quarterly (e.g., '2025-Q3')
+    revenue_range VARCHAR(20) CHECK (revenue_range IN ('30k-5m', '5m-20m', 'all')),
+    
+    -- Profitability metrics (stored as decimals, e.g., 0.25 = 25%)
+    gross_margin_q1 DECIMAL(5,4),                  -- 25th percentile
+    gross_margin_median DECIMAL(5,4),              -- 50th percentile (industry average)
+    gross_margin_q3 DECIMAL(5,4),                  -- 75th percentile
+    net_margin_q1 DECIMAL(5,4),
+    net_margin_median DECIMAL(5,4),
+    net_margin_q3 DECIMAL(5,4),
+    
+    -- Operating metrics
+    operating_expense_ratio DECIMAL(5,4),          -- Operating expenses / Revenue
+    wages_to_revenue_ratio DECIMAL(5,4),           -- Wages & benefits / Revenue
+    rent_to_revenue_ratio DECIMAL(5,4),            -- Rent & occupancy / Revenue
+    
+    -- Balance sheet ratios
+    current_ratio_median DECIMAL(6,2),             -- Current assets / Current liabilities
+    debt_to_equity_median DECIMAL(6,2),            -- Total debt / Equity
+    
+    -- Growth metrics (from Stats Can quarterly data)
+    revenue_yoy_growth DECIMAL(5,4),               -- Year-over-year revenue change
+    revenue_qoq_growth DECIMAL(5,4),               -- Quarter-over-quarter revenue change
+    
+    -- Metadata
+    sample_size INTEGER,                           -- Number of businesses in sample
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(industry_id, data_source, reference_year, reference_quarter, revenue_range)
+);
+
+CREATE INDEX idx_benchmarks_industry ON reporting.industry_benchmarks(industry_id);
+CREATE INDEX idx_benchmarks_naics ON reporting.industry_benchmarks(naics_code);
+CREATE INDEX idx_benchmarks_source ON reporting.industry_benchmarks(data_source);
+CREATE INDEX idx_benchmarks_year ON reporting.industry_benchmarks(reference_year);
+
+-- Benchmark Data Refresh Log
+CREATE TABLE reporting.benchmark_refresh_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    data_source VARCHAR(20) NOT NULL,
+    refresh_type VARCHAR(20) NOT NULL CHECK (refresh_type IN ('full', 'incremental')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('started', 'completed', 'failed')),
+    records_processed INTEGER DEFAULT 0,
+    records_created INTEGER DEFAULT 0,
+    records_updated INTEGER DEFAULT 0,
+    error_message TEXT,
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE
+);
 
 -- Grant permissions
 GRANT USAGE ON SCHEMA accounting TO plainledger;

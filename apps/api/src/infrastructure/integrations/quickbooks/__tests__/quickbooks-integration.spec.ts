@@ -12,7 +12,7 @@
  * 3. Run: npm test -- --testPathPattern=quickbooks-integration
  */
 
-import { QuickBooksService, QuickBooksTokens } from "../quickbooks.service";
+import { QuickBooksService } from "../quickbooks.service";
 import { ETLPipelineService } from "@application/services/etl-pipeline.service";
 import {
   SilverAccountType,
@@ -20,7 +20,7 @@ import {
   SilverTransactionType,
   SilverSourceSystem,
 } from "@domain/datalake/silver-schema";
-import { AccountType, SourceSystem } from "@domain/datalake/schemas";
+import { AccountType } from "@domain/datalake/schemas";
 import { ConfigService } from "@nestjs/config";
 
 // Test configuration - these would come from environment variables

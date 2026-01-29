@@ -10,14 +10,14 @@ const BRAND_COLORS = {
   primary: '#059669',      // PlainLedger green (emerald-600)
   primaryLight: '#10b981', // Lighter green (emerald-500)
   primaryDark: '#047857',  // Darker green (emerald-700)
-  accent: '#3b82f6',       // Blue accent
+  accent: '#f59e0b',       // Amber/gold accent (matching theme)
   text: '#0f172a',         // Dark text
   textMuted: '#64748b',    // Muted text
   border: '#e2e8f0',       // Border gray
   background: '#f8fafc',   // Light background
   white: '#ffffff',
   success: '#059669',      // Use primary green for success
-  warning: '#ca8a04',
+  warning: '#f59e0b',      // Amber warning (matching accent)
 };
 
 interface InvitationEmailParams {

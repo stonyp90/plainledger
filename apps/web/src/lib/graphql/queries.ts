@@ -313,3 +313,285 @@ export const GET_AVAILABLE_PROVIDERS = gql`
     }
   }
 `;
+
+// =====================================================
+// MARKET ANALYSIS / BENCHMARK QUERIES
+// =====================================================
+
+export const GET_INDUSTRY_BENCHMARK = gql`
+  query GetIndustryBenchmark($industry: String!, $revenueRange: String) {
+    industryBenchmark(industry: $industry, revenueRange: $revenueRange) {
+      industryId
+      industryName
+      revenueRange
+      referenceYear
+      sampleSize
+      dataSource
+      profitability {
+        grossMargin {
+          q1
+          median
+          q3
+        }
+        netMargin {
+          q1
+          median
+          q3
+        }
+      }
+      operations {
+        operatingExpenseRatio
+        wagesToRevenueRatio
+        rentToRevenueRatio
+      }
+      balanceSheet {
+        currentRatio {
+          q1
+          median
+          q3
+        }
+        debtToEquity {
+          q1
+          median
+          q3
+        }
+      }
+      growth {
+        revenueYoY
+        revenueQoQ
+      }
+      lastUpdated
+    }
+  }
+`;
+
+export const GET_ALL_INDUSTRY_BENCHMARKS = gql`
+  query GetAllIndustryBenchmarks($revenueRange: String) {
+    allIndustryBenchmarks(revenueRange: $revenueRange) {
+      industryId
+      industryName
+      revenueRange
+      referenceYear
+      sampleSize
+      profitability {
+        grossMargin {
+          q1
+          median
+          q3
+        }
+        netMargin {
+          q1
+          median
+          q3
+        }
+      }
+      operations {
+        operatingExpenseRatio
+      }
+      balanceSheet {
+        currentRatio {
+          q1
+          median
+          q3
+        }
+      }
+      growth {
+        revenueYoY
+      }
+    }
+  }
+`;
+
+export const GET_ORGANIZATION_COMPARISON = gql`
+  query GetOrganizationComparison(
+    $organizationId: String!
+    $industry: String!
+    $revenueRange: String
+    $grossMargin: Float
+    $netMargin: Float
+    $currentRatio: Float
+    $debtToEquity: Float
+    $operatingExpenseRatio: Float
+  ) {
+    organizationComparison(
+      organizationId: $organizationId
+      industry: $industry
+      revenueRange: $revenueRange
+      grossMargin: $grossMargin
+      netMargin: $netMargin
+      currentRatio: $currentRatio
+      debtToEquity: $debtToEquity
+      operatingExpenseRatio: $operatingExpenseRatio
+    ) {
+      organizationId
+      industry
+      comparisons {
+        metricName
+        userValue
+        benchmarkQ1
+        benchmarkMedian
+        benchmarkQ3
+        percentileRank
+        status
+        insight
+      }
+      overallScore
+      benchmarkDataDate
+    }
+  }
+`;
+
+export const GET_BENCHMARK_REFRESH_STATUS = gql`
+  query GetBenchmarkRefreshStatus {
+    benchmarkRefreshStatus {
+      lastRefresh {
+        startedAt
+        completedAt
+        status
+        recordsCreated
+        recordsUpdated
+        errors
+      }
+      nextScheduledRefresh
+      dataFreshness {
+        newestData
+        oldestData
+        averageAgeInDays
+      }
+    }
+  }
+`;
+
+// =====================================================
+// REAL DATA QUERIES - Trial Balance, Aging, Waterfall
+// =====================================================
+
+export const GET_TRIAL_BALANCE = gql`
+  query GetTrialBalance {
+    trialBalance {
+      entries {
+        accountCode
+        accountName
+        accountType
+        debitBalance
+        creditBalance
+      }
+      totalDebits
+      totalCredits
+      difference
+      isBalanced
+      asOfDate
+    }
+  }
+`;
+
+export const GET_CASH_FLOW_WATERFALL = gql`
+  query GetCashFlowWaterfall($startDate: String, $endDate: String) {
+    cashFlowWaterfall(startDate: $startDate, endDate: $endDate) {
+      label
+      labelEn
+      value
+      type
+      category
+    }
+  }
+`;
+
+export const GET_RECEIVABLES_AGING = gql`
+  query GetReceivablesAging {
+    receivablesAging {
+      buckets {
+        label
+        labelEn
+        minDays
+        maxDays
+        amount
+        count
+      }
+      total
+      totalOverdue
+      averageDays
+      hasData
+    }
+  }
+`;
+
+export const GET_PAYABLES_AGING = gql`
+  query GetPayablesAging {
+    payablesAging {
+      buckets {
+        label
+        labelEn
+        minDays
+        maxDays
+        amount
+        count
+      }
+      total
+      totalOverdue
+      averageDays
+      hasData
+    }
+  }
+`;
+
+// =====================================================
+// BUDGET QUERIES
+// =====================================================
+
+export const GET_BUDGET_SETTINGS = gql`
+  query GetBudgetSettings {
+    budgetSettings {
+      year
+      categories {
+        categoryId
+        categoryName
+        categoryNameEn
+        monthlyAmount
+      }
+      lastUpdated
+      updatedBy
+      hasBudget
+    }
+  }
+`;
+
+export const SAVE_BUDGET = gql`
+  mutation SaveBudget($input: SaveBudgetInput!) {
+    saveBudget(input: $input) {
+      year
+      categories {
+        categoryId
+        categoryName
+        categoryNameEn
+        monthlyAmount
+      }
+      lastUpdated
+      updatedBy
+      hasBudget
+    }
+  }
+`;
+
+// =====================================================
+// TAX DEADLINES QUERIES
+// =====================================================
+
+export const GET_TAX_DEADLINES = gql`
+  query GetTaxDeadlines {
+    taxDeadlines {
+      deadlines {
+        id
+        title
+        titleEn
+        description
+        dueDate
+        daysRemaining
+        status
+        category
+      }
+      fiscalYearEnd
+      province
+    }
+  }
+`;

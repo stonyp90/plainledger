@@ -350,8 +350,8 @@
                             <div class="footer-legal">
                                 <p>&copy; ${.now?string('yyyy')} PlainLedger Inc. All rights reserved.</p>
                                 <p>
-                                    This email was sent by PlainLedger because you have an account with us.<br>
-                                    If you believe you received this email in error, please contact <a href="mailto:support@plainledger.ca">support@plainledger.ca</a>
+                                    You are receiving this email because you have an account with PlainLedger or requested information from us. 
+                                    This is a transactional email related to your account activity. You cannot unsubscribe from account-related notifications.
                                 </p>
                             </div>
                             
@@ -364,6 +364,9 @@
                                 <p>
                                     <a href="https://plainledger.ca/settings/notifications">Manage email preferences</a> &bull; 
                                     <a href="https://plainledger.ca/unsubscribe">Unsubscribe from marketing emails</a>
+                                </p>
+                                <p style="margin-top: 8px;">
+                                    If you believe you received this in error, please contact <a href="mailto:support@plainledger.ca">support@plainledger.ca</a>
                                 </p>
                             </div>
                         </td>

@@ -66,6 +66,7 @@ import {
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import Toggle from '../components/Toggle';
+import Checkbox from '../components/Checkbox';
 import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 import {
   boardMeetingService,
@@ -661,10 +662,10 @@ const INDUSTRY_ACTIONS = {
     { id: 'inventory-shrinkage', label: 'Inventory Shrinkage', labelFr: 'Perte de stock' },
     { id: 'seasonal-forecast', label: 'Seasonal Forecasting', labelFr: 'Prévisions saisonnières' },
   ],
-  technology: [
-    { id: 'arr-mrr', label: 'ARR/MRR Analysis', labelFr: 'Analyse ARR/MRR' },
-    { id: 'customer-acquisition', label: 'Customer Acquisition Cost', labelFr: 'Coût d\'acquisition client' },
-    { id: 'burn-rate', label: 'Burn Rate & Runway', labelFr: 'Taux de consommation et piste' },
+  construction: [
+    { id: 'backlog-analysis', label: 'Backlog Analysis', labelFr: 'Analyse carnet de commandes' },
+    { id: 'job-costing', label: 'Job Costing & Profitability', labelFr: 'Coût et rentabilité par projet' },
+    { id: 'bid-win-rate', label: 'Bid-to-Win Rate', labelFr: 'Taux de soumissions gagnées' },
   ],
   professional_services: [
     { id: 'utilization', label: 'Utilization Rates', labelFr: 'Taux d\'utilisation' },
@@ -751,7 +752,7 @@ function BoardReadyShareContent({ isEn, meetingTitle }: BoardReadyShareContentPr
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [notifySubmitted, setNotifySubmitted] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState<keyof typeof INDUSTRY_ACTIONS>('technology');
+  const [selectedIndustry, setSelectedIndustry] = useState<keyof typeof INDUSTRY_ACTIONS>('construction');
   const [selectedSections, setSelectedSections] = useState(['executive_summary', 'financials', 'kpis']);
   
   // Generate random password
@@ -959,15 +960,19 @@ function BoardReadyShareContent({ isEn, meetingTitle }: BoardReadyShareContentPr
                 </select>
               </div>
               
-              <div className="space-y-2 pt-6">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={allowDownload} onChange={(e) => setAllowDownload(e.target.checked)} className="w-4 h-4 rounded" />
-                  <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Allow PDF download' : 'Autoriser PDF'}</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={notifyOnView} onChange={(e) => setNotifyOnView(e.target.checked)} className="w-4 h-4 rounded" />
-                  <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Notify when viewed' : 'Notifier à la consultation'}</span>
-                </label>
+              <div className="space-y-3 pt-6">
+                <Checkbox
+                  checked={allowDownload}
+                  onChange={setAllowDownload}
+                  label={isEn ? 'Allow PDF download' : 'Autoriser PDF'}
+                  size="sm"
+                />
+                <Checkbox
+                  checked={notifyOnView}
+                  onChange={setNotifyOnView}
+                  label={isEn ? 'Notify when viewed' : 'Notifier à la consultation'}
+                  size="sm"
+                />
               </div>
             </div>
           </div>
@@ -1143,7 +1148,7 @@ function BoardReadyShareContent({ isEn, meetingTitle }: BoardReadyShareContentPr
                 className="w-full p-2.5 rounded-xl border text-sm mb-4"
                 style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))', color: 'rgb(var(--color-text))' }}
               >
-                <option value="technology">{isEn ? 'Technology / SaaS' : 'Technologie / SaaS'}</option>
+                <option value="construction">{isEn ? 'Construction' : 'Construction'}</option>
                 <option value="healthcare">{isEn ? 'Healthcare' : 'Santé'}</option>
                 <option value="manufacturing">{isEn ? 'Manufacturing' : 'Manufacturier'}</option>
                 <option value="retail">{isEn ? 'Retail' : 'Commerce'}</option>

@@ -1,5 +1,4 @@
 import { TenantId } from "@domain/value-objects/TenantId";
-import { Money } from "@domain/value-objects/Money";
 import { DomainError } from "@domain/errors/DomainError";
 
 export interface OrganizationProps {

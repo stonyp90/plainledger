@@ -36,7 +36,6 @@ import {
   Min,
   Max,
   MaxLength,
-  ValidateIf,
 } from "class-validator";
 import { Transform } from "class-transformer";
 import { GenerateAIResponseUseCase } from "@application/use-cases/generate-ai-response.use-case";

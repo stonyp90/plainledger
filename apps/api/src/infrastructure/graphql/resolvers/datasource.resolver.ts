@@ -14,7 +14,6 @@ import { UseGuards, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
-import { Public } from "nest-keycloak-connect";
 import {
   DataSource,
   DataSourceStatus,

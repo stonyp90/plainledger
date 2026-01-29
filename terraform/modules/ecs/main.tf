@@ -766,7 +766,7 @@ resource "aws_ecs_task_definition" "keycloak" {
         { name = "SMTP_AUTH", value = "true" }
       ]
 
-      secrets = [
+      secrets = concat([
         {
           name      = "KC_DB_URL_HOST"
           valueFrom = "${var.db_credentials_secret_arn}:host::"
@@ -787,7 +787,14 @@ resource "aws_ecs_task_definition" "keycloak" {
           name      = "SMTP_PASSWORD"
           valueFrom = "${var.keycloak_smtp_secret_arn}:password::"
         }
-      ]
+      ], var.keycloak_client_secret_arn != "" ? [
+        {
+          # This secret is used by Keycloak during realm import to substitute
+          # ${API_CLIENT_SECRET:default} placeholders in plainledger-realm.json
+          name      = "API_CLIENT_SECRET"
+          valueFrom = "${var.keycloak_client_secret_arn}:secret::"
+        }
+      ] : [])
 
       logConfiguration = {
         logDriver = "awslogs"

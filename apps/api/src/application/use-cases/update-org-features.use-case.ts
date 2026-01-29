@@ -1,13 +1,5 @@
-import {
-  Injectable,
-  Inject,
-  UnauthorizedException,
-  NotFoundException,
-} from "@nestjs/common";
-import {
-  OrganizationFeatures,
-  CreateOrganizationFeaturesInput,
-} from "@domain/entities/OrganizationFeatures";
+import { Injectable, Inject } from "@nestjs/common";
+import { OrganizationFeatures } from "@domain/entities/OrganizationFeatures";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
 
 export interface UpdateOrgFeaturesRequest {

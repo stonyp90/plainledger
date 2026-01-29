@@ -91,7 +91,7 @@ export class UploadController {
   async uploadLogo(
     @UploadedFile() file: Express.Multer.File,
     @Param("tenantId") tenantId: string,
-    @Req() req: AuthenticatedRequest,
+    @Req() _req: AuthenticatedRequest,
   ): Promise<UploadResult> {
     if (!file) {
       throw new BadRequestException("No file provided");
@@ -133,7 +133,7 @@ export class UploadController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   async deleteLogo(
     @Param("tenantId") tenantId: string,
-    @Req() req: AuthenticatedRequest,
+    @Req() _req: AuthenticatedRequest,
   ): Promise<{ success: boolean }> {
     // Try to delete common image formats
     const extensions = ["png", "jpg", "gif", "webp"];

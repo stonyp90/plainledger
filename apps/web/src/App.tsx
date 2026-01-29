@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ApolloProvider } from '@apollo/client/react';
+import { apolloClient } from './lib/graphql/client';
 import { useKeycloak } from './lib/keycloak';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -30,6 +32,9 @@ import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import PowerBIAnalytics from './pages/PowerBIAnalytics';
 import OrgFeaturesConfig from './pages/OrgFeaturesConfig';
+import KnowledgeBase from './pages/KnowledgeBase';
+import MarketAnalysis from './pages/MarketAnalysis';
+import TaxCredits from './pages/TaxCredits';
 import CrispChat from './components/CrispChat';
 import { AnalyticsVisibilityProvider } from './contexts/AnalyticsVisibilityContext';
 import config from './lib/config';
@@ -88,8 +93,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Allow bypass with URL parameter for development/testing
   // IMPORTANT: Only redirect if we KNOW email is not verified (emailVerified === false)
   // If emailVerified is undefined, allow access (assume verified - better UX)
+  // Also skip check for signup page (user is completing signup flow)
   const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
-  if (!skipEmailVerification && user && user.emailVerified === false && !location.pathname.includes('/verify-email')) {
+  if (!skipEmailVerification && user && user.emailVerified === false && 
+      !location.pathname.includes('/verify-email') && 
+      !location.pathname.includes('/signup')) {
     return <Navigate to="/verify-email" replace />;
   }
 
@@ -220,13 +228,14 @@ function App() {
   }
 
   return (
-    <AnalyticsVisibilityProvider>
-      {/* Crisp Live Chat */}
-      {config.crisp.enabled && config.crisp.websiteId && (
-        <CrispChat websiteId={config.crisp.websiteId} />
-      )}
-      
-      <Routes>
+    <ApolloProvider client={apolloClient}>
+      <AnalyticsVisibilityProvider>
+        {/* Crisp Live Chat */}
+        {config.crisp.enabled && config.crisp.websiteId && (
+          <CrispChat websiteId={config.crisp.websiteId} />
+        )}
+        
+        <Routes>
         {/* Public routes - Main marketing website at root */}
         <Route 
           path="/" 
@@ -243,16 +252,16 @@ function App() {
           element={<Navigate to="/" replace />} 
         />
         
-        {/* Signup - custom registration form or redirect if authenticated */}
+        {/* Signup - unified 3-step signup flow */}
         <Route 
           path="/signup" 
-          element={authenticated ? <Navigate to="/onboarding" replace /> : <Signup />} 
+          element={authenticated ? <Navigate to="/app" replace /> : <Signup />} 
         />
         
         {/* Register - alias for signup */}
         <Route 
           path="/register" 
-          element={authenticated ? <Navigate to="/onboarding" replace /> : <Signup />} 
+          element={authenticated ? <Navigate to="/app" replace /> : <Signup />} 
         />
         
         {/* Login - custom UI */}
@@ -325,6 +334,38 @@ function App() {
             <ProtectedOnboardingRoute>
               <Onboarding />
             </ProtectedOnboardingRoute>
+          }
+        />
+
+        {/* Knowledge Base - protected routes with AppLayout */}
+        <Route
+          path="/help/knowledge-base/:topicId/:articleId"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <KnowledgeBase />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/help/knowledge-base/:topicId"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <KnowledgeBase />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/help/knowledge-base"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <KnowledgeBase />
+              </AppLayout>
+            </ProtectedRoute>
           }
         />
       
@@ -494,11 +535,32 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/app/market-analysis"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <MarketAnalysis />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/tax-credits"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <TaxCredits />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
       
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnalyticsVisibilityProvider>
+        </Routes>
+      </AnalyticsVisibilityProvider>
+    </ApolloProvider>
   );
 }
 

@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index,
 } from "typeorm";
 import { UserProfileEntity } from "./user-profile.entity";
 

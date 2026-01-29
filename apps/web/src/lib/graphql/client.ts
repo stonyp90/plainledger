@@ -14,50 +14,10 @@ import {
   ApolloLink,
 } from "@apollo/client";
 
-// Note: setContext and onError are exported from @apollo/client in v3.8+
-// If you get import errors, install: npm i @apollo/client@latest
-
-// Inline implementation of setContext for compatibility
-const setContext = (
-  setter: (
-    request: unknown,
-    prevContext: { headers?: Record<string, string> }
-  ) => { headers: Record<string, string> }
-) => {
-  return new ApolloLink((operation, forward) => {
-    const context = operation.getContext();
-    const newContext = setter(operation, context);
-    operation.setContext({
-      ...context,
-      ...newContext,
-    });
-    return forward(operation);
-  });
-};
-
-// Inline implementation of onError for compatibility
-interface ErrorHandlerParams {
-  graphQLErrors?: readonly { message: string; locations?: unknown; path?: unknown; extensions?: { code?: string } }[];
-  networkError?: Error & { statusCode?: number };
-  operation: { operationName?: string };
-}
-
-const onError = (errorHandler: (params: ErrorHandlerParams) => void) => {
-  return new ApolloLink((operation, forward) => {
-    return forward(operation).map((result) => {
-      if (result.errors) {
-        errorHandler({
-          graphQLErrors: result.errors,
-          operation: { operationName: operation.operationName },
-        });
-      }
-      return result;
-    });
-  });
-};
-
 // Get the GraphQL endpoint from environment or default
 const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || "/graphql";
+
+console.log("[Apollo] Initializing with URL:", GRAPHQL_URL);
 
 // HTTP Link - handles the actual GraphQL requests
 const httpLink = createHttpLink({
@@ -66,12 +26,12 @@ const httpLink = createHttpLink({
 });
 
 // Auth Link - adds the JWT token and CSRF prevention headers to requests
-const authLink = setContext((_, { headers }) => {
+const authLink = new ApolloLink((operation, forward) => {
   // Get the authentication token from localStorage or Keycloak
   const token = localStorage.getItem("kc-token") || 
                 sessionStorage.getItem("kc-token");
 
-  return {
+  operation.setContext(({ headers = {} }) => ({
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : "",
@@ -79,56 +39,14 @@ const authLink = setContext((_, { headers }) => {
       "apollo-require-preflight": "true",
       "content-type": "application/json",
     },
-  };
-});
+  }));
 
-// Error Link - handles GraphQL and network errors
-const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
-  if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, locations, path, extensions }) => {
-      console.error(
-        `[GraphQL Error] Operation: ${operation.operationName}`,
-        `Message: ${message}`,
-        `Path: ${path}`,
-        `Code: ${extensions?.code}`,
-      );
-
-      // Handle specific error codes
-      if (extensions?.code === "UNAUTHENTICATED") {
-        // Redirect to login or refresh token
-        window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
-      }
-    });
-  }
-
-  if (networkError) {
-    console.error(`[Network Error]: ${networkError.message}`);
-    
-    // Handle network errors (API down, etc.)
-    if ("statusCode" in networkError && networkError.statusCode === 401) {
-      window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
-    }
-  }
-});
-
-// Logging Link (development only)
-const loggingLink = new ApolloLink((operation, forward) => {
-  if (import.meta.env.DEV) {
-    const startTime = Date.now();
-    console.log(`[GraphQL] Starting ${operation.operationName}`);
-
-    return forward(operation).map((result) => {
-      const duration = Date.now() - startTime;
-      console.log(`[GraphQL] Completed ${operation.operationName} in ${duration}ms`);
-      return result;
-    });
-  }
   return forward(operation);
 });
 
-// Create the Apollo Client instance
+// Create the Apollo Client instance - simplified without logging link
 export const apolloClient = new ApolloClient({
-  link: from([loggingLink, errorLink, authLink, httpLink]),
+  link: from([authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {

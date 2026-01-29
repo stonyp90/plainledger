@@ -1,45 +1,49 @@
 <!-- Connection Error Email Template -->
-<h1 class="email-title">Problème avec votre connexion {{provider}}</h1>
+<h1 class="email-title">Issue with Your {{provider}} Connection</h1>
 
 <p class="email-text">
-  Bonjour {{firstName}},
+  Hello {{firstName}},
 </p>
 
 <p class="email-text">
-  Nous avons détecté un problème avec votre connexion à {{provider}}. La synchronisation de vos données a été interrompue.
+  We've detected an issue with your {{provider}} connection. Data synchronization has been interrupted.
 </p>
 
 <div class="info-box danger">
-  <strong style="color: #991b1b;">Détails de l'erreur:</strong>
-  <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">
+  <strong>Error Details:</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
     {{errorMessage}}
   </p>
 </div>
 
 <p class="email-text">
-  Pour résoudre ce problème, vous devrez peut-être reconnecter votre compte {{provider}}.
+  To resolve this issue, you may need to reconnect your {{provider}} account.
 </p>
 
 <div style="text-align: center; margin: 32px 0;">
   <a href="{{baseUrl}}/app/connections" class="email-button">
-    Reconnecter {{provider}}
+    Reconnect {{provider}}
   </a>
 </div>
 
 <hr class="email-divider">
 
-<h2 style="font-size: 16px; color: #1a1a1a; margin-bottom: 12px;">Causes possibles:</h2>
+<h2 style="font-size: 16px; color: #1e293b; margin-bottom: 12px; letter-spacing: -0.02em;">Possible Causes:</h2>
 
-<ul style="color: #666; padding-left: 20px; margin: 0;">
-  <li style="margin-bottom: 8px;">Votre autorisation {{provider}} a expiré</li>
-  <li style="margin-bottom: 8px;">Votre mot de passe {{provider}} a été modifié</li>
-  <li style="margin-bottom: 8px;">Les permissions de l'application ont été révoquées</li>
-  <li style="margin-bottom: 8px;">{{provider}} est temporairement indisponible</li>
+<ul style="color: #64748b; padding-left: 20px; margin: 0;">
+  <li style="margin-bottom: 8px;">Your {{provider}} authorization has expired</li>
+  <li style="margin-bottom: 8px;">Your {{provider}} password was changed</li>
+  <li style="margin-bottom: 8px;">App permissions were revoked</li>
+  <li style="margin-bottom: 8px;">{{provider}} is temporarily unavailable</li>
 </ul>
 
 <hr class="email-divider">
 
-<p class="email-text" style="font-size: 14px; color: #888;">
-  Besoin d'aide pour reconnecter votre compte?<br>
-  <a href="{{baseUrl}}/help/connections" style="color: #1a1a1a;">Consulter notre guide</a> ou contactez-nous à <a href="mailto:support@plainledger.ca" style="color: #1a1a1a;">support@plainledger.ca</a>
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  Need help reconnecting your account?<br>
+  <a href="{{baseUrl}}/help/connections" style="color: #059669;">View our guide</a> or contact us at <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
 </p>
+
+<div class="email-signature">
+  <p>Best regards,<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

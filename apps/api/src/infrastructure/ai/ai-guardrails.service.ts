@@ -375,7 +375,7 @@ export class AIGuardrailsService {
    */
   private addConfidenceDisclaimer(
     response: string,
-    confidence: number,
+    _confidence: number,
   ): string {
     const disclaimer = `\n\n⚠️ **Note:** This analysis is based on limited data. Please verify all numbers and calculations.`;
 

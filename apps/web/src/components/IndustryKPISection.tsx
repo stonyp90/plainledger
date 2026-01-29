@@ -24,12 +24,13 @@ import {
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../contexts/ThemeContext';
 
-// Theme colors
+// Theme colors - Corporate green palette (consistent with Landing page)
 const colors = {
-  green: '#2E7D5F',
-  greenDark: '#1E5A43',
-  gold: '#C5A24D',
-  goldDark: '#A68A3C',
+  green: '#059669',      // emerald-600 - primary corporate green
+  greenDark: '#047857',  // emerald-700 - darker for depth
+  greenLight: '#10b981', // emerald-500 - lighter accents
+  gold: '#d4af37',       // classic gold
+  goldDark: '#b8860b',   // darker gold
 };
 
 // =====================================================
@@ -60,16 +61,20 @@ function useInView(threshold = 0.2) {
   return { ref, isInView };
 }
 
-// Mini sparkline chart component
+// Mini sparkline chart component with industry benchmark comparison
 function AnimatedSparkline({ 
   data, 
+  benchmarkData,
   color, 
+  benchmarkColor = 'rgba(148, 163, 184, 0.6)',
   height = 32,
   showFill = true,
   isVisible = true 
 }: { 
   data: number[]; 
+  benchmarkData?: number[];
   color: string; 
+  benchmarkColor?: string;
   height?: number;
   showFill?: boolean;
   isVisible?: boolean;
@@ -79,35 +84,60 @@ function AnimatedSparkline({
   useEffect(() => {
     if (!isVisible) return;
     let start: number;
+    let animationId: number;
     const animate = (time: number) => {
       if (!start) start = time;
       const p = Math.min((time - start) / 1200, 1);
       setProgress(p);
-      if (p < 1) requestAnimationFrame(animate);
+      if (p < 1) {
+        animationId = requestAnimationFrame(animate);
+      }
     };
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
   }, [isVisible]);
   
-  const max = Math.max(...data);
-  const min = Math.min(...data);
+  // Calculate min/max across both datasets for consistent scale
+  const allData = benchmarkData ? [...data, ...benchmarkData] : data;
+  const max = Math.max(...allData);
+  const min = Math.min(...allData);
   const range = max - min || 1;
   
-  const points = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = height - ((v - min) / range) * (height - 4) - 2;
+  const getPoints = (values: number[]) => values.map((v, i) => {
+    const x = (i / (values.length - 1)) * 100;
+    const y = height - ((v - min) / range) * (height - 8) - 4;
     return `${x},${y}`;
   });
   
+  const points = getPoints(data);
+  const benchmarkPoints = benchmarkData ? getPoints(benchmarkData) : [];
+  
   const visiblePoints = points.slice(0, Math.ceil(data.length * progress));
+  const visibleBenchmarkPoints = benchmarkPoints.slice(0, Math.ceil(benchmarkPoints.length * progress));
   
   return (
     <svg width="100%" height={height} className="overflow-visible">
+      {/* Industry benchmark line (dashed, behind) */}
+      {benchmarkData && visibleBenchmarkPoints.length > 1 && (
+        <polyline
+          points={visibleBenchmarkPoints.join(' ')}
+          fill="none"
+          stroke={benchmarkColor}
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity={0.7}
+        />
+      )}
+      {/* User data fill */}
       {showFill && visiblePoints.length > 1 && (
         <polygon
           points={`0,${height} ${visiblePoints.join(' ')} ${visiblePoints.length > 0 ? visiblePoints[visiblePoints.length - 1].split(',')[0] : 0},${height}`}
           fill={`${color}15`}
         />
       )}
+      {/* User data line */}
       <polyline
         points={visiblePoints.join(' ')}
         fill="none"
@@ -116,12 +146,23 @@ function AnimatedSparkline({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {/* User data end point */}
       {visiblePoints.length > 0 && progress > 0.8 && (
         <circle
           cx={visiblePoints[visiblePoints.length - 1]?.split(',')[0]}
           cy={visiblePoints[visiblePoints.length - 1]?.split(',')[1]}
           r="3"
           fill={color}
+        />
+      )}
+      {/* Benchmark end point */}
+      {benchmarkData && visibleBenchmarkPoints.length > 0 && progress > 0.8 && (
+        <circle
+          cx={visibleBenchmarkPoints[visibleBenchmarkPoints.length - 1]?.split(',')[0]}
+          cy={visibleBenchmarkPoints[visibleBenchmarkPoints.length - 1]?.split(',')[1]}
+          r="2"
+          fill={benchmarkColor}
+          opacity={0.7}
         />
       )}
     </svg>
@@ -144,6 +185,7 @@ interface KPIDefinition {
   impact: string;
   impactFr: string;
   chartData: number[];
+  industryBenchmark: number[]; // Industry average trend for comparison
 }
 
 interface IndustryData {
@@ -158,9 +200,79 @@ interface IndustryData {
 }
 
 const INDUSTRY_KPIS: IndustryData[] = [
+  // Real Estate FIRST as primary focus
+  {
+    id: 'real_estate',
+    name: { en: 'Real Estate', fr: 'Immobilier' },
+    icon: Building2,
+    roiHighlight: { en: 'Vacancy cost reduction', fr: 'Réduction coûts vacance' },
+    roiValue: '-40%',
+    kpis: [
+      { 
+        name: 'Occupancy Rate', 
+        nameFr: 'Taux d\'occupation', 
+        formula: 'Occupied Units / Total Units', 
+        target: '85-95%',
+        currentValue: 94,
+        targetValue: 92,
+        trend: 'up',
+        trendValue: '+2%',
+        impact: 'Near full occupancy',
+        impactFr: 'Quasi pleine occupation',
+        chartData: [88, 89, 90, 91, 92, 93, 94],
+        industryBenchmark: [85, 85, 86, 86, 87, 87, 88],
+      },
+      { 
+        name: 'Cap Rate', 
+        nameFr: 'Taux de capitalisation', 
+        formula: 'NOI / Property Value', 
+        target: '4-8%',
+        currentValue: 6.2,
+        targetValue: 6.0,
+        trend: 'stable',
+        trendValue: '0%',
+        impact: 'Healthy returns',
+        impactFr: 'Rendements sains',
+        chartData: [5.8, 5.9, 6.0, 6.1, 6.1, 6.2, 6.2],
+        industryBenchmark: [5.5, 5.5, 5.6, 5.6, 5.7, 5.7, 5.8],
+      },
+      { 
+        name: 'NOI', 
+        nameFr: 'Résultat net d\'exploitation', 
+        formula: 'Revenue - Operating Expenses', 
+        target: 'Positive',
+        currentValue: 185000,
+        targetValue: 170000,
+        trend: 'up',
+        trendValue: '+8%',
+        impact: '+$15K vs target',
+        impactFr: '+15K$ vs cible',
+        chartData: [160, 165, 170, 175, 178, 182, 185],
+        industryBenchmark: [150, 152, 155, 158, 160, 162, 165],
+      },
+      { 
+        name: 'Cash-on-Cash', 
+        nameFr: 'Rendement cash-on-cash', 
+        formula: 'Annual Cash Flow / Cash Invested', 
+        target: '8-12%',
+        currentValue: 10.5,
+        targetValue: 10,
+        trend: 'up',
+        trendValue: '+0.5%',
+        impact: 'Strong cash returns',
+        impactFr: 'Forts rendements cash',
+        chartData: [8.5, 9, 9.5, 9.8, 10, 10.2, 10.5],
+        industryBenchmark: [7.5, 7.6, 7.8, 8.0, 8.1, 8.2, 8.3],
+      },
+    ],
+    benchmarkNote: { 
+      en: 'Property types: Multi-family 92-96%, Commercial 85-90%, Retail 88-93%',
+      fr: 'Types de propriétés: Multi-logements 92-96%, Commercial 85-90%, Commerce 88-93%'
+    },
+  },
   {
     id: 'restaurant',
-    name: { en: 'Restaurant / Food Service', fr: 'Restauration' },
+    name: { en: 'Restaurant', fr: 'Restauration' },
     icon: UtensilsCrossed,
     roiHighlight: { en: 'Avg savings from waste reduction', fr: 'Économies moyennes réduction gaspillage' },
     roiValue: '$4,200/mo',
@@ -174,13 +286,14 @@ const INDUSTRY_KPIS: IndustryData[] = [
         targetValue: 30,
         trend: 'down',
         trendValue: '-2.1%',
-        impact: 'On target - $1,200/mo saved',
-        impactFr: 'Dans la cible - 1 200$/mois économisés',
+        impact: 'On target, $1,200/mo saved',
+        impactFr: 'Dans la cible, 1 200$/mois économisés',
         chartData: [32, 31, 30, 29.5, 29, 28.8, 28.5],
+        industryBenchmark: [33, 32.5, 32, 31.5, 31, 31, 30.5],
       },
       { 
         name: 'Labor Cost %', 
-        nameFr: 'Coût main-d\'oeuvre %', 
+        nameFr: 'Coût main-d\'œuvre %', 
         formula: 'Labor / Total Revenue', 
         target: '20-30%',
         currentValue: 24.2,
@@ -190,6 +303,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Optimized scheduling',
         impactFr: 'Horaires optimisés',
         chartData: [25, 24.5, 24.8, 24.2, 24.3, 24.1, 24.2],
+        industryBenchmark: [27, 26.8, 26.5, 26.2, 26, 25.8, 25.5],
       },
       { 
         name: 'Prime Cost %', 
@@ -203,6 +317,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Above industry avg',
         impactFr: 'Au-dessus de la moyenne',
         chartData: [58, 57, 56, 55, 54, 53, 52.7],
+        industryBenchmark: [62, 61, 60, 59.5, 59, 58.5, 58],
       },
       { 
         name: 'Revenue', 
@@ -216,6 +331,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: '+$47K vs target',
         impactFr: '+47K$ vs cible',
         chartData: [720, 745, 780, 800, 815, 830, 847],
+        industryBenchmark: [700, 710, 720, 730, 740, 750, 760],
       },
     ],
     profitNote: { 
@@ -242,10 +358,11 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: '+$8,400/mo revenue',
         impactFr: '+8 400$/mois revenus',
         chartData: [65, 67, 68, 70, 71, 71.5, 72],
+        industryBenchmark: [60, 61, 62, 63, 64, 65, 66],
       },
       { 
         name: 'ADR', 
-        nameFr: 'TJM', 
+        nameFr: 'TJM (Tarif journalier moyen)', 
         formula: 'Room Revenue / Rooms Sold', 
         target: '$80-600',
         currentValue: 185,
@@ -255,10 +372,11 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Dynamic pricing working',
         impactFr: 'Tarification dynamique efficace',
         chartData: [165, 170, 172, 178, 180, 183, 185],
+        industryBenchmark: [155, 157, 159, 161, 163, 165, 167],
       },
       { 
         name: 'RevPAR', 
-        nameFr: 'RevPAR', 
+        nameFr: 'RevPAR (Revenu par chambre)', 
         formula: 'ADR × Occupancy', 
         target: '$44-450',
         currentValue: 133.2,
@@ -268,10 +386,11 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Exceeding benchmark',
         impactFr: 'Au-dessus de la référence',
         chartData: [107, 114, 117, 125, 128, 131, 133.2],
+        industryBenchmark: [93, 96, 99, 102, 105, 107, 110],
       },
       { 
         name: 'GOP Margin', 
-        nameFr: 'Marge GOP', 
+        nameFr: 'Marge GOP (Bénéfice brut)', 
         formula: 'GOP / Total Revenue', 
         target: '35-45%',
         currentValue: 38.5,
@@ -281,6 +400,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Strong profitability',
         impactFr: 'Forte rentabilité',
         chartData: [35, 36, 36.5, 37, 37.5, 38, 38.5],
+        industryBenchmark: [32, 32.5, 33, 33.5, 34, 34.5, 35],
       },
     ],
     benchmarkNote: { 
@@ -307,10 +427,11 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Reduced carrying costs',
         impactFr: 'Coûts de stockage réduits',
         chartData: [6.5, 7, 7.3, 7.6, 7.8, 8, 8.2],
+        industryBenchmark: [5.5, 5.7, 5.9, 6.1, 6.3, 6.5, 6.7],
       },
       { 
         name: 'GMROI', 
-        nameFr: 'GMROI', 
+        nameFr: 'GMROI (Retour sur investissement)', 
         formula: 'Gross Profit / Avg Inventory', 
         target: '>2.0',
         currentValue: 2.4,
@@ -320,6 +441,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Strong ROI on inventory',
         impactFr: 'Fort ROI sur inventaire',
         chartData: [1.9, 2.0, 2.1, 2.2, 2.3, 2.35, 2.4],
+        industryBenchmark: [1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0],
       },
       { 
         name: 'Gross Margin %', 
@@ -331,12 +453,13 @@ const INDUSTRY_KPIS: IndustryData[] = [
         trend: 'up',
         trendValue: '+2%',
         impact: 'Better pricing strategy',
-        impactFr: 'Meilleure stratégie prix',
+        impactFr: 'Meilleure stratégie de prix',
         chartData: [38, 39, 39.5, 40, 41, 41.5, 42],
+        industryBenchmark: [35, 35.5, 36, 36.5, 37, 37.5, 38],
       },
       { 
         name: 'Shrinkage %', 
-        nameFr: 'Démarque %', 
+        nameFr: 'Démarque inconnue %', 
         formula: 'Loss / Sales', 
         target: '<2%',
         currentValue: 1.2,
@@ -344,75 +467,11 @@ const INDUSTRY_KPIS: IndustryData[] = [
         trend: 'down',
         trendValue: '-0.4%',
         impact: 'Loss prevention working',
-        impactFr: 'Prévention pertes efficace',
+        impactFr: 'Prévention des pertes efficace',
         chartData: [1.8, 1.7, 1.5, 1.4, 1.35, 1.25, 1.2],
+        industryBenchmark: [2.2, 2.1, 2.0, 1.95, 1.9, 1.85, 1.8],
       },
     ],
-  },
-  {
-    id: 'real_estate',
-    name: { en: 'Real Estate / Immobilier', fr: 'Immobilier' },
-    icon: Building2,
-    roiHighlight: { en: 'Vacancy cost reduction', fr: 'Réduction coûts vacance' },
-    roiValue: '-40%',
-    kpis: [
-      { 
-        name: 'Occupancy Rate', 
-        nameFr: 'Taux d\'occupation', 
-        formula: 'Occupied Units / Total Units', 
-        target: '85-95%',
-        currentValue: 94,
-        targetValue: 92,
-        trend: 'up',
-        trendValue: '+2%',
-        impact: 'Near full occupancy',
-        impactFr: 'Quasi pleine occupation',
-        chartData: [88, 89, 90, 91, 92, 93, 94],
-      },
-      { 
-        name: 'Cap Rate', 
-        nameFr: 'Taux de capitalisation', 
-        formula: 'NOI / Property Value', 
-        target: '4-8%',
-        currentValue: 6.2,
-        targetValue: 6.0,
-        trend: 'stable',
-        trendValue: '0%',
-        impact: 'Healthy returns',
-        impactFr: 'Rendements sains',
-        chartData: [5.8, 5.9, 6.0, 6.1, 6.1, 6.2, 6.2],
-      },
-      { 
-        name: 'NOI', 
-        nameFr: 'Résultat net d\'exploitation', 
-        formula: 'Revenue - Operating Expenses', 
-        target: 'Positive',
-        currentValue: 185000,
-        targetValue: 170000,
-        trend: 'up',
-        trendValue: '+8%',
-        impact: '+$15K vs target',
-        impactFr: '+15K$ vs cible',
-        chartData: [160, 165, 170, 175, 178, 182, 185],
-      },
-      { 
-        name: 'Cash-on-Cash', 
-        nameFr: 'Rendement cash', 
-        formula: 'Annual Cash Flow / Cash Invested', 
-        target: '8-12%',
-        currentValue: 10.5,
-        targetValue: 10,
-        trend: 'up',
-        trendValue: '+0.5%',
-        impact: 'Strong cash returns',
-        impactFr: 'Forts rendements cash',
-        chartData: [8.5, 9, 9.5, 9.8, 10, 10.2, 10.5],
-      },
-    ],
-    benchmarkNote: { 
-      en: 'Property types: Multi-family 92-96%, Commercial 85-90%, Retail 88-93%',
-      fr: 'Types: Multi-logements 92-96%, Commercial 85-90%, Commerce 88-93%'
-    },
   },
   {
     id: 'construction',
@@ -433,6 +492,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Better cost control',
         impactFr: 'Meilleur contrôle coûts',
         chartData: [18, 19, 19.5, 20, 21, 21.5, 22],
+        industryBenchmark: [16, 16.5, 17, 17.5, 18, 18.5, 19],
       },
       { 
         name: 'Backlog Months', 
@@ -446,6 +506,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Strong pipeline',
         impactFr: 'Pipeline solide',
         chartData: [5, 5.5, 6, 6.5, 7, 7.5, 8],
+        industryBenchmark: [4, 4.2, 4.5, 4.8, 5, 5.2, 5.5],
       },
       { 
         name: 'Bid-to-Win Ratio', 
@@ -459,6 +520,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Competitive pricing',
         impactFr: 'Prix compétitifs',
         chartData: [18, 19, 20, 21, 22, 23, 24],
+        industryBenchmark: [15, 15.5, 16, 16.5, 17, 17.5, 18],
       },
       { 
         name: 'Job Margin Variance', 
@@ -472,6 +534,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Accurate estimates',
         impactFr: 'Estimations précises',
         chartData: [4.5, 4, 3.5, 3, 2.8, 2.4, 2.1],
+        industryBenchmark: [6, 5.8, 5.5, 5.2, 5, 4.8, 4.5],
       },
     ],
   },
@@ -494,6 +557,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: '+$45K annual revenue',
         impactFr: '+45K$ revenus annuels',
         chartData: [72, 73, 74, 75, 76, 77, 78],
+        industryBenchmark: [68, 68.5, 69, 69.5, 70, 70.5, 71],
       },
       { 
         name: 'Realization Rate', 
@@ -507,6 +571,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Better collections',
         impactFr: 'Meilleurs recouvrements',
         chartData: [88, 89, 89.5, 90, 91, 91.5, 92],
+        industryBenchmark: [85, 85.5, 86, 86.5, 87, 87.5, 88],
       },
       { 
         name: 'Effective Rate', 
@@ -520,6 +585,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Higher value work',
         impactFr: 'Travail à plus haute valeur',
         chartData: [165, 170, 172, 175, 180, 183, 185],
+        industryBenchmark: [150, 152, 155, 158, 160, 162, 165],
       },
       { 
         name: 'AR Days', 
@@ -533,6 +599,7 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impact: 'Faster collections',
         impactFr: 'Recouvrements plus rapides',
         chartData: [42, 40, 38, 36, 35, 33, 32],
+        industryBenchmark: [48, 47, 46, 45, 44, 43, 42],
       },
     ],
   },
@@ -551,7 +618,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('restaurant');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('real_estate');
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
   const { ref: sectionRef, isInView } = useInView(0.1);
   
@@ -589,9 +656,9 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           <div 
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
             style={{ 
-              background: `${colors.gold}15`,
-              border: `1px solid ${colors.gold}25`,
-              color: colors.goldDark
+              background: `${colors.gold}${isDark ? '25' : '15'}`,
+              border: `1px solid ${colors.gold}${isDark ? '40' : '25'}`,
+              color: isDark ? colors.gold : colors.goldDark
             }}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -602,7 +669,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
             style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
           >
-            {isEn ? 'Know Your Numbers' : 'Connaissez vos chiffres'}
+            {isEn ? 'Beat Your Industry Benchmarks' : 'Dépassez les références de votre secteur'}
           </h2>
           
           <p 
@@ -610,8 +677,8 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
           >
             {isEn 
-              ? 'Understand the formulas behind key metrics and how you compare to industry standards. Education meets actionable intelligence.'
-              : 'Comprenez les formules derrière les métriques clés et comment vous vous comparez aux standards de l\'industrie.'}
+              ? 'See exactly where you stand vs. industry leaders. Identify the KPIs dragging down your margins and fix them.'
+              : 'Voyez exactement où vous vous situez vs les leaders du secteur. Identifiez les KPIs qui réduisent vos marges et corrigez-les.'}
           </p>
         </div>
         
@@ -625,14 +692,17 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
               <button
                 key={industry.id}
                 onClick={() => setSelectedIndustry(industry.id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
                 style={{
-                  backgroundColor: isSelected ? colors.green : (isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(248, 250, 252, 0.9)'),
-                  color: isSelected ? 'white' : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                  border: `1px solid ${isSelected ? colors.green : (isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)')}`,
+                  backgroundColor: isSelected ? colors.green : (isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)'),
+                  color: isSelected ? 'white' : (isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)'),
+                  border: `1px solid ${isSelected ? colors.green : (isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)')}`,
+                  boxShadow: isSelected 
+                    ? `0 4px 12px ${colors.green}40` 
+                    : (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)'),
                 }}
               >
-                <TabIcon className="w-3.5 h-3.5" />
+                <TabIcon className="w-4 h-4" style={{ color: isSelected ? 'white' : colors.green }} />
                 <span className="hidden sm:inline">
                   {isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim()}
                 </span>
@@ -643,30 +713,33 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
         
         {/* Dashboard Container */}
         <div 
-          className="rounded-2xl overflow-hidden shadow-xl"
+          className="rounded-2xl overflow-hidden shadow-2xl"
           style={{ 
-            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-            border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+            backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(255, 255, 255, 0.98)',
+            border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)'}`,
+            boxShadow: isDark 
+              ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
+              : '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
           }}
         >
           {/* Browser Chrome */}
           <div 
             className="h-10 flex items-center px-4 gap-3 border-b"
             style={{ 
-              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(250, 250, 250, 0.95)',
-              borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'
+              backgroundColor: isDark ? 'rgb(15, 23, 42)' : 'rgba(248, 250, 252, 0.98)',
+              borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 0.6)'
             }}
           >
             <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.green }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.gold }} />
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: isDark ? 'rgb(71, 85, 105)' : 'rgb(203, 213, 225)' }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.green }} />
             </div>
             
             {/* Industry Name */}
             <div className="flex-1 flex items-center justify-center gap-2">
               <Icon className="w-4 h-4" style={{ color: colors.green }} />
-              <span className="text-[11px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+              <span className="text-[11px] font-semibold" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)' }}>
                 {isEn ? currentIndustry.name.en : currentIndustry.name.fr}
               </span>
             </div>
@@ -682,33 +755,46 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           </div>
           
           {/* Main Content */}
-          <div className="p-4 sm:p-6">
+          <div 
+            className="p-4 sm:p-6"
+            style={{
+              backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(255, 255, 255, 0.98)',
+            }}
+          >
             {/* ROI Highlight Banner */}
             <div 
-              className="mb-5 p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3"
+              className="mb-6 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4"
               style={{ 
-                background: `linear-gradient(135deg, ${colors.gold}15 0%, ${colors.green}10 100%)`,
-                border: `1px solid ${colors.gold}30`
+                background: isDark 
+                  ? `linear-gradient(135deg, ${colors.gold}35 0%, ${colors.green}25 100%)`
+                  : `linear-gradient(135deg, ${colors.gold}20 0%, ${colors.green}12 100%)`,
+                border: `1px solid ${isDark ? `${colors.gold}70` : `${colors.gold}40`}`,
+                boxShadow: isDark 
+                  ? `0 4px 20px ${colors.gold}20` 
+                  : `0 4px 20px ${colors.gold}10`
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${colors.gold}20` }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ 
+                    backgroundColor: `${colors.gold}30`,
+                    boxShadow: `0 2px 8px ${colors.gold}20`
+                  }}
                 >
-                  <DollarSign className="w-5 h-5" style={{ color: colors.gold }} />
+                  <DollarSign className="w-6 h-6" style={{ color: colors.gold }} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
                     {isEn ? 'ROI Highlight' : 'Point ROI'}
                   </p>
-                  <p className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+                  <p className="text-base font-bold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
                     {isEn ? currentIndustry.roiHighlight.en : currentIndustry.roiHighlight.fr}
                   </p>
                 </div>
               </div>
               <div 
-                className="text-xl sm:text-2xl font-bold"
+                className="text-2xl sm:text-3xl font-bold"
                 style={{ color: colors.gold }}
               >
                 {currentIndustry.roiValue}
@@ -716,7 +802,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             </div>
             
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
               {currentIndustry.kpis.map((kpi, idx) => {
                 const isOnTarget = kpi.currentValue >= kpi.targetValue * 0.95 || 
                   (kpi.name.includes('Cost') && kpi.currentValue <= kpi.targetValue * 1.05) ||
@@ -725,31 +811,33 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                 return (
                   <div 
                     key={idx}
-                    className="p-3 rounded-xl transition-all duration-300 cursor-pointer group"
+                    className="p-4 rounded-xl transition-all duration-300 cursor-pointer group"
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-                      border: `1px solid ${hoveredKpi === idx ? colors.green : (isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)')}`,
-                      transform: hoveredKpi === idx ? 'translateY(-2px)' : 'none',
-                      boxShadow: hoveredKpi === idx ? `0 8px 20px ${colors.green}20` : 'none'
+                      backgroundColor: isDark ? 'rgb(51, 65, 85)' : 'rgba(255, 255, 255, 0.98)',
+                      border: `1px solid ${hoveredKpi === idx ? colors.green : (isDark ? 'rgba(71, 85, 105, 0.8)' : 'rgba(229, 231, 235, 0.8)')}`,
+                      transform: hoveredKpi === idx ? 'translateY(-3px)' : 'none',
+                      boxShadow: hoveredKpi === idx 
+                        ? `0 12px 24px ${colors.green}30` 
+                        : (isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 12px rgba(0, 0, 0, 0.08)')
                     }}
                     onMouseEnter={() => setHoveredKpi(idx)}
                     onMouseLeave={() => setHoveredKpi(null)}
                   >
                     {/* Header */}
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-[10px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-[11px] font-semibold" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
                         {isEn ? kpi.name : kpi.nameFr}
                       </span>
                       <div 
-                        className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold"
                         style={{ 
                           backgroundColor: kpi.trend === 'up' 
-                            ? `${colors.green}15` 
+                            ? `${colors.green}25` 
                             : kpi.trend === 'down' 
                               ? (kpi.name.includes('Cost') || kpi.name.includes('Days') || kpi.name.includes('Coût') || kpi.name.includes('Jours'))
-                                ? `${colors.green}15`
-                                : '#fee2e215'
-                              : `${colors.gold}15`,
+                                ? `${colors.green}25`
+                                : '#fee2e225'
+                              : `${colors.gold}25`,
                           color: kpi.trend === 'up' 
                             ? colors.green 
                             : kpi.trend === 'down'
@@ -759,52 +847,76 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                               : colors.gold
                         }}
                       >
-                        {kpi.trend === 'up' ? <TrendingUp className="w-2.5 h-2.5" /> : 
-                         kpi.trend === 'down' ? <TrendingDown className="w-2.5 h-2.5" /> : 
-                         <Target className="w-2.5 h-2.5" />}
+                        {kpi.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : 
+                         kpi.trend === 'down' ? <TrendingDown className="w-3 h-3" /> : 
+                         <Target className="w-3 h-3" />}
                         {kpi.trendValue}
                       </div>
                     </div>
                     
                     {/* Value */}
-                    <div className="text-lg sm:text-xl font-bold mb-2" style={{ color: colors.green }}>
+                    <div className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: colors.green }}>
                       {formatValue(kpi.currentValue, kpi.name)}
                     </div>
                     
-                    {/* Chart */}
-                    <div className="h-8 mb-2">
+                    {/* Chart with Industry Comparison */}
+                    <div className="h-12 mb-2">
                       <AnimatedSparkline 
                         data={kpi.chartData} 
+                        benchmarkData={kpi.industryBenchmark}
                         color={colors.green}
-                        height={32}
+                        benchmarkColor={isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.6)'}
+                        height={48}
                         isVisible={isInView}
                       />
                     </div>
                     
+                    {/* Chart Legend */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-0.5 rounded" style={{ backgroundColor: colors.green }}></div>
+                        <span className="text-[8px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
+                          {isEn ? 'You' : 'Vous'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div 
+                          className="w-3 h-0.5 rounded" 
+                          style={{ 
+                            backgroundColor: isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.6)',
+                            backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, currentColor 2px, currentColor 4px)'
+                          }}
+                        ></div>
+                        <span className="text-[8px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(148, 163, 184)' }}>
+                          {isEn ? 'Industry' : 'Industrie'}
+                        </span>
+                      </div>
+                    </div>
+                    
                     {/* Target & Status */}
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                      <span className="text-[10px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
                         {isEn ? 'Target:' : 'Cible:'} {kpi.target}
                       </span>
                       <div className="flex items-center gap-1">
                         {isOnTarget ? (
-                          <CheckCircle className="w-3 h-3" style={{ color: colors.green }} />
+                          <CheckCircle className="w-4 h-4" style={{ color: colors.green }} />
                         ) : (
-                          <AlertCircle className="w-3 h-3" style={{ color: colors.gold }} />
+                          <AlertCircle className="w-4 h-4" style={{ color: colors.gold }} />
                         )}
                       </div>
                     </div>
                     
                     {/* Impact on hover */}
                     <div 
-                      className="mt-2 pt-2 border-t transition-all duration-300"
+                      className="mt-3 pt-3 border-t transition-all duration-300"
                       style={{ 
-                        borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
-                        opacity: hoveredKpi === idx ? 1 : 0.7,
-                        maxHeight: hoveredKpi === idx ? '40px' : '24px',
+                        borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 0.8)',
+                        opacity: hoveredKpi === idx ? 1 : 0.8,
+                        maxHeight: hoveredKpi === idx ? '50px' : '28px',
                       }}
                     >
-                      <p className="text-[9px] font-medium" style={{ color: colors.green }}>
+                      <p className="text-[10px] font-semibold" style={{ color: isDark ? colors.greenLight : colors.green }}>
                         {isEn ? kpi.impact : kpi.impactFr}
                       </p>
                     </div>
@@ -813,67 +925,163 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
               })}
             </div>
             
-            {/* Formula Reference */}
+            {/* Formula Builder - Spreadsheet Style */}
             <div 
-              className="p-4 rounded-xl"
+              className="rounded-xl overflow-hidden shadow-lg"
               style={{ 
-                backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.8)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.6)'}`
+                backgroundColor: isDark ? 'rgb(51, 65, 85)' : 'rgba(255, 255, 255, 0.98)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.7)' : 'rgba(229, 231, 235, 0.8)'}`,
+                boxShadow: isDark 
+                  ? '0 4px 20px rgba(0, 0, 0, 0.4)' 
+                  : '0 4px 20px rgba(0, 0, 0, 0.08)'
               }}
             >
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="w-4 h-4" style={{ color: colors.green }} />
-                <span className="text-xs font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
-                  {isEn ? 'KPI Formulas & Benchmarks' : 'Formules KPI & Références'}
-                </span>
+              {/* Header with tabs */}
+              <div 
+                className="flex items-center justify-between px-4 py-3 border-b"
+                style={{ 
+                  borderColor: isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)',
+                  backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(248, 250, 252, 0.95)'
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="p-1.5 rounded-lg"
+                    style={{ backgroundColor: `${colors.green}20` }}
+                  >
+                    <BarChart3 className="w-4 h-4" style={{ color: colors.green }} />
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+                    {isEn ? 'Formula Builder' : 'Constructeur de formules'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span 
+                    className="text-[10px] px-2.5 py-1 rounded-md font-medium"
+                    style={{ backgroundColor: `${colors.green}20`, color: colors.green }}
+                  >
+                    {isEn ? 'Pre-built' : 'Pré-définies'}
+                  </span>
+                  <span 
+                    className="text-[10px] px-2.5 py-1 rounded-md font-medium"
+                    style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
+                  >
+                    {isEn ? 'Custom' : 'Personnalisées'}
+                  </span>
+                </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {currentIndustry.kpis.map((kpi, idx) => (
+              {/* Spreadsheet-like grid */}
+              <div className="overflow-x-auto">
+                <div style={{ minWidth: '500px' }}>
+                  {/* Column headers */}
                   <div 
-                    key={idx}
-                    className="flex items-center gap-3 p-2 rounded-lg transition-colors"
+                    className="grid text-[10px] font-bold uppercase tracking-wider px-4 py-2.5"
                     style={{ 
-                      backgroundColor: hoveredKpi === idx 
-                        ? (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(241, 245, 249, 0.9)')
-                        : 'transparent'
+                      gridTemplateColumns: '1.5fr 2fr 80px 60px',
+                      backgroundColor: isDark ? 'rgb(71, 85, 105)' : 'rgba(241, 245, 249, 1)',
+                      color: isDark ? 'rgb(248, 250, 252)' : 'rgb(71, 85, 105)',
+                      borderBottom: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)'}`
                     }}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-medium truncate" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                    <span className="text-left">{isEn ? 'Metric' : 'Métrique'}</span>
+                    <span className="text-left">{isEn ? 'Formula' : 'Formule'}</span>
+                    <span className="text-left">{isEn ? 'Target' : 'Cible'}</span>
+                    <span></span>
+                  </div>
+                  
+                  {/* Formula rows */}
+                  {currentIndustry.kpis.map((kpi, idx) => (
+                    <div 
+                      key={idx}
+                      className="grid items-center px-4 py-3 border-b transition-all duration-200 cursor-pointer group"
+                      style={{ 
+                        gridTemplateColumns: '1.5fr 2fr 80px 60px',
+                        borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
+                        backgroundColor: hoveredKpi === idx 
+                          ? (isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(241, 245, 249, 1)')
+                          : (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(255, 255, 255, 0.5)')
+                      }}
+                      onMouseEnter={() => setHoveredKpi(idx)}
+                      onMouseLeave={() => setHoveredKpi(null)}
+                    >
+                      <span 
+                        className="text-[11px] font-semibold text-left"
+                        style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                      >
                         {isEn ? kpi.name : kpi.nameFr}
-                      </p>
-                      <code 
-                        className="text-[9px] px-1.5 py-0.5 rounded"
+                      </span>
+                      <div className="flex items-center gap-1.5 justify-start">
+                        <code 
+                          className="text-[10px] px-2.5 py-1.5 rounded-md font-mono font-medium"
+                          style={{ 
+                            backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(241, 245, 249, 1)',
+                            color: isDark ? colors.greenLight : colors.green,
+                            border: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.8)' : 'rgba(203, 213, 225, 0.8)'}`,
+                            boxShadow: isDark ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                          }}
+                        >
+                          {kpi.formula}
+                        </code>
+                      </div>
+                      <span 
+                        className="text-[10px] px-2.5 py-1 rounded-full font-semibold text-left inline-block"
                         style={{ 
-                          backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.6)',
-                          color: colors.green
+                          backgroundColor: isDark ? `${colors.green}30` : `${colors.green}18`,
+                          color: isDark ? colors.greenLight : colors.green
                         }}
                       >
-                        {kpi.formula}
-                      </code>
+                        {kpi.target}
+                      </span>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          className="p-1.5 rounded-md transition-colors"
+                          style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
+                          title={isEn ? 'Edit formula' : 'Modifier'}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <span 
-                      className="text-[9px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                  ))}
+                  
+                  {/* Add custom formula row */}
+                  <div 
+                    className="flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(248, 250, 252, 0.8)',
+                    }}
+                  >
+                    <div 
+                      className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
                       style={{ 
-                        backgroundColor: `${colors.green}15`,
-                        color: colors.green
+                        border: `2px dashed ${isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(148, 163, 184, 0.8)'}`,
+                        color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'
                       }}
                     >
-                      {kpi.target}
+                      <span className="text-sm font-bold">+</span>
+                    </div>
+                    <span 
+                      className="text-[11px] font-medium"
+                      style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}
+                    >
+                      {isEn ? 'Add custom formula...' : 'Ajouter une formule personnalisée...'}
                     </span>
                   </div>
-                ))}
+                </div>
               </div>
               
               {/* Benchmark Note */}
               {(currentIndustry.profitNote || currentIndustry.benchmarkNote) && (
                 <div 
-                  className="mt-3 pt-3 border-t flex items-start gap-2"
-                  style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.6)' }}
+                  className="px-4 py-3.5 flex items-start gap-2.5"
+                  style={{ 
+                    borderTop: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)'}`,
+                    backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(248, 250, 252, 0.9)'
+                  }}
                 >
-                  <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: colors.gold }} />
-                  <p className="text-[10px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                  <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: isDark ? '#fbbf24' : colors.gold }} />
+                  <p className="text-[11px] font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
                     {isEn 
                       ? (currentIndustry.profitNote?.en || currentIndustry.benchmarkNote?.en)
                       : (currentIndustry.profitNote?.fr || currentIndustry.benchmarkNote?.fr)
@@ -889,12 +1097,12 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
         <div className="mt-8 text-center">
           <p 
             className="text-xs sm:text-sm mb-5 max-w-2xl mx-auto"
-            style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}
           >
-            <Sparkles className="w-3.5 h-3.5 inline mr-1.5" style={{ color: colors.green }} />
+            <Sparkles className="w-3.5 h-3.5 inline mr-1.5" style={{ color: isDark ? colors.greenLight : colors.green }} />
             {isEn 
-              ? 'PlainLedger\'s AI is optimized for 15+ Canadian industries including Manufacturing, Technology/SaaS, Agriculture, Transport & Logistics, Healthcare, and more.'
-              : 'L\'IA de PlainLedger est optimisée pour plus de 15 industries canadiennes, y compris la fabrication, technologie/SaaS, agriculture, transport et logistique, santé, et plus.'}
+              ? 'AI-optimized for 15+ Canadian industries: Real Estate, Restaurant, Hospitality, Construction, Retail, Professional Services, Manufacturing, Transport, Agriculture, and more.'
+              : 'IA optimisée pour plus de 15 industries canadiennes: Immobilier, Restauration, Hôtellerie, Construction, Commerce de détail, Services professionnels, Fabrication, Transport, Agriculture, et plus.'}
           </p>
           
           <button 
@@ -905,7 +1113,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
               boxShadow: `0 4px 16px ${colors.green}35`
             }}
           >
-            {isEn ? 'Get KPIs for your business' : 'Obtenez les KPIs pour votre entreprise'}
+            {isEn ? 'See your industry benchmarks free' : 'Voyez vos benchmarks sectoriels gratuitement'}
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

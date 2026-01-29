@@ -10,7 +10,7 @@ import {
   formatNotificationMessage,
 } from '../lib/notifications';
 import { useCredentialRotation } from '../hooks/useCredentialRotation';
-import { useAuth } from '../lib/keycloak';
+import { useAuth, isMockAuthEnabled } from '../lib/keycloak';
 import { userSettingsApi } from '../lib/settings-api';
 
 // ============================================================================
@@ -108,19 +108,22 @@ function NovuNotificationInner({ children }: { children: ReactNode }) {
   // Load preferences
   useEffect(() => {
     const loadPreferences = async () => {
-      try {
-        // Try to load from database first
-        const settings = await userSettingsApi.get();
-        if (settings?.notificationPreferences) {
-          setPreferences({ ...defaultNotificationPreferences, ...settings.notificationPreferences });
-          localStorage.setItem('notificationPreferences', JSON.stringify(settings.notificationPreferences));
-          return;
+      // Skip API call in mock auth mode - no valid token to authenticate
+      if (!isMockAuthEnabled()) {
+        try {
+          // Try to load from database first
+          const settings = await userSettingsApi.get();
+          if (settings?.notificationPreferences) {
+            setPreferences({ ...defaultNotificationPreferences, ...settings.notificationPreferences });
+            localStorage.setItem('notificationPreferences', JSON.stringify(settings.notificationPreferences));
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to load preferences from database:', error);
         }
-      } catch (error) {
-        console.error('Failed to load preferences from database:', error);
       }
       
-      // Fallback to localStorage
+      // Fallback to localStorage (always used in mock auth mode)
       try {
         const stored = localStorage.getItem('notificationPreferences');
         if (stored) {
@@ -194,12 +197,14 @@ function NovuNotificationInner({ children }: { children: ReactNode }) {
       const updated = { ...prev, ...prefs };
       localStorage.setItem('notificationPreferences', JSON.stringify(updated));
       
-      // Also save to database
-      userSettingsApi.updateNotificationPreferences({
-        notificationPreferences: updated,
-      }).catch(error => {
-        console.error('Failed to save notification preferences to database:', error);
-      });
+      // Skip API call in mock auth mode - no valid token to authenticate
+      if (!isMockAuthEnabled()) {
+        userSettingsApi.updateNotificationPreferences({
+          notificationPreferences: updated,
+        }).catch(error => {
+          console.error('Failed to save notification preferences to database:', error);
+        });
+      }
       
       return updated;
     });
@@ -343,19 +348,22 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
   };
 
   const loadPreferences = async () => {
-    try {
-      // Try to load from database first
-      const settings = await userSettingsApi.get();
-      if (settings?.notificationPreferences) {
-        setPreferences({ ...defaultNotificationPreferences, ...settings.notificationPreferences });
-        localStorage.setItem('notificationPreferences', JSON.stringify(settings.notificationPreferences));
-        return;
+    // Skip API call in mock auth mode - no valid token to authenticate
+    if (!isMockAuthEnabled()) {
+      try {
+        // Try to load from database first
+        const settings = await userSettingsApi.get();
+        if (settings?.notificationPreferences) {
+          setPreferences({ ...defaultNotificationPreferences, ...settings.notificationPreferences });
+          localStorage.setItem('notificationPreferences', JSON.stringify(settings.notificationPreferences));
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to load preferences from database:', error);
       }
-    } catch (error) {
-      console.error('Failed to load preferences from database:', error);
     }
     
-    // Fallback to localStorage
+    // Fallback to localStorage (always used in mock auth mode)
     try {
       const stored = localStorage.getItem('notificationPreferences');
       if (stored) {
@@ -440,12 +448,14 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
       const updated = { ...prev, ...prefs };
       localStorage.setItem('notificationPreferences', JSON.stringify(updated));
       
-      // Also save to database
-      userSettingsApi.updateNotificationPreferences({
-        notificationPreferences: updated,
-      }).catch(error => {
-        console.error('Failed to save notification preferences to database:', error);
-      });
+      // Skip API call in mock auth mode - no valid token to authenticate
+      if (!isMockAuthEnabled()) {
+        userSettingsApi.updateNotificationPreferences({
+          notificationPreferences: updated,
+        }).catch(error => {
+          console.error('Failed to save notification preferences to database:', error);
+        });
+      }
       
       return updated;
     });

@@ -6,6 +6,7 @@ import { useFinancialData } from '../hooks/useFinancialData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
+import Toggle from '../components/Toggle';
 
 export default function IncomeStatement() {
   const { currentTenant } = useTenant();
@@ -298,19 +299,12 @@ export default function IncomeStatement() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="showComparison"
-              checked={showComparison}
-              onChange={(e) => setShowComparison(e.target.checked)}
-              className="w-4 h-4 rounded"
-              style={{ accentColor: 'rgb(var(--color-primary-500))' }}
-            />
-            <label htmlFor="showComparison" className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Show comparison with prior year' : 'Afficher la comparaison avec l\'année précédente'}
-            </label>
-          </div>
+          <Toggle
+            checked={showComparison}
+            onChange={setShowComparison}
+            label={isEn ? 'Show comparison with prior year' : 'Afficher la comparaison avec l\'année précédente'}
+            size="sm"
+          />
         </div>
       </div>
 

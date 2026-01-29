@@ -36,6 +36,7 @@ interface AgingWidgetProps {
   averageDays: number;
   type: 'receivable' | 'payable';
   isEn: boolean;
+  hasData?: boolean; // Optional - if false, shows empty state CTA
   onViewDetails?: () => void;
 }
 
@@ -47,10 +48,74 @@ export function AgingWidget({
   averageDays,
   type,
   isEn,
+  hasData = true, // Default to true for backwards compatibility
   onViewDetails 
 }: AgingWidgetProps) {
   const total = data.reduce((sum, bucket) => sum + bucket.amount, 0);
   const overduePercent = total > 0 ? (totalOverdue / total) * 100 : 0;
+  
+  // Show empty state when no data (e.g., no bills tracked for AP)
+  if (!hasData || (data.length === 0 && total === 0)) {
+    return (
+      <div className="card">
+        <div className="flex items-center gap-3 mb-4">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
+            {type === 'receivable' ? (
+              <Users className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            ) : (
+              <Building2 className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            )}
+          </div>
+          <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? titleEn : title}
+          </h3>
+        </div>
+        
+        <div className="text-center py-8">
+          <div 
+            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
+            {type === 'receivable' ? (
+              <CheckCircle className="w-6 h-6" style={{ color: 'rgb(var(--color-success))' }} />
+            ) : (
+              <FileText className="w-6 h-6" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            )}
+          </div>
+          <p className="font-medium mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+            {type === 'receivable' 
+              ? (isEn ? 'No outstanding invoices' : 'Aucune facture en souffrance')
+              : (isEn ? 'No bills tracked' : 'Aucune facture fournisseur suivie')
+            }
+          </p>
+          <p className="text-sm text-muted mb-4">
+            {type === 'receivable'
+              ? (isEn 
+                  ? 'All customer payments are up to date' 
+                  : 'Tous les paiements clients sont à jour')
+              : (isEn 
+                  ? 'Enter bills in QuickBooks to track accounts payable'
+                  : 'Entrez vos factures dans QuickBooks pour suivre les comptes fournisseurs')
+            }
+          </p>
+          {type === 'payable' && (
+            <a
+              href="https://quickbooks.intuit.com/learn-support/en-us/bills-and-expenses/entering-bills/00/202949"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium"
+              style={{ color: 'rgb(var(--color-primary-500))' }}
+            >
+              {isEn ? 'Learn how' : 'En savoir plus'} <ArrowRight className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-CA', {

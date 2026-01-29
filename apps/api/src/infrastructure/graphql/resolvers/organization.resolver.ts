@@ -147,7 +147,7 @@ export class OrganizationResolver {
     @Args("input") input: CreateOrganizationInput,
     @Context() context: { req: { user: { sub: string; email: string } } },
   ): Promise<Organization> {
-    const { sub: userId, email } = context.req.user;
+    const { sub: userId } = context.req.user;
     this.logger.log(`User ${userId} creating organization: ${input.name}`);
 
     try {

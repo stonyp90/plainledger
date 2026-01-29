@@ -1,10 +1,11 @@
 /**
- * Signup Page
- * Custom registration form that creates users via Keycloak Admin API
- * Provides seamless branded experience within the app
+ * Signup Page - Unified 3-Step Signup Flow
+ * Step 1: Account Info (email, name, password)
+ * Step 2: Organization + Industry
+ * Step 3: Invite Team
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -21,11 +22,18 @@ import {
   Lock,
   MapPin,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  CheckCircle,
+  PartyPopper,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n, LanguageToggle } from '../lib/i18n';
 import ThemeToggle from '../components/ThemeToggle';
+import Checkbox from '../components/Checkbox';
 import { analytics } from '../lib/analytics';
+import { CompanyInfoStep, IndustryPreviewStep, InviteTeamStep, type OnboardingData } from '../components/Onboarding';
 
 // =====================================================
 // TYPES
@@ -37,10 +45,11 @@ interface SignupFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  organizationName: string;
   province: string;
   agreeToTerms: boolean;
 }
+
+type SignupStep = 1 | 2 | 3 | 'success';
 
 // Canadian Provinces and Territories
 const CANADIAN_PROVINCES = [
@@ -109,9 +118,21 @@ const INITIAL_FORM_DATA: SignupFormData = {
   email: '',
   password: '',
   confirmPassword: '',
-  organizationName: '',
   province: '',
   agreeToTerms: false,
+};
+
+const INITIAL_ONBOARDING_DATA: OnboardingData = {
+  accountType: 'business',
+  companyName: '',
+  companySize: '',
+  industry: '',
+  fiscalYearEnd: 12,
+  currency: 'CAD',
+  primarySource: '',
+  skipSource: false,
+  teamEmails: [],
+  skipTeam: false,
 };
 
 // =====================================================
@@ -122,15 +143,22 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { language } = useI18n();
+  const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
+  const isDark = resolvedTheme === 'dark';
+
+  // Step management
+  const [currentStep, setCurrentStep] = useState<SignupStep>(1);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<SignupFormData>(INITIAL_FORM_DATA);
+  const [onboardingData, setOnboardingData] = useState<OnboardingData>(INITIAL_ONBOARDING_DATA);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
 
   // Pre-fill email from URL params (for team invites)
   useEffect(() => {
@@ -140,7 +168,7 @@ export default function Signup() {
       setFormData((prev) => ({ ...prev, email }));
     }
     if (org) {
-      setFormData((prev) => ({ ...prev, organizationName: org }));
+      setOnboardingData((prev) => ({ ...prev, companyName: org }));
     }
   }, [searchParams]);
 
@@ -149,11 +177,52 @@ export default function Signup() {
     analytics.page('signup');
   }, []);
 
+  // Load saved progress from localStorage
+  useEffect(() => {
+    try {
+      const savedFormData = localStorage.getItem('pl_signup_form_data');
+      const savedOnboardingData = localStorage.getItem('pl_signup_onboarding_data');
+      const savedStep = localStorage.getItem('pl_signup_step');
+      
+      if (savedFormData) {
+        setFormData(JSON.parse(savedFormData));
+      }
+      if (savedOnboardingData) {
+        setOnboardingData(JSON.parse(savedOnboardingData));
+      }
+      if (savedStep && ['1', '2', '3'].includes(savedStep)) {
+        setCurrentStep(parseInt(savedStep) as SignupStep);
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }, []);
+
+  // Save progress to localStorage
+  const saveProgress = useCallback(() => {
+    try {
+      localStorage.setItem('pl_signup_form_data', JSON.stringify(formData));
+      localStorage.setItem('pl_signup_onboarding_data', JSON.stringify(onboardingData));
+      localStorage.setItem('pl_signup_step', currentStep.toString());
+    } catch (e) {
+      // Ignore errors
+    }
+  }, [formData, onboardingData, currentStep]);
+
+  useEffect(() => {
+    saveProgress();
+  }, [saveProgress]);
+
   // Update form field
   const updateField = (field: keyof SignupFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
   };
+
+  // Update onboarding data
+  const updateOnboardingData = useCallback((data: Partial<OnboardingData>) => {
+    setOnboardingData((prev) => ({ ...prev, ...data }));
+  }, []);
 
   // Check password requirements
   const passwordMet = PASSWORD_REQUIREMENTS.map((req) => ({
@@ -163,8 +232,8 @@ export default function Signup() {
   const allPasswordRequirementsMet = passwordMet.every((r) => r.met);
   const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
 
-  // Form validation
-  const isFormValid =
+  // Form validation for step 1
+  const isStep1Valid =
     formData.firstName.trim().length > 0 &&
     formData.lastName.trim().length > 0 &&
     formData.email.trim().length > 0 &&
@@ -174,18 +243,16 @@ export default function Signup() {
     passwordsMatch &&
     formData.agreeToTerms;
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle step 1 submission (create account)
+  const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid || isSubmitting) return;
+    if (!isStep1Valid || isSubmitting) return;
 
     setIsSubmitting(true);
     setError(null);
 
     try {
-      analytics.track('signup_submitted', { 
-        hasOrganization: !!formData.organizationName 
-      });
+      analytics.track('signup_step1_submitted');
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -197,7 +264,6 @@ export default function Signup() {
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           password: formData.password,
-          ...(formData.organizationName.trim() && { organizationName: formData.organizationName.trim() }),
           province: formData.province,
         }),
       });
@@ -205,20 +271,17 @@ export default function Signup() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle validation errors
         if (data.errors && Array.isArray(data.errors)) {
           throw new Error(data.errors.join('. '));
         }
         throw new Error(data.message || 'Registration failed');
       }
 
-      analytics.track('signup_success', { userId: data.userId });
-      setSuccess(true);
-
-      // Redirect to email verification page after short delay
-      setTimeout(() => {
-        navigate('/verify-email?email=' + encodeURIComponent(formData.email));
-      }, 2000);
+      analytics.track('signup_account_created', { userId: data.userId });
+      setAccountCreated(true);
+      
+      // Move to step 2 after account creation
+      setCurrentStep(2);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed. Please try again.';
       setError(message);
@@ -228,8 +291,88 @@ export default function Signup() {
     }
   };
 
+  // Handle step 2 completion
+  const [showIndustryPreview, setShowIndustryPreview] = useState(false);
+  
+  const handleStep2Next = () => {
+    if (onboardingData.companyName.trim().length === 0) {
+      return; // Can't proceed without company name
+    }
+    
+    if (onboardingData.industry && !showIndustryPreview) {
+      // Show industry preview if industry is selected
+      setShowIndustryPreview(true);
+    } else {
+      // Move to step 3
+      setShowIndustryPreview(false);
+      setCurrentStep(3);
+    }
+  };
+
+  // Reset industry preview when changing steps
+  useEffect(() => {
+    if (currentStep !== 2) {
+      setShowIndustryPreview(false);
+    }
+  }, [currentStep]);
+
+  // Handle step 3 completion (final step)
+  const handleStep3Complete = async () => {
+    setIsSubmitting(true);
+    try {
+      // Save onboarding data
+      const response = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          companyName: onboardingData.companyName,
+          companySize: onboardingData.companySize,
+          industry: onboardingData.industry,
+          fiscalYearEnd: onboardingData.fiscalYearEnd,
+          currency: onboardingData.currency,
+          primarySource: onboardingData.primarySource,
+          skipSource: onboardingData.skipSource,
+          teamEmails: onboardingData.teamEmails,
+          skipTeam: onboardingData.skipTeam,
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to save onboarding data');
+      }
+
+      analytics.track('signup_completed');
+      
+      // Clear saved progress
+      localStorage.removeItem('pl_signup_form_data');
+      localStorage.removeItem('pl_signup_onboarding_data');
+      localStorage.removeItem('pl_signup_step');
+
+      // Show brief success message
+      setCurrentStep('success');
+      
+      // Redirect after 2-3 seconds
+      setTimeout(() => {
+        // Check if email is verified (in production, this would check the user's emailVerified status)
+        // For now, redirect to email verification page
+        navigate('/verify-email?email=' + encodeURIComponent(formData.email));
+      }, 2500);
+    } catch (error) {
+      console.error('Error completing signup:', error);
+      setError('Failed to complete setup. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Progress calculation
+  const progress = currentStep === 1 ? 33 : currentStep === 2 ? 66 : currentStep === 3 ? 100 : 100;
+
   // Success state
-  if (success) {
+  if (currentStep === 'success') {
     return (
       <div 
         className="min-h-screen flex items-center justify-center px-4"
@@ -241,24 +384,21 @@ export default function Signup() {
           className="max-w-md w-full text-center"
         >
           <div 
-            className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+            className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
           >
-            <Check className="w-8 h-8" style={{ color: 'rgb(var(--color-success))' }} />
+            <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-success))' }} />
           </div>
           <h1 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Account Created!' : 'Compte créé!'}
+            {isEn ? 'All Set!' : 'Tout est prêt!'}
           </h1>
           <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn 
-              ? `We've sent a verification email to ${formData.email}. Please check your inbox.`
-              : `Nous avons envoyé un courriel de vérification à ${formData.email}. Veuillez vérifier votre boîte de réception.`}
+              ? 'Your account has been created successfully. Redirecting...'
+              : 'Votre compte a été créé avec succès. Redirection...'}
           </p>
           <div className="mt-8">
             <Loader2 className="w-6 h-6 mx-auto animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            <p className="text-sm mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Redirecting...' : 'Redirection...'}
-            </p>
           </div>
         </motion.div>
       </div>
@@ -267,403 +407,482 @@ export default function Signup() {
 
   return (
     <div 
-      className="min-h-screen"
+      className="min-h-screen flex flex-col"
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
-      {/* Header */}
-      <header className="px-4 py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-            style={{ 
-              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
-            }}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-              <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-              <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-              <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+      {/* Header - Matching Landing page style */}
+      <header 
+        className="sticky top-0 z-50 border-b backdrop-blur-md"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-bg) / 0.95)',
+          borderColor: 'rgb(var(--color-border))'
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                  boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
+                }}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                  <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                PlainLedger
+              </span>
+            </Link>
+
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-6">
+              <a href="/#industries" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Industries' : 'Industries'}
+              </a>
+              <a href="/#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Pricing' : 'Tarifs'}
+              </a>
+            </div>
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-3">
+              {/* Progress indicator */}
+              <div className="flex items-center gap-3 mr-2">
+                <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? `Step ${currentStep} of 3` : `Étape ${currentStep} sur 3`}
+                </span>
+                <div className="w-24 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                  <div 
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${progress}%`,
+                      backgroundColor: 'rgb(var(--color-primary-500))'
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <ThemeToggle />
+              <LanguageToggle />
+              
+              <Link 
+                to="/login" 
+                className="text-sm font-medium"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+              >
+                {isEn ? 'Sign in' : 'Connexion'}
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center gap-2">
+              <ThemeToggle />
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
-          <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-            PlainLedger
-          </span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <LanguageToggle />
+
+          {/* Mobile Menu Dropdown */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden py-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <nav className="flex flex-col gap-3">
+                <a href="/#industries" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Industries' : 'Industries'}
+                </a>
+                <a href="/#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Pricing' : 'Tarifs'}
+                </a>
+                <Link 
+                  to="/login"
+                  className="text-sm font-medium py-2"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {isEn ? 'Sign in' : 'Connexion'}
+                </Link>
+                <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  <LanguageToggle />
+                </div>
+                {/* Progress indicator (mobile) */}
+                <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? `Step ${currentStep} of 3` : `Étape ${currentStep} sur 3`}
+                  </span>
+                  <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                    <div 
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${progress}%`,
+                        backgroundColor: 'rgb(var(--color-primary-500))'
+                      }}
+                    />
+                  </div>
+                </div>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Title */}
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Create your account' : 'Créer votre compte'}
-            </h1>
-            <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn 
-                ? 'Get started for free. No credit card required.'
-                : 'Commencez gratuitement. Aucune carte de crédit requise.'}
-            </p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Error Alert */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-lg flex items-start gap-3"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-error) / 0.1)',
-                  border: '1px solid rgb(var(--color-error) / 0.2)'
-                }}
-              >
-                <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-error))' }} />
-                <p className="text-sm" style={{ color: 'rgb(var(--color-error))' }}>{error}</p>
-              </motion.div>
-            )}
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'First name' : 'Prénom'} *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => updateField('firstName', e.target.value)}
-                    placeholder={isEn ? 'John' : 'Jean'}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-bg-subtle))',
-                      borderColor: 'rgb(var(--color-border))',
-                      color: 'rgb(var(--color-text))',
-                    }}
-                    required
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Last name' : 'Nom'} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => updateField('lastName', e.target.value)}
-                  placeholder={isEn ? 'Doe' : 'Dupont'}
-                  className="w-full px-4 py-2.5 rounded-lg border transition-colors"
-                  style={{
-                    backgroundColor: 'rgb(var(--color-bg-subtle))',
-                    borderColor: 'rgb(var(--color-border))',
-                    color: 'rgb(var(--color-text))',
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Work email' : 'Courriel professionnel'} *
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  placeholder="you@company.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
-                  style={{
-                    backgroundColor: 'rgb(var(--color-bg-subtle))',
-                    borderColor: 'rgb(var(--color-border))',
-                    color: 'rgb(var(--color-text))',
-                  }}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Organization Name and Province */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Organization name' : 'Nom de l\'organisation'} 
-                  <span className="text-xs ml-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    ({isEn ? 'optional' : 'optionnel'})
-                  </span>
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  <input
-                    type="text"
-                    value={formData.organizationName}
-                    onChange={(e) => updateField('organizationName', e.target.value)}
-                    placeholder={isEn ? 'Acme Corp' : 'Entreprise ABC'}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-bg-subtle))',
-                      borderColor: 'rgb(var(--color-border))',
-                      color: 'rgb(var(--color-text))',
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Province */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Province / Territory' : 'Province / Territoire'} *
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  <select
-                    value={formData.province}
-                    onChange={(e) => updateField('province', e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 rounded-lg border transition-colors appearance-none cursor-pointer"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-bg-subtle))',
-                      borderColor: 'rgb(var(--color-border))',
-                      color: formData.province ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-                    }}
-                    required
-                  >
-                    <option value="">{isEn ? 'Select province...' : 'Sélectionner...'}</option>
-                    {CANADIAN_PROVINCES.map((prov) => (
-                      <option key={prov.code} value={prov.code}>
-                        {isEn ? prov.name : prov.nameFr}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Password' : 'Mot de passe'} *
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => updateField('password', e.target.value)}
-                  className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
-                  style={{
-                    backgroundColor: 'rgb(var(--color-bg-subtle))',
-                    borderColor: 'rgb(var(--color-border))',
-                    color: 'rgb(var(--color-text))',
-                  }}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Password Requirements */}
-              {formData.password.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-3 p-3 rounded-lg"
-                  style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                >
-                  <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Password requirements:' : 'Exigences du mot de passe:'}
-                  </p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {passwordMet.map((req) => (
-                      <div key={req.id} className="flex items-center gap-1.5">
-                        {req.met ? (
-                          <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
-                        ) : (
-                          <X className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                        )}
-                        <span 
-                          className="text-xs"
-                          style={{ color: req.met ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))' }}
-                        >
-                          {isEn ? req.label : req.labelFr}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Confirm password' : 'Confirmer le mot de passe'} *
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={(e) => updateField('confirmPassword', e.target.value)}
-                  className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
-                  style={{
-                    backgroundColor: 'rgb(var(--color-bg-subtle))',
-                    borderColor: formData.confirmPassword.length > 0 
-                      ? (passwordsMatch ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))') 
-                      : 'rgb(var(--color-border))',
-                    color: 'rgb(var(--color-text))',
-                  }}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              {formData.confirmPassword.length > 0 && !passwordsMatch && (
-                <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-error))' }}>
-                  {isEn ? 'Passwords do not match' : 'Les mots de passe ne correspondent pas'}
-                </p>
-              )}
-            </div>
-
-            {/* Terms */}
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={formData.agreeToTerms}
-                onChange={(e) => updateField('agreeToTerms', e.target.checked)}
-                className="mt-1 w-4 h-4 rounded"
-                style={{ accentColor: 'rgb(var(--color-primary-500))' }}
-              />
-              <label htmlFor="terms" className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? (
-                  <>
-                    I agree to the{' '}
-                    <Link to="/terms" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link to="/privacy" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                      Privacy Policy
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    J'accepte les{' '}
-                    <Link to="/terms" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                      Conditions d'utilisation
-                    </Link>{' '}
-                    et la{' '}
-                    <Link to="/privacy" className="underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                      Politique de confidentialité
-                    </Link>
-                  </>
-                )}
-              </label>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={!isFormValid || isSubmitting}
-              className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: isFormValid ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                color: isFormValid ? 'white' : 'rgb(var(--color-text-muted))',
-              }}
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-2xl">
+          {/* Step 1: Account Info */}
+          {currentStep === 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {isEn ? 'Creating account...' : 'Création du compte...'}
-                </>
+              {/* Title */}
+              <div className="text-center">
+                <h1 className="text-3xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Create your account' : 'Créer votre compte'}
+                </h1>
+                <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn 
+                    ? 'Get started for free. No credit card required.'
+                    : 'Commencez gratuitement. Aucune carte de crédit requise.'}
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleStep1Submit} className="space-y-4">
+                {/* Error Alert */}
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg flex items-start gap-3"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                      border: '1px solid rgb(var(--color-error) / 0.2)'
+                    }}
+                  >
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-error))' }} />
+                    <p className="text-sm" style={{ color: 'rgb(var(--color-error))' }}>{error}</p>
+                  </motion.div>
+                )}
+
+                {/* Name Fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'First name' : 'Prénom'} *
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => updateField('firstName', e.target.value)}
+                        placeholder={isEn ? 'John' : 'Jean'}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
+                        style={{
+                          backgroundColor: 'rgb(var(--color-bg-subtle))',
+                          borderColor: 'rgb(var(--color-border))',
+                          color: 'rgb(var(--color-text))',
+                        }}
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Last name' : 'Nom'} *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => updateField('lastName', e.target.value)}
+                      placeholder={isEn ? 'Doe' : 'Dupont'}
+                      className="w-full px-4 py-2.5 rounded-lg border transition-colors"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-bg-subtle))',
+                        borderColor: 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
+                      }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Work email' : 'Courriel professionnel'} *
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      placeholder="you@company.com"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-bg-subtle))',
+                        borderColor: 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
+                      }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Province */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Province / Territory' : 'Province / Territoire'} *
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <select
+                      value={formData.province}
+                      onChange={(e) => updateField('province', e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 rounded-lg border transition-colors appearance-none cursor-pointer"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-bg-subtle))',
+                        borderColor: 'rgb(var(--color-border))',
+                        color: formData.province ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
+                      }}
+                      required
+                    >
+                      <option value="">{isEn ? 'Select province...' : 'Sélectionner...'}</option>
+                      {CANADIAN_PROVINCES.map((prov) => (
+                        <option key={prov.code} value={prov.code}>
+                          {isEn ? prov.name : prov.nameFr}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Password' : 'Mot de passe'} *
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => updateField('password', e.target.value)}
+                      className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-bg-subtle))',
+                        borderColor: 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
+                      }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+
+                  {/* Password Requirements */}
+                  {formData.password.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 p-3 rounded-lg"
+                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                    >
+                      <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {isEn ? 'Password requirements:' : 'Exigences du mot de passe:'}
+                      </p>
+                      <div className="grid grid-cols-2 gap-1">
+                        {passwordMet.map((req) => (
+                          <div key={req.id} className="flex items-center gap-1.5">
+                            {req.met ? (
+                              <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
+                            ) : (
+                              <X className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                            )}
+                            <span 
+                              className="text-xs"
+                              style={{ color: req.met ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))' }}
+                            >
+                              {isEn ? req.label : req.labelFr}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Confirm password' : 'Confirmer le mot de passe'} *
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={formData.confirmPassword}
+                      onChange={(e) => updateField('confirmPassword', e.target.value)}
+                      className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-bg-subtle))',
+                        borderColor: formData.confirmPassword.length > 0 
+                          ? (passwordsMatch ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))') 
+                          : 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
+                      }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {formData.confirmPassword.length > 0 && !passwordsMatch && (
+                    <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-error))' }}>
+                      {isEn ? 'Passwords do not match' : 'Les mots de passe ne correspondent pas'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Terms */}
+                <Checkbox
+                  checked={formData.agreeToTerms}
+                  onChange={(checked) => updateField('agreeToTerms', checked)}
+                  label={
+                    isEn ? (
+                      <>
+                        I agree to the{' '}
+                        <Link to="/terms" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                          Terms of Service
+                        </Link>{' '}
+                        and{' '}
+                        <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                          Privacy Policy
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        J'accepte les{' '}
+                        <Link to="/terms" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                          Conditions d'utilisation
+                        </Link>{' '}
+                        et la{' '}
+                        <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                          Politique de confidentialité
+                        </Link>
+                      </>
+                    )
+                  }
+                />
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={!isStep1Valid || isSubmitting}
+                  className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: isStep1Valid ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
+                    color: isStep1Valid ? 'white' : 'rgb(var(--color-text-muted))',
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      {isEn ? 'Creating account...' : 'Création du compte...'}
+                    </>
+                  ) : (
+                    <>
+                      {isEn ? 'Continue' : 'Continuer'}
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Sign In Link */}
+              <div className="text-center">
+                <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Already have an account?' : 'Vous avez déjà un compte?'}{' '}
+                  <Link 
+                    to="/login" 
+                    className="font-medium"
+                    style={{ color: 'rgb(var(--color-primary-500))' }}
+                  >
+                    {isEn ? 'Sign in' : 'Se connecter'}
+                  </Link>
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Organization + Industry */}
+          {currentStep === 2 && (
+            <div>
+              {!showIndustryPreview ? (
+                <CompanyInfoStep 
+                  data={onboardingData} 
+                  onChange={updateOnboardingData} 
+                  onNext={handleStep2Next}
+                  onBack={() => setCurrentStep(1)}
+                />
               ) : (
-                <>
-                  {isEn ? 'Create account' : 'Créer le compte'}
-                  <ArrowRight className="w-5 h-5" />
-                </>
+                <IndustryPreviewStep
+                  data={onboardingData}
+                  onChange={updateOnboardingData}
+                  onNext={handleStep2Next}
+                  onBack={() => setShowIndustryPreview(false)}
+                />
               )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" style={{ borderColor: 'rgb(var(--color-border))' }}></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span 
-                className="px-2" 
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg))',
-                  color: 'rgb(var(--color-text-muted))'
-                }}
-              >
-                {isEn ? 'or' : 'ou'}
-              </span>
-            </div>
-          </div>
+          )}
 
-          {/* Sign In Link */}
-          <div className="text-center">
-            <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Already have an account?' : 'Vous avez déjà un compte?'}{' '}
-              <Link 
-                to="/login" 
-                className="font-medium"
-                style={{ color: 'rgb(var(--color-primary-500))' }}
-              >
-                {isEn ? 'Sign in' : 'Se connecter'}
-              </Link>
-            </p>
-          </div>
-
-          {/* Security Note */}
-          <div 
-            className="flex items-center justify-center gap-2 text-xs"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            <Shield className="w-4 h-4" />
-            <span>
-              {isEn 
-                ? 'Your data is encrypted and secure'
-                : 'Vos données sont chiffrées et sécurisées'}
-            </span>
-          </div>
-        </motion.div>
+          {/* Step 3: Invite Team */}
+          {currentStep === 3 && (
+            <InviteTeamStep 
+              data={onboardingData} 
+              onChange={updateOnboardingData} 
+              onNext={handleStep3Complete}
+              onBack={() => setCurrentStep(2)}
+            />
+          )}
+        </div>
       </main>
+
+      {/* Footer */}
+      <footer className="py-4 px-6 text-center">
+        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn 
+            ? 'Need help? Contact support@plainledger.ca'
+            : 'Besoin d\'aide ? Contactez support@plainledger.ca'}
+        </p>
+      </footer>
     </div>
   );
 }

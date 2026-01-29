@@ -26,6 +26,7 @@ import { useI18n } from '../lib/i18n';
 import { organizationSettingsApi } from '../lib/settings-api';
 import { useTenant } from '../contexts/TenantContext';
 import { useDemoMode } from '../contexts/DemoModeContext';
+import { isMockAuthEnabled } from '../lib/keycloak';
 
 interface ThresholdSettingsProps {
   onSave?: (thresholds: ThresholdConfig) => void;
@@ -169,46 +170,51 @@ export default function ThresholdSettings({ onSave }: ThresholdSettingsProps) {
         return;
       }
 
-      try {
-        const settings = await organizationSettingsApi.get();
-        let loadedThresholds = DEFAULT_THRESHOLDS;
-        
-        if (settings?.thresholdSettings) {
-          loadedThresholds = settings.thresholdSettings;
-        } else if (isDemoMode) {
-          // Apply real estate preset for demo mode if no saved settings
-          const realEstatePreset = INDUSTRY_PRESETS.real_estate.thresholds;
-          loadedThresholds = { ...DEFAULT_THRESHOLDS, ...realEstatePreset };
-          setSelectedPreset('real_estate');
-        } else {
-          // Fallback to localStorage for backward compatibility
-          const saved = localStorage.getItem('plainledger-thresholds');
-          if (saved) {
-            loadedThresholds = JSON.parse(saved);
+      // Skip API call in mock auth mode - no valid token to authenticate
+      if (!isMockAuthEnabled()) {
+        try {
+          const settings = await organizationSettingsApi.get();
+          let loadedThresholds = DEFAULT_THRESHOLDS;
+          
+          if (settings?.thresholdSettings) {
+            loadedThresholds = settings.thresholdSettings;
+          } else if (isDemoMode) {
+            // Apply real estate preset for demo mode if no saved settings
+            const realEstatePreset = INDUSTRY_PRESETS.real_estate.thresholds;
+            loadedThresholds = { ...DEFAULT_THRESHOLDS, ...realEstatePreset };
+            setSelectedPreset('real_estate');
+          } else {
+            // Fallback to localStorage for backward compatibility
+            const saved = localStorage.getItem('plainledger-thresholds');
+            if (saved) {
+              loadedThresholds = JSON.parse(saved);
+            }
           }
+          
+          setThresholds(loadedThresholds);
+          setOriginalThresholds(loadedThresholds);
+          setLoading(false);
+          return;
+        } catch (error) {
+          console.error('Failed to load thresholds:', error);
         }
-        
-        setThresholds(loadedThresholds);
-        setOriginalThresholds(loadedThresholds);
-      } catch (error) {
-        console.error('Failed to load thresholds:', error);
-        // Fallback to localStorage for backward compatibility
-        const saved = localStorage.getItem('plainledger-thresholds');
-        if (saved) {
-          const savedThresholds = JSON.parse(saved);
-          setThresholds(savedThresholds);
-          setOriginalThresholds(savedThresholds);
-        } else if (isDemoMode) {
-          // Apply real estate preset for demo mode
-          const realEstatePreset = INDUSTRY_PRESETS.real_estate.thresholds;
-          const demoThresholds = { ...DEFAULT_THRESHOLDS, ...realEstatePreset };
-          setThresholds(demoThresholds);
-          setOriginalThresholds(demoThresholds);
-          setSelectedPreset('real_estate');
-        }
-      } finally {
-        setLoading(false);
       }
+      
+      // Fallback to localStorage (always used in mock auth mode)
+      const saved = localStorage.getItem('plainledger-thresholds');
+      if (saved) {
+        const savedThresholds = JSON.parse(saved);
+        setThresholds(savedThresholds);
+        setOriginalThresholds(savedThresholds);
+      } else if (isDemoMode) {
+        // Apply real estate preset for demo mode
+        const realEstatePreset = INDUSTRY_PRESETS.real_estate.thresholds;
+        const demoThresholds = { ...DEFAULT_THRESHOLDS, ...realEstatePreset };
+        setThresholds(demoThresholds);
+        setOriginalThresholds(demoThresholds);
+        setSelectedPreset('real_estate');
+      }
+      setLoading(false);
     };
 
     loadThresholds();
@@ -236,8 +242,8 @@ export default function ThresholdSettings({ onSave }: ThresholdSettingsProps) {
   };
 
   const handleSave = async () => {
-    if (!currentTenant?.id) {
-      // Fallback to localStorage if no tenant
+    // In mock auth mode or without tenant, just use localStorage
+    if (isMockAuthEnabled() || !currentTenant?.id) {
       localStorage.setItem('plainledger-thresholds', JSON.stringify(thresholds));
       setOriginalThresholds(thresholds);
       setHasChanges(false);
@@ -274,8 +280,8 @@ export default function ThresholdSettings({ onSave }: ThresholdSettingsProps) {
     setOriginalThresholds(resetThresholds);
     localStorage.removeItem('plainledger-thresholds');
     
-    // Also reset in database
-    if (currentTenant?.id) {
+    // Also reset in database (skip in mock auth mode)
+    if (currentTenant?.id && !isMockAuthEnabled()) {
       try {
         await organizationSettingsApi.updateThresholds(resetThresholds);
       } catch (error) {

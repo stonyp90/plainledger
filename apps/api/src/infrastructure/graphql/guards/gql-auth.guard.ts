@@ -20,7 +20,6 @@ import {
 import { GqlExecutionContext } from "@nestjs/graphql";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
-import * as crypto from "crypto";
 
 // Simple rate limiter for GraphQL
 interface RateLimitEntry {
@@ -63,12 +62,21 @@ export class GqlAuthGuard implements CanActivate {
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext();
 
-    // Skip auth in development mode if configured
+    // SECURITY: Only skip auth in development mode - NEVER in production
+    const nodeEnv = this.configService.get<string>("NODE_ENV");
+    const isProduction = nodeEnv === "production";
     const skipAuth = this.configService.get<string>("SKIP_AUTH") === "true";
-    const isDev = this.configService.get<string>("NODE_ENV") !== "production";
 
-    if (skipAuth && isDev) {
-      this.logger.warn("Authentication skipped (development mode)");
+    if (isProduction && skipAuth) {
+      this.logger.error(
+        "SECURITY: SKIP_AUTH is enabled in production - this is ignored for security",
+      );
+    }
+
+    if (skipAuth && !isProduction) {
+      this.logger.warn(
+        `Authentication skipped (development mode, NODE_ENV=${nodeEnv})`,
+      );
       req.user = this.getMockUser();
       return true;
     }
@@ -190,12 +198,15 @@ export class GqlAuthGuard implements CanActivate {
 
   /**
    * Get mock user for development
+   * Organization ID can be set via MOCK_ORG_ID environment variable
    */
   private getMockUser() {
+    const mockOrgId =
+      this.configService.get<string>("MOCK_ORG_ID") || "default";
     return {
       sub: "dev-user-123",
       email: "dev@plainledger.ca",
-      organizationId: "default",
+      organizationId: mockOrgId,
       roles: ["user", "admin"],
       name: "Development User",
     };

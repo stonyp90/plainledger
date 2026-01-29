@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n, LanguageToggle } from '../lib/i18n';
@@ -9,7 +9,6 @@ import ThemeToggle from './ThemeToggle';
 import OrganizationSwitcher from './OrganizationSwitcher';
 import SearchModal, { useSearchModal } from './SearchModal';
 import { crispUtils } from './CrispChat';
-import { HelpCenter } from './HelpCenter';
 import { PremiumBadge, type PremiumFeature } from './PremiumFeatureGate';
 import config from '../lib/config';
 import {
@@ -31,28 +30,28 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
+  BookOpen,
+  TrendingUp,
+  Receipt,
 } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-// Help Center Button with modal
-function HelpCenterButton() {
-  const [isOpen, setIsOpen] = useState(false);
-  const { t } = useI18n();
+// Help/Knowledge Base Button - navigates directly to Knowledge Base
+function HelpButton() {
+  const navigate = useNavigate();
+  const { language } = useI18n();
   
   return (
-    <>
-      <button 
-        className="icon-btn" 
-        onClick={() => setIsOpen(true)}
-        title={t('nav.help')}
-      >
-        <HelpCircle className="w-5 h-5" />
-      </button>
-      <HelpCenter isOpen={isOpen} onClose={() => setIsOpen(false)} />
-    </>
+    <button 
+      className="icon-btn" 
+      onClick={() => navigate('/help/knowledge-base')}
+      title={language === 'en' ? 'Knowledge Base' : 'Base de connaissances'}
+    >
+      <BookOpen className="w-5 h-5" />
+    </button>
   );
 }
 
@@ -108,6 +107,8 @@ export default function Layout({ children }: LayoutProps) {
   }[] = [
     { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' },
     { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports', premiumFeature: 'advancedAnalytics' },
+    { name: language === 'en' ? 'Market Analysis' : 'Analyse de marché', href: '/app/market-analysis', icon: TrendingUp, permission: 'view:reports', premiumFeature: 'marketAnalysis' },
+    { name: language === 'en' ? 'Tax Credits' : 'Crédits d\'impôt', href: '/app/tax-credits', icon: Receipt, permission: 'view:reports', premiumFeature: 'taxCredits' },
     { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports', premiumFeature: 'strategicPlanning' },
     { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' },
     { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
@@ -156,7 +157,7 @@ export default function Layout({ children }: LayoutProps) {
                 <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
           </Link>
@@ -228,7 +229,7 @@ export default function Layout({ children }: LayoutProps) {
                 <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span 
@@ -317,11 +318,6 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
           
-          {/* Controls Row - Language toggle only since theme is in header */}
-          <div className="flex items-center gap-2 mb-3">
-            <LanguageToggle />
-          </div>
-
           {/* Logout Button - Full width, touch-friendly */}
           <button
             onClick={logout}
@@ -376,7 +372,7 @@ export default function Layout({ children }: LayoutProps) {
                 <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 {/* Checkmark */}
-                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             {!isSidebarCollapsed && (
@@ -654,7 +650,7 @@ export default function Layout({ children }: LayoutProps) {
             </button>
             
             {/* Help Center */}
-            <HelpCenterButton />
+            <HelpButton />
 
             {/* Live Chat */}
             {config.crisp.enabled && (

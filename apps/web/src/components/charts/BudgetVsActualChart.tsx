@@ -426,7 +426,7 @@ export default function BudgetVsActualChart({
                         className="h-full rounded-full transition-all"
                         style={{ 
                           width: `${Math.min(100, Math.max(0, (item.actual / item.budget) * 100))}%`,
-                          backgroundColor: item.isFavorable ? '#22c55e' : '#ef4444'
+                          backgroundColor: item.isFavorable ? '#059669' : '#ef4444'
                         }}
                       />
                     </div>

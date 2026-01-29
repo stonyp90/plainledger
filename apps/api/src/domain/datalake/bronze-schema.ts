@@ -220,3 +220,107 @@ export interface BronzeXeroInvoice {
     UpdatedDateUTC: string;
   };
 }
+
+// =============================================================================
+// Bronze Layer - Sage Raw Data
+// =============================================================================
+
+export interface BronzeSageAccount {
+  metadata: BronzeMetadata;
+  raw_data: {
+    id: string;
+    displayed_as: string;
+    ledger_account_group: {
+      id: string;
+      displayed_as: string;
+    };
+    nominal_code: number;
+    ledger_account_type: {
+      id: string;
+      displayed_as: string;
+    };
+    ledger_account_classification: {
+      id: string;
+      displayed_as: string;
+    };
+    balance: number;
+    is_enabled: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export interface BronzeSageContact {
+  metadata: BronzeMetadata;
+  raw_data: {
+    id: string;
+    displayed_as: string;
+    reference?: string;
+    contact_types: Array<{ id: string; displayed_as: string }>;
+    name: string;
+    email?: string;
+    telephone?: string;
+    mobile?: string;
+    main_address?: {
+      address_line_1?: string;
+      city?: string;
+      region?: string;
+      postal_code?: string;
+      country: { id: string; displayed_as: string };
+    };
+    is_customer: boolean;
+    is_supplier: boolean;
+    currency: { id: string; displayed_as: string };
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+// =============================================================================
+// Bronze Layer - FreshBooks Raw Data
+// =============================================================================
+
+export interface BronzeFreshBooksAccount {
+  metadata: BronzeMetadata;
+  raw_data: {
+    accountid: number;
+    account_number: string;
+    account_type: {
+      value: string;
+      account_type: string;
+      account_subtype: string;
+    };
+    name: string;
+    balance: {
+      amount: string;
+      code: string;
+    };
+    parent_accountid?: number;
+    system_account: boolean;
+    active: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export interface BronzeFreshBooksClient {
+  metadata: BronzeMetadata;
+  raw_data: {
+    id: number;
+    userid: number;
+    email?: string;
+    organization?: string;
+    fname?: string;
+    lname?: string;
+    p_street?: string;
+    p_city?: string;
+    p_province?: string;
+    p_country?: string;
+    p_code?: string;
+    home_phone?: string;
+    currency_code: string;
+    outstanding_balance?: Array<{ amount: string; code: string }>;
+    updated: string;
+    vis_state: number;
+  };
+}

@@ -14,6 +14,10 @@ import {
   BronzeXeroAccount,
   BronzeXeroContact,
   BronzeXeroInvoice,
+  BronzeSageAccount,
+  BronzeSageContact,
+  BronzeFreshBooksAccount,
+  BronzeFreshBooksClient,
 } from "@domain/datalake/bronze-schema";
 import {
   SilverMetadata,
@@ -41,6 +45,10 @@ import {
   XeroAccount,
   XeroContact,
   XeroInvoice,
+  SageAccount,
+  SageContact,
+  FreshBooksAccount,
+  FreshBooksClient,
 } from "@domain/datalake/provider-types";
 
 export class ETLPipelineService {
@@ -206,6 +214,98 @@ export class ETLPipelineService {
     return {
       metadata,
       raw_data: rawInvoice,
+    };
+  }
+
+  /**
+   * Ingest raw Sage account into Bronze layer
+   */
+  ingestSageAccountToBronze(
+    rawAccount: SageAccount,
+    organizationId: string,
+    datasourceId: string,
+  ): BronzeSageAccount {
+    const metadata = this.createBronzeMetadata(
+      "SAGE",
+      organizationId,
+      datasourceId,
+      "/ledger_accounts",
+      1,
+      JSON.stringify(rawAccount),
+    );
+
+    return {
+      metadata,
+      raw_data: rawAccount,
+    };
+  }
+
+  /**
+   * Ingest raw Sage contact into Bronze layer
+   */
+  ingestSageContactToBronze(
+    rawContact: SageContact,
+    organizationId: string,
+    datasourceId: string,
+  ): BronzeSageContact {
+    const metadata = this.createBronzeMetadata(
+      "SAGE",
+      organizationId,
+      datasourceId,
+      "/contacts",
+      1,
+      JSON.stringify(rawContact),
+    );
+
+    return {
+      metadata,
+      raw_data: rawContact,
+    };
+  }
+
+  /**
+   * Ingest raw FreshBooks account into Bronze layer
+   */
+  ingestFreshBooksAccountToBronze(
+    rawAccount: FreshBooksAccount,
+    organizationId: string,
+    datasourceId: string,
+  ): BronzeFreshBooksAccount {
+    const metadata = this.createBronzeMetadata(
+      "FRESHBOOKS",
+      organizationId,
+      datasourceId,
+      "/accounting/account",
+      1,
+      JSON.stringify(rawAccount),
+    );
+
+    return {
+      metadata,
+      raw_data: rawAccount,
+    };
+  }
+
+  /**
+   * Ingest raw FreshBooks client into Bronze layer
+   */
+  ingestFreshBooksClientToBronze(
+    rawClient: FreshBooksClient,
+    organizationId: string,
+    datasourceId: string,
+  ): BronzeFreshBooksClient {
+    const metadata = this.createBronzeMetadata(
+      "FRESHBOOKS",
+      organizationId,
+      datasourceId,
+      "/users/clients",
+      1,
+      JSON.stringify(rawClient),
+    );
+
+    return {
+      metadata,
+      raw_data: rawClient,
     };
   }
 
@@ -625,6 +725,237 @@ export class ETLPipelineService {
     };
   }
 
+  /**
+   * Transform Bronze Sage account to Silver
+   */
+  transformSageAccountToSilver(bronze: BronzeSageAccount): SilverAccount {
+    const raw = bronze.raw_data;
+    const qualityIssues: string[] = [];
+    const qualityScore = 100;
+
+    // Map Sage classification to standard type
+    const accountType = this.mapSageClassificationToSilverType(
+      raw.ledger_account_classification.displayed_as,
+    );
+
+    const normalBalance =
+      accountType === SilverAccountType.ASSET ||
+      accountType === SilverAccountType.EXPENSE
+        ? "DEBIT"
+        : "CREDIT";
+
+    const metadata: SilverMetadata = {
+      bronze_ingestion_id: bronze.metadata.ingestion_id,
+      processing_job_id: crypto.randomUUID(),
+      processed_at: new Date(),
+      source_system: SilverSourceSystem.SAGE,
+      organization_id: bronze.metadata.organization_id,
+      quality_score: qualityScore,
+      quality_issues: qualityIssues,
+      is_valid: qualityScore >= 70,
+    };
+
+    return {
+      metadata,
+      silver_account_id: `silver_sage_acc_${raw.id}`,
+      source_account_id: raw.id,
+      organization_id: bronze.metadata.organization_id,
+      account_code: String(raw.nominal_code),
+      account_name: raw.displayed_as,
+      account_type: accountType,
+      account_subtype: raw.ledger_account_type.displayed_as,
+      parent_account_id: null,
+      source_account_type: raw.ledger_account_type.displayed_as,
+      source_account_subtype: raw.ledger_account_group.displayed_as,
+      is_active: raw.is_enabled,
+      is_system_account: false,
+      hierarchy_level: 1,
+      hierarchy_path: raw.displayed_as,
+      normal_balance: normalBalance,
+      currency_code: "CAD",
+      source_created_at: new Date(raw.created_at),
+      source_updated_at: new Date(raw.updated_at),
+    };
+  }
+
+  /**
+   * Transform Bronze Sage contact to Silver
+   */
+  transformSageContactToSilver(bronze: BronzeSageContact): SilverContact {
+    const raw = bronze.raw_data;
+    const qualityIssues: string[] = [];
+    let qualityScore = 100;
+
+    const emailIsValid = this.validateEmail(raw.email);
+    if (raw.email && !emailIsValid) {
+      qualityIssues.push("CON_001: Invalid email format");
+      qualityScore -= 5;
+    }
+
+    let contactType: SilverContactType;
+    if (raw.is_customer && raw.is_supplier) {
+      contactType = SilverContactType.CUSTOMER_AND_VENDOR;
+    } else if (raw.is_supplier) {
+      contactType = SilverContactType.VENDOR;
+    } else {
+      contactType = SilverContactType.CUSTOMER;
+    }
+
+    const metadata: SilverMetadata = {
+      bronze_ingestion_id: bronze.metadata.ingestion_id,
+      processing_job_id: crypto.randomUUID(),
+      processed_at: new Date(),
+      source_system: SilverSourceSystem.SAGE,
+      organization_id: bronze.metadata.organization_id,
+      quality_score: qualityScore,
+      quality_issues: qualityIssues,
+      is_valid: qualityScore >= 70,
+    };
+
+    return {
+      metadata,
+      silver_contact_id: `silver_sage_contact_${raw.id}`,
+      source_contact_id: raw.id,
+      organization_id: bronze.metadata.organization_id,
+      contact_type: contactType,
+      display_name: raw.displayed_as,
+      legal_name: raw.name,
+      first_name: null,
+      last_name: null,
+      email: raw.email || null,
+      email_is_valid: emailIsValid,
+      phone: raw.telephone || null,
+      phone_normalized: this.normalizePhone(raw.telephone),
+      address_line1: raw.main_address?.address_line_1 || null,
+      address_city: raw.main_address?.city || null,
+      address_province_state: raw.main_address?.region || null,
+      address_province_code: raw.main_address?.region || null,
+      address_postal_code: raw.main_address?.postal_code || null,
+      address_country: raw.main_address?.country?.displayed_as || null,
+      address_country_code: raw.main_address?.country?.id || null,
+      is_active: true,
+      source_created_at: new Date(raw.created_at),
+      source_updated_at: new Date(raw.updated_at),
+    };
+  }
+
+  /**
+   * Transform Bronze FreshBooks account to Silver
+   */
+  transformFreshBooksAccountToSilver(
+    bronze: BronzeFreshBooksAccount,
+  ): SilverAccount {
+    const raw = bronze.raw_data;
+    const qualityIssues: string[] = [];
+    const qualityScore = 100;
+
+    const accountType = this.mapFreshBooksTypeToSilverType(
+      raw.account_type.account_type,
+    );
+    const normalBalance =
+      accountType === SilverAccountType.ASSET ||
+      accountType === SilverAccountType.EXPENSE
+        ? "DEBIT"
+        : "CREDIT";
+
+    const metadata: SilverMetadata = {
+      bronze_ingestion_id: bronze.metadata.ingestion_id,
+      processing_job_id: crypto.randomUUID(),
+      processed_at: new Date(),
+      source_system: SilverSourceSystem.FRESHBOOKS,
+      organization_id: bronze.metadata.organization_id,
+      quality_score: qualityScore,
+      quality_issues: qualityIssues,
+      is_valid: qualityScore >= 70,
+    };
+
+    return {
+      metadata,
+      silver_account_id: `silver_fb_acc_${raw.accountid}`,
+      source_account_id: String(raw.accountid),
+      organization_id: bronze.metadata.organization_id,
+      account_code: raw.account_number,
+      account_name: raw.name,
+      account_type: accountType,
+      account_subtype: raw.account_type.account_subtype,
+      parent_account_id: raw.parent_accountid
+        ? String(raw.parent_accountid)
+        : null,
+      source_account_type: raw.account_type.account_type,
+      source_account_subtype: raw.account_type.account_subtype,
+      is_active: raw.active,
+      is_system_account: raw.system_account,
+      hierarchy_level: 1,
+      hierarchy_path: raw.name,
+      normal_balance: normalBalance,
+      currency_code: raw.balance.code,
+      source_created_at: new Date(raw.created_at),
+      source_updated_at: new Date(raw.updated_at),
+    };
+  }
+
+  /**
+   * Transform Bronze FreshBooks client to Silver contact
+   */
+  transformFreshBooksClientToSilver(
+    bronze: BronzeFreshBooksClient,
+  ): SilverContact {
+    const raw = bronze.raw_data;
+    const qualityIssues: string[] = [];
+    let qualityScore = 100;
+
+    const emailIsValid = this.validateEmail(raw.email);
+    if (raw.email && !emailIsValid) {
+      qualityIssues.push("CON_001: Invalid email format");
+      qualityScore -= 5;
+    }
+
+    if (!raw.organization && !raw.fname) {
+      qualityIssues.push("CON_002: Display name is missing");
+      qualityScore -= 20;
+    }
+
+    const metadata: SilverMetadata = {
+      bronze_ingestion_id: bronze.metadata.ingestion_id,
+      processing_job_id: crypto.randomUUID(),
+      processed_at: new Date(),
+      source_system: SilverSourceSystem.FRESHBOOKS,
+      organization_id: bronze.metadata.organization_id,
+      quality_score: qualityScore,
+      quality_issues: qualityIssues,
+      is_valid: qualityScore >= 70,
+    };
+
+    const displayName =
+      raw.organization || [raw.fname, raw.lname].filter(Boolean).join(" ");
+
+    return {
+      metadata,
+      silver_contact_id: `silver_fb_client_${raw.id}`,
+      source_contact_id: String(raw.id),
+      organization_id: bronze.metadata.organization_id,
+      contact_type: SilverContactType.CUSTOMER,
+      display_name: displayName,
+      legal_name: raw.organization || null,
+      first_name: raw.fname || null,
+      last_name: raw.lname || null,
+      email: raw.email || null,
+      email_is_valid: emailIsValid,
+      phone: raw.home_phone || null,
+      phone_normalized: this.normalizePhone(raw.home_phone),
+      address_line1: raw.p_street || null,
+      address_city: raw.p_city || null,
+      address_province_state: raw.p_province || null,
+      address_province_code: raw.p_province || null,
+      address_postal_code: raw.p_code || null,
+      address_country: raw.p_country || null,
+      address_country_code: this.normalizeCountryCode(raw.p_country),
+      is_active: raw.vis_state === 0,
+      source_created_at: new Date(raw.updated),
+      source_updated_at: new Date(raw.updated),
+    };
+  }
+
   // ===========================================================================
   // STAGE 3: Silver Layer → Gold Layer (Star Schema)
   // ===========================================================================
@@ -824,6 +1155,36 @@ export class ETLPipelineService {
     return mapping[xeroClass] || SilverAccountType.EXPENSE;
   }
 
+  private mapSageClassificationToSilverType(
+    classification: string,
+  ): SilverAccountType {
+    const mapping: Record<string, SilverAccountType> = {
+      Asset: SilverAccountType.ASSET,
+      Liability: SilverAccountType.LIABILITY,
+      Equity: SilverAccountType.EQUITY,
+      Revenue: SilverAccountType.REVENUE,
+      Income: SilverAccountType.REVENUE,
+      Expense: SilverAccountType.EXPENSE,
+      "Direct Cost": SilverAccountType.EXPENSE,
+    };
+    return mapping[classification] || SilverAccountType.EXPENSE;
+  }
+
+  private mapFreshBooksTypeToSilverType(
+    accountType: string,
+  ): SilverAccountType {
+    const mapping: Record<string, SilverAccountType> = {
+      Bank: SilverAccountType.ASSET,
+      Asset: SilverAccountType.ASSET,
+      Liability: SilverAccountType.LIABILITY,
+      Equity: SilverAccountType.EQUITY,
+      Income: SilverAccountType.REVENUE,
+      Revenue: SilverAccountType.REVENUE,
+      Expense: SilverAccountType.EXPENSE,
+    };
+    return mapping[accountType] || SilverAccountType.EXPENSE;
+  }
+
   private mapSilverTypeToGoldType(silverType: SilverAccountType): AccountType {
     const mapping: Record<SilverAccountType, AccountType> = {
       [SilverAccountType.ASSET]: AccountType.ASSET,
@@ -925,5 +1286,84 @@ export class ETLPipelineService {
       return accountType;
     }
     return null;
+  }
+
+  // ===========================================================================
+  // TAX CREDIT ELIGIBILITY CALCULATION
+  // ===========================================================================
+
+  /**
+   * Calculate tax credit eligibility based on gold metrics
+   * This is called after gold layer metrics are calculated
+   */
+  async calculateTaxCreditEligibility(
+    organizationKey: string,
+    industryId: string,
+    province: string | null,
+    fiscalYear: number,
+    goldMetrics: any, // FactMonthlyMetrics from gold layer
+  ): Promise<any[]> {
+    // Import eligibility service dynamically to avoid circular dependencies
+    const { TaxCreditEligibilityService } =
+      await import("./tax-credit-eligibility.service");
+    // Dynamic import to avoid circular dependencies
+    await import("@domain/datalake/tax-credits");
+
+    const eligibilityService = new TaxCreditEligibilityService();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const provinceCode = province as any;
+
+    // Convert gold metrics to FactMonthlyMetrics format
+    const metrics = {
+      metric_key: goldMetrics.metric_key || "",
+      organization_key: organizationKey,
+      date_key: goldMetrics.date_key || 0,
+      industry_id: industryId,
+      total_revenue: goldMetrics.total_revenue || 0,
+      total_expenses: goldMetrics.total_expenses || 0,
+      gross_profit: goldMetrics.gross_profit || 0,
+      net_income: goldMetrics.net_income || 0,
+      total_assets: goldMetrics.total_assets || 0,
+      total_liabilities: goldMetrics.total_liabilities || 0,
+      total_equity: goldMetrics.total_equity || 0,
+      cash_on_hand: goldMetrics.cash_on_hand || 0,
+      accounts_receivable: goldMetrics.accounts_receivable || 0,
+      accounts_payable: goldMetrics.accounts_payable || 0,
+      industry_metrics: goldMetrics.industry_metrics || {},
+      prior_month_revenue: goldMetrics.prior_month_revenue || 0,
+      prior_year_revenue: goldMetrics.prior_year_revenue || 0,
+      budget_revenue: goldMetrics.budget_revenue,
+      mom_revenue_change_pct: goldMetrics.mom_revenue_change_pct || 0,
+      yoy_revenue_change_pct: goldMetrics.yoy_revenue_change_pct || 0,
+      gross_margin_pct: goldMetrics.gross_margin_pct || 0,
+      net_margin_pct: goldMetrics.net_margin_pct || 0,
+      current_ratio: goldMetrics.current_ratio || 0,
+      quick_ratio: goldMetrics.quick_ratio || 0,
+      debt_to_equity_ratio: goldMetrics.debt_to_equity_ratio || 0,
+      calculation_timestamp: new Date(),
+      data_completeness: goldMetrics.data_completeness || 0,
+      account_count: goldMetrics.account_count || 0,
+      transaction_count: goldMetrics.transaction_count || 0,
+    };
+
+    const results = eligibilityService.calculateTaxCreditEligibility(
+      metrics,
+      industryId as any,
+      provinceCode,
+    );
+
+    // Convert to database format
+    return results.map((result) => ({
+      credit_id: result.creditId,
+      organization_key: organizationKey,
+      fiscal_year: fiscalYear,
+      eligibility_status: result.eligibilityStatus,
+      eligibility_score: result.eligibilityScore,
+      criteria_met: result.criteriaMet,
+      criteria_not_met: result.criteriaNotMet,
+      estimated_benefit_min: result.estimatedBenefitMin,
+      estimated_benefit_max: result.estimatedBenefitMax,
+      calculation_timestamp: result.calculationTimestamp,
+    }));
   }
 }

@@ -25,10 +25,8 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  UnauthorizedException,
   ForbiddenException,
   Logger,
-  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -39,13 +37,8 @@ import {
   ApiParam,
 } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
-import { Public, Roles } from "nest-keycloak-connect";
+import { Public } from "nest-keycloak-connect";
 import { SecureDataAccess } from "@infrastructure/services/powerbi-datalake.service";
-import {
-  DimAccount,
-  DimContact,
-  FactTransaction,
-} from "@infrastructure/services/datalake-data.service";
 import { IPowerBIDatalakeService } from "@application/ports/outbound/IPowerBIDatalakeService";
 import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 import { Inject } from "@nestjs/common";

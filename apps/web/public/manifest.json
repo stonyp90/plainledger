@@ -1,15 +1,16 @@
 {
-  "name": "PlainLedger - Data Intelligence & Industry KPIs",
+  "name": "PlainLedger - AI Financial Dashboards for Canadian Businesses",
   "short_name": "PlainLedger",
-  "description": "Data intelligence platform with industry-specific KPIs to optimize business outcomes. AI anomaly detection and CPA support included.",
+  "description": "Canadian AI-powered financial dashboards with industry-specific KPIs. Connect QuickBooks in 5 minutes. Recover $28K/year from prevented errors. Data stored in Canada. PIPEDA compliant.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#0f172a",
   "theme_color": "#10b981",
   "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "en",
-  "categories": ["business", "finance", "productivity"],
+  "lang": "en-CA",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "/favicon.svg",

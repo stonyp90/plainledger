@@ -36,7 +36,7 @@ import * as crypto from "crypto";
 // =====================================================
 
 // Valid Canadian province/territory codes
-const VALID_PROVINCES = [
+const _VALID_PROVINCES = [
   "AB",
   "BC",
   "MB",

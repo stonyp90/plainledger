@@ -8,7 +8,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Plus, ChevronDown, ChevronRight, Pencil, Trash2, Building2, ShoppingCart, Briefcase, HeartPulse, Factory, Code, GraduationCap, Utensils, X, Check } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Pencil, Trash2, Building2, ShoppingCart, Briefcase, HeartPulse, Factory, GraduationCap, Utensils, X, Check } from 'lucide-react';
 import {
   type FinancialModel,
   type Driver,
@@ -49,16 +49,16 @@ const colors = {
 
 // Industry-based group templates
 const GROUP_TEMPLATES = {
-  saas: {
-    icon: Code,
-    nameEn: 'SaaS / Technology',
-    name: 'SaaS / Technologie',
+  construction: {
+    icon: Building2,
+    nameEn: 'Construction',
+    name: 'Construction',
     groups: [
-      { nameEn: 'Revenue', name: 'Revenus', drivers: ['MRR', 'ARR', 'New MRR', 'Churned MRR', 'Expansion MRR'] },
-      { nameEn: 'Customers', name: 'Clients', drivers: ['Total Customers', 'New Customers', 'Churned Customers', 'ARPU'] },
-      { nameEn: 'Sales & Marketing', name: 'Ventes & Marketing', drivers: ['CAC', 'Marketing Spend', 'Sales Headcount', 'Lead Generation'] },
-      { nameEn: 'Product & Engineering', name: 'Produit & Ingénierie', drivers: ['Engineering Headcount', 'Server Costs', 'Third-party APIs'] },
-      { nameEn: 'Operating Expenses', name: 'Dépenses opérationnelles', drivers: ['Payroll', 'Office', 'Software & Tools', 'Travel'] },
+      { nameEn: 'Revenue', name: 'Revenus', drivers: ['Project Revenue', 'Change Orders', 'Retainage', 'Progress Billings'] },
+      { nameEn: 'Direct Costs', name: 'Coûts directs', drivers: ['Materials', 'Labor', 'Subcontractors', 'Equipment Rental'] },
+      { nameEn: 'Project Management', name: 'Gestion de projet', drivers: ['Project Managers', 'Site Supervisors', 'Engineering'] },
+      { nameEn: 'Equipment', name: 'Équipement', drivers: ['Equipment Depreciation', 'Fuel', 'Maintenance', 'Insurance'] },
+      { nameEn: 'Overhead', name: 'Frais généraux', drivers: ['Office Rent', 'Admin Staff', 'Bonding', 'Professional Fees'] },
     ],
   },
   retail: {

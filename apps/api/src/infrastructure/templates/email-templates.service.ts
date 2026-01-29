@@ -359,8 +359,8 @@ export class EmailTemplatesService {
                             <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
                                 <p style="margin: 0 0 8px 0;">&copy; ${this.currentYear} PlainLedger Inc. All rights reserved.</p>
                                 <p style="margin: 0 0 8px 0;">
-                                    This email was sent by PlainLedger because you have an account with us.<br>
-                                    If you believe you received this email in error, please contact <a href="mailto:support@plainledger.ca" style="color: #64748b;">support@plainledger.ca</a>
+                                    You are receiving this email because you have an account with PlainLedger or requested information from us. 
+                                    This email may contain transactional or marketing content related to your account activity.
                                 </p>
                             </div>
                             
@@ -370,8 +370,12 @@ export class EmailTemplatesService {
                             </div>
                             
                             <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                                <p style="font-size: 11px; color: #94a3b8; margin: 0 0 8px 0;">
+                                    <a href="${this.baseUrl}/settings/notifications" style="color: #64748b; text-decoration: underline;">Manage email preferences</a>
+                                    &bull; <a href="${this.baseUrl}/unsubscribe" style="color: #64748b; text-decoration: underline;">Unsubscribe from marketing emails</a>
+                                </p>
                                 <p style="font-size: 11px; color: #94a3b8; margin: 0;">
-                                    <a href="${this.baseUrl}/settings/notifications" style="color: #64748b;">Manage email preferences</a>
+                                    If you believe you received this in error, please contact <a href="mailto:support@plainledger.ca" style="color: #64748b; text-decoration: underline;">support@plainledger.ca</a>
                                 </p>
                             </div>
                         </td>

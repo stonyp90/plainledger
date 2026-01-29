@@ -416,4 +416,456 @@ export class DashboardFilterInput {
 
   @Field({ nullable: true })
   compareWithPrevious?: boolean;
+
+  @Field({ nullable: true })
+  industryId?: string;
 }
+
+// =====================================================
+// INDUSTRY KPI TYPES
+// =====================================================
+
+@ObjectType({ description: "Industry-specific KPI with benchmark" })
+export class IndustryKPI {
+  @Field()
+  id: string;
+
+  @Field()
+  name: string;
+
+  @Field(() => Float, { nullable: true })
+  value?: number;
+
+  @Field()
+  format: string;
+
+  @Field(() => Float, { nullable: true })
+  benchmarkMin?: number;
+
+  @Field(() => Float, { nullable: true })
+  benchmarkMax?: number;
+
+  @Field({ nullable: true })
+  status?: string;
+}
+
+@ObjectType({ description: "Restaurant-specific KPIs" })
+export class RestaurantKPIs {
+  @Field(() => Float, { nullable: true })
+  foodCostPct?: number;
+
+  @Field(() => Float, { nullable: true })
+  beverageCostPct?: number;
+
+  @Field(() => Float, { nullable: true })
+  laborCostPct?: number;
+
+  @Field(() => Float, { nullable: true })
+  primeCostPct?: number;
+
+  @Field(() => Float, { nullable: true })
+  averageCheck?: number;
+
+  @Field(() => Int, { nullable: true })
+  coversPerDay?: number;
+}
+
+@ObjectType({ description: "Retail-specific KPIs" })
+export class RetailKPIs {
+  @Field(() => Float, { nullable: true })
+  grossMarginPct?: number;
+
+  @Field(() => Float, { nullable: true })
+  inventoryTurnover?: number;
+
+  @Field(() => Float, { nullable: true })
+  salesPerSqft?: number;
+
+  @Field(() => Float, { nullable: true })
+  shrinkagePct?: number;
+}
+
+@ObjectType({ description: "Real Estate-specific KPIs" })
+export class RealEstateKPIs {
+  @Field(() => Float, { nullable: true })
+  occupancyRate?: number;
+
+  @Field(() => Float, { nullable: true })
+  capRate?: number;
+
+  @Field(() => Float, { nullable: true })
+  noi?: number;
+
+  @Field(() => Float, { nullable: true })
+  rentPerSqft?: number;
+
+  @Field(() => Float, { nullable: true })
+  expenseRatio?: number;
+
+  @Field(() => Float, { nullable: true })
+  cashOnCash?: number;
+}
+
+@ObjectType({ description: "Construction-specific KPIs" })
+export class ConstructionKPIs {
+  @Field(() => Float, { nullable: true })
+  jobMarginPct?: number;
+
+  @Field(() => Float, { nullable: true })
+  wipBalance?: number;
+
+  @Field(() => Float, { nullable: true })
+  retentionBalance?: number;
+
+  @Field(() => Float, { nullable: true })
+  backlogValue?: number;
+}
+
+@ObjectType({ description: "Professional Services-specific KPIs" })
+export class ProfessionalServicesKPIs {
+  @Field(() => Float, { nullable: true })
+  utilizationRate?: number;
+
+  @Field(() => Float, { nullable: true })
+  realizationRate?: number;
+
+  @Field(() => Float, { nullable: true })
+  effectiveRate?: number;
+
+  @Field(() => Int, { nullable: true })
+  arDays?: number;
+
+  @Field(() => Int, { nullable: true })
+  wipDays?: number;
+}
+
+@ObjectType({ description: "Industry KPIs response with calculated values" })
+export class IndustryKPIsResponse {
+  @Field()
+  industry: string;
+
+  @Field()
+  industryName: string;
+
+  @Field(() => [IndustryKPI])
+  kpis: IndustryKPI[];
+
+  @Field(() => RestaurantKPIs, { nullable: true })
+  restaurant?: RestaurantKPIs;
+
+  @Field(() => RetailKPIs, { nullable: true })
+  retail?: RetailKPIs;
+
+  @Field(() => RealEstateKPIs, { nullable: true })
+  realEstate?: RealEstateKPIs;
+
+  @Field(() => ConstructionKPIs, { nullable: true })
+  construction?: ConstructionKPIs;
+
+  @Field(() => ProfessionalServicesKPIs, { nullable: true })
+  professionalServices?: ProfessionalServicesKPIs;
+
+  @Field(() => GraphQLISODateTime)
+  asOfDate: Date;
+}
+
+// =====================================================
+// TRIAL BALANCE TYPES
+// =====================================================
+
+@ObjectType({ description: "Trial balance entry for a single account" })
+export class TrialBalanceEntry {
+  @Field()
+  accountCode: string;
+
+  @Field()
+  accountName: string;
+
+  @Field()
+  accountType: string;
+
+  @Field(() => Float)
+  debitBalance: number;
+
+  @Field(() => Float)
+  creditBalance: number;
+}
+
+@ObjectType({
+  description: "Trial balance report - real data from transactions",
+})
+export class TrialBalance {
+  @Field(() => [TrialBalanceEntry])
+  entries: TrialBalanceEntry[];
+
+  @Field(() => Float)
+  totalDebits: number;
+
+  @Field(() => Float)
+  totalCredits: number;
+
+  @Field(() => Float)
+  difference: number;
+
+  @Field()
+  isBalanced: boolean;
+
+  @Field()
+  asOfDate: string;
+}
+
+// =====================================================
+// CASH FLOW WATERFALL TYPES
+// =====================================================
+
+@ObjectType({ description: "Cash flow waterfall item for chart" })
+export class WaterfallItem {
+  @Field()
+  label: string;
+
+  @Field()
+  labelEn: string;
+
+  @Field(() => Float)
+  value: number;
+
+  @Field({ description: "start | increase | decrease | subtotal | end" })
+  type: string;
+
+  @Field({
+    description: "opening | operating | investing | financing | closing",
+  })
+  category: string;
+}
+
+// =====================================================
+// AGING REPORT TYPES
+// =====================================================
+
+@ObjectType({ description: "Aging bucket for AR/AP aging" })
+export class AgingBucket {
+  @Field()
+  label: string;
+
+  @Field()
+  labelEn: string;
+
+  @Field(() => Int)
+  minDays: number;
+
+  @Field(() => Int, { nullable: true })
+  maxDays: number | null;
+
+  @Field(() => Float)
+  amount: number;
+
+  @Field(() => Int)
+  count: number;
+}
+
+@ObjectType({
+  description: "AR or AP aging report - real data from transactions",
+})
+export class AgingReport {
+  @Field(() => [AgingBucket])
+  buckets: AgingBucket[];
+
+  @Field(() => Float)
+  total: number;
+
+  @Field(() => Float)
+  totalOverdue: number;
+
+  @Field(() => Int)
+  averageDays: number;
+
+  @Field({ description: "Whether real invoice/bill data exists" })
+  hasData: boolean;
+}
+
+// =====================================================
+// BUDGET TYPES
+// =====================================================
+
+@ObjectType({ description: "Budget comparison entry" })
+export class BudgetComparisonEntry {
+  @Field()
+  category: string;
+
+  @Field()
+  categoryEn: string;
+
+  @Field(() => Float)
+  budgetAmount: number;
+
+  @Field(() => Float)
+  actualAmount: number;
+
+  @Field(() => Float)
+  variance: number;
+
+  @Field(() => Float)
+  variancePercent: number;
+}
+
+@ObjectType({
+  description: "Budget vs Actual comparison - requires budget setup",
+})
+export class BudgetComparison {
+  @Field(() => [BudgetComparisonEntry])
+  entries: BudgetComparisonEntry[];
+
+  @Field(() => Float)
+  totalBudget: number;
+
+  @Field(() => Float)
+  totalActual: number;
+
+  @Field(() => Float)
+  totalVariance: number;
+
+  @Field({ description: "Whether budget has been configured" })
+  hasBudget: boolean;
+
+  @Field()
+  periodLabel: string;
+}
+
+// =====================================================
+// TAX DEADLINES TYPES
+// =====================================================
+
+@ObjectType({ description: "Tax or filing deadline" })
+export class TaxDeadline {
+  @Field()
+  id: string;
+
+  @Field()
+  title: string;
+
+  @Field()
+  titleEn: string;
+
+  @Field()
+  description: string;
+
+  @Field(() => GraphQLISODateTime)
+  dueDate: Date;
+
+  @Field(() => Int)
+  daysRemaining: number;
+
+  @Field({ description: "overdue | urgent | upcoming | future" })
+  status: string;
+
+  @Field({ description: "gst | payroll | corporate | other" })
+  category: string;
+}
+
+@ObjectType({ description: "Upcoming tax deadlines based on fiscal year" })
+export class TaxDeadlinesResponse {
+  @Field(() => [TaxDeadline])
+  deadlines: TaxDeadline[];
+
+  @Field({ nullable: true })
+  fiscalYearEnd?: string;
+
+  @Field({ nullable: true })
+  province?: string;
+}
+
+// =====================================================
+// BUDGET INPUT/OUTPUT TYPES
+// =====================================================
+
+@ObjectType({ description: "Budget category with amount" })
+export class BudgetCategory {
+  @Field()
+  categoryId: string;
+
+  @Field()
+  categoryName: string;
+
+  @Field()
+  categoryNameEn: string;
+
+  @Field(() => Float)
+  monthlyAmount: number;
+}
+
+@ObjectType({ description: "Organization budget settings" })
+export class BudgetSettings {
+  @Field(() => Int)
+  year: number;
+
+  @Field(() => [BudgetCategory])
+  categories: BudgetCategory[];
+
+  @Field({ nullable: true })
+  lastUpdated?: string;
+
+  @Field({ nullable: true })
+  updatedBy?: string;
+
+  @Field()
+  hasBudget: boolean;
+}
+
+@InputType({ description: "Budget category input" })
+export class BudgetCategoryInput {
+  @Field()
+  categoryId: string;
+
+  @Field()
+  categoryName: string;
+
+  @Field()
+  categoryNameEn: string;
+
+  @Field(() => Float)
+  monthlyAmount: number;
+}
+
+@InputType({ description: "Save budget settings input" })
+export class SaveBudgetInput {
+  @Field(() => Int)
+  year: number;
+
+  @Field(() => [BudgetCategoryInput])
+  categories: BudgetCategoryInput[];
+}
+
+// Default budget categories for quick setup
+export const DEFAULT_BUDGET_CATEGORIES = [
+  {
+    categoryId: "salaries",
+    categoryName: "Salaires",
+    categoryNameEn: "Salaries",
+  },
+  {
+    categoryId: "rent",
+    categoryName: "Loyer & Services",
+    categoryNameEn: "Rent & Utilities",
+  },
+  {
+    categoryId: "marketing",
+    categoryName: "Marketing",
+    categoryNameEn: "Marketing",
+  },
+  {
+    categoryId: "supplies",
+    categoryName: "Fournitures",
+    categoryNameEn: "Supplies",
+  },
+  {
+    categoryId: "professional",
+    categoryName: "Services professionnels",
+    categoryNameEn: "Professional Services",
+  },
+  {
+    categoryId: "insurance",
+    categoryName: "Assurances",
+    categoryNameEn: "Insurance",
+  },
+  { categoryId: "other", categoryName: "Autres", categoryNameEn: "Other" },
+];

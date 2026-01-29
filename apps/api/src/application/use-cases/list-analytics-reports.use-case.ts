@@ -1,5 +1,4 @@
 import { Injectable, Inject, UnauthorizedException } from "@nestjs/common";
-import { AnalyticsReport } from "@domain/entities/AnalyticsReport";
 import { IAnalyticsReportRepository } from "@application/ports/outbound/IAnalyticsReportRepository";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
 

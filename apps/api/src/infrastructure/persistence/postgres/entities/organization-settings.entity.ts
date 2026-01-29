@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  Index,
 } from "typeorm";
 import { OrganizationEntity } from "./organization.entity";
 
@@ -102,11 +101,26 @@ export class OrganizationSettingsEntity {
   @Column({ name: "general_settings", type: "jsonb", nullable: true })
   generalSettings?: {
     fiscalYearEndMonth?: number;
+    province?: string; // Canadian province for tax deadlines
     currency?: string;
     industry?: string;
     timezone?: string;
     dateFormat?: string;
     currencyFormat?: string;
+  };
+
+  // Budget Settings (JSONB) - Simple monthly budget by category
+  @Column({ name: "budget_settings", type: "jsonb", nullable: true })
+  budgetSettings?: {
+    year: number; // Budget year
+    categories: {
+      categoryId: string;
+      categoryName: string;
+      categoryNameEn: string;
+      monthlyAmount: number;
+    }[];
+    lastUpdated?: string;
+    updatedBy?: string;
   };
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })

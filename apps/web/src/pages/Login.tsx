@@ -16,6 +16,8 @@ import {
   Mail,
   Lock,
   Shield,
+  ArrowLeft,
+  X,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useI18n, LanguageToggle } from '../lib/i18n';
@@ -41,6 +43,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showBackPopup, setShowBackPopup] = useState(false);
 
   // Pre-fill email from URL params and check for success messages
   useEffect(() => {
@@ -155,15 +158,105 @@ export default function Login() {
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
+      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
+      {/* Back to Website Confirmation Popup */}
+      {showBackPopup && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setShowBackPopup(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="w-full max-w-sm rounded-xl shadow-2xl p-6 relative"
+            style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowBackPopup(false)}
+              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Popup content */}
+            <div className="text-center">
+              <div 
+                className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
+                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+              >
+                <ArrowLeft className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              </div>
+              <h3 
+                className="text-lg font-semibold mb-2"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {isEn ? 'Return to Website?' : 'Retourner au site web?'}
+              </h3>
+              <p 
+                className="text-sm mb-6"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn 
+                  ? 'You will leave the login page and return to the main website.'
+                  : 'Vous quitterez la page de connexion et retournerez au site web principal.'}
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBackPopup(false)}
+                  className="flex-1 py-2.5 px-4 rounded-lg font-medium border transition-colors"
+                  style={{
+                    backgroundColor: 'transparent',
+                    borderColor: 'rgb(var(--color-border))',
+                    color: 'rgb(var(--color-text))',
+                  }}
+                >
+                  {isEn ? 'Cancel' : 'Annuler'}
+                </button>
+                <button
+                  onClick={() => navigate('/')}
+                  className="flex-1 py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-primary-500))',
+                    color: 'white',
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {isEn ? 'Go Back' : 'Retourner'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <div className="w-full max-w-md">
         {/* Login Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card p-8"
+          className="card p-8 relative"
         >
+          {/* Back to Website Button */}
+          <button
+            onClick={() => setShowBackPopup(true)}
+            className="absolute top-4 left-4 flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {isEn ? 'Back' : 'Retour'}
+          </button>
+
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
             <div 
@@ -179,7 +272,7 @@ export default function Login() {
                 <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                 <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span 

@@ -16,3 +16,9 @@ export * from "./financial.types";
 
 // Data source types
 export * from "./datasource.types";
+
+// Tax credit types
+export * from "./tax-credit.types";
+
+// Market analysis types
+export * from "./market-analysis.types";

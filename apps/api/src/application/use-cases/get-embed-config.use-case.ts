@@ -4,7 +4,6 @@ import {
   UnauthorizedException,
   NotFoundException,
 } from "@nestjs/common";
-import { EmbedConfig } from "@domain/value-objects/EmbedConfig";
 import { RLSIdentity } from "@domain/value-objects/RLSIdentity";
 import { IAnalyticsReportRepository } from "@application/ports/outbound/IAnalyticsReportRepository";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";

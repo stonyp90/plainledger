@@ -14,10 +14,7 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import {
-  AIGuardrailsService,
-  FinancialContext as GuardrailContext,
-} from "./ai-guardrails.service";
+import { AIGuardrailsService } from "./ai-guardrails.service";
 import { IAIService } from "@application/ports/outbound/IAIService";
 
 export type AIProvider =

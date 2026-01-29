@@ -219,6 +219,7 @@ export interface DashboardSummary {
     aging: AgingBucket[];
     totalOverdue: number;
     averageDaysOutstanding: number;
+    hasData?: boolean; // True if real invoice data exists
   };
   payables: {
     current: number;
@@ -226,6 +227,7 @@ export interface DashboardSummary {
     aging: AgingBucket[];
     totalOverdue: number;
     averageDaysPayable: number;
+    hasData?: boolean; // True if real bill data exists (many businesses don't track bills)
   };
   // Bank & reconciliation
   bankAccounts: BankReconciliation[];
@@ -281,6 +283,50 @@ export interface FinancialDataResponse {
 // =====================================================
 
 /**
+ * Generates a deterministic seed from a date string for consistent random values
+ */
+function getDateSeed(dateStr: string): number {
+  const date = new Date(dateStr);
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+}
+
+/**
+ * Seeded random number generator for deterministic values
+ */
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+/**
+ * Apply date-based variation to a base value
+ * More recent dates have higher values (simulating growth)
+ */
+function applyDateVariation(baseValue: number, asOfDate: string, variationPercent: number = 15): number {
+  const seed = getDateSeed(asOfDate);
+  const random = seededRandom(seed);
+  
+  // Reference date (latest expected date - end of 2025)
+  const referenceDate = new Date('2025-12-31');
+  const targetDate = new Date(asOfDate);
+  
+  // Calculate months from reference (negative means earlier date)
+  const monthsDiff = (referenceDate.getFullYear() - targetDate.getFullYear()) * 12 
+                   + (referenceDate.getMonth() - targetDate.getMonth());
+  
+  // Apply growth rate (about 0.5% per month decline for older dates)
+  const growthFactor = Math.pow(0.995, monthsDiff);
+  
+  // Add some random variation based on date seed (±variationPercent%)
+  const randomVariation = 1 + (random() - 0.5) * 2 * (variationPercent / 100);
+  
+  return Math.round(baseValue * growthFactor * randomVariation);
+}
+
+/**
  * Generates realistic mock financial data based on organization settings.
  * In production, this would be replaced with actual API calls to:
  * - QuickBooks Online API
@@ -301,14 +347,46 @@ export function generateMockFinancialData(
   priorDate.setFullYear(priorDate.getFullYear() - 1);
   const comparisonDate = priorDate.toISOString().split('T')[0];
 
-  // Generate balance sheet accounts
+  // Base values - these will be modified based on asOfDate
+  const baseValues = {
+    cash: 245000,
+    receivables: 185000,
+    inventory: 78000,
+    prepaid: 12000,
+    fixedAssets: 450000,
+    depreciation: -125000,
+    payables: 78000,
+    accrued: 45000,
+    currentDebt: 25000,
+    longTermDebt: 175000,
+    shareCapital: 100000,
+    retainedEarnings: 422000,
+  };
+
+  // Prior year base values
+  const priorBaseValues = {
+    cash: 198000,
+    receivables: 156000,
+    inventory: 82000,
+    prepaid: 10000,
+    fixedAssets: 420000,
+    depreciation: -95000,
+    payables: 65000,
+    accrued: 38000,
+    currentDebt: 25000,
+    longTermDebt: 200000,
+    shareCapital: 100000,
+    retainedEarnings: 343000,
+  };
+
+  // Generate balance sheet accounts with date-based variations
   const currentAssets: AccountBalanceExtended[] = [
     { 
       code: '1000', 
       name: 'Encaisse et équivalents', 
       nameEn: 'Cash and equivalents',
-      current: 245000, 
-      prior: 198000, 
+      current: applyDateVariation(baseValues.cash, asOfDate, 12), 
+      prior: applyDateVariation(priorBaseValues.cash, comparisonDate, 10), 
       budget: 200000,
       type: 'asset',
       subType: 'current'
@@ -317,8 +395,8 @@ export function generateMockFinancialData(
       code: '1100', 
       name: 'Comptes clients', 
       nameEn: 'Accounts receivable',
-      current: 185000, 
-      prior: 156000, 
+      current: applyDateVariation(baseValues.receivables, asOfDate, 15), 
+      prior: applyDateVariation(priorBaseValues.receivables, comparisonDate, 12), 
       budget: 170000,
       type: 'asset',
       subType: 'current'
@@ -327,8 +405,8 @@ export function generateMockFinancialData(
       code: '1200', 
       name: 'Stocks', 
       nameEn: 'Inventory',
-      current: 78000, 
-      prior: 82000, 
+      current: applyDateVariation(baseValues.inventory, asOfDate, 10), 
+      prior: applyDateVariation(priorBaseValues.inventory, comparisonDate, 8), 
       budget: 75000,
       type: 'asset',
       subType: 'current'
@@ -337,8 +415,8 @@ export function generateMockFinancialData(
       code: '1300', 
       name: 'Frais payés d\'avance', 
       nameEn: 'Prepaid expenses',
-      current: 12000, 
-      prior: 10000, 
+      current: applyDateVariation(baseValues.prepaid, asOfDate, 5), 
+      prior: applyDateVariation(priorBaseValues.prepaid, comparisonDate, 5), 
       budget: 12000,
       type: 'asset',
       subType: 'current'
@@ -350,8 +428,8 @@ export function generateMockFinancialData(
       code: '1500', 
       name: 'Immobilisations', 
       nameEn: 'Property and equipment',
-      current: 450000, 
-      prior: 420000, 
+      current: applyDateVariation(baseValues.fixedAssets, asOfDate, 5), 
+      prior: applyDateVariation(priorBaseValues.fixedAssets, comparisonDate, 5), 
       budget: 430000,
       type: 'asset',
       subType: 'fixed'
@@ -360,8 +438,8 @@ export function generateMockFinancialData(
       code: '1600', 
       name: 'Amortissement cumulé', 
       nameEn: 'Accumulated depreciation',
-      current: -125000, 
-      prior: -95000, 
+      current: applyDateVariation(baseValues.depreciation, asOfDate, 8), 
+      prior: applyDateVariation(priorBaseValues.depreciation, comparisonDate, 8), 
       budget: -110000,
       type: 'asset',
       subType: 'fixed'
@@ -373,8 +451,8 @@ export function generateMockFinancialData(
       code: '2000', 
       name: 'Comptes fournisseurs', 
       nameEn: 'Accounts payable',
-      current: 78000, 
-      prior: 65000, 
+      current: applyDateVariation(baseValues.payables, asOfDate, 18), 
+      prior: applyDateVariation(priorBaseValues.payables, comparisonDate, 15), 
       budget: 70000,
       type: 'liability',
       subType: 'current'
@@ -383,8 +461,8 @@ export function generateMockFinancialData(
       code: '2100', 
       name: 'Charges à payer', 
       nameEn: 'Accrued expenses',
-      current: 45000, 
-      prior: 38000, 
+      current: applyDateVariation(baseValues.accrued, asOfDate, 12), 
+      prior: applyDateVariation(priorBaseValues.accrued, comparisonDate, 10), 
       budget: 42000,
       type: 'liability',
       subType: 'current'
@@ -393,8 +471,8 @@ export function generateMockFinancialData(
       code: '2200', 
       name: 'Portion courante dette LT', 
       nameEn: 'Current portion of LT debt',
-      current: 25000, 
-      prior: 25000, 
+      current: baseValues.currentDebt, // Fixed amount
+      prior: priorBaseValues.currentDebt, 
       budget: 25000,
       type: 'liability',
       subType: 'current'
@@ -406,21 +484,34 @@ export function generateMockFinancialData(
       code: '2500', 
       name: 'Dette à long terme', 
       nameEn: 'Long-term debt',
-      current: 175000, 
-      prior: 200000, 
+      current: applyDateVariation(baseValues.longTermDebt, asOfDate, 3), 
+      prior: applyDateVariation(priorBaseValues.longTermDebt, comparisonDate, 3), 
       budget: 185000,
       type: 'liability',
       subType: 'longTerm'
     },
   ];
 
+  // Calculate retained earnings to balance the sheet
+  const totalAssetsRaw = currentAssets.reduce((sum, a) => sum + a.current, 0)
+                       + fixedAssets.reduce((sum, a) => sum + a.current, 0);
+  const totalLiabilitiesRaw = currentLiabilities.reduce((sum, a) => sum + a.current, 0)
+                            + longTermLiabilities.reduce((sum, a) => sum + a.current, 0);
+  const balancingRetainedEarnings = totalAssetsRaw - totalLiabilitiesRaw - baseValues.shareCapital;
+
+  const totalAssetsPrior = currentAssets.reduce((sum, a) => sum + a.prior, 0)
+                         + fixedAssets.reduce((sum, a) => sum + a.prior, 0);
+  const totalLiabilitiesPrior = currentLiabilities.reduce((sum, a) => sum + a.prior, 0)
+                              + longTermLiabilities.reduce((sum, a) => sum + a.prior, 0);
+  const balancingRetainedEarningsPrior = totalAssetsPrior - totalLiabilitiesPrior - priorBaseValues.shareCapital;
+
   const equity: AccountBalanceExtended[] = [
     { 
       code: '3000', 
       name: 'Capital-actions', 
       nameEn: 'Share capital',
-      current: 100000, 
-      prior: 100000, 
+      current: baseValues.shareCapital, 
+      prior: priorBaseValues.shareCapital, 
       budget: 100000,
       type: 'equity'
     },
@@ -428,8 +519,8 @@ export function generateMockFinancialData(
       code: '3100', 
       name: 'Bénéfices non répartis', 
       nameEn: 'Retained earnings',
-      current: 422000, 
-      prior: 343000, 
+      current: balancingRetainedEarnings, 
+      prior: balancingRetainedEarningsPrior, 
       budget: 400000,
       type: 'equity'
     },
@@ -446,45 +537,80 @@ export function generateMockFinancialData(
   
   const totalEquity = equity.reduce((sum, a) => sum + a.current, 0);
 
-  // Generate monthly trend data (last 12 months)
+  // Generate monthly trend data (last 12 months based on asOfDate)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthsFr = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
   
-  const revenueData: FinancialDataPoint[] = months.map((month, i) => ({
-    period: monthsFr[i],
-    value: 125000 + (i * 6000) + Math.floor(Math.random() * 10000),
-  }));
+  // Use date seed for consistent random variations
+  const dateSeed = getDateSeed(asOfDate);
+  const random = seededRandom(dateSeed);
+  
+  // Calculate base revenue factor based on date (more recent = higher)
+  const referenceDate = new Date('2025-12-31');
+  const targetDate = new Date(asOfDate);
+  const monthsDiff = (referenceDate.getFullYear() - targetDate.getFullYear()) * 12 
+                   + (referenceDate.getMonth() - targetDate.getMonth());
+  const dateGrowthFactor = Math.pow(0.992, monthsDiff);
+  
+  const revenueData: FinancialDataPoint[] = months.map((month, i) => {
+    const baseRevenue = 125000 + (i * 6000);
+    const variation = random() * 10000;
+    return {
+      period: monthsFr[i],
+      value: Math.round((baseRevenue + variation) * dateGrowthFactor),
+    };
+  });
 
-  const revenueBudget = months.map((_, i) => 120000 + (i * 5500));
+  const revenueBudget = months.map((_, i) => Math.round((120000 + (i * 5500)) * dateGrowthFactor));
 
-  const expenseData: FinancialDataPoint[] = months.map((month, i) => ({
-    period: monthsFr[i],
-    value: 95000 + (i * 3000) + Math.floor(Math.random() * 5000),
-  }));
+  const expenseData: FinancialDataPoint[] = months.map((month, i) => {
+    const baseExpense = 95000 + (i * 3000);
+    const variation = random() * 5000;
+    return {
+      period: monthsFr[i],
+      value: Math.round((baseExpense + variation) * dateGrowthFactor),
+    };
+  });
 
-  const cashFlowTrendData: FinancialDataPoint[] = months.map((month, i) => ({
-    period: monthsFr[i],
-    value: 45000 + Math.floor(Math.random() * 40000),
-  }));
+  const cashFlowTrendData: FinancialDataPoint[] = months.map((month, i) => {
+    const baseCashFlow = 45000;
+    const variation = random() * 40000;
+    return {
+      period: monthsFr[i],
+      value: Math.round((baseCashFlow + variation) * dateGrowthFactor),
+    };
+  });
 
   const profitData: FinancialDataPoint[] = revenueData.map((rev, i) => ({
     period: rev.period,
     value: rev.value - expenseData[i].value,
   }));
 
-  // Cash flow waterfall - using short, clear labels
+  // Cash flow waterfall - using short, clear labels with date-based values
+  const currentCash = currentAssets.find(a => a.code === '1000')?.current || 245000;
+  const priorCash = currentAssets.find(a => a.code === '1000')?.prior || 198000;
+  const salesInflow = Math.round(applyDateVariation(195000, asOfDate, 12));
+  const collectionsInflow = Math.round(applyDateVariation(156000, asOfDate, 15));
+  const payrollOutflow = Math.round(applyDateVariation(-112000, asOfDate, 8));
+  const suppliersOutflow = Math.round(applyDateVariation(-78000, asOfDate, 12));
+  const rentOutflow = Math.round(applyDateVariation(-35000, asOfDate, 3));
+  const opTotal = priorCash + salesInflow + collectionsInflow + payrollOutflow + suppliersOutflow + rentOutflow;
+  const capexOutflow = Math.round(applyDateVariation(-45000, asOfDate, 20));
+  const debtOutflow = -25000;
+  const dividendsOutflow = Math.round(applyDateVariation(-9000, asOfDate, 15));
+  
   const cashFlowWaterfall: WaterfallDataPoint[] = [
-    { label: 'Ouverture', labelEn: 'Opening', value: 198000, type: 'start' },
-    { label: 'Ventes', labelEn: 'Sales', value: 195000, type: 'increase', category: 'operations' },
-    { label: 'Recouvrements', labelEn: 'Collections', value: 156000, type: 'increase', category: 'operations' },
-    { label: 'Salaires', labelEn: 'Payroll', value: -112000, type: 'decrease', category: 'operations' },
-    { label: 'Fournisseurs', labelEn: 'Suppliers', value: -78000, type: 'decrease', category: 'operations' },
-    { label: 'Loyer', labelEn: 'Rent', value: -35000, type: 'decrease', category: 'operations' },
-    { label: 'Op. Total', labelEn: 'Op. Total', value: 324000, type: 'subtotal' },
-    { label: 'Équipement', labelEn: 'CapEx', value: -45000, type: 'decrease', category: 'investing' },
-    { label: 'Dette', labelEn: 'Debt', value: -25000, type: 'decrease', category: 'financing' },
-    { label: 'Dividendes', labelEn: 'Dividends', value: -9000, type: 'decrease', category: 'financing' },
-    { label: 'Clôture', labelEn: 'Closing', value: 245000, type: 'end' },
+    { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+    { label: 'Ventes', labelEn: 'Sales', value: salesInflow, type: 'increase', category: 'operations' },
+    { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+    { label: 'Salaires', labelEn: 'Payroll', value: payrollOutflow, type: 'decrease', category: 'operations' },
+    { label: 'Fournisseurs', labelEn: 'Suppliers', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+    { label: 'Loyer', labelEn: 'Rent', value: rentOutflow, type: 'decrease', category: 'operations' },
+    { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+    { label: 'Équipement', labelEn: 'CapEx', value: capexOutflow, type: 'decrease', category: 'investing' },
+    { label: 'Dette', labelEn: 'Debt', value: debtOutflow, type: 'decrease', category: 'financing' },
+    { label: 'Dividendes', labelEn: 'Dividends', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+    { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
   ];
 
   // Calculate financial metrics

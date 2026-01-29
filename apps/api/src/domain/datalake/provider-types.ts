@@ -136,6 +136,44 @@ export interface QuickBooksJournalLine {
   Description?: string;
 }
 
+export interface QuickBooksBill {
+  Id: string;
+  DocNumber?: string;
+  TxnDate: string;
+  DueDate?: string;
+  VendorRef: { value: string; name: string };
+  Line: QuickBooksBillLine[];
+  TotalAmt: number;
+  Balance: number;
+  CurrencyRef: { value: string; name: string };
+  ExchangeRate?: number;
+  PrivateNote?: string;
+  APAccountRef?: { value: string; name: string };
+  MetaData: {
+    CreateTime: string;
+    LastUpdatedTime: string;
+  };
+}
+
+export interface QuickBooksBillLine {
+  Id: string;
+  LineNum: number;
+  Amount: number;
+  DetailType: string;
+  Description?: string;
+  AccountBasedExpenseLineDetail?: {
+    AccountRef: { value: string; name: string };
+    TaxCodeRef?: { value: string };
+    BillableStatus?: string;
+  };
+  ItemBasedExpenseLineDetail?: {
+    ItemRef?: { value: string; name: string };
+    Qty?: number;
+    UnitPrice?: number;
+    TaxCodeRef?: { value: string };
+  };
+}
+
 // =============================================================================
 // Xero Data Types
 // =============================================================================

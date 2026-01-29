@@ -1,10 +1,17 @@
 import {
   Controller,
   Get,
+  Post,
+  Patch,
+  Delete,
   Query,
   Param,
+  Body,
+  Headers,
   BadRequestException,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -12,6 +19,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
 } from "@nestjs/swagger";
 import { Roles, Public } from "nest-keycloak-connect";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
@@ -123,6 +131,117 @@ export class ReportController {
       tenantId,
       startDate,
       endDate,
+    };
+  }
+
+  @Post("share")
+  @Roles({ roles: ["admin", "owner", "accountant"] })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: "Create a shareable link for a report" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        reportId: { type: "string", nullable: true },
+        reportType: { type: "string" },
+        shareUrl: { type: "string" },
+        password: { type: "string", nullable: true },
+        expiresIn: {
+          type: "string",
+          enum: ["1d", "7d", "30d", "90d", "never"],
+        },
+        allowDownload: { type: "boolean" },
+        requireAuth: { type: "boolean" },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: "Share link created successfully" })
+  async createShareLink(
+    @Body()
+    body: {
+      reportId?: string;
+      reportType: string;
+      shareUrl: string;
+      password?: string;
+      expiresIn: string;
+      allowDownload: boolean;
+      requireAuth: boolean;
+    },
+    @Headers("x-tenant-id") _tenantId?: string,
+  ) {
+    // Generate share token
+    const shareToken = `shr_${Date.now().toString(36)}${Math.random().toString(36).substr(2, 9)}`;
+
+    // Calculate expiration date
+    let expiresAt: Date | null = null;
+    if (body.expiresIn !== "never") {
+      const days = parseInt(body.expiresIn.replace("d", ""));
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + days);
+    }
+
+    // TODO: Save to database - reporting.shared_report_links table
+    // For now, return mock response
+    return {
+      id: `share-${Date.now()}`,
+      shareToken,
+      shareUrl: body.shareUrl,
+      expiresAt: expiresAt?.toISOString(),
+      allowDownload: body.allowDownload,
+      requireAuth: body.requireAuth,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  @Get("share/:shareToken")
+  @Public()
+  @ApiOperation({ summary: "Get share link details" })
+  @ApiResponse({ status: 200, description: "Share link found" })
+  @ApiResponse({ status: 404, description: "Share link not found" })
+  async getShareLink(@Param("shareToken") shareToken: string) {
+    // TODO: Query database for share link
+    // For now, return mock response
+    return {
+      id: `share-123`,
+      shareToken,
+      shareUrl: `http://localhost:5173/share/report/${shareToken}`,
+      expiresAt: null,
+      allowDownload: true,
+      requireAuth: false,
+      isActive: true,
+    };
+  }
+
+  @Patch("share/:shareToken")
+  @Roles({ roles: ["admin", "owner", "accountant"] })
+  @ApiOperation({ summary: "Update share link settings" })
+  @ApiResponse({ status: 200, description: "Share link updated" })
+  async updateShareLink(
+    @Param("shareToken") _shareToken: string,
+    @Body()
+    _body: {
+      expiresIn?: string;
+      allowDownload?: boolean;
+      requireAuth?: boolean;
+      isActive?: boolean;
+    },
+  ) {
+    // TODO: Update database
+    return {
+      success: true,
+      message: "Share link updated",
+    };
+  }
+
+  @Delete("share/:shareToken")
+  @Roles({ roles: ["admin", "owner", "accountant"] })
+  @ApiOperation({ summary: "Delete a share link" })
+  @ApiResponse({ status: 200, description: "Share link deleted" })
+  async deleteShareLink(@Param("shareToken") _shareToken: string) {
+    // TODO: Delete from database
+    return {
+      success: true,
+      message: "Share link deleted",
     };
   }
 }

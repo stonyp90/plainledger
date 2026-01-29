@@ -1,8 +1,5 @@
 import { Injectable, Inject } from "@nestjs/common";
-import {
-  Organization,
-  CreateOrganizationInput,
-} from "@domain/entities/Organization";
+import { Organization } from "@domain/entities/Organization";
 import { IOrganizationRepository } from "@application/ports/outbound/IOrganizationRepository";
 import { TenantId } from "@domain/value-objects/TenantId";
 import { DuplicateEntityError } from "@domain/errors/DomainError";

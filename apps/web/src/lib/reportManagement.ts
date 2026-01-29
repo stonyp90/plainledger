@@ -92,6 +92,12 @@ export interface ReportSharing {
   }[];
   publicLink?: string;
   expiresAt?: string;
+  expiresIn?: string; // '1d', '7d', '30d', '90d', 'never'
+  allowDownload?: boolean;
+  requireAuth?: boolean;
+  password?: string;
+  shareToken?: string;
+  createdAt?: string;
 }
 
 export type ReportType = 

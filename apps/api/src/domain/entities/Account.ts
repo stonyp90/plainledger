@@ -1,5 +1,4 @@
 import { AccountCode } from "@domain/value-objects/AccountCode";
-import { Money } from "@domain/value-objects/Money";
 import { DomainError } from "@domain/errors/DomainError";
 
 export enum AccountType {

@@ -1,6 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
 import { OrganizationFeatures } from "@domain/entities/OrganizationFeatures";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
 
@@ -13,7 +11,7 @@ export class PostgresOrganizationFeaturesRepository implements IOrganizationFeat
   }
 
   async findByOrganizationId(
-    organizationId: string,
+    _organizationId: string,
   ): Promise<OrganizationFeatures | null> {
     // TODO: Implement database query
     // const entity = await this.repository.findOne({ where: { organizationId } });

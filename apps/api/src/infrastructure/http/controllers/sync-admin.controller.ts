@@ -306,7 +306,7 @@ export class SyncAdminController {
   @ApiResponse({ status: 202, description: "Sync initiated" })
   async triggerSync(
     @Param("id") id: string,
-    @Body() options?: { fullSync?: boolean; entities?: string[] },
+    @Body() _options?: { fullSync?: boolean; entities?: string[] },
   ): Promise<{ message: string; syncId: string; estimatedDuration: string }> {
     this.logger.log(`Admin triggering sync for connection: ${id}`);
 
@@ -339,7 +339,7 @@ export class SyncAdminController {
   @ApiResponse({ status: 200, description: "Sync history" })
   async getSyncHistory(
     @Param("id") id: string,
-    @Query("limit") limit = 10,
+    @Query("limit") _limit = 10,
   ): Promise<SyncResultDto[]> {
     this.logger.log(`Admin getting sync history for connection: ${id}`);
 

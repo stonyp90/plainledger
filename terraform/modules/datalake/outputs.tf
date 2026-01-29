@@ -77,3 +77,29 @@ output "kms_key_id" {
   description = "Data lake KMS key ID"
   value       = aws_kms_key.datalake.key_id
 }
+
+# ETL Jobs
+output "etl_scripts_bucket_id" {
+  description = "ETL scripts bucket ID"
+  value       = aws_s3_bucket.etl_scripts.id
+}
+
+output "glue_etl_role_arn" {
+  description = "Glue ETL IAM role ARN"
+  value       = aws_iam_role.glue_etl.arn
+}
+
+output "silver_to_gold_job_name" {
+  description = "Silver to Gold ETL job name"
+  value       = aws_glue_job.silver_to_gold.name
+}
+
+output "industry_kpi_calculator_job_name" {
+  description = "Industry KPI Calculator ETL job name"
+  value       = aws_glue_job.industry_kpi_calculator.name
+}
+
+output "monthly_summary_job_name" {
+  description = "Monthly Summary Calculator ETL job name"
+  value       = aws_glue_job.monthly_summary_calculator.name
+}

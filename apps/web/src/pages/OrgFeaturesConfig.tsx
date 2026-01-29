@@ -5,6 +5,8 @@ import { useAnalyticsVisibility } from '../contexts/AnalyticsVisibilityContext';
 import { useTenant } from '../contexts/TenantContext';
 import { api } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
+import Toggle from '../components/Toggle';
+import Checkbox from '../components/Checkbox';
 
 export default function OrgFeaturesConfig() {
   const { currentTenant } = useTenant();
@@ -118,15 +120,10 @@ export default function OrgFeaturesConfig() {
                 Native graphs, AI recommendations, and anomaly detection
               </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.plainledger.enabled}
-                onChange={() => handleToggle('plainledger', 'enabled')}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+            <Toggle
+              checked={formData.plainledger.enabled}
+              onChange={() => handleToggle('plainledger', 'enabled')}
+            />
           </div>
 
           {formData.plainledger.enabled && (
@@ -136,15 +133,13 @@ export default function OrgFeaturesConfig() {
               </label>
               <div className="space-y-2">
                 {availableRoles.map(role => (
-                  <label key={role} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.plainledger.visibleToRoles.includes(role)}
-                      onChange={() => handleRoleToggle('plainledger', role)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{role}</span>
-                  </label>
+                  <Checkbox
+                    key={role}
+                    checked={formData.plainledger.visibleToRoles.includes(role)}
+                    onChange={() => handleRoleToggle('plainledger', role)}
+                    label={role}
+                    size="sm"
+                  />
                 ))}
               </div>
             </div>
@@ -160,15 +155,10 @@ export default function OrgFeaturesConfig() {
                 Embedded Power BI reports with advanced visualizations
               </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.powerbi.enabled}
-                onChange={() => handleToggle('powerbi', 'enabled')}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
+            <Toggle
+              checked={formData.powerbi.enabled}
+              onChange={() => handleToggle('powerbi', 'enabled')}
+            />
           </div>
 
           {formData.powerbi.enabled && (
@@ -178,15 +168,13 @@ export default function OrgFeaturesConfig() {
               </label>
               <div className="space-y-2">
                 {availableRoles.map(role => (
-                  <label key={role} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.powerbi.visibleToRoles.includes(role)}
-                      onChange={() => handleRoleToggle('powerbi', role)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{role}</span>
-                  </label>
+                  <Checkbox
+                    key={role}
+                    checked={formData.powerbi.visibleToRoles.includes(role)}
+                    onChange={() => handleRoleToggle('powerbi', role)}
+                    label={role}
+                    size="sm"
+                  />
                 ))}
               </div>
             </div>

@@ -510,105 +510,6 @@ export const MANUFACTURING_KPIS: KPIFormula[] = [
 ];
 
 /**
- * Technology KPIs
- */
-export const TECHNOLOGY_KPIS: KPIFormula[] = [
-  {
-    id: 'mrr',
-    industryId: 'technology',
-    name: { en: 'Monthly Recurring Revenue', fr: 'Revenus récurrents mensuels' },
-    formula: '=Monthly Recurring Revenue',
-    description: {
-      en: 'Predictable monthly revenue from subscriptions',
-      fr: 'Revenus mensuels prévisibles provenant d\'abonnements',
-    },
-    format: 'currency',
-    decimals: 0,
-    category: 'revenue',
-  },
-  {
-    id: 'arr',
-    industryId: 'technology',
-    name: { en: 'Annual Recurring Revenue', fr: 'Revenus récurrents annuels' },
-    formula: '=Monthly Recurring Revenue * 12',
-    description: {
-      en: 'Annualized recurring revenue',
-      fr: 'Revenus récurrents annualisés',
-    },
-    format: 'currency',
-    decimals: 0,
-    category: 'revenue',
-  },
-  {
-    id: 'churn_rate',
-    industryId: 'technology',
-    name: { en: 'Churn Rate', fr: 'Taux d\'attrition' },
-    formula: '=Churned Customers / Total Customers',
-    description: {
-      en: 'Percentage of customers lost per period',
-      fr: 'Pourcentage de clients perdus par période',
-    },
-    format: 'percentage',
-    decimals: 2,
-    benchmark: { min: 0, max: 5, unit: '%' },
-    category: 'growth',
-  },
-  {
-    id: 'cac',
-    industryId: 'technology',
-    name: { en: 'Customer Acquisition Cost', fr: 'Coût d\'acquisition client' },
-    formula: '=Marketing & Sales Costs / New Customers',
-    description: {
-      en: 'Average cost to acquire one customer',
-      fr: 'Coût moyen pour acquérir un client',
-    },
-    format: 'currency',
-    decimals: 0,
-    category: 'cost',
-  },
-  {
-    id: 'ltv',
-    industryId: 'technology',
-    name: { en: 'Lifetime Value', fr: 'Valeur à vie' },
-    formula: '=Average Revenue per Customer / Churn Rate',
-    description: {
-      en: 'Total revenue expected from average customer',
-      fr: 'Revenus totaux attendus d\'un client moyen',
-    },
-    format: 'currency',
-    decimals: 0,
-    category: 'profitability',
-  },
-  {
-    id: 'ltv_cac_ratio',
-    industryId: 'technology',
-    name: { en: 'LTV:CAC Ratio', fr: 'Ratio LTV:CAC' },
-    formula: '=Lifetime Value / Customer Acquisition Cost',
-    description: {
-      en: 'Ratio of customer lifetime value to acquisition cost',
-      fr: 'Ratio de la valeur à vie du client au coût d\'acquisition',
-    },
-    format: 'number',
-    decimals: 1,
-    benchmark: { min: 3, max: 5, unit: 'ratio' },
-    category: 'profitability',
-  },
-  {
-    id: 'runway',
-    industryId: 'technology',
-    name: { en: 'Runway (Months)', fr: 'Piste (mois)' },
-    formula: '=Cash Balance / Monthly Burn Rate',
-    description: {
-      en: 'Months of cash remaining at current burn rate',
-      fr: 'Mois de trésorerie restants au taux de consommation actuel',
-    },
-    format: 'number',
-    decimals: 1,
-    category: 'profitability',
-  },
-];
-
-/**
  * Agriculture KPIs
  */
 export const AGRICULTURE_KPIS: KPIFormula[] = [
@@ -700,6 +601,260 @@ export const TRANSPORT_KPIS: KPIFormula[] = [
 ];
 
 /**
+ * Healthcare Industry KPIs
+ */
+export const HEALTHCARE_KPIS: KPIFormula[] = [
+  {
+    id: 'revenue_per_patient',
+    industryId: 'healthcare',
+    name: { en: 'Revenue per Patient', fr: 'Revenu par patient' },
+    formula: '=Total Revenue / Patient Visits',
+    description: {
+      en: 'Average revenue generated per patient visit',
+      fr: 'Revenu moyen généré par visite patient',
+    },
+    format: 'currency',
+    decimals: 2,
+    benchmark: { min: 150, max: 400, unit: 'CAD' },
+    category: 'revenue',
+  },
+  {
+    id: 'patient_retention',
+    industryId: 'healthcare',
+    name: { en: 'Patient Retention Rate', fr: 'Taux de rétention patients' },
+    formula: '=Returning Patients / Total Patients',
+    description: {
+      en: 'Percentage of patients who return for follow-up care',
+      fr: 'Pourcentage de patients qui reviennent pour suivi',
+    },
+    format: 'percentage',
+    decimals: 1,
+    benchmark: { min: 60, max: 80, unit: '%' },
+    category: 'efficiency',
+  },
+];
+
+/**
+ * Education Industry KPIs
+ */
+export const EDUCATION_KPIS: KPIFormula[] = [
+  {
+    id: 'student_retention_rate',
+    industryId: 'education',
+    name: { en: 'Student Retention Rate', fr: 'Taux de rétention étudiants' },
+    formula: '=Returning Students / Total Students',
+    description: {
+      en: 'Percentage of students who continue enrollment',
+      fr: 'Pourcentage d\'étudiants qui poursuivent leur inscription',
+    },
+    format: 'percentage',
+    decimals: 1,
+    benchmark: { min: 75, max: 95, unit: '%' },
+    category: 'efficiency',
+  },
+  {
+    id: 'revenue_per_student',
+    industryId: 'education',
+    name: { en: 'Revenue per Student', fr: 'Revenu par étudiant' },
+    formula: '=Total Revenue / Number of Students',
+    description: {
+      en: 'Average revenue generated per student',
+      fr: 'Revenu moyen généré par étudiant',
+    },
+    format: 'currency',
+    decimals: 0,
+    category: 'revenue',
+  },
+];
+
+/**
+ * Wholesale & Distribution KPIs
+ */
+export const WHOLESALE_KPIS: KPIFormula[] = [
+  {
+    id: 'gross_margin',
+    industryId: 'wholesale',
+    name: { en: 'Gross Margin', fr: 'Marge brute' },
+    formula: '=(Average Unit Price - Cost per Unit) / Average Unit Price',
+    description: {
+      en: 'Profit margin on wholesale sales',
+      fr: 'Marge bénéficiaire sur ventes en gros',
+    },
+    format: 'percentage',
+    decimals: 1,
+    benchmark: { min: 15, max: 30, unit: '%' },
+    category: 'profitability',
+  },
+  {
+    id: 'inventory_turnover',
+    industryId: 'wholesale',
+    name: { en: 'Inventory Turnover', fr: 'Rotation des stocks' },
+    formula: '=Cost of Goods Sold / Average Inventory',
+    description: {
+      en: 'How many times inventory is sold and replaced per period',
+      fr: 'Nombre de fois que l\'inventaire est vendu et remplacé par période',
+    },
+    format: 'number',
+    decimals: 1,
+    benchmark: { min: 4, max: 12, unit: 'times/year' },
+    category: 'efficiency',
+  },
+];
+
+/**
+ * Automotive Industry KPIs
+ */
+export const AUTOMOTIVE_KPIS: KPIFormula[] = [
+  {
+    id: 'service_revenue_pct',
+    industryId: 'automotive',
+    name: { en: 'Service Revenue %', fr: 'Revenus services %' },
+    formula: '=Service Revenue / Total Revenue',
+    description: {
+      en: 'Percentage of revenue from service and parts',
+      fr: 'Pourcentage des revenus provenant des services et pièces',
+    },
+    format: 'percentage',
+    decimals: 1,
+    benchmark: { min: 20, max: 40, unit: '%' },
+    category: 'revenue',
+  },
+  {
+    id: 'vehicles_sold_per_month',
+    industryId: 'automotive',
+    name: { en: 'Vehicles Sold per Month', fr: 'Véhicules vendus par mois' },
+    formula: '=Vehicles Sold / Number of Months',
+    description: {
+      en: 'Average number of vehicles sold per month',
+      fr: 'Nombre moyen de véhicules vendus par mois',
+    },
+    format: 'number',
+    decimals: 0,
+    category: 'revenue',
+  },
+];
+
+/**
+ * Technology Industry KPIs
+ */
+export const TECHNOLOGY_KPIS: KPIFormula[] = [
+  {
+    id: 'mrr',
+    industryId: 'technology',
+    name: { en: 'Monthly Recurring Revenue', fr: 'Revenus récurrents mensuels' },
+    formula: '=Number of Customers * Average Revenue per Customer',
+    description: {
+      en: 'Predictable monthly revenue from subscriptions',
+      fr: 'Revenus mensuels prévisibles des abonnements',
+    },
+    format: 'currency',
+    decimals: 0,
+    category: 'revenue',
+  },
+  {
+    id: 'arr',
+    industryId: 'technology',
+    name: { en: 'Annual Recurring Revenue', fr: 'Revenus récurrents annuels' },
+    formula: '=MRR * 12',
+    description: {
+      en: 'Annualized recurring revenue from subscriptions',
+      fr: 'Revenus récurrents annualisés des abonnements',
+    },
+    format: 'currency',
+    decimals: 0,
+    category: 'revenue',
+  },
+  {
+    id: 'churn_rate',
+    industryId: 'technology',
+    name: { en: 'Churn Rate', fr: 'Taux de désabonnement' },
+    formula: '=Lost Customers / Total Customers at Start of Period',
+    description: {
+      en: 'Percentage of customers lost during a period',
+      fr: 'Pourcentage de clients perdus durant une période',
+    },
+    format: 'percentage',
+    decimals: 2,
+    benchmark: { min: 2, max: 8, unit: '%' },
+    category: 'efficiency',
+  },
+  {
+    id: 'cac',
+    industryId: 'technology',
+    name: { en: 'Customer Acquisition Cost', fr: 'Coût d\'acquisition client' },
+    formula: '=Sales & Marketing Costs / New Customers Acquired',
+    description: {
+      en: 'Average cost to acquire a new customer',
+      fr: 'Coût moyen pour acquérir un nouveau client',
+    },
+    format: 'currency',
+    decimals: 0,
+    category: 'cost',
+  },
+  {
+    id: 'ltv',
+    industryId: 'technology',
+    name: { en: 'Customer Lifetime Value', fr: 'Valeur vie client' },
+    formula: '=Average Revenue per Customer / Churn Rate',
+    description: {
+      en: 'Total revenue expected from a customer over their lifetime',
+      fr: 'Revenus totaux attendus d\'un client sur sa durée de vie',
+    },
+    format: 'currency',
+    decimals: 0,
+    category: 'revenue',
+  },
+  {
+    id: 'ltv_cac_ratio',
+    industryId: 'technology',
+    name: { en: 'LTV/CAC Ratio', fr: 'Ratio LTV/CAC' },
+    formula: '=Customer Lifetime Value / Customer Acquisition Cost',
+    description: {
+      en: 'Return on customer acquisition investment',
+      fr: 'Retour sur investissement d\'acquisition client',
+    },
+    format: 'number',
+    decimals: 1,
+    benchmark: { min: 3, max: 5, unit: 'x' },
+    category: 'profitability',
+  },
+];
+
+/**
+ * Beauty & Wellness Industry KPIs
+ */
+export const BEAUTY_WELLNESS_KPIS: KPIFormula[] = [
+  {
+    id: 'revenue_per_client',
+    industryId: 'beauty_wellness',
+    name: { en: 'Revenue per Client', fr: 'Revenu par client' },
+    formula: '=Total Revenue / Client Visits',
+    description: {
+      en: 'Average revenue per client visit',
+      fr: 'Revenu moyen par visite client',
+    },
+    format: 'currency',
+    decimals: 2,
+    benchmark: { min: 80, max: 200, unit: 'CAD' },
+    category: 'revenue',
+  },
+  {
+    id: 'client_retention',
+    industryId: 'beauty_wellness',
+    name: { en: 'Client Retention Rate', fr: 'Taux de rétention clients' },
+    formula: '=Returning Clients / Total Clients',
+    description: {
+      en: 'Percentage of clients who return for repeat services',
+      fr: 'Pourcentage de clients qui reviennent pour services répétés',
+    },
+    format: 'percentage',
+    decimals: 1,
+    benchmark: { min: 50, max: 75, unit: '%' },
+    category: 'efficiency',
+  },
+];
+
+/**
  * Get all KPIs for an industry
  */
 export function getKPIsForIndustry(industryId: string): KPIFormula[] {
@@ -714,6 +869,11 @@ export function getKPIsForIndustry(industryId: string): KPIFormula[] {
     ...TECHNOLOGY_KPIS,
     ...AGRICULTURE_KPIS,
     ...TRANSPORT_KPIS,
+    ...HEALTHCARE_KPIS,
+    ...EDUCATION_KPIS,
+    ...WHOLESALE_KPIS,
+    ...AUTOMOTIVE_KPIS,
+    ...BEAUTY_WELLNESS_KPIS,
   ];
   
   return allKPIs.filter(kpi => kpi.industryId === industryId);
@@ -734,6 +894,11 @@ export function getKPIById(kpiId: string): KPIFormula | undefined {
     ...TECHNOLOGY_KPIS,
     ...AGRICULTURE_KPIS,
     ...TRANSPORT_KPIS,
+    ...HEALTHCARE_KPIS,
+    ...EDUCATION_KPIS,
+    ...WHOLESALE_KPIS,
+    ...AUTOMOTIVE_KPIS,
+    ...BEAUTY_WELLNESS_KPIS,
   ];
   
   return allKPIs.find(kpi => kpi.id === kpiId);

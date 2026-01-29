@@ -13,9 +13,13 @@ import {
   ExternalLink,
   Eye,
   Download,
+  Clock,
+  Calendar,
 } from 'lucide-react';
 import Toggle from './Toggle';
+import Checkbox from './Checkbox';
 import { useI18n } from '../lib/i18n';
+import { reportsApi } from '../lib/api';
 
 export interface ShareModalProps {
   isOpen: boolean;
@@ -28,6 +32,8 @@ export interface ShareModalProps {
   subtitle?: string;
   /** The base URL to share (will be modified with share token) */
   shareUrl?: string;
+  /** Report ID for database storage */
+  reportId?: string;
   /** Type of content for customization */
   contentType?: 'report' | 'chart' | 'presentation' | 'document';
   /** Whether to show download permission option */
@@ -56,6 +62,7 @@ export default function ShareModal({
   titleEn,
   subtitle,
   shareUrl,
+  reportId,
   contentType = 'document',
   showDownloadOption = true,
   showEmbedOption = false,
@@ -94,20 +101,72 @@ export default function ShareModal({
   
   // Build share URL
   const baseUrl = shareUrl || `${window.location.origin}/share/${contentType}/${Date.now()}`;
-  const fullShareUrl = enablePassword 
-    ? `${baseUrl}?p=${password}` 
+  const fullShareUrl = enablePassword && password
+    ? `${baseUrl}?p=${encodeURIComponent(password)}` 
     : baseUrl;
   
   // Embed code
   const embedCode = `<iframe src="${baseUrl}?embed=true" width="100%" height="600" frameborder="0"></iframe>`;
   
-  const handleCopyLink = () => {
+  const saveShareSettings = async () => {
+    if (!reportId) return; // Skip if no reportId provided
+    
+    try {
+      await reportsApi.createShareLink({
+        reportId,
+        reportType: contentType,
+        shareUrl: fullShareUrl,
+        password: enablePassword ? password : undefined,
+        expiresIn,
+        allowDownload,
+        requireAuth,
+      });
+    } catch (error) {
+      console.error('Failed to save share settings:', error);
+      // Don't block the user if save fails
+    }
+  };
+  
+  const handleCopyLink = async () => {
     const textToCopy = enablePassword 
       ? `${fullShareUrl}\n\n${isEn ? 'Password' : 'Mot de passe'}: ${password}`
       : fullShareUrl;
-    navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    
+    // Save share settings to database
+    await saveShareSettings();
+    
+    // Use modern clipboard API with fallback
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch((err) => {
+        console.error('Failed to copy:', err);
+        // Fallback to older method
+        fallbackCopyTextToClipboard(textToCopy);
+      });
+    } else {
+      fallbackCopyTextToClipboard(textToCopy);
+    }
+  };
+  
+  const fallbackCopyTextToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+    }
+    document.body.removeChild(textArea);
   };
   
   const handleCopyEmbed = () => {
@@ -129,12 +188,15 @@ export default function ShareModal({
       emails: emails.split(',').map(e => e.trim()).filter(e => e.includes('@')),
     };
     
+    // Save share settings to database
+    await saveShareSettings();
+    
     // Call onShare callback if provided
     if (onShare) {
       onShare(shareConfig);
     }
     
-    // Simulate API call
+    // Simulate API call for sending emails
     await new Promise(resolve => setTimeout(resolve, 1500));
     setSending(false);
     setSent(true);
@@ -168,11 +230,30 @@ export default function ShareModal({
   return (
     <div 
       className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', zIndex: 9999 }}
+      style={{ 
+        backgroundColor: 'rgba(0, 0, 0, 0.85)', 
+        backdropFilter: 'blur(8px)', 
+        zIndex: 9999,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden'
+      }}
+      onClick={(e) => {
+        // Close modal when clicking on the overlay (not the modal content)
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div 
         className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div 
@@ -283,12 +364,16 @@ export default function ShareModal({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder={isEn ? 'Enter password' : 'Entrer le mot de passe'}
-                      className="flex-1 bg-transparent text-sm outline-none font-mono"
-                      style={{ color: 'rgb(var(--color-text))' }}
+                      className="flex-1 bg-transparent text-base outline-none font-mono font-semibold tracking-wider"
+                      style={{ 
+                        color: 'rgb(var(--color-text))',
+                        letterSpacing: '0.1em'
+                      }}
+                      readOnly={false}
                     />
                     <button
                       onClick={generateNewPassword}
-                      className="text-xs px-2 py-1 rounded-lg transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium"
                       style={{ 
                         backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                         color: 'rgb(var(--color-primary-500))',
@@ -300,59 +385,77 @@ export default function ShareModal({
                 )}
               </div>
               
-              {/* Options Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Link Expires' : 'Expiration'}
+              {/* Options Section */}
+              <div className="space-y-4">
+                {/* Expiration */}
+                <div 
+                  className="p-4 rounded-xl border"
+                  style={{ borderColor: 'rgb(var(--color-border))', backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)' }}
+                >
+                  <label className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                    <Clock className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    {isEn ? 'Expiration' : 'Expiration'}
                   </label>
-                  <select
-                    value={expiresIn}
-                    onChange={(e) => setExpiresIn(e.target.value)}
-                    className="w-full p-3 rounded-xl border text-sm"
-                    style={{ 
-                      backgroundColor: 'transparent',
-                      borderColor: 'rgb(var(--color-border))',
-                      color: 'rgb(var(--color-text))',
-                    }}
-                  >
-                    <option value="1d">{isEn ? '1 day' : '1 jour'}</option>
-                    <option value="7d">{isEn ? '7 days' : '7 jours'}</option>
-                    <option value="30d">{isEn ? '30 days' : '30 jours'}</option>
-                    <option value="90d">{isEn ? '90 days' : '90 jours'}</option>
-                    <option value="never">{isEn ? 'Never' : 'Jamais'}</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={expiresIn}
+                      onChange={(e) => setExpiresIn(e.target.value)}
+                      className="w-full p-3 pl-10 rounded-lg border text-sm appearance-none cursor-pointer transition-colors"
+                      style={{ 
+                        backgroundColor: 'rgb(var(--color-surface))',
+                        borderColor: 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text))',
+                      }}
+                    >
+                      <option value="1d">{isEn ? '1 day' : '1 jour'}</option>
+                      <option value="7d">{isEn ? '7 days' : '7 jours'}</option>
+                      <option value="30d">{isEn ? '30 days' : '30 jours'}</option>
+                      <option value="90d">{isEn ? '90 days' : '90 jours'}</option>
+                      <option value="never">{isEn ? 'Never' : 'Jamais'}</option>
+                    </select>
+                    <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                  </div>
                 </div>
                 
-                <div className="space-y-3">
-                  {showDownloadOption && (
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={allowDownload}
-                        onChange={(e) => setAllowDownload(e.target.checked)}
-                        className="w-4 h-4 rounded"
-                        style={{ accentColor: 'rgb(var(--color-primary-500))' }}
-                      />
-                      <span className="text-sm flex items-center gap-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                        <Download className="w-3.5 h-3.5" />
-                        {isEn ? 'Allow download' : 'Autoriser téléchargement'}
-                      </span>
-                    </label>
-                  )}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={requireAuth}
-                      onChange={(e) => setRequireAuth(e.target.checked)}
-                      className="w-4 h-4 rounded"
-                      style={{ accentColor: 'rgb(var(--color-primary-500))' }}
-                    />
-                    <span className="text-sm flex items-center gap-1.5" style={{ color: 'rgb(var(--color-text))' }}>
-                      <Eye className="w-3.5 h-3.5" />
-                      {isEn ? 'Require login' : 'Connexion requise'}
-                    </span>
+                {/* Permissions */}
+                <div 
+                  className="p-4 rounded-xl border space-y-3"
+                  style={{ borderColor: 'rgb(var(--color-border))', backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)' }}
+                >
+                  <label className="text-sm font-medium flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                    <Shield className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    {isEn ? 'Permissions' : 'Permissions'}
                   </label>
+                  
+                  {showDownloadOption && (
+                    <div className="p-2 rounded-lg hover:bg-black/5 transition-colors">
+                      <Checkbox
+                        checked={allowDownload}
+                        onChange={setAllowDownload}
+                        label={
+                          <span className="flex items-center gap-2">
+                            <Download className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                            {isEn ? 'Allow download' : 'Autoriser téléchargement'}
+                          </span>
+                        }
+                        size="sm"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="p-2 rounded-lg hover:bg-black/5 transition-colors">
+                    <Checkbox
+                      checked={requireAuth}
+                      onChange={setRequireAuth}
+                      label={
+                        <span className="flex items-center gap-2">
+                          <Eye className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          {isEn ? 'Require login' : 'Connexion requise'}
+                        </span>
+                      }
+                      size="sm"
+                    />
+                  </div>
                 </div>
               </div>
             </>

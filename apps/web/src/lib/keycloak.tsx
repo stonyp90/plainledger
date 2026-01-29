@@ -6,6 +6,9 @@ import Keycloak from 'keycloak-js';
 const MOCK_AUTH_ENABLED = import.meta.env.VITE_MOCK_AUTH === 'true' || 
   (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false');
 
+// Export for use in other modules that need to skip API calls in mock mode
+export const isMockAuthEnabled = () => MOCK_AUTH_ENABLED;
+
 // Key for persisting mock auth logout state
 const MOCK_AUTH_LOGGED_OUT_KEY = 'plainledger_mock_auth_logged_out';
 
@@ -25,20 +28,20 @@ const keycloakConfig = {
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web',
 };
 
-// Mock user for development
+// Mock user for development - Set to free-org to test free tier features
 const MOCK_USER: UserProfile = {
-  id: 'mock-user-001',
-  email: 'admin@plainledger.ca',
-  name: 'Admin User',
-  firstName: 'Admin',
+  id: 'mock-user-free',
+  email: 'free@plainledger.ca',
+  name: 'Free User',
+  firstName: 'Free',
   lastName: 'User',
-  organization: 'PlainLedger Demo',
-  roles: ['admin', 'user'],
+  organization: 'free-org',  // Matches free tier mock tenant
+  roles: ['user'],
   locale: 'en',
   emailVerified: true,
   identityProvider: 'local',
   // Professional avatar from DiceBear API
-  picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=AdminUser&backgroundColor=b6e3f4&clothesColor=3c4f5c&clothingGraphic=bear&eyebrows=default&eyes=default&facialHair=blank&hairColor=2c1b18&mouth=smile&skinColor=f8d25c&top=shortHair',
+  picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FreeUser&backgroundColor=b6e3f4&clothesColor=3c4f5c&clothingGraphic=bear&eyebrows=default&eyes=default&facialHair=blank&hairColor=2c1b18&mouth=smile&skinColor=f8d25c&top=shortHair',
 };
 
 // Singleton keycloak instance
@@ -233,16 +236,9 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
     // Mock authentication mode for development/testing (only if no stored tokens)
     if (MOCK_AUTH_ENABLED) {
-      // Check if user explicitly logged out - respect that choice
-      const isLoggedOut = localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY) === 'true';
-      if (isLoggedOut) {
-        console.log('🔓 Mock authentication enabled - user logged out, staying logged out');
-        setAuthenticated(false);
-        setUser(null);
-        setInitialized(true);
-        return;
-      }
-      console.log('🔓 Mock authentication enabled - bypassing Keycloak');
+      // Clear any logged out state - always auto-login in mock mode for development
+      localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
+      console.log('🔓 Mock authentication enabled - auto-login with free tier user');
       setAuthenticated(true);
       setUser(MOCK_USER);
       setInitialized(true);
@@ -320,30 +316,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
   // Login with optional email/loginHint (for custom login form) or IDP hint (e.g., 'google', 'microsoft', 'saml')
   const login = (emailOrIdpHint?: string) => {
-    // Mock auth mode - just set authenticated
-    if (MOCK_AUTH_ENABLED) {
-      // Check if user explicitly logged out - redirect to landing instead of auto-login
-      const isLoggedOut = localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY) === 'true';
-      if (isLoggedOut) {
-        // Don't auto-login, redirect to landing page
-        window.location.replace(window.location.origin);
-        return;
-      }
-      // Clear logged out state so user stays logged in on refresh
-      localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
-      setAuthenticated(true);
-      setUser(MOCK_USER);
-      return;
-    }
-
-    // If Keycloak is not available, show a message
-    if (!KEYCLOAK_AVAILABLE) {
-      console.warn('Keycloak not configured - login unavailable');
-      alert('Authentication is not configured. Please contact support.');
-      return;
-    }
-    
-    // Redirect to our custom login page instead of Keycloak's UI
+    // Always redirect to custom login page - consistent behavior in all modes
     // This maintains our custom UI/UX while using Keycloak securely via API
     const loginUrl = '/login' + (emailOrIdpHint && emailOrIdpHint.includes('@') 
       ? `?email=${encodeURIComponent(emailOrIdpHint)}` 
@@ -353,20 +326,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
   // Register (signup) - navigates to custom registration page that uses Keycloak Admin API
   const register = (redirectUri?: string) => {
-    console.log('[Auth] register() called, MOCK_AUTH_ENABLED:', MOCK_AUTH_ENABLED);
-    // Mock auth mode - just set authenticated and navigate
-    if (MOCK_AUTH_ENABLED) {
-      console.log('[Auth] Mock mode - navigating to onboarding');
-      // Clear logged out state so user stays logged in on refresh
-      localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
-      setAuthenticated(true);
-      setUser(MOCK_USER);
-      // Use assign for more reliable navigation
-      window.location.assign(redirectUri || '/onboarding');
-      return;
-    }
-
-    // Navigate to custom signup page that uses Keycloak Admin API
+    // Always redirect to custom signup page - consistent behavior in all modes
     // This maintains our custom UI/UX instead of redirecting to Keycloak's UI
     const signupUrl = '/signup' + (redirectUri ? `?redirect=${encodeURIComponent(redirectUri)}` : '');
     window.location.href = signupUrl;

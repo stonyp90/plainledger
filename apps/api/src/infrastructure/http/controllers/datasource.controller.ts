@@ -126,7 +126,7 @@ export class DataSourceController {
   @ApiOperation({ summary: "List all data source connections" })
   @ApiResponse({ status: 200, description: "List of data sources" })
   async listDataSources(
-    @Query("tenantId") tenantId?: string,
+    @Query("tenantId") _tenantId?: string,
   ): Promise<DataSourceResponseDto[]> {
     // In production, this would query the database
     return mockDataSources;

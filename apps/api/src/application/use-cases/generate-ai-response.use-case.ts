@@ -11,7 +11,7 @@
 
 import { Injectable, Inject, Logger } from "@nestjs/common";
 import { IAIService } from "@application/ports/outbound/IAIService";
-import { AIResponse, AIGenerationOptions } from "@infrastructure/ai/ai.service";
+import { AIResponse } from "@infrastructure/ai/ai.service";
 
 export interface GenerateAIResponseRequest {
   prompt: string;

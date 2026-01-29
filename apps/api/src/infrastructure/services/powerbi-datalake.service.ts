@@ -213,7 +213,7 @@ export class PowerBIDatalakeService implements IPowerBIDatalakeService {
   async generateSecureDataUrl(
     access: SecureDataAccess,
     tableName: string,
-    format: "parquet" | "json" = "parquet",
+    _format: "parquet" | "json" = "parquet",
   ): Promise<string> {
     // Verify the access signature
     if (!this.verifyAccessSignature(access)) {

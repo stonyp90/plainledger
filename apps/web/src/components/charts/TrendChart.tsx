@@ -8,6 +8,7 @@ import {
   FinancialDataPoint,
 } from '../../lib/anomalyDetection';
 import { ChartTooltip, DataPointTooltip } from './ChartTooltip';
+import { ChartEmptyState } from '../EmptyDataState';
 
 interface TrendChartProps {
   data: FinancialDataPoint[];
@@ -232,11 +233,10 @@ export default function TrendChart({
         >
           {isEn && titleEn ? titleEn : title}
         </h3>
-        <div 
-          className="flex items-center justify-center"
-          style={{ height: `${height}px`, color: 'rgb(var(--color-text-muted))' }}
-        >
-          {isEn ? 'No data available' : 'Aucune donnée disponible'}
+        <div style={{ height: `${height}px` }}>
+          <ChartEmptyState 
+            message={isEn ? 'No trend data available' : 'Aucune donnée de tendance disponible'}
+          />
         </div>
       </div>
     );

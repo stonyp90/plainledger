@@ -369,6 +369,38 @@ export const reportsApi = {
     api.get<{ url: string }>(`/reports/${id}/export`, { params: { format } }),
   
   delete: (id: string) => api.delete(`/reports/${id}`),
+  
+  // Share report
+  createShareLink: (data: {
+    reportId?: string;
+    reportType: string;
+    shareUrl: string;
+    password?: string;
+    expiresIn: string;
+    allowDownload: boolean;
+    requireAuth: boolean;
+  }) => api.post<{ id: string; shareToken: string; shareUrl: string }>('/reports/share', data),
+  
+  getShareLink: (shareToken: string) =>
+    api.get<{
+      id: string;
+      shareToken: string;
+      shareUrl: string;
+      expiresAt?: string;
+      allowDownload: boolean;
+      requireAuth: boolean;
+      isActive: boolean;
+    }>(`/reports/share/${shareToken}`),
+  
+  updateShareLink: (shareToken: string, data: {
+    expiresIn?: string;
+    allowDownload?: boolean;
+    requireAuth?: boolean;
+    isActive?: boolean;
+  }) => api.patch(`/reports/share/${shareToken}`, data),
+  
+  deleteShareLink: (shareToken: string) =>
+    api.delete(`/reports/share/${shareToken}`),
 };
 
 // Anomalies
@@ -411,6 +443,29 @@ export const auditApi = {
   
   export: (params?: { from?: string; to?: string }) =>
     api.get<{ url: string }>('/audit-logs/export', { params }),
+};
+
+// Tax Credits
+export const taxCreditsApi = {
+  requestConsultation: (data: {
+    organizationId: string;
+    taxCreditId: string;
+    contactInfo: {
+      name: string;
+      email: string;
+      phone?: string;
+      companyName?: string;
+      notes?: string;
+    };
+  }) => api.post<boolean>('/tax-credits/consultation', data),
+  
+  getEligibility: (organizationId: string, fiscalYear?: number) =>
+    api.get<unknown[]>(`/tax-credits/eligibility/${organizationId}`, {
+      params: { fiscalYear },
+    }),
+  
+  getAvailableCredits: (params?: { industryId?: string; province?: string }) =>
+    api.get<unknown[]>('/tax-credits', { params }),
 };
 
 export default api;

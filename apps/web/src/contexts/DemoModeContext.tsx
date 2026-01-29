@@ -23,10 +23,14 @@ interface DemoModeProviderProps {
 }
 
 export function DemoModeProvider({ children }: DemoModeProviderProps) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   // Check if user is in demo-signup organization - auto-enable demo mode
   const isDemoSignupUser = user?.organization === 'demo-signup';
+  
+  // Check if user has a real organization (not demo-signup)
+  // Users with real orgs should see real data by default
+  const hasRealOrganization = isAuthenticated && user?.organization && user.organization !== 'demo-signup';
   
   // Load demo mode preference from localStorage or auto-enable for demo-signup users
   const [isDemoMode, setIsDemoModeState] = useState<boolean>(() => {
@@ -34,6 +38,13 @@ export function DemoModeProvider({ children }: DemoModeProviderProps) {
     if (isDemoSignupUser) {
       return true;
     }
+    // For users with real organizations, default to real data (not demo)
+    if (hasRealOrganization) {
+      const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
+      // Only use saved value if explicitly set to true, otherwise default to false
+      return saved === 'true';
+    }
+    // For unauthenticated users, check localStorage
     const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
     return saved === 'true';
   });
@@ -44,6 +55,17 @@ export function DemoModeProvider({ children }: DemoModeProviderProps) {
       setIsDemoModeState(true);
     }
   }, [isDemoSignupUser, isDemoMode]);
+  
+  // Auto-disable demo mode for users with real organizations (on first login)
+  useEffect(() => {
+    if (hasRealOrganization && isDemoMode) {
+      // Check if this is a fresh session (no explicit demo mode preference)
+      const saved = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
+      if (saved !== 'true') {
+        setIsDemoModeState(false);
+      }
+    }
+  }, [hasRealOrganization, isDemoMode]);
 
   // Save to localStorage whenever it changes
   useEffect(() => {

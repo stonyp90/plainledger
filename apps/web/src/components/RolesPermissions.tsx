@@ -100,6 +100,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     permissions: [
       { id: 'view:plainledger_analytics', nameEn: 'View PlainLedger Analytics', nameFr: 'Voir analytique PlainLedger' },
       { id: 'view:powerbi_analytics', nameEn: 'View Power BI Analytics', nameFr: 'Voir analytique Power BI' },
+      { id: 'view:market_analysis', nameEn: 'View Market Analysis', nameFr: 'Voir l\'analyse de marché', descEn: 'Access AI-powered industry benchmarks', descFr: 'Accéder aux benchmarks sectoriels IA' },
       { id: 'manage:org_features', nameEn: 'Configure Organization Features', nameFr: 'Configurer fonctionnalités organisation', critical: true },
     ],
   },
@@ -207,7 +208,7 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     permissions: [
       'view:connections', 'view:dashboard', 'view:reports', 'create:reports', 
       'edit:reports', 'export:reports', 'view:anomalies', 'resolve:anomalies',
-      'view:members', 'view:settings', 'use:api'
+      'view:members', 'view:settings', 'use:api', 'view:market_analysis'
     ],
   },
   {
@@ -222,7 +223,7 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     isSystem: true,
     permissions: [
       'view:connections', 'view:dashboard', 'view:reports', 'view:anomalies',
-      'view:members', 'view:settings'
+      'view:members', 'view:settings', 'view:market_analysis'
     ],
   },
 ];

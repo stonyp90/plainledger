@@ -7,7 +7,6 @@
 import {
   Field,
   ObjectType,
-  ID,
   Float,
   Int,
   registerEnumType,

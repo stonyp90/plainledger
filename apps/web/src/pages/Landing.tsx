@@ -34,6 +34,11 @@ import {
   Smartphone,
   Hash,
   Users,
+  DollarSign,
+  Building2,
+  ExternalLink,
+  UtensilsCrossed,
+  Hammer,
 } from 'lucide-react';
 
 // =====================================================
@@ -683,7 +688,7 @@ function AnimatedAreaChart({
 
 function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: boolean; theme: typeof colors.light; isEn: boolean; isVisible: boolean }) {
   const [showElements, setShowElements] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState(0);
+  const [selectedIndustry, setSelectedIndustry] = useState(0); // Default to Real Estate (first in array)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
   const [roadmapView, setRoadmapView] = useState<'quarterly' | 'monthly' | 'yearly'>('quarterly');
@@ -695,71 +700,17 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
     }
   }, [isVisible]);
 
-  // Industry-specific configurations
+  // Industry-specific configurations - Real Estate first as primary focus
   const industries = [
-    { 
-      id: 'restaurant',
-      name: isEn ? 'Restaurant' : 'Restauration',
-      icon: 'R',
-      iconColor: theme.green,
-      kpis: [
-        { 
-          label: isEn ? 'Revenue' : 'Revenus', 
-          value: '$847K', 
-          data: [42, 45, 48, 52, 58, 54, 62, 68, 72, 78, 82, 85], 
-          projection: true,
-          threshold: isEn ? 'Target: $800K+' : 'Cible: 800K$+',
-          target: '$800K',
-          previous: '$780K',
-          insight: isEn ? '+8.6% vs last month' : '+8,6% vs mois dernier'
-        },
-        { 
-          label: isEn ? 'Food Cost %' : 'Coût nourriture', 
-          value: '28.5%', 
-          data: [32, 30, 29, 31, 28, 29, 27, 28, 29, 28, 28.5, 28], 
-          projection: false,
-          threshold: isEn ? 'Target: 25-35%' : 'Cible: 25-35%',
-          target: '30%',
-          previous: '29.2%',
-          insight: isEn ? 'Within optimal range' : 'Dans la plage optimale'
-        },
-        { 
-          label: isEn ? 'Labor Cost %' : 'Coût M-O', 
-          value: '24.2%', 
-          data: [26, 25, 24, 25, 24, 23, 24, 25, 24, 24, 24, 24.2], 
-          projection: false,
-          threshold: isEn ? 'Target: 20-30%' : 'Cible: 20-30%',
-          target: '25%',
-          previous: '24.8%',
-          insight: isEn ? 'Optimized scheduling working' : 'Planification optimisée efficace'
-        },
-        { 
-          label: isEn ? 'Prime Cost' : 'Coût principal', 
-          value: '52.7%', 
-          data: [58, 55, 53, 56, 52, 52, 51, 53, 53, 52, 52.5, 52.7], 
-          projection: true,
-          threshold: isEn ? 'Target: 55-65%' : 'Cible: 55-65%',
-          target: '60%',
-          previous: '54.0%',
-          insight: isEn ? 'Excellent - below target' : 'Excellent - sous la cible'
-        },
-      ],
-      benchmarks: [
-        { metric: isEn ? 'Food Cost %' : 'Coût nourriture %', yours: '28.5%', target: '25-35%', status: 'good' },
-        { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '24.2%', target: '20-30%', status: 'good' },
-        { metric: isEn ? 'Prime Cost %' : 'Coût principal %', yours: '52.7%', target: '55-65%', status: 'excellent' },
-        { metric: isEn ? 'Net Margin' : 'Marge nette', yours: '8.2%', target: '6-9%', status: 'good' },
-        { metric: isEn ? 'Beverage Cost %' : 'Coût boissons %', yours: '18.4%', target: '18-24%', status: 'excellent' },
-      ]
-    },
     { 
       id: 'realestate',
       name: isEn ? 'Real Estate' : 'Immobilier',
-      icon: 'RE',
-      iconColor: theme.gold,
+      icon: Building2,
+      iconColor: theme.green,
       kpis: [
         { 
-          label: isEn ? 'NOI' : 'Bénéfice net', 
+          label: isEn ? 'NOI' : 'RNE', 
+          labelFull: isEn ? 'Net Operating Income' : 'Résultat net d\'exploitation',
           value: '$1.2M', 
           data: [85, 88, 92, 95, 98, 102, 108, 112, 115, 118, 120, 124], 
           projection: true,
@@ -770,6 +721,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         },
         { 
           label: isEn ? 'Occupancy' : 'Occupation', 
+          labelFull: isEn ? 'Occupancy Rate' : 'Taux d\'occupation',
           value: '94.5%', 
           data: [88, 89, 90, 91, 92, 93, 93, 94, 94, 94, 94.5, 95], 
           projection: true,
@@ -780,6 +732,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         },
         { 
           label: isEn ? 'Cap Rate' : 'Taux cap.', 
+          labelFull: isEn ? 'Capitalization Rate' : 'Taux de capitalisation',
           value: '6.8%', 
           data: [7.2, 7.1, 7.0, 6.9, 6.9, 6.8, 6.8, 6.8, 6.7, 6.8, 6.8, 6.8], 
           projection: false,
@@ -789,7 +742,8 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           insight: isEn ? 'Healthy returns' : 'Rendements sains'
         },
         { 
-          label: isEn ? 'Cash-on-Cash' : 'Rendement', 
+          label: isEn ? 'Cash-on-Cash' : 'Rend. cash', 
+          labelFull: isEn ? 'Cash-on-Cash Return' : 'Rendement cash-on-cash',
           value: '12.4%', 
           data: [10, 10.5, 11, 11.2, 11.5, 11.8, 12, 12.1, 12.2, 12.3, 12.4, 12.5], 
           projection: true,
@@ -800,100 +754,197 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Occupancy Rate' : 'Taux occupation', yours: '94.5%', target: '90-95%', status: 'good' },
-        { metric: isEn ? 'Cap Rate' : 'Taux capitalisation', yours: '6.8%', target: '5-8%', status: 'good' },
-        { metric: isEn ? 'Cash-on-Cash' : 'Rendement cash', yours: '12.4%', target: '8-12%', status: 'excellent' },
-        { metric: 'DSC Ratio', yours: '1.35', target: '>1.25', status: 'good' },
+        { metric: isEn ? 'Occupancy Rate' : 'Taux d\'occupation', yours: '94.5%', target: '90-95%', status: 'good' },
+        { metric: isEn ? 'Cap Rate' : 'Taux de capitalisation', yours: '6.8%', target: '5-8%', status: 'good' },
+        { metric: isEn ? 'Cash-on-Cash Return' : 'Rendement cash-on-cash', yours: '12.4%', target: '8-12%', status: 'excellent' },
+        { metric: isEn ? 'DSC Ratio' : 'Ratio couverture dette', yours: '1.35', target: '>1.25', status: 'good' },
+        { metric: isEn ? 'Operating Expense Ratio' : 'Ratio dépenses exploitation', yours: '38%', target: '35-45%', status: 'good' },
+        { metric: isEn ? 'Rent per Sq Ft' : 'Loyer par pi²', yours: '$18.50', target: '$17-20', status: 'excellent' },
+      ],
+      roadmapItems: [
+        { 
+          plan: isEn ? 'Property Acquisition' : 'Acquisition propriété', 
+          start: 0, 
+          end: 25, 
+          color: theme.green,
+        },
+        { 
+          plan: isEn ? 'Renovation Phase' : 'Phase rénovation', 
+          start: 20, 
+          end: 55, 
+          color: theme.gold,
+        },
+        { 
+          plan: isEn ? 'Lease-up Strategy' : 'Stratégie location', 
+          start: 45, 
+          end: 100, 
+          color: theme.green,
+        },
       ]
     },
     { 
-      id: 'saas',
-      name: 'SaaS / Tech',
-      icon: 'S',
-      iconColor: theme.green,
+      id: 'restaurant',
+      name: isEn ? 'Restaurant' : 'Restauration',
+      icon: UtensilsCrossed,
+      iconColor: theme.gold,
       kpis: [
         { 
-          label: 'ARR', 
-          value: '$2.8M', 
-          data: [1.5, 1.7, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8], 
+          label: isEn ? 'Revenue' : 'Revenus', 
+          labelFull: isEn ? 'Total Revenue' : 'Revenus totaux',
+          value: '$847K', 
+          data: [42, 45, 48, 52, 58, 54, 62, 68, 72, 78, 82, 85], 
           projection: true,
-          threshold: isEn ? 'Target: $2.5M+' : 'Cible: 2,5M$+',
-          target: '$2.5M',
-          previous: '$2.6M',
-          insight: isEn ? '+7.7% growth rate' : '+7,7% taux de croissance'
+          threshold: isEn ? 'Target: $800K+' : 'Cible: 800K$+',
+          target: '$800K',
+          previous: '$780K',
+          insight: isEn ? '+8.6% vs last month' : '+8,6% vs mois dernier'
         },
         { 
-          label: isEn ? 'Cash' : 'Trésorerie', 
-          value: '$4.6M', 
-          data: [3.2, 3.4, 3.6, 3.8, 4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.55, 4.6], 
-          projection: true,
-          threshold: isEn ? 'Target: $4.0M+' : 'Cible: 4,0M$+',
-          target: '$4.0M',
-          previous: '$4.4M',
-          insight: isEn ? 'Strong cash position' : 'Position de trésorerie solide'
-        },
-        { 
-          label: isEn ? 'Avg ACV' : 'ACV moyen', 
-          value: '$23K', 
-          data: [18, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 23], 
+          label: isEn ? 'Food Cost %' : 'Coût nourr.', 
+          labelFull: isEn ? 'Food Cost Percentage' : 'Pourcentage coût nourriture',
+          value: '28.5%', 
+          data: [32, 30, 29, 31, 28, 29, 27, 28, 29, 28, 28.5, 28], 
           projection: false,
-          threshold: isEn ? 'Target: $20K+' : 'Cible: 20K$+',
-          target: '$20K',
-          previous: '$22K',
-          insight: isEn ? 'Higher value customers' : 'Clients à plus haute valeur'
+          threshold: isEn ? 'Target: 25-35%' : 'Cible: 25-35%',
+          target: '30%',
+          previous: '29.2%',
+          insight: isEn ? 'Within optimal range' : 'Dans la plage optimale'
         },
         { 
-          label: 'Runway', 
-          value: isEn ? '14 Mo' : '14 mois', 
-          data: [18, 17, 16, 16, 15, 15, 14, 14, 14, 14, 14, 14], 
+          label: isEn ? 'Labor Cost %' : 'Coût M-O', 
+          labelFull: isEn ? 'Labor Cost Percentage' : 'Pourcentage coût main-d\'œuvre',
+          value: '24.2%', 
+          data: [26, 25, 24, 25, 24, 23, 24, 25, 24, 24, 24, 24.2], 
+          projection: false,
+          threshold: isEn ? 'Target: 20-30%' : 'Cible: 20-30%',
+          target: '25%',
+          previous: '24.8%',
+          insight: isEn ? 'Optimized scheduling' : 'Planification optimisée'
+        },
+        { 
+          label: isEn ? 'Prime Cost' : 'Coût princ.', 
+          labelFull: isEn ? 'Prime Cost (Food + Labor)' : 'Coût principal (Nourr. + M-O)',
+          value: '52.7%', 
+          data: [58, 55, 53, 56, 52, 52, 51, 53, 53, 52, 52.5, 52.7], 
           projection: true,
-          threshold: isEn ? 'Target: 12+ months' : 'Cible: 12+ mois',
-          target: '12 Mo',
-          previous: '15 Mo',
-          insight: isEn ? 'Adequate runway' : 'Runway adéquat'
+          threshold: isEn ? 'Target: 55-65%' : 'Cible: 55-65%',
+          target: '60%',
+          previous: '54.0%',
+          insight: isEn ? 'Excellent, below target' : 'Excellent, sous la cible'
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Net Retention' : 'Rétention nette', yours: '115%', target: '>100%', status: 'excellent' },
-        { metric: isEn ? 'Gross Margin' : 'Marge brute', yours: '78%', target: '70-85%', status: 'good' },
-        { metric: 'CAC Payback', yours: isEn ? '12 mo' : '12 mois', target: '<18 mo', status: 'good' },
-        { metric: isEn ? 'Magic Number' : 'Nombre magique', yours: '0.85', target: '>0.75', status: 'good' },
+        { metric: isEn ? 'Food Cost %' : 'Coût nourriture %', yours: '28.5%', target: '25-35%', status: 'good' },
+        { metric: isEn ? 'Labor Cost %' : 'Coût main-d\'œuvre %', yours: '24.2%', target: '20-30%', status: 'good' },
+        { metric: isEn ? 'Prime Cost %' : 'Coût principal %', yours: '52.7%', target: '55-65%', status: 'excellent' },
+        { metric: isEn ? 'Net Margin' : 'Marge nette', yours: '8.2%', target: '6-9%', status: 'good' },
+        { metric: isEn ? 'Beverage Cost %' : 'Coût boissons %', yours: '18.4%', target: '18-24%', status: 'excellent' },
+      ],
+      roadmapItems: [
+        { 
+          plan: isEn ? 'Q1 Expansion' : 'Expansion Q1', 
+          start: 0, 
+          end: 30, 
+          color: theme.green,
+        },
+        { 
+          plan: isEn ? 'Cost Optimization' : 'Optimisation coûts', 
+          start: 20, 
+          end: 60, 
+          color: theme.gold,
+        },
+        { 
+          plan: isEn ? 'New Revenue Stream' : 'Nouveau revenu', 
+          start: 50, 
+          end: 100, 
+          color: theme.green,
+        },
+      ]
+    },
+    { 
+      id: 'construction',
+      name: 'Construction',
+      icon: Hammer,
+      iconColor: theme.green,
+      kpis: [
+        { 
+          label: isEn ? 'Revenue' : 'Revenus', 
+          labelFull: isEn ? 'Project Revenue' : 'Revenus projets',
+          value: '$3.2M', 
+          data: [2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.0, 3.1, 3.1, 3.2, 3.2], 
+          projection: true,
+          threshold: isEn ? 'Target: $3.0M+' : 'Cible: 3,0M$+',
+          target: '$3.0M',
+          previous: '$3.0M',
+          insight: isEn ? '+6.7% vs last quarter' : '+6,7% vs trimestre dernier'
+        },
+        { 
+          label: isEn ? 'Gross Margin' : 'Marge brute', 
+          labelFull: isEn ? 'Gross Margin %' : 'Marge brute %',
+          value: '22.5%', 
+          data: [18, 19, 19.5, 20, 20.5, 21, 21.5, 21.8, 22, 22.2, 22.4, 22.5], 
+          projection: true,
+          threshold: isEn ? 'Target: 15-30%' : 'Cible: 15-30%',
+          target: '20%',
+          previous: '21.2%',
+          insight: isEn ? 'Better cost control' : 'Meilleur contrôle des coûts'
+        },
+        { 
+          label: isEn ? 'Backlog' : 'Carnet', 
+          labelFull: isEn ? 'Backlog (Months)' : 'Carnet de commandes (mois)',
+          value: isEn ? '8 Mo' : '8 mois', 
+          data: [5, 5.5, 6, 6.2, 6.5, 6.8, 7, 7.2, 7.5, 7.8, 8, 8], 
+          projection: false,
+          threshold: isEn ? 'Target: 3-12 months' : 'Cible: 3-12 mois',
+          target: '6 Mo',
+          previous: '7 Mo',
+          insight: isEn ? 'Strong pipeline' : 'Pipeline solide'
+        },
+        { 
+          label: isEn ? 'Bid Win' : 'Soumissions', 
+          labelFull: isEn ? 'Bid-to-Win Ratio' : 'Ratio soumissions gagnées',
+          value: '24%', 
+          data: [18, 19, 19.5, 20, 21, 21.5, 22, 22.5, 23, 23.5, 24, 24], 
+          projection: true,
+          threshold: isEn ? 'Target: 15-25%' : 'Cible: 15-25%',
+          target: '20%',
+          previous: '22%',
+          insight: isEn ? 'Competitive pricing' : 'Prix compétitifs'
+        },
+      ],
+      benchmarks: [
+        { metric: isEn ? 'Gross Margin' : 'Marge brute', yours: '22.5%', target: '15-30%', status: 'good' },
+        { metric: isEn ? 'Backlog (Months)' : 'Carnet (mois)', yours: '8', target: '3-12', status: 'good' },
+        { metric: isEn ? 'Bid-to-Win Ratio' : 'Ratio soumissions', yours: '24%', target: '15-25%', status: 'excellent' },
+        { metric: isEn ? 'Job Margin Variance' : 'Écart marge projet', yours: '2.1%', target: '<5%', status: 'excellent' },
+      ],
+      roadmapItems: [
+        { 
+          plan: isEn ? 'Equipment Purchase' : 'Achat équipement', 
+          start: 0, 
+          end: 25, 
+          color: theme.green,
+        },
+        { 
+          plan: isEn ? 'Workforce Expansion' : 'Expansion main-d\'œuvre', 
+          start: 20, 
+          end: 60, 
+          color: theme.gold,
+        },
+        { 
+          plan: isEn ? 'New Market Entry' : 'Nouveau marché', 
+          start: 50, 
+          end: 100, 
+          color: theme.green,
+        },
       ]
     },
   ];
 
   const current = industries[selectedIndustry];
 
-  // Strategic roadmap items
-  const roadmapItems = [
-    { 
-      plan: isEn ? 'Q1 Expansion' : 'Expansion Q1', 
-      start: 0, 
-      end: 30, 
-      color: theme.green,
-      details: isEn ? 'Open 2 new locations, hire 15 staff' : 'Ouvrir 2 nouveaux emplacements, embaucher 15 employés',
-      budget: isEn ? '$450K' : '450K$',
-      status: isEn ? 'On track' : 'Dans les temps'
-    },
-    { 
-      plan: isEn ? 'Cost Optimization' : 'Optimisation coûts', 
-      start: 20, 
-      end: 60, 
-      color: theme.gold,
-      details: isEn ? 'Reduce overhead by 12%, automate processes' : 'Réduire les frais généraux de 12%, automatiser les processus',
-      budget: isEn ? 'Save $180K/yr' : 'Économiser 180K$/an',
-      status: isEn ? 'In progress' : 'En cours'
-    },
-    { 
-      plan: isEn ? 'New Revenue Stream' : 'Nouveau revenu', 
-      start: 50, 
-      end: 100, 
-      color: theme.green,
-      details: isEn ? 'Launch catering service, target $200K ARR' : 'Lancer service traiteur, cible 200K$ ARR',
-      budget: isEn ? '$120K investment' : '120K$ investissement',
-      status: isEn ? 'Planned' : 'Planifié'
-    },
-  ];
+  // Get roadmap items from current industry
+  const roadmapItems = current.roadmapItems;
 
   return (
     <div 
@@ -903,7 +954,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.6)'}`,
       }}
     >
-      {/* Top Bar */}
+      {/* Top Bar - Browser Chrome Style */}
       <div 
         className="h-10 sm:h-12 flex items-center px-3 sm:px-4 gap-3 border-b"
         style={{ 
@@ -917,27 +968,40 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
         
-        {/* Industry Selector Dropdown */}
-        <div 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-black/5 transition-colors"
-          style={{ backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.8)' }}
-        >
-          <span className="text-sm">{current.icon}</span>
-          <span className="text-[10px] sm:text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-            {current.name}
-          </span>
-          <ArrowDownRight className="w-3 h-3 rotate-45" style={{ color: 'rgb(var(--color-text-muted))' }} />
+        {/* Industry Tabs - Switchable */}
+        <div className="flex items-center gap-1 ml-2">
+          {industries.map((industry, idx) => (
+            <button
+              key={industry.id}
+              onClick={() => setSelectedIndustry(idx)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all"
+              style={{ 
+                backgroundColor: selectedIndustry === idx ? `${industry.iconColor}15` : 'transparent',
+                color: selectedIndustry === idx ? industry.iconColor : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
+                border: selectedIndustry === idx ? `1px solid ${industry.iconColor}30` : '1px solid transparent',
+              }}
+            >
+              <industry.icon className="w-3.5 h-3.5" style={{ color: selectedIndustry === idx ? industry.iconColor : undefined }} />
+              <span className="hidden sm:inline">{industry.name}</span>
+            </button>
+          ))}
         </div>
         
         <div className="flex-1" />
         
         <div className="hidden sm:flex items-center gap-2">
+          {/* Real-time badge */}
           <div 
-            className="px-3 py-1 rounded-md text-[10px] font-medium"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium"
             style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
           >
+            <div className="relative">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+              <div className="absolute inset-0 w-1.5 h-1.5 rounded-full animate-ping" style={{ backgroundColor: theme.green, opacity: 0.5 }} />
+            </div>
             {isEn ? 'Live Data' : 'Temps réel'}
           </div>
+          {/* User avatar */}
           <div className="w-7 h-7 rounded-full overflow-hidden border-2 shadow-sm" style={{ borderColor: theme.green }}>
             <img 
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" 
@@ -949,133 +1013,137 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
       </div>
       
       <div className="flex">
-        {/* Sidebar - Hidden on mobile */}
+        {/* Sidebar - Hidden on mobile - Matches App Layout */}
         <div 
-          className="hidden md:flex flex-col w-48 border-r py-3 px-2"
+          className="hidden md:flex flex-col w-52 border-r py-3 px-2"
           style={{ 
             backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(250, 250, 250, 0.8)',
             borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
           }}
         >
+          {/* Logo Header - Matches App */}
+          <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
+            <div 
+              className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 2px 6px ${theme.green}40`
+              }}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
+                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
+                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              Plain<span style={{ color: theme.green }}>Ledger</span>
+            </span>
+          </div>
           
-          {/* Board - Active with sub-items */}
+          {/* Dashboard - Active */}
           <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '0ms' }}>
             <div 
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-semibold cursor-pointer"
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-semibold cursor-pointer"
               style={{ 
                 backgroundColor: `${theme.green}15`,
                 color: theme.green,
               }}
             >
-              <BarChart3 className="w-3.5 h-3.5" />
-              {isEn ? 'Board' : 'Tableau'}
-            </div>
-            {/* Sub-items - Left aligned */}
-            <div className="mt-1 space-y-0.5 pl-4">
-              {[
-                { label: isEn ? 'Overview' : 'Aperçu', active: true },
-                { label: isEn ? 'Cash Flow' : 'Flux de trésorerie', active: false },
-                { label: isEn ? 'P&L Analysis' : 'Analyse P&L', active: false },
-              ].map((sub, j) => (
-                <div 
-                  key={j}
-                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
-                  style={{ 
-                    color: sub.active ? theme.green : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                    backgroundColor: sub.active ? `${theme.green}08` : 'transparent',
-                    borderLeft: `2px solid ${sub.active ? theme.green : 'transparent'}`
-                  }}
-                >
-                  {sub.label}
-                </div>
-              ))}
+              <BarChart3 className="w-4 h-4" />
+              {isEn ? 'Dashboard' : 'Tableau de bord'}
             </div>
           </div>
           
-          {/* Industry KPIs */}
+          {/* Visualizations */}
           <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '50ms' }}>
             <div 
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium cursor-pointer hover:bg-opacity-50 transition-colors"
-              style={{ 
-                color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
-              }}
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
-              <TrendingUp className="w-3.5 h-3.5" style={{ color: theme.gold }} />
-              {isEn ? 'Industry KPIs' : 'KPIs sectoriels'}
-            </div>
-            <div className="mt-1 space-y-0.5 pl-4">
-              {[
-                { label: isEn ? 'Benchmarks' : 'Références' },
-                { label: isEn ? 'Trends' : 'Tendances' },
-              ].map((sub, j) => (
-                <div 
-                  key={j}
-                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
-                  style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
-                >
-                  {sub.label}
-                </div>
-              ))}
+              <TrendingUp className="w-4 h-4" />
+              {isEn ? 'Visualizations' : 'Visualisations'}
             </div>
           </div>
           
-          {/* Scenarios */}
+          {/* Strategic Planning */}
           <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '100ms' }}>
             <div 
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium cursor-pointer hover:bg-opacity-50 transition-colors"
-              style={{ 
-                color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
-              }}
+              className="flex items-center justify-start gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors text-left"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
-              <Target className="w-3.5 h-3.5" style={{ color: theme.gold }} />
-              {isEn ? 'Scenarios' : 'Scénarios'}
+              <Target className="w-4 h-4 flex-shrink-0" />
+              <span className="text-left">{isEn ? 'Strategic Planning' : 'Planification stratégique'}</span>
             </div>
-            <div className="mt-1 space-y-0.5 pl-4">
-              {[
-                { label: isEn ? 'What-If' : 'Simulation' },
-                { label: isEn ? 'Forecasts' : 'Prévisions' },
-              ].map((sub, j) => (
-                <div 
-                  key={j}
-                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
-                  style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
-                >
-                  {sub.label}
-                </div>
-              ))}
+          </div>
+          
+          {/* Anomalies */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '150ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              <AlertCircle className="w-4 h-4" />
+              {isEn ? 'Anomalies' : 'Anomalies'}
+              <span 
+                className="ml-auto flex items-center justify-center w-4 h-4 text-[9px] rounded-full font-semibold"
+                style={{ backgroundColor: 'rgb(239, 68, 68)', color: 'white' }}
+              >
+                2
+              </span>
+            </div>
+          </div>
+          
+          {/* Connections */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '200ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              <Database className="w-4 h-4" />
+              {isEn ? 'Connections' : 'Connexions'}
             </div>
           </div>
           
           {/* Reports */}
-          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '150ms' }}>
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '250ms' }}>
             <div 
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] font-medium cursor-pointer hover:bg-opacity-50 transition-colors"
-              style={{ 
-                color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
-              }}
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
-              <FileCheck className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              <FileCheck className="w-4 h-4" />
               {isEn ? 'Reports' : 'Rapports'}
-            </div>
-            <div className="mt-1 space-y-0.5 pl-4">
-              {[
-                { label: isEn ? 'Monthly' : 'Mensuel' },
-                { label: isEn ? 'Custom' : 'Personnalisé' },
-              ].map((sub, j) => (
-                <div 
-                  key={j}
-                  className="text-[9px] py-1 pl-2 rounded cursor-pointer transition-colors text-left"
-                  style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
-                >
-                  {sub.label}
-                </div>
-              ))}
             </div>
           </div>
           
-          {/* AI Status */}
+          {/* Board Meeting */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '300ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              <Users className="w-4 h-4" />
+              {isEn ? 'Board Meeting' : 'Réunion CA'}
+            </div>
+          </div>
+          
+          {/* Settings */}
+          <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '350ms' }}>
+            <div 
+              className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              <Layers className="w-4 h-4" />
+              {isEn ? 'Settings' : 'Paramètres'}
+            </div>
+          </div>
+          
+          {/* AI Status - Bottom */}
           <div 
-            className="mt-auto p-3 rounded-lg"
+            className="mt-auto p-3 rounded-xl"
             style={{ 
               backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(248, 250, 252, 0.95)',
               border: `1px solid ${theme.green}25`,
@@ -1094,7 +1162,10 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-3 h-3" style={{ color: theme.gold }} />
               <p className="text-[9px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)' }}>
-                {isEn ? '3 opportunities detected' : '3 opportunités détectées'}
+                {current.id === 'realestate' 
+                  ? (isEn ? '2 rent optimization tips' : '2 conseils optimisation loyers')
+                  : (isEn ? '3 opportunities detected' : '3 opportunités détectées')
+                }
               </p>
             </div>
             <p className="text-[8px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
@@ -1289,7 +1360,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           >
             <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
               <h4 className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Industry Benchmarks' : 'Références sectorielles'} - {current.name}
+                {isEn ? 'Industry Benchmarks' : 'Références sectorielles'} {current.name}
               </h4>
               <button 
                 className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
@@ -1302,14 +1373,17 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             
             {/* Table Header */}
             <div 
-              className="grid grid-cols-5 text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
-              style={{ backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)' }}
+              className="grid text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
+                gridTemplateColumns: '2fr 1fr 1fr 1fr 60px'
+              }}
             >
-              <span style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
-              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current Score' : 'Score actuel'}</span>
-              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target Score' : 'Score cible'}</span>
-              <span className="text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}></span>
+              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
+              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current' : 'Actuel'}</span>
+              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
+              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
+              <span style={{ color: 'rgb(var(--color-text-muted))' }}></span>
             </div>
             
             {/* Table Rows */}
@@ -1322,22 +1396,28 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               return (
                 <div 
                   key={i}
-                  className={`grid grid-cols-5 text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all group ${
+                  className={`grid text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all group ${
                     hoveredRow === i ? 'bg-opacity-50' : ''
                   }`}
                   style={{ 
                     borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
-                    backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent'
+                    backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr 60px'
                   }}
                   onMouseEnter={() => setHoveredRow(i)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
-                  <span className="font-medium flex items-center gap-1" style={{ color: 'rgb(var(--color-text))' }}>
+                  <span className="font-medium flex items-center gap-1.5 text-left" style={{ color: 'rgb(var(--color-text))' }}>
                     {row.metric}
+                    <Info 
+                      className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity cursor-help" 
+                      style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                      title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}
+                    />
                   </span>
-                  <span className="text-center font-bold" style={{ color: theme.green }}>{row.yours}</span>
+                  <span className="font-bold text-left" style={{ color: theme.green }}>{row.yours}</span>
                   <span 
-                    className="text-center px-2 py-0.5 rounded-full mx-auto font-medium"
+                    className="px-2 py-0.5 rounded-full font-medium w-fit text-left"
                     style={{ 
                       backgroundColor: `${theme.gold}12`,
                       color: theme.goldDark,
@@ -1346,7 +1426,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                   >
                     {row.target}
                   </span>
-                  <div className="flex justify-center items-center gap-1">
+                  <div className="flex items-center gap-1 justify-start">
                     {isExcellent ? (
                       <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
                     ) : isGood ? (
@@ -1364,21 +1444,19 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                       {isExcellent ? (isEn ? 'Excellent' : 'Excellent') : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
                     </span>
                   </div>
-                  <div className="flex justify-end items-center">
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Could open a modal or navigate to detailed view
-                        alert(isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`);
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-opacity-50"
+                      className="opacity-60 group-hover:opacity-100 transition-opacity p-1 rounded"
                       style={{ 
-                        backgroundColor: `${theme.green}10`,
-                        color: theme.green
+                        backgroundColor: `${theme.gold}12`,
+                        color: theme.gold
                       }}
-                      title={isEn ? 'Learn more' : 'En savoir plus'}
+                      title={isEn ? 'AI Analysis' : 'Analyse IA'}
                     >
-                      <Info className="w-3 h-3" />
+                      <Sparkles className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -1393,21 +1471,21 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
 
 // Supported integrations - used inline in JSX
 
-// Theme colors
+// Theme colors - Corporate green palette (emerald-based, professional)
 const colors = {
   light: {
-    green: '#10b981',
-    greenDark: '#059669',
-    greenLight: '#34d399',
+    green: '#059669',      // emerald-600 - primary corporate green
+    greenDark: '#047857',  // emerald-700 - darker for depth
+    greenLight: '#10b981', // emerald-500 - lighter accents
     gold: '#d4af37',
     goldDark: '#b8860b',
     goldText: '#8b7355',
     navBg: 'rgba(254, 253, 251, 0.92)',
   },
   dark: {
-    green: '#34d399',
-    greenDark: '#10b981',
-    greenLight: '#6ee7b7',
+    green: '#10b981',      // emerald-500 - visible on dark bg
+    greenDark: '#059669',  // emerald-600 - darker shade
+    greenLight: '#34d399', // emerald-400 - highlights
     gold: '#fbbf24',
     goldDark: '#f59e0b',
     goldText: '#fcd34d',
@@ -1535,7 +1613,7 @@ export default function Landing() {
                   <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                   <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
                   <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
               <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
@@ -1544,23 +1622,29 @@ export default function Landing() {
             </Link>
 
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-6">
-              <a href="#industries" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            <nav className="hidden lg:flex items-center gap-4 xl:gap-5" aria-label={isEn ? 'Main navigation' : 'Navigation principale'}>
+              <a href="#features" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View features' : 'Voir les fonctionnalités'}>
+                {isEn ? 'Features' : 'Fonctionnalités'}
+              </a>
+              <a href="#industries" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View industry KPIs' : 'Voir les KPIs par industrie'}>
                 {isEn ? 'Industries' : 'Industries'}
               </a>
-              <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <a href="#pipeline" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Learn how it works' : 'Apprendre comment ça marche'}>
+                {isEn ? 'How it Works' : 'Comment ça marche'}
+              </a>
+              <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View pricing' : 'Voir les tarifs'}>
                 {isEn ? 'Pricing' : 'Tarifs'}
               </a>
-            </div>
+            </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-2 xl:gap-3">
               <ThemeToggle />
               <LanguageToggle />
               {authenticated ? (
                 <Link 
                   to="/app" 
-                  className="px-5 py-2.5 rounded-lg font-medium transition-all btn-primary btn-sm"
+                  className="px-5 py-2.5 rounded-lg font-medium transition-all btn-primary btn-sm whitespace-nowrap"
                 >
                   {isEn ? 'Go to Dashboard' : 'Accéder au dashboard'}
                 </Link>
@@ -1568,14 +1652,14 @@ export default function Landing() {
                 <>
                   <button 
                     onClick={() => login()}
-                    className="text-sm font-medium"
+                    className="text-sm font-medium whitespace-nowrap"
                     style={{ color: 'rgb(var(--color-text-secondary))' }}
                   >
                     {isEn ? 'Sign in' : 'Connexion'}
                   </button>
                   <button 
                     onClick={() => register()}
-                    className="btn-primary btn-sm"
+                    className="btn-primary btn-sm whitespace-nowrap"
                   >
                     {isEn ? 'Start free' : 'Essai gratuit'}
                   </button>
@@ -1584,7 +1668,7 @@ export default function Landing() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center gap-2">
+            <div className="lg:hidden flex items-center gap-2">
               <ThemeToggle />
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -1599,24 +1683,42 @@ export default function Landing() {
           {/* Mobile Menu Dropdown */}
           {isMobileMenuOpen && (
             <div 
-              className="md:hidden py-4 border-t"
+              className="lg:hidden py-4 border-t"
               style={{ borderColor: 'rgb(var(--color-border))' }}
             >
-              <nav className="flex flex-col gap-3">
-                <a href="#industries" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <nav className="flex flex-col gap-1" aria-label={isEn ? 'Mobile navigation' : 'Navigation mobile'}>
+                <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View features' : 'Voir les fonctionnalités'}>
+                  {isEn ? 'Features' : 'Fonctionnalités'}
+                </a>
+                <a href="#industries" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View industry KPIs' : 'Voir les KPIs par industrie'}>
                   {isEn ? 'Industries' : 'Industries'}
                 </a>
-                <a href="#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <a href="#pipeline" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Learn how it works' : 'Apprendre comment ça marche'}>
+                  {isEn ? 'How it Works' : 'Comment ça marche'}
+                </a>
+                <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View pricing' : 'Voir les tarifs'}>
                   {isEn ? 'Pricing' : 'Tarifs'}
                 </a>
-                <button 
-                  onClick={() => { login(); setIsMobileMenuOpen(false); }}
-                  className="text-sm font-medium py-2 text-left"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn ? 'Sign in' : 'Connexion'}
-                </button>
-                <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                
+                {/* Mobile Auth Actions */}
+                <div className="flex flex-col gap-3 pt-4 mt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  <button 
+                    onClick={() => { login(); setIsMobileMenuOpen(false); }}
+                    className="text-sm font-medium py-2.5 px-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    {isEn ? 'Sign in' : 'Connexion'}
+                  </button>
+                  <button 
+                    onClick={() => { register(); setIsMobileMenuOpen(false); }}
+                    className="btn-primary w-full py-2.5 text-sm"
+                  >
+                    {isEn ? 'Start free' : 'Essai gratuit'}
+                  </button>
+                </div>
+                
+                {/* Language selector */}
+                <div className="flex items-center gap-3 pt-3 mt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
                   <LanguageToggle />
                 </div>
               </nav>
@@ -1653,33 +1755,69 @@ export default function Landing() {
             {isEn ? (
               <>
                 <span style={{ color: theme.green }}>
-                  No Surprises.
+                  Know Your Numbers.
                 </span>{' '}
-                <span>Just Numbers.</span>
+                <span>Grow Your Business.</span>
               </>
             ) : (
               <>
                 <span style={{ color: theme.green }}>
-                  Pas de surprises.
+                  Maîtrisez vos chiffres.
                 </span>{' '}
-                <span>Juste des chiffres.</span>
+                <span>Faites croître votre entreprise.</span>
               </>
             )}
           </h1>
 
-          {/* Value Proposition - Condensed */}
+          {/* Value Proposition - ROI focused */}
           <div 
-            className="max-w-2xl mx-auto mb-8 px-2 animate-fade-up opacity-0"
+            className="max-w-3xl mx-auto mb-8 px-2 animate-fade-up opacity-0"
             style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}
           >
             <p 
-              className="text-lg sm:text-xl md:text-2xl leading-relaxed"
+              className="text-lg sm:text-xl md:text-2xl leading-relaxed mb-4"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Exec-ready dashboards with industry KPIs, OKRs, and AI-optimized projections.'
-                : 'Tableaux de bord avec KPIs sectoriels, OKRs et projections optimisées par IA.'}
+                ? 'AI-powered dashboards with industry-specific KPIs that help you spot opportunities, reduce costs, and make confident decisions.'
+                : 'Tableaux de bord propulsés par l\'IA avec des KPIs spécifiques à votre industrie pour identifier les opportunités, réduire les coûts et prendre des décisions éclairées.'}
             </p>
+            {/* Key value metrics */}
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm">
+              <span 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{ 
+                  backgroundColor: `${theme.green}15`,
+                  color: theme.green,
+                  fontWeight: 600,
+                }}
+              >
+                <TrendingUp className="w-4 h-4" />
+                {isEn ? '15+ Industries' : '15+ Industries'}
+              </span>
+              <span 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{ 
+                  backgroundColor: `${theme.gold}15`,
+                  color: theme.goldDark,
+                  fontWeight: 600,
+                }}
+              >
+                <Target className="w-4 h-4" />
+                {isEn ? 'Real-time KPIs' : 'KPIs en temps réel'}
+              </span>
+              <span 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{ 
+                  backgroundColor: `${theme.green}15`,
+                  color: theme.green,
+                  fontWeight: 600,
+                }}
+              >
+                <Sparkles className="w-4 h-4" />
+                {isEn ? 'AI Insights' : 'Analyses IA'}
+              </span>
+            </div>
           </div>
 
           {/* CTAs - Smaller buttons */}
@@ -1713,7 +1851,7 @@ export default function Landing() {
             </button>
           </div>
 
-          {/* Trust badges */}
+          {/* Trust badges - ROI focused */}
           <div 
             className="w-full flex justify-center animate-fade-up opacity-0"
             style={{ animationDelay: '0.35s', animationFillMode: 'forwards' }}
@@ -1721,14 +1859,18 @@ export default function Landing() {
             <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
               <span className="flex items-center gap-2">
                 <Check className="w-4 h-4" style={{ color: theme.green }} />
-                {isEn ? 'No credit card' : 'Sans carte de crédit'}
+                {isEn ? 'Free to start' : 'Essai gratuit'}
               </span>
               <span className="flex items-center gap-2">
                 <Check className="w-4 h-4" style={{ color: theme.green }} />
-                {isEn ? '5 min setup' : '5 min config'}
+                {isEn ? 'Connect in 5 min' : 'Connecté en 5 min'}
               </span>
               <span className="flex items-center gap-2">
                 <Check className="w-4 h-4" style={{ color: theme.green }} />
+                {isEn ? 'Syncs with QuickBooks' : 'Synchro QuickBooks'}
+              </span>
+              <span className="flex items-center gap-2">
+                <Shield className="w-4 h-4" style={{ color: theme.green }} />
                 {isEn ? 'Data in Canada' : 'Données au Canada'} 🇨🇦
               </span>
             </div>
@@ -1816,6 +1958,7 @@ export default function Landing() {
       <section 
         id="exec-dashboard" 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative"
+        aria-label={isEn ? 'Executive dashboard features' : 'Fonctionnalités du tableau de bord exécutif'}
         style={{ 
           background: isDark 
             ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
@@ -1846,15 +1989,15 @@ export default function Landing() {
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
-              {isEn ? 'Strategic Intelligence at a Glance' : 'Intelligence stratégique en un coup d\'œil'}
+              {isEn ? 'Save 10+ Hours Weekly on Financial Reporting' : 'Économisez 10+ heures par semaine sur vos rapports'}
             </h2>
             <p 
               className="text-sm sm:text-base max-w-2xl mx-auto"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'Real-time metrics, AI-powered insights, and strategic planning tools designed for executive decision-making.'
-                : 'Métriques en temps réel, insights alimentés par l\'IA et outils de planification stratégique conçus pour les décisions exécutives.'}
+                ? 'Replace spreadsheets and manual reports with automated dashboards. Get the insights you need to make confident decisions, faster.'
+                : 'Remplacez les feuilles de calcul et les rapports manuels par des tableaux de bord automatisés. Obtenez les insights nécessaires pour prendre des décisions éclairées, plus rapidement.'}
             </p>
           </motion.div>
 
@@ -1865,55 +2008,61 @@ export default function Landing() {
                 icon: Eye,
                 title: isEn ? 'Real-Time Visibility' : 'Visibilité en temps réel',
                 desc: isEn 
-                  ? 'Live dashboards that sync with your accounting software. See your cash position, revenue trends, and key metrics updated automatically.'
-                  : 'Tableaux de bord en direct synchronisés avec votre logiciel comptable. Position de trésorerie, tendances et métriques clés mis à jour automatiquement.',
-                highlight: isEn ? 'Auto-sync every 15 min' : 'Synchro auto chaque 15 min',
+                  ? 'No more waiting for month-end reports. See cash position, revenue trends, and margins the moment they change.'
+                  : 'Fini l\'attente des rapports de fin de mois. Consultez votre trésorerie, revenus et marges dès qu\'ils changent.',
+                highlight: isEn ? 'Updates every 15 min' : 'Mise à jour aux 15 min',
+                stat: isEn ? '5hrs/week saved' : '5h/sem économisées',
                 color: theme.green,
               },
               {
                 icon: Brain,
-                title: isEn ? 'AI-Powered Alerts' : 'Alertes alimentées par l\'IA',
+                title: isEn ? 'AI-Powered Intelligence' : 'Intelligence alimentée par l\'IA',
                 desc: isEn 
-                  ? 'Proactive anomaly detection that catches issues before they become problems. Get notified about unusual expenses, cash flow risks, and opportunities.'
-                  : 'Détection proactive d\'anomalies qui identifie les problèmes avant qu\'ils ne surviennent. Alertes sur dépenses inhabituelles et risques de trésorerie.',
-                highlight: isEn ? '97% detection accuracy' : '97% de précision',
+                  ? 'Catch issues before they cost you. Get specific recommendations on costs to cut, when to collect receivables, and where to invest.'
+                  : 'Détectez les problèmes avant qu\'ils ne coûtent cher. Obtenez des recommandations sur les coûts, créances et investissements.',
+                highlight: isEn ? '97% accuracy' : '97% de précision',
+                stat: isEn ? '+8% avg margin' : '+8% marge moy.',
                 color: theme.gold,
               },
               {
                 icon: Target,
-                title: isEn ? 'OKRs & Goal Tracking' : 'OKRs & Suivi des objectifs',
+                title: isEn ? 'Goal Tracking' : 'Suivi des objectifs',
                 desc: isEn 
-                  ? 'Set quarterly objectives and track progress automatically. Link financial KPIs to strategic goals for complete alignment.'
-                  : 'Définissez des objectifs trimestriels et suivez la progression automatiquement. Liez les KPIs financiers aux objectifs stratégiques.',
-                highlight: isEn ? 'Quarterly planning' : 'Planification trimestrielle',
+                  ? 'Set revenue targets, margin goals, or cost limits. Track progress automatically against AI-analyzed benchmarks from 75,000+ businesses.'
+                  : 'Définissez des objectifs de revenus, marges ou coûts. Suivez automatiquement la progression vs les benchmarks IA de 75 000+ entreprises.',
+                highlight: isEn ? 'AI benchmarks' : 'Benchmarks IA',
+                stat: isEn ? '75,000+ businesses' : '75 000+ entreprises',
                 color: theme.green,
               },
               {
                 icon: TrendingUp,
-                title: isEn ? 'Scenario Planning' : 'Planification de scénarios',
+                title: isEn ? '12-Month Forecasts' : 'Prévisions 12 mois',
                 desc: isEn 
-                  ? 'What-if analysis for strategic decisions. Model hiring plans, expansion costs, or market changes and see projected impact.'
-                  : 'Analyse "what-if" pour décisions stratégiques. Modélisez embauches, coûts d\'expansion ou changements de marché.',
-                highlight: isEn ? '12-month forecasts' : 'Prévisions 12 mois',
+                  ? 'Plan with confidence. Model different scenarios and see the financial impact before making decisions.'
+                  : 'Planifiez en toute confiance. Modélisez différents scénarios et voyez l\'impact financier avant de décider.',
+                highlight: isEn ? 'What-if analysis' : 'Analyse "what-if"',
+                stat: isEn ? 'Better decisions' : 'Meilleures décisions',
                 color: theme.gold,
               },
               {
                 icon: FileCheck,
-                title: isEn ? 'Board-Ready Reports' : 'Rapports prêts pour le CA',
+                title: isEn ? 'One-Click Reports' : 'Rapports en un clic',
                 desc: isEn 
-                  ? 'One-click exports for board meetings, investor updates, or bank reviews. Professional formatting with your branding.'
-                  : 'Exports en un clic pour réunions du CA, mises à jour investisseurs ou revues bancaires. Formatage professionnel avec votre image.',
-                highlight: isEn ? 'PDF, Excel, PowerPoint' : 'PDF, Excel, PowerPoint',
+                  ? 'Export board-ready reports instantly. No more hours in Excel preparing for meetings.'
+                  : 'Exportez des rapports prêts pour le CA instantanément. Fini les heures dans Excel avant les réunions.',
+                highlight: isEn ? 'PDF, Excel, PPT' : 'PDF, Excel, PPT',
+                stat: isEn ? '3hrs/report saved' : '3h/rapport écon.',
                 color: theme.green,
               },
               {
-                icon: Zap,
-                title: isEn ? 'Action Recommendations' : 'Recommandations d\'action',
+                icon: BarChart3,
+                title: isEn ? 'Market Intelligence' : 'Intelligence de marché',
                 desc: isEn 
-                  ? 'AI suggests specific actions based on your data: optimize payment terms, reduce specific costs, or invest in growth areas.'
-                  : 'L\'IA suggère des actions spécifiques: optimiser les délais de paiement, réduire certains coûts, ou investir dans des zones de croissance.',
-                highlight: isEn ? 'Data-driven decisions' : 'Décisions basées sur les données',
-                color: theme.gold,
+                  ? 'See how you stack up against 75,000+ Canadian businesses. AI-analyzed benchmarks for your industry and size.'
+                  : 'Voyez votre position vs 75 000+ entreprises canadiennes. Benchmarks IA pour votre secteur et taille.',
+                highlight: isEn ? 'AI benchmarks' : 'Benchmarks IA',
+                stat: isEn ? '15+ industries' : '15+ industries',
+                color: theme.green,
               },
             ].map((feature, idx) => (
               <motion.div 
@@ -1944,10 +2093,21 @@ export default function Landing() {
                 
                 {/* Title */}
                 <h3 
-                  className="text-base font-bold mb-2"
+                  className="text-base font-bold mb-2 flex items-center gap-2"
                   style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
                 >
                   {feature.title}
+                  {(feature as any).isPro && (
+                    <span 
+                      className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
+                      style={{ 
+                        backgroundColor: `${theme.gold}25`,
+                        color: theme.gold
+                      }}
+                    >
+                      PRO
+                    </span>
+                  )}
                 </h3>
                 
                 {/* Description */}
@@ -1958,16 +2118,30 @@ export default function Landing() {
                   {feature.desc}
                 </p>
                 
-                {/* Highlight */}
-                <div 
-                  className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                  style={{ 
-                    backgroundColor: `${feature.color}12`,
-                    color: feature.color
-                  }}
-                >
-                  <Check className="w-3 h-3" />
-                  {feature.highlight}
+                {/* Highlight & Stat */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div 
+                    className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                    style={{ 
+                      backgroundColor: `${feature.color}12`,
+                      color: feature.color
+                    }}
+                  >
+                    <Check className="w-3 h-3" />
+                    {feature.highlight}
+                  </div>
+                  {'stat' in feature && (
+                    <div 
+                      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
+                      style={{ 
+                        backgroundColor: `${theme.green}15`,
+                        color: theme.green
+                      }}
+                    >
+                      <TrendingUp className="w-2.5 h-2.5" />
+                      {(feature as any).stat}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -1982,12 +2156,18 @@ export default function Landing() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <p 
-              className="text-sm mb-4 text-center w-full max-w-md mx-auto px-4"
+              className="text-sm mb-4 text-center w-full max-w-lg mx-auto px-4"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
-              {isEn 
-                ? 'All features included in every plan. No hidden upgrades.'
-                : 'Toutes les fonctionnalités incluses dans chaque plan. Aucune mise à niveau cachée.'}
+              {isEn ? 'Businesses using PlainLedger report ' : 'Les entreprises utilisant PlainLedger rapportent des rapports '}
+              <span style={{ color: theme.green, fontWeight: 600 }}>
+                {isEn ? '40% faster' : '40% plus rapides'}
+              </span>
+              {isEn ? ' reporting and ' : ' et '}
+              <span style={{ color: theme.green, fontWeight: 600 }}>
+                {isEn ? '25% better' : '25% de meilleure'}
+              </span>
+              {isEn ? ' margin visibility.' : ' visibilité sur les marges.'}
             </p>
             <button 
               onClick={() => register()}
@@ -1997,7 +2177,7 @@ export default function Landing() {
                 boxShadow: `0 4px 16px ${theme.green}35`
               }}
             >
-              {isEn ? 'Try the dashboard free' : 'Essayez le tableau de bord gratuitement'}
+              {isEn ? 'Start saving time today' : 'Commencez à économiser du temps'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </motion.div>
@@ -2048,15 +2228,15 @@ export default function Landing() {
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
-              {isEn ? 'Intelligent Anomaly Detection' : 'Détection Intelligente d\'Anomalies'}
+              {isEn ? 'Stop Losing Money to Preventable Errors' : 'Arrêtez de perdre de l\'argent sur des erreurs évitables'}
             </h2>
             <p 
               className="text-sm sm:text-base max-w-2xl mx-auto"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'Our AI continuously monitors your financial data, detecting unusual patterns, potential errors, and risks before they impact your business.'
-                : 'Notre IA surveille vos données financières en continu, détectant les schémas inhabituels, erreurs potentielles et risques avant qu\'ils n\'impactent votre entreprise.'}
+                ? 'Our AI catches duplicate payments, billing errors, and unusual expenses that typically go unnoticed. Average recovery: $28,000/year per business.'
+                : 'Notre IA détecte les paiements en double, erreurs de facturation et dépenses inhabituelles qui passent souvent inaperçues. Récupération moyenne: 28 000$/an par entreprise.'}
             </p>
           </motion.div>
 
@@ -2102,20 +2282,20 @@ export default function Landing() {
               <div className="space-y-3">
                 {[
                   {
-                    title: isEn ? 'Unusual Transaction Patterns' : 'Transactions inhabituelles',
-                    desc: isEn ? 'Detects spending spikes, duplicate payments, and irregular vendor activity' : 'Détecte les pics de dépenses, paiements en double et activité fournisseur irrégulière',
+                    title: isEn ? 'Duplicate Payment Detection' : 'Détection paiements en double',
+                    desc: isEn ? 'Catches duplicate invoices and payments before you lose money. Avg savings: $4,200/year.' : 'Détecte les factures et paiements en double avant qu\'ils ne coûtent. Économies moy.: 4 200$/an.',
                   },
                   {
-                    title: isEn ? 'Cash Flow Anomalies' : 'Anomalies de trésorerie',
-                    desc: isEn ? 'Identifies unexpected cash flow variations and potential shortfalls' : 'Identifie les variations de trésorerie inattendues et déficits potentiels',
+                    title: isEn ? 'Cash Flow Warnings' : 'Alertes de trésorerie',
+                    desc: isEn ? 'Get 30-day advance warning on potential cash shortfalls. Never be caught off guard.' : 'Recevez des alertes 30 jours à l\'avance sur les manques de trésorerie. Ne soyez plus pris au dépourvu.',
                   },
                   {
-                    title: isEn ? 'Seasonal Pattern Deviations' : 'Écarts de saisonnalité',
-                    desc: isEn ? 'Compares against historical data to spot unusual seasonal trends' : 'Compare aux données historiques pour repérer les tendances saisonnières inhabituelles',
+                    title: isEn ? 'Cost Overrun Alerts' : 'Alertes dépassements coûts',
+                    desc: isEn ? 'Know instantly when expenses exceed budget or historical patterns.' : 'Sachez immédiatement quand les dépenses dépassent le budget ou les tendances historiques.',
                   },
                   {
-                    title: isEn ? 'Industry Benchmark Alerts' : 'Alertes de référence sectorielle',
-                    desc: isEn ? 'Flags when your KPIs deviate from industry standards' : 'Alerte quand vos KPIs s\'écartent des standards sectoriels',
+                    title: isEn ? 'AI Market Intelligence' : 'Intelligence de marché IA',
+                    desc: isEn ? 'Our AI analyzes 75,000+ businesses to show your competitive position. Identify opportunities faster.' : 'Notre IA analyse 75 000+ entreprises pour montrer votre position concurrentielle. Identifiez les opportunités plus vite.',
                   },
                 ].map((item, idx) => (
                   <motion.div 
@@ -2211,11 +2391,11 @@ export default function Landing() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                 {[
                   { icon: Mail, name: 'Email', color: theme.green, desc: isEn ? 'Detailed reports' : 'Rapports détaillés' },
-                  { icon: Smartphone, name: isEn ? 'Push' : 'Push', color: '#8B5CF6', desc: isEn ? 'Mobile alerts' : 'Alertes mobiles' },
-                  { icon: MessageSquare, name: 'SMS', color: '#06B6D4', desc: isEn ? 'Critical alerts' : 'Alertes critiques' },
-                  { icon: Hash, name: 'Slack', color: '#E11D48', desc: isEn ? 'Team channels' : 'Canaux d\'équipe' },
-                  { icon: Users, name: 'Teams', color: '#6366F1', desc: isEn ? 'Microsoft 365' : 'Microsoft 365' },
-                  { icon: Bell, name: isEn ? 'In-App' : 'In-App', color: theme.gold, desc: isEn ? 'Dashboard alerts' : 'Alertes tableau de bord' },
+                  { icon: Smartphone, name: isEn ? 'Push' : 'Push', color: theme.green, desc: isEn ? 'Mobile alerts' : 'Alertes mobiles' },
+                  { icon: MessageSquare, name: 'SMS', color: theme.gold, desc: isEn ? 'Critical alerts' : 'Alertes critiques' },
+                  { icon: Hash, name: 'Slack', color: theme.green, desc: isEn ? 'Team channels' : 'Canaux d\'équipe' },
+                  { icon: Users, name: 'Teams', color: theme.gold, desc: isEn ? 'Microsoft 365' : 'Microsoft 365' },
+                  { icon: Bell, name: isEn ? 'In-App' : 'In-App', color: theme.green, desc: isEn ? 'Dashboard alerts' : 'Alertes tableau de bord' },
                 ].map((platform, idx) => (
                   <motion.div
                     key={idx}
@@ -2295,22 +2475,26 @@ export default function Landing() {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <p 
-              className="text-sm mb-4"
+              className="text-sm mb-4 text-center max-w-xl mx-auto"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'Stay ahead of issues with intelligent, real-time monitoring'
-                : 'Restez en avance sur les problèmes avec une surveillance intelligente en temps réel'}
+                ? 'The average PlainLedger user recovers ' 
+                : 'L\'utilisateur moyen de PlainLedger récupère '}
+              <span style={{ color: theme.gold, fontWeight: 600 }}>$28K</span>
+              {isEn 
+                ? ' in their first year from prevented errors.'
+                : ' la première année grâce aux erreurs évitées.'}
             </p>
             <button 
               onClick={() => register()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white text-sm hover:scale-105 transition-all"
               style={{ 
-                background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.gold}dd 100%)`,
-                boxShadow: `0 4px 16px ${theme.gold}35`
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 4px 16px ${theme.green}40`
               }}
             >
-              {isEn ? 'Get AI-Powered Alerts' : 'Obtenez des alertes IA'}
+              {isEn ? 'See what AI finds in your data' : 'Voyez ce que l\'IA trouve dans vos données'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </motion.div>
@@ -2319,14 +2503,171 @@ export default function Landing() {
 
       {/* Industry KPIs Section - Formulas & Benchmarks */}
       <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
-      <section id="industries" className="relative">
+      <section id="industries" className="relative" aria-label={isEn ? 'Industry-specific KPIs and benchmarks' : 'KPIs et références par industrie'}>
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
+      </section>
+
+      {/* Tax Credits Section */}
+      <section 
+        id="tax-credits" 
+        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
+        aria-label={isEn ? 'Tax credits and subventions' : 'Crédits d\'impôt et subventions'}
+        style={{ 
+          background: isDark 
+            ? 'transparent' 
+            : 'linear-gradient(180deg, rgba(240, 253, 244, 0.3) 0%, rgba(255, 255, 255, 0.9) 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mb-8 sm:mb-12"
+          >
+            <motion.div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.2 }}
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.gold}15 0%, ${theme.green}10 100%)`,
+                border: `1px solid ${theme.gold}30`
+              }}
+            >
+              <DollarSign className="w-4 h-4" style={{ color: theme.gold }} />
+              <span className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+                {isEn ? 'Average unclaimed credits: ' : 'Crédits non réclamés moyens: '}
+                <span style={{ color: theme.gold }}>$47,000</span>
+              </span>
+            </motion.div>
+            
+            <motion.h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
+              initial={{ opacity: 0, scale: 0.92 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Discover Tax Credits You May Be Missing' : 'Découvrez les crédits d\'impôt que vous pourriez manquer'}
+            </motion.h2>
+            <motion.p 
+              className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-2xl mx-auto px-2 text-center"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'PlainLedger automatically analyzes your financial data to identify eligible federal and provincial tax credits. Get matched with certified specialists to maximize your benefits.'
+                : 'PlainLedger analyse automatiquement vos données financières pour identifier les crédits d\'impôt fédéraux et provinciaux admissibles. Obtenez une mise en relation avec des spécialistes certifiés pour maximiser vos avantages.'}
+            </motion.p>
+          </motion.div>
+
+          {/* Tax Credits Grid */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+          >
+            {[
+              {
+                id: 'sred',
+                name: { en: 'SR&ED', fr: 'RSDE' },
+                description: { en: 'Up to 35% refundable credit on R&D expenditures', fr: 'Jusqu\'à 35% de crédit remboursable sur les dépenses R-D' },
+                industries: { en: 'Technology, Manufacturing', fr: 'Technologie, Manufacturier' },
+              },
+              {
+                id: 'cric',
+                name: { en: 'CRIC', fr: 'CRIC' },
+                description: { en: 'Quebec R&D credit: 20-30% on innovation', fr: 'Crédit R-D Québec: 20-30% sur l\'innovation' },
+                industries: { en: 'Quebec businesses', fr: 'Entreprises québécoises' },
+              },
+              {
+                id: 'cdae',
+                name: { en: 'CDAE', fr: 'CDAE' },
+                description: { en: '30% credit on IT salaries, max $25K/employee', fr: '30% crédit sur salaires TI, max 25K$/employé' },
+                industries: { en: 'Quebec IT companies', fr: 'Entreprises TI québécoises' },
+              },
+              {
+                id: 'oidmtc',
+                name: { en: 'OIDMTC', fr: 'OIDMTC' },
+                description: { en: '40% credit on digital media development', fr: '40% crédit sur développement médias numériques' },
+                industries: { en: 'Ontario digital media', fr: 'Médias numériques Ontario' },
+              },
+              {
+                id: 'ommitc',
+                name: { en: 'OMMITC', fr: 'OMMITC' },
+                description: { en: '15% credit on manufacturing investments', fr: '15% crédit sur investissements manufacturiers' },
+                industries: { en: 'Ontario manufacturing', fr: 'Manufacturier Ontario' },
+              },
+              {
+                id: 'apprenticeship',
+                name: { en: 'Apprenticeship', fr: 'Apprentissage' },
+                description: { en: '$2,000 per eligible apprentice per year', fr: '2 000 $ par apprenti admissible par année' },
+                industries: { en: 'Construction, Manufacturing', fr: 'Construction, Manufacturier' },
+              },
+            ].map((credit, idx) => (
+              <motion.div
+                key={credit.id}
+                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 sm:p-6 hover:shadow-lg transition-all"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.1 + 0.5 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {credit.name[language]}
+                  </h3>
+                  <ExternalLink className="w-4 h-4 text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  {credit.description[language]}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <Building2 className="w-3 h-3" />
+                  <span>{credit.industries[language]}</span>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div 
+            className="text-center mt-8 sm:mt-10"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.8 }}
+          >
+            <button 
+              onClick={() => register()}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 hover:shadow-lg text-sm"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 4px 16px ${theme.green}35`
+              }}
+            >
+              {isEn ? 'Connect Your Data to See Your Eligibility' : 'Connectez vos données pour voir votre éligibilité'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+        </div>
       </section>
 
       {/* How It Works - Clean Animated Pipeline */}
       <section 
         id="pipeline" 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        aria-label={isEn ? 'How PlainLedger works in 4 steps' : 'Comment PlainLedger fonctionne en 4 étapes'}
         style={{ 
           background: isDark 
             ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
@@ -2374,7 +2715,7 @@ export default function Landing() {
               transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
-              {isEn ? 'Your Data Journey' : 'Le parcours de vos données'}
+              {isEn ? 'From Spreadsheets to Insights in 5 Minutes' : 'De vos feuilles de calcul aux insights en 5 minutes'}
             </motion.h2>
             <motion.p 
               className="text-sm sm:text-base max-w-lg mx-auto"
@@ -2385,8 +2726,8 @@ export default function Landing() {
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'From connection to insights in 4 intelligent steps'
-                : 'De la connexion aux insights en 4 étapes intelligentes'}
+                ? 'Connect your accounting software and get your first insights today. No IT required.'
+                : 'Connectez votre logiciel comptable et obtenez vos premiers insights aujourd\'hui. Aucune ressource TI requise.'}
             </motion.p>
           </motion.div>
 
@@ -2452,35 +2793,39 @@ export default function Landing() {
                   num: 1, 
                   icon: Database, 
                   title: isEn ? 'Connect' : 'Connecter',
-                  desc: isEn ? 'Link your accounting software securely' : 'Liez votre logiciel comptable de façon sécurisée',
+                  desc: isEn ? '2 clicks to connect QuickBooks, Xero, or Sage securely' : '2 clics pour connecter QuickBooks, Xero ou Sage de façon sécurisée',
                   tags: ['QuickBooks', 'Xero', 'Sage'],
+                  time: isEn ? '2 min' : '2 min',
                   color: theme.green,
                   visual: 'connect',
                 },
                 { 
                   num: 2, 
                   icon: RefreshCw, 
-                  title: isEn ? 'Clean & Store' : 'Nettoyer',
-                  desc: isEn ? 'Transform & store in Canadian data lake' : 'Transformez et stockez au Canada',
-                  tags: [isEn ? 'Sanitized' : 'Assaini', isEn ? 'Validated' : 'Validé', 'CA'],
+                  title: isEn ? 'Sync & Secure' : 'Sync. & Sécurisé',
+                  desc: isEn ? 'Data stored in Canada. Bank-level encryption.' : 'Données stockées au Canada. Chiffrement bancaire.',
+                  tags: [isEn ? 'Encrypted' : 'Chiffré', isEn ? 'Canadian' : 'Canadien'],
+                  time: isEn ? 'Auto' : 'Auto',
                   color: theme.green,
                   visual: 'clean',
                 },
                 { 
                   num: 3, 
                   icon: Sparkles, 
-                  title: isEn ? 'AI Analysis' : 'Analyse IA',
-                  desc: isEn ? 'Industry-specific machine learning' : 'Apprentissage machine sectoriel',
+                  title: isEn ? 'AI Analyzes' : 'L\'IA analyse',
+                  desc: isEn ? 'Detects anomalies, calculates KPIs, spots trends' : 'Détecte anomalies, calcule KPIs, repère tendances',
                   tags: ['97%', isEn ? 'Accuracy' : 'Précision', 'ML'],
+                  time: isEn ? '1 min' : '1 min',
                   color: theme.gold,
                   visual: 'ai',
                 },
                 { 
                   num: 4, 
                   icon: TrendingUp, 
-                  title: isEn ? 'Dashboard' : 'Tableau',
-                  desc: isEn ? 'Executive-ready business insights' : 'Insights prêts pour dirigeants',
-                  tags: ['KPIs', 'OKRs', isEn ? 'Real-time' : 'Temps réel'],
+                  title: isEn ? 'You Decide' : 'Vous décidez',
+                  desc: isEn ? 'Executive dashboards with actionable recommendations' : 'Tableaux de bord exécutifs avec recommandations actionnables',
+                  tags: ['KPIs', isEn ? 'Forecasts' : 'Prévisions', isEn ? 'Alerts' : 'Alertes'],
+                  time: isEn ? 'Instant' : 'Instantané',
                   color: theme.gold,
                   visual: 'dashboard',
                 },
@@ -2499,7 +2844,8 @@ export default function Landing() {
                 >
                   {/* Step Card - Enhanced Design */}
                   <motion.div 
-                    className="relative p-4 sm:p-5 rounded-xl cursor-pointer overflow-hidden h-full min-h-[280px] sm:min-h-[300px]"
+                    className="relative p-4 sm:p-5 rounded-xl cursor-pointer overflow-hidden h-full flex flex-col"
+                    style={{ minHeight: '320px' }}
                     style={{ 
                       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                       border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
@@ -2605,17 +2951,21 @@ export default function Landing() {
                       {step.title}
                     </h4>
                     
-                    {/* Description */}
+                    {/* Description - Fixed height for alignment */}
                     <p 
-                      className="text-xs sm:text-sm mb-3 leading-relaxed min-h-[2.5rem]"
-                      style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                      className="text-xs sm:text-sm mb-3 leading-relaxed"
+                      style={{ 
+                        color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
+                        height: '3rem',
+                        overflow: 'hidden'
+                      }}
                     >
                       {step.desc}
                     </p>
                     
-                    {/* Mini Visualization Area */}
+                    {/* Mini Visualization Area - Flex grow to fill space */}
                     <div 
-                      className="relative h-16 sm:h-20 mb-3 rounded-lg overflow-hidden"
+                      className="relative flex-1 min-h-[64px] mb-3 rounded-lg overflow-hidden"
                       style={{ 
                         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
                         border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.5)'}`
@@ -2828,8 +3178,8 @@ export default function Landing() {
                       )}
                     </div>
                     
-                    {/* Tags with enhanced styling */}
-                    <div className="flex flex-wrap gap-1.5 min-h-[1.75rem]">
+                    {/* Tags with enhanced styling - Always at bottom */}
+                    <div className="flex flex-wrap gap-1.5 mt-auto pt-2">
                       {step.tags.map((tag, tagIdx) => (
                         <motion.span 
                           key={tag}
@@ -2895,6 +3245,20 @@ export default function Landing() {
 
           {/* CTA */}
           <div className="text-center mt-8">
+            <p 
+              className="text-sm mb-4 text-center max-w-md mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn ? 'Total setup time: ' : 'Temps de configuration total: '}
+              <span style={{ color: theme.green, fontWeight: 600 }}>
+                {isEn ? 'under 5 minutes' : 'moins de 5 minutes'}
+              </span>
+              {isEn ? '. First insights: ' : '. Premiers insights: '}
+              <span style={{ color: theme.gold, fontWeight: 600 }}>
+                {isEn ? 'immediate' : 'immédiats'}
+              </span>
+              .
+            </p>
             <button 
               onClick={() => register()}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 hover:shadow-lg text-sm"
@@ -2903,7 +3267,7 @@ export default function Landing() {
                 boxShadow: `0 4px 16px ${theme.green}35`
               }}
             >
-              {isEn ? 'Start your journey' : 'Commencer votre parcours'}
+              {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -2922,6 +3286,7 @@ export default function Landing() {
       <section 
         id="pricing" 
         className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
+        aria-label={isEn ? 'Pricing and features included' : 'Tarifs et fonctionnalités incluses'}
         style={{ 
           background: isDark 
             ? 'transparent' 
@@ -2935,6 +3300,26 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
           >
+            {/* ROI Highlight */}
+            <motion.div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.2 }}
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.gold}15 0%, ${theme.green}10 100%)`,
+                border: `1px solid ${theme.gold}30`
+              }}
+            >
+              <TrendingUp className="w-4 h-4" style={{ color: theme.gold }} />
+              <span className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+                {isEn ? 'Average ROI: ' : 'ROI moyen: '}
+                <span style={{ color: theme.gold }}>8x</span>
+                {isEn ? ' in the first year' : ' la première année'}
+              </span>
+            </motion.div>
+            
             <motion.h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
               initial={{ opacity: 0, scale: 0.92 }}
@@ -2943,19 +3328,25 @@ export default function Landing() {
               transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text))' }}
             >
-              {isEn ? 'Simple, transparent pricing' : 'Tarification simple et transparente'}
+              {isEn ? 'Costs Less Than the Errors It Prevents' : 'Coûte moins que les erreurs qu\'il prévient'}
             </motion.h2>
             <motion.p 
-              className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-xl mx-auto px-2"
+              className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-xl mx-auto px-2 text-center"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn 
-                ? 'Get a personalized quote based on your business needs.'
-                : 'Obtenez une soumission selon vos besoins.'}
+              {isEn ? 'The average business saves ' : 'L\'entreprise moyenne économise '}
+              <span style={{ color: theme.gold, fontWeight: 600 }}>
+                {isEn ? '$28K/year' : '28K$/an'}
+              </span>
+              {isEn ? ' from prevented errors alone. Plus ' : ' en erreurs évitées seulement. Plus '}
+              <span style={{ color: theme.green, fontWeight: 600 }}>
+                {isEn ? '10+ hours weekly' : '10+ heures par semaine'}
+              </span>
+              {isEn ? ' in reporting time.' : ' en temps de rapport.'}
             </motion.p>
           </motion.div>
 
@@ -2971,20 +3362,20 @@ export default function Landing() {
               border: isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)',
             }}
           >
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 justify-items-start">
               {[
-                { en: 'Industry KPIs', fr: 'KPIs sectoriels' },
-                { en: 'Anomaly detection', fr: 'Détection d\'anomalies' },
-                { en: 'Monthly reports', fr: 'Rapports mensuels' },
-                { en: 'Custom dashboards', fr: 'Tableaux de bord personnalisés' },
-                { en: 'Priority CPA support', fr: 'Support CPA prioritaire' },
-                { en: 'Cash flow forecasting', fr: 'Prévisions de trésorerie' },
+                { en: 'AI anomaly detection', fr: 'Détection d\'anomalies IA', highlight: true },
+                { en: '75K+ business benchmarks', fr: 'Benchmarks 75K+ entreprises', highlight: true },
+                { en: '15+ industry KPIs', fr: '15+ KPIs sectoriels', highlight: true },
+                { en: 'Cash flow forecasting', fr: 'Prévisions de trésorerie', highlight: true },
+                { en: 'Real-time dashboards', fr: 'Tableaux de bord temps réel' },
+                { en: 'Board-ready reports', fr: 'Rapports prêts pour le CA' },
                 { en: 'Budget vs Actual', fr: 'Budget vs Réel' },
-                { en: 'Multi-entity consolidation', fr: 'Consolidation multi-entités' },
-                { en: 'Export (PDF/Excel)', fr: 'Export (PDF/Excel)' },
-                { en: 'API access', fr: 'Accès API' },
+                { en: 'Multi-entity support', fr: 'Support multi-entités' },
                 { en: 'Slack & Teams alerts', fr: 'Alertes Slack & Teams' },
-                { en: 'Board reports', fr: 'Rapports pour CA' },
+                { en: 'Multi-format exports', fr: 'Exports multi-formats' },
+                { en: 'Priority CPA support', fr: 'Support CPA prioritaire' },
+                { en: 'Data stored in Canada 🇨🇦', fr: 'Données au Canada 🇨🇦' },
               ].map((feature, idx) => (
                 <motion.div 
                   key={feature.en}
@@ -2996,15 +3387,53 @@ export default function Landing() {
                 >
                   <div 
                     className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${theme.green}20` }}
+                    style={{ backgroundColor: (feature as any).highlight ? `${theme.gold}20` : `${theme.green}20` }}
                   >
-                    <Check className="w-3.5 h-3.5" style={{ color: theme.green }} />
+                    <Check className="w-3.5 h-3.5" style={{ color: (feature as any).highlight ? theme.gold : theme.green }} />
                   </div>
-                  <span className="text-sm sm:text-base" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <span 
+                    className="text-sm sm:text-base flex items-center gap-2" 
+                    style={{ 
+                      color: 'rgb(var(--color-text-secondary))',
+                      fontWeight: (feature as any).highlight ? 600 : 400
+                    }}
+                  >
                     {isEn ? feature.en : feature.fr}
+                    {(feature as any).pro && (
+                      <span 
+                        className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
+                        style={{ 
+                          backgroundColor: `${theme.gold}25`,
+                          color: theme.gold
+                        }}
+                      >
+                        PRO
+                      </span>
+                    )}
                   </span>
                 </motion.div>
               ))}
+            </div>
+            
+            {/* CTA Button */}
+            <div className="mt-8 flex flex-col items-center justify-center">
+              <button 
+                onClick={() => register()}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white text-base hover:opacity-90 transition-all hover:scale-105"
+                style={{ 
+                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                  boxShadow: `0 4px 20px ${theme.green}40`
+                }}
+              >
+                {isEn ? 'Start free, see your ROI in minutes' : 'Commencez gratuitement, voyez votre ROI en minutes'}
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              <p 
+                className="text-xs mt-4 text-center"
+                style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+              >
+                {isEn ? 'No credit card required. Cancel anytime.' : 'Sans carte de crédit. Annulez à tout moment.'}
+              </p>
             </div>
           </motion.div>
         </div>
@@ -3099,20 +3528,24 @@ export default function Landing() {
               viewport={{ once: true }}
               transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              {isEn ? 'Ready to see your data clearly?' : 'Prêt à voir vos données clairement?'}
+              {isEn ? 'Your Next Decision Could Be Data-Driven' : 'Votre prochaine décision pourrait être basée sur les données'}
             </motion.h2>
             
             {/* Subheading */}
             <motion.p 
-              className="text-base sm:text-lg lg:text-xl mb-8 text-white/85 max-w-2xl mx-auto"
+              className="text-base sm:text-lg lg:text-xl mb-8 text-white/85 max-w-2xl mx-auto text-center"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1.3, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
+              {isEn ? 'In ' : 'En '}
+              <span className="text-green-400 font-semibold">
+                {isEn ? '5 minutes' : '5 minutes'}
+              </span>
               {isEn 
-                ? 'Get the financial clarity you need to make confident decisions. Start exploring today.'
-                : 'Obtenez la clarté financière dont vous avez besoin pour prendre des décisions éclairées.'}
+                ? ', you could have real-time dashboards, AI-powered insights, and market intelligence from 75,000+ businesses. What will you discover?'
+                : ', vous pourriez avoir des tableaux de bord en temps réel, des insights IA et une intelligence de marché de 75 000+ entreprises. Qu\'allez-vous découvrir?'}
             </motion.p>
             
             {/* CTA Buttons */}
@@ -3134,7 +3567,7 @@ export default function Landing() {
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                 }}
               >
-                {isEn ? 'Get started free' : 'Commencer gratuitement'}
+                {isEn ? 'Start free today' : 'Commencez gratuitement'}
                 <ArrowRight className="w-5 h-5" />
               </motion.button>
               
@@ -3151,7 +3584,7 @@ export default function Landing() {
                 }}
               >
                 <Calendar className="w-5 h-5" />
-                {isEn ? 'Talk to an expert' : 'Parler à un expert'}
+                {isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée'}
               </motion.button>
             </motion.div>
             
@@ -3165,9 +3598,9 @@ export default function Landing() {
             >
               <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-white/70 text-sm">
                 {[
-                  { text: isEn ? 'No credit card required' : 'Sans carte de crédit' },
-                  { text: isEn ? 'Setup in 5 minutes' : 'Configuration en 5 min' },
-                  { text: isEn ? 'Data stays in Canada' : 'Données au Canada', flag: true },
+                  { text: isEn ? '8x average ROI' : 'ROI moyen de 8x' },
+                  { text: isEn ? '5 min setup' : 'Config. en 5 min' },
+                  { text: isEn ? 'Data in Canada' : 'Données au Canada', flag: true },
                 ].map((badge, idx) => (
                   <motion.span 
                     key={idx}
@@ -3203,7 +3636,7 @@ export default function Landing() {
               <svg className="w-3 h-3 sm:w-4 sm:h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
                 <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <span className="font-medium text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>

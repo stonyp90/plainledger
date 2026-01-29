@@ -195,7 +195,7 @@ export class NotificationService {
 
     // Generate email HTML
     const templateName = this.getEmailTemplateName(payload.type);
-    const emailHtml = this.renderEmail(templateName, {
+    const _emailHtml = this.renderEmail(templateName, {
       subject: payload.title,
       firstName: payload.data?.firstName || "Utilisateur",
       ...payload.data,
@@ -379,7 +379,7 @@ export class NotificationService {
   // --------------------------------------------------------------------------
 
   private async getUserPreferences(
-    userId: string,
+    _userId: string,
   ): Promise<UserNotificationPreferences> {
     // Fetch from database
     // For now, return default preferences
@@ -401,12 +401,12 @@ export class NotificationService {
     };
   }
 
-  private async getUserEmail(userId: string): Promise<string | null> {
+  private async getUserEmail(_userId: string): Promise<string | null> {
     // Fetch from database
     return "user@example.com";
   }
 
-  private async getUserPhone(userId: string): Promise<string | null> {
+  private async getUserPhone(_userId: string): Promise<string | null> {
     // Fetch from database
     return null;
   }

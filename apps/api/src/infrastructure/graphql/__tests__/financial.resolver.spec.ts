@@ -110,7 +110,11 @@ jest.mock("@infrastructure/services/datalake-data.service", () => {
             { period: "2026-02", value: 32000 },
             { period: "2026-03", value: 33000 },
           ],
-          cashFlow: [],
+          cashFlow: [
+            { period: "2026-01", value: 15000 },
+            { period: "2026-02", value: 16000 },
+            { period: "2026-03", value: 19000 },
+          ],
         },
       }),
     })),
@@ -266,7 +270,11 @@ describe("FinancialResolver", () => {
             { period: "2026-02", value: 32000 },
             { period: "2026-03", value: 33000 },
           ],
-          cashFlow: [],
+          cashFlow: [
+            { period: "2026-01", value: 15000 },
+            { period: "2026-02", value: 16000 },
+            { period: "2026-03", value: 19000 },
+          ],
         },
       }),
     };
@@ -364,6 +372,45 @@ describe("FinancialResolver", () => {
       );
 
       expect(result).toHaveLength(0);
+    });
+
+    it("should return cashFlow data for camelCase metric", async () => {
+      const result = await resolver.getFinancialTrends(
+        ["cashFlow"],
+        undefined,
+        mockContext,
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0].metricName).toBe("cashFlow");
+      expect(result[0].data.length).toBeGreaterThan(0);
+      expect(result[0].data[0].value).toBe(15000);
+    });
+
+    it("should handle case-insensitive metric names", async () => {
+      const result = await resolver.getFinancialTrends(
+        ["REVENUE", "CashFlow", "expenses"],
+        undefined,
+        mockContext,
+      );
+
+      expect(result).toHaveLength(3);
+      // All metrics should return data
+      for (const trend of result) {
+        expect(trend.data.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("should handle lowercase cashflow metric", async () => {
+      const result = await resolver.getFinancialTrends(
+        ["cashflow"],
+        undefined,
+        mockContext,
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0].metricName).toBe("cashflow");
+      expect(result[0].data.length).toBeGreaterThan(0);
     });
   });
 

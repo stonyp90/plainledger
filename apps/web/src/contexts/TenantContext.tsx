@@ -15,6 +15,9 @@ export interface Tenant {
   limits: TenantLimits;
   members: number;
   role: 'owner' | 'admin' | 'member' | 'viewer';
+  // Organization market/industry information
+  industry?: string;
+  region?: string; // e.g., 'canada', 'quebec', 'ontario'
 }
 
 export interface TenantSettings {
@@ -256,19 +259,38 @@ const ENTERPRISE_FEATURES: TenantSettings['features'] = {
 // Mock data for development
 const MOCK_TENANTS: Tenant[] = [
   {
-    id: 'tenant-1',
-    name: 'Demo Corporation',
-    slug: 'demo-corp',
-    plan: 'free',
+    id: 'free-org',  // Free tier organization for testing
+    name: 'Free Starter Co.',
+    slug: 'free-starter',
+    plan: 'free',  // Free plan - limited features
     status: 'active',
-    createdAt: '2024-01-15T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES, demoMode: true },
+    createdAt: '2026-01-01T10:00:00Z',
+    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES, demoMode: true },  // Demo mode for free tier
     limits: {
       ...PLAN_LIMITS.free,
+      currentUsage: { users: 1, connections: 0, reports: 2, storage: 10, apiCalls: 50 },
+    },
+    members: 1,
+    role: 'owner',
+    industry: 'retail',
+    region: 'canada',
+  },
+  {
+    id: 'demo-org',  // Matches the organization key in Keycloak and MinIO data
+    name: 'Demo Corporation',
+    slug: 'demo-corp',
+    plan: 'professional',  // Professional plan - has real data access
+    status: 'active',
+    createdAt: '2024-01-15T10:00:00Z',
+    settings: { ...DEFAULT_SETTINGS, features: PROFESSIONAL_FEATURES, demoMode: false },  // Real data mode
+    limits: {
+      ...PLAN_LIMITS.professional,
       currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 100 },
     },
     members: 1,
     role: 'owner',
+    industry: 'professional_services',
+    region: 'canada',
   },
   {
     id: 'tenant-2',
@@ -284,6 +306,8 @@ const MOCK_TENANTS: Tenant[] = [
     },
     members: 1,
     role: 'admin',
+    industry: 'retail',
+    region: 'canada',
   },
   {
     id: 'tenant-3',
@@ -299,6 +323,8 @@ const MOCK_TENANTS: Tenant[] = [
     },
     members: 3,
     role: 'owner',
+    industry: 'construction',
+    region: 'quebec',
   },
 ];
 

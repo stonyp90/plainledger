@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ClientSecretCredential } from "@azure/identity";
 import { EmbedConfig } from "@domain/value-objects/EmbedConfig";

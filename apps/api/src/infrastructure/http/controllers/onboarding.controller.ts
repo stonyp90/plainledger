@@ -10,7 +10,6 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
-  Req,
 } from "@nestjs/common";
 import { AuthenticatedUser } from "nest-keycloak-connect";
 import { NovuService } from "../../notifications/novu.service";

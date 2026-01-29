@@ -23,7 +23,9 @@ export type PremiumFeature =
   | 'sso'
   | 'strategicPlanning'
   | 'advancedAnalytics'
-  | 'boardMeeting';
+  | 'boardMeeting'
+  | 'marketAnalysis'
+  | 'taxCredits';
 
 interface PremiumFeatureGateProps {
   children: ReactNode;
@@ -155,6 +157,26 @@ const FEATURE_INFO: Record<PremiumFeature, {
     highlightsEn: ['Auto presentations', 'Executive summaries', 'Share securely'],
     highlightsFr: ['Présentations auto', 'Résumés exécutifs', 'Partage sécurisé'],
   },
+  marketAnalysis: {
+    titleEn: 'AI-Powered Market Intelligence',
+    titleFr: 'Intelligence de marché propulsée par l\'IA',
+    descEn: 'Our AI analyzes data from 75,000+ Canadian businesses to reveal your competitive position, identify growth opportunities, and benchmark your performance against industry leaders.',
+    descFr: 'Notre IA analyse les données de plus de 75 000 entreprises canadiennes pour révéler votre position concurrentielle, identifier les opportunités de croissance et comparer vos performances aux leaders du secteur.',
+    icon: TrendingUp,
+    plans: ['professional', 'enterprise'],
+    highlightsEn: ['AI-analyzed benchmarks', 'Smart recommendations', 'Competitive positioning'],
+    highlightsFr: ['Benchmarks analysés par IA', 'Recommandations intelligentes', 'Positionnement concurrentiel'],
+  },
+  taxCredits: {
+    titleEn: 'Tax Credits & Incentives',
+    titleFr: 'Crédits d\'impôt et incitatifs',
+    descEn: 'Discover tax credits you may be eligible for based on your industry, province, and financial profile. Get estimated savings and connect with certified partners for expert guidance.',
+    descFr: 'Découvrez les crédits d\'impôt auxquels vous pourriez être admissible selon votre secteur, province et profil financier. Obtenez des estimations d\'économies et connectez-vous avec des partenaires certifiés.',
+    icon: Target,
+    plans: ['professional', 'enterprise'],
+    highlightsEn: ['Eligibility scoring', 'Estimated savings', 'Expert partner referrals'],
+    highlightsFr: ['Score d\'admissibilité', 'Économies estimées', 'Références d\'experts'],
+  },
 };
 
 export function usePremiumFeature(feature: PremiumFeature): {
@@ -276,7 +298,7 @@ export default function PremiumFeatureGate({
 
   // Full card mode (default) - Enhanced aspirational design
   return (
-    <div className={`relative rounded-2xl overflow-hidden ${className}`}>
+    <div className={`relative rounded-xl overflow-hidden ${className}`}>
       {/* Grayed out preview of content */}
       {showPreview && (
         <div className="opacity-15 pointer-events-none blur-[4px] select-none">
@@ -286,94 +308,88 @@ export default function PremiumFeatureGate({
       
       {/* Premium Gate Overlay - Redesigned for better UX */}
       <div 
-        className={`${showPreview ? 'absolute inset-0 overflow-y-auto' : ''} flex items-center justify-center p-4 sm:p-6 lg:p-8`}
+        className={`${showPreview ? 'absolute inset-0 overflow-y-auto' : ''} flex items-center justify-center p-3 sm:p-4 lg:p-6`}
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
         }}
       >
         {/* Background decorative elements */}
         <div 
-          className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none"
+          className="absolute top-0 right-0 w-48 h-48 opacity-[0.02] pointer-events-none"
           style={{
             background: 'radial-gradient(circle, rgb(var(--color-accent-500)) 0%, transparent 70%)',
           }}
         />
-        <div 
-          className="absolute bottom-0 left-0 w-48 h-48 opacity-[0.02] pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgb(var(--color-accent-400)) 0%, transparent 70%)',
-          }}
-        />
         
-        <div className="relative w-full max-w-5xl mx-auto my-auto">
+        <div className="relative w-full max-w-4xl mx-auto my-auto">
           {/* Main content card */}
           <div 
-            className="rounded-2xl p-6 sm:p-8 lg:p-10"
+            className="rounded-xl p-5 sm:p-6 lg:p-8"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 10px 15px -3px rgb(0 0 0 / 0.05)',
+              boxShadow: '0 2px 4px -1px rgb(0 0 0 / 0.03), 0 4px 8px -2px rgb(0 0 0 / 0.04)',
             }}
           >
             {/* Two-column layout on larger screens */}
-            <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-12">
+            <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
               {/* Left Column - Main Info */}
               <div className="flex-1 text-center lg:text-left">
-                {/* Icon with animated glow */}
-                <div className="relative inline-flex mb-6">
+                {/* Icon - smaller and tighter */}
+                <div className="relative inline-flex mb-4">
                   <div 
-                    className="absolute inset-0 rounded-2xl animate-pulse"
+                    className="absolute inset-0 rounded-xl"
                     style={{ 
-                      background: 'rgb(var(--color-accent-500) / 0.2)',
-                      filter: 'blur(16px)',
+                      background: 'rgb(var(--color-accent-500) / 0.15)',
+                      filter: 'blur(10px)',
                     }}
                   />
                   <div 
-                    className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center"
+                    className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center"
                     style={{ 
                       background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
-                      boxShadow: '0 4px 14px rgb(var(--color-accent-500) / 0.35)',
+                      boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.25)',
                     }}
                   >
-                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                 </div>
                 
-                {/* Title */}
+                {/* Title - smaller */}
                 <h3 
-                  className="text-2xl sm:text-3xl font-bold mb-4"
+                  className="text-xl sm:text-2xl font-bold mb-2.5"
                   style={{ color: 'rgb(var(--color-text))' }}
                 >
                   {displayTitle}
                 </h3>
                 
-                {/* Description */}
+                {/* Description - tighter */}
                 <p 
-                  className="text-base sm:text-lg leading-relaxed mb-6"
+                  className="text-sm sm:text-base leading-relaxed mb-5 max-w-lg"
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 >
                   {displayDesc}
                 </p>
                 
-                {/* Feature highlights */}
-                <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-8">
+                {/* Feature highlights - more compact */}
+                <div className="flex flex-wrap justify-center lg:justify-start gap-1.5 mb-6">
                   {highlights.map((highlight, idx) => (
                     <span 
                       key={idx}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium"
                       style={{ 
-                        backgroundColor: 'rgb(var(--color-accent-500) / 0.1)',
+                        backgroundColor: 'rgb(var(--color-accent-500) / 0.08)',
                         color: 'rgb(var(--color-accent-700))',
-                        border: '1px solid rgb(var(--color-accent-500) / 0.2)',
+                        border: '1px solid rgb(var(--color-accent-500) / 0.15)',
                       }}
                     >
-                      <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-accent-600))' }} />
+                      <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-accent-600))' }} />
                       {highlight}
                     </span>
                   ))}
                 </div>
                 
-                {/* CTA Buttons */}
+                {/* CTA Buttons - more compact */}
                 {showEmailForm && showEmailFormState ? (
                   <div className="w-full text-left">
                     <UpgradeRequestForm
@@ -386,65 +402,63 @@ export default function PremiumFeatureGate({
                     />
                   </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                  <div className="flex flex-col sm:flex-row gap-2.5 justify-center lg:justify-start">
                     <button
                       onClick={handleUpgradeClick}
-                      className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                      className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                       style={{ 
                         background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                        boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.1)',
-                        minWidth: '180px',
+                        boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.1)',
                       }}
                     >
-                      <Calendar className="w-5 h-5" />
+                      <Calendar className="w-4 h-4" />
                       <span>{isEn ? 'Schedule Call' : 'Planifier un appel'}</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </button>
                     {showEmailForm && (
                       <button
                         onClick={() => setShowEmailFormState(true)}
-                        className="group inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                        className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                         style={{ 
                           background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                          boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.4), inset 0 1px 0 rgb(255 255 255 / 0.1)',
-                          minWidth: '180px',
+                          boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.1)',
                         }}
                       >
-                        <Mail className="w-5 h-5" />
+                        <Mail className="w-4 h-4" />
                         <span>{isEn ? 'Request Info' : 'Demander info'}</span>
-                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                       </button>
                     )}
                   </div>
                 )}
               </div>
               
-              {/* Right Column - Plan info card */}
+              {/* Right Column - Plan info card - more compact */}
               <div 
-                className="lg:w-64 flex-shrink-0 rounded-xl p-6 mt-4 lg:mt-0"
+                className="lg:w-56 flex-shrink-0 rounded-lg p-4 mt-2 lg:mt-0"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)',
-                  border: '1px solid rgb(var(--color-border) / 0.5)',
+                  backgroundColor: 'rgb(var(--color-bg-muted) / 0.4)',
+                  border: '1px solid rgb(var(--color-border) / 0.4)',
                 }}
               >
-                {/* Plan badge */}
+                {/* Plan badge - smaller */}
                 <div 
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide mb-5"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide mb-4"
                   style={{ 
                     background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
                     color: 'white',
-                    boxShadow: '0 2px 6px rgb(var(--color-accent-500) / 0.3)',
+                    boxShadow: '0 1px 4px rgb(var(--color-accent-500) / 0.25)',
                   }}
                 >
-                  <Crown className="w-3 h-3" />
+                  <Crown className="w-2.5 h-2.5" />
                   {requiredPlan.toUpperCase()}
                 </div>
                 
                 {/* Upgrade benefits */}
-                <p className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? 'Included in upgrade' : 'INCLUS DANS LE PLAN'}
+                <p className="text-[10px] font-semibold uppercase tracking-wide mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Included in plan' : 'INCLUS DANS LE PLAN'}
                 </p>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {[
                     { icon: Sparkles, textEn: 'Unlimited AI queries', textFr: 'Requêtes IA illimitées' },
                     { icon: BarChart3, textEn: 'Advanced analytics', textFr: 'Analytique avancée' },
@@ -452,10 +466,10 @@ export default function PremiumFeatureGate({
                   ].map((item, idx) => (
                     <li 
                       key={idx}
-                      className="flex items-center gap-2.5 text-sm"
+                      className="flex items-center gap-2 text-xs"
                       style={{ color: 'rgb(var(--color-text-secondary))' }}
                     >
-                      <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+                      <item.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
                       <span>{isEn ? item.textEn : item.textFr}</span>
                     </li>
                   ))}
@@ -463,13 +477,13 @@ export default function PremiumFeatureGate({
                 
                 {/* Current plan */}
                 <div 
-                  className="mt-6 pt-4"
-                  style={{ borderTop: '1px solid rgb(var(--color-border) / 0.5)' }}
+                  className="mt-4 pt-3"
+                  style={{ borderTop: '1px solid rgb(var(--color-border) / 0.4)' }}
                 >
-                  <p className="text-xs mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <p className="text-[10px] mb-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? 'Your current plan:' : 'Votre plan actuel:'}
                   </p>
-                  <p className="text-sm font-semibold capitalize" style={{ color: 'rgb(var(--color-text))' }}>
+                  <p className="text-xs font-semibold capitalize" style={{ color: 'rgb(var(--color-text))' }}>
                     {currentPlan}
                   </p>
                 </div>

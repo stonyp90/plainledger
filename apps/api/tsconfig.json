@@ -20,7 +20,8 @@
     "paths": {
       "@domain/*": ["domain/*"],
       "@application/*": ["application/*"],
-      "@infrastructure/*": ["infrastructure/*"]
+      "@infrastructure/*": ["infrastructure/*"],
+      "@__fixtures__/*": ["__fixtures__/*"]
     }
   },
   "include": ["src/**/*"],
