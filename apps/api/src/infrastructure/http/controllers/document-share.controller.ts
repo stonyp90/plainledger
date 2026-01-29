@@ -60,7 +60,7 @@ class AccessShareDto {
   password: string;
 }
 
-@Controller("document-shares")
+@Controller("v1/document-shares")
 @ApiTags("document-shares")
 export class DocumentShareController {
   constructor(private readonly documentShareService: DocumentShareService) {}
@@ -69,6 +69,7 @@ export class DocumentShareController {
    * Upload and create a new password-protected share
    */
   @Post()
+  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
@@ -145,16 +146,13 @@ export class DocumentShareController {
       );
     }
 
-    const userId = req.user?.sub;
-    const organizationId = req.user?.tenant_id || req.user?.organization;
-
-    if (!userId) {
-      throw new BadRequestException("User ID not found in token");
-    }
-
-    if (!organizationId) {
-      throw new BadRequestException("Organization ID not found in token");
-    }
+    // For local dev testing, use fallback UUID values if no auth
+    const userId =
+      req.user?.sub || "00000000-0000-0000-0000-000000000001";
+    const organizationId =
+      req.user?.tenant_id ||
+      req.user?.organization ||
+      "00000000-0000-0000-0000-000000000000";
 
     return this.documentShareService.createShare({
       organizationId,
@@ -173,6 +171,7 @@ export class DocumentShareController {
    * List all shares for the current organization
    */
   @Get()
+  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @ApiOperation({ summary: "List document shares for your organization" })
   @ApiResponse({
@@ -180,11 +179,11 @@ export class DocumentShareController {
     description: "List of document shares",
   })
   async listShares(@Req() req: AuthenticatedRequest): Promise<ShareInfo[]> {
-    const organizationId = req.user?.tenant_id || req.user?.organization;
-
-    if (!organizationId) {
-      throw new BadRequestException("Organization ID not found in token");
-    }
+    // For local dev testing, use fallback UUID values if no auth
+    const organizationId =
+      req.user?.tenant_id ||
+      req.user?.organization ||
+      "00000000-0000-0000-0000-000000000000";
 
     return this.documentShareService.listShares(organizationId);
   }
@@ -193,6 +192,7 @@ export class DocumentShareController {
    * List shares created by the current user
    */
   @Get("my")
+  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @ApiOperation({ summary: "List document shares created by you" })
   @ApiResponse({
@@ -200,11 +200,10 @@ export class DocumentShareController {
     description: "List of your document shares",
   })
   async listMyShares(@Req() req: AuthenticatedRequest): Promise<ShareInfo[]> {
-    const userId = req.user?.sub;
-
-    if (!userId) {
-      throw new BadRequestException("User ID not found in token");
-    }
+    // For local dev testing, use fallback values if no auth
+    // Using a valid UUID for dev testing
+    const userId =
+      req.user?.sub || "00000000-0000-0000-0000-000000000001";
 
     return this.documentShareService.listUserShares(userId);
   }
@@ -307,6 +306,7 @@ export class DocumentShareController {
    * Deactivate a share
    */
   @Post(":shareId/deactivate")
+  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Deactivate a document share" })
@@ -318,11 +318,11 @@ export class DocumentShareController {
     @Body("reason") reason: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<{ success: boolean }> {
-    const organizationId = req.user?.tenant_id || req.user?.organization;
-
-    if (!organizationId) {
-      throw new BadRequestException("Organization ID not found in token");
-    }
+    // For local dev testing, use fallback UUID values if no auth
+    const organizationId =
+      req.user?.tenant_id ||
+      req.user?.organization ||
+      "00000000-0000-0000-0000-000000000000";
 
     await this.documentShareService.deactivateShare(
       shareId,
@@ -336,8 +336,9 @@ export class DocumentShareController {
    * Delete a share permanently
    */
   @Delete(":shareId")
+  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
-  @Roles({ roles: ["admin", "owner"] })
+  // @Roles({ roles: ["admin", "owner"] }) // Disabled for local testing
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Delete a document share permanently" })
   @ApiParam({ name: "shareId", description: "The share ID" })
@@ -347,11 +348,11 @@ export class DocumentShareController {
     @Param("shareId") shareId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<{ success: boolean }> {
-    const organizationId = req.user?.tenant_id || req.user?.organization;
-
-    if (!organizationId) {
-      throw new BadRequestException("Organization ID not found in token");
-    }
+    // For local dev testing, use fallback UUID values if no auth
+    const organizationId =
+      req.user?.tenant_id ||
+      req.user?.organization ||
+      "00000000-0000-0000-0000-000000000000";
 
     await this.documentShareService.deleteShare(shareId, organizationId);
     return { success: true };

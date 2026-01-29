@@ -2584,45 +2584,17 @@ export default function Landing() {
 
           {/* Flywheel Visualization */}
           <motion.div 
-            className="mb-12"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            className="mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <FlywheelVisualization theme={theme} isDark={isDark} />
           </motion.div>
 
           {/* Key Metrics */}
           <AIMetricsRow theme={theme} isDark={isDark} />
-
-          {/* Data Flywheel Messaging */}
-          <motion.div 
-            className="mt-10 p-6 rounded-2xl text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            style={{ 
-              background: `linear-gradient(135deg, ${theme.gold}10 0%, ${theme.green}10 100%)`,
-              border: `1px solid ${theme.gold}20`
-            }}
-          >
-            <h3 
-              className="text-lg font-bold mb-2"
-              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-            >
-              {isEn ? 'The Data Flywheel Effect' : 'L\'effet volant de données'}
-            </h3>
-            <p 
-              className="text-sm max-w-2xl mx-auto"
-              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-            >
-              {isEn 
-                ? 'Every business that joins makes our intelligence better for everyone. Unlike generic AI tools, our recommendations are grounded in real decisions from real Canadian businesses in your industry.'
-                : 'Chaque entreprise qui rejoint améliore notre intelligence pour tous. Contrairement aux outils d\'IA génériques, nos recommandations sont basées sur de vraies décisions d\'entreprises canadiennes dans votre secteur.'}
-            </p>
-          </motion.div>
         </div>
       </section>
 

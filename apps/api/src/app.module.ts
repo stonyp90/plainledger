@@ -19,6 +19,7 @@ import { UserSettingsEntity } from "@infrastructure/persistence/postgres/entitie
 import { DecisionEventEntity } from "@infrastructure/persistence/postgres/entities/decision-event.entity";
 import { IndustryPatternEntity } from "@infrastructure/persistence/postgres/entities/industry-pattern.entity";
 import { SharedDocumentEntity } from "@infrastructure/persistence/postgres/entities/shared-document.entity";
+import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -38,6 +39,8 @@ import { KeycloakAdminController } from "@infrastructure/http/controllers/keyclo
 import { UploadController } from "@infrastructure/http/controllers/upload.controller";
 import { SettingsController } from "@infrastructure/http/controllers/settings.controller";
 import { DocumentShareController } from "@infrastructure/http/controllers/document-share.controller";
+import { EmailWebhookController } from "@infrastructure/http/controllers/email-webhook.controller";
+import { UnsubscribeController } from "@infrastructure/http/controllers/unsubscribe.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
@@ -72,6 +75,8 @@ import { GenerateAIResponseUseCase } from "@application/use-cases/generate-ai-re
 
 // Repositories
 import { PostgresOrganizationRepository } from "@infrastructure/persistence/postgres/postgres-organization.repository";
+import { DecisionRepository } from "@infrastructure/persistence/decision.repository";
+import { DECISION_REPOSITORY_TOKEN } from "@application/ports/outbound/IDecisionRepository";
 import { PostgresAccountRepository } from "@infrastructure/persistence/postgres/postgres-account.repository";
 import { PostgresAnalyticsReportRepository } from "@infrastructure/persistence/postgres/postgres-analytics-report.repository";
 import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persistence/postgres/postgres-organization-features.repository";
@@ -90,9 +95,18 @@ import { SESEmailService } from "./infrastructure/notifications/ses-email.servic
 // Email Templates
 import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
 
+// Journey Tracking
+import { JourneyTrackingService } from "@application/services/journey-tracking.service";
+import { CustomerJourneyJob } from "@infrastructure/jobs/customer-journey.job";
+
+// MongoDB (Analytics & Audit)
+import { MongoDBModule, MongoDBService, AnalyticsRepository, AuditRepository } from "@infrastructure/persistence/mongodb";
+
+// CRM (HubSpot)
+import { HubSpotService } from "@infrastructure/crm/hubspot.service";
+
 // Intelligence Platform
 import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.module";
-import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job";
 
 @Module({
   imports: [
@@ -121,6 +135,7 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
           DecisionEventEntity,
           IndustryPatternEntity,
           SharedDocumentEntity,
+          EmailEventEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -177,6 +192,7 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
       DecisionEventEntity,
       IndustryPatternEntity,
       SharedDocumentEntity,
+      EmailEventEntity,
     ]),
 
     // Keycloak Authentication
@@ -198,6 +214,9 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
 
     // Notifications
     NovuModule,
+
+    // MongoDB (Analytics & Audit - optional, graceful degradation)
+    MongoDBModule,
 
     // GraphQL API
     GraphQLModule,
@@ -226,6 +245,8 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
     UploadController,
     SettingsController,
     DocumentShareController,
+    EmailWebhookController,
+    UnsubscribeController,
   ],
   providers: [
     // Guards
@@ -266,6 +287,8 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
     EmailTemplatesService,
     FileStorageService,
     DocumentShareService,
+    JourneyTrackingService,
+    CustomerJourneyJob,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,
@@ -320,9 +343,18 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
     PostgresOrganizationSettingsRepository,
     PostgresUserSettingsRepository,
     DatabaseInitializerService,
+    DecisionRepository,
+    {
+      provide: DECISION_REPOSITORY_TOKEN,
+      useClass: DecisionRepository,
+    },
 
-    // Scheduled Jobs
-    WeeklyRetrainingJob,
+    // MongoDB Repositories (Analytics & Audit)
+    AnalyticsRepository,
+    AuditRepository,
+
+    // CRM (HubSpot)
+    HubSpotService,
   ],
 })
 export class AppModule {}

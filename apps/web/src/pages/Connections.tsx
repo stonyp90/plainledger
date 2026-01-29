@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Link2, 
   CheckCircle2, 
@@ -289,56 +289,86 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
   );
 }
 
+// Memoized Trust Badges Component
+const TrustBadges = ({ isEn }: { isEn: boolean }) => (
+  <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+    <div className="flex items-center gap-1">
+      <Lock className="w-3 h-3" />
+      {isEn ? 'AES-256 Encryption' : 'Chiffrement AES-256'}
+    </div>
+    <div className="flex items-center gap-1">
+      <Shield className="w-3 h-3" />
+      {isEn ? 'Bank-Level Security' : 'Sécurité bancaire'}
+    </div>
+    <div className="flex items-center gap-1">
+      <Headphones className="w-3 h-3" />
+      {isEn ? 'Customer Success Support' : 'Support client dédié'}
+    </div>
+  </div>
+);
+
+// Steps data moved outside component to prevent recreation
+const SUBSCRIPTION_STEPS: StepType[] = [
+  {
+    number: 1,
+    titleEn: 'Select your software',
+    titleFr: 'Sélectionnez votre logiciel',
+    descEn: 'Choose from QuickBooks, Xero, Sage, FreshBooks, Wave, or upload a CSV. No technical skills required — just pick your accounting system and we\'ll handle the rest.',
+    descFr: 'Choisissez parmi QuickBooks, Xero, Sage, FreshBooks, Wave, ou téléchargez un CSV. Aucune compétence technique requise — choisissez simplement votre système comptable et nous nous occupons du reste.',
+    icon: MousePointerClick,
+    benefitsEn: ['6+ supported platforms', 'CSV import fallback', 'No coding needed'],
+    benefitsFr: ['6+ plateformes supportées', 'Import CSV disponible', 'Aucun code requis'],
+  },
+  {
+    number: 2,
+    titleEn: 'Authorize securely',
+    titleFr: 'Autorisez en toute sécurité',
+    descEn: 'Click one button to grant read-only access. Your data stays encrypted with AES-256. We never modify your accounting records — only read.',
+    descFr: 'Cliquez sur un bouton pour accorder l\'accès en lecture seule. Vos données restent chiffrées avec AES-256. Nous ne modifions jamais vos données — lecture seule.',
+    icon: Shield,
+    benefitsEn: ['Read-only access', 'AES-256 encryption', 'Bank-level security'],
+    benefitsFr: ['Accès lecture seule', 'Chiffrement AES-256', 'Sécurité bancaire'],
+  },
+  {
+    number: 3,
+    titleEn: 'Automatic sync',
+    titleFr: 'Synchronisation automatique',
+    descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed — ever. Set it once and always have up-to-date financial insights.',
+    descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire — jamais. Configurez une fois et ayez toujours des insights à jour.',
+    icon: RefreshCw,
+    benefitsEn: ['Daily auto-sync', 'Zero manual work', 'Real-time updates'],
+    benefitsFr: ['Sync auto quotidien', 'Zéro travail manuel', 'Mises à jour en temps réel'],
+  },
+  {
+    number: 4,
+    titleEn: 'Get insights instantly',
+    titleFr: 'Obtenez des insights instantanément',
+    descEn: 'View board-ready reports, detect anomalies, and track your financial health in plain language. Everything is automatic — no accounting degree required.',
+    descFr: 'Consultez des rapports prêts pour le conseil, détectez les anomalies et suivez votre santé financière en langage clair. Tout est automatique — aucun diplôme en comptabilité requis.',
+    icon: BarChart3,
+    benefitsEn: ['Board-ready reports', 'Anomaly detection', 'Plain language insights'],
+    benefitsFr: ['Rapports prêts pour le CA', 'Détection d\'anomalies', 'Insights en langage clair'],
+  },
+];
+
 // Full-page subscription gate for free users
 function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
   const [showEmailForm, setShowEmailForm] = useState(false);
-  
-  const steps = [
-    {
-      number: 1,
-      titleEn: 'Select your software',
-      titleFr: 'Sélectionnez votre logiciel',
-      descEn: 'Choose from QuickBooks, Xero, Sage, FreshBooks, Wave, or upload a CSV. No technical skills required — just pick your accounting system and we\'ll handle the rest.',
-      descFr: 'Choisissez parmi QuickBooks, Xero, Sage, FreshBooks, Wave, ou téléchargez un CSV. Aucune compétence technique requise — choisissez simplement votre système comptable et nous nous occupons du reste.',
-      icon: MousePointerClick,
-      benefitsEn: ['6+ supported platforms', 'CSV import fallback', 'No coding needed'],
-      benefitsFr: ['6+ plateformes supportées', 'Import CSV disponible', 'Aucun code requis'],
-    },
-    {
-      number: 2,
-      titleEn: 'Authorize securely',
-      titleFr: 'Autorisez en toute sécurité',
-      descEn: 'Click one button to grant read-only access. Your data stays encrypted with AES-256. We never modify your accounting records — only read.',
-      descFr: 'Cliquez sur un bouton pour accorder l\'accès en lecture seule. Vos données restent chiffrées avec AES-256. Nous ne modifions jamais vos données — lecture seule.',
-      icon: Shield,
-      benefitsEn: ['Read-only access', 'AES-256 encryption', 'Bank-level security'],
-      benefitsFr: ['Accès lecture seule', 'Chiffrement AES-256', 'Sécurité bancaire'],
-    },
-    {
-      number: 3,
-      titleEn: 'Automatic sync',
-      titleFr: 'Synchronisation automatique',
-      descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed — ever. Set it once and always have up-to-date financial insights.',
-      descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire — jamais. Configurez une fois et ayez toujours des insights à jour.',
-      icon: RefreshCw,
-      benefitsEn: ['Daily auto-sync', 'Zero manual work', 'Real-time updates'],
-      benefitsFr: ['Sync auto quotidien', 'Zéro travail manuel', 'Mises à jour en temps réel'],
-    },
-    {
-      number: 4,
-      titleEn: 'Get insights instantly',
-      titleFr: 'Obtenez des insights instantanément',
-      descEn: 'View board-ready reports, detect anomalies, and track your financial health in plain language. Everything is automatic — no accounting degree required.',
-      descFr: 'Consultez des rapports prêts pour le conseil, détectez les anomalies et suivez votre santé financière en langage clair. Tout est automatique — aucun diplôme en comptabilité requis.',
-      icon: BarChart3,
-      benefitsEn: ['Board-ready reports', 'Anomaly detection', 'Plain language insights'],
-      benefitsFr: ['Rapports prêts pour le CA', 'Détection d\'anomalies', 'Insights en langage clair'],
-    },
-  ];
 
-  const handleUpgradeClick = () => {
+  const handleUpgradeClick = useCallback(() => {
     window.open(CALENDLY_URL, '_blank');
-  };
+  }, []);
+
+  const handleShowEmailForm = useCallback(() => setShowEmailForm(true), []);
+  const handleHideEmailForm = useCallback(() => setShowEmailForm(false), []);
+
+  // Memoized benefits list
+  const ctaBenefits = useMemo(() => [
+    isEn ? 'Unlimited connections' : 'Connexions illimitées',
+    isEn ? 'Daily auto-sync' : 'Sync auto quotidien',
+    isEn ? 'Board-ready reports' : 'Rapports prêts pour le CA',
+    isEn ? 'Priority support' : 'Support prioritaire',
+  ], [isEn]);
 
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col">
@@ -365,12 +395,12 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
 
       {/* Interactive Timeline */}
       <InteractiveTimeline 
-        steps={steps} 
+        steps={SUBSCRIPTION_STEPS} 
         isEn={isEn}
         onSelectProvider={() => setShowEmailForm(true)}
       />
 
-      {/* Enhanced Upgrade CTA Section - No Green Background */}
+      {/* Enhanced Upgrade CTA Section */}
       <div 
         className="rounded-xl p-5 sm:p-6 text-center relative overflow-hidden"
         style={{ 
@@ -379,11 +409,11 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
         }}
       >
         <div className="relative">
-          {/* Crown icon - smaller */}
+          {/* Crown icon */}
           <div 
             className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
             style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-            onClick={() => setShowEmailForm(true)}
+            onClick={handleShowEmailForm}
           >
             <Crown className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
           </div>
@@ -399,12 +429,7 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
 
           {/* What's included - compact */}
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mb-3">
-            {[
-              isEn ? 'Unlimited connections' : 'Connexions illimitées',
-              isEn ? 'Daily auto-sync' : 'Sync auto quotidien',
-              isEn ? 'Board-ready reports' : 'Rapports prêts pour le CA',
-              isEn ? 'Priority support' : 'Support prioritaire',
-            ].map((item, idx) => (
+            {ctaBenefits.map((item, idx) => (
               <span 
                 key={idx}
                 className="inline-flex items-center gap-1 text-xs"
@@ -429,12 +454,12 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
                 feature="customReports"
                 compact={true}
                 showCalendlyOption={true}
-                onSubmitted={() => setShowEmailForm(false)}
+                onSubmitted={handleHideEmailForm}
                 title={isEn ? 'Connect Accounting Software' : 'Connecter un logiciel comptable'}
                 description={isEn ? 'We\'ll get back to you within 24 hours.' : 'Nous vous répondrons dans les 24 heures.'}
               />
               <button
-                onClick={() => setShowEmailForm(false)}
+                onClick={handleHideEmailForm}
                 className="mt-2 text-[10px] underline opacity-70 hover:opacity-100 transition-opacity"
                 style={{ color: 'rgb(var(--color-text-muted))' }}
               >
@@ -456,7 +481,7 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
                 <ArrowRight className="w-2.5 h-2.5 transition-transform group-hover:translate-x-0.5" />
               </button>
               <button
-                onClick={() => setShowEmailForm(true)}
+                onClick={handleShowEmailForm}
                 className="group flex items-center gap-1 px-3 py-1.5 rounded-md font-medium text-xs transition-all hover:opacity-90 active:scale-[0.98] border"
                 style={{ 
                   borderColor: 'rgb(var(--color-primary-500))',
@@ -471,72 +496,60 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
           )}
 
           {/* Trust badges */}
-          <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <div className="flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              {isEn ? 'AES-256 Encryption' : 'Chiffrement AES-256'}
-            </div>
-            <div className="flex items-center gap-1">
-              <Shield className="w-3 h-3" />
-              {isEn ? 'Bank-Level Security' : 'Sécurité bancaire'}
-            </div>
-            <div className="flex items-center gap-1">
-              <Headphones className="w-3 h-3" />
-              {isEn ? 'Customer Success Support' : 'Support client dédié'}
-            </div>
-          </div>
+          <TrustBadges isEn={isEn} />
         </div>
       </div>
     </div>
   );
 }
 
+// Onboarding steps data (moved outside component)
+const ONBOARDING_STEPS = [
+  {
+    number: 1,
+    titleEn: 'Select your software',
+    titleFr: 'Sélectionnez votre logiciel',
+    descEn: 'Choose from QuickBooks, Xero, Sage, FreshBooks, Wave, or upload a CSV. No technical skills required.',
+    descFr: 'Choisissez parmi QuickBooks, Xero, Sage, FreshBooks, Wave, ou téléchargez un CSV. Aucune compétence technique requise.',
+    icon: MousePointerClick,
+    actionEn: 'Browse integrations below',
+    actionFr: 'Parcourir les intégrations ci-dessous',
+  },
+  {
+    number: 2,
+    titleEn: 'Authorize securely',
+    titleFr: 'Autorisez en toute sécurité',
+    descEn: 'Click one button to grant read-only access. Your data stays encrypted with AES-256 and we never modify your records.',
+    descFr: 'Cliquez sur un bouton pour accorder l\'accès en lecture seule. Vos données restent chiffrées avec AES-256 et nous ne modifions jamais vos enregistrements.',
+    icon: Shield,
+    actionEn: 'One-click authorization',
+    actionFr: 'Autorisation en un clic',
+  },
+  {
+    number: 3,
+    titleEn: 'Automatic sync',
+    titleFr: 'Synchronisation automatique',
+    descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed—ever.',
+    descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire.',
+    icon: RefreshCw,
+    actionEn: 'Set it and forget it',
+    actionFr: 'Configurez et oubliez',
+  },
+  {
+    number: 4,
+    titleEn: 'Get insights instantly',
+    titleFr: 'Obtenez des insights instantanément',
+    descEn: 'View board-ready reports, detect anomalies, and track your financial health in plain language.',
+    descFr: 'Consultez des rapports prêts pour le conseil, détectez les anomalies et suivez votre santé financière en langage clair.',
+    icon: BarChart3,
+    actionEn: 'Start analyzing',
+    actionFr: 'Commencer l\'analyse',
+  },
+];
+
 // Interactive onboarding steps component
 function OnboardingSteps({ isEn, onSelectProvider }: { isEn: boolean; onSelectProvider: () => void }) {
   const [activeStep, setActiveStep] = useState(1);
-  
-  const steps = [
-    {
-      number: 1,
-      titleEn: 'Select your software',
-      titleFr: 'Sélectionnez votre logiciel',
-      descEn: 'Choose from QuickBooks, Xero, Sage, FreshBooks, Wave, or upload a CSV. No technical skills required.',
-      descFr: 'Choisissez parmi QuickBooks, Xero, Sage, FreshBooks, Wave, ou téléchargez un CSV. Aucune compétence technique requise.',
-      icon: MousePointerClick,
-      actionEn: 'Browse integrations below',
-      actionFr: 'Parcourir les intégrations ci-dessous',
-    },
-    {
-      number: 2,
-      titleEn: 'Authorize securely',
-      titleFr: 'Autorisez en toute sécurité',
-      descEn: 'Click one button to grant read-only access. Your data stays encrypted with AES-256 and we never modify your records.',
-      descFr: 'Cliquez sur un bouton pour accorder l\'accès en lecture seule. Vos données restent chiffrées avec AES-256 et nous ne modifions jamais vos enregistrements.',
-      icon: Shield,
-      actionEn: 'One-click authorization',
-      actionFr: 'Autorisation en un clic',
-    },
-    {
-      number: 3,
-      titleEn: 'Automatic sync',
-      titleFr: 'Synchronisation automatique',
-      descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed—ever.',
-      descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire.',
-      icon: RefreshCw,
-      actionEn: 'Set it and forget it',
-      actionFr: 'Configurez et oubliez',
-    },
-    {
-      number: 4,
-      titleEn: 'Get insights instantly',
-      titleFr: 'Obtenez des insights instantanément',
-      descEn: 'View board-ready reports, detect anomalies, and track your financial health in plain language.',
-      descFr: 'Consultez des rapports prêts pour le conseil, détectez les anomalies et suivez votre santé financière en langage clair.',
-      icon: BarChart3,
-      actionEn: 'Start analyzing',
-      actionFr: 'Commencer l\'analyse',
-    },
-  ];
 
   return (
     <div className="mb-8">
@@ -581,7 +594,7 @@ function OnboardingSteps({ isEn, onSelectProvider }: { isEn: boolean; onSelectPr
         {/* Steps navigation */}
         <div className="px-5 py-3 sm:px-6 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
           <div className="flex items-center gap-1 overflow-x-auto">
-            {steps.map((step, index) => (
+            {ONBOARDING_STEPS.map((step, index) => (
               <button
                 key={step.number}
                 onClick={() => setActiveStep(step.number)}
@@ -611,7 +624,7 @@ function OnboardingSteps({ isEn, onSelectProvider }: { isEn: boolean; onSelectPr
                 <span className="font-medium text-xs hidden sm:inline">
                   {isEn ? step.titleEn : step.titleFr}
                 </span>
-                {index < steps.length - 1 && (
+                {index < ONBOARDING_STEPS.length - 1 && (
                   <ArrowRight 
                     className="w-3.5 h-3.5 hidden lg:block ml-1" 
                     style={{ color: 'rgb(var(--color-text-muted))' }}
@@ -624,7 +637,7 @@ function OnboardingSteps({ isEn, onSelectProvider }: { isEn: boolean; onSelectPr
 
         {/* Active step content */}
         <div className="p-5 sm:p-6">
-          {steps.map((step) => (
+          {ONBOARDING_STEPS.map((step) => (
             <div 
               key={step.number}
               className={`transition-all duration-300 ${activeStep === step.number ? 'block' : 'hidden'}`}

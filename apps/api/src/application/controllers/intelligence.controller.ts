@@ -14,6 +14,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Inject,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "@infrastructure/auth/jwt-auth.guard";
 import { IntelligenceRouterService } from "@infrastructure/intelligence/intelligence-router.service";
@@ -22,13 +23,17 @@ import {
   DecisionContext,
 } from "../ports/outbound/IIntelligenceEngine";
 import { Money } from "@domain/value-objects/Money";
-import { IDecisionRepository } from "../ports/outbound/IDecisionRepository";
+import {
+  IDecisionRepository,
+  DECISION_REPOSITORY_TOKEN,
+} from "../ports/outbound/IDecisionRepository";
 
 @Controller("api/v1/intelligence")
 @UseGuards(JwtAuthGuard)
 export class IntelligenceController {
   constructor(
     private readonly intelligenceRouter: IntelligenceRouterService,
+    @Inject(DECISION_REPOSITORY_TOKEN)
     private readonly decisionRepository: IDecisionRepository,
   ) {}
 

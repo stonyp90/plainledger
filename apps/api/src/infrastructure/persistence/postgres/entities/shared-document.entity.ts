@@ -14,16 +14,15 @@ import {
  * Documents are stored in S3, this tracks the share link details.
  */
 @Entity({ name: "shared_documents", schema: "integration" })
-@Index(["organization_id"])
-@Index(["created_by"])
-@Index(["expires_at"])
-@Index(["share_token"], { unique: true })
+@Index(["organizationId"])
+@Index(["createdBy"])
+@Index(["expiresAt"])
+@Index(["shareToken"], { unique: true })
 export class SharedDocumentEntity {
   @PrimaryColumn({ type: "uuid" })
   id: string;
 
   @Column({ name: "organization_id", type: "uuid" })
-  @Index()
   organizationId: string;
 
   @Column({ name: "created_by", type: "uuid" })

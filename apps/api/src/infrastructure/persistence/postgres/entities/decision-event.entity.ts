@@ -8,16 +8,15 @@ import {
 } from "typeorm";
 
 @Entity({ name: "decision_events", schema: "intelligence" })
-@Index(["organization_id"])
+@Index(["organizationId"])
 @Index(["industry"])
-@Index(["created_at"])
-@Index(["industry", "trigger_metric"])
+@Index(["createdAt"])
+@Index(["industry", "triggerMetric"])
 export class DecisionEventEntity {
   @PrimaryColumn({ type: "varchar", length: 255 })
   id: string;
 
   @Column({ name: "organization_id", type: "uuid" })
-  @Index()
   organizationId: string;
 
   @Column({ type: "varchar", length: 50 })

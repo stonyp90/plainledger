@@ -1,11 +1,31 @@
 /**
  * Analytics Service
  * Unified tracking for customer flow monitoring
- * Integrates with Segment, Mixpanel, Google Analytics, and Hotjar
+ * Integrates with Google Analytics, PostHog, and optionally Segment/Mixpanel
+ *
+ * Primary (FREE):
+ * - Google Analytics GA4 (unlimited events)
+ * - PostHog (1M events + 5K recordings/month free)
+ *
+ * Optional (paid):
+ * - Segment (data routing)
+ * - Mixpanel (product analytics)
  */
+
+import posthogService from './posthog';
 
 // Analytics configuration from environment
 const ANALYTICS_CONFIG = {
+  // PRIMARY: Free tier analytics
+  googleAnalytics: {
+    measurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-85LVG81DY5',
+    enabled: true, // Always enabled - free
+  },
+  posthog: {
+    apiKey: import.meta.env.VITE_POSTHOG_KEY || 'phc_2nSLndf5sZu7lXOugOH7g7w3oNwxF24Hewla7X3CT2s',
+    enabled: true, // Always enabled - generous free tier
+  },
+  // OPTIONAL: Paid analytics (enable when needed)
   segment: {
     writeKey: import.meta.env.VITE_SEGMENT_WRITE_KEY || '',
     enabled: !!import.meta.env.VITE_SEGMENT_WRITE_KEY,
@@ -14,13 +34,9 @@ const ANALYTICS_CONFIG = {
     token: import.meta.env.VITE_MIXPANEL_TOKEN || '',
     enabled: !!import.meta.env.VITE_MIXPANEL_TOKEN,
   },
-  googleAnalytics: {
-    measurementId: import.meta.env.VITE_GA_MEASUREMENT_ID || '',
-    enabled: !!import.meta.env.VITE_GA_MEASUREMENT_ID,
-  },
   hotjar: {
     siteId: import.meta.env.VITE_HOTJAR_SITE_ID || '',
-    enabled: !!import.meta.env.VITE_HOTJAR_SITE_ID,
+    enabled: !!import.meta.env.VITE_HOTJAR_SITE_ID, // Not needed - PostHog has session recording
   },
   debug: import.meta.env.DEV,
 };
@@ -238,7 +254,29 @@ class Analytics {
     };
 
     this.execute(() => {
-      // Segment
+      // PostHog (primary - free)
+      if (ANALYTICS_CONFIG.posthog.enabled) {
+        posthogService.identify(userId, {
+          email: traits?.email,
+          name: traits?.name,
+          firstName: traits?.firstName,
+          lastName: traits?.lastName,
+          organizationId: traits?.organizationId,
+          organizationName: traits?.organizationName,
+          subscriptionTier: traits?.subscriptionTier as 'free' | 'pro' | 'premium',
+          signupDate: traits?.createdAt,
+          locale: traits?.locale,
+        });
+        // Set organization for B2B analytics
+        if (traits?.organizationId) {
+          posthogService.setOrganization(traits.organizationId, {
+            name: traits.organizationName,
+            plan: traits.subscriptionTier,
+          });
+        }
+      }
+
+      // Segment (optional)
       if ((window as any).analytics?.identify) {
         (window as any).analytics.identify(userId, enrichedTraits);
       }
@@ -248,9 +286,14 @@ class Analytics {
         (window as any).gtag('config', ANALYTICS_CONFIG.googleAnalytics.measurementId, {
           user_id: userId,
         });
+        // Set user properties
+        (window as any).gtag('set', 'user_properties', {
+          subscription_tier: traits?.subscriptionTier || 'free',
+          organization_id: traits?.organizationId,
+        });
       }
 
-      // Hotjar
+      // Hotjar (optional - PostHog has session recording)
       if ((window as any).hj) {
         (window as any).hj('identify', userId, enrichedTraits);
       }
@@ -273,7 +316,12 @@ class Analytics {
     };
 
     this.execute(() => {
-      // Segment
+      // PostHog (primary - free)
+      if (ANALYTICS_CONFIG.posthog.enabled) {
+        posthogService.trackPageView(window.location.pathname);
+      }
+
+      // Segment (optional)
       if ((window as any).analytics?.page) {
         (window as any).analytics.page(name, pageProperties);
       }
@@ -304,7 +352,12 @@ class Analytics {
     };
 
     this.execute(() => {
-      // Segment
+      // PostHog (primary - free)
+      if (ANALYTICS_CONFIG.posthog.enabled) {
+        posthogService.track(event, eventProperties as Record<string, string | number | boolean | null | undefined | string[]>);
+      }
+
+      // Segment (optional)
       if ((window as any).analytics?.track) {
         (window as any).analytics.track(event, eventProperties);
       }
@@ -323,7 +376,17 @@ class Analytics {
    */
   group(groupId: string, traits?: EventProperties): void {
     this.execute(() => {
-      // Segment
+      // PostHog (primary - free)
+      if (ANALYTICS_CONFIG.posthog.enabled) {
+        posthogService.setOrganization(groupId, {
+          name: traits?.name as string,
+          industry: traits?.industry as string,
+          size: traits?.size as string,
+          plan: traits?.plan as string,
+        });
+      }
+
+      // Segment (optional)
       if ((window as any).analytics?.group) {
         (window as any).analytics.group(groupId, traits);
       }
@@ -340,7 +403,12 @@ class Analytics {
     this.anonymousId = this.generateAnonymousId();
     
     this.execute(() => {
-      // Segment
+      // PostHog (primary - free)
+      if (ANALYTICS_CONFIG.posthog.enabled) {
+        posthogService.reset();
+      }
+
+      // Segment (optional)
       if ((window as any).analytics?.reset) {
         (window as any).analytics.reset();
       }

@@ -1797,31 +1797,49 @@ export default function BoardMeeting() {
                 </span>
               </div>
               
-              {/* Blurred Slide Previews - Grid layout */}
+              {/* Mini Dashboard Preview - Grid layout */}
               <div className="grid grid-cols-2 gap-1.5">
-                {[1, 2, 3, 4].map((slide) => (
+                {[
+                  { label: isEn ? 'Revenue' : 'Revenus', value: '$1.2M', change: '+12%', bars: [40, 55, 45, 70, 65, 80] },
+                  { label: isEn ? 'Margin' : 'Marge', value: '42%', change: '+3%', bars: [30, 35, 40, 38, 42, 45] },
+                  { label: isEn ? 'Cash' : 'Trésorerie', value: '$340K', change: '+8%', bars: [50, 45, 55, 60, 58, 65] },
+                  { label: isEn ? 'Growth' : 'Croissance', value: '+24%', change: 'YoY', bars: [20, 30, 35, 45, 55, 70] },
+                ].map((item, idx) => (
                   <div 
-                    key={slide}
-                    className="relative rounded p-2 overflow-hidden aspect-[4/3]"
+                    key={idx}
+                    className="relative rounded p-2 overflow-hidden"
                     style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                   >
-                    {/* Slide content placeholder */}
                     <div className="space-y-1">
-                      <div 
-                        className="h-1 rounded w-3/4"
-                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
-                      />
-                      <div 
-                        className="h-0.5 rounded w-full"
-                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
-                      />
-                    </div>
-                    {/* Overlay blur effect */}
-                    <div 
-                      className="absolute inset-0 backdrop-blur-sm flex items-center justify-center rounded"
-                      style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
-                    >
-                      <Presentation className="w-3 h-3 opacity-50" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[8px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          {item.label}
+                        </span>
+                        <span 
+                          className="text-[8px] font-medium"
+                          style={{ color: item.change.startsWith('+') ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))' }}
+                        >
+                          {item.change}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                        {item.value}
+                      </div>
+                      {/* Mini bar chart */}
+                      <div className="flex items-end gap-0.5 h-4">
+                        {item.bars.map((height, i) => (
+                          <div 
+                            key={i}
+                            className="flex-1 rounded-t"
+                            style={{ 
+                              height: `${height}%`,
+                              backgroundColor: i === item.bars.length - 1 
+                                ? 'rgb(var(--color-primary-500))' 
+                                : 'rgb(var(--color-primary-500) / 0.3)'
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}

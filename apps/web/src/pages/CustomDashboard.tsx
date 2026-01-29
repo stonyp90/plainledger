@@ -596,33 +596,34 @@ export default function CustomDashboard() {
               
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { icon: BarChart3, name: isEn ? 'Revenue' : 'Revenus' },
-                  { icon: PieChart, name: isEn ? 'Expenses' : 'Dépenses' },
-                  { icon: LineChart, name: isEn ? 'Trends' : 'Tendances' },
-                  { icon: TrendingUp, name: isEn ? 'Growth' : 'Croissance' },
+                  { icon: BarChart3, name: isEn ? 'Revenue' : 'Revenus', value: '$371K', change: '+12%' },
+                  { icon: PieChart, name: isEn ? 'Expenses' : 'Dépenses', value: '$218K', change: '-5%' },
+                  { icon: LineChart, name: isEn ? 'Trends' : 'Tendances', value: '+8.2%', change: 'MoM' },
+                  { icon: TrendingUp, name: isEn ? 'Growth' : 'Croissance', value: '+24%', change: 'YoY' },
                 ].map((chart, idx) => (
                   <div 
                     key={idx}
                     className="relative rounded-lg p-3 overflow-hidden"
                     style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                   >
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1">
                       <div 
-                        className="w-8 h-8 rounded flex items-center justify-center opacity-30"
+                        className="w-8 h-8 rounded flex items-center justify-center"
                         style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                       >
                         <chart.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       </div>
-                      <div 
-                        className="w-full h-2 rounded"
-                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
-                      />
-                      <div 
-                        className="w-full h-1 rounded"
-                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
-                      />
+                      <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                        {chart.value}
+                      </span>
+                      <span 
+                        className="text-[10px] font-medium"
+                        style={{ color: chart.change.startsWith('+') ? 'rgb(var(--color-success))' : chart.change.startsWith('-') ? 'rgb(var(--color-error))' : 'rgb(var(--color-text-muted))' }}
+                      >
+                        {chart.change}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-center mt-1 block opacity-50" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    <span className="text-[10px] text-center mt-1 block" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       {chart.name}
                     </span>
                   </div>

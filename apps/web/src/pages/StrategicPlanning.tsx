@@ -422,21 +422,39 @@ export default function StrategicPlanning() {
                 </span>
               </div>
               
-              {/* Blurred Chart Preview */}
+              {/* Blurred Chart Preview with Sample Data */}
               <div className="relative rounded-lg p-3 overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                <div className="space-y-2">
-                  {/* Chart bars */}
-                  {[0.8, 0.6, 0.4, 0.2, 0.1].map((height, idx) => (
-                    <div key={idx} className="flex items-end gap-1">
+                {/* Sample runway data visualization */}
+                <div className="flex items-end justify-between gap-1 h-20">
+                  {[
+                    { month: 'Jan', cash: 850, color: '#10B981' },
+                    { month: 'Feb', cash: 825, color: '#10B981' },
+                    { month: 'Mar', cash: 800, color: '#10B981' },
+                    { month: 'Apr', cash: 775, color: '#10B981' },
+                    { month: 'May', cash: 750, color: '#10B981' },
+                    { month: 'Jun', cash: 720, color: '#F59E0B' },
+                    { month: 'Jul', cash: 690, color: '#F59E0B' },
+                    { month: 'Aug', cash: 655, color: '#F59E0B' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex flex-col items-center flex-1">
                       <div 
-                        className="flex-1 rounded-t"
+                        className="w-full rounded-t transition-all"
                         style={{ 
-                          height: `${height * 60}px`,
-                          backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
+                          height: `${(item.cash / 850) * 56}px`,
+                          backgroundColor: `${item.color}40`,
+                          borderTop: `2px solid ${item.color}`,
                         }}
                       />
+                      <span className="text-[7px] mt-1 font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {item.month}
+                      </span>
                     </div>
                   ))}
+                </div>
+                {/* Cash labels */}
+                <div className="flex justify-between mt-2 text-[8px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>$850K</span>
+                  <span>$655K</span>
                 </div>
                 {/* Overlay blur effect */}
                 <div 

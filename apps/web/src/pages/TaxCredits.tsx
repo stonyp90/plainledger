@@ -393,16 +393,16 @@ export default function TaxCredits() {
                 </div>
                 
                 <div className="space-y-2">
-                  {['SR&ED', 'CDAE', 'OIDMTC'].map((credit) => (
-                    <div key={credit} className="flex items-center justify-between">
-                      <span className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>{credit}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>$</span>
-                        <div 
-                          className="w-16 h-4 rounded"
-                          style={{ backgroundColor: 'rgb(var(--color-border))' }}
-                        />
-                      </div>
+                  {[
+                    { name: 'SR&ED', value: '45,200' },
+                    { name: 'CDAE', value: '18,500' },
+                    { name: 'OIDMTC', value: '12,800' },
+                  ].map((credit) => (
+                    <div key={credit.name} className="flex items-center justify-between">
+                      <span className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>{credit.name}</span>
+                      <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                        ${credit.value}
+                      </span>
                     </div>
                   ))}
                   <div 
@@ -412,13 +412,9 @@ export default function TaxCredits() {
                     <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn ? 'Total Estimated' : 'Total estimé'}
                     </span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>$</span>
-                      <div 
-                        className="w-20 h-5 rounded"
-                        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.15)' }}
-                      />
-                    </div>
+                    <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                      $76,500
+                    </span>
                   </div>
                 </div>
               </div>

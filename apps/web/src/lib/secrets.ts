@@ -219,9 +219,12 @@ export function sanitizeForLogging<T extends Record<string, unknown>>(obj: T): T
  */
 class SecretsService {
   private apiBaseUrl: string;
+  private isDemoMode: boolean;
   
   constructor() {
-    this.apiBaseUrl = import.meta.env.VITE_API_URL || '/api';
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || '';
+    // If no API URL is configured, use demo mode with mock data
+    this.isDemoMode = !this.apiBaseUrl;
   }
   
   /**
@@ -240,6 +243,11 @@ class SecretsService {
    * List all secrets for an organization (metadata only, no values)
    */
   async listSecrets(organizationId: string): Promise<SecretMetadata[]> {
+    // In demo mode, return mock data directly without network request
+    if (this.isDemoMode) {
+      return this.getMockSecrets(organizationId);
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(
@@ -267,6 +275,28 @@ class SecretsService {
     organizationId: string,
     request: CreateSecretRequest
   ): Promise<SecretMetadata> {
+    // In demo mode, return a mock response
+    if (this.isDemoMode) {
+      const now = new Date().toISOString();
+      return {
+        id: `secret_${Date.now()}`,
+        name: request.name,
+        description: request.description,
+        provider: request.provider,
+        type: request.type,
+        maskedValue: maskSecret(request.value),
+        isExpired: false,
+        createdAt: now,
+        createdBy: 'demo@plainledger.ca',
+        updatedAt: now,
+        updatedBy: 'demo@plainledger.ca',
+        accessCount: 0,
+        status: 'active',
+        organizationId,
+        environment: request.environment,
+      };
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(`${this.apiBaseUrl}/secrets`, {
@@ -299,6 +329,28 @@ class SecretsService {
     organizationId: string,
     request: UpdateSecretRequest
   ): Promise<SecretMetadata> {
+    // In demo mode, return a mock response
+    if (this.isDemoMode) {
+      const now = new Date().toISOString();
+      return {
+        id: request.secretId,
+        name: 'Rotated Secret',
+        provider: 'internal',
+        type: 'api_key',
+        maskedValue: maskSecret(request.value),
+        lastRotated: now,
+        isExpired: false,
+        createdAt: now,
+        createdBy: 'demo@plainledger.ca',
+        updatedAt: now,
+        updatedBy: 'demo@plainledger.ca',
+        accessCount: 0,
+        status: 'active',
+        organizationId,
+        environment: 'production',
+      };
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(
@@ -336,6 +388,12 @@ class SecretsService {
     secretId: string,
     reason?: string
   ): Promise<void> {
+    // In demo mode, just log and return
+    if (this.isDemoMode) {
+      this.logAuditEvent('revoked', secretId, organizationId);
+      return;
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       await fetch(
@@ -362,6 +420,12 @@ class SecretsService {
     organizationId: string,
     secretId: string
   ): Promise<void> {
+    // In demo mode, just log and return
+    if (this.isDemoMode) {
+      this.logAuditEvent('deleted', secretId, organizationId);
+      return;
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       await fetch(`${this.apiBaseUrl}/secrets/${secretId}`, {
@@ -385,6 +449,12 @@ class SecretsService {
     organizationId: string,
     secretId: string
   ): Promise<{ valid: boolean; message?: string }> {
+    // In demo mode, return mock validation success
+    if (this.isDemoMode) {
+      this.logAuditEvent('accessed', secretId, organizationId);
+      return { valid: true, message: 'Demo mode - validation simulated' };
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(
@@ -413,6 +483,11 @@ class SecretsService {
     organizationId: string,
     options?: { secretId?: string; limit?: number; startDate?: string; endDate?: string }
   ): Promise<SecretAuditLog[]> {
+    // In demo mode, return mock data directly without network request
+    if (this.isDemoMode) {
+      return this.getMockAuditLogs();
+    }
+    
     try {
       const headers = await this.getAuthHeader();
       const params = new URLSearchParams({

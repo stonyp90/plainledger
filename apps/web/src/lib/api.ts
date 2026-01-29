@@ -333,23 +333,24 @@ export const tenantsApi = {
     api.delete(`/tenants/${tenantId}/members/${memberId}`),
 };
 
-// Connections
+// Connections (uses datasources API endpoint)
+const CONNECTIONS_BASE = '/api/datasources';
 export const connectionsApi = {
-  list: () => api.get<unknown[]>('/connections'),
+  list: () => api.get<unknown[]>(CONNECTIONS_BASE),
   
-  get: (id: string) => api.get<unknown>(`/connections/${id}`),
+  get: (id: string) => api.get<unknown>(`${CONNECTIONS_BASE}/${id}`),
   
   create: (data: { provider: string; credentials: unknown }) =>
-    api.post<unknown>('/connections', data),
+    api.post<unknown>(CONNECTIONS_BASE, data),
   
   update: (id: string, data: Partial<unknown>) =>
-    api.patch<unknown>(`/connections/${id}`, data),
+    api.patch<unknown>(`${CONNECTIONS_BASE}/${id}`, data),
   
-  delete: (id: string) => api.delete(`/connections/${id}`),
+  delete: (id: string) => api.delete(`${CONNECTIONS_BASE}/${id}`),
   
-  sync: (id: string) => api.post<unknown>(`/connections/${id}/sync`),
+  sync: (id: string) => api.post<unknown>(`${CONNECTIONS_BASE}/${id}/sync`),
   
-  test: (id: string) => api.post<{ success: boolean }>(`/connections/${id}/test`),
+  test: (id: string) => api.post<{ success: boolean }>(`${CONNECTIONS_BASE}/${id}/test`),
 };
 
 // Reports

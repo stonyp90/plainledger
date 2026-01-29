@@ -40,7 +40,7 @@ function getEnvBool(key: string, defaultValue: boolean = false): boolean {
 
 export const config: AppConfig = {
   api: {
-    baseUrl: getEnvVar('VITE_API_URL', 'http://localhost:3001/api'),
+    baseUrl: getEnvVar('VITE_API_URL', ''),
     timeout: parseInt(getEnvVar('VITE_API_TIMEOUT', '30000'), 10),
   },
   keycloak: {

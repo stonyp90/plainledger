@@ -406,9 +406,9 @@ export default function MarketAnalysis() {
               
               <div className="space-y-3">
                 {[
-                  { label: isEn ? 'Gross Margin' : 'Marge brute', value: '██%', icon: Percent },
-                  { label: isEn ? 'Net Margin' : 'Marge nette', value: '██%', icon: DollarSign },
-                  { label: isEn ? 'Current Ratio' : 'Ratio de liquidité', value: '█.█', icon: Scale },
+                  { label: isEn ? 'Gross Margin' : 'Marge brute', value: '42%', icon: Percent, progress: 70 },
+                  { label: isEn ? 'Net Margin' : 'Marge nette', value: '18%', icon: DollarSign, progress: 60 },
+                  { label: isEn ? 'Current Ratio' : 'Ratio de liquidité', value: '2.1', icon: Scale, progress: 85 },
                 ].map((metric, idx) => (
                   <div 
                     key={idx}
@@ -417,19 +417,27 @@ export default function MarketAnalysis() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <metric.icon className="w-4 h-4 opacity-50" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                        <span className="text-xs font-medium opacity-50" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                        <metric.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                           {metric.label}
                         </span>
                       </div>
-                      <span className="text-sm font-bold opacity-30" style={{ color: 'rgb(var(--color-text))' }}>
+                      <span className="text-sm font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                         {metric.value}
                       </span>
                     </div>
                     <div 
-                      className="h-2 rounded-full"
+                      className="h-2 rounded-full overflow-hidden"
                       style={{ backgroundColor: 'rgb(var(--color-border))' }}
-                    />
+                    >
+                      <div 
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${metric.progress}%`,
+                          backgroundColor: 'rgb(var(--color-primary-500))'
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

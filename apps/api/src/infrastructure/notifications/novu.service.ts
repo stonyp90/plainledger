@@ -113,6 +113,17 @@ export const NovuWorkflows = {
   // Contact
   CONTACT_FORM: "contact-form", // Contact form submission notification
   CONTACT_FORM_AUTO_REPLY: "contact-form-auto-reply", // Auto-reply to sender
+
+  // Journey / GTM Emails (automated sequences)
+  JOURNEY_DAY_1: "journey-day-1", // Day 1: Connect your accounting software
+  JOURNEY_DAY_3: "journey-day-3", // Day 3: Schedule onboarding call
+  JOURNEY_DAY_7: "journey-day-7", // Day 7: Need help? Book a demo
+  JOURNEY_FIRST_DASHBOARD: "journey-first-dashboard", // After connection: Your dashboard is ready
+  JOURNEY_FIRST_REPORT: "journey-first-report", // After first report: Upgrade for advanced insights
+  JOURNEY_TRIAL_REMINDER_3: "journey-trial-reminder-3", // 3 days before trial ends
+  JOURNEY_TRIAL_REMINDER_1: "journey-trial-reminder-1", // 1 day before trial ends
+  JOURNEY_WINBACK: "journey-winback", // 14 days inactive: We miss you
+  JOURNEY_WEEKLY_DIGEST: "journey-weekly-digest", // Weekly engagement email
 } as const;
 
 type _WorkflowId = (typeof NovuWorkflows)[keyof typeof NovuWorkflows];
@@ -969,6 +980,179 @@ export class NovuService implements OnModuleInit, INotificationService {
         },
       });
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Journey / GTM Email Methods
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Send Day 1 journey email - Connect your accounting software
+   */
+  async sendJourneyDay1(
+    userId: string,
+    data: { firstName: string; email: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.JOURNEY_DAY_1,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        subject: "Connect your accounting software to PlainLedger",
+        connectionUrl: `${this.getBaseUrl()}/app/connections`,
+        calendlyUrl: "https://calendly.com/anthonypaquet1508",
+      },
+    });
+  }
+
+  /**
+   * Send Day 3 journey email - Schedule onboarding call
+   */
+  async sendJourneyDay3(
+    userId: string,
+    data: { firstName: string; email: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.JOURNEY_DAY_3,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        subject: "Need help getting started? Let's chat!",
+        calendlyUrl: "https://calendly.com/anthonypaquet1508",
+        helpUrl: `${this.getBaseUrl()}/help`,
+      },
+    });
+  }
+
+  /**
+   * Send Day 7 journey email - Need help? Book a demo
+   */
+  async sendJourneyDay7(
+    userId: string,
+    data: { firstName: string; email: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.JOURNEY_DAY_7,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        subject: "We're here to help you succeed",
+        calendlyUrl: "https://calendly.com/anthonypaquet1508",
+        connectionUrl: `${this.getBaseUrl()}/app/connections`,
+        featuresUrl: `${this.getBaseUrl()}/features`,
+      },
+    });
+  }
+
+  /**
+   * Send dashboard ready email - After first connection
+   */
+  async sendJourneyFirstDashboard(
+    userId: string,
+    data: { firstName: string; providerName: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.JOURNEY_FIRST_DASHBOARD,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        providerName: data.providerName,
+        subject: "Your financial dashboard is ready!",
+        dashboardUrl: `${this.getBaseUrl()}/app/dashboard`,
+        reportsUrl: `${this.getBaseUrl()}/app/reports`,
+      },
+    });
+  }
+
+  /**
+   * Send trial reminder - 3 days before trial ends
+   */
+  async sendJourneyTrialReminder3(
+    userId: string,
+    data: { firstName: string; trialEndsAt: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.JOURNEY_TRIAL_REMINDER_3,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        trialEndsAt: data.trialEndsAt,
+        daysLeft: 3,
+        subject: "Your PlainLedger trial ends in 3 days",
+        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
+        pricingUrl: `${this.getBaseUrl()}/pricing`,
+      },
+    });
+  }
+
+  /**
+   * Send trial reminder - 1 day before trial ends
+   */
+  async sendJourneyTrialReminder1(
+    userId: string,
+    data: { firstName: string; trialEndsAt: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.JOURNEY_TRIAL_REMINDER_1,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        trialEndsAt: data.trialEndsAt,
+        daysLeft: 1,
+        subject: "Last day of your PlainLedger trial!",
+        upgradeUrl: `${this.getBaseUrl()}/app/settings?tab=subscription`,
+        pricingUrl: `${this.getBaseUrl()}/pricing`,
+      },
+    });
+  }
+
+  /**
+   * Send winback email - For inactive users
+   */
+  async sendJourneyWinback(
+    userId: string,
+    data: { firstName: string; lastActiveAt: string },
+  ): Promise<{ transactionId: string }> {
+    return this.trigger({
+      workflowId: NovuWorkflows.WINBACK_OFFER,
+      to: userId,
+      payload: {
+        firstName: data.firstName,
+        lastActiveAt: data.lastActiveAt,
+        subject: "We miss you at PlainLedger!",
+        dashboardUrl: `${this.getBaseUrl()}/app/dashboard`,
+        calendlyUrl: "https://calendly.com/anthonypaquet1508",
+      },
+    });
+  }
+
+  /**
+   * Send journey email by workflow ID (generic method for daily job)
+   */
+  async sendJourneyEmail(
+    workflowId: string,
+    userId: string,
+    data: {
+      firstName: string;
+      email: string;
+      journeyData?: Record<string, unknown>;
+    },
+  ): Promise<{ transactionId: string }> {
+    const basePayload = {
+      firstName: data.firstName,
+      baseUrl: this.getBaseUrl(),
+      dashboardUrl: `${this.getBaseUrl()}/app/dashboard`,
+      connectionUrl: `${this.getBaseUrl()}/app/connections`,
+      settingsUrl: `${this.getBaseUrl()}/app/settings`,
+      calendlyUrl: "https://calendly.com/anthonypaquet1508",
+      ...data.journeyData,
+    };
+
+    return this.trigger({
+      workflowId,
+      to: userId,
+      payload: basePayload,
+    });
   }
 
   // ---------------------------------------------------------------------------

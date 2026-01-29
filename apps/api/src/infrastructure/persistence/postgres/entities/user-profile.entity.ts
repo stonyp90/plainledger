@@ -11,6 +11,18 @@ import {
 import { OrganizationEntity } from "./organization.entity";
 
 /**
+ * Customer Journey Stages for GTM tracking
+ */
+export type JourneyStage =
+  | "signup" // Just registered
+  | "onboarding" // Started onboarding wizard
+  | "activated" // Connected first data source
+  | "engaged" // Generated first report
+  | "trial" // Started paid trial
+  | "converted" // Paid customer
+  | "churned"; // Cancelled/inactive
+
+/**
  * UserProfile Entity
  * Stores user profile data and preferences in PlainLedger database
  * Primary key is the Keycloak user ID (sub) for easy linking
@@ -102,6 +114,61 @@ export class UserProfileEntity {
     teamEmails?: string[];
     referralSource?: string;
   };
+
+  // ============================================================================
+  // Customer Journey Tracking (GTM)
+  // ============================================================================
+
+  @Column({ name: "journey_stage", length: 50, default: "signup" })
+  @Index()
+  journeyStage: JourneyStage;
+
+  @Column({ name: "journey_data", type: "jsonb", nullable: true })
+  journeyData?: {
+    signupAt: string;
+    emailVerifiedAt?: string;
+    onboardingStartedAt?: string;
+    onboardingCompletedAt?: string;
+    firstConnectionAt?: string;
+    firstReportAt?: string;
+    trialStartedAt?: string;
+    trialEndsAt?: string;
+    convertedAt?: string;
+    churnedAt?: string;
+    lastActiveAt: string;
+    daysActive: number;
+    sessionsCount: number;
+    featuresUsed: string[];
+    // Email sequence tracking
+    lastJourneyEmailSentAt?: string;
+    journeyEmailsSent: string[]; // workflow IDs sent
+  };
+
+  // ============================================================================
+  // Email Preferences & Deliverability
+  // ============================================================================
+
+  @Column({ name: "email_preferences", type: "jsonb", nullable: true })
+  emailPreferences?: {
+    marketingOptIn: boolean; // Can send promotional emails
+    productUpdates: boolean; // Feature announcements
+    weeklyDigest: boolean; // Weekly summary email
+    securityAlerts: boolean; // Always true, cannot opt out
+    unsubscribedAt?: string; // When they clicked unsubscribe
+    unsubscribeReason?: string;
+  };
+
+  @Column({ name: "email_valid", type: "boolean", default: true })
+  emailValid: boolean; // False after hard bounce
+
+  @Column({ name: "email_bounce_count", type: "int", default: 0 })
+  emailBounceCount: number; // Track soft bounces
+
+  @Column({ name: "last_email_sent_at", type: "timestamptz", nullable: true })
+  lastEmailSentAt?: Date; // Prevent over-emailing
+
+  @Column({ name: "last_email_opened_at", type: "timestamptz", nullable: true })
+  lastEmailOpenedAt?: Date; // Engagement tracking
 
   // Registration source tracking
   @Column({ name: "registration_source", length: 50, default: "web" })

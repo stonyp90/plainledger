@@ -15,6 +15,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Inject,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "@infrastructure/auth/jwt-auth.guard";
 import {
@@ -25,7 +26,10 @@ import {
   OutcomeTrackingService,
   RecordOutcomeInput,
 } from "../services/outcome-tracking.service";
-import { IDecisionRepository } from "../ports/outbound/IDecisionRepository";
+import {
+  IDecisionRepository,
+  DECISION_REPOSITORY_TOKEN,
+} from "../ports/outbound/IDecisionRepository";
 
 @Controller("api/v1/decisions")
 @UseGuards(JwtAuthGuard)
@@ -33,6 +37,7 @@ export class DecisionsController {
   constructor(
     private readonly captureDecisionUseCase: CaptureDecisionUseCase,
     private readonly outcomeTrackingService: OutcomeTrackingService,
+    @Inject(DECISION_REPOSITORY_TOKEN)
     private readonly decisionRepository: IDecisionRepository,
   ) {}
 

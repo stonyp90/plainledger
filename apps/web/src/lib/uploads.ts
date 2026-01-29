@@ -42,7 +42,7 @@ export async function uploadLogo(
 
   try {
     const response = await fetch(
-      `${config.api.baseUrl}/uploads/logo/${tenantId}`,
+      `${config.api.baseUrl}/api/uploads/logo/${tenantId}`,
       {
         method: "POST",
         headers: {
@@ -89,7 +89,7 @@ export async function deleteLogo(tenantId: string): Promise<boolean> {
 
   try {
     const response = await fetch(
-      `${config.api.baseUrl}/uploads/logo/${tenantId}`,
+      `${config.api.baseUrl}/api/uploads/logo/${tenantId}`,
       {
         method: "DELETE",
         headers: {
@@ -123,7 +123,7 @@ export async function uploadProfilePicture(file: File): Promise<UploadResult> {
 
   try {
     const response = await fetch(
-      `${config.api.baseUrl}/uploads/profile-picture`,
+      `${config.api.baseUrl}/api/uploads/profile-picture`,
       {
         method: "POST",
         headers: {
@@ -170,7 +170,7 @@ export async function deleteProfilePicture(): Promise<boolean> {
 
   try {
     const response = await fetch(
-      `${config.api.baseUrl}/uploads/profile-picture`,
+      `${config.api.baseUrl}/api/uploads/profile-picture`,
       {
         method: "DELETE",
         headers: {

@@ -8,8 +8,8 @@ import {
 } from "typeorm";
 
 @Entity({ name: "industry_patterns", schema: "intelligence" })
-@Index(["industry", "trigger_metric"])
-@Index(["last_updated"])
+@Index(["industry", "triggerMetric"])
+@Index(["lastUpdated"])
 export class IndustryPatternEntity {
   @PrimaryColumn({ type: "varchar", length: 255 })
   id: string;

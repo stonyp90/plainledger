@@ -77,24 +77,96 @@ function HelpButton() {
 interface SettingsSubmenuItem {
   id: string;
   name: { en: string; fr: string };
+  description: { en: string; fr: string };
   icon: typeof Settings;
   show: (permissions: { canManageSettings: boolean; canManageMembers: boolean; canManageBilling: boolean; isInternalStaff: boolean; isAdmin: boolean }) => boolean;
+  isLink?: boolean;
+  href?: string;
 }
 
 const settingsSubmenuItems: SettingsSubmenuItem[] = [
-  { id: 'organization', name: { en: 'Organization', fr: 'Organisation' }, icon: Building2, show: (p) => p.canManageSettings },
-  { id: 'team', name: { en: 'Team', fr: 'Équipe' }, icon: Users, show: (p) => p.canManageMembers },
-  { id: 'roles', name: { en: 'Roles & Access', fr: 'Rôles & Accès' }, icon: Shield, show: () => true },
-  { id: 'profile', name: { en: 'Profile', fr: 'Profil' }, icon: User, show: () => true },
-  { id: 'subscription', name: { en: 'Subscription', fr: 'Abonnement' }, icon: CreditCard, show: (p) => p.canManageBilling },
-  { id: 'anomalies', name: { en: 'Anomaly Detection', fr: 'Détection anomalies' }, icon: AlertTriangle, show: (p) => p.canManageSettings },
-  { id: 'notifications', name: { en: 'Notifications', fr: 'Notifications' }, icon: Bell, show: () => true },
-  { id: 'security', name: { en: 'Security', fr: 'Sécurité' }, icon: Lock, show: () => true },
-  { id: 'secrets', name: { en: 'API Keys', fr: 'Clés API' }, icon: Lock, show: (p) => p.isAdmin },
-  { id: 'integrations', name: { en: 'Integrations', fr: 'Intégrations' }, icon: Database, show: (p) => p.isInternalStaff },
+  { 
+    id: 'organization', 
+    name: { en: 'Organization', fr: 'Organisation' }, 
+    description: { en: 'Company info, logo, fiscal year', fr: 'Infos entreprise, logo, exercice' },
+    icon: Building2, 
+    show: (p) => p.canManageSettings 
+  },
+  { 
+    id: 'team', 
+    name: { en: 'Team', fr: 'Équipe' }, 
+    description: { en: 'Manage team members', fr: 'Gérer les membres' },
+    icon: Users, 
+    show: (p) => p.canManageMembers 
+  },
+  { 
+    id: 'roles', 
+    name: { en: 'Roles & Access', fr: 'Rôles & Accès' }, 
+    description: { en: 'Permissions and access control', fr: 'Permissions et contrôle d\'accès' },
+    icon: Shield, 
+    show: () => true 
+  },
+  { 
+    id: 'profile', 
+    name: { en: 'Profile', fr: 'Profil' }, 
+    description: { en: 'Your personal information', fr: 'Vos informations personnelles' },
+    icon: User, 
+    show: () => true 
+  },
+  { 
+    id: 'subscription', 
+    name: { en: 'Subscription', fr: 'Abonnement' }, 
+    description: { en: 'Plan, billing, invoices', fr: 'Forfait, facturation' },
+    icon: CreditCard, 
+    show: (p) => p.canManageBilling 
+  },
+  { 
+    id: 'document-shares', 
+    name: { en: 'Document Shares', fr: 'Partages' }, 
+    description: { en: 'Shared documents & links', fr: 'Documents et liens partagés' },
+    icon: Share2, 
+    show: () => true, 
+    isLink: true, 
+    href: '/app/document-shares' 
+  },
+  { 
+    id: 'anomalies', 
+    name: { en: 'Anomaly Detection', fr: 'Anomalies' }, 
+    description: { en: 'Alert thresholds config', fr: 'Config. seuils d\'alerte' },
+    icon: AlertTriangle, 
+    show: (p) => p.canManageSettings 
+  },
+  { 
+    id: 'notifications', 
+    name: { en: 'Notifications', fr: 'Notifications' }, 
+    description: { en: 'Email and alert preferences', fr: 'Préférences email et alertes' },
+    icon: Bell, 
+    show: () => true 
+  },
+  { 
+    id: 'security', 
+    name: { en: 'Security', fr: 'Sécurité' }, 
+    description: { en: 'Password, 2FA, sessions', fr: 'Mot de passe, 2FA, sessions' },
+    icon: Lock, 
+    show: () => true 
+  },
+  { 
+    id: 'secrets', 
+    name: { en: 'API Keys', fr: 'Clés API' }, 
+    description: { en: 'Manage API credentials', fr: 'Gérer identifiants API' },
+    icon: Lock, 
+    show: (p) => p.isAdmin 
+  },
+  { 
+    id: 'integrations', 
+    name: { en: 'Integrations', fr: 'Intégrations' }, 
+    description: { en: 'Data source connections', fr: 'Connexions sources de données' },
+    icon: Database, 
+    show: (p) => p.isInternalStaff 
+  },
 ];
 
-// Settings Submenu Component with flyout (Desktop)
+// Settings Submenu Button Component with Integrated Flyout (Desktop) - Opens flyout on hover, left-aligned
 interface SettingsSubmenuProps {
   isActive: boolean;
   isCollapsed: boolean;
@@ -106,120 +178,150 @@ interface SettingsSubmenuProps {
     isInternalStaff: boolean;
     isAdmin: boolean;
   };
-  onNavigate?: () => void;
 }
 
-function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onNavigate }: SettingsSubmenuProps) {
+function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: SettingsSubmenuProps) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
   const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
 
   const handleMouseEnter = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
-    setIsHovering(true);
     setIsOpen(true);
   };
 
   const handleMouseLeave = () => {
-    setIsHovering(false);
-    timeoutRef.current = setTimeout(() => {
-      if (!isHovering) {
-        setIsOpen(false);
-      }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
     }, 150);
   };
 
-  const handleItemClick = (tabId: string) => {
-    navigate(`/app/settings?tab=${tabId}`);
+  const handleItemClick = (item: SettingsSubmenuItem) => {
+    if (item.isLink && item.href) {
+      navigate(item.href);
+    } else {
+      navigate(`/app/settings?tab=${item.id}`);
+    }
     setIsOpen(false);
-    onNavigate?.();
   };
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+  
   return (
     <div 
+      ref={containerRef}
       className="relative"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Main Settings Button */}
-      <Link
-        to="/app/settings"
-        className={`nav-item ${isActive ? 'active' : ''} ${isCollapsed ? 'justify-center px-2 w-full' : ''}`}
+      {/* Settings Button */}
+      <button
+        onClick={() => navigate('/app/settings')}
+        className={`nav-item w-full ${isActive ? 'active' : ''} ${isCollapsed ? 'justify-center px-2' : ''}`}
         title={isCollapsed ? (language === 'en' ? 'Settings' : 'Paramètres') : undefined}
-        onClick={(e) => {
-          // Allow direct navigation if not hovering submenu
-          if (!isOpen) return;
-        }}
       >
         <Settings className="w-5 h-5 flex-shrink-0" />
         {!isCollapsed && (
           <>
-            <span className="flex-1">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
+            <span className="flex-1 text-left">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
             <ChevronRight 
               className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
               style={{ color: 'rgb(var(--color-text-muted))' }}
             />
           </>
         )}
-      </Link>
+      </button>
 
-      {/* Flyout Submenu */}
+      {/* Flyout Menu - Positioned to the right of the button, aligned with it */}
       {isOpen && (
         <div 
-          className={`absolute z-50 py-2 rounded-xl shadow-xl border min-w-[220px] ${
-            isCollapsed ? 'left-full ml-2 top-0' : 'left-full ml-2 top-0'
-          }`}
+          className="absolute z-50 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
-            borderColor: 'rgb(var(--color-border))',
-            boxShadow: '0 10px 40px rgb(0 0 0 / 0.15), 0 2px 10px rgb(0 0 0 / 0.1)',
-          }}
-          onMouseEnter={() => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            setIsHovering(true);
-          }}
-          onMouseLeave={() => {
-            setIsHovering(false);
-            setIsOpen(false);
+            border: '1px solid rgb(var(--color-border))',
+            boxShadow: '0 10px 40px -10px rgb(0 0 0 / 0.2), 0 4px 12px rgb(0 0 0 / 0.1)',
+            left: '100%',
+            bottom: 0,
+            marginLeft: '8px',
+            width: 'min(300px, calc(100vw - 100px))',
+            maxHeight: 'min(500px, calc(100vh - 180px))',
           }}
         >
-          {/* Header */}
+          {/* Hover bridge - invisible element to maintain hover when moving to flyout */}
           <div 
-            className="px-3 py-2 mb-1 border-b"
-            style={{ borderColor: 'rgb(var(--color-border))' }}
+            className="absolute"
+            style={{
+              left: '-12px',
+              top: 0,
+              bottom: 0,
+              width: '12px',
+            }}
+          />
+          
+          {/* Flyout Header */}
+          <div 
+            className="px-4 py-3 border-b"
+            style={{ 
+              borderColor: 'rgb(var(--color-border))',
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, rgb(var(--color-primary-600) / 0.02) 100%)'
+            }}
           >
-            <p 
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {language === 'en' ? 'Settings' : 'Paramètres'}
-            </p>
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                {language === 'en' ? 'Settings' : 'Paramètres'}
+              </span>
+            </div>
           </div>
           
-          {/* Menu Items */}
-          <div className="px-1">
+          {/* Flyout Content - Settings Items List */}
+          <div className="py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             {visibleItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => handleItemClick(item.id)}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all"
-                style={{ color: 'rgb(var(--color-text))' }}
+                onClick={() => handleItemClick(item)}
+                className="w-full flex items-start gap-3 px-4 py-2.5 text-left transition-all"
+                style={{ 
+                  color: 'rgb(var(--color-text))'
+                }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
-                  e.currentTarget.style.color = 'rgb(var(--color-primary-600))';
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.08)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'rgb(var(--color-text))';
                 }}
               >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">{item.name[language]}</span>
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <item.icon 
+                    className="w-4 h-4"
+                    style={{ color: 'rgb(var(--color-primary-600))' }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium leading-tight">{item.name[language]}</div>
+                  <div 
+                    className="text-xs mt-0.5 leading-tight"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {item.description[language]}
+                  </div>
+                </div>
               </button>
             ))}
           </div>
@@ -249,8 +351,12 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: 
 
   const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
 
-  const handleItemClick = (tabId: string) => {
-    navigate(`/app/settings?tab=${tabId}`);
+  const handleItemClick = (item: SettingsSubmenuItem) => {
+    if (item.isLink && item.href) {
+      navigate(item.href);
+    } else {
+      navigate(`/app/settings?tab=${item.id}`);
+    }
     onNavigate();
   };
 
@@ -278,7 +384,7 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: 
           {visibleItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => handleItemClick(item.id)}
+              onClick={() => handleItemClick(item)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all active:scale-[0.98]"
               style={{ 
                 color: 'rgb(var(--color-text))',
@@ -363,7 +469,6 @@ export default function Layout({ children }: LayoutProps) {
     { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
     { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' },
     { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports', premiumFeature: 'boardMeeting' },
-    { name: language === 'en' ? 'Document Shares' : 'Partage docs', href: '/app/document-shares', icon: Share2, permission: 'view:reports' },
   ];
   
   // Settings shown separately with submenu
@@ -712,7 +817,7 @@ export default function Layout({ children }: LayoutProps) {
               </Link>
             ))}
             
-            {/* Settings with Submenu */}
+            {/* Settings with Flyout */}
             {showSettings && (
               <SettingsSubmenu
                 isActive={isActive('/app/settings')}

@@ -92,7 +92,14 @@ export type NotificationType =
   | 'team_member_removed'
   | 'team_role_changed'
   | 'organization_created'
-  | 'organization_deleted';
+  | 'organization_deleted'
+  
+  // Journey/GTM CTA notifications (in-app prompts)
+  | 'journey_connect_source'
+  | 'journey_schedule_onboarding'
+  | 'journey_first_report'
+  | 'journey_upgrade_prompt'
+  | 'journey_trial_ending';
 
 // ============================================================================
 // Notification Structure
@@ -729,6 +736,58 @@ export const notificationTemplates: Record<NotificationType, NotificationTemplat
     message: 'L\'organisation "{organizationName}" a été supprimée.',
     emailSubject: 'Organisation supprimée',
     emailTemplate: 'organization_deleted',
+  },
+  
+  // Journey/GTM CTA notifications
+  journey_connect_source: {
+    type: 'journey_connect_source',
+    category: 'marketing',
+    priority: 'high',
+    channels: ['in_app'],
+    title: 'Connect Your Accounting Software',
+    message: 'Get real-time financial insights by connecting QuickBooks, Xero, or Sage to PlainLedger.',
+    actionUrl: '/app/connections',
+    actionLabel: 'Connect Now',
+  },
+  journey_schedule_onboarding: {
+    type: 'journey_schedule_onboarding',
+    category: 'marketing',
+    priority: 'medium',
+    channels: ['in_app'],
+    title: 'Need Help Getting Started?',
+    message: 'Schedule a free 15-minute onboarding call with our team to get the most out of PlainLedger.',
+    actionUrl: 'https://calendly.com/anthonypaquet1508',
+    actionLabel: 'Book a Call',
+  },
+  journey_first_report: {
+    type: 'journey_first_report',
+    category: 'marketing',
+    priority: 'medium',
+    channels: ['in_app'],
+    title: 'Generate Your First Report',
+    message: 'Your data is connected! Create your first financial report to see PlainLedger in action.',
+    actionUrl: '/app/reports',
+    actionLabel: 'Create Report',
+  },
+  journey_upgrade_prompt: {
+    type: 'journey_upgrade_prompt',
+    category: 'marketing',
+    priority: 'medium',
+    channels: ['in_app'],
+    title: 'Unlock Advanced Features',
+    message: 'Upgrade to Pro for AI-powered insights, benchmarking, and unlimited reports.',
+    actionUrl: '/app/settings?tab=subscription',
+    actionLabel: 'View Plans',
+  },
+  journey_trial_ending: {
+    type: 'journey_trial_ending',
+    category: 'billing',
+    priority: 'high',
+    channels: ['in_app'],
+    title: 'Your Trial Ends Soon',
+    message: 'Your PlainLedger Pro trial ends in {daysLeft} days. Subscribe now to keep your access.',
+    actionUrl: '/app/settings?tab=subscription',
+    actionLabel: 'Subscribe Now',
   },
 };
 

@@ -24,7 +24,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ChevronLeft,
   FileText,
   Copy,
 } from 'lucide-react';
@@ -226,22 +225,96 @@ export default function Settings() {
   // Build tabs based on permissions
   // Technical configuration tabs are hidden from customers - only visible to internal staff
   const isAdmin = canManageSettings || isInternalStaff;
+  const { language } = useI18n();
+  const isEn = language === 'en';
   
   const allTabs = [
-    { id: 'organization', name: 'Organisation', icon: Building2, show: canManageSettings },
-    { id: 'team', name: 'Équipe', icon: Users, show: canManageMembers },
-    { id: 'roles', name: 'Rôles & Accès', icon: Shield, show: true },
-    { id: 'profile', name: 'Profil', icon: User, show: true },
-    { id: 'subscription', name: 'Abonnement', icon: CreditCard, show: canManageBilling },
-    { id: 'anomalies', name: 'Détection anomalies', icon: AlertTriangle, show: canManageSettings },
-    { id: 'notifications', name: 'Notifications', icon: Bell, show: true },
-    { id: 'security', name: 'Sécurité', icon: Shield, show: true },
+    { 
+      id: 'organization', 
+      name: isEn ? 'Organization' : 'Organisation', 
+      description: isEn ? 'Company info, logo, fiscal year' : 'Infos entreprise, logo, exercice',
+      icon: Building2, 
+      show: canManageSettings 
+    },
+    { 
+      id: 'team', 
+      name: isEn ? 'Team' : 'Équipe', 
+      description: isEn ? 'Manage team members' : 'Gérer les membres',
+      icon: Users, 
+      show: canManageMembers 
+    },
+    { 
+      id: 'roles', 
+      name: isEn ? 'Roles & Access' : 'Rôles & Accès', 
+      description: isEn ? 'Permissions and access control' : 'Permissions et contrôle d\'accès',
+      icon: Shield, 
+      show: true 
+    },
+    { 
+      id: 'profile', 
+      name: isEn ? 'Profile' : 'Profil', 
+      description: isEn ? 'Your personal information' : 'Vos informations personnelles',
+      icon: User, 
+      show: true 
+    },
+    { 
+      id: 'subscription', 
+      name: isEn ? 'Subscription' : 'Abonnement', 
+      description: isEn ? 'Plan, billing, invoices' : 'Forfait, facturation',
+      icon: CreditCard, 
+      show: canManageBilling 
+    },
+    { 
+      id: 'anomalies', 
+      name: isEn ? 'Anomaly Detection' : 'Anomalies', 
+      description: isEn ? 'Alert thresholds config' : 'Config. seuils d\'alerte',
+      icon: AlertTriangle, 
+      show: canManageSettings 
+    },
+    { 
+      id: 'notifications', 
+      name: 'Notifications', 
+      description: isEn ? 'Email and alert preferences' : 'Préférences email et alertes',
+      icon: Bell, 
+      show: true 
+    },
+    { 
+      id: 'security', 
+      name: isEn ? 'Security' : 'Sécurité', 
+      description: isEn ? 'Password, 2FA, sessions' : 'Mot de passe, 2FA, sessions',
+      icon: Lock, 
+      show: true 
+    },
     // Secrets management - admin only (secure handling)
-    { id: 'secrets', name: 'Clés API', icon: Lock, show: isAdmin },
+    { 
+      id: 'secrets', 
+      name: isEn ? 'API Keys' : 'Clés API', 
+      description: isEn ? 'Manage API credentials' : 'Gérer identifiants API',
+      icon: Lock, 
+      show: isAdmin 
+    },
     // Technical config tabs - internal PlainLedger staff only (we configure this for customers)
-    { id: 'analytics', name: 'Analytics Config', icon: BarChart3, show: isInternalStaff && entitlements.powerBI.enabled },
-    { id: 'integrations', name: 'Intégrations', icon: Database, show: isInternalStaff },
-    { id: 'api-docs', name: 'API Documentation', icon: FileText, show: isInternalStaff },
+    { 
+      id: 'analytics', 
+      name: 'Analytics Config', 
+      description: 'Power BI configuration',
+      icon: BarChart3, 
+      show: isInternalStaff && entitlements.powerBI.enabled 
+    },
+    { 
+      id: 'integrations', 
+      name: isEn ? 'Integrations' : 'Intégrations', 
+      description: isEn ? 'Data source connections' : 'Connexions sources de données',
+      icon: Database, 
+      show: isInternalStaff 
+    },
+    { 
+      id: 'api-docs', 
+      name: 'API Documentation', 
+      description: 'Swagger/OpenAPI docs',
+      icon: FileText, 
+      show: isInternalStaff 
+    },
   ];
 
   const tabs = allTabs.filter(tab => tab.show);
@@ -272,69 +345,7 @@ export default function Settings() {
         </select>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-start">
-        {/* Desktop Sidebar Tabs - Fixed/Sticky with Collapse Toggle */}
-        <div 
-          className={`hidden lg:block flex-shrink-0 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto transition-all duration-300 ${
-            isSettingsMenuCollapsed ? 'w-14' : 'w-56 xl:w-64'
-          }`}
-        >
-          <nav 
-            className="space-y-1 p-2 rounded-xl relative"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))'
-            }}
-          >
-            {/* Menu Toggle Button with Arrow */}
-            <button
-              onClick={toggleSettingsMenu}
-              className="w-full flex items-center justify-center gap-2 p-2 mb-1 rounded-lg transition-all group relative"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)',
-                color: 'rgb(var(--color-text-muted))'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
-                e.currentTarget.style.color = 'rgb(var(--color-primary-600))';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted) / 0.5)';
-                e.currentTarget.style.color = 'rgb(var(--color-text-muted))';
-              }}
-              title={isSettingsMenuCollapsed ? 'Afficher le menu' : 'Réduire le menu'}
-            >
-              {isSettingsMenuCollapsed ? (
-                <ChevronLeft 
-                  className="w-4 h-4 transition-transform duration-300" 
-                  style={{ transform: 'rotate(180deg)' }}
-                />
-              ) : (
-                <>
-                  <ChevronLeft className="w-4 h-4 transition-transform duration-300" />
-                  <span className="text-xs font-medium">Réduire</span>
-                </>
-              )}
-            </button>
-            
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`nav-item w-full text-left ${activeTab === tab.id ? 'active' : ''} ${
-                  isSettingsMenuCollapsed ? 'justify-center px-2' : ''
-                }`}
-                title={isSettingsMenuCollapsed ? tab.name : undefined}
-              >
-                <tab.icon className="w-5 h-5 flex-shrink-0" />
-                {!isSettingsMenuCollapsed && <span className="text-sm">{tab.name}</span>}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
+      <div>
           {/* Demo Mode Banner - Visible on all tabs */}
           <DemoModeBanner />
           
@@ -885,7 +896,6 @@ export default function Settings() {
           {activeTab === 'security' && <SecuritySettings />}
 
           {activeTab === 'secrets' && <SecretsManagement />}
-        </div>
       </div>
     </div>
   );

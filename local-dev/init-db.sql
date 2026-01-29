@@ -520,6 +520,107 @@ CREATE INDEX idx_industry_patterns_significance ON intelligence.industry_pattern
 CREATE INDEX idx_industry_patterns_sample_size ON intelligence.industry_patterns(sample_size DESC);
 CREATE INDEX idx_industry_patterns_updated ON intelligence.industry_patterns(last_updated DESC);
 
+-- ============================================
+-- USER PROFILES - Extended with Journey & Email Tracking
+-- ============================================
+
+-- User Profiles table (stores user data from Keycloak + app-specific data)
+CREATE TABLE IF NOT EXISTS accounting.user_profiles (
+    id VARCHAR(100) PRIMARY KEY,  -- Keycloak user ID (sub)
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    province VARCHAR(2),
+    phone_number VARCHAR(20),
+    job_title VARCHAR(100),
+    organization_id UUID REFERENCES accounting.organizations(id),
+    organization_name VARCHAR(255),
+    industry VARCHAR(100),
+    language VARCHAR(3) DEFAULT 'en',
+    theme VARCHAR(50) DEFAULT 'system',
+    timezone VARCHAR(50) DEFAULT 'America/Toronto',
+    date_format VARCHAR(20) DEFAULT 'YYYY-MM-DD',
+    currency_format VARCHAR(20) DEFAULT 'symbol',
+    notification_preferences JSONB,
+    feature_flags JSONB,
+    
+    -- Onboarding
+    onboarding_completed BOOLEAN DEFAULT false,
+    onboarding_completed_at TIMESTAMPTZ,
+    onboarding_data JSONB,
+    
+    -- Customer Journey Tracking (GTM)
+    journey_stage VARCHAR(50) DEFAULT 'signup',
+    journey_data JSONB,
+    
+    -- Email Preferences & Deliverability
+    email_preferences JSONB,
+    email_valid BOOLEAN DEFAULT true,
+    email_bounce_count INTEGER DEFAULT 0,
+    last_email_sent_at TIMESTAMPTZ,
+    last_email_opened_at TIMESTAMPTZ,
+    
+    -- Registration & Activity
+    registration_source VARCHAR(50) DEFAULT 'web',
+    invited_by VARCHAR(100),
+    is_active BOOLEAN DEFAULT true,
+    email_verified BOOLEAN DEFAULT false,
+    last_login_at TIMESTAMPTZ,
+    login_count INTEGER DEFAULT 0,
+    
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON accounting.user_profiles(email);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_org ON accounting.user_profiles(organization_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_journey ON accounting.user_profiles(journey_stage);
+
+-- ============================================
+-- EMAIL EVENTS - Track all email interactions
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS accounting.email_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    message_id VARCHAR(255),                    -- SES Message ID
+    transaction_id VARCHAR(100),                -- Novu Transaction ID
+    user_id VARCHAR(100),                       -- Links to user_profiles.id
+    recipient VARCHAR(255) NOT NULL,
+    workflow_id VARCHAR(100),                   -- Novu workflow ID (e.g., 'welcome', 'journey_day_1')
+    email_category VARCHAR(50),                 -- transactional, marketing, journey, security
+    event_type VARCHAR(50) NOT NULL,            -- sent, delivered, opened, clicked, bounced, complained, unsubscribed
+    subject VARCHAR(500),
+    link_clicked VARCHAR(1000),
+    metadata JSONB,                             -- Bounce details, complaint type, user agent, etc.
+    ip_address VARCHAR(50),
+    user_agent VARCHAR(500),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_events_user ON accounting.email_events(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_email_events_message ON accounting.email_events(message_id);
+CREATE INDEX IF NOT EXISTS idx_email_events_type ON accounting.email_events(event_type, created_at);
+CREATE INDEX IF NOT EXISTS idx_email_events_recipient ON accounting.email_events(recipient);
+CREATE INDEX IF NOT EXISTS idx_email_events_workflow ON accounting.email_events(workflow_id);
+
+-- ============================================
+-- UNSUBSCRIBE TOKENS - For one-click unsubscribe
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS accounting.unsubscribe_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    token VARCHAR(255) NOT NULL UNIQUE,
+    user_id VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    email_category VARCHAR(50),                 -- Which category to unsubscribe from
+    used_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_unsubscribe_tokens_token ON accounting.unsubscribe_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_unsubscribe_tokens_user ON accounting.unsubscribe_tokens(user_id);
+
 -- Grant permissions
 GRANT USAGE ON SCHEMA accounting TO plainledger;
 GRANT USAGE ON SCHEMA reporting TO plainledger;

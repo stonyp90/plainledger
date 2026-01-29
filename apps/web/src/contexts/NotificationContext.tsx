@@ -265,6 +265,8 @@ function NovuNotificationInner({ children }: { children: ReactNode }) {
 // Local Provider (without Novu - fallback)
 // ============================================================================
 
+const NOTIFICATIONS_STORAGE_KEY = 'plainledger-notifications';
+
 function LocalNotificationProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -275,6 +277,15 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
   
   const isDemoSignupUser = user?.organization === 'demo-signup';
 
+  // Persist notifications to localStorage whenever they change
+  const persistNotifications = useCallback((notifs: Notification[]) => {
+    try {
+      localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifs));
+    } catch (error) {
+      console.error('Failed to persist notifications to localStorage:', error);
+    }
+  }, []);
+
   // Load notifications on mount
   useEffect(() => {
     loadNotifications();
@@ -284,6 +295,22 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
   const loadNotifications = async () => {
     setIsLoading(true);
     try {
+      // First, try to load from localStorage
+      const storedNotifications = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+      if (storedNotifications) {
+        try {
+          const parsed = JSON.parse(storedNotifications) as Notification[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setNotifications(parsed);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to parse stored notifications:', e);
+        }
+      }
+
+      // No stored notifications - create initial ones based on user type
       if (isDemoSignupUser) {
         const storedLang = localStorage.getItem('plainledger-language') || 'en';
         const isEn = storedLang === 'en';
@@ -308,20 +335,26 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
           },
         ];
         setNotifications(welcomeNotification);
+        persistNotifications(welcomeNotification);
       } else {
-        // Mock notifications for development
+        // Demo/development notifications - only created on first visit
+        const storedLang = localStorage.getItem('plainledger-language') || 'en';
+        const isEn = storedLang === 'en';
+        
         const mockNotifications: Notification[] = [
           {
             id: '1',
             type: 'sync_completed',
             category: 'data_sync',
             priority: 'low',
-            title: 'Synchronisation terminée',
-            message: 'La synchronisation avec QuickBooks est terminée. 156 transactions mises à jour.',
+            title: isEn ? 'Sync completed' : 'Synchronisation terminée',
+            message: isEn 
+              ? 'QuickBooks sync completed. 156 transactions updated.'
+              : 'La synchronisation avec QuickBooks est terminée. 156 transactions mises à jour.',
             read: false,
             archived: false,
             actionUrl: '/app/connections',
-            actionLabel: 'Voir les détails',
+            actionLabel: isEn ? 'View details' : 'Voir les détails',
             createdAt: new Date(Date.now() - 5 * 60000).toISOString(),
           },
           {
@@ -329,16 +362,19 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
             type: 'usage_limit_warning',
             category: 'billing',
             priority: 'medium',
-            title: 'Limite d\'utilisation proche',
-            message: 'Vous avez utilisé 80% de votre quota de rapports ce mois-ci.',
+            title: isEn ? 'Usage limit approaching' : 'Limite d\'utilisation proche',
+            message: isEn 
+              ? 'You have used 80% of your report quota this month.'
+              : 'Vous avez utilisé 80% de votre quota de rapports ce mois-ci.',
             read: false,
             archived: false,
             actionUrl: '/app/settings',
-            actionLabel: 'Mettre à niveau',
+            actionLabel: isEn ? 'Upgrade' : 'Mettre à niveau',
             createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
           },
         ];
         setNotifications(mockNotifications);
+        persistNotifications(mockNotifications);
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
@@ -397,12 +433,16 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
 
-    setNotifications(prev => [notification, ...prev]);
+    setNotifications(prev => {
+      const updated = [notification, ...prev];
+      persistNotifications(updated);
+      return updated;
+    });
 
     if (template.priority === 'high' || template.priority === 'urgent') {
       showToast('info', notification.message, notification.title);
     }
-  }, []);
+  }, [persistNotifications]);
 
   // Check for credential rotation needs (security best practice)
   // Only runs in local provider, not with Novu (Novu handles notifications server-side)
@@ -411,36 +451,47 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
 
   // Mark notification as read
   const markAsRead = useCallback((id: string) => {
-    setNotifications(prev => 
-      prev.map(n => 
+    setNotifications(prev => {
+      const updated = prev.map(n => 
         n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n
-      )
-    );
-  }, []);
+      );
+      persistNotifications(updated);
+      return updated;
+    });
+  }, [persistNotifications]);
 
   // Mark all as read
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, read: true, readAt: new Date().toISOString() }))
-    );
-  }, []);
+    setNotifications(prev => {
+      const updated = prev.map(n => ({ ...n, read: true, readAt: new Date().toISOString() }));
+      persistNotifications(updated);
+      return updated;
+    });
+  }, [persistNotifications]);
 
   // Archive notification
   const archiveNotification = useCallback((id: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === id ? { ...n, archived: true } : n)
-    );
-  }, []);
+    setNotifications(prev => {
+      const updated = prev.map(n => n.id === id ? { ...n, archived: true } : n);
+      persistNotifications(updated);
+      return updated;
+    });
+  }, [persistNotifications]);
 
   // Delete notification
   const deleteNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
+    setNotifications(prev => {
+      const updated = prev.filter(n => n.id !== id);
+      persistNotifications(updated);
+      return updated;
+    });
+  }, [persistNotifications]);
 
   // Clear all notifications
   const clearAll = useCallback(() => {
     setNotifications([]);
-  }, []);
+    persistNotifications([]);
+  }, [persistNotifications]);
 
   // Update preferences
   const updatePreferences = useCallback(async (prefs: Partial<NotificationPreferences>) => {
