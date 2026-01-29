@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import { useTenant } from '../contexts/TenantContext';
@@ -17,7 +18,6 @@ import {
   Settings,
   LogOut,
   Link2,
-  HelpCircle,
   Search,
   MessageCircle,
   AlertTriangle,
@@ -29,6 +29,7 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Building2,
   BookOpen,
   TrendingUp,
@@ -53,7 +54,6 @@ import {
   Share2,
   LifeBuoy,
 } from 'lucide-react';
-import { HelpCenter } from './HelpCenter';
 
 interface LayoutProps {
   children: ReactNode;
@@ -86,94 +86,124 @@ interface SettingsSubmenuItem {
   href?: string;
 }
 
-const settingsSubmenuItems: SettingsSubmenuItem[] = [
-  { 
-    id: 'organization', 
-    name: { en: 'Organization', fr: 'Organisation' }, 
-    description: { en: 'Company info, logo, fiscal year', fr: 'Infos entreprise, logo, exercice' },
-    icon: Building2, 
-    show: (p) => p.canManageSettings 
+interface SettingsCategory {
+  id: string;
+  label: { en: string; fr: string };
+  items: SettingsSubmenuItem[];
+}
+
+const settingsCategories: SettingsCategory[] = [
+  {
+    id: 'personal',
+    label: { en: 'Personal', fr: 'Personnel' },
+    items: [
+      { 
+        id: 'profile', 
+        name: { en: 'Profile', fr: 'Profil' }, 
+        description: { en: 'Your personal information', fr: 'Vos informations personnelles' },
+        icon: User, 
+        show: () => true 
+      },
+      { 
+        id: 'security', 
+        name: { en: 'Security', fr: 'Sécurité' }, 
+        description: { en: 'Password, 2FA, sessions', fr: 'Mot de passe, 2FA, sessions' },
+        icon: Lock, 
+        show: () => true 
+      },
+      { 
+        id: 'notifications', 
+        name: { en: 'Notifications', fr: 'Notifications' }, 
+        description: { en: 'Email and alert preferences', fr: 'Préférences email et alertes' },
+        icon: Bell, 
+        show: () => true 
+      },
+    ]
   },
-  { 
-    id: 'team', 
-    name: { en: 'Team', fr: 'Équipe' }, 
-    description: { en: 'Manage team members', fr: 'Gérer les membres' },
-    icon: Users, 
-    show: (p) => p.canManageMembers 
+  {
+    id: 'organization',
+    label: { en: 'Organization', fr: 'Organisation' },
+    items: [
+      { 
+        id: 'organization', 
+        name: { en: 'Company', fr: 'Entreprise' }, 
+        description: { en: 'Company info, logo, fiscal year', fr: 'Infos entreprise, logo, exercice' },
+        icon: Building2, 
+        show: (p) => p.canManageSettings 
+      },
+      { 
+        id: 'team', 
+        name: { en: 'Team', fr: 'Équipe' }, 
+        description: { en: 'Manage team members', fr: 'Gérer les membres' },
+        icon: Users, 
+        show: (p) => p.canManageMembers 
+      },
+      { 
+        id: 'roles', 
+        name: { en: 'Roles & Access', fr: 'Rôles & Accès' }, 
+        description: { en: 'Permissions and access control', fr: 'Permissions et contrôle d\'accès' },
+        icon: Shield, 
+        show: () => true 
+      },
+      { 
+        id: 'subscription', 
+        name: { en: 'Subscription', fr: 'Abonnement' }, 
+        description: { en: 'Plan, billing, invoices', fr: 'Forfait, facturation' },
+        icon: CreditCard, 
+        show: (p) => p.canManageBilling 
+      },
+    ]
   },
-  { 
-    id: 'roles', 
-    name: { en: 'Roles & Access', fr: 'Rôles & Accès' }, 
-    description: { en: 'Permissions and access control', fr: 'Permissions et contrôle d\'accès' },
-    icon: Shield, 
-    show: () => true 
+  {
+    id: 'configuration',
+    label: { en: 'Configuration', fr: 'Configuration' },
+    items: [
+      { 
+        id: 'anomalies', 
+        name: { en: 'Anomaly Detection', fr: 'Détection d\'anomalies' }, 
+        description: { en: 'Alert thresholds config', fr: 'Config. seuils d\'alerte' },
+        icon: AlertTriangle, 
+        show: (p) => p.canManageSettings 
+      },
+      { 
+        id: 'document-shares', 
+        name: { en: 'Document Shares', fr: 'Partages' }, 
+        description: { en: 'Shared documents & links', fr: 'Documents et liens partagés' },
+        icon: Share2, 
+        show: () => true, 
+        isLink: true, 
+        href: '/app/document-shares' 
+      },
+      { 
+        id: 'integrations', 
+        name: { en: 'Integrations', fr: 'Intégrations' }, 
+        description: { en: 'Data source connections', fr: 'Connexions sources de données' },
+        icon: Database, 
+        show: (p) => p.isInternalStaff 
+      },
+      { 
+        id: 'secrets', 
+        name: { en: 'API Keys', fr: 'Clés API' }, 
+        description: { en: 'Manage API credentials', fr: 'Gérer identifiants API' },
+        icon: Lock, 
+        show: (p) => p.isAdmin 
+      },
+    ]
   },
-  { 
-    id: 'profile', 
-    name: { en: 'Profile', fr: 'Profil' }, 
-    description: { en: 'Your personal information', fr: 'Vos informations personnelles' },
-    icon: User, 
-    show: () => true 
-  },
-  { 
-    id: 'subscription', 
-    name: { en: 'Subscription', fr: 'Abonnement' }, 
-    description: { en: 'Plan, billing, invoices', fr: 'Forfait, facturation' },
-    icon: CreditCard, 
-    show: (p) => p.canManageBilling 
-  },
-  { 
-    id: 'document-shares', 
-    name: { en: 'Document Shares', fr: 'Partages' }, 
-    description: { en: 'Shared documents & links', fr: 'Documents et liens partagés' },
-    icon: Share2, 
-    show: () => true, 
-    isLink: true, 
-    href: '/app/document-shares' 
-  },
-  { 
-    id: 'anomalies', 
-    name: { en: 'Anomaly Detection', fr: 'Anomalies' }, 
-    description: { en: 'Alert thresholds config', fr: 'Config. seuils d\'alerte' },
-    icon: AlertTriangle, 
-    show: (p) => p.canManageSettings 
-  },
-  { 
-    id: 'notifications', 
-    name: { en: 'Notifications', fr: 'Notifications' }, 
-    description: { en: 'Email and alert preferences', fr: 'Préférences email et alertes' },
-    icon: Bell, 
-    show: () => true 
-  },
-  { 
-    id: 'security', 
-    name: { en: 'Security', fr: 'Sécurité' }, 
-    description: { en: 'Password, 2FA, sessions', fr: 'Mot de passe, 2FA, sessions' },
-    icon: Lock, 
-    show: () => true 
-  },
-  { 
-    id: 'secrets', 
-    name: { en: 'API Keys', fr: 'Clés API' }, 
-    description: { en: 'Manage API credentials', fr: 'Gérer identifiants API' },
-    icon: Lock, 
-    show: (p) => p.isAdmin 
-  },
-  { 
-    id: 'integrations', 
-    name: { en: 'Integrations', fr: 'Intégrations' }, 
-    description: { en: 'Data source connections', fr: 'Connexions sources de données' },
-    icon: Database, 
-    show: (p) => p.isInternalStaff 
-  },
-  { 
-    id: 'help-support', 
-    name: { en: 'Help & Support', fr: 'Aide & Support' }, 
-    description: { en: 'Contact us, FAQ, knowledge base', fr: 'Nous contacter, FAQ, base de connaissances' },
-    icon: LifeBuoy, 
-    show: () => true,
-    isLink: true,
-    href: 'help-center' // Special flag to open help center modal
+  {
+    id: 'support',
+    label: { en: 'Support', fr: 'Support' },
+    items: [
+      { 
+        id: 'help-support', 
+        name: { en: 'Help & Support', fr: 'Aide & Support' }, 
+        description: { en: 'Contact us, FAQ, knowledge base', fr: 'Nous contacter, FAQ, base de connaissances' },
+        icon: LifeBuoy, 
+        show: () => true,
+        isLink: true,
+        href: '/app/contact'
+      },
+    ]
   },
 ];
 
@@ -189,22 +219,57 @@ interface SettingsSubmenuProps {
     isInternalStaff: boolean;
     isAdmin: boolean;
   };
-  onOpenHelpCenter?: () => void;
 }
 
-function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onOpenHelpCenter }: SettingsSubmenuProps) {
+function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: SettingsSubmenuProps) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [flyoutPosition, setFlyoutPosition] = useState({ top: 0, left: 0 });
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
   
-  const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
+  // Filter categories and items based on permissions
+  const visibleCategories = settingsCategories
+    .map(category => ({
+      ...category,
+      items: category.items.filter(item => item.show(permissions))
+    }))
+    .filter(category => category.items.length > 0);
+
+  // Calculate flyout position when opening
+  const updateFlyoutPosition = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const flyoutHeight = 520; // Height to fit all settings items
+      const viewportHeight = window.innerHeight;
+      
+      // Position to the right of the button, trying to center vertically on button
+      let top = rect.top - (flyoutHeight / 2) + (rect.height / 2);
+      
+      // Make sure flyout doesn't go above viewport
+      if (top < 10) {
+        top = 10;
+      }
+      
+      // Make sure flyout doesn't go below viewport
+      if (top + flyoutHeight > viewportHeight - 10) {
+        top = viewportHeight - flyoutHeight - 10;
+      }
+      
+      setFlyoutPosition({
+        top: Math.max(10, top),
+        left: rect.right + 8,
+      });
+    }
+  };
 
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+    updateFlyoutPosition();
     setIsOpen(true);
   };
 
@@ -214,10 +279,21 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onOpenH
     }, 150);
   };
 
+  const handleFlyoutMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleFlyoutMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
+  };
+
   const handleItemClick = (item: SettingsSubmenuItem) => {
-    if (item.href === 'help-center') {
-      onOpenHelpCenter?.();
-    } else if (item.isLink && item.href) {
+    if (item.isLink && item.href) {
       navigate(item.href);
     } else {
       navigate(`/app/settings?tab=${item.id}`);
@@ -234,6 +310,98 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onOpenH
     };
   }, []);
   
+  // Flyout content rendered via portal
+  const flyoutContent = isOpen ? createPortal(
+    <div 
+      ref={flyoutRef}
+      className="fixed rounded-xl shadow-xl flex flex-col animate-in fade-in slide-in-from-left-2 duration-200"
+      style={{ 
+        backgroundColor: 'rgb(var(--color-surface))',
+        border: '1px solid rgb(var(--color-border))',
+        boxShadow: '0 10px 40px -10px rgb(0 0 0 / 0.2), 0 4px 12px rgb(0 0 0 / 0.1)',
+        top: flyoutPosition.top,
+        left: flyoutPosition.left,
+        width: 'min(320px, calc(100vw - 100px))',
+        maxHeight: 'min(500px, calc(100vh - 80px))',
+        zIndex: 9999,
+      }}
+      onMouseEnter={handleFlyoutMouseEnter}
+      onMouseLeave={handleFlyoutMouseLeave}
+    >
+      {/* Flyout Header */}
+      <div 
+        className="px-4 py-3 border-b flex-shrink-0"
+        style={{ 
+          borderColor: 'rgb(var(--color-border))',
+          background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, rgb(var(--color-primary-600) / 0.02) 100%)'
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+            {language === 'en' ? 'Settings' : 'Paramètres'}
+          </span>
+        </div>
+      </div>
+      
+      {/* Flyout Content - Settings Items by Category - Scrollable */}
+      <div className="py-1 overflow-y-auto flex-1 min-h-0">
+        {visibleCategories.map((category, categoryIndex) => (
+          <div key={category.id}>
+            {/* Category Header */}
+            <div 
+              className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${categoryIndex > 0 ? 'mt-2 border-t' : ''}`}
+              style={{ 
+                color: 'rgb(var(--color-text-muted))',
+                borderColor: 'rgb(var(--color-border))',
+              }}
+            >
+              {category.label[language]}
+            </div>
+            
+            {/* Category Items */}
+            {category.items.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item)}
+                className="w-full flex items-start gap-3 px-4 py-2 text-left transition-all"
+                style={{ 
+                  color: 'rgb(var(--color-text))'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <div 
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <item.icon 
+                    className="w-3.5 h-3.5"
+                    style={{ color: 'rgb(var(--color-primary-600))' }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium leading-tight">{item.name[language]}</div>
+                  <div 
+                    className="text-xs mt-0.5 leading-tight"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {item.description[language]}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
     <div 
       ref={containerRef}
@@ -259,88 +427,8 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onOpenH
         )}
       </button>
 
-      {/* Flyout Menu - Positioned to the right of the button, aligned with it */}
-      {isOpen && (
-        <div 
-          className="absolute z-50 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-surface))',
-            border: '1px solid rgb(var(--color-border))',
-            boxShadow: '0 10px 40px -10px rgb(0 0 0 / 0.2), 0 4px 12px rgb(0 0 0 / 0.1)',
-            left: '100%',
-            bottom: 0,
-            marginLeft: '8px',
-            width: 'min(300px, calc(100vw - 100px))',
-            maxHeight: 'min(500px, calc(100vh - 180px))',
-          }}
-        >
-          {/* Hover bridge - invisible element to maintain hover when moving to flyout */}
-          <div 
-            className="absolute"
-            style={{
-              left: '-12px',
-              top: 0,
-              bottom: 0,
-              width: '12px',
-            }}
-          />
-          
-          {/* Flyout Header */}
-          <div 
-            className="px-4 py-3 border-b"
-            style={{ 
-              borderColor: 'rgb(var(--color-border))',
-              background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, rgb(var(--color-primary-600) / 0.02) 100%)'
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-                {language === 'en' ? 'Settings' : 'Paramètres'}
-              </span>
-            </div>
-          </div>
-          
-          {/* Flyout Content - Settings Items List */}
-          <div className="py-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-            {visibleItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleItemClick(item)}
-                className="w-full flex items-start gap-3 px-4 py-2.5 text-left transition-all"
-                style={{ 
-                  color: 'rgb(var(--color-text))'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.08)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-                >
-                  <item.icon 
-                    className="w-4 h-4"
-                    style={{ color: 'rgb(var(--color-primary-600))' }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium leading-tight">{item.name[language]}</div>
-                  <div 
-                    className="text-xs mt-0.5 leading-tight"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  >
-                    {item.description[language]}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Flyout rendered via portal */}
+      {flyoutContent}
     </div>
   );
 }
@@ -357,19 +445,22 @@ interface MobileSettingsSubmenuProps {
     isAdmin: boolean;
   };
   onNavigate: () => void;
-  onOpenHelpCenter?: () => void;
 }
 
-function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate, onOpenHelpCenter }: MobileSettingsSubmenuProps) {
+function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: MobileSettingsSubmenuProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
+  // Filter categories and items based on permissions
+  const visibleCategories = settingsCategories
+    .map(category => ({
+      ...category,
+      items: category.items.filter(item => item.show(permissions))
+    }))
+    .filter(category => category.items.length > 0);
 
   const handleItemClick = (item: SettingsSubmenuItem) => {
-    if (item.href === 'help-center') {
-      onOpenHelpCenter?.();
-    } else if (item.isLink && item.href) {
+    if (item.isLink && item.href) {
       navigate(item.href);
     } else {
       navigate(`/app/settings?tab=${item.id}`);
@@ -385,32 +476,55 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate, on
         className={`nav-item w-full ${isActive ? 'active' : ''}`}
       >
         <Settings className="w-5 h-5 flex-shrink-0" />
-        <span className="flex-1 truncate">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
+        <span className="flex-1 truncate text-left">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
         <ChevronRight 
           className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
           style={{ color: 'rgb(var(--color-text-muted))' }}
         />
       </button>
 
-      {/* Expandable Submenu Items */}
+      {/* Expandable Submenu Items by Category */}
       {isExpanded && (
         <div 
-          className="ml-4 mt-1 pl-4 space-y-1 border-l-2"
+          className="ml-4 mt-1 pl-4 border-l-2"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          {visibleItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleItemClick(item)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all active:scale-[0.98]"
-              style={{ 
-                color: 'rgb(var(--color-text))',
-                backgroundColor: 'transparent',
-              }}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              <span className="text-sm">{item.name[language]}</span>
-            </button>
+          {visibleCategories.map((category, categoryIndex) => (
+            <div key={category.id} className={categoryIndex > 0 ? 'mt-3' : ''}>
+              {/* Category Header */}
+              <div 
+                className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {category.label[language]}
+              </div>
+              
+              {/* Category Items */}
+              <div className="space-y-0.5">
+                {category.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleItemClick(item)}
+                    className="w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-all active:scale-[0.98]"
+                    style={{ 
+                      color: 'rgb(var(--color-text))',
+                      backgroundColor: 'transparent',
+                    }}
+                  >
+                    <item.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium block">{item.name[language]}</span>
+                      <span 
+                        className="text-xs block mt-0.5 leading-tight"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
+                        {item.description[language]}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -426,7 +540,6 @@ export default function Layout({ children }: LayoutProps) {
   const { toggleTheme } = useTheme();
   const searchModal = useSearchModal();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isHelpCenterOpen, setIsHelpCenterOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     // Check localStorage for saved preference
     try {
@@ -435,6 +548,21 @@ export default function Layout({ children }: LayoutProps) {
       return false;
     }
   });
+  
+  // Track which navigation categories are expanded
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['overview']));
+  
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
   
   // Settings submenu permissions
   const settingsPermissions = {
@@ -471,23 +599,70 @@ export default function Layout({ children }: LayoutProps) {
     };
   }, [isMobileMenuOpen]);
 
-  const navigation: {
+  // Navigation items grouped by category
+  type NavItem = {
     name: string;
     href: string;
     icon: typeof LayoutDashboard;
     permission: 'view:dashboard' | 'view:reports' | 'view:connections' | 'view:settings';
     premiumFeature?: PremiumFeature;
-  }[] = [
-    { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' },
-    { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports', premiumFeature: 'advancedAnalytics' },
-    { name: language === 'en' ? 'Market Analysis' : 'Analyse de marché', href: '/app/market-analysis', icon: TrendingUp, permission: 'view:reports', premiumFeature: 'marketAnalysis' },
-    { name: language === 'en' ? 'Tax Credits' : 'Crédits d\'impôt', href: '/app/tax-credits', icon: Receipt, permission: 'view:reports', premiumFeature: 'taxCredits' },
-    { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports', premiumFeature: 'strategicPlanning' },
-    { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' },
-    { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
-    { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' },
-    { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports', premiumFeature: 'boardMeeting' },
+  };
+
+  type NavCategory = {
+    id: string;
+    label: { en: string; fr: string };
+    items: NavItem[];
+  };
+
+  const navigationCategories: NavCategory[] = [
+    {
+      id: 'overview',
+      label: { en: 'Overview', fr: 'Aperçu' },
+      items: [
+        { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' },
+      ]
+    },
+    {
+      id: 'analytics',
+      label: { en: 'Analytics', fr: 'Analytique' },
+      items: [
+        { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports', premiumFeature: 'advancedAnalytics' },
+        { name: language === 'en' ? 'Market Analysis' : 'Analyse de marché', href: '/app/market-analysis', icon: TrendingUp, permission: 'view:reports', premiumFeature: 'marketAnalysis' },
+        { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' },
+      ]
+    },
+    {
+      id: 'reports',
+      label: { en: 'Reports', fr: 'Rapports' },
+      items: [
+        { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' },
+        { name: language === 'en' ? 'Tax Credits' : 'Crédits d\'impôt', href: '/app/tax-credits', icon: Receipt, permission: 'view:reports', premiumFeature: 'taxCredits' },
+        { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports', premiumFeature: 'boardMeeting' },
+      ]
+    },
+    {
+      id: 'planning',
+      label: { en: 'Planning', fr: 'Planification' },
+      items: [
+        { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports', premiumFeature: 'strategicPlanning' },
+      ]
+    },
+    {
+      id: 'data',
+      label: { en: 'Data', fr: 'Données' },
+      items: [
+        { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
+      ]
+    },
   ];
+
+  // Filter categories and items based on permissions
+  const filteredCategories = navigationCategories
+    .map(category => ({
+      ...category,
+      items: category.items.filter(item => hasPermission(item.permission))
+    }))
+    .filter(category => category.items.length > 0);
   
   // Settings shown separately with submenu
   const showSettings = hasPermission('view:settings');
@@ -497,7 +672,15 @@ export default function Layout({ children }: LayoutProps) {
     return location.pathname.startsWith(path);
   };
 
-  const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
+  // Auto-expand the category containing the active page
+  useEffect(() => {
+    const activeCategory = filteredCategories.find(category => 
+      category.items.some(item => isActive(item.href))
+    );
+    if (activeCategory && !expandedCategories.has(activeCategory.id)) {
+      setExpandedCategories(prev => new Set([...prev, activeCategory.id]));
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
@@ -610,30 +793,72 @@ export default function Layout({ children }: LayoutProps) {
           <OrganizationSwitcher />
         </div>
 
-        {/* Mobile Navigation - Scrollable */}
-        <nav className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {filteredNavigation.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              <span className="flex-1 truncate">{item.name}</span>
-              {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
-              <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
-            </Link>
-          ))}
+        {/* Mobile Navigation - Scrollable with Collapsible Categories */}
+        <nav className="flex-1 overflow-y-auto p-3 sm:p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {filteredCategories.map((category, categoryIndex) => {
+            const isExpanded = expandedCategories.has(category.id);
+            const hasActiveItem = category.items.some(item => isActive(item.href));
+            
+            return (
+              <div key={category.id} className={categoryIndex > 0 ? 'mt-2' : ''}>
+                {/* Category Header - Clickable to toggle */}
+                <button
+                  onClick={() => toggleCategory(category.id)}
+                  className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider rounded transition-colors active:scale-[0.98]"
+                  style={{ 
+                    color: hasActiveItem ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted) / 0.6)',
+                  }}
+                >
+                  <span>{category.label[language as 'en' | 'fr']}</span>
+                  <ChevronDown 
+                    className={`w-3 h-3 transition-transform duration-200 opacity-50 ${isExpanded ? '' : '-rotate-90'}`}
+                  />
+                </button>
+                
+                {/* Category Items - Collapsible */}
+                <div 
+                  className="space-y-0.5 mt-1 overflow-hidden transition-all duration-200"
+                  style={{ 
+                    maxHeight: isExpanded ? '500px' : '0px',
+                    opacity: isExpanded ? 1 : 0,
+                  }}
+                >
+                  {category.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="flex-1 truncate">{item.name}</span>
+                      {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
+                      <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
           
           {/* Mobile Settings with Expandable Submenu */}
           {showSettings && (
-            <MobileSettingsSubmenu
-              isActive={isActive('/app/settings')}
-              language={language as 'en' | 'fr'}
-              permissions={settingsPermissions}
-              onNavigate={() => setIsMobileMenuOpen(false)}
-            />
+            <div className="mt-2">
+              <div 
+                className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider"
+                style={{ color: 'rgb(var(--color-text-muted) / 0.6)' }}
+              >
+                {language === 'en' ? 'Settings' : 'Paramètres'}
+              </div>
+              <div className="mt-1">
+                <MobileSettingsSubmenu
+                  isActive={isActive('/app/settings')}
+                  language={language as 'en' | 'fr'}
+                  permissions={settingsPermissions}
+                  onNavigate={() => setIsMobileMenuOpen(false)}
+                />
+              </div>
+            </div>
           )}
         </nav>
 
@@ -811,40 +1036,84 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         )}
 
-        {/* Navigation */}
+        {/* Navigation with Categories */}
         <nav className={`flex-1 overflow-y-auto transition-all min-h-0 ${
           isSidebarCollapsed ? 'p-2' : 'p-4'
         }`}>
-          <div className="space-y-1">
-            {filteredNavigation.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`nav-item ${isActive(item.href) ? 'active' : ''} ${
-                  isSidebarCollapsed ? 'justify-center px-2 w-full' : ''
-                }`}
-                title={isSidebarCollapsed ? item.name : undefined}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!isSidebarCollapsed && (
-                  <>
-                    <span className="flex-1">{item.name}</span>
-                    {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
-                  </>
-                )}
-              </Link>
-            ))}
+          {filteredCategories.map((category, categoryIndex) => {
+            const isExpanded = expandedCategories.has(category.id);
+            const hasActiveItem = category.items.some(item => isActive(item.href));
             
-            {/* Settings with Flyout */}
-            {showSettings && (
-              <SettingsSubmenu
-                isActive={isActive('/app/settings')}
-                isCollapsed={isSidebarCollapsed}
-                language={language as 'en' | 'fr'}
-                permissions={settingsPermissions}
-              />
-            )}
-          </div>
+            return (
+              <div key={category.id} className={categoryIndex > 0 ? 'mt-2' : ''}>
+                {/* Category Header - Clickable to toggle, hidden when sidebar collapsed */}
+                {!isSidebarCollapsed && (
+                  <button
+                    onClick={() => toggleCategory(category.id)}
+                    className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded transition-colors"
+                    style={{ 
+                      color: hasActiveItem ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted) / 0.6)',
+                    }}
+                  >
+                    <span>{category.label[language as 'en' | 'fr']}</span>
+                    <ChevronDown 
+                      className={`w-3 h-3 transition-transform duration-200 opacity-50 ${isExpanded ? '' : '-rotate-90'}`}
+                    />
+                  </button>
+                )}
+                
+                {/* Category Items - Collapsible */}
+                <div 
+                  className={`space-y-0.5 overflow-hidden transition-all duration-200 ${!isSidebarCollapsed ? 'mt-1' : ''}`}
+                  style={{ 
+                    maxHeight: isSidebarCollapsed || isExpanded ? '500px' : '0px',
+                    opacity: isSidebarCollapsed || isExpanded ? 1 : 0,
+                  }}
+                >
+                  {category.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      className={`nav-item ${isActive(item.href) ? 'active' : ''} ${
+                        isSidebarCollapsed ? 'justify-center px-2 w-full' : ''
+                      }`}
+                      title={isSidebarCollapsed ? item.name : undefined}
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {!isSidebarCollapsed && (
+                        <>
+                          <span className="flex-1">{item.name}</span>
+                          {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
+                        </>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          
+          {/* Settings Category */}
+          {showSettings && (
+            <div className="mt-2">
+              {!isSidebarCollapsed && (
+                <div 
+                  className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider"
+                  style={{ color: 'rgb(var(--color-text-muted) / 0.6)' }}
+                >
+                  {language === 'en' ? 'Settings' : 'Paramètres'}
+                </div>
+              )}
+              <div className={`${!isSidebarCollapsed ? 'mt-1' : ''}`}>
+                <SettingsSubmenu
+                  isActive={isActive('/app/settings')}
+                  isCollapsed={isSidebarCollapsed}
+                  language={language as 'en' | 'fr'}
+                  permissions={settingsPermissions}
+                />
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* User Menu - Bottom Left */}
@@ -977,7 +1246,7 @@ export default function Layout({ children }: LayoutProps) {
         >
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              {navigation.find((n) => isActive(n.href))?.name || 'PlainLedger'}
+              {filteredCategories.flatMap(c => c.items).find((n) => isActive(n.href))?.name || 'PlainLedger'}
             </h1>
             
             {/* Industry Badge - Visible on all pages (smaller version for header) */}

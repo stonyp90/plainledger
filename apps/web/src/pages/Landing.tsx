@@ -2647,8 +2647,8 @@ export default function Landing() {
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'We combine the best commercial AI models with proprietary models trained on real Canadian business decisions.'
-                : 'Nous combinons les meilleurs modèles IA commerciaux avec des modèles propriétaires entraînés sur de vraies décisions d\'entreprises canadiennes.'}
+                ? 'We combine the best commercial AI with proprietary technology trained on real Canadian business decisions.'
+                : 'Nous combinons les meilleures technologies IA commerciales avec une technologie propriétaire entraînée sur de vraies décisions d\'entreprises canadiennes.'}
             </p>
           </motion.div>
 

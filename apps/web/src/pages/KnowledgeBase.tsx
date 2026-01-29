@@ -992,24 +992,30 @@ export default function KnowledgeBase() {
       <div className="h-full overflow-auto" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm mb-6 flex-wrap" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <nav 
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm mb-6 flex-wrap" 
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+            aria-label="Breadcrumb"
+          >
             <Link 
               to="/help/knowledge-base" 
-              className="hover:underline"
+              className="hover:underline shrink-0"
               style={{ color: 'rgb(var(--color-primary-500))' }}
             >
               {isEn ? 'Knowledge Base' : 'Base de connaissances'}
             </Link>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <Link 
               to={`/help/knowledge-base/${topicId}`}
-              className="hover:underline"
+              className="hover:underline shrink-0"
               style={{ color: 'rgb(var(--color-primary-500))' }}
             >
               {isEn ? topic.title.en : topic.title.fr}
             </Link>
-            <ChevronRight className="w-4 h-4" />
-            <span>{isEn ? article.title.en : article.title.fr}</span>
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate max-w-[150px] sm:max-w-none">
+              {isEn ? article.title.en : article.title.fr}
+            </span>
           </nav>
 
           <article>
@@ -1127,16 +1133,22 @@ export default function KnowledgeBase() {
     <div className="h-full overflow-auto" style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm mb-6" style={{ color: 'rgb(var(--color-text-muted))' }}>
+        <nav 
+          className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm mb-6 flex-wrap" 
+          style={{ color: 'rgb(var(--color-text-muted))' }}
+          aria-label="Breadcrumb"
+        >
           <Link 
             to="/help/knowledge-base" 
-            className="hover:underline"
+            className="hover:underline shrink-0"
             style={{ color: 'rgb(var(--color-primary-500))' }}
           >
             {isEn ? 'Knowledge Base' : 'Base de connaissances'}
           </Link>
-          <ChevronRight className="w-4 h-4" />
-          <span>{isEn ? topic.title.en : topic.title.fr}</span>
+          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate max-w-[200px] sm:max-w-none">
+            {isEn ? topic.title.en : topic.title.fr}
+          </span>
         </nav>
 
         {/* Topic Header */}

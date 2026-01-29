@@ -37,6 +37,7 @@ import MarketAnalysis from './pages/MarketAnalysis';
 import TaxCredits from './pages/TaxCredits';
 import DocumentShares from './pages/DocumentShares';
 import SharedDocumentAccess from './pages/SharedDocumentAccess';
+import Contact from './pages/Contact';
 import CrispChat from './components/CrispChat';
 import { AnalyticsVisibilityProvider } from './contexts/AnalyticsVisibilityContext';
 import config from './lib/config';
@@ -442,6 +443,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <Settings />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/contact"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Contact />
             </AppLayout>
           </ProtectedRoute>
         }

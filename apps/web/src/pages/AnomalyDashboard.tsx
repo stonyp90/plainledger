@@ -497,10 +497,15 @@ export default function AnomalyDashboard() {
           </div>
           
           {/* Last Analysis - Desktop */}
-          <div className="hidden lg:flex items-center gap-2 text-xs whitespace-nowrap" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Clock className="w-3.5 h-3.5" />
-            {lastRefresh.toLocaleTimeString(isEn ? 'en-CA' : 'fr-CA')}
-          </div>
+          <Tooltip 
+            content={isEn ? 'Time when the analysis was last run. Click "Refresh" to update.' : 'Heure de la dernière analyse. Cliquez sur « Actualiser » pour mettre à jour.'}
+            position="bottom"
+          >
+            <div className="hidden lg:flex items-center gap-2 text-xs whitespace-nowrap cursor-help" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <Clock className="w-3.5 h-3.5" />
+              {lastRefresh.toLocaleTimeString(isEn ? 'en-CA' : 'fr-CA')}
+            </div>
+          </Tooltip>
         </div>
         
         {/* Controls Row */}
@@ -553,10 +558,15 @@ export default function AnomalyDashboard() {
           </div>
           
           {/* Last Analysis - Mobile */}
-          <div className="lg:hidden flex items-center gap-1.5 text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Clock className="w-3 h-3" />
-            {lastRefresh.toLocaleTimeString(isEn ? 'en-CA' : 'fr-CA', { hour: '2-digit', minute: '2-digit' })}
-          </div>
+          <Tooltip 
+            content={isEn ? 'Last analysis time' : 'Heure de la dernière analyse'}
+            position="bottom"
+          >
+            <div className="lg:hidden flex items-center gap-1.5 text-[10px] sm:text-xs cursor-help" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <Clock className="w-3 h-3" />
+              {lastRefresh.toLocaleTimeString(isEn ? 'en-CA' : 'fr-CA', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </Tooltip>
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2 ml-auto">
@@ -777,7 +787,7 @@ export default function AnomalyDashboard() {
                 >
                   <button
                     onClick={() => toggleAnomaly(anomaly.id)}
-                    className="w-full flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 text-left transition-colors hover:opacity-90"
+                    className="w-full flex items-start sm:items-center gap-2 sm:gap-3 p-3 sm:p-4 text-left"
                     style={{ backgroundColor: style.bgColor }}
                   >
                     {isExpanded ? (

@@ -422,19 +422,19 @@ export default function StrategicPlanning() {
                 </span>
               </div>
               
-              {/* Blurred Chart Preview with Sample Data */}
+              {/* Chart Preview with Sample Data */}
               <div className="relative rounded-lg p-3 overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
                 {/* Sample runway data visualization */}
                 <div className="flex items-end justify-between gap-1 h-20">
                   {[
-                    { month: 'Jan', cash: 850, color: '#10B981' },
-                    { month: 'Feb', cash: 825, color: '#10B981' },
-                    { month: 'Mar', cash: 800, color: '#10B981' },
-                    { month: 'Apr', cash: 775, color: '#10B981' },
-                    { month: 'May', cash: 750, color: '#10B981' },
-                    { month: 'Jun', cash: 720, color: '#F59E0B' },
-                    { month: 'Jul', cash: 690, color: '#F59E0B' },
-                    { month: 'Aug', cash: 655, color: '#F59E0B' },
+                    { month: isEn ? 'Jan' : 'Jan', cash: 850, color: '#10B981' },
+                    { month: isEn ? 'Feb' : 'Fév', cash: 825, color: '#10B981' },
+                    { month: isEn ? 'Mar' : 'Mar', cash: 800, color: '#10B981' },
+                    { month: isEn ? 'Apr' : 'Avr', cash: 775, color: '#10B981' },
+                    { month: isEn ? 'May' : 'Mai', cash: 750, color: '#10B981' },
+                    { month: isEn ? 'Jun' : 'Jun', cash: 720, color: '#F59E0B' },
+                    { month: isEn ? 'Jul' : 'Jul', cash: 690, color: '#F59E0B' },
+                    { month: isEn ? 'Aug' : 'Aoû', cash: 655, color: '#F59E0B' },
                   ].map((item, idx) => (
                     <div key={idx} className="flex flex-col items-center flex-1">
                       <div 
@@ -456,15 +456,14 @@ export default function StrategicPlanning() {
                   <span>$850K</span>
                   <span>$655K</span>
                 </div>
-                {/* Overlay blur effect */}
-                <div 
-                  className="absolute inset-0 backdrop-blur-sm flex items-center justify-center rounded-lg"
-                  style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
-                >
-                  <div className="text-center">
-                    <Target className="w-6 h-6 mx-auto mb-1 opacity-50" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                    <span className="text-xs font-medium opacity-50" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? 'Pro Feature' : 'Fonctionnalité Pro'}
+                {/* Runway indicator */}
+                <div className="mt-2 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[8px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? 'Runway' : 'Piste'}
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: '#10B981' }}>
+                      8 {isEn ? 'months' : 'mois'}
                     </span>
                   </div>
                 </div>
@@ -474,106 +473,156 @@ export default function StrategicPlanning() {
         </div>
 
         {/* Quick Metrics Preview */}
-        <div 
-          className="rounded-2xl p-4 sm:p-5"
-          style={{
-            backgroundColor: 'rgb(var(--color-bg-muted))',
-            border: '1px solid rgb(var(--color-border))',
-          }}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {[
-              { 
-                label: isEn ? 'Cash Balance' : 'Solde de trésorerie', 
-                value: '$850K', 
-                icon: TrendingUp,
-                iconColor: '#10B981',
-                iconBg: 'rgba(16, 185, 129, 0.1)',
-                borderColor: 'rgba(16, 185, 129, 0.15)',
-              },
-              { 
-                label: isEn ? 'Monthly Burn' : 'Brûlage mensuel', 
-                value: '$25K', 
-                suffix: isEn ? '/mo' : '/mois',
-                icon: TrendingDown,
-                iconColor: '#EF4444',
-                iconBg: 'rgba(239, 68, 68, 0.1)',
-                borderColor: 'rgba(239, 68, 68, 0.15)',
-              },
-              { 
-                label: isEn ? 'Runway' : 'Trésorerie', 
-                value: '34', 
-                suffix: isEn ? 'months' : 'mois',
-                icon: Target,
-                iconColor: '#10B981',
-                iconBg: 'rgba(16, 185, 129, 0.1)',
-                borderColor: 'rgba(16, 185, 129, 0.15)',
-                badge: isEn ? 'Healthy' : 'Sain',
-              },
-              { 
-                label: isEn ? 'Zero Date' : 'Date zéro', 
-                value: isEn ? 'Nov 2028' : 'nov. 2028',
-                icon: Calendar,
-                iconColor: '#6B7280',
-                iconBg: 'rgba(107, 114, 128, 0.1)',
-                borderColor: 'rgba(107, 114, 128, 0.15)',
-              },
-            ].map((metric, idx) => (
-              <div 
-                key={idx}
-                className="group relative flex items-center gap-2.5 p-3 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02]"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-surface))',
-                  border: `1px solid ${metric.borderColor}`,
-                  boxShadow: '0 1px 3px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.02)',
-                }}
-              >
-                {/* Subtle gradient glow on hover */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* Cash Balance */}
+          <div 
+            className="group relative rounded-xl p-4 overflow-hidden transition-all duration-300 hover:shadow-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div className="absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-10" 
+              style={{ backgroundColor: '#10B981' }} 
+            />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
                 <div 
-                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{ 
-                    background: `radial-gradient(circle at 30% 30%, ${metric.iconBg}, transparent 70%)`,
-                  }}
-                />
-                
-                {/* Icon container */}
-                <div 
-                  className="relative w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-                  style={{ 
-                    backgroundColor: metric.iconBg,
-                    border: `1px solid ${metric.iconColor}20`,
-                  }}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
                 >
-                  <metric.icon className="w-4 h-4" style={{ color: metric.iconColor }} />
+                  <TrendingUp className="w-4 h-4" style={{ color: '#10B981' }} />
                 </div>
-                
-                {/* Content */}
-                <div className="relative flex-1 min-w-0">
-                  <p 
-                    className="text-[9px] font-medium uppercase tracking-wide mb-0.5"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  >
-                    {metric.label}
-                  </p>
-                  <div className="flex items-baseline gap-0.5">
-                    <span 
-                      className="text-base font-bold tabular-nums tracking-tight"
-                      style={{ color: metric.iconColor }}
-                    >
-                      {metric.value}
-                    </span>
-                    {metric.suffix && (
-                      <span 
-                        className="text-[10px] font-medium"
-                        style={{ color: `${metric.iconColor}99` }}
-                      >
-                        {metric.suffix}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Cash Balance' : 'Solde de trésorerie'}
+                </span>
               </div>
-            ))}
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl sm:text-3xl font-bold" style={{ color: '#10B981' }}>$850K</span>
+              </div>
+              <div className="mt-2 flex items-center gap-1">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
+                  +12%
+                </span>
+                <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'vs last month' : 'vs mois dernier'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Burn */}
+          <div 
+            className="group relative rounded-xl p-4 overflow-hidden transition-all duration-300 hover:shadow-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div className="absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-10" 
+              style={{ backgroundColor: '#F59E0B' }} 
+            />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)' }}
+                >
+                  <TrendingDown className="w-4 h-4" style={{ color: '#F59E0B' }} />
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Monthly Burn' : 'Brûlage mensuel'}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl sm:text-3xl font-bold" style={{ color: '#F59E0B' }}>$25K</span>
+                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  /{isEn ? 'mo' : 'mois'}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center gap-1">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
+                  -5%
+                </span>
+                <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'reduced costs' : 'coûts réduits'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Runway */}
+          <div 
+            className="group relative rounded-xl p-4 overflow-hidden transition-all duration-300 hover:shadow-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div className="absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-10" 
+              style={{ backgroundColor: '#10B981' }} 
+            />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+                >
+                  <Target className="w-4 h-4" style={{ color: '#10B981' }} />
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Runway' : 'Piste financière'}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl sm:text-3xl font-bold" style={{ color: '#10B981' }}>34</span>
+                <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'months' : 'mois'}
+                </span>
+              </div>
+              <div className="mt-2">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#059669' }}>
+                  ✓ {isEn ? 'Excellent' : 'Excellent'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Zero Date */}
+          <div 
+            className="group relative rounded-xl p-4 overflow-hidden transition-all duration-300 hover:shadow-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div className="absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full opacity-10" 
+              style={{ backgroundColor: '#6366F1' }} 
+            />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
+                >
+                  <Calendar className="w-4 h-4" style={{ color: '#6366F1' }} />
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Zero Date' : 'Date zéro'}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl sm:text-3xl font-bold" style={{ color: '#6366F1' }}>
+                  {isEn ? 'Nov' : 'Nov'}
+                </span>
+                <span className="text-lg font-semibold" style={{ color: '#6366F1' }}>2028</span>
+              </div>
+              <div className="mt-2">
+                <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? '34 months from now' : 'Dans 34 mois'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1461,7 +1461,7 @@ function IndustryKPISectionDashboard({ industry, isEn }: IndustryKPISectionDashb
             <Icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base sm:text-lg lg:text-xl font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+            <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? `${industryData.name.en} KPIs` : `KPIs ${industryData.name.fr}`}
             </h3>
             <p className="text-xs sm:text-sm mt-0.5 sm:mt-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
@@ -1683,7 +1683,7 @@ function PortfolioSummarySection({ industry, isEn }: PortfolioSummarySectionProp
           <Building2 className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-lg lg:text-xl font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Portfolio Overview' : 'Aperçu du portefeuille'}
           </h3>
           <p className="text-xs sm:text-sm mt-0.5 sm:mt-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>

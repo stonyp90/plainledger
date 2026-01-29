@@ -2,7 +2,7 @@
 <@layout.emailLayout>
     <p>Hi${(user.firstName)???then(' ' + user.firstName, '')},</p>
     
-    <p>Your administrator has requested that you update your PlainLedger account. Please complete the following actions:</p>
+    <p>To keep your PlainLedger account secure, please complete the following steps:</p>
     
     <ul class="action-list">
     <#if requiredActions??>
@@ -12,10 +12,8 @@
     </#if>
     </ul>
     
-    <p>Click the button below to complete this process:</p>
-    
     <p style="text-align: center; margin: 32px 0;">
-        <a href="${link}" class="email-button">Update Account</a>
+        <a href="${link}" class="email-button">Complete Setup</a>
     </p>
     
     <div class="email-link-text">
@@ -25,7 +23,7 @@
     
     <div class="email-note">
         <strong>This link will expire in ${linkExpiration} minutes.</strong><br>
-        If you didn't expect this email, please contact your administrator or our support team.
+        If you did not create a PlainLedger account, you can safely ignore this email.
     </div>
     
     <div class="email-signature">

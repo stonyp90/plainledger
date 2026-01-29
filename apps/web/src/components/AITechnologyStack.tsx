@@ -185,7 +185,7 @@ export default function AITechnologyStack({ theme, isDark }: AITechnologyStackPr
               className="text-xs"
               style={{ color: isDark ? '#94a3b8' : '#64748b' }}
             >
-              {isEn ? 'Industry-specific models' : 'Modèles par industrie'}
+              {isEn ? 'Industries served' : 'Industries desservies'}
             </div>
           </div>
           <div>
@@ -213,20 +213,11 @@ export default function AITechnologyStack({ theme, isDark }: AITechnologyStackPr
         >
           <span className="mr-1">🔒</span>
           {isEn 
-            ? 'Your data trains YOUR industry model. We never share data between industries.'
-            : 'Vos données entraînent VOTRE modèle sectoriel. Nous ne partageons jamais entre industries.'}
+            ? 'Your data improves YOUR industry insights. We never share data between industries.'
+            : 'Vos données améliorent VOS insights sectoriels. Nous ne partageons jamais entre industries.'}
         </div>
       </motion.div>
 
-      {/* Open Source Footer */}
-      <div 
-        className="mt-6 text-center text-xs"
-        style={{ color: isDark ? '#64748b' : '#94a3b8' }}
-      >
-        {isEn 
-          ? 'Built on open-source foundations: Mistral 7B • HuggingFace Transformers • PyTorch • LoRA'
-          : 'Construit sur des fondations open-source: Mistral 7B • HuggingFace Transformers • PyTorch • LoRA'}
-      </div>
     </div>
   );
 }
