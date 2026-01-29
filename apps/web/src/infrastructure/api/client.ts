@@ -108,7 +108,7 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
   // Use relative URLs for better compatibility with ALB routing
   // If baseUrl is set and is absolute, use it; otherwise use relative path
   const baseUrl = config.api.baseUrl.replace(/\/$/, '');
-  let fullPath = path.startsWith('/') ? path : `/${path}`;
+  const fullPath = path.startsWith('/') ? path : `/${path}`;
   
   // If baseUrl is absolute, prepend it; otherwise use relative path
   if (baseUrl && (baseUrl.startsWith('http://') || baseUrl.startsWith('https://'))) {

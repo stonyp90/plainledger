@@ -27,7 +27,12 @@ export class IndustryPatternEntity {
   @Column({ name: "trigger_value", type: "jsonb", nullable: true })
   triggerValue: number | [number, number] | null;
 
-  @Column({ name: "business_size", type: "varchar", length: 20, nullable: true })
+  @Column({
+    name: "business_size",
+    type: "varchar",
+    length: 20,
+    nullable: true,
+  })
   businessSize?: string;
 
   // Aggregated data
@@ -58,7 +63,12 @@ export class IndustryPatternEntity {
     sampleSize: number;
   };
 
-  @Column({ name: "statistical_significance", type: "decimal", precision: 3, scale: 2 })
+  @Column({
+    name: "statistical_significance",
+    type: "decimal",
+    precision: 3,
+    scale: 2,
+  })
   statisticalSignificance: number;
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })

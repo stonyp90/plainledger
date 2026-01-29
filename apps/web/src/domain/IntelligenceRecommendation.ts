@@ -7,7 +7,7 @@
 
 import { IndustryPattern } from './IndustryPattern';
 import { DecisionEvent } from './DecisionEvent';
-import { Money } from './Money';
+import { Money } from './value-objects/Money';
 
 export type ConfidenceLevel = 'low' | 'medium' | 'high';
 export type Percentage = number; // 0-100

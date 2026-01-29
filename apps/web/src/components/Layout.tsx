@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/keycloak';
 import { useTenant } from '../contexts/TenantContext';
@@ -43,6 +43,14 @@ import {
   Truck,
   Heart,
   GraduationCap,
+  Users,
+  Shield,
+  User,
+  CreditCard,
+  Bell,
+  Lock,
+  Database,
+  Share2,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -65,10 +73,232 @@ function HelpButton() {
   );
 }
 
+// Settings submenu items configuration
+interface SettingsSubmenuItem {
+  id: string;
+  name: { en: string; fr: string };
+  icon: typeof Settings;
+  show: (permissions: { canManageSettings: boolean; canManageMembers: boolean; canManageBilling: boolean; isInternalStaff: boolean; isAdmin: boolean }) => boolean;
+}
+
+const settingsSubmenuItems: SettingsSubmenuItem[] = [
+  { id: 'organization', name: { en: 'Organization', fr: 'Organisation' }, icon: Building2, show: (p) => p.canManageSettings },
+  { id: 'team', name: { en: 'Team', fr: 'Équipe' }, icon: Users, show: (p) => p.canManageMembers },
+  { id: 'roles', name: { en: 'Roles & Access', fr: 'Rôles & Accès' }, icon: Shield, show: () => true },
+  { id: 'profile', name: { en: 'Profile', fr: 'Profil' }, icon: User, show: () => true },
+  { id: 'subscription', name: { en: 'Subscription', fr: 'Abonnement' }, icon: CreditCard, show: (p) => p.canManageBilling },
+  { id: 'anomalies', name: { en: 'Anomaly Detection', fr: 'Détection anomalies' }, icon: AlertTriangle, show: (p) => p.canManageSettings },
+  { id: 'notifications', name: { en: 'Notifications', fr: 'Notifications' }, icon: Bell, show: () => true },
+  { id: 'security', name: { en: 'Security', fr: 'Sécurité' }, icon: Lock, show: () => true },
+  { id: 'secrets', name: { en: 'API Keys', fr: 'Clés API' }, icon: Lock, show: (p) => p.isAdmin },
+  { id: 'integrations', name: { en: 'Integrations', fr: 'Intégrations' }, icon: Database, show: (p) => p.isInternalStaff },
+];
+
+// Settings Submenu Component with flyout (Desktop)
+interface SettingsSubmenuProps {
+  isActive: boolean;
+  isCollapsed: boolean;
+  language: 'en' | 'fr';
+  permissions: {
+    canManageSettings: boolean;
+    canManageMembers: boolean;
+    canManageBilling: boolean;
+    isInternalStaff: boolean;
+    isAdmin: boolean;
+  };
+  onNavigate?: () => void;
+}
+
+function SettingsSubmenu({ isActive, isCollapsed, language, permissions, onNavigate }: SettingsSubmenuProps) {
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsHovering(true);
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    timeoutRef.current = setTimeout(() => {
+      if (!isHovering) {
+        setIsOpen(false);
+      }
+    }, 150);
+  };
+
+  const handleItemClick = (tabId: string) => {
+    navigate(`/app/settings?tab=${tabId}`);
+    setIsOpen(false);
+    onNavigate?.();
+  };
+
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Main Settings Button */}
+      <Link
+        to="/app/settings"
+        className={`nav-item ${isActive ? 'active' : ''} ${isCollapsed ? 'justify-center px-2 w-full' : ''}`}
+        title={isCollapsed ? (language === 'en' ? 'Settings' : 'Paramètres') : undefined}
+        onClick={(e) => {
+          // Allow direct navigation if not hovering submenu
+          if (!isOpen) return;
+        }}
+      >
+        <Settings className="w-5 h-5 flex-shrink-0" />
+        {!isCollapsed && (
+          <>
+            <span className="flex-1">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
+            <ChevronRight 
+              className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            />
+          </>
+        )}
+      </Link>
+
+      {/* Flyout Submenu */}
+      {isOpen && (
+        <div 
+          className={`absolute z-50 py-2 rounded-xl shadow-xl border min-w-[220px] ${
+            isCollapsed ? 'left-full ml-2 top-0' : 'left-full ml-2 top-0'
+          }`}
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+            boxShadow: '0 10px 40px rgb(0 0 0 / 0.15), 0 2px 10px rgb(0 0 0 / 0.1)',
+          }}
+          onMouseEnter={() => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            setIsHovering(true);
+          }}
+          onMouseLeave={() => {
+            setIsHovering(false);
+            setIsOpen(false);
+          }}
+        >
+          {/* Header */}
+          <div 
+            className="px-3 py-2 mb-1 border-b"
+            style={{ borderColor: 'rgb(var(--color-border))' }}
+          >
+            <p 
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {language === 'en' ? 'Settings' : 'Paramètres'}
+            </p>
+          </div>
+          
+          {/* Menu Items */}
+          <div className="px-1">
+            {visibleItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all"
+                style={{ color: 'rgb(var(--color-text))' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                  e.currentTarget.style.color = 'rgb(var(--color-primary-600))';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'rgb(var(--color-text))';
+                }}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{item.name[language]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mobile Settings Submenu - Click to expand
+interface MobileSettingsSubmenuProps {
+  isActive: boolean;
+  language: 'en' | 'fr';
+  permissions: {
+    canManageSettings: boolean;
+    canManageMembers: boolean;
+    canManageBilling: boolean;
+    isInternalStaff: boolean;
+    isAdmin: boolean;
+  };
+  onNavigate: () => void;
+}
+
+function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: MobileSettingsSubmenuProps) {
+  const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const visibleItems = settingsSubmenuItems.filter(item => item.show(permissions));
+
+  const handleItemClick = (tabId: string) => {
+    navigate(`/app/settings?tab=${tabId}`);
+    onNavigate();
+  };
+
+  return (
+    <div>
+      {/* Main Settings Button - Toggles expansion */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`nav-item w-full ${isActive ? 'active' : ''}`}
+      >
+        <Settings className="w-5 h-5 flex-shrink-0" />
+        <span className="flex-1 truncate">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
+        <ChevronRight 
+          className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+          style={{ color: 'rgb(var(--color-text-muted))' }}
+        />
+      </button>
+
+      {/* Expandable Submenu Items */}
+      {isExpanded && (
+        <div 
+          className="ml-4 mt-1 pl-4 space-y-1 border-l-2"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
+          {visibleItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleItemClick(item.id)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all active:scale-[0.98]"
+              style={{ 
+                color: 'rgb(var(--color-text))',
+                backgroundColor: 'transparent',
+              }}
+            >
+              <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <span className="text-sm">{item.name[language]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { currentTenant, hasPermission, isInternalStaff } = useTenant();
+  const { currentTenant, hasPermission, isInternalStaff, canManageSettings, canManageMembers, canManageBilling } = useTenant();
   const { t, language, setLanguage, formatDate } = useI18n();
   const { toggleTheme } = useTheme();
   const searchModal = useSearchModal();
@@ -81,6 +311,15 @@ export default function Layout({ children }: LayoutProps) {
       return false;
     }
   });
+  
+  // Settings submenu permissions
+  const settingsPermissions = {
+    canManageSettings: canManageSettings ?? false,
+    canManageMembers: canManageMembers ?? false,
+    canManageBilling: canManageBilling ?? false,
+    isInternalStaff: isInternalStaff ?? false,
+    isAdmin: (canManageSettings || isInternalStaff) ?? false,
+  };
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -124,8 +363,11 @@ export default function Layout({ children }: LayoutProps) {
     { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
     { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' },
     { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports', premiumFeature: 'boardMeeting' },
-    { name: t('nav.settings'), href: '/app/settings', icon: Settings, permission: 'view:settings' },
+    { name: language === 'en' ? 'Document Shares' : 'Partage docs', href: '/app/document-shares', icon: Share2, permission: 'view:reports' },
   ];
+  
+  // Settings shown separately with submenu
+  const showSettings = hasPermission('view:settings');
 
   const isActive = (path: string) => {
     if (path === '/app') return location.pathname === '/app';
@@ -260,6 +502,16 @@ export default function Layout({ children }: LayoutProps) {
               <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
             </Link>
           ))}
+          
+          {/* Mobile Settings with Expandable Submenu */}
+          {showSettings && (
+            <MobileSettingsSubmenu
+              isActive={isActive('/app/settings')}
+              language={language as 'en' | 'fr'}
+              permissions={settingsPermissions}
+              onNavigate={() => setIsMobileMenuOpen(false)}
+            />
+          )}
         </nav>
 
         {/* Mobile User Menu - Fixed at bottom */}
@@ -459,6 +711,16 @@ export default function Layout({ children }: LayoutProps) {
                 )}
               </Link>
             ))}
+            
+            {/* Settings with Submenu */}
+            {showSettings && (
+              <SettingsSubmenu
+                isActive={isActive('/app/settings')}
+                isCollapsed={isSidebarCollapsed}
+                language={language as 'en' | 'fr'}
+                permissions={settingsPermissions}
+              />
+            )}
           </div>
         </nav>
 

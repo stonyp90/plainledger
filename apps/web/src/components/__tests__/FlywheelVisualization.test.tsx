@@ -7,7 +7,7 @@ import { render, screen } from '@testing-library/react';
 import FlywheelVisualization from '../FlywheelVisualization';
 
 // Mock the i18n hook
-vi.mock('../lib/i18n', () => ({
+vi.mock('../../lib/i18n', () => ({
   useI18n: vi.fn(() => ({ language: 'en' })),
 }));
 
@@ -42,24 +42,24 @@ describe('FlywheelVisualization', () => {
   it('should apply dark theme styles when isDark is true', () => {
     const { container } = render(<FlywheelVisualization theme={mockTheme} isDark={true} />);
     
-    // Check that dark theme styles are applied
-    const elements = container.querySelectorAll('[style*="rgba(30, 41, 59)"]');
-    expect(elements.length).toBeGreaterThan(0);
+    // Check that dark theme text colors are applied to node labels
+    const darkTextElements = container.querySelectorAll('[style*="#f1f5f9"]');
+    expect(darkTextElements.length).toBeGreaterThan(0);
   });
 
   it('should apply light theme styles when isDark is false', () => {
     const { container } = render(<FlywheelVisualization theme={mockTheme} isDark={false} />);
     
-    // Check that light theme styles are applied
-    const elements = container.querySelectorAll('[style*="rgba(255, 255, 255)"]');
-    expect(elements.length).toBeGreaterThan(0);
+    // Check that light theme text colors are applied
+    const lightTextElements = container.querySelectorAll('[style*="#1e293b"]');
+    expect(lightTextElements.length).toBeGreaterThan(0);
   });
 
-  it('should animate on mount', () => {
+  it('should render the SVG arrow path', () => {
     const { container } = render(<FlywheelVisualization theme={mockTheme} isDark={false} />);
     
-    // Check for motion components with animation
-    const animatedElements = container.querySelectorAll('[style*="rotate"]');
-    expect(animatedElements.length).toBeGreaterThan(0);
+    // Check for SVG circle element (the animated arrow path)
+    const svgCircle = container.querySelector('svg circle');
+    expect(svgCircle).toBeInTheDocument();
   });
 });

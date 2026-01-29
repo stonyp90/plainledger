@@ -1,15 +1,21 @@
 /**
  * OutcomeTrackingService
- * 
+ *
  * Service for tracking decision outcomes and updating patterns.
  * Part of the Context Intelligence Platform.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { IDecisionRepository } from '../ports/outbound/IDecisionRepository';
-import { IPatternService } from '../ports/outbound/IPatternService';
-import { DecisionEvent } from '../../../../web/src/domain/DecisionEvent';
-import { Money } from '../../../../web/src/domain/value-objects/Money';
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import {
+  IDecisionRepository,
+  DECISION_REPOSITORY_TOKEN,
+} from "../ports/outbound/IDecisionRepository";
+import {
+  IPatternService,
+  PATTERN_SERVICE_TOKEN,
+} from "../ports/outbound/IPatternService";
+import { DecisionEvent } from "@domain/DecisionEvent";
+import { Money } from "@domain/value-objects/Money";
 
 export interface RecordOutcomeInput {
   decisionId: string;
@@ -24,7 +30,9 @@ export class OutcomeTrackingService {
   private readonly logger = new Logger(OutcomeTrackingService.name);
 
   constructor(
+    @Inject(DECISION_REPOSITORY_TOKEN)
     private readonly decisionRepository: IDecisionRepository,
+    @Inject(PATTERN_SERVICE_TOKEN)
     private readonly patternService: IPatternService,
   ) {}
 
@@ -43,9 +51,10 @@ export class OutcomeTrackingService {
     // Calculate variance
     const expectedImpact = decision.decision.expectedImpact.amount;
     const actualImpact = input.actualImpact;
-    const variance = expectedImpact > 0
-      ? ((actualImpact - expectedImpact) / expectedImpact) * 100
-      : 0;
+    const variance =
+      expectedImpact > 0
+        ? ((actualImpact - expectedImpact) / expectedImpact) * 100
+        : 0;
 
     // Add outcome to decision
     decision.addOutcome({
@@ -59,11 +68,16 @@ export class OutcomeTrackingService {
     // Save updated decision
     await this.decisionRepository.save(decision);
 
-    this.logger.log(`Outcome recorded for decision ${input.decisionId}. Variance: ${variance.toFixed(1)}%`);
+    this.logger.log(
+      `Outcome recorded for decision ${input.decisionId}. Variance: ${variance.toFixed(1)}%`,
+    );
 
     // Trigger pattern recalculation (async)
-    this.triggerPatternRecalculation(decision).catch(err => {
-      this.logger.error(`Failed to recalculate patterns: ${err.message}`, err.stack);
+    this.triggerPatternRecalculation(decision).catch((err) => {
+      this.logger.error(
+        `Failed to recalculate patterns: ${err.message}`,
+        err.stack,
+      );
     });
 
     return decision;
@@ -72,17 +86,26 @@ export class OutcomeTrackingService {
   /**
    * Trigger pattern recalculation for the industry
    */
-  private async triggerPatternRecalculation(decision: DecisionEvent): Promise<void> {
+  private async triggerPatternRecalculation(
+    decision: DecisionEvent,
+  ): Promise<void> {
     // Get all decisions for this industry with outcomes
-    const decisions = await this.decisionRepository.findWithOutcomes(decision.industry);
+    const decisions = await this.decisionRepository.findWithOutcomes(
+      decision.industry,
+    );
 
     if (decisions.length < 10) {
-      this.logger.debug(`Insufficient decisions (${decisions.length}) for pattern recalculation`);
+      this.logger.debug(
+        `Insufficient decisions (${decisions.length}) for pattern recalculation`,
+      );
       return;
     }
 
     // Aggregate patterns
-    const pattern = await this.patternService.aggregatePattern(decision.industry, decisions);
+    const pattern = await this.patternService.aggregatePattern(
+      decision.industry,
+      decisions,
+    );
 
     // Update pattern
     await this.patternService.updatePattern(pattern);
@@ -100,23 +123,35 @@ export class OutcomeTrackingService {
     avgVariance: number;
     avgROI: number;
   }> {
-    const decisions = await this.decisionRepository.findByOrganization(organizationId);
-    const decisionsWithOutcomes = decisions.filter(d => d.outcome !== undefined);
+    const decisions =
+      await this.decisionRepository.findByOrganization(organizationId);
+    const decisionsWithOutcomes = decisions.filter(
+      (d) => d.outcome !== undefined,
+    );
 
-    const successRate = decisionsWithOutcomes.length > 0
-      ? (decisionsWithOutcomes.filter(d => d.isSuccessful() === true).length / decisionsWithOutcomes.length) * 100
-      : 0;
+    const successRate =
+      decisionsWithOutcomes.length > 0
+        ? (decisionsWithOutcomes.filter((d) => d.isSuccessful() === true)
+            .length /
+            decisionsWithOutcomes.length) *
+          100
+        : 0;
 
-    const avgVariance = decisionsWithOutcomes.length > 0
-      ? decisionsWithOutcomes.reduce((sum, d) => sum + (d.outcome?.variance || 0), 0) / decisionsWithOutcomes.length
-      : 0;
+    const avgVariance =
+      decisionsWithOutcomes.length > 0
+        ? decisionsWithOutcomes.reduce(
+            (sum, d) => sum + (d.outcome?.variance || 0),
+            0,
+          ) / decisionsWithOutcomes.length
+        : 0;
 
-    const avgROI = decisionsWithOutcomes.length > 0
-      ? decisionsWithOutcomes.reduce((sum, d) => {
-          const roi = d.getROI();
-          return sum + (roi || 0);
-        }, 0) / decisionsWithOutcomes.length
-      : 0;
+    const avgROI =
+      decisionsWithOutcomes.length > 0
+        ? decisionsWithOutcomes.reduce((sum, d) => {
+            const roi = d.getROI();
+            return sum + (roi || 0);
+          }, 0) / decisionsWithOutcomes.length
+        : 0;
 
     return {
       totalDecisions: decisions.length,

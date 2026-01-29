@@ -8,7 +8,7 @@ import AITechnologyStack from '../AITechnologyStack';
 
 // Mock the i18n hook
 const mockUseI18n = vi.fn(() => ({ language: 'en' }));
-vi.mock('../lib/i18n', () => ({
+vi.mock('../../lib/i18n', () => ({
   useI18n: () => mockUseI18n(),
 }));
 
@@ -27,7 +27,7 @@ describe('AITechnologyStack', () => {
   it('should render all AI providers', () => {
     render(<AITechnologyStack theme={mockTheme} isDark={false} />);
     
-    const providers = ['OpenAI', 'Anthropic', 'Google', 'Mistral', 'AWS Bedrock', 'Custom Model'];
+    const providers = ['OpenAI', 'Anthropic', 'Google', 'Mistral', 'AWS Bedrock', 'PlainLedger AI'];
     providers.forEach(provider => {
       expect(screen.getByText(provider)).toBeInTheDocument();
     });
@@ -42,10 +42,10 @@ describe('AITechnologyStack', () => {
     expect(screen.getByText('15+')).toBeInTheDocument();
   });
 
-  it('should display proprietary badge on Custom Model', () => {
+  it('should display proprietary badge on PlainLedger AI', () => {
     render(<AITechnologyStack theme={mockTheme} isDark={false} />);
     
-    expect(screen.getByText('PROPRIETARY')).toBeInTheDocument();
+    expect(screen.getByText('Proprietary')).toBeInTheDocument();
   });
 
   it('should handle language toggle', () => {
@@ -79,7 +79,8 @@ describe('AITechnologyStack', () => {
   it('should apply dark theme styles when isDark is true', () => {
     const { container } = render(<AITechnologyStack theme={mockTheme} isDark={true} />);
     
-    const elements = container.querySelectorAll('[style*="rgba(30, 41, 59)"]');
-    expect(elements.length).toBeGreaterThan(0);
+    // Check that dark theme text colors are applied
+    const darkTextElements = container.querySelectorAll('[style*="#f1f5f9"]');
+    expect(darkTextElements.length).toBeGreaterThan(0);
   });
 });

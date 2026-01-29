@@ -44,7 +44,7 @@ function useKnowledgeBaseSEO(title: string, description: string) {
     document.title = `${title} | PlainLedger Knowledge Base`;
     
     // Set meta description
-    let metaDescription = document.querySelector('meta[name="description"]');
+    const metaDescription = document.querySelector('meta[name="description"]');
     const previousDescription = metaDescription?.getAttribute('content') || '';
     if (metaDescription) {
       metaDescription.setAttribute('content', description);

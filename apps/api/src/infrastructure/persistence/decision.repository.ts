@@ -1,19 +1,19 @@
 /**
  * DecisionRepository (PostgreSQL Implementation)
- * 
+ *
  * PostgreSQL implementation of IDecisionRepository.
  * Part of the Context Intelligence Platform.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IDecisionRepository } from '@application/ports/outbound/IDecisionRepository';
-import { DecisionEvent } from '../../../../web/src/domain/DecisionEvent';
-import { IndustryPattern } from '../../../../web/src/domain/IndustryPattern';
-import { Money } from '../../../../web/src/domain/value-objects/Money';
-import { DecisionEventEntity } from './postgres/entities/decision-event.entity';
-import { IndustryPatternEntity } from './postgres/entities/industry-pattern.entity';
+import { Injectable, Logger } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { IDecisionRepository } from "@application/ports/outbound/IDecisionRepository";
+import { DecisionEvent } from "@domain/DecisionEvent";
+import { IndustryPattern } from "@domain/IndustryPattern";
+import { Money, Currency } from "@domain/value-objects/Money";
+import { DecisionEventEntity } from "./postgres/entities/decision-event.entity";
+import { IndustryPatternEntity } from "./postgres/entities/industry-pattern.entity";
 
 @Injectable()
 export class DecisionRepository implements IDecisionRepository {
@@ -34,7 +34,7 @@ export class DecisionRepository implements IDecisionRepository {
 
     const entity = this.domainToEntity(decision);
     await this.decisionEventRepo.save(entity);
-    
+
     this.logger.log(`Decision ${decision.id} saved successfully`);
   }
 
@@ -50,69 +50,82 @@ export class DecisionRepository implements IDecisionRepository {
    * Find decisions by organization
    */
   async findByOrganization(organizationId: string): Promise<DecisionEvent[]> {
-    const entities = await this.decisionEventRepo.find({ 
+    const entities = await this.decisionEventRepo.find({
       where: { organizationId },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
-    return entities.map(e => this.entityToDomain(e));
+    return entities.map((e) => this.entityToDomain(e));
   }
 
   /**
    * Find decisions by industry
    */
-  async findByIndustry(industry: string, limit: number = 100): Promise<DecisionEvent[]> {
-    const entities = await this.decisionEventRepo.find({ 
+  async findByIndustry(
+    industry: string,
+    limit: number = 100,
+  ): Promise<DecisionEvent[]> {
+    const entities = await this.decisionEventRepo.find({
       where: { industry },
       take: limit,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
-    return entities.map(e => this.entityToDomain(e));
+    return entities.map((e) => this.entityToDomain(e));
   }
 
   /**
    * Find decisions with outcomes (for training data)
    */
-  async findWithOutcomes(industry?: string, limit: number = 1000): Promise<DecisionEvent[]> {
-    const queryBuilder = this.decisionEventRepo.createQueryBuilder('decision')
-      .where('decision.outcomeSuccess IS NOT NULL');
-    
+  async findWithOutcomes(
+    industry?: string,
+    limit: number = 1000,
+  ): Promise<DecisionEvent[]> {
+    const queryBuilder = this.decisionEventRepo
+      .createQueryBuilder("decision")
+      .where("decision.outcomeSuccess IS NOT NULL");
+
     if (industry) {
-      queryBuilder.andWhere('decision.industry = :industry', { industry });
+      queryBuilder.andWhere("decision.industry = :industry", { industry });
     }
-    
+
     const entities = await queryBuilder
       .take(limit)
-      .orderBy('decision.createdAt', 'DESC')
+      .orderBy("decision.createdAt", "DESC")
       .getMany();
-    
-    return entities.map(e => this.entityToDomain(e));
+
+    return entities.map((e) => this.entityToDomain(e));
   }
 
   /**
    * Aggregate patterns from decisions
    */
-  async aggregatePatterns(industry: string, condition?: any): Promise<IndustryPattern[]> {
-    const queryBuilder = this.industryPatternRepo.createQueryBuilder('pattern')
-      .where('pattern.industry = :industry', { industry });
-    
+  async aggregatePatterns(
+    industry: string,
+    condition?: any,
+  ): Promise<IndustryPattern[]> {
+    const queryBuilder = this.industryPatternRepo
+      .createQueryBuilder("pattern")
+      .where("pattern.industry = :industry", { industry });
+
     if (condition?.triggerMetric) {
-      queryBuilder.andWhere('pattern.triggerMetric = :metric', { metric: condition.triggerMetric });
+      queryBuilder.andWhere("pattern.triggerMetric = :metric", {
+        metric: condition.triggerMetric,
+      });
     }
-    
+
     const entities = await queryBuilder
-      .orderBy('pattern.lastUpdated', 'DESC')
+      .orderBy("pattern.lastUpdated", "DESC")
       .getMany();
-    
-    return entities.map(e => this.patternEntityToDomain(e));
+
+    return entities.map((e) => this.patternEntityToDomain(e));
   }
 
   /**
    * Find similar decisions based on trigger conditions
    */
   async findSimilar(
-    trigger: DecisionEvent['trigger'],
+    trigger: DecisionEvent["trigger"],
     industry: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<DecisionEvent[]> {
     const entities = await this.decisionEventRepo.find({
       where: {
@@ -120,9 +133,9 @@ export class DecisionRepository implements IDecisionRepository {
         triggerMetric: trigger.metric,
       },
       take: limit,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
-    return entities.map(e => this.entityToDomain(e));
+    return entities.map((e) => this.entityToDomain(e));
   }
 
   /**
@@ -135,40 +148,53 @@ export class DecisionRepository implements IDecisionRepository {
   /**
    * Get decision statistics
    */
-  async getStatistics(organizationId?: string, industry?: string): Promise<{
+  async getStatistics(
+    organizationId?: string,
+    industry?: string,
+  ): Promise<{
     totalDecisions: number;
     decisionsWithOutcomes: number;
     avgSuccessRate: number;
     avgVariance: number;
   }> {
-    const queryBuilder = this.decisionEventRepo.createQueryBuilder('decision');
-    
+    const queryBuilder = this.decisionEventRepo.createQueryBuilder("decision");
+
     if (organizationId) {
-      queryBuilder.where('decision.organizationId = :organizationId', { organizationId });
+      queryBuilder.where("decision.organizationId = :organizationId", {
+        organizationId,
+      });
     }
-    
+
     if (industry) {
-      queryBuilder.andWhere('decision.industry = :industry', { industry });
+      queryBuilder.andWhere("decision.industry = :industry", { industry });
     }
-    
+
     const totalDecisions = await queryBuilder.getCount();
-    
-    const withOutcomesQuery = queryBuilder.clone()
-      .andWhere('decision.outcomeSuccess IS NOT NULL');
-    
+
+    const withOutcomesQuery = queryBuilder
+      .clone()
+      .andWhere("decision.outcomeSuccess IS NOT NULL");
+
     const decisionsWithOutcomes = await withOutcomesQuery.getCount();
-    
+
     // Calculate average success rate
     const successResults = await withOutcomesQuery
-      .select('AVG(CASE WHEN decision.outcomeSuccess = true THEN 1 ELSE 0 END)', 'avgSuccessRate')
-      .addSelect('AVG(decision.outcomeVariance)', 'avgVariance')
+      .select(
+        "AVG(CASE WHEN decision.outcomeSuccess = true THEN 1 ELSE 0 END)",
+        "avgSuccessRate",
+      )
+      .addSelect("AVG(decision.outcomeVariance)", "avgVariance")
       .getRawOne();
-    
+
     return {
       totalDecisions,
       decisionsWithOutcomes,
-      avgSuccessRate: successResults?.avgSuccessRate ? parseFloat(successResults.avgSuccessRate) * 100 : 0,
-      avgVariance: successResults?.avgVariance ? parseFloat(successResults.avgVariance) : 0,
+      avgSuccessRate: successResults?.avgSuccessRate
+        ? parseFloat(successResults.avgSuccessRate) * 100
+        : 0,
+      avgVariance: successResults?.avgVariance
+        ? parseFloat(successResults.avgVariance)
+        : 0,
     };
   }
 
@@ -190,22 +216,24 @@ export class DecisionRepository implements IDecisionRepository {
     entity.decisionDescription = decision.decision.description;
     entity.decisionReasoning = decision.decision.reasoning;
     entity.decisionExpectedImpact = decision.decision.expectedImpact.amount;
-    entity.decisionExpectedImpactCurrency = decision.decision.expectedImpact.currency || 'CAD';
+    entity.decisionExpectedImpactCurrency =
+      decision.decision.expectedImpact.currency || "CAD";
     entity.decisionConfidence = decision.decision.confidence;
-    
+
     if (decision.outcome) {
       entity.outcomeActualImpact = decision.outcome.actualImpact.amount;
-      entity.outcomeActualImpactCurrency = decision.outcome.actualImpact.currency || 'CAD';
+      entity.outcomeActualImpactCurrency =
+        decision.outcome.actualImpact.currency || "CAD";
       entity.outcomeMeasuredAt = decision.outcome.measuredAt;
       entity.outcomeSuccess = decision.outcome.success;
       entity.outcomeVariance = decision.outcome.variance;
       entity.outcomeLearnings = decision.outcome.learnings;
     }
-    
+
     entity.source = decision.source;
     entity.createdAt = decision.createdAt;
     entity.updatedAt = new Date();
-    
+
     return entity;
   }
 
@@ -220,8 +248,14 @@ export class DecisionRepository implements IDecisionRepository {
       businessSize: entity.businessSize as any,
       trigger: {
         metric: entity.triggerMetric as any,
-        currentValue: Money.create(entity.triggerCurrentValue, entity.decisionExpectedImpactCurrency || 'CAD'),
-        benchmarkValue: Money.create(entity.triggerBenchmarkValue, entity.decisionExpectedImpactCurrency || 'CAD'),
+        currentValue: Money.create(
+          entity.triggerCurrentValue,
+          (entity.decisionExpectedImpactCurrency || "CAD") as Currency,
+        ),
+        benchmarkValue: Money.create(
+          entity.triggerBenchmarkValue,
+          (entity.decisionExpectedImpactCurrency || "CAD") as Currency,
+        ),
         gapPercentage: Number(entity.triggerGapPercentage),
         chartContext: entity.triggerChartContext,
       },
@@ -229,16 +263,26 @@ export class DecisionRepository implements IDecisionRepository {
         actionType: entity.decisionActionType as any,
         description: entity.decisionDescription,
         reasoning: entity.decisionReasoning,
-        expectedImpact: Money.create(entity.decisionExpectedImpact, entity.decisionExpectedImpactCurrency || 'CAD'),
+        expectedImpact: Money.create(
+          entity.decisionExpectedImpact,
+          (entity.decisionExpectedImpactCurrency || "CAD") as Currency,
+        ),
         confidence: entity.decisionConfidence as any,
       },
-      outcome: entity.outcomeActualImpact !== null && entity.outcomeActualImpact !== undefined ? {
-        actualImpact: Money.create(entity.outcomeActualImpact, entity.outcomeActualImpactCurrency || 'CAD'),
-        measuredAt: entity.outcomeMeasuredAt!,
-        success: entity.outcomeSuccess!,
-        variance: Number(entity.outcomeVariance || 0),
-        learnings: entity.outcomeLearnings,
-      } : undefined,
+      outcome:
+        entity.outcomeActualImpact !== null &&
+        entity.outcomeActualImpact !== undefined
+          ? {
+              actualImpact: Money.create(
+                entity.outcomeActualImpact,
+                (entity.outcomeActualImpactCurrency || "CAD") as Currency,
+              ),
+              measuredAt: entity.outcomeMeasuredAt!,
+              success: entity.outcomeSuccess!,
+              variance: Number(entity.outcomeVariance || 0),
+              learnings: entity.outcomeLearnings,
+            }
+          : undefined,
       createdAt: entity.createdAt,
       source: entity.source as any,
     });
@@ -247,31 +291,44 @@ export class DecisionRepository implements IDecisionRepository {
   /**
    * Convert pattern entity to domain entity
    */
-  private patternEntityToDomain(entity: IndustryPatternEntity): IndustryPattern {
+  private patternEntityToDomain(
+    entity: IndustryPatternEntity,
+  ): IndustryPattern {
     return IndustryPattern.create({
       industry: entity.industry,
       triggerCondition: {
         metric: entity.triggerMetric as any,
         threshold: {
-          operator: entity.triggerOperator as 'above' | 'below' | 'between',
+          operator: entity.triggerOperator as "above" | "below" | "between",
           value: entity.triggerValue as number | [number, number],
         },
         industry: entity.industry,
         businessSize: entity.businessSize,
       },
       sampleSize: entity.sampleSize,
-      commonActions: entity.commonActions.map(action => ({
+      commonActions: entity.commonActions.map((action) => ({
         action: action.action as any,
         frequency: action.frequency,
         percentage: action.percentage,
-        avgExpectedImpact: Money.create(action.avgExpectedImpact.amount, action.avgExpectedImpact.currency),
-        avgActualImpact: action.avgActualImpact ? Money.create(action.avgActualImpact.amount, action.avgActualImpact.currency) : undefined,
+        avgExpectedImpact: Money.create(
+          action.avgExpectedImpact.amount,
+          action.avgExpectedImpact.currency as Currency,
+        ),
+        avgActualImpact: action.avgActualImpact
+          ? Money.create(
+              action.avgActualImpact.amount,
+              action.avgActualImpact.currency as Currency,
+            )
+          : undefined,
       })),
       successRates: entity.successRates,
       topPerformers: {
         ...entity.topPerformers,
         topActions: entity.topPerformers.topActions as any[],
-        avgImpact: Money.create(entity.topPerformers.avgImpact.amount, entity.topPerformers.avgImpact.currency),
+        avgImpact: Money.create(
+          entity.topPerformers.avgImpact.amount,
+          entity.topPerformers.avgImpact.currency as Currency,
+        ),
       },
       statisticalSignificance: Number(entity.statisticalSignificance),
       lastUpdated: entity.lastUpdated,

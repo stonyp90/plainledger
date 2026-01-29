@@ -1,162 +1,149 @@
-import { DomainError } from "@domain/errors/DomainError";
-
 /**
  * Money Value Object
- * Represents a monetary amount with currency
- * Uses integer cents to avoid floating point issues
+ * Immutable representation of monetary values with currency support
  */
-export class Money {
-  private readonly _cents: number;
-  private readonly _currency: string;
 
-  private constructor(cents: number, currency: string) {
-    this._cents = cents;
+export type Currency = "CAD" | "USD" | "EUR" | "GBP";
+
+export class Money {
+  private readonly _amount: number;
+  private readonly _currency: Currency;
+
+  private constructor(amount: number, currency: Currency = "CAD") {
+    this._amount = Math.round(amount * 100) / 100; // Round to 2 decimal places
     this._currency = currency;
   }
 
-  /**
-   * Create Money from a decimal amount
-   */
-  static fromDecimal(amount: number, currency: string = "CAD"): Money {
+  static create(amount: number, currency: Currency = "CAD"): Money {
     if (!Number.isFinite(amount)) {
-      throw new DomainError("Amount must be a finite number");
+      throw new Error("Amount must be a finite number");
     }
-
-    if (!/^[A-Z]{3}$/.test(currency)) {
-      throw new DomainError("Currency must be a valid 3-letter ISO code");
-    }
-
-    // Round to nearest cent to avoid floating point issues
-    const cents = Math.round(amount * 100);
-    return new Money(cents, currency);
+    return new Money(amount, currency);
   }
 
-  /**
-   * Create Money from cents
-   */
-  static fromCents(cents: number, currency: string = "CAD"): Money {
-    if (!Number.isInteger(cents)) {
-      throw new DomainError("Cents must be an integer");
-    }
-
-    if (!/^[A-Z]{3}$/.test(currency)) {
-      throw new DomainError("Currency must be a valid 3-letter ISO code");
-    }
-
-    return new Money(cents, currency);
-  }
-
-  /**
-   * Create zero money
-   */
-  static zero(currency: string = "CAD"): Money {
+  static zero(currency: Currency = "CAD"): Money {
     return new Money(0, currency);
   }
 
-  get cents(): number {
-    return this._cents;
+  static fromCents(cents: number, currency: Currency = "CAD"): Money {
+    return new Money(cents / 100, currency);
   }
 
-  get currency(): string {
+  get amount(): number {
+    return this._amount;
+  }
+
+  get currency(): Currency {
     return this._currency;
   }
 
-  /**
-   * Get the decimal amount
-   */
-  toDecimal(): number {
-    return this._cents / 100;
+  get cents(): number {
+    return Math.round(this._amount * 100);
   }
 
-  /**
-   * Add two Money values
-   */
+  // Operations
   add(other: Money): Money {
     this.assertSameCurrency(other);
-    return new Money(this._cents + other._cents, this._currency);
+    return new Money(this._amount + other._amount, this._currency);
   }
 
-  /**
-   * Subtract another Money value
-   */
   subtract(other: Money): Money {
     this.assertSameCurrency(other);
-    return new Money(this._cents - other._cents, this._currency);
+    return new Money(this._amount - other._amount, this._currency);
   }
 
-  /**
-   * Multiply by a factor
-   */
   multiply(factor: number): Money {
-    return new Money(Math.round(this._cents * factor), this._currency);
+    return new Money(this._amount * factor, this._currency);
   }
 
-  /**
-   * Negate the amount
-   */
+  divide(divisor: number): Money {
+    if (divisor === 0) {
+      throw new Error("Cannot divide by zero");
+    }
+    return new Money(this._amount / divisor, this._currency);
+  }
+
   negate(): Money {
-    return new Money(-this._cents, this._currency);
+    return new Money(-this._amount, this._currency);
   }
 
-  /**
-   * Get absolute value
-   */
   abs(): Money {
-    return new Money(Math.abs(this._cents), this._currency);
+    return new Money(Math.abs(this._amount), this._currency);
   }
 
-  /**
-   * Check if zero
-   */
-  isZero(): boolean {
-    return this._cents === 0;
-  }
-
-  /**
-   * Check if positive
-   */
-  isPositive(): boolean {
-    return this._cents > 0;
-  }
-
-  /**
-   * Check if negative
-   */
-  isNegative(): boolean {
-    return this._cents < 0;
-  }
-
-  /**
-   * Compare to another Money value
-   */
-  compareTo(other: Money): number {
-    this.assertSameCurrency(other);
-    return this._cents - other._cents;
-  }
-
+  // Comparisons
   equals(other: Money): boolean {
-    return this._cents === other._cents && this._currency === other._currency;
+    return this._amount === other._amount && this._currency === other._currency;
   }
 
-  /**
-   * Format for display
-   */
-  format(locale: string = "fr-CA"): string {
+  isGreaterThan(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this._amount > other._amount;
+  }
+
+  isLessThan(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this._amount < other._amount;
+  }
+
+  isGreaterThanOrEqual(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this._amount >= other._amount;
+  }
+
+  isLessThanOrEqual(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this._amount <= other._amount;
+  }
+
+  isZero(): boolean {
+    return this._amount === 0;
+  }
+
+  isPositive(): boolean {
+    return this._amount > 0;
+  }
+
+  isNegative(): boolean {
+    return this._amount < 0;
+  }
+
+  // Formatting
+  format(locale: string = "en-CA"): string {
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: this._currency,
-    }).format(this.toDecimal());
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(this._amount);
+  }
+
+  formatCompact(locale: string = "en-CA"): string {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: this._currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(this._amount);
+  }
+
+  // Helper
+  private assertSameCurrency(other: Money): void {
+    if (this._currency !== other._currency) {
+      throw new Error(
+        `Currency mismatch: ${this._currency} vs ${other._currency}`,
+      );
+    }
   }
 
   toString(): string {
-    return `${this.toDecimal().toFixed(2)} ${this._currency}`;
+    return this.format();
   }
 
-  private assertSameCurrency(other: Money): void {
-    if (this._currency !== other._currency) {
-      throw new DomainError(
-        `Cannot perform operation on different currencies: ${this._currency} vs ${other._currency}`,
-      );
-    }
+  toJSON(): { amount: number; currency: Currency } {
+    return {
+      amount: this._amount,
+      currency: this._currency,
+    };
   }
 }

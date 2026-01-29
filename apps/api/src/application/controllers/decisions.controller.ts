@@ -1,6 +1,6 @@
 /**
  * DecisionsController
- * 
+ *
  * REST API endpoints for decision capture and outcome tracking.
  * Part of the Context Intelligence Platform.
  */
@@ -15,13 +15,19 @@ import {
   Request,
   HttpCode,
   HttpStatus,
-} from '@nestjs/common';
-import { JwtAuthGuard } from '@infrastructure/auth/jwt-auth.guard';
-import { CaptureDecisionUseCase, CaptureDecisionInput } from '../use-cases/capture-decision.use-case';
-import { OutcomeTrackingService, RecordOutcomeInput } from '../services/outcome-tracking.service';
-import { IDecisionRepository } from '../ports/outbound/IDecisionRepository';
+} from "@nestjs/common";
+import { JwtAuthGuard } from "@infrastructure/auth/jwt-auth.guard";
+import {
+  CaptureDecisionUseCase,
+  CaptureDecisionInput,
+} from "../use-cases/capture-decision.use-case";
+import {
+  OutcomeTrackingService,
+  RecordOutcomeInput,
+} from "../services/outcome-tracking.service";
+import { IDecisionRepository } from "../ports/outbound/IDecisionRepository";
 
-@Controller('api/v1/decisions')
+@Controller("api/v1/decisions")
 @UseGuards(JwtAuthGuard)
 export class DecisionsController {
   constructor(
@@ -62,11 +68,11 @@ export class DecisionsController {
    * Record outcome for a decision
    * POST /api/v1/decisions/:id/outcome
    */
-  @Post(':id/outcome')
+  @Post(":id/outcome")
   @HttpCode(HttpStatus.OK)
   async recordOutcome(
-    @Param('id') decisionId: string,
-    @Body() body: Omit<RecordOutcomeInput, 'decisionId'>,
+    @Param("id") decisionId: string,
+    @Body() body: Omit<RecordOutcomeInput, "decisionId">,
   ) {
     const input: RecordOutcomeInput = {
       ...body,
@@ -92,14 +98,14 @@ export class DecisionsController {
    * Get decision by ID
    * GET /api/v1/decisions/:id
    */
-  @Get(':id')
-  async getDecision(@Param('id') id: string) {
+  @Get(":id")
+  async getDecision(@Param("id") id: string) {
     const decision = await this.decisionRepository.findById(id);
 
     if (!decision) {
       return {
         success: false,
-        error: 'Decision not found',
+        error: "Decision not found",
       };
     }
 
@@ -116,11 +122,12 @@ export class DecisionsController {
   @Get()
   async getDecisions(@Request() req: any) {
     const organizationId = req.user.organizationId;
-    const decisions = await this.decisionRepository.findByOrganization(organizationId);
+    const decisions =
+      await this.decisionRepository.findByOrganization(organizationId);
 
     return {
       success: true,
-      data: decisions.map(d => d.toJSON()),
+      data: decisions.map((d) => d.toJSON()),
     };
   }
 
@@ -128,10 +135,11 @@ export class DecisionsController {
    * Get outcome statistics
    * GET /api/v1/decisions/statistics
    */
-  @Get('statistics')
+  @Get("statistics")
   async getStatistics(@Request() req: any) {
     const organizationId = req.user.organizationId;
-    const stats = await this.outcomeTrackingService.getOutcomeStatistics(organizationId);
+    const stats =
+      await this.outcomeTrackingService.getOutcomeStatistics(organizationId);
 
     return {
       success: true,

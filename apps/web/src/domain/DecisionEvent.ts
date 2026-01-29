@@ -5,7 +5,7 @@
  * Part of the Context Intelligence Platform.
  */
 
-import { Money } from './Money';
+import { Money } from './value-objects/Money';
 
 export type IndustryType = 
   | 'restaurant'

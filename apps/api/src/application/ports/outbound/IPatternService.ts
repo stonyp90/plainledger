@@ -1,17 +1,20 @@
 /**
  * IPatternService Port
- * 
+ *
  * Outbound port for industry pattern aggregation and analysis.
  * Part of the Context Intelligence Platform.
  */
 
-import { IndustryPattern } from '../../../../web/src/domain/IndustryPattern';
-import { DecisionEvent } from '../../../../web/src/domain/DecisionEvent';
+import { IndustryPattern } from "@domain/IndustryPattern";
+import { DecisionEvent } from "@domain/DecisionEvent";
+
+// DI Token for IPatternService
+export const PATTERN_SERVICE_TOKEN = "IPatternService";
 
 export interface PatternCondition {
   metric: string;
   threshold: {
-    operator: 'above' | 'below' | 'between';
+    operator: "above" | "below" | "between";
     value: number | [number, number];
   };
   industry: string;
@@ -24,7 +27,7 @@ export interface IPatternService {
    */
   aggregatePattern(
     industry: string,
-    decisions: DecisionEvent[]
+    decisions: DecisionEvent[],
   ): Promise<IndustryPattern>;
 
   /**
@@ -42,15 +45,13 @@ export interface IPatternService {
    */
   getPatternForTrigger(
     industry: string,
-    trigger: DecisionEvent['trigger']
+    trigger: DecisionEvent["trigger"],
   ): Promise<IndustryPattern | null>;
 
   /**
    * Calculate statistical significance
    */
-  calculateSignificance(
-    decisions: DecisionEvent[]
-  ): Promise<number>; // Returns 0-1
+  calculateSignificance(decisions: DecisionEvent[]): Promise<number>; // Returns 0-1
 
   /**
    * Get pattern freshness (time since last update)

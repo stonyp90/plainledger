@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Building2, 
   User, 
@@ -67,34 +68,35 @@ export default function Settings() {
   const { user } = useAuth();
   const { currentTenant, canManageSettings, canManageMembers, canManageBilling, isInternalStaff, updateTenantSettings, setCurrentTenant } = useTenant();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
-  const [activeTab, setActiveTab] = useState('organization');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get initial tab from URL or default to first available
+  const getInitialTab = () => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab) return urlTab;
+    // Default to organization if user can manage settings, otherwise profile
+    return canManageSettings ? 'organization' : 'profile';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [subscription] = useState(mockSubscription);
   const entitlements = getEntitlements(currentTenant?.plan || subscription.tier);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [userPicture, setUserPicture] = useState<string | undefined>(user?.picture);
-  // Menu visibility state: 'expanded' | 'collapsed'
-  const [isSettingsMenuCollapsed, setIsSettingsMenuCollapsed] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('pl-settings-menu-state');
-      if (saved === 'collapsed') return true;
-      if (saved === 'expanded') return false;
-      // Legacy migration
-      if (localStorage.getItem('pl-settings-menu-collapsed') === 'true') {
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
+  
+  // Sync URL with active tab
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
     }
-  });
-
-  const toggleSettingsMenu = () => {
-    const newState = !isSettingsMenuCollapsed;
-    setIsSettingsMenuCollapsed(newState);
-    try {
-      localStorage.setItem('pl-settings-menu-state', newState ? 'collapsed' : 'expanded');
-    } catch {}
+  }, [searchParams]);
+  
+  // Update URL when tab changes
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId }, { replace: true });
   };
 
   // Handle logo upload
@@ -259,7 +261,7 @@ export default function Settings() {
         <label className="sr-only">Sélectionner une section</label>
         <select
           value={activeTab}
-          onChange={(e) => setActiveTab(e.target.value)}
+          onChange={(e) => handleTabChange(e.target.value)}
           className="select w-full"
         >
           {tabs.map((tab) => (
@@ -318,7 +320,7 @@ export default function Settings() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`nav-item w-full text-left ${activeTab === tab.id ? 'active' : ''} ${
                   isSettingsMenuCollapsed ? 'justify-center px-2' : ''
                 }`}

@@ -35,11 +35,13 @@ import OrgFeaturesConfig from './pages/OrgFeaturesConfig';
 import KnowledgeBase from './pages/KnowledgeBase';
 import MarketAnalysis from './pages/MarketAnalysis';
 import TaxCredits from './pages/TaxCredits';
+import DocumentShares from './pages/DocumentShares';
+import SharedDocumentAccess from './pages/SharedDocumentAccess';
 import CrispChat from './components/CrispChat';
 import { AnalyticsVisibilityProvider } from './contexts/AnalyticsVisibilityContext';
 import config from './lib/config';
 import { analytics } from './lib/analytics';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 // Check if user has completed onboarding
 function hasCompletedOnboarding(): boolean {
@@ -65,7 +67,7 @@ function hasCompletedOnboarding(): boolean {
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { authenticated, initialized, login, user } = useKeycloak();
+  const { authenticated, initialized, user } = useKeycloak();
   const location = useLocation();
 
   if (!initialized) {
@@ -106,18 +108,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Removed: forced redirect to /onboarding
 
   return <>{children}</>;
-}
-
-// Login redirect - redirects to custom login page
-function LoginRedirect() {
-  const { authenticated } = useKeycloak();
-
-  if (authenticated) {
-    return <Navigate to="/app" replace />;
-  }
-
-  // Redirect to custom login page instead of Keycloak's UI
-  return <Navigate to="/login" replace />;
 }
 
 // Protected route for email verification (doesn't redirect to verify-email again)
@@ -315,6 +305,12 @@ function App() {
         <Route 
           path="/privacy" 
           element={<PrivacyPolicy />} 
+        />
+
+        {/* Shared Document Access - public page (no auth required) */}
+        <Route 
+          path="/shared/:shareToken" 
+          element={<SharedDocumentAccess />} 
         />
 
         {/* Email Verification - protected but separate from main app */}
@@ -551,6 +547,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <TaxCredits />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/document-shares"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <DocumentShares />
             </AppLayout>
           </ProtectedRoute>
         }

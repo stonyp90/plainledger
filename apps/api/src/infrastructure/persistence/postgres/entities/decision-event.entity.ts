@@ -30,13 +30,28 @@ export class DecisionEventEntity {
   @Column({ name: "trigger_metric", type: "varchar", length: 50 })
   triggerMetric: string;
 
-  @Column({ name: "trigger_current_value", type: "decimal", precision: 15, scale: 2 })
+  @Column({
+    name: "trigger_current_value",
+    type: "decimal",
+    precision: 15,
+    scale: 2,
+  })
   triggerCurrentValue: number;
 
-  @Column({ name: "trigger_benchmark_value", type: "decimal", precision: 15, scale: 2 })
+  @Column({
+    name: "trigger_benchmark_value",
+    type: "decimal",
+    precision: 15,
+    scale: 2,
+  })
   triggerBenchmarkValue: number;
 
-  @Column({ name: "trigger_gap_percentage", type: "decimal", precision: 5, scale: 2 })
+  @Column({
+    name: "trigger_gap_percentage",
+    type: "decimal",
+    precision: 5,
+    scale: 2,
+  })
   triggerGapPercentage: number;
 
   @Column({ name: "trigger_chart_context", type: "text", nullable: true })
@@ -52,20 +67,41 @@ export class DecisionEventEntity {
   @Column({ name: "decision_reasoning", type: "text", nullable: true })
   decisionReasoning?: string;
 
-  @Column({ name: "decision_expected_impact", type: "decimal", precision: 15, scale: 2 })
+  @Column({
+    name: "decision_expected_impact",
+    type: "decimal",
+    precision: 15,
+    scale: 2,
+  })
   decisionExpectedImpact: number;
 
-  @Column({ name: "decision_expected_impact_currency", type: "varchar", length: 3, default: "CAD" })
+  @Column({
+    name: "decision_expected_impact_currency",
+    type: "varchar",
+    length: 3,
+    default: "CAD",
+  })
   decisionExpectedImpactCurrency: string;
 
   @Column({ name: "decision_confidence", type: "varchar", length: 20 })
   decisionConfidence: string;
 
   // Outcome fields (nullable)
-  @Column({ name: "outcome_actual_impact", type: "decimal", precision: 15, scale: 2, nullable: true })
+  @Column({
+    name: "outcome_actual_impact",
+    type: "decimal",
+    precision: 15,
+    scale: 2,
+    nullable: true,
+  })
   outcomeActualImpact?: number;
 
-  @Column({ name: "outcome_actual_impact_currency", type: "varchar", length: 3, nullable: true })
+  @Column({
+    name: "outcome_actual_impact_currency",
+    type: "varchar",
+    length: 3,
+    nullable: true,
+  })
   outcomeActualImpactCurrency?: string;
 
   @Column({ name: "outcome_measured_at", type: "timestamptz", nullable: true })
@@ -74,7 +110,13 @@ export class DecisionEventEntity {
   @Column({ name: "outcome_success", type: "boolean", nullable: true })
   outcomeSuccess?: boolean;
 
-  @Column({ name: "outcome_variance", type: "decimal", precision: 5, scale: 2, nullable: true })
+  @Column({
+    name: "outcome_variance",
+    type: "decimal",
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
   outcomeVariance?: number;
 
   @Column({ name: "outcome_learnings", type: "text", nullable: true })

@@ -1,12 +1,15 @@
 /**
  * IDecisionRepository Port
- * 
+ *
  * Outbound port for decision event persistence.
  * Part of the Context Intelligence Platform.
  */
 
-import { DecisionEvent } from '../../../../web/src/domain/DecisionEvent';
-import { IndustryPattern } from '../../../../web/src/domain/IndustryPattern';
+import { DecisionEvent } from "@domain/DecisionEvent";
+import { IndustryPattern } from "@domain/IndustryPattern";
+
+// DI Token for IDecisionRepository
+export const DECISION_REPOSITORY_TOKEN = "IDecisionRepository";
 
 export interface IDecisionRepository {
   /**
@@ -37,15 +40,18 @@ export interface IDecisionRepository {
   /**
    * Aggregate patterns from decisions
    */
-  aggregatePatterns(industry: string, condition?: any): Promise<IndustryPattern[]>;
+  aggregatePatterns(
+    industry: string,
+    condition?: any,
+  ): Promise<IndustryPattern[]>;
 
   /**
    * Find similar decisions based on trigger conditions
    */
   findSimilar(
-    trigger: DecisionEvent['trigger'],
+    trigger: DecisionEvent["trigger"],
     industry: string,
-    limit?: number
+    limit?: number,
   ): Promise<DecisionEvent[]>;
 
   /**
@@ -56,7 +62,10 @@ export interface IDecisionRepository {
   /**
    * Get decision statistics
    */
-  getStatistics(organizationId?: string, industry?: string): Promise<{
+  getStatistics(
+    organizationId?: string,
+    industry?: string,
+  ): Promise<{
     totalDecisions: number;
     decisionsWithOutcomes: number;
     avgSuccessRate: number;

@@ -304,7 +304,7 @@ export function generateRepaymentSchedule(
   const monthlyRate = annualRate / 100 / 12;
   
   let remainingPrincipal = principal;
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
   
   // Add grace period months (interest only or no payment)
   for (let i = 0; i < gracePeriodMonths; i++) {

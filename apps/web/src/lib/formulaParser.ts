@@ -33,7 +33,7 @@ export function parseFormulaForDisplay(
   if (!formula) return [];
   
   // Remove leading = if present
-  let expr = formula.startsWith('=') ? formula.slice(1) : formula;
+  const expr = formula.startsWith('=') ? formula.slice(1) : formula;
   const parts: FormulaPart[] = [];
   
   // Build a map of driver names (case-insensitive)

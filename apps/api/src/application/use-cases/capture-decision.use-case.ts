@@ -1,19 +1,22 @@
 /**
  * CaptureDecisionUseCase
- * 
+ *
  * Use case for capturing business decisions in context.
  * Part of the Context Intelligence Platform.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { DecisionEvent } from '../../../../web/src/domain/DecisionEvent';
-import { IDecisionRepository } from '../ports/outbound/IDecisionRepository';
-import { Money } from '../../../../web/src/domain/value-objects/Money';
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import { DecisionEvent } from "@domain/DecisionEvent";
+import {
+  IDecisionRepository,
+  DECISION_REPOSITORY_TOKEN,
+} from "../ports/outbound/IDecisionRepository";
+import { Money } from "@domain/value-objects/Money";
 
 export interface CaptureDecisionInput {
   organizationId: string;
   industry: string;
-  businessSize: 'micro' | 'small' | 'medium' | 'large';
+  businessSize: "micro" | "small" | "medium" | "large";
   trigger: {
     metric: string;
     currentValue: number;
@@ -26,9 +29,9 @@ export interface CaptureDecisionInput {
     description: string;
     reasoning?: string;
     expectedImpact: number;
-    confidence: 'low' | 'medium' | 'high';
+    confidence: "low" | "medium" | "high";
   };
-  source?: 'user' | 'ai_suggested' | 'imported';
+  source?: "user" | "ai_suggested" | "imported";
 }
 
 @Injectable()
@@ -36,6 +39,7 @@ export class CaptureDecisionUseCase {
   private readonly logger = new Logger(CaptureDecisionUseCase.name);
 
   constructor(
+    @Inject(DECISION_REPOSITORY_TOKEN)
     private readonly decisionRepository: IDecisionRepository,
   ) {}
 
@@ -43,7 +47,9 @@ export class CaptureDecisionUseCase {
    * Capture a new decision event
    */
   async execute(input: CaptureDecisionInput): Promise<DecisionEvent> {
-    this.logger.log(`Capturing decision for organization ${input.organizationId}`);
+    this.logger.log(
+      `Capturing decision for organization ${input.organizationId}`,
+    );
 
     // Validate industry
     this.validateIndustry(input.industry);
@@ -55,8 +61,8 @@ export class CaptureDecisionUseCase {
       businessSize: input.businessSize,
       trigger: {
         metric: input.trigger.metric as any,
-        currentValue: Money.create(input.trigger.currentValue, 'CAD'),
-        benchmarkValue: Money.create(input.trigger.benchmarkValue, 'CAD'),
+        currentValue: Money.create(input.trigger.currentValue, "CAD"),
+        benchmarkValue: Money.create(input.trigger.benchmarkValue, "CAD"),
         gapPercentage: input.trigger.gapPercentage,
         chartContext: input.trigger.chartContext,
       },
@@ -64,10 +70,10 @@ export class CaptureDecisionUseCase {
         actionType: input.decision.actionType as any,
         description: input.decision.description,
         reasoning: input.decision.reasoning,
-        expectedImpact: Money.create(input.decision.expectedImpact, 'CAD'),
+        expectedImpact: Money.create(input.decision.expectedImpact, "CAD"),
         confidence: input.decision.confidence,
       },
-      source: input.source || 'user',
+      source: input.source || "user",
     });
 
     // Save to repository
@@ -88,19 +94,21 @@ export class CaptureDecisionUseCase {
    */
   private validateIndustry(industry: string): void {
     const validIndustries = [
-      'restaurant',
-      'retail',
-      'construction',
-      'professional_services',
-      'real_estate',
-      'saas',
-      'healthcare',
-      'manufacturing',
-      'other',
+      "restaurant",
+      "retail",
+      "construction",
+      "professional_services",
+      "real_estate",
+      "saas",
+      "healthcare",
+      "manufacturing",
+      "other",
     ];
 
     if (!validIndustries.includes(industry)) {
-      throw new Error(`Invalid industry: ${industry}. Must be one of: ${validIndustries.join(', ')}`);
+      throw new Error(
+        `Invalid industry: ${industry}. Must be one of: ${validIndustries.join(", ")}`,
+      );
     }
   }
 }

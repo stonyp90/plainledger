@@ -6,7 +6,7 @@
  */
 
 import { DecisionEvent, ActionType, FinancialMetric } from './DecisionEvent';
-import { Money } from './Money';
+import { Money } from './value-objects/Money';
 
 export type Percentage = number; // 0-100
 

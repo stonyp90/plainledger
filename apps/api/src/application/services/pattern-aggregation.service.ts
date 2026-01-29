@@ -1,25 +1,29 @@
 /**
  * PatternAggregationService
- * 
+ *
  * Service for aggregating decisions into industry patterns.
  * Part of the Context Intelligence Platform.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IPatternService } from '../ports/outbound/IPatternService';
-import { IDecisionRepository } from '../ports/outbound/IDecisionRepository';
-import { IndustryPattern } from '../../../../web/src/domain/IndustryPattern';
-import { DecisionEvent } from '../../../../web/src/domain/DecisionEvent';
-import { Money } from '../../../../web/src/domain/value-objects/Money';
-import { IndustryPatternEntity } from '@infrastructure/persistence/postgres/entities/industry-pattern.entity';
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { IPatternService } from "../ports/outbound/IPatternService";
+import {
+  IDecisionRepository,
+  DECISION_REPOSITORY_TOKEN,
+} from "../ports/outbound/IDecisionRepository";
+import { IndustryPattern } from "@domain/IndustryPattern";
+import { DecisionEvent } from "@domain/DecisionEvent";
+import { Money } from "@domain/value-objects/Money";
+import { IndustryPatternEntity } from "@infrastructure/persistence/postgres/entities/industry-pattern.entity";
 
 @Injectable()
 export class PatternAggregationService implements IPatternService {
   private readonly logger = new Logger(PatternAggregationService.name);
 
   constructor(
+    @Inject(DECISION_REPOSITORY_TOKEN)
     private readonly decisionRepository: IDecisionRepository,
     @InjectRepository(IndustryPatternEntity)
     private readonly patternRepository: Repository<IndustryPatternEntity>,
@@ -30,16 +34,20 @@ export class PatternAggregationService implements IPatternService {
    */
   async aggregatePattern(
     industry: string,
-    decisions: DecisionEvent[]
+    decisions: DecisionEvent[],
   ): Promise<IndustryPattern> {
     if (decisions.length === 0) {
       throw new Error(`No decisions provided for industry ${industry}`);
     }
 
-    this.logger.log(`Aggregating patterns for ${industry} from ${decisions.length} decisions`);
+    this.logger.log(
+      `Aggregating patterns for ${industry} from ${decisions.length} decisions`,
+    );
 
     // Filter decisions with outcomes
-    const decisionsWithOutcomes = decisions.filter(d => d.outcome !== undefined);
+    const decisionsWithOutcomes = decisions.filter(
+      (d) => d.outcome !== undefined,
+    );
 
     // Group by trigger condition
     const triggerCondition = this.extractTriggerCondition(decisions[0]);
@@ -54,7 +62,9 @@ export class PatternAggregationService implements IPatternService {
     const topPerformers = this.calculateTopPerformers(decisionsWithOutcomes);
 
     // Calculate statistical significance
-    const statisticalSignificance = this.calculateSignificance(decisionsWithOutcomes);
+    const statisticalSignificance = await this.calculateSignificance(
+      decisionsWithOutcomes,
+    );
 
     return IndustryPattern.create({
       industry,
@@ -73,11 +83,15 @@ export class PatternAggregationService implements IPatternService {
    */
   async findPatterns(condition: any): Promise<IndustryPattern[]> {
     // Query decisions matching condition
-    const decisions = await this.decisionRepository.findByIndustry(condition.industry);
-    
+    const decisions = await this.decisionRepository.findByIndustry(
+      condition.industry,
+    );
+
     // Filter by condition
-    const filtered = decisions.filter(d => this.matchesCondition(d, condition));
-    
+    const filtered = decisions.filter((d) =>
+      this.matchesCondition(d, condition),
+    );
+
     if (filtered.length === 0) {
       return [];
     }
@@ -101,10 +115,14 @@ export class PatternAggregationService implements IPatternService {
    */
   async getPatternForTrigger(
     industry: string,
-    trigger: DecisionEvent['trigger']
+    trigger: DecisionEvent["trigger"],
   ): Promise<IndustryPattern | null> {
-    const decisions = await this.decisionRepository.findSimilar(trigger, industry, 100);
-    
+    const decisions = await this.decisionRepository.findSimilar(
+      trigger,
+      industry,
+      100,
+    );
+
     if (decisions.length < 10) {
       return null; // Insufficient data
     }
@@ -126,10 +144,10 @@ export class PatternAggregationService implements IPatternService {
     // Query patterns for this industry from database
     const patterns = await this.patternRepository.find({
       where: { industry },
-      order: { lastUpdated: 'DESC' },
+      order: { lastUpdated: "DESC" },
       take: 1,
     });
-    
+
     if (patterns.length === 0) {
       return 999; // No patterns = stale
     }
@@ -138,7 +156,7 @@ export class PatternAggregationService implements IPatternService {
 
     // Calculate days since last update
     const daysSinceUpdate = Math.floor(
-      (Date.now() - mostRecent.lastUpdated.getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - mostRecent.lastUpdated.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     return daysSinceUpdate;
@@ -149,11 +167,12 @@ export class PatternAggregationService implements IPatternService {
    */
   private extractTriggerCondition(decision: DecisionEvent): any {
     const gapPercentage = decision.trigger.gapPercentage;
-    
+
     return {
       metric: decision.trigger.metric,
       threshold: {
-        operator: gapPercentage < 0 ? 'below' : gapPercentage > 0 ? 'above' : 'between',
+        operator:
+          gapPercentage < 0 ? "below" : gapPercentage > 0 ? "above" : "between",
         value: Math.abs(gapPercentage),
       },
       industry: decision.industry,
@@ -165,9 +184,12 @@ export class PatternAggregationService implements IPatternService {
    * Calculate common actions
    */
   private calculateCommonActions(decisions: DecisionEvent[]): any[] {
-    const actionCounts = new Map<string, { count: number; totalImpact: number }>();
+    const actionCounts = new Map<
+      string,
+      { count: number; totalImpact: number }
+    >();
 
-    decisions.forEach(decision => {
+    decisions.forEach((decision) => {
       const action = decision.decision.actionType;
       const impact = decision.decision.expectedImpact.amount;
 
@@ -200,7 +222,7 @@ export class PatternAggregationService implements IPatternService {
   private calculateSuccessRates(decisions: DecisionEvent[]): any {
     const actionSuccess = new Map<string, { success: number; total: number }>();
 
-    decisions.forEach(decision => {
+    decisions.forEach((decision) => {
       const action = decision.decision.actionType;
       const success = decision.outcome?.success;
 
@@ -228,7 +250,8 @@ export class PatternAggregationService implements IPatternService {
       overallTotal += stats.total;
     });
 
-    const overallSuccessRate = overallTotal > 0 ? (overallSuccess / overallTotal) * 100 : 0;
+    const overallSuccessRate =
+      overallTotal > 0 ? (overallSuccess / overallTotal) * 100 : 0;
 
     return {
       overallSuccessRate,
@@ -240,9 +263,12 @@ export class PatternAggregationService implements IPatternService {
    * Calculate top performers
    */
   private calculateTopPerformers(decisions: DecisionEvent[]): any {
-    const actionStats = new Map<string, { impacts: number[]; successes: number; total: number }>();
+    const actionStats = new Map<
+      string,
+      { impacts: number[]; successes: number; total: number }
+    >();
 
-    decisions.forEach(decision => {
+    decisions.forEach((decision) => {
       const action = decision.decision.actionType;
       const impact = decision.outcome?.actualImpact?.amount;
       const success = decision.outcome?.success;
@@ -271,8 +297,10 @@ export class PatternAggregationService implements IPatternService {
 
     actionStats.forEach((stats, action) => {
       if (stats.impacts.length > 0) {
-        const avgImpact = stats.impacts.reduce((a, b) => a + b, 0) / stats.impacts.length;
-        const successRate = stats.total > 0 ? (stats.successes / stats.total) * 100 : 0;
+        const avgImpact =
+          stats.impacts.reduce((a, b) => a + b, 0) / stats.impacts.length;
+        const successRate =
+          stats.total > 0 ? (stats.successes / stats.total) * 100 : 0;
 
         if (avgImpact > topAvgImpact) {
           topAction = action;
@@ -311,7 +339,10 @@ export class PatternAggregationService implements IPatternService {
       return false;
     }
 
-    if (condition.businessSize && decision.businessSize !== condition.businessSize) {
+    if (
+      condition.businessSize &&
+      decision.businessSize !== condition.businessSize
+    ) {
       return false;
     }
 
@@ -326,9 +357,9 @@ export class PatternAggregationService implements IPatternService {
       const operator = threshold.operator;
       const value = threshold.value;
 
-      if (operator === 'above' && gap <= value) return false;
-      if (operator === 'below' && gap >= value) return false;
-      if (operator === 'between' && Array.isArray(value)) {
+      if (operator === "above" && gap <= value) return false;
+      if (operator === "below" && gap >= value) return false;
+      if (operator === "between" && Array.isArray(value)) {
         if (gap < value[0] || gap > value[1]) return false;
       }
     }

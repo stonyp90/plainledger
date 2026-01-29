@@ -18,6 +18,7 @@ import { OrganizationSettingsEntity } from "@infrastructure/persistence/postgres
 import { UserSettingsEntity } from "@infrastructure/persistence/postgres/entities/user-settings.entity";
 import { DecisionEventEntity } from "@infrastructure/persistence/postgres/entities/decision-event.entity";
 import { IndustryPatternEntity } from "@infrastructure/persistence/postgres/entities/industry-pattern.entity";
+import { SharedDocumentEntity } from "@infrastructure/persistence/postgres/entities/shared-document.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -36,12 +37,14 @@ import { SyncAdminController } from "@infrastructure/http/controllers/sync-admin
 import { KeycloakAdminController } from "@infrastructure/http/controllers/keycloak-admin.controller";
 import { UploadController } from "@infrastructure/http/controllers/upload.controller";
 import { SettingsController } from "@infrastructure/http/controllers/settings.controller";
+import { DocumentShareController } from "@infrastructure/http/controllers/document-share.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
 
 // Infrastructure - Storage
 import { FileStorageService } from "@infrastructure/storage/file-storage.service";
+import { DocumentShareService } from "@infrastructure/storage/document-share.service";
 import { AIService } from "@infrastructure/ai/ai.service";
 import { PowerBIService } from "@infrastructure/services/powerbi.service";
 import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
@@ -117,6 +120,7 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
           UserSettingsEntity,
           DecisionEventEntity,
           IndustryPatternEntity,
+          SharedDocumentEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -172,6 +176,7 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
       UserSettingsEntity,
       DecisionEventEntity,
       IndustryPatternEntity,
+      SharedDocumentEntity,
     ]),
 
     // Keycloak Authentication
@@ -220,6 +225,7 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
     KeycloakAdminController,
     UploadController,
     SettingsController,
+    DocumentShareController,
   ],
   providers: [
     // Guards
@@ -259,6 +265,7 @@ import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job"
     SESEmailService,
     EmailTemplatesService,
     FileStorageService,
+    DocumentShareService,
     {
       provide: "IPowerBIService",
       useClass: PowerBIService,

@@ -615,7 +615,7 @@ export default function JamesChatbot({
       }
 
       // Format inline elements
-      let formattedLine = line
+      const formattedLine = line
         .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold" style="color: rgb(var(--color-text))">$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded text-xs font-mono" style="background: rgb(var(--color-bg-muted)); color: rgb(var(--color-primary-500))">$1</code>')
