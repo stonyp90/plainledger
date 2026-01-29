@@ -34,6 +34,7 @@ import { AnomalyTooltip, Tooltip, InfoTooltip } from '../components/Tooltip';
 import Toggle, { ToggleGroup } from '../components/Toggle';
 import { usePremiumFeature } from '../components/PremiumFeatureGate';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import {
@@ -86,9 +87,80 @@ const aiTypeLabels: Record<AIAnomalyType, { label: string; labelEn: string; icon
   ratio_drift: { label: 'Dérive ratio', labelEn: 'Ratio Drift', icon: PieChart },
 };
 
+// Industry-specific chart labels
+const INDUSTRY_CHART_LABELS: Record<string, {
+  revenue: { title: string; titleEn: string; subtitle: string; subtitleEn: string };
+  expenses: { title: string; titleEn: string; subtitle: string; subtitleEn: string };
+}> = {
+  real_estate: {
+    revenue: { title: 'Revenus locatifs', titleEn: 'Rental Income', subtitle: 'Analyse mensuelle des loyers perçus', subtitleEn: 'Monthly rent collection analysis' },
+    expenses: { title: "Charges d'exploitation", titleEn: 'Operating Expenses', subtitle: 'Entretien, taxes, assurances', subtitleEn: 'Maintenance, taxes, insurance' },
+  },
+  restaurant: {
+    revenue: { title: 'Revenus ventes', titleEn: 'Sales Revenue', subtitle: 'Ventes alimentaires et boissons', subtitleEn: 'Food and beverage sales' },
+    expenses: { title: 'Coûts principaux', titleEn: 'Prime Costs', subtitle: 'Nourriture et main-d\'œuvre', subtitleEn: 'Food and labor costs' },
+  },
+  hospitality: {
+    revenue: { title: 'Revenus chambres', titleEn: 'Room Revenue', subtitle: 'RevPAR et taux d\'occupation', subtitleEn: 'RevPAR and occupancy analysis' },
+    expenses: { title: 'Coûts opérationnels', titleEn: 'Operating Costs', subtitle: 'Personnel, entretien, services', subtitleEn: 'Staff, maintenance, utilities' },
+  },
+  retail: {
+    revenue: { title: 'Ventes au détail', titleEn: 'Retail Sales', subtitle: 'Performance par catégorie', subtitleEn: 'Category performance analysis' },
+    expenses: { title: 'Coûts des marchandises', titleEn: 'Cost of Goods Sold', subtitle: 'COGS et marge brute', subtitleEn: 'COGS and gross margin' },
+  },
+  construction: {
+    revenue: { title: 'Revenus projets', titleEn: 'Project Revenue', subtitle: 'Facturation et encaissements', subtitleEn: 'Billing and collections' },
+    expenses: { title: 'Coûts directs', titleEn: 'Direct Costs', subtitle: 'Matériaux et sous-traitants', subtitleEn: 'Materials and subcontractors' },
+  },
+  professional_services: {
+    revenue: { title: 'Revenus facturables', titleEn: 'Billable Revenue', subtitle: 'Heures facturées et taux', subtitleEn: 'Billed hours and rates' },
+    expenses: { title: 'Coûts d\'exploitation', titleEn: 'Operating Costs', subtitle: 'Salaires et frais généraux', subtitleEn: 'Salaries and overhead' },
+  },
+  manufacturing: {
+    revenue: { title: 'Ventes produits', titleEn: 'Product Sales', subtitle: 'Volume et prix unitaire', subtitleEn: 'Volume and unit pricing' },
+    expenses: { title: 'Coûts de production', titleEn: 'Production Costs', subtitle: 'Matières premières et main-d\'œuvre', subtitleEn: 'Raw materials and labor' },
+  },
+  agriculture: {
+    revenue: { title: 'Ventes récolte', titleEn: 'Crop Revenue', subtitle: 'Rendement et prix du marché', subtitleEn: 'Yield and market prices' },
+    expenses: { title: 'Coûts agricoles', titleEn: 'Farm Costs', subtitle: 'Intrants et équipement', subtitleEn: 'Inputs and equipment' },
+  },
+  transport: {
+    revenue: { title: 'Revenus transport', titleEn: 'Transport Revenue', subtitle: 'Revenus par kilomètre', subtitleEn: 'Revenue per kilometer' },
+    expenses: { title: 'Coûts d\'exploitation', titleEn: 'Operating Costs', subtitle: 'Carburant et entretien', subtitleEn: 'Fuel and maintenance' },
+  },
+  healthcare: {
+    revenue: { title: 'Revenus patients', titleEn: 'Patient Revenue', subtitle: 'Services et assurances', subtitleEn: 'Services and insurance' },
+    expenses: { title: 'Coûts médicaux', titleEn: 'Medical Costs', subtitle: 'Fournitures et personnel', subtitleEn: 'Supplies and staff' },
+  },
+  education: {
+    revenue: { title: 'Revenus scolarité', titleEn: 'Tuition Revenue', subtitle: 'Inscriptions et frais', subtitleEn: 'Enrollments and fees' },
+    expenses: { title: 'Coûts pédagogiques', titleEn: 'Educational Costs', subtitle: 'Personnel et fournitures', subtitleEn: 'Staff and supplies' },
+  },
+  wholesale: {
+    revenue: { title: 'Ventes en gros', titleEn: 'Wholesale Sales', subtitle: 'Volume et marges', subtitleEn: 'Volume and margins' },
+    expenses: { title: 'Coût des ventes', titleEn: 'Cost of Sales', subtitle: 'Achats et entreposage', subtitleEn: 'Purchases and warehousing' },
+  },
+  automotive: {
+    revenue: { title: 'Ventes véhicules', titleEn: 'Vehicle Sales', subtitle: 'Neufs et services', subtitleEn: 'New and service revenue' },
+    expenses: { title: 'Coûts d\'inventaire', titleEn: 'Inventory Costs', subtitle: 'Floor plan et pièces', subtitleEn: 'Floor plan and parts' },
+  },
+  beauty_wellness: {
+    revenue: { title: 'Revenus services', titleEn: 'Service Revenue', subtitle: 'Services et produits', subtitleEn: 'Services and retail' },
+    expenses: { title: 'Coûts d\'exploitation', titleEn: 'Operating Costs', subtitle: 'Fournitures et personnel', subtitleEn: 'Supplies and staff' },
+  },
+  default: {
+    revenue: { title: 'Revenus', titleEn: 'Revenue', subtitle: 'Analyse mensuelle', subtitleEn: 'Monthly analysis' },
+    expenses: { title: 'Dépenses', titleEn: 'Expenses', subtitle: 'Analyse des coûts', subtitleEn: 'Cost analysis' },
+  },
+};
+
 export default function AnomalyDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const { currentTenant } = useTenant();
+  
+  // Get industry from tenant, default to real_estate
+  const selectedIndustry = (currentTenant?.industry || 'real_estate') as IndustryType;
   
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
@@ -102,7 +174,6 @@ export default function AnomalyDashboard() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [useAIDetection, setUseAIDetection] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState<IndustryType>('real_estate');
   const { hasAccess: hasAIAccess } = usePremiumFeature('advancedAnalytics');
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResult | null>(null);
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
@@ -139,13 +210,65 @@ export default function AnomalyDashboard() {
     return financialData.trends.expenses.data;
   }, [financialData]);
 
-  // Standard analysis
+  // Get industry-specific demo anomalies
+  const demoAnomalies = useMemo(() => {
+    if (!financialData?.demoAnomalies) return [];
+    // Convert demo anomalies to the Anomaly format with proper language support
+    return financialData.demoAnomalies.map(da => ({
+      id: da.id,
+      category: da.type === 'duplicate' ? 'duplicate' as const : 
+                da.type === 'fraud' ? 'duplicate' as const : 
+                da.type === 'spike' ? 'variance' as const : 
+                'timing' as const,
+      severity: da.severity,
+      title: isEn ? da.title : (da.titleFr || da.title),
+      description: isEn ? da.description : (da.descriptionFr || da.description),
+      value: da.amount,
+      affectedAccount: da.accountId,
+      affectedPeriod: da.date,
+      recommendation: isEn 
+        ? `Review this ${da.type} anomaly and take appropriate action.`
+        : `Examinez cette anomalie de type ${da.type} et prenez les mesures appropriées.`,
+      detectedAt: new Date(da.date),
+      confidence: da.confidence,
+    }));
+  }, [financialData?.demoAnomalies, isEn]);
+
+  // Standard analysis - combines dynamic detection with demo anomalies
   const analysis = useMemo(() => {
     if (!accountsData.length || !revenueData.length) {
+      // Use demo anomalies if no real data
+      if (demoAnomalies.length > 0) {
+        const summary = {
+          critical: demoAnomalies.filter(a => a.severity === 'critical').length,
+          warning: demoAnomalies.filter(a => a.severity === 'warning').length,
+          info: demoAnomalies.filter(a => a.severity === 'info').length,
+          total: demoAnomalies.length,
+        };
+        const healthScore = Math.max(0, 100 - (summary.critical * 20 + summary.warning * 10 + summary.info * 2));
+        return { anomalies: demoAnomalies, summary, healthScore };
+      }
       return { anomalies: [], summary: { critical: 0, warning: 0, info: 0, total: 0 }, healthScore: 100 };
     }
-    return runFullAnalysis(accountsData, revenueData, thresholds);
-  }, [accountsData, revenueData, thresholds]);
+    
+    const dynamicAnalysis = runFullAnalysis(accountsData, revenueData, thresholds);
+    
+    // Merge demo anomalies with dynamic analysis (prioritize demo anomalies for demo mode)
+    const allAnomalies = [...demoAnomalies, ...dynamicAnalysis.anomalies];
+    
+    // Recalculate summary with merged anomalies
+    const summary = {
+      critical: allAnomalies.filter(a => a.severity === 'critical').length,
+      warning: allAnomalies.filter(a => a.severity === 'warning').length,
+      info: allAnomalies.filter(a => a.severity === 'info').length,
+      total: allAnomalies.length,
+    };
+    
+    // Recalculate health score
+    const healthScore = Math.max(0, 100 - (summary.critical * 20 + summary.warning * 10 + summary.info * 2));
+    
+    return { anomalies: allAnomalies, summary, healthScore };
+  }, [accountsData, revenueData, thresholds, demoAnomalies]);
 
   // Run AI analysis when data changes
   useEffect(() => {
@@ -529,7 +652,11 @@ export default function AnomalyDashboard() {
           severity: a.severity,
           description: a.description,
         }))}
-        industry={INDUSTRY_LABELS[selectedIndustry]}
+        industry={{ 
+          id: selectedIndustry, 
+          name: INDUSTRY_LABELS[selectedIndustry].fr, 
+          nameEn: INDUSTRY_LABELS[selectedIndustry].en 
+        }}
       />
 
       {/* Financial Analysis Section - Responsive grid */}
@@ -553,19 +680,27 @@ export default function AnomalyDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TrendChart
                 data={revenueData}
-                title={isEn ? "Rental Income" : "Revenus locatifs"}
-                titleEn="Rental Income"
-                subtitle={isEn ? "Monthly rent collection analysis" : "Analyse mensuelle des loyers perçus"}
-                subtitleEn="Monthly rent collection analysis"
+                title={isEn 
+                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn)
+                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.title || INDUSTRY_CHART_LABELS.default.revenue.title)}
+                titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn}
+                subtitle={isEn 
+                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn)
+                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitle || INDUSTRY_CHART_LABELS.default.revenue.subtitle)}
+                subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn}
                 height={220}
                 isEn={isEn}
               />
               <TrendChart
                 data={expenseData}
-                title={isEn ? "Operating Expenses" : "Charges d'exploitation"}
-                titleEn="Operating Expenses"
-                subtitle={isEn ? "Maintenance, taxes, insurance" : "Entretien, taxes, assurances"}
-                subtitleEn="Maintenance, taxes, insurance"
+                title={isEn 
+                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn)
+                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.title || INDUSTRY_CHART_LABELS.default.expenses.title)}
+                titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn}
+                subtitle={isEn 
+                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn)
+                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitle || INDUSTRY_CHART_LABELS.default.expenses.subtitle)}
+                subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn}
                 color="rgb(var(--color-text-muted))"
                 height={220}
                 isEn={isEn}

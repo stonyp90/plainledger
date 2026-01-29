@@ -35,10 +35,16 @@ import {
   Copy,
   Eye,
   BarChart3,
+  Calendar,
+  ArrowRight,
+  Target,
+  Crown,
+  PieChart,
+  LineChart,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
-import { InfoTooltip } from '../components/Tooltip';
+import { InfoTooltip, LabelTooltip } from '../components/Tooltip';
 import {
   DataVisualizationCard,
   ChartGallery,
@@ -68,11 +74,16 @@ import {
 import ChartBuilder from '../components/ChartBuilder';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
 import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
+import { useTenant } from '../contexts/TenantContext';
+
+// Calendly link for upgrade consultations
+const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 
 export default function CustomDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, refresh } = useFinancialData();
+  const { currentTenant } = useTenant();
   const { hasAccess } = usePremiumFeature('advancedAnalytics');
   
   const [pinnedCharts, setPinnedCharts] = useState<PinnedChart[]>([]);
@@ -443,55 +454,213 @@ export default function CustomDashboard() {
     }
   };
   
+  const handleUpgradeClick = () => {
+    window.open(CALENDLY_URL, '_blank');
+  };
+
   // Show premium gate if user doesn't have access
   if (!hasAccess) {
     return (
       <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 
+              className="text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap" 
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
+              <span className="whitespace-nowrap">
+                {isEn ? 'Visualizations' : 'Visualisations'}
+              </span>
+              <span 
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full uppercase tracking-wide"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
+                  color: 'white',
+                }}
+              >
+                <Crown className="w-3 h-3" />
+                PRO
+              </span>
+            </h1>
+            <p 
+              className="mt-1 text-sm line-clamp-2 sm:line-clamp-none" 
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn 
+                ? 'Explore your finances in depth with interactive charts, personalized KPIs and sector comparisons. Understand your performance at a glance.'
+                : 'Explorez vos finances en profondeur avec graphiques interactifs, KPIs personnalisés et comparaisons sectorielles. Comprenez votre performance en un coup d\'œil.'}
+            </p>
+          </div>
+        </div>
+
         {/* Premium Upgrade Banner */}
         <PremiumUpgradeBanner feature="advancedAnalytics" />
         
-        {/* Grayed out preview */}
-        <PremiumFeatureGate feature="advancedAnalytics" showPreview={true}>
-          <div className="space-y-6">
-            {/* Header Card Preview */}
-            <div 
-              className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-700)) 0%, rgb(var(--color-primary-800)) 100%)',
-              }}
-            >
-              <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">
-                      {isEn ? 'Custom Visualizations' : 'Visualisations personnalisées'}
-                    </h1>
-                    <p className="text-xs sm:text-sm text-white/70 truncate">
-                      {isEn ? 'Build custom charts and dashboards' : 'Créez des graphiques et tableaux de bord personnalisés'}
-                    </p>
-                  </div>
+        {/* Value Proposition Card */}
+        <div 
+          className="relative rounded-2xl p-6 sm:p-8 overflow-hidden"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          {/* Gold accent stripe at top */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-1"
+            style={{ 
+              background: 'linear-gradient(90deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-400)) 50%, rgb(var(--color-accent-500)) 100%)',
+            }}
+          />
+          
+          {/* Background decoration */}
+          <div 
+            className="absolute -right-12 -top-12 w-64 h-64 opacity-[0.03] pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgb(var(--color-accent-500)) 0%, transparent 70%)',
+            }}
+          />
+          
+          <div className="relative flex flex-col lg:flex-row items-start gap-6">
+            {/* Left: Value Props */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div 
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
+                    boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.25)',
+                  }}
+                >
+                  <BarChart3 className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn 
+                      ? 'Unlock Advanced Analytics' 
+                      : 'Débloquez l\'analytique avancée'}
+                  </h2>
+                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Build custom dashboards tailored to your needs' : 'Créez des tableaux de bord personnalisés adaptés à vos besoins'}
+                  </p>
                 </div>
               </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                {[
+                  { en: 'Interactive charts', fr: 'Graphiques interactifs' },
+                  { en: 'Custom KPIs', fr: 'KPIs personnalisés' },
+                  { en: 'Industry benchmarks', fr: 'Benchmarks sectoriels' },
+                  { en: 'Drag-and-drop layout', fr: 'Mise en page glisser-déposer' },
+                ].map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-1.5 text-xs"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    {isEn ? item.en : item.fr}
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                onClick={handleUpgradeClick}
+                className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
+                }}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                {isEn ? 'Schedule Demo' : 'Planifier une démo'}
+                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+              </button>
             </div>
             
-            {/* Sample Chart Placeholders */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i}
-                  className="h-64 rounded-xl border"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-surface))',
-                    borderColor: 'rgb(var(--color-border))'
-                  }}
-                />
-              ))}
+            {/* Right: Chart Preview Grid */}
+            <div 
+              className="lg:w-64 w-full rounded-xl p-4"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-3">
+                <Sparkles className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Example Charts' : 'Exemples de graphiques'}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { icon: BarChart3, name: isEn ? 'Revenue' : 'Revenus' },
+                  { icon: PieChart, name: isEn ? 'Expenses' : 'Dépenses' },
+                  { icon: LineChart, name: isEn ? 'Trends' : 'Tendances' },
+                  { icon: TrendingUp, name: isEn ? 'Growth' : 'Croissance' },
+                ].map((chart, idx) => (
+                  <div 
+                    key={idx}
+                    className="relative rounded-lg p-3 overflow-hidden"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <div 
+                        className="w-8 h-8 rounded flex items-center justify-center opacity-30"
+                        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                      >
+                        <chart.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                      </div>
+                      <div 
+                        className="w-full h-2 rounded"
+                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
+                      />
+                      <div 
+                        className="w-full h-1 rounded"
+                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-center mt-1 block opacity-50" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {chart.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </PremiumFeatureGate>
+        </div>
+
+        {/* What You Can Build Section */}
+        <div 
+          className="rounded-xl p-4 border"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-1" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn 
+                  ? 'What You Can Build' 
+                  : 'Ce que vous pouvez créer'}
+              </h3>
+              <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn 
+                  ? 'Create custom dashboards with revenue trends, expense breakdowns, cash flow analysis, and more. Pin your favorite charts and arrange them exactly how you need.'
+                  : 'Créez des tableaux de bord personnalisés avec tendances de revenus, répartition des dépenses, analyse de trésorerie et plus encore. Épinglez vos graphiques préférés et organisez-les comme vous le souhaitez.'}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -854,7 +1023,11 @@ export default function CustomDashboard() {
                       >
                         <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       </div>
-                      <span className="font-medium truncate">{isEn ? chart.nameEn : chart.name}</span>
+                      <LabelTooltip label={isEn ? chart.nameEn : chart.name}>
+                        <span className="font-medium text-sm leading-tight line-clamp-2">
+                          {isEn ? chart.nameEn : chart.name}
+                        </span>
+                      </LabelTooltip>
                       <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block flex-shrink-0" 
                         style={{ color: 'rgb(var(--color-primary-500))' }} 
                       />
@@ -1238,14 +1411,22 @@ export default function CustomDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                            {isEn ? report.nameEn : report.name}
-                          </h3>
+                          <LabelTooltip label={isEn ? report.nameEn : report.name}>
+                            <h3 
+                              className="font-medium leading-tight line-clamp-2" 
+                              style={{ color: 'rgb(var(--color-text))' }}
+                            >
+                              {isEn ? report.nameEn : report.name}
+                            </h3>
+                          </LabelTooltip>
                           {report.isFavorite && (
                             <Star className="w-4 h-4 flex-shrink-0 fill-warning text-warning" />
                           )}
                         </div>
-                        <p className="text-sm truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        <p 
+                          className="text-sm leading-tight line-clamp-1" 
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
+                        >
                           {report.charts.length} {isEn ? 'charts' : 'graphiques'} • {new Date(report.updatedAt).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA')}
                         </p>
                       </div>

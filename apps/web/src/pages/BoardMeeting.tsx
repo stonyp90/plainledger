@@ -62,6 +62,8 @@ import {
   Video,
   Building2,
   Bookmark,
+  Crown,
+  Check,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -1655,229 +1657,222 @@ export default function BoardMeeting() {
     );
   }
   
+  const handleUpgradeClick = () => {
+    window.open('https://calendly.com/anthonypaquet1508', '_blank');
+  };
+
   // Show development section for users without access
   if (!hasAccess) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className="space-y-6">
         {/* Header */}
-        <div 
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b"
-          style={{ borderColor: 'rgb(var(--color-border))' }}
-        >
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Board Meeting' : 'Réunion du conseil'}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 
+              className="text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap" 
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              <Presentation className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
+              <span className="whitespace-nowrap">
+                {isEn ? 'Board Meeting' : 'Réunion du conseil'}
+              </span>
+              <span 
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full uppercase tracking-wide"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
+                  color: 'white',
+                }}
+              >
+                <Crown className="w-3 h-3" />
+                PRO
+              </span>
             </h1>
-            <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Quarterly Financial Review' : 'Revue financière trimestrielle'}
+            <p 
+              className="mt-1 text-sm line-clamp-2 sm:line-clamp-none" 
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn 
+                ? 'Generate polished board presentations in minutes. Auto-create executive summaries, financial highlights, and key metrics that impress stakeholders.'
+                : 'Créez des présentations de conseil en quelques minutes. Résumés exécutifs, points financiers et métriques clés générés automatiquement.'}
             </p>
           </div>
         </div>
-        
-        {/* Coming Soon Section with Visualizations */}
-        <div className="flex-1 p-6">
-          <div className="w-full max-w-7xl mx-auto space-y-6">
-            {/* Hero Section */}
-            <div 
-              className="rounded-2xl p-8 md:p-12 relative overflow-hidden border-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-primary-500) / 0.3)',
-                boxShadow: '0 4px 20px rgb(var(--color-primary-500) / 0.15)'
-              }}
-            >
-              {/* Green gradient background decoration */}
-              <div className="absolute top-0 right-0 w-96 h-96 opacity-5 pointer-events-none">
-                <div className="w-full h-full rounded-full blur-3xl" style={{ 
-                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 50%, rgb(var(--color-primary-500)) 100%)'
-                }}></div>
-              </div>
-              {/* Subtle green overlay */}
-              <div 
-                className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                style={{
-                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 50%, rgb(var(--color-primary-500)) 100%)'
-                }}
-              />
-              
-              <div className="relative z-10">
-                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-                  {/* Left side - Info */}
-                  <div className="flex-1">
-                    {/* Badge */}
-                    <div className="flex justify-start mb-4">
-                      <span 
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold border"
-                        style={{ 
-                          backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                          color: '#D4AF37',
-                          borderColor: 'rgba(212, 175, 55, 0.3)'
-                        }}
-                      >
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: '#D4AF37' }}></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: '#D4AF37' }}></span>
-                        </span>
-                        {isEn ? 'Under Active Development' : 'En développement actif'}
-                      </span>
-                    </div>
-                    
-                    {/* Title */}
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ 
-                      color: 'rgb(var(--color-primary-600))',
-                      textShadow: '0 2px 4px rgb(var(--color-primary-500) / 0.2)'
-                    }}>
-                      {isEn ? 'Board Meeting Tools' : 'Outils de réunion CA'}
-                    </h2>
-                    
-                    {/* Description */}
-                    <p className="text-lg mb-8 leading-relaxed" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn 
-                        ? 'We\'re building powerful board presentation tools. Create executive summaries, financial highlights, and key metrics automatically with beautiful visualizations.'
-                        : 'Nous développons des outils puissants pour les réunions du conseil. Créez des résumés exécutifs, points financiers et métriques clés automatiquement avec de magnifiques visualisations.'
-                      }
-                    </p>
-                    
-                    {/* CTA Button */}
-                    <button
-                      onClick={() => window.open('https://calendly.com/anthonypaquet1508', '_blank')}
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-semibold text-white transition-all hover:opacity-90 hover:scale-[1.02] shadow-lg border"
-                      style={{ 
-                        background: 'linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-500)) 50%, rgb(var(--color-primary-600)) 100%)',
-                        borderColor: 'rgb(var(--color-primary-500) / 0.3)',
-                        boxShadow: '0 4px 15px rgb(var(--color-primary-500) / 0.4)'
-                      }}
-                    >
-                      <Calendar className="w-5 h-5" />
-                      {isEn ? 'Get Early Access' : 'Obtenir un accès anticipé'}
-                    </button>
-                  </div>
-                  
-                  {/* Right side - Features */}
-                  <div className="w-full lg:w-80 flex-shrink-0">
-                    <div 
-                      className="rounded-xl p-6 border relative overflow-hidden"
-                      style={{ 
-                        backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)',
-                        borderColor: 'rgb(var(--color-primary-500) / 0.2)'
-                      }}
-                    >
-                      {/* Green accent stripe */}
-                      <div 
-                        className="absolute top-0 left-0 right-0 h-1"
-                        style={{
-                          background: 'linear-gradient(90deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-500)) 50%, rgb(var(--color-primary-600)) 100%)'
-                        }}
-                      />
-                      <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'rgb(var(--color-primary-600))' }}>
-                        {isEn ? 'Coming Features' : 'Fonctionnalités à venir'}
-                      </h3>
-                      <div className="space-y-3">
-                        {[
-                          { icon: Presentation, en: 'Auto-generate board presentations', fr: 'Générer des présentations automatiquement' },
-                          { icon: Users, en: 'Secure board member access', fr: 'Accès sécurisé pour les membres' },
-                          { icon: Activity, en: 'Live financial analytics', fr: 'Analyses financières en direct' },
-                          { icon: FileText, en: 'Executive summary reports', fr: 'Rapports de synthèse exécutive' },
-                          { icon: Share2, en: 'Easy sharing & collaboration', fr: 'Partage et collaboration faciles' },
-                        ].map((item, idx) => (
-                          <div key={idx} className="flex items-center gap-3">
-                            <div 
-                              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border"
-                              style={{ 
-                                backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                                borderColor: 'rgb(var(--color-primary-500) / 0.2)'
-                              }}
-                            >
-                              <item.icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                            </div>
-                            <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                              {isEn ? item.en : item.fr}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+
+        {/* Premium Upgrade Banner */}
+        <PremiumUpgradeBanner feature="boardMeeting" />
+
+        {/* Value Proposition Card */}
+        <div 
+          className="relative rounded-2xl p-6 sm:p-8 overflow-hidden"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          {/* Gold accent stripe at top */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-1"
+            style={{ 
+              background: 'linear-gradient(90deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-400)) 50%, rgb(var(--color-accent-500)) 100%)',
+            }}
+          />
+          
+          {/* Background decoration */}
+          <div 
+            className="absolute -right-12 -top-12 w-64 h-64 opacity-[0.03] pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgb(var(--color-accent-500)) 0%, transparent 70%)',
+            }}
+          />
+          
+          <div className="relative flex flex-col lg:flex-row items-start gap-6">
+            {/* Left: Value Props */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div 
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
+                    boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.25)',
+                  }}
+                >
+                  <Presentation className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn 
+                      ? 'Board Meeting Tools' 
+                      : 'Outils de réunion CA'}
+                  </h2>
+                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Under active development' : 'En développement actif'}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Preview Visualizations Section */}
-            <div className="space-y-6">
-              {/* Presentation Preview */}
-              <div 
-                className="rounded-xl p-8 border-2 border-dashed relative overflow-hidden"
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                {[
+                  { en: 'Auto presentations', fr: 'Présentations auto' },
+                  { en: 'Executive summaries', fr: 'Résumés exécutifs' },
+                  { en: 'Share securely', fr: 'Partage sécurisé' },
+                  { en: 'Live analytics', fr: 'Analyses en direct' },
+                ].map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-1.5 text-xs"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    {isEn ? item.en : item.fr}
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                onClick={handleUpgradeClick}
+                className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)',
-                  borderColor: 'rgb(var(--color-primary-600))',
-                  boxShadow: '0 4px 20px rgb(var(--color-primary-500) / 0.2)'
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
                 }}
               >
-                {/* Green gradient overlay */}
-                <div 
-                  className="absolute inset-0 opacity-5 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-500)) 50%, rgb(var(--color-primary-600)) 100%)'
-                  }}
-                />
-                <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
-                      <Presentation className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                      <h4 className="text-xl font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
-                        {isEn ? 'Automated Presentation Generation' : 'Génération automatique de présentations'}
-                      </h4>
+                <Calendar className="w-3.5 h-3.5" />
+                {isEn ? 'Get Early Access' : 'Obtenir un accès anticipé'}
+                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
+            
+            {/* Right: Presentation Preview - Compact */}
+            <div 
+              className="lg:w-52 w-full rounded-xl p-3"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-2">
+                <Sparkles className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Preview' : 'Aperçu'}
+                </span>
+              </div>
+              
+              {/* Blurred Slide Previews - Grid layout */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {[1, 2, 3, 4].map((slide) => (
+                  <div 
+                    key={slide}
+                    className="relative rounded p-2 overflow-hidden aspect-[4/3]"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    {/* Slide content placeholder */}
+                    <div className="space-y-1">
+                      <div 
+                        className="h-1 rounded w-3/4"
+                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
+                      />
+                      <div 
+                        className="h-0.5 rounded w-full"
+                        style={{ backgroundColor: 'rgb(var(--color-border))' }}
+                      />
                     </div>
-                    <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn 
-                        ? 'Create professional board meeting presentations with one click. All your financial data, visualizations, and insights automatically formatted and ready to present.'
-                        : 'Créez des présentations professionnelles pour les réunions du conseil en un clic. Toutes vos données financières, visualisations et insights formatés automatiquement et prêts à présenter.'
-                      }
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                      {[
-                        { icon: FileText, label: isEn ? 'Executive Summary' : 'Résumé exécutif' },
-                        { icon: BarChart3, label: isEn ? 'Financial Charts' : 'Graphiques financiers' },
-                        { icon: Shield, label: isEn ? 'Secure Sharing' : 'Partage sécurisé' },
-                        { icon: Download, label: isEn ? 'PDF Export' : 'Export PDF' },
-                      ].map((feature, idx) => (
-                        <div 
-                          key={idx}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border"
-                          style={{ 
-                            backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                            borderColor: 'rgb(var(--color-primary-500) / 0.3)'
-                          }}
-                        >
-                          <feature.icon className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                          <span style={{ color: 'rgb(var(--color-primary-600))' }}>{feature.label}</span>
-                        </div>
-                      ))}
+                    {/* Overlay blur effect */}
+                    <div 
+                      className="absolute inset-0 backdrop-blur-sm flex items-center justify-center rounded"
+                      style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
+                    >
+                      <Presentation className="w-3 h-3 opacity-50" style={{ color: 'rgb(var(--color-primary-500))' }} />
                     </div>
                   </div>
-                  <div className="w-full md:w-64 flex-shrink-0">
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features List */}
+        <div 
+          className="rounded-xl p-4 border"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-sm mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn 
+                  ? 'Upcoming Features' 
+                  : 'Fonctionnalités à venir'}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { icon: Presentation, en: 'Auto-generate board presentations', fr: 'Générer des présentations automatiquement' },
+                  { icon: Users, en: 'Secure board member access', fr: 'Accès sécurisé pour les membres' },
+                  { icon: Activity, en: 'Live financial analytics', fr: 'Analyses financières en direct' },
+                  { icon: FileText, en: 'Executive summary reports', fr: 'Rapports de synthèse exécutive' },
+                  { icon: Share2, en: 'Easy sharing & collaboration', fr: 'Partage et collaboration faciles' },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
                     <div 
-                      className="rounded-lg p-4 shadow-lg border"
+                      className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0"
                       style={{ 
-                        backgroundColor: 'rgb(var(--color-surface))',
-                        borderColor: 'rgb(var(--color-primary-500) / 0.2)',
-                        boxShadow: '0 4px 15px rgb(var(--color-primary-500) / 0.1)'
+                        backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                       }}
                     >
-                      <div className="aspect-video rounded bg-gradient-to-br flex items-center justify-center mb-3 border" style={{ 
-                        background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.15) 0%, rgb(var(--color-primary-400) / 0.1) 100%)',
-                        borderColor: 'rgb(var(--color-primary-500) / 0.3)'
-                      }}>
-                        <Presentation className="w-12 h-12" style={{ color: '#D4AF37' }} />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}></div>
-                        <div className="h-2 rounded-full w-3/4" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}></div>
-                        <div className="h-2 rounded-full w-1/2" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}></div>
-                      </div>
+                      <item.icon className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-600))' }} />
                     </div>
+                    <span className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {isEn ? item.en : item.fr}
+                    </span>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>

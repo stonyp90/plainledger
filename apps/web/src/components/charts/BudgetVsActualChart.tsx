@@ -137,10 +137,16 @@ export default function BudgetVsActualChart({
 
   return (
     <div 
-      className="rounded-xl"
+      className="rounded-xl transition-all duration-200 hover:shadow-md"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
       }}
     >
       {/* Header */}

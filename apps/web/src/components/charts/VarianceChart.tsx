@@ -90,7 +90,15 @@ export default function VarianceChart({
   };
 
   return (
-    <div className="card">
+    <div 
+      className="card transition-all duration-200 hover:shadow-md"
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
+      }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">

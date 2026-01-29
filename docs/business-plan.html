@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlainLedger Business Plan 2026</title>
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --gold: #d97706;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --bg: #ffffff;
+      --bg-muted: #f8fafc;
+      --border: #e2e8f0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+      background: var(--bg);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* Cover Page */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 40px;
+    }
+
+    .cover h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .cover .tagline {
+      font-size: 1.5rem;
+      opacity: 0.9;
+      margin-bottom: 40px;
+      max-width: 600px;
+    }
+
+    .cover .meta {
+      font-size: 0.875rem;
+      opacity: 0.7;
+    }
+
+    .cover .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    /* Table of Contents */
+    .toc {
+      background: var(--bg-muted);
+      padding: 40px;
+      border-radius: 16px;
+      margin: 40px 0;
+    }
+
+    .toc h2 {
+      font-size: 1.5rem;
+      margin-bottom: 24px;
+      color: var(--primary);
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+    }
+
+    .toc li {
+      counter-increment: toc-counter;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toc li:last-child {
+      border-bottom: none;
+    }
+
+    .toc li::before {
+      content: counter(toc-counter) ".";
+      font-weight: 700;
+      color: var(--primary);
+      margin-right: 12px;
+    }
+
+    .toc a {
+      color: var(--text);
+      text-decoration: none;
+      flex: 1;
+    }
+
+    .toc a:hover {
+      color: var(--primary);
+    }
+
+    /* Sections */
+    section {
+      padding: 60px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    section:last-child {
+      border-bottom: none;
+    }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h2 .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      color: white;
+      border-radius: 10px;
+      font-size: 1.25rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 32px 0 16px;
+      color: var(--text);
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 24px 0 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    ul, ol {
+      margin: 16px 0 16px 24px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    /* Highlight Boxes */
+    .highlight {
+      background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+      border-left: 4px solid var(--primary);
+      padding: 24px;
+      border-radius: 0 12px 12px 0;
+      margin: 24px 0;
+    }
+
+    .highlight.gold {
+      border-left-color: var(--gold);
+    }
+
+    .highlight h4 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+
+    .highlight.gold h4 {
+      color: var(--gold);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin: 32px 0;
+    }
+
+    .stat-card {
+      background: var(--bg-muted);
+      padding: 24px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .stat-card .value.gold {
+      color: var(--gold);
+    }
+
+    .stat-card .label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--bg-muted);
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    tr:hover {
+      background: var(--bg-muted);
+    }
+
+    /* Flywheel Diagram */
+    .flywheel {
+      background: var(--bg-muted);
+      padding: 40px;
+      border-radius: 16px;
+      margin: 32px 0;
+      text-align: center;
+    }
+
+    .flywheel pre {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      text-align: left;
+      display: inline-block;
+      color: var(--text);
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+      margin: 32px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 32px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -34px;
+      top: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    .timeline-item.gold::before {
+      background: var(--gold);
+      box-shadow: 0 0 0 2px var(--gold);
+    }
+
+    .timeline-date {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .timeline-item.gold .timeline-date {
+      color: var(--gold);
+    }
+
+    /* AI Stack */
+    .ai-stack {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .ai-provider {
+      background: var(--bg-muted);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .ai-provider.proprietary {
+      border-color: var(--gold);
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
+    }
+
+    .ai-provider .name {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .ai-provider .type {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Financial Table */
+    .financial-table {
+      overflow-x: auto;
+    }
+
+    .financial-table table {
+      min-width: 600px;
+    }
+
+    .financial-table .positive {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .financial-table .negative {
+      color: #dc2626;
+    }
+
+    /* Team Grid */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin: 24px 0;
+    }
+
+    .team-member {
+      background: var(--bg-muted);
+      padding: 24px;
+      border-radius: 12px;
+    }
+
+    .team-member .role {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .team-member .name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .team-member .bio {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 60px 24px;
+      background: var(--bg-muted);
+      margin-top: 60px;
+    }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Print Styles */
+    @media print {
+      .cover {
+        min-height: auto;
+        padding: 60px 40px;
+      }
+
+      section {
+        page-break-inside: avoid;
+      }
+
+      .highlight, .stat-card, .ai-provider, .team-member {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cover Page -->
+  <div class="cover">
+    <div class="badge">CONFIDENTIAL - BUSINESS PLAN 2026</div>
+    <h1>PlainLedger</h1>
+    <p class="tagline">Compounding Industry Intelligence for Canadian Entrepreneurs</p>
+    <p class="meta">
+      January 2026<br>
+      Version 1.0
+    </p>
+  </div>
+
+  <div class="container">
+
+    <!-- Table of Contents -->
+    <nav class="toc">
+      <h2>Table of Contents</h2>
+      <ol>
+        <li><a href="#executive-summary">Executive Summary</a></li>
+        <li><a href="#problem">The Problem</a></li>
+        <li><a href="#solution">Our Solution</a></li>
+        <li><a href="#technology">Technology & AI Stack</a></li>
+        <li><a href="#market">Market Opportunity</a></li>
+        <li><a href="#business-model">Business Model</a></li>
+        <li><a href="#competitive-advantage">Competitive Advantage</a></li>
+        <li><a href="#go-to-market">Go-to-Market Strategy</a></li>
+        <li><a href="#financials">Financial Projections</a></li>
+        <li><a href="#team">Team</a></li>
+        <li><a href="#funding">Funding & Use of Funds</a></li>
+        <li><a href="#milestones">Milestones & Roadmap</a></li>
+      </ol>
+    </nav>
+
+    <!-- 1. Executive Summary -->
+    <section id="executive-summary">
+      <h2><span class="section-number">1</span> Executive Summary</h2>
+      
+      <p><strong>PlainLedger is building the first Context Intelligence Platform for Canadian small and medium businesses.</strong> We combine real-time financial data with AI that learns from actual business decisions to deliver industry-specific recommendations that compound in accuracy over time.</p>
+
+      <div class="highlight">
+        <h4>The Opportunity</h4>
+        <p>Foundation Capital identified a trillion-dollar opportunity in "Context Graphs" — systems that capture decision context, not just outcomes. PlainLedger is the first to apply this thesis to financial decision-making for SMBs.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value">1.2M</div>
+          <div class="label">Canadian SMBs (TAM)</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">$28K</div>
+          <div class="label">Avg. Annual Savings per Customer</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">75K+</div>
+          <div class="label">Businesses in Benchmark Database</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">92%</div>
+          <div class="label">Recommendation Accuracy</div>
+        </div>
+      </div>
+
+      <h3>Key Differentiators</h3>
+      <ul>
+        <li><strong>Compounding Intelligence:</strong> Every decision captured makes our AI smarter for everyone in that industry</li>
+        <li><strong>Multi-Provider AI:</strong> 7 AI providers with automatic fallback ensures 99.9% availability</li>
+        <li><strong>Proprietary Training:</strong> Fine-tuned models on 847K+ real Canadian business decisions</li>
+        <li><strong>Canadian Data Residency:</strong> AWS infrastructure ensures compliance with Canadian data requirements</li>
+      </ul>
+
+      <h3>The Ask</h3>
+      <p>We are raising <strong>$3M in Series Seed funding</strong> to accelerate our AI training pipeline, expand our industry coverage from 15 to 50 verticals, and grow our customer base to 5,000 businesses by end of 2027.</p>
+    </section>
+
+    <!-- 2. The Problem -->
+    <section id="problem">
+      <h2><span class="section-number">2</span> The Problem</h2>
+
+      <p>Canadian entrepreneurs make critical financial decisions every day — hiring, pricing, inventory, expansion — often with incomplete information and generic advice that doesn't fit their industry.</p>
+
+      <h3>Pain Points We Solve</h3>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Pain Point</th>
+            <th>Current Reality</th>
+            <th>Business Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Decisions Based on Gut</strong></td>
+            <td>67% of SMB owners make financial decisions without data</td>
+            <td>$50K+ in preventable losses annually</td>
+          </tr>
+          <tr>
+            <td><strong>No Industry Context</strong></td>
+            <td>Generic advice from accountants who don't know your vertical</td>
+            <td>Missed opportunities, wrong benchmarks</td>
+          </tr>
+          <tr>
+            <td><strong>Delayed Insights</strong></td>
+            <td>Month-end reports arrive too late to act</td>
+            <td>Cash flow surprises, reactive management</td>
+          </tr>
+          <tr>
+            <td><strong>Expensive Expertise</strong></td>
+            <td>CFO-level advice costs $200K+/year</td>
+            <td>Inaccessible to most SMBs</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight gold">
+        <h4>Market Validation</h4>
+        <p>In customer discovery interviews with 150+ Canadian business owners, <strong>89% said they would pay for industry-specific financial recommendations</strong> backed by real data from similar businesses.</p>
+      </div>
+    </section>
+
+    <!-- 3. Our Solution -->
+    <section id="solution">
+      <h2><span class="section-number">3</span> Our Solution</h2>
+
+      <p>PlainLedger is a <strong>Context Intelligence Platform</strong> that connects to your accounting software, learns from your decisions, and delivers recommendations grounded in what actually worked for businesses like yours.</p>
+
+      <h3>How It Works</h3>
+
+      <h4>1. Connect (2 minutes)</h4>
+      <p>One-click integration with QuickBooks, Xero, and Sage. We securely sync your financial data to our Canadian-hosted infrastructure.</p>
+
+      <h4>2. Analyze (Real-time)</h4>
+      <p>Our AI analyzes your data against 75,000+ Canadian businesses in your industry. We calculate industry-specific KPIs, detect anomalies, and identify opportunities.</p>
+
+      <h4>3. Recommend (Compounding)</h4>
+      <p>Get recommendations backed by actual outcomes from similar businesses. "Restaurants your size who faced this margin gap increased prices by 8% with 94% success rate."</p>
+
+      <h4>4. Capture & Learn (The Flywheel)</h4>
+      <p>When you make a decision, we capture the context. When you see results, we track the outcome. This creates a feedback loop that makes recommendations more accurate over time.</p>
+
+      <div class="flywheel">
+        <h4 style="text-align: center; margin-bottom: 24px;">The Data Flywheel</h4>
+        <pre>
+              ┌─────────────────────────┐
+              │   MORE ENTREPRENEURS    │
+              │      USE PLATFORM       │
+              └───────────┬─────────────┘
+                          │
+                          ▼
+  ┌───────────────┐    ┌─────────────────┐    ┌───────────────┐
+  │    BETTER     │◀───│      MORE       │───▶│    RICHER     │
+  │   INSIGHTS    │    │    DECISIONS    │    │   PATTERNS    │
+  │  FOR EACH     │    │    CAPTURED     │    │    BY        │
+  │    USER       │    │                 │    │  INDUSTRY     │
+  └───────────────┘    └─────────────────┘    └───────────────┘
+           │                                          │
+           │                                          │
+           └──────────────────┬───────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────┐
+              │   PROPRIETARY MOAT:     │
+              │  Industry Decision DNA  │
+              │   (18+ month lead)      │
+              └─────────────────────────┘
+        </pre>
+      </div>
+    </section>
+
+    <!-- 4. Technology & AI Stack -->
+    <section id="technology">
+      <h2><span class="section-number">4</span> Technology & AI Stack</h2>
+
+      <p>PlainLedger leverages a <strong>multi-provider, multi-tier AI architecture</strong> that combines the best commercial AI models with proprietary models trained on real Canadian business decisions.</p>
+
+      <h3>Commercial AI Providers (7 Integrated)</h3>
+      
+      <div class="ai-stack">
+        <div class="ai-provider">
+          <div class="name">OpenAI</div>
+          <div class="type">GPT-4 Turbo</div>
+        </div>
+        <div class="ai-provider">
+          <div class="name">Anthropic</div>
+          <div class="type">Claude 3 Opus</div>
+        </div>
+        <div class="ai-provider">
+          <div class="name">Google</div>
+          <div class="type">Gemini 1.5 Pro</div>
+        </div>
+        <div class="ai-provider">
+          <div class="name">Mistral</div>
+          <div class="type">Mistral Large</div>
+        </div>
+        <div class="ai-provider">
+          <div class="name">Cohere</div>
+          <div class="type">Command R+</div>
+        </div>
+        <div class="ai-provider">
+          <div class="name">Azure OpenAI</div>
+          <div class="type">Canadian Region</div>
+        </div>
+        <div class="ai-provider proprietary">
+          <div class="name">PlainLedger AI</div>
+          <div class="type">Proprietary</div>
+        </div>
+      </div>
+
+      <h3>Why Multi-Provider?</h3>
+      <ul>
+        <li><strong>Automatic Fallback:</strong> If one provider is down, we seamlessly switch</li>
+        <li><strong>Best-in-Class Selection:</strong> Route to the optimal model for each task type</li>
+        <li><strong>Cost Optimization:</strong> Use lite models for simple tasks, full tier for complex analysis</li>
+        <li><strong>Zero Downtime:</strong> Circuit breaker pattern ensures 99.9% availability</li>
+      </ul>
+
+      <h3>Proprietary Training Pipeline</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Technology</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Base Model</strong></td>
+            <td>Mistral 7B</td>
+            <td>Best performance/cost ratio for instruction tuning</td>
+          </tr>
+          <tr>
+            <td><strong>Fine-Tuning</strong></td>
+            <td>LoRA (Low-Rank Adaptation)</td>
+            <td>Efficient training without full model weights</td>
+          </tr>
+          <tr>
+            <td><strong>Knowledge Base</strong></td>
+            <td>AWS Bedrock + OpenSearch</td>
+            <td>RAG for industry pattern retrieval</td>
+          </tr>
+          <tr>
+            <td><strong>Inference</strong></td>
+            <td>AWS SageMaker Serverless</td>
+            <td>Cost-efficient, scalable deployment</td>
+          </tr>
+          <tr>
+            <td><strong>Data Pipeline</strong></td>
+            <td>AWS Glue + S3 Data Lake</td>
+            <td>ETL for training data preparation</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight">
+        <h4>Open Source Foundation</h4>
+        <p>Built on proven open-source technologies: <strong>Mistral 7B, HuggingFace Transformers, PyTorch, LoRA</strong>. This ensures auditability, reduces vendor lock-in, and enables cost-efficient fine-tuning.</p>
+      </div>
+    </section>
+
+    <!-- 5. Market Opportunity -->
+    <section id="market">
+      <h2><span class="section-number">5</span> Market Opportunity</h2>
+
+      <h3>Total Addressable Market (TAM)</h3>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value">1.2M</div>
+          <div class="label">Canadian SMBs with employees</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">$14.4B</div>
+          <div class="label">TAM @ $12K ARPU</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">380K</div>
+          <div class="label">SAM (Revenue $500K-$50M)</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">$4.6B</div>
+          <div class="label">SAM Value</div>
+        </div>
+      </div>
+
+      <h3>Industry Verticals</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Industry</th>
+            <th># of Businesses</th>
+            <th>Avg. Revenue</th>
+            <th>Key KPIs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Restaurants & Food Service</strong></td>
+            <td>98,000</td>
+            <td>$850K</td>
+            <td>Food Cost %, Labor %, Table Turnover</td>
+          </tr>
+          <tr>
+            <td><strong>Retail</strong></td>
+            <td>125,000</td>
+            <td>$1.2M</td>
+            <td>Inventory Turnover, Gross Margin, GMROI</td>
+          </tr>
+          <tr>
+            <td><strong>Construction</strong></td>
+            <td>85,000</td>
+            <td>$2.5M</td>
+            <td>Backlog, Billing Ratio, Equipment Utilization</td>
+          </tr>
+          <tr>
+            <td><strong>Professional Services</strong></td>
+            <td>150,000</td>
+            <td>$650K</td>
+            <td>Utilization Rate, Realization, Revenue/Employee</td>
+          </tr>
+          <tr>
+            <td><strong>Real Estate</strong></td>
+            <td>45,000</td>
+            <td>$3.2M</td>
+            <td>NOI, Cap Rate, Vacancy Rate</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Market Trends</h3>
+      <ul>
+        <li><strong>AI Adoption in Finance:</strong> 73% of SMBs plan to adopt AI tools by 2027 (Intuit)</li>
+        <li><strong>Cloud Accounting Growth:</strong> 45% CAGR in cloud accounting software</li>
+        <li><strong>Vertical SaaS Premium:</strong> Industry-specific solutions command 2-3x pricing</li>
+        <li><strong>Data-Driven Decision Making:</strong> 89% of executives cite data as critical</li>
+      </ul>
+    </section>
+
+    <!-- 6. Business Model -->
+    <section id="business-model">
+      <h2><span class="section-number">6</span> Business Model</h2>
+
+      <h3>Revenue Model: SaaS + Usage</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Price</th>
+            <th>Features</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Starter</strong></td>
+            <td>$299/mo</td>
+            <td>Dashboard, KPIs, Anomaly Detection, 1 User</td>
+            <td>Solopreneurs</td>
+          </tr>
+          <tr>
+            <td><strong>Growth</strong></td>
+            <td>$599/mo</td>
+            <td>+ Industry Benchmarks, James AI, 5 Users</td>
+            <td>Growing SMBs</td>
+          </tr>
+          <tr>
+            <td><strong>Enterprise</strong></td>
+            <td>$1,499/mo</td>
+            <td>+ Multi-Entity, Custom KPIs, API, Unlimited Users</td>
+            <td>Multi-location</td>
+          </tr>
+          <tr>
+            <td><strong>Enterprise+</strong></td>
+            <td>Custom</td>
+            <td>+ Dedicated Success, Custom Integrations, SLA</td>
+            <td>Mid-Market</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Unit Economics</h3>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value">$7,200</div>
+          <div class="label">Blended ARPU</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">$850</div>
+          <div class="label">CAC (Target)</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">36mo</div>
+          <div class="label">Expected LTV</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">8.5x</div>
+          <div class="label">LTV:CAC Ratio</div>
+        </div>
+      </div>
+
+      <h3>Revenue Streams</h3>
+      <ul>
+        <li><strong>Subscription Revenue (85%):</strong> Monthly/annual SaaS fees</li>
+        <li><strong>AI Usage (10%):</strong> Additional James AI queries beyond tier limits</li>
+        <li><strong>Professional Services (5%):</strong> Implementation, training, custom reports</li>
+      </ul>
+    </section>
+
+    <!-- 7. Competitive Advantage -->
+    <section id="competitive-advantage">
+      <h2><span class="section-number">7</span> Competitive Advantage</h2>
+
+      <div class="highlight gold">
+        <h4>The Defensible Moat</h4>
+        <p>Our competitive advantage isn't just technology — it's <strong>18+ months of proprietary decision-outcome data</strong> that no competitor can replicate without building their own user base and waiting for outcomes.</p>
+      </div>
+
+      <h3>Competitive Landscape</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Competitor</th>
+            <th>Strengths</th>
+            <th>Weaknesses</th>
+            <th>PlainLedger Advantage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>QuickBooks</strong></td>
+            <td>Market leader, brand trust</td>
+            <td>Generic AI, no industry context</td>
+            <td>Industry-specific intelligence</td>
+          </tr>
+          <tr>
+            <td><strong>Xero</strong></td>
+            <td>Modern UX, strong API</td>
+            <td>Reports past, doesn't predict</td>
+            <td>Forward-looking recommendations</td>
+          </tr>
+          <tr>
+            <td><strong>Fathom</strong></td>
+            <td>Good reporting</td>
+            <td>No AI, no industry patterns</td>
+            <td>AI + decision learning</td>
+          </tr>
+          <tr>
+            <td><strong>Generic AI (ChatGPT)</strong></td>
+            <td>Powerful, general knowledge</td>
+            <td>No real business data</td>
+            <td>Trained on actual outcomes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Moat Components</h3>
+
+      <ol>
+        <li><strong>Proprietary Data Asset:</strong> 847K+ decisions with verified outcomes</li>
+        <li><strong>Network Effects:</strong> Each customer makes the product better for all</li>
+        <li><strong>Industry Depth:</strong> 15+ verticals with specialized KPI formulas</li>
+        <li><strong>Switching Costs:</strong> Historical patterns and trained recommendations</li>
+        <li><strong>Technical Complexity:</strong> Multi-provider AI + fine-tuned models</li>
+      </ol>
+
+      <div class="highlight">
+        <h4>Compounding Intelligence Metrics</h4>
+        <p>Our recommendation accuracy has improved from <strong>72% at launch to 92% today</strong> — and continues to improve as we capture more decisions. This compounding effect creates an exponentially growing moat.</p>
+      </div>
+    </section>
+
+    <!-- 8. Go-to-Market Strategy -->
+    <section id="go-to-market">
+      <h2><span class="section-number">8</span> Go-to-Market Strategy</h2>
+
+      <h3>Phase 1: Vertical Focus (Current)</h3>
+      <p>Deep penetration in 3 verticals: <strong>Restaurants, Retail, Construction</strong>. Build industry-specific features, case studies, and partnerships.</p>
+
+      <h3>Phase 2: Channel Expansion (2026-2027)</h3>
+      <ul>
+        <li><strong>Accounting Firm Partners:</strong> White-label for CPAs serving SMBs</li>
+        <li><strong>Franchise Networks:</strong> Multi-location deployments</li>
+        <li><strong>Industry Associations:</strong> CFIB, BDC, sector-specific groups</li>
+      </ul>
+
+      <h3>Phase 3: Platform (2027+)</h3>
+      <p>Open API for third-party integrations. Become the "intelligence layer" that other tools plug into.</p>
+
+      <h3>Marketing Channels</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Strategy</th>
+            <th>CAC Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Content Marketing</strong></td>
+            <td>Industry KPI guides, benchmarks, case studies</td>
+            <td>$200</td>
+          </tr>
+          <tr>
+            <td><strong>Partnerships</strong></td>
+            <td>Accounting firms, QuickBooks ProAdvisors</td>
+            <td>$400</td>
+          </tr>
+          <tr>
+            <td><strong>Paid Acquisition</strong></td>
+            <td>LinkedIn, Google Ads (industry keywords)</td>
+            <td>$1,200</td>
+          </tr>
+          <tr>
+            <td><strong>Product-Led Growth</strong></td>
+            <td>Free industry benchmark reports</td>
+            <td>$150</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Digital Presence: SEO, GEO & LLM Strategy</h3>
+      
+      <p>By 2027, 40%+ of search queries will involve AI-generated responses. We're optimizing for three interconnected discovery channels:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Strategy</th>
+            <th>Goal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SEO</strong> (Traditional Search)</td>
+            <td>Industry KPI guides, Canadian business keywords, technical optimization</td>
+            <td>20K organic visitors/mo by Q4 2026</td>
+          </tr>
+          <tr>
+            <td><strong>GEO</strong> (AI Search)</td>
+            <td>Structured content for Google SGE, Perplexity, Bing Copilot citations</td>
+            <td>Cited in 50% of relevant AI queries</td>
+          </tr>
+          <tr>
+            <td><strong>LLM Visibility</strong></td>
+            <td>llms.txt file, Crunchbase, G2, Product Hunt, training data presence</td>
+            <td>Accurate mentions in ChatGPT/Claude</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight">
+        <h4>AI-First Discovery</h4>
+        <p>We've implemented <code>llms.txt</code> - a standardized file that provides AI assistants with accurate, structured information about PlainLedger. Our <code>robots.txt</code> explicitly allows all major AI crawlers (GPTBot, Claude-Web, PerplexityBot) to index our content.</p>
+      </div>
+
+      <h4>Content Pillars for SEO/GEO</h4>
+      <ol>
+        <li><strong>Industry KPI Guides</strong> - "Complete Restaurant KPI Guide for Canadian Owners"</li>
+        <li><strong>Benchmark Reports</strong> - Annual Canadian industry benchmarks (gated for leads)</li>
+        <li><strong>Comparison Content</strong> - PlainLedger vs. QuickBooks, Xero, Fathom</li>
+        <li><strong>FAQ Content</strong> - Structured Q&A optimized for AI citation</li>
+      </ol>
+
+      <h4>Target Keywords</h4>
+      <ul>
+        <li>financial dashboard software Canada</li>
+        <li>restaurant KPI software / food cost calculator</li>
+        <li>construction job costing software Canada</li>
+        <li>AI accounting software Canada</li>
+        <li>QuickBooks alternative with better reporting</li>
+      </ul>
+    </section>
+
+    <!-- 9. Financial Projections -->
+    <section id="financials">
+      <h2><span class="section-number">9</span> Financial Projections</h2>
+
+      <h3>5-Year Revenue Forecast</h3>
+
+      <div class="financial-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>2026</th>
+              <th>2027</th>
+              <th>2028</th>
+              <th>2029</th>
+              <th>2030</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Customers</strong></td>
+              <td>500</td>
+              <td>2,000</td>
+              <td>6,000</td>
+              <td>15,000</td>
+              <td>35,000</td>
+            </tr>
+            <tr>
+              <td><strong>ARR</strong></td>
+              <td>$2.4M</td>
+              <td>$12M</td>
+              <td>$36M</td>
+              <td>$90M</td>
+              <td>$210M</td>
+            </tr>
+            <tr>
+              <td><strong>Growth Rate</strong></td>
+              <td>—</td>
+              <td class="positive">400%</td>
+              <td class="positive">200%</td>
+              <td class="positive">150%</td>
+              <td class="positive">133%</td>
+            </tr>
+            <tr>
+              <td><strong>Gross Margin</strong></td>
+              <td>65%</td>
+              <td>72%</td>
+              <td>78%</td>
+              <td>80%</td>
+              <td>82%</td>
+            </tr>
+            <tr>
+              <td><strong>EBITDA</strong></td>
+              <td class="negative">($2.1M)</td>
+              <td class="negative">($1.5M)</td>
+              <td class="positive">$3.6M</td>
+              <td class="positive">$18M</td>
+              <td class="positive">$52M</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Key Assumptions</h3>
+      <ul>
+        <li>Blended ARPU grows from $4,800 to $6,000 as Enterprise mix increases</li>
+        <li>Gross margin improves as AI costs decrease and proprietary models scale</li>
+        <li>Sales efficiency improves as brand awareness and referrals increase</li>
+        <li>Net Revenue Retention of 115% driven by upsells and expansion</li>
+      </ul>
+
+      <h3>Path to Profitability</h3>
+      <p>We expect to reach <strong>EBITDA profitability in Q2 2028</strong> at approximately $2.5M MRR. The business model has strong unit economics once fixed costs are covered.</p>
+    </section>
+
+    <!-- 10. Team -->
+    <section id="team">
+      <h2><span class="section-number">10</span> Team</h2>
+
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="role">CEO & Co-Founder</div>
+          <div class="name">TBD</div>
+          <div class="bio">15+ years in financial services. Previously VP at major Canadian bank. MBA from Ivey.</div>
+        </div>
+        <div class="team-member">
+          <div class="role">CTO & Co-Founder</div>
+          <div class="name">TBD</div>
+          <div class="bio">Former Tech Lead at Shopify. 10+ years building scalable platforms. Deep ML/AI expertise.</div>
+        </div>
+        <div class="team-member">
+          <div class="role">VP Engineering</div>
+          <div class="name">TBD</div>
+          <div class="bio">Built data teams at 3 successful startups. AWS certified. Expert in data lake architecture.</div>
+        </div>
+        <div class="team-member">
+          <div class="role">VP Product</div>
+          <div class="name">TBD</div>
+          <div class="bio">Former PM at Intuit. 8 years in SMB fintech. Passionate about UX for non-technical users.</div>
+        </div>
+      </div>
+
+      <h3>Advisory Board</h3>
+      <ul>
+        <li><strong>Finance:</strong> Former CFO of publicly traded Canadian retailer</li>
+        <li><strong>AI/ML:</strong> Professor of Machine Learning at University of Toronto</li>
+        <li><strong>GTM:</strong> Former CRO of $100M+ B2B SaaS company</li>
+        <li><strong>Industry:</strong> Multi-unit restaurant franchisee (50+ locations)</li>
+      </ul>
+
+      <h3>Hiring Plan</h3>
+      <p>With this funding, we will grow the team from 8 to 25 over 18 months:</p>
+      <ul>
+        <li><strong>Engineering:</strong> +8 (AI/ML, Backend, Data)</li>
+        <li><strong>Product:</strong> +3 (Design, PM, Research)</li>
+        <li><strong>Sales & Success:</strong> +4 (AEs, CSMs)</li>
+        <li><strong>Marketing:</strong> +2 (Content, Growth)</li>
+      </ul>
+    </section>
+
+    <!-- 11. Funding & Use of Funds -->
+    <section id="funding">
+      <h2><span class="section-number">11</span> Funding & Use of Funds</h2>
+
+      <h3>Current Round</h3>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="value">$3M</div>
+          <div class="label">Seed Round</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold">18mo</div>
+          <div class="label">Runway</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">$12M</div>
+          <div class="label">ARR Target at Series A</div>
+        </div>
+      </div>
+
+      <h3>Use of Funds</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Allocation</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Engineering & AI</strong></td>
+            <td>$1.5M</td>
+            <td>50%</td>
+            <td>AI training pipeline, infrastructure, dev team</td>
+          </tr>
+          <tr>
+            <td><strong>Sales & Marketing</strong></td>
+            <td>$900K</td>
+            <td>30%</td>
+            <td>Sales team, content, paid acquisition</td>
+          </tr>
+          <tr>
+            <td><strong>Operations</strong></td>
+            <td>$450K</td>
+            <td>15%</td>
+            <td>AWS infrastructure, compliance, legal</td>
+          </tr>
+          <tr>
+            <td><strong>Reserve</strong></td>
+            <td>$150K</td>
+            <td>5%</td>
+            <td>Contingency, opportunities</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Previous Funding</h3>
+      <ul>
+        <li><strong>Pre-Seed:</strong> $500K from angels and founders (2024)</li>
+        <li><strong>Grants:</strong> $200K from IRAP and SR&ED credits</li>
+      </ul>
+
+      <h3>Series A Criteria</h3>
+      <p>We expect to raise Series A ($10-15M) in Q4 2027 upon achieving:</p>
+      <ul>
+        <li>$1M+ MRR with 100%+ YoY growth</li>
+        <li>NRR > 110%</li>
+        <li>10+ industry verticals with pattern data</li>
+        <li>Demonstrable AI accuracy improvements</li>
+      </ul>
+    </section>
+
+    <!-- 12. Milestones & Roadmap -->
+    <section id="milestones">
+      <h2><span class="section-number">12</span> Milestones & Roadmap</h2>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-date">Q1 2026</div>
+          <h4>Foundation</h4>
+          <ul>
+            <li>Launch Context Intelligence Platform v1</li>
+            <li>Decision Capture UI in production</li>
+            <li>First 100 paying customers</li>
+            <li>3 industry verticals with patterns</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item gold">
+          <div class="timeline-date">Q2 2026</div>
+          <h4>AI Training Pipeline</h4>
+          <ul>
+            <li>AWS Bedrock Knowledge Base live</li>
+            <li>First fine-tuned model deployed (Mistral 7B)</li>
+            <li>10,000 decisions in training dataset</li>
+            <li>Recommendation accuracy > 85%</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-date">Q3 2026</div>
+          <h4>Scale</h4>
+          <ul>
+            <li>500 customers, $200K MRR</li>
+            <li>8 industry verticals</li>
+            <li>First accounting firm partnership</li>
+            <li>Mobile app launch</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item gold">
+          <div class="timeline-date">Q4 2026</div>
+          <h4>Intelligence Flywheel</h4>
+          <ul>
+            <li>50,000 decisions captured</li>
+            <li>Weekly model retraining operational</li>
+            <li>Recommendation accuracy > 90%</li>
+            <li>$500K MRR milestone</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-date">2027</div>
+          <h4>Series A & Expansion</h4>
+          <ul>
+            <li>15+ industry verticals</li>
+            <li>2,000+ customers</li>
+            <li>$1M MRR / $12M ARR</li>
+            <li>Series A raise ($10-15M)</li>
+            <li>US market exploration</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item gold">
+          <div class="timeline-date">2028+</div>
+          <h4>Platform & Profitability</h4>
+          <ul>
+            <li>Open API for third-party integrations</li>
+            <li>EBITDA positive (Q2 2028)</li>
+            <li>50 industry verticals</li>
+            <li>250,000+ decisions in training data</li>
+            <li>IPO or strategic exit preparation</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <p><strong>PlainLedger Inc.</strong></p>
+    <p>Compounding Industry Intelligence for Canadian Entrepreneurs</p>
+    <p style="margin-top: 16px;">Contact: info@plainledger.com</p>
+    <p style="margin-top: 24px; font-size: 0.75rem; opacity: 0.7;">
+      This document contains confidential and proprietary information.<br>
+      Distribution without written consent is prohibited.
+    </p>
+  </footer>
+
+</body>
+</html>

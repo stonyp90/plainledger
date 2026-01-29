@@ -6,6 +6,8 @@ import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
+import FlywheelVisualization from '../components/FlywheelVisualization';
+import AITechnologyStack, { AIMetricsRow } from '../components/AITechnologyStack';
 import { 
   ArrowRight,
   Check,
@@ -1769,7 +1771,25 @@ export default function Landing() {
             )}
           </h1>
 
-          {/* Value Proposition - ROI focused */}
+          {/* Compounding Intelligence Badge */}
+          <div 
+            className="flex justify-center mb-6 animate-fade-up opacity-0"
+            style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
+          >
+            <span 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`,
+                color: theme.gold
+              }}
+            >
+              <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" style={{ animationDuration: '8s' }} />
+              {isEn ? 'AI that learns from 75,000+ Canadian businesses' : 'IA qui apprend de 75 000+ entreprises canadiennes'}
+            </span>
+          </div>
+
+          {/* Value Proposition - Compounding Intelligence focused */}
           <div 
             className="max-w-3xl mx-auto mb-8 px-2 animate-fade-up opacity-0"
             style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}
@@ -1779,11 +1799,22 @@ export default function Landing() {
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'AI-powered dashboards with industry-specific KPIs that help you spot opportunities, reduce costs, and make confident decisions.'
-                : 'Tableaux de bord propulsés par l\'IA avec des KPIs spécifiques à votre industrie pour identifier les opportunités, réduire les coûts et prendre des décisions éclairées.'}
+                ? 'Industry-specific recommendations backed by real decisions from businesses like yours. Every insight gets smarter over time.'
+                : 'Recommandations sectorielles basées sur de vraies décisions d\'entreprises comme la vôtre. Chaque insight devient plus intelligent avec le temps.'}
             </p>
             {/* Key value metrics */}
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm">
+              <span 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{ 
+                  backgroundColor: `${theme.gold}15`,
+                  color: theme.gold,
+                  fontWeight: 600,
+                }}
+              >
+                <Target className="w-4 h-4" />
+                {isEn ? '92% Accuracy' : '92% Précision'}
+              </span>
               <span 
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full"
                 style={{ 
@@ -1799,23 +1830,12 @@ export default function Landing() {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full"
                 style={{ 
                   backgroundColor: `${theme.gold}15`,
-                  color: theme.goldDark,
-                  fontWeight: 600,
-                }}
-              >
-                <Target className="w-4 h-4" />
-                {isEn ? 'Real-time KPIs' : 'KPIs en temps réel'}
-              </span>
-              <span 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-                style={{ 
-                  backgroundColor: `${theme.green}15`,
-                  color: theme.green,
+                  color: theme.gold,
                   fontWeight: 600,
                 }}
               >
                 <Sparkles className="w-4 h-4" />
-                {isEn ? 'AI Insights' : 'Analyses IA'}
+                {isEn ? 'Gets Smarter Daily' : 'S\'améliore chaque jour'}
               </span>
             </div>
           </div>
@@ -2228,16 +2248,28 @@ export default function Landing() {
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
-              {isEn ? 'Stop Losing Money to Preventable Errors' : 'Arrêtez de perdre de l\'argent sur des erreurs évitables'}
+              {isEn ? 'AI That Learns From Your Industry' : 'IA qui apprend de votre industrie'}
             </h2>
             <p 
-              className="text-sm sm:text-base max-w-2xl mx-auto"
+              className="text-sm sm:text-base max-w-2xl mx-auto mb-4"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
                 ? 'Our AI catches duplicate payments, billing errors, and unusual expenses that typically go unnoticed. Average recovery: $28,000/year per business.'
                 : 'Notre IA détecte les paiements en double, erreurs de facturation et dépenses inhabituelles qui passent souvent inaperçues. Récupération moyenne: 28 000$/an par entreprise.'}
             </p>
+            {/* Learning Badge */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span 
+                className="text-xs font-medium"
+                style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+              >
+                {isEn 
+                  ? 'Trained on 847K+ real business decisions' 
+                  : 'Entraîné sur 847K+ vraies décisions d\'affaires'}
+              </span>
+            </div>
           </motion.div>
 
           {/* Two-column layout: AI Features & Notification Platforms */}
@@ -2271,10 +2303,12 @@ export default function Landing() {
                     className="text-lg font-bold"
                     style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
                   >
-                    {isEn ? 'AI-Optimized Detection' : 'Détection Optimisée par IA'}
+                    {isEn ? 'Learning Detection Engine' : 'Moteur de détection apprenant'}
                   </h3>
                   <p className="text-xs" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                    {isEn ? 'Machine learning that learns your business' : 'Apprentissage automatique adapté à votre entreprise'}
+                    {isEn 
+                      ? 'Gets smarter with every business that joins. Currently trained on patterns from 75,000+ Canadian businesses.' 
+                      : 'S\'améliore avec chaque entreprise qui rejoint. Actuellement entraîné sur les modèles de 75 000+ entreprises canadiennes.'}
                   </p>
                 </div>
               </div>
@@ -2498,6 +2532,149 @@ export default function Landing() {
               <ArrowRight className="w-4 h-4" />
             </button>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Compounding Intelligence Section */}
+      <section 
+        id="compounding-intelligence" 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        aria-label={isEn ? 'Compounding Industry Intelligence' : 'Intelligence industrielle composée'}
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.95) 100%)' 
+            : 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 50%, #ffffff 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              style={{ 
+                background: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`,
+                color: theme.gold
+              }}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {isEn ? 'Getting Smarter Every Day' : 'Plus intelligent chaque jour'}
+            </div>
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
+              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+            >
+              {isEn ? 'The More You Use It, The Smarter It Gets' : 'Plus vous l\'utilisez, plus il devient intelligent'}
+            </h2>
+            <p 
+              className="text-sm sm:text-base max-w-2xl mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'Our AI learns from every decision across 75,000+ businesses. The result? Recommendations that compound in accuracy over time.'
+                : 'Notre IA apprend de chaque décision parmi 75 000+ entreprises. Le résultat? Des recommandations dont la précision s\'améliore avec le temps.'}
+            </p>
+          </motion.div>
+
+          {/* Flywheel Visualization */}
+          <motion.div 
+            className="mb-12"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <FlywheelVisualization theme={theme} isDark={isDark} />
+          </motion.div>
+
+          {/* Key Metrics */}
+          <AIMetricsRow theme={theme} isDark={isDark} />
+
+          {/* Data Flywheel Messaging */}
+          <motion.div 
+            className="mt-10 p-6 rounded-2xl text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            style={{ 
+              background: `linear-gradient(135deg, ${theme.gold}10 0%, ${theme.green}10 100%)`,
+              border: `1px solid ${theme.gold}20`
+            }}
+          >
+            <h3 
+              className="text-lg font-bold mb-2"
+              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+            >
+              {isEn ? 'The Data Flywheel Effect' : 'L\'effet volant de données'}
+            </h3>
+            <p 
+              className="text-sm max-w-2xl mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'Every business that joins makes our intelligence better for everyone. Unlike generic AI tools, our recommendations are grounded in real decisions from real Canadian businesses in your industry.'
+                : 'Chaque entreprise qui rejoint améliore notre intelligence pour tous. Contrairement aux outils d\'IA génériques, nos recommandations sont basées sur de vraies décisions d\'entreprises canadiennes dans votre secteur.'}
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* AI Technology Stack Section */}
+      <section 
+        id="ai-technology" 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative"
+        aria-label={isEn ? 'AI Technology Stack' : 'Stack technologique IA'}
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' 
+            : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, #f8fafc 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              style={{ 
+                background: `${theme.green}15`,
+                border: `1px solid ${theme.green}25`,
+                color: theme.greenDark
+              }}
+            >
+              <Brain className="w-3.5 h-3.5" />
+              {isEn ? 'Enterprise AI' : 'IA Entreprise'}
+            </div>
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
+              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+            >
+              {isEn ? 'Powered by World-Class AI' : 'Propulsé par une IA de classe mondiale'}
+            </h2>
+            <p 
+              className="text-sm sm:text-base max-w-2xl mx-auto"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? 'We combine the best commercial AI models with proprietary models trained on real Canadian business decisions.'
+                : 'Nous combinons les meilleurs modèles IA commerciaux avec des modèles propriétaires entraînés sur de vraies décisions d\'entreprises canadiennes.'}
+            </p>
+          </motion.div>
+
+          {/* AI Technology Stack Component */}
+          <AITechnologyStack theme={theme} isDark={isDark} />
         </div>
       </section>
 
@@ -2845,8 +3022,8 @@ export default function Landing() {
                   {/* Step Card - Enhanced Design */}
                   <motion.div 
                     className="relative p-4 sm:p-5 rounded-xl cursor-pointer overflow-hidden h-full flex flex-col"
-                    style={{ minHeight: '320px' }}
                     style={{ 
+                      minHeight: '320px',
                       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                       border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
                       backdropFilter: 'blur(12px)',
@@ -3300,13 +3477,33 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* ROI Highlight */}
+            {/* Compounding Intelligence Badge */}
             <motion.div 
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1, delay: 0.2 }}
+              style={{ 
+                background: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`
+              }}
+            >
+              <RefreshCw className="w-4 h-4" style={{ color: theme.gold }} />
+              <span className="text-sm font-semibold" style={{ color: theme.gold }}>
+                {isEn 
+                  ? 'Gets smarter every day - same price' 
+                  : 'Plus intelligent chaque jour - même prix'}
+              </span>
+            </motion.div>
+            
+            {/* ROI Highlight */}
+            <motion.div 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, delay: 0.3 }}
               style={{ 
                 background: `linear-gradient(135deg, ${theme.gold}15 0%, ${theme.green}10 100%)`,
                 border: `1px solid ${theme.gold}30`
@@ -3338,15 +3535,9 @@ export default function Landing() {
               transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'The average business saves ' : 'L\'entreprise moyenne économise '}
-              <span style={{ color: theme.gold, fontWeight: 600 }}>
-                {isEn ? '$28K/year' : '28K$/an'}
-              </span>
-              {isEn ? ' from prevented errors alone. Plus ' : ' en erreurs évitées seulement. Plus '}
-              <span style={{ color: theme.green, fontWeight: 600 }}>
-                {isEn ? '10+ hours weekly' : '10+ heures par semaine'}
-              </span>
-              {isEn ? ' in reporting time.' : ' en temps de rapport.'}
+              {isEn 
+                ? 'Unlike static software, PlainLedger\'s recommendations improve monthly as our AI learns from more decisions. Today\'s price locks in tomorrow\'s intelligence.'
+                : 'Contrairement aux logiciels statiques, les recommandations de PlainLedger s\'améliorent mensuellement à mesure que notre IA apprend. Le prix d\'aujourd\'hui garantit l\'intelligence de demain.'}
             </motion.p>
           </motion.div>
 
@@ -3516,7 +3707,7 @@ export default function Landing() {
                 }}
               >
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                {isEn ? 'Join 500+ Canadian businesses' : 'Rejoignez 500+ entreprises canadiennes'}
+                {isEn ? '75,000+ businesses contributing to intelligence' : '75 000+ entreprises contribuant à l\'intelligence'}
               </motion.div>
             </motion.div>
             
@@ -3528,7 +3719,7 @@ export default function Landing() {
               viewport={{ once: true }}
               transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              {isEn ? 'Your Next Decision Could Be Data-Driven' : 'Votre prochaine décision pourrait être basée sur les données'}
+              {isEn ? 'Join the Intelligence Network' : 'Rejoignez le réseau d\'intelligence'}
             </motion.h2>
             
             {/* Subheading */}
@@ -3539,13 +3730,9 @@ export default function Landing() {
               viewport={{ once: true }}
               transition={{ duration: 1.3, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              {isEn ? 'In ' : 'En '}
-              <span className="text-green-400 font-semibold">
-                {isEn ? '5 minutes' : '5 minutes'}
-              </span>
               {isEn 
-                ? ', you could have real-time dashboards, AI-powered insights, and market intelligence from 75,000+ businesses. What will you discover?'
-                : ', vous pourriez avoir des tableaux de bord en temps réel, des insights IA et une intelligence de marché de 75 000+ entreprises. Qu\'allez-vous découvrir?'}
+                ? 'Every business that joins makes our AI smarter. Early adopters get the best ROI as our recommendations compound in accuracy.'
+                : 'Chaque entreprise qui rejoint rend notre IA plus intelligente. Les premiers adopteurs obtiennent le meilleur ROI à mesure que nos recommandations s\'améliorent.'}
             </motion.p>
             
             {/* CTA Buttons */}

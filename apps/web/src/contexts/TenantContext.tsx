@@ -36,6 +36,8 @@ export interface TenantSettings {
     auditLogs: boolean;
     webhooks: boolean;
     sso: boolean;
+    /** Decision capture feature - must be manually enabled per organization */
+    decisionCapture: boolean;
   };
   notifications: {
     emailDigest: 'daily' | 'weekly' | 'never';
@@ -194,6 +196,7 @@ const DEFAULT_SETTINGS: TenantSettings = {
     auditLogs: false,
     webhooks: false,
     sso: false,
+    decisionCapture: false, // Must be manually enabled per organization
   },
   notifications: {
     emailDigest: 'weekly',
@@ -215,6 +218,7 @@ const PLAN_LIMITS: Record<Tenant['plan'], Omit<TenantLimits, 'currentUsage'>> = 
 const STORAGE_KEY = 'plainledger-current-tenant';
 
 // Feature settings for different plans
+// Note: decisionCapture is always false by default - must be manually enabled per org
 const FREE_FEATURES: TenantSettings['features'] = {
   powerBI: false,
   aiInsights: false,
@@ -223,6 +227,7 @@ const FREE_FEATURES: TenantSettings['features'] = {
   auditLogs: false,
   webhooks: false,
   sso: false,
+  decisionCapture: false,
 };
 
 const STARTER_FEATURES: TenantSettings['features'] = {
@@ -233,6 +238,7 @@ const STARTER_FEATURES: TenantSettings['features'] = {
   auditLogs: false,
   webhooks: false,
   sso: false,
+  decisionCapture: false,
 };
 
 const PROFESSIONAL_FEATURES: TenantSettings['features'] = {
@@ -243,6 +249,7 @@ const PROFESSIONAL_FEATURES: TenantSettings['features'] = {
   auditLogs: false,
   webhooks: false,
   sso: false,
+  decisionCapture: false, // Must be manually enabled even for professional plans
 };
 
 const ENTERPRISE_FEATURES: TenantSettings['features'] = {
@@ -253,6 +260,7 @@ const ENTERPRISE_FEATURES: TenantSettings['features'] = {
   auditLogs: true,
   webhooks: true,
   sso: true,
+  decisionCapture: false, // Must be manually enabled even for enterprise plans
 };
 
 

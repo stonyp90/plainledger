@@ -546,6 +546,38 @@ export function MiniSparkline({
   const [tooltipPos, setTooltipPos] = useState<TooltipPosition>({ x: 0, y: 0 });
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Convert CSS variable color to actual hex color for SVG gradients
+  const getActualColor = (colorString: string): string => {
+    // Primary colors - always use green
+    if (colorString.includes('--color-primary') || colorString.includes('primary')) {
+      return '#10b981'; // emerald-500 (green) - theme color
+    }
+    // Success colors - use green
+    if (colorString.includes('--color-success') || colorString.includes('success')) {
+      return '#16a34a'; // green-600
+    }
+    // Error colors - use red
+    if (colorString.includes('--color-error') || colorString.includes('error')) {
+      return '#ef4444'; // red-500
+    }
+    // Warning colors - use amber
+    if (colorString.includes('--color-warning') || colorString.includes('warning')) {
+      return '#f59e0b'; // amber-500
+    }
+    // If it's already a hex color, return as-is
+    if (colorString.startsWith('#')) {
+      return colorString;
+    }
+    // If it's already an rgb() color without CSS variables, return as-is
+    if (colorString.startsWith('rgb(') && !colorString.includes('var(')) {
+      return colorString;
+    }
+    // Default to green for all charts (theme color)
+    return '#10b981';
+  };
+
+  const actualColor = getActualColor(color);
+
   if (data.length < 2) return null;
 
   const min = Math.min(...data);
@@ -591,8 +623,8 @@ export function MiniSparkline({
         {/* Gradient fill */}
         <defs>
           <linearGradient id="sparkline-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
+            <stop offset="0%" stopColor={actualColor} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={actualColor} stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -606,7 +638,7 @@ export function MiniSparkline({
         <path
           d={pathD}
           fill="none"
-          stroke={color}
+          stroke={actualColor}
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"

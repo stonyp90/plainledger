@@ -742,4 +742,46 @@ export function SimpleTooltip({ text, textEn, children, position = 'top' }: Simp
   );
 }
 
+// =====================================================
+// LABEL TOOLTIP (for truncated text labels - instant display)
+// =====================================================
+
+interface LabelTooltipProps {
+  label: string;
+  children: ReactNode;
+  className?: string;
+  maxWidth?: number;
+}
+
+/**
+ * Lightweight tooltip for truncated labels that appears instantly on hover.
+ * Use this for KPI labels, chart labels, and other truncated text.
+ * Includes visual cue (dotted underline) to indicate hoverable content.
+ */
+export function LabelTooltip({ label, children, className = '', maxWidth = 280 }: LabelTooltipProps) {
+  return (
+    <Tooltip 
+      content={
+        <div className="p-2.5">
+          <span className="font-medium whitespace-normal break-words text-sm">{label}</span>
+        </div>
+      } 
+      position="auto"
+      delay={0}
+      maxWidth={maxWidth}
+      variant="rich"
+    >
+      <span 
+        className={`cursor-help inline-block transition-all duration-150 hover:opacity-100 border-b border-dotted ${className}`}
+        style={{
+          borderColor: 'rgb(var(--color-text-muted) / 0.4)',
+          opacity: 0.9,
+        }}
+      >
+        {children}
+      </span>
+    </Tooltip>
+  );
+}
+
 export default Tooltip;

@@ -1,66 +1,144 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle, Info, TrendingUp, TrendingDown, ExternalLink, Building2 } from 'lucide-react';
 
-// Industry benchmark data - focused on key industries with real estate as primary
+// Industry benchmark data - comprehensive industry support
 export type IndustryType = 
   | 'real_estate' 
   | 'retail' 
+  | 'restaurant'
+  | 'hospitality'
   | 'construction' 
-  | 'services'
+  | 'professional_services'
+  | 'services' // alias for professional_services
+  | 'manufacturing'
+  | 'agriculture'
+  | 'healthcare'
+  | 'transport'
+  | 'education'
+  | 'wholesale'
+  | 'automotive'
+  | 'beauty_wellness'
   | 'general';
 
 export const INDUSTRY_LABELS: Record<IndustryType, { fr: string; en: string }> = {
   real_estate: { fr: 'Immobilier', en: 'Real Estate' },
   retail: { fr: 'Commerce de détail', en: 'Retail' },
+  restaurant: { fr: 'Restauration', en: 'Restaurant' },
+  hospitality: { fr: 'Hôtellerie', en: 'Hospitality' },
   construction: { fr: 'Construction', en: 'Construction' },
+  professional_services: { fr: 'Services professionnels', en: 'Professional Services' },
   services: { fr: 'Services professionnels', en: 'Professional Services' },
+  manufacturing: { fr: 'Manufacturier', en: 'Manufacturing' },
+  agriculture: { fr: 'Agroalimentaire', en: 'Agriculture' },
+  healthcare: { fr: 'Santé', en: 'Healthcare' },
+  transport: { fr: 'Transport', en: 'Transport' },
+  education: { fr: 'Éducation', en: 'Education' },
+  wholesale: { fr: 'Commerce de gros', en: 'Wholesale' },
+  automotive: { fr: 'Automobile', en: 'Automotive' },
+  beauty_wellness: { fr: 'Beauté et bien-être', en: 'Beauty & Wellness' },
   general: { fr: 'Général', en: 'General' },
 };
 
 // Industry-specific benchmarks for common ratios
-// Real estate benchmarks based on Quebec/Canadian market data
-export const INDUSTRY_BENCHMARKS: Record<string, Record<IndustryType, { min: number; max: number; ideal: number; median: number }>> = {
+// Benchmarks based on Quebec/Canadian market data and industry standards
+type BenchmarkValues = { min: number; max: number; ideal: number; median: number };
+const defaultBenchmarks: Record<string, BenchmarkValues> = {
+  currentRatio: { min: 1.0, max: 3.0, ideal: 2.0, median: 1.8 },
+  quickRatio: { min: 0.8, max: 2.0, ideal: 1.0, median: 1.0 },
+  debtToEquity: { min: 0.0, max: 2.0, ideal: 1.0, median: 1.0 },
+  grossProfitMargin: { min: 0.20, max: 0.60, ideal: 0.40, median: 0.35 },
+  netProfitMargin: { min: 0.05, max: 0.15, ideal: 0.10, median: 0.08 },
+};
+
+export const INDUSTRY_BENCHMARKS: Record<string, Record<IndustryType, BenchmarkValues>> = {
   currentRatio: {
-    // Real estate: Lower due to property inventory valued as long-term assets
-    // Typical range for property management/development companies
     real_estate: { min: 1.0, max: 2.5, ideal: 1.5, median: 1.35 },
     retail: { min: 1.0, max: 2.5, ideal: 1.5, median: 1.4 },
+    restaurant: { min: 0.8, max: 2.0, ideal: 1.2, median: 1.1 },
+    hospitality: { min: 0.9, max: 2.2, ideal: 1.3, median: 1.2 },
     construction: { min: 1.2, max: 2.5, ideal: 1.5, median: 1.4 },
+    professional_services: { min: 1.2, max: 3.0, ideal: 2.0, median: 1.9 },
     services: { min: 1.2, max: 3.0, ideal: 2.0, median: 1.9 },
+    manufacturing: { min: 1.2, max: 2.5, ideal: 1.8, median: 1.6 },
+    agriculture: { min: 1.0, max: 2.5, ideal: 1.5, median: 1.3 },
+    healthcare: { min: 1.2, max: 2.8, ideal: 1.8, median: 1.6 },
+    transport: { min: 1.0, max: 2.2, ideal: 1.4, median: 1.3 },
+    education: { min: 1.3, max: 3.0, ideal: 2.0, median: 1.8 },
+    wholesale: { min: 1.1, max: 2.5, ideal: 1.6, median: 1.4 },
+    automotive: { min: 1.1, max: 2.3, ideal: 1.5, median: 1.3 },
+    beauty_wellness: { min: 1.0, max: 2.5, ideal: 1.5, median: 1.3 },
     general: { min: 1.0, max: 3.0, ideal: 2.0, median: 1.8 },
   },
   quickRatio: {
-    // Real estate: Lower quick ratio acceptable due to property assets
-    // Rental income provides steady cash flow
     real_estate: { min: 0.5, max: 1.8, ideal: 1.0, median: 0.85 },
     retail: { min: 0.3, max: 1.5, ideal: 0.8, median: 0.6 },
+    restaurant: { min: 0.4, max: 1.2, ideal: 0.7, median: 0.5 },
+    hospitality: { min: 0.5, max: 1.5, ideal: 0.9, median: 0.7 },
     construction: { min: 0.8, max: 2.0, ideal: 1.2, median: 1.0 },
+    professional_services: { min: 1.0, max: 2.5, ideal: 1.5, median: 1.4 },
     services: { min: 1.0, max: 2.5, ideal: 1.5, median: 1.4 },
+    manufacturing: { min: 0.6, max: 1.8, ideal: 1.0, median: 0.9 },
+    agriculture: { min: 0.4, max: 1.5, ideal: 0.8, median: 0.6 },
+    healthcare: { min: 0.8, max: 2.0, ideal: 1.2, median: 1.0 },
+    transport: { min: 0.6, max: 1.5, ideal: 0.9, median: 0.8 },
+    education: { min: 0.9, max: 2.2, ideal: 1.4, median: 1.2 },
+    wholesale: { min: 0.5, max: 1.5, ideal: 0.9, median: 0.7 },
+    automotive: { min: 0.4, max: 1.4, ideal: 0.8, median: 0.6 },
+    beauty_wellness: { min: 0.6, max: 1.8, ideal: 1.0, median: 0.8 },
     general: { min: 0.8, max: 2.0, ideal: 1.0, median: 1.0 },
   },
   debtToEquity: {
-    // Real estate: Higher leverage is normal due to mortgages and financing
-    // Properties serve as collateral, allowing higher debt levels
     real_estate: { min: 0.8, max: 3.5, ideal: 1.8, median: 2.1 },
     retail: { min: 0.5, max: 2.5, ideal: 1.2, median: 1.5 },
+    restaurant: { min: 0.8, max: 3.0, ideal: 1.5, median: 1.8 },
+    hospitality: { min: 1.0, max: 3.5, ideal: 2.0, median: 2.2 },
     construction: { min: 0.5, max: 2.5, ideal: 1.0, median: 1.2 },
+    professional_services: { min: 0.2, max: 1.5, ideal: 0.5, median: 0.6 },
     services: { min: 0.2, max: 1.5, ideal: 0.5, median: 0.6 },
+    manufacturing: { min: 0.5, max: 2.5, ideal: 1.2, median: 1.4 },
+    agriculture: { min: 0.8, max: 3.0, ideal: 1.5, median: 1.8 },
+    healthcare: { min: 0.3, max: 2.0, ideal: 0.8, median: 1.0 },
+    transport: { min: 0.8, max: 3.0, ideal: 1.5, median: 1.8 },
+    education: { min: 0.2, max: 1.5, ideal: 0.5, median: 0.6 },
+    wholesale: { min: 0.5, max: 2.5, ideal: 1.2, median: 1.4 },
+    automotive: { min: 0.8, max: 3.0, ideal: 1.5, median: 1.8 },
+    beauty_wellness: { min: 0.5, max: 2.5, ideal: 1.0, median: 1.2 },
     general: { min: 0.0, max: 2.0, ideal: 1.0, median: 1.0 },
   },
   grossProfitMargin: {
-    // Real estate: High margins on rental income, lower on property sales
     real_estate: { min: 0.35, max: 0.70, ideal: 0.55, median: 0.48 },
     retail: { min: 0.20, max: 0.50, ideal: 0.35, median: 0.30 },
+    restaurant: { min: 0.55, max: 0.72, ideal: 0.65, median: 0.62 },
+    hospitality: { min: 0.50, max: 0.75, ideal: 0.62, median: 0.58 },
     construction: { min: 0.15, max: 0.35, ideal: 0.25, median: 0.22 },
+    professional_services: { min: 0.40, max: 0.75, ideal: 0.55, median: 0.50 },
     services: { min: 0.40, max: 0.75, ideal: 0.55, median: 0.50 },
+    manufacturing: { min: 0.25, max: 0.50, ideal: 0.35, median: 0.32 },
+    agriculture: { min: 0.25, max: 0.55, ideal: 0.38, median: 0.35 },
+    healthcare: { min: 0.40, max: 0.70, ideal: 0.55, median: 0.50 },
+    transport: { min: 0.25, max: 0.45, ideal: 0.32, median: 0.30 },
+    education: { min: 0.45, max: 0.75, ideal: 0.60, median: 0.55 },
+    wholesale: { min: 0.15, max: 0.30, ideal: 0.22, median: 0.20 },
+    automotive: { min: 0.15, max: 0.35, ideal: 0.22, median: 0.18 },
+    beauty_wellness: { min: 0.50, max: 0.75, ideal: 0.62, median: 0.58 },
     general: { min: 0.20, max: 0.60, ideal: 0.40, median: 0.35 },
   },
   netProfitMargin: {
-    // Real estate: Varies widely - rental income high margin, development lower
     real_estate: { min: 0.08, max: 0.25, ideal: 0.15, median: 0.12 },
     retail: { min: 0.02, max: 0.08, ideal: 0.05, median: 0.04 },
+    restaurant: { min: 0.03, max: 0.10, ideal: 0.06, median: 0.05 },
+    hospitality: { min: 0.05, max: 0.15, ideal: 0.10, median: 0.08 },
     construction: { min: 0.02, max: 0.08, ideal: 0.05, median: 0.04 },
+    professional_services: { min: 0.08, max: 0.22, ideal: 0.15, median: 0.12 },
     services: { min: 0.08, max: 0.22, ideal: 0.15, median: 0.12 },
+    manufacturing: { min: 0.04, max: 0.12, ideal: 0.08, median: 0.06 },
+    agriculture: { min: 0.05, max: 0.18, ideal: 0.10, median: 0.08 },
+    healthcare: { min: 0.08, max: 0.20, ideal: 0.14, median: 0.12 },
+    transport: { min: 0.03, max: 0.10, ideal: 0.06, median: 0.05 },
+    education: { min: 0.05, max: 0.18, ideal: 0.10, median: 0.08 },
+    wholesale: { min: 0.02, max: 0.06, ideal: 0.04, median: 0.03 },
+    automotive: { min: 0.02, max: 0.06, ideal: 0.04, median: 0.03 },
+    beauty_wellness: { min: 0.08, max: 0.20, ideal: 0.14, median: 0.12 },
     general: { min: 0.05, max: 0.15, ideal: 0.10, median: 0.08 },
   },
 };

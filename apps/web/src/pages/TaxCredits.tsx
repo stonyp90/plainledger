@@ -18,6 +18,22 @@ import {
   ArrowRight,
   Target,
   Check,
+  // Industry icons (using Lucide instead of emojis for consistent theming)
+  ShoppingBag,
+  Hammer,
+  Hotel,
+  UtensilsCrossed,
+  Briefcase,
+  Factory,
+  Wheat,
+  Truck,
+  Heart,
+  GraduationCap,
+  Laptop,
+  Scissors,
+  Car,
+  Package,
+  Home,
 } from 'lucide-react';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
@@ -27,6 +43,44 @@ import TaxCreditsSection from '../components/TaxCreditsSection';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
+
+// Industry Lucide icons (themed icons instead of emojis for consistent branding)
+const INDUSTRY_LUCIDE_ICONS: Record<string, typeof Building2> = {
+  real_estate: Home,
+  construction: Hammer,
+  hospitality: Hotel,
+  restaurant: UtensilsCrossed,
+  retail: ShoppingBag,
+  professional_services: Briefcase,
+  manufacturing: Factory,
+  agriculture: Wheat,
+  transport: Truck,
+  healthcare: Heart,
+  education: GraduationCap,
+  wholesale: Package,
+  automotive: Car,
+  beauty_wellness: Scissors,
+  technology: Laptop,
+};
+
+// Industry display names
+const INDUSTRY_NAMES: Record<string, { en: string; fr: string }> = {
+  real_estate: { en: 'Real Estate', fr: 'Immobilier' },
+  construction: { en: 'Construction', fr: 'Construction' },
+  hospitality: { en: 'Hospitality', fr: 'Hôtellerie' },
+  restaurant: { en: 'Restaurant', fr: 'Restauration' },
+  retail: { en: 'Retail', fr: 'Commerce de détail' },
+  professional_services: { en: 'Professional Services', fr: 'Services professionnels' },
+  manufacturing: { en: 'Manufacturing', fr: 'Manufacturier' },
+  agriculture: { en: 'Agriculture', fr: 'Agroalimentaire' },
+  transport: { en: 'Transport & Logistics', fr: 'Transport et logistique' },
+  healthcare: { en: 'Healthcare', fr: 'Santé' },
+  education: { en: 'Education', fr: 'Éducation' },
+  wholesale: { en: 'Wholesale & Distribution', fr: 'Commerce de gros' },
+  automotive: { en: 'Automotive', fr: 'Automobile' },
+  beauty_wellness: { en: 'Beauty & Wellness', fr: 'Beauté et bien-être' },
+  technology: { en: 'Technology', fr: 'Technologie' },
+};
 
 export default function TaxCredits() {
   const { currentTenant } = useTenant();
@@ -105,7 +159,7 @@ export default function TaxCredits() {
         <div 
           className="rounded-xl border p-4"
           style={{ 
-            background: 'linear-gradient(135deg, rgb(var(--color-surface)) 0%, rgb(var(--color-bg-muted)) 100%)',
+            backgroundColor: 'rgb(var(--color-surface))',
             borderColor: 'rgb(var(--color-border))'
           }}
         >
@@ -117,7 +171,14 @@ export default function TaxCredits() {
                 boxShadow: '0 4px 12px -2px rgb(var(--color-primary-500) / 0.3)'
               }}
             >
-              <Building2 className="w-6 h-6 text-white" />
+              {(() => {
+                const IndustryIcon = orgIndustry ? INDUSTRY_LUCIDE_ICONS[orgIndustry] : null;
+                return IndustryIcon ? (
+                  <IndustryIcon className="w-6 h-6 text-white" />
+                ) : (
+                  <Building2 className="w-6 h-6 text-white" />
+                );
+              })()}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -132,7 +193,7 @@ export default function TaxCredits() {
                       color: 'rgb(var(--color-primary-700))'
                     }}
                   >
-                    {orgIndustry}
+                    {INDUSTRY_NAMES[orgIndustry]?.[language] || orgIndustry}
                   </span>
                 )}
                 {orgProvince && (
@@ -166,11 +227,11 @@ export default function TaxCredits() {
           <div 
             className="rounded-xl p-4 border flex items-start gap-3"
             style={{
-              backgroundColor: 'rgb(var(--color-info) / 0.05)',
-              borderColor: 'rgb(var(--color-info) / 0.2)',
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+              borderColor: 'rgb(var(--color-primary-500) / 0.2)',
             }}
           >
-            <Info className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-info))' }} />
+            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
             <div>
               <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn 
@@ -259,32 +320,32 @@ export default function TaxCredits() {
               }}
             />
             
-            <div className="relative flex flex-col lg:flex-row items-start gap-8">
+            <div className="relative flex flex-col lg:flex-row items-start gap-6">
               {/* Left: Value Props */}
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2.5 mb-3">
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center"
                     style={{ 
                       background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
-                      boxShadow: '0 4px 12px rgb(var(--color-accent-500) / 0.3)',
+                      boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.25)',
                     }}
                   >
-                    <Target className="w-6 h-6 text-white" />
+                    <Target className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                    <h2 className="text-base sm:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn 
                         ? 'Unlock Tax Credit Analysis' 
                         : 'Débloquez l\'analyse des crédits d\'impôt'}
                     </h2>
-                    <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       {isEn ? 'Pro members save $15,000+ on average' : 'Les membres Pro économisent 15 000$+ en moyenne'}
                     </p>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                   {[
                     { en: 'AI-powered eligibility scoring', fr: 'Score d\'admissibilité par IA' },
                     { en: 'Estimated savings calculator', fr: 'Calculateur d\'économies' },
@@ -293,15 +354,10 @@ export default function TaxCredits() {
                   ].map((item, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center gap-2 text-sm"
+                      className="flex items-center gap-1.5 text-xs"
                       style={{ color: 'rgb(var(--color-text-secondary))' }}
                     >
-                      <div 
-                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
-                      >
-                        <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-success))' }} />
-                      </div>
+                      <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       {isEn ? item.en : item.fr}
                     </div>
                   ))}
@@ -309,65 +365,60 @@ export default function TaxCredits() {
                 
                 <button
                   onClick={handleUpgradeClick}
-                  className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                   style={{ 
                     background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                    boxShadow: '0 4px 14px rgb(var(--color-primary-500) / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.1)',
+                    boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
                   }}
                 >
-                  <Calendar className="w-5 h-5" />
+                  <Calendar className="w-3.5 h-3.5" />
                   {isEn ? 'Schedule Demo' : 'Planifier une démo'}
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </div>
               
               {/* Right: Savings Preview */}
               <div 
-                className="lg:w-72 w-full rounded-xl p-5"
+                className="lg:w-64 w-full rounded-xl p-4"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  border: '1px solid rgb(var(--color-border) / 0.5)',
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: '1px solid rgb(var(--color-border))',
                 }}
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-accent-500))' }} />
-                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Sparkles className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? 'Potential Savings' : 'Économies potentielles'}
                   </span>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>SR&ED</span>
-                    <span className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                      <span className="opacity-40">$██,███</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>CDAE</span>
-                    <span className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                      <span className="opacity-40">$██,███</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>OIDMTC</span>
-                    <span className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                      <span className="opacity-40">$██,███</span>
-                    </span>
-                  </div>
+                <div className="space-y-2">
+                  {['SR&ED', 'CDAE', 'OIDMTC'].map((credit) => (
+                    <div key={credit} className="flex items-center justify-between">
+                      <span className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>{credit}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>$</span>
+                        <div 
+                          className="w-16 h-4 rounded"
+                          style={{ backgroundColor: 'rgb(var(--color-border))' }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                   <div 
-                    className="pt-3 mt-3 flex items-center justify-between"
+                    className="pt-2 mt-2 flex items-center justify-between"
                     style={{ borderTop: '1px solid rgb(var(--color-border))' }}
                   >
-                    <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                    <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn ? 'Total Estimated' : 'Total estimé'}
                     </span>
-                    <span 
-                      className="text-lg font-bold"
-                      style={{ color: 'rgb(var(--color-primary-600))' }}
-                    >
-                      <span className="opacity-40">$███,███</span>
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>$</span>
+                      <div 
+                        className="w-20 h-5 rounded"
+                        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.15)' }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -381,21 +432,21 @@ export default function TaxCredits() {
 
       {/* Data Sources Footer */}
       <div 
-        className="rounded-xl border p-4"
+        className="rounded-lg border p-3"
         style={{
-          backgroundColor: 'rgb(var(--color-bg-muted))',
+          backgroundColor: 'rgb(var(--color-surface))',
           borderColor: 'rgb(var(--color-border))',
         }}
       >
-        <div className="flex items-start gap-3">
-          <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+        <div className="flex items-start gap-2">
+          <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <div>
-            <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-xs leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {isEn 
-                ? 'Tax credit information is sourced from official CRA and provincial government resources. Eligibility estimates are for informational purposes only and should be verified with a qualified tax professional.'
-                : 'Les informations sur les crédits d\'impôt proviennent des ressources officielles de l\'ARC et des gouvernements provinciaux. Les estimations d\'admissibilité sont à titre informatif seulement et doivent être vérifiées avec un professionnel fiscal qualifié.'}
+                ? 'Tax credit information is sourced from official CRA and provincial government resources. Eligibility estimates are for informational purposes only.'
+                : 'Les informations sur les crédits d\'impôt proviennent des ressources officielles de l\'ARC et des gouvernements provinciaux. Les estimations d\'admissibilité sont à titre informatif seulement.'}
             </p>
-            <p className="text-[10px] mt-1" style={{ color: 'rgb(var(--color-text-muted) / 0.7)' }}>
+            <p className="text-[10px] mt-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn 
                 ? `Last updated: ${new Date().toLocaleDateString('en-CA', { month: 'long', year: 'numeric' })}`
                 : `Dernière mise à jour: ${new Date().toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' })}`}

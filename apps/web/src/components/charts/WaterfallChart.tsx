@@ -5,8 +5,9 @@
  */
 
 import { useMemo, useState, useRef, useCallback } from 'react';
-import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown, Target } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
+import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
 
 interface WaterfallItem {
   label: string;
@@ -26,6 +27,23 @@ interface WaterfallChartProps {
   showVarianceThreshold?: number; // Highlight items exceeding this % of total
   height?: number;
   isEn?: boolean;
+  
+  // Decision capture integration
+  /** Enable decision capture button on chart */
+  enableDecisions?: boolean;
+  /** Callback when user wants to record a decision */
+  onRecordDecision?: (trigger: {
+    metricType: DataMetric;
+    metricLabel: string;
+    chartId: string;
+    currentValue: number;
+    benchmarkValue?: number;
+    period?: string;
+  }) => void;
+  /** Metric type for decision context */
+  metricType?: DataMetric;
+  /** Benchmark value for decision context */
+  benchmarkValue?: number;
 }
 
 export default function WaterfallChart({
@@ -38,6 +56,10 @@ export default function WaterfallChart({
   showVarianceThreshold = 20,
   height = 280,
   isEn = false,
+  enableDecisions = false,
+  onRecordDecision,
+  metricType = 'cash_flow',
+  benchmarkValue,
 }: WaterfallChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -126,18 +148,34 @@ export default function WaterfallChart({
   // Calculate bar width to ensure all columns fit in view
   const barWidth = Math.min(55, 550 / data.length);
   const gap = barWidth * 0.35;
+  
+  // Calculate label rotation based on number of items (more items = more rotation)
+  const labelRotation = data.length > 6 ? -35 : data.length > 4 ? -25 : 0;
+  const labelBottomPadding = labelRotation !== 0 ? 55 : 30;
+  
+  // Helper to truncate long labels
+  const truncateLabel = (label: string, maxLength: number = 12) => {
+    if (label.length <= maxLength) return label;
+    return label.substring(0, maxLength - 1) + '…';
+  };
 
   return (
     <div 
-      className="rounded-xl p-4 sm:p-5"
+      className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'
       }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
+      }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
+      <div className="flex items-start justify-between mb-4 gap-3">
+        <div className="flex-1">
           <h3 
             className="font-semibold"
             style={{ color: 'rgb(var(--color-text))' }}
@@ -154,37 +192,64 @@ export default function WaterfallChart({
           )}
         </div>
         
-        {/* Net change indicator */}
-        <div 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-          style={{ 
-            backgroundColor: totalChange >= 0 
-              ? 'rgb(var(--color-success) / 0.1)' 
-              : 'rgb(var(--color-error) / 0.1)'
-          }}
-        >
-          {totalChange >= 0 ? (
-            <ArrowUp className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-          ) : (
-            <ArrowDown className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+        <div className="flex items-center gap-2">
+          {/* Decision button */}
+          {enableDecisions && onRecordDecision && (
+            <button
+              onClick={() => {
+                const endItem = data.find(d => d.type === 'end');
+                onRecordDecision({
+                  metricType,
+                  metricLabel: isEn && titleEn ? titleEn : title,
+                  chartId: `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`,
+                  currentValue: endItem?.value ?? totalChange,
+                  benchmarkValue,
+                });
+              }}
+              className="flex items-center gap-1 text-xs px-2 py-1.5 rounded transition-colors hover:scale-105"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-success) / 0.15)',
+                color: 'rgb(var(--color-success))'
+              }}
+              title={isEn ? 'Record a decision based on this data' : 'Enregistrer une décision basée sur ces données'}
+            >
+              <Target className="w-3 h-3" />
+              {isEn ? 'Decide' : 'Décider'}
+            </button>
           )}
-          <span 
-            className="text-sm font-semibold tabular-nums"
+          
+          {/* Net change indicator */}
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
             style={{ 
-              color: totalChange >= 0 
-                ? 'rgb(var(--color-success))' 
-                : 'rgb(var(--color-error))'
+              backgroundColor: totalChange >= 0 
+                ? 'rgb(var(--color-success) / 0.1)' 
+                : 'rgb(var(--color-error) / 0.1)'
             }}
           >
-            {formatValue(totalChange)}
-          </span>
+            {totalChange >= 0 ? (
+              <ArrowUp className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+            ) : (
+              <ArrowDown className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+            )}
+            <span 
+              className="text-sm font-semibold tabular-nums"
+              style={{ 
+                color: totalChange >= 0 
+                  ? 'rgb(var(--color-success))' 
+                  : 'rgb(var(--color-error))'
+              }}
+            >
+              {formatValue(totalChange)}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Chart */}
-      <div className="relative overflow-x-auto" style={{ height: `${height + 30}px` }}>
+      <div className="relative overflow-x-auto" style={{ height: `${height + labelBottomPadding}px` }}>
         <svg 
-          viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${height + 30}`}
+          viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${height + labelBottomPadding}`}
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full"
         >
@@ -242,7 +307,7 @@ export default function WaterfallChart({
                 barTop = getYPosition(0);
                 barHeight = Math.abs(barHeight);
               }
-              fillColor = 'rgb(var(--color-text))';
+              fillColor = 'rgb(var(--color-primary-500))';
             } else {
               if (item.value >= 0) {
                 barTop = getYPosition(item.end);
@@ -311,7 +376,7 @@ export default function WaterfallChart({
                       : (barTop + barHeight) * height / 100 + 14
                   }
                   textAnchor="middle"
-                  className="text-[10px] font-mono tabular-nums"
+                  className="text-[9px] font-mono tabular-nums"
                   fill={isHovered ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-secondary))'}
                   style={{ fontWeight: isHovered ? 600 : 400 }}
                 >
@@ -321,9 +386,9 @@ export default function WaterfallChart({
                 {/* Column label - directly below the bar */}
                 <text
                   x={x + barWidth / 2}
-                  y={height + 18}
-                  textAnchor="middle"
-                  className="text-[11px] font-medium"
+                  y={height + 12}
+                  textAnchor={labelRotation !== 0 ? 'end' : 'middle'}
+                  className="text-[9px] font-medium"
                   fill={
                     isHovered 
                       ? 'rgb(var(--color-primary-500))'
@@ -333,8 +398,10 @@ export default function WaterfallChart({
                         ? 'rgb(var(--color-text-secondary))'
                         : 'rgb(var(--color-text-muted))'
                   }
+                  transform={labelRotation !== 0 ? `rotate(${labelRotation}, ${x + barWidth / 2}, ${height + 12})` : undefined}
                 >
-                  {isEn && item.labelEn ? item.labelEn : item.label}
+                  <title>{isEn && item.labelEn ? item.labelEn : item.label}</title>
+                  {truncateLabel(isEn && item.labelEn ? item.labelEn : item.label, data.length > 8 ? 10 : 14)}
                 </text>
               </g>
             );

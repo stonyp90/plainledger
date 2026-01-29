@@ -13,16 +13,18 @@ import {
   Briefcase,
   Sparkles,
   ArrowRight,
-  TrendingUp,
-  TrendingDown,
-  Target,
   DollarSign,
-  AlertCircle,
-  CheckCircle,
   BarChart3,
+  Factory,
+  Wheat,
+  Truck,
+  Heart,
+  GraduationCap,
+  type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../contexts/ThemeContext';
+import KPICard from './KPICard';
 
 // Theme colors - Corporate green palette (consistent with Landing page)
 const colors = {
@@ -61,114 +63,6 @@ function useInView(threshold = 0.2) {
   return { ref, isInView };
 }
 
-// Mini sparkline chart component with industry benchmark comparison
-function AnimatedSparkline({ 
-  data, 
-  benchmarkData,
-  color, 
-  benchmarkColor = 'rgba(148, 163, 184, 0.6)',
-  height = 32,
-  showFill = true,
-  isVisible = true 
-}: { 
-  data: number[]; 
-  benchmarkData?: number[];
-  color: string; 
-  benchmarkColor?: string;
-  height?: number;
-  showFill?: boolean;
-  isVisible?: boolean;
-}) {
-  const [progress, setProgress] = useState(0);
-  
-  useEffect(() => {
-    if (!isVisible) return;
-    let start: number;
-    let animationId: number;
-    const animate = (time: number) => {
-      if (!start) start = time;
-      const p = Math.min((time - start) / 1200, 1);
-      setProgress(p);
-      if (p < 1) {
-        animationId = requestAnimationFrame(animate);
-      }
-    };
-    animationId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationId);
-  }, [isVisible]);
-  
-  // Calculate min/max across both datasets for consistent scale
-  const allData = benchmarkData ? [...data, ...benchmarkData] : data;
-  const max = Math.max(...allData);
-  const min = Math.min(...allData);
-  const range = max - min || 1;
-  
-  const getPoints = (values: number[]) => values.map((v, i) => {
-    const x = (i / (values.length - 1)) * 100;
-    const y = height - ((v - min) / range) * (height - 8) - 4;
-    return `${x},${y}`;
-  });
-  
-  const points = getPoints(data);
-  const benchmarkPoints = benchmarkData ? getPoints(benchmarkData) : [];
-  
-  const visiblePoints = points.slice(0, Math.ceil(data.length * progress));
-  const visibleBenchmarkPoints = benchmarkPoints.slice(0, Math.ceil(benchmarkPoints.length * progress));
-  
-  return (
-    <svg width="100%" height={height} className="overflow-visible">
-      {/* Industry benchmark line (dashed, behind) */}
-      {benchmarkData && visibleBenchmarkPoints.length > 1 && (
-        <polyline
-          points={visibleBenchmarkPoints.join(' ')}
-          fill="none"
-          stroke={benchmarkColor}
-          strokeWidth="1.5"
-          strokeDasharray="4 3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity={0.7}
-        />
-      )}
-      {/* User data fill */}
-      {showFill && visiblePoints.length > 1 && (
-        <polygon
-          points={`0,${height} ${visiblePoints.join(' ')} ${visiblePoints.length > 0 ? visiblePoints[visiblePoints.length - 1].split(',')[0] : 0},${height}`}
-          fill={`${color}15`}
-        />
-      )}
-      {/* User data line */}
-      <polyline
-        points={visiblePoints.join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* User data end point */}
-      {visiblePoints.length > 0 && progress > 0.8 && (
-        <circle
-          cx={visiblePoints[visiblePoints.length - 1]?.split(',')[0]}
-          cy={visiblePoints[visiblePoints.length - 1]?.split(',')[1]}
-          r="3"
-          fill={color}
-        />
-      )}
-      {/* Benchmark end point */}
-      {benchmarkData && visibleBenchmarkPoints.length > 0 && progress > 0.8 && (
-        <circle
-          cx={visibleBenchmarkPoints[visibleBenchmarkPoints.length - 1]?.split(',')[0]}
-          cy={visibleBenchmarkPoints[visibleBenchmarkPoints.length - 1]?.split(',')[1]}
-          r="2"
-          fill={benchmarkColor}
-          opacity={0.7}
-        />
-      )}
-    </svg>
-  );
-}
-
 // =====================================================
 // INDUSTRY DATA
 // =====================================================
@@ -191,7 +85,7 @@ interface KPIDefinition {
 interface IndustryData {
   id: string;
   name: { en: string; fr: string };
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   kpis: KPIDefinition[];
   profitNote?: { en: string; fr: string };
   benchmarkNote?: { en: string; fr: string };
@@ -199,7 +93,7 @@ interface IndustryData {
   roiValue: string;
 }
 
-const INDUSTRY_KPIS: IndustryData[] = [
+export const INDUSTRY_KPIS: IndustryData[] = [
   // Real Estate FIRST as primary focus
   {
     id: 'real_estate',
@@ -263,6 +157,20 @@ const INDUSTRY_KPIS: IndustryData[] = [
         impactFr: 'Forts rendements cash',
         chartData: [8.5, 9, 9.5, 9.8, 10, 10.2, 10.5],
         industryBenchmark: [7.5, 7.6, 7.8, 8.0, 8.1, 8.2, 8.3],
+      },
+      { 
+        name: 'DSCR', 
+        nameFr: 'Ratio de couverture dette', 
+        formula: 'NOI / Debt Service', 
+        target: '>1.25x',
+        currentValue: 1.35,
+        targetValue: 1.25,
+        trend: 'up',
+        trendValue: '+8%',
+        impact: 'Strong debt coverage',
+        impactFr: 'Forte couverture dette',
+        chartData: [1.20, 1.22, 1.25, 1.28, 1.30, 1.32, 1.35],
+        industryBenchmark: [1.15, 1.16, 1.17, 1.18, 1.19, 1.20, 1.21],
       },
     ],
     benchmarkNote: { 
@@ -603,6 +511,540 @@ const INDUSTRY_KPIS: IndustryData[] = [
       },
     ],
   },
+  {
+    id: 'manufacturing',
+    name: { en: 'Manufacturing', fr: 'Fabrication' },
+    icon: Factory,
+    roiHighlight: { en: 'Production efficiency gains', fr: 'Gains efficacité production' },
+    roiValue: '+15%',
+    kpis: [
+      { 
+        name: 'Gross Margin %', 
+        nameFr: 'Marge brute %', 
+        formula: '(Revenue - COGS) / Revenue', 
+        target: '20-35%',
+        currentValue: 28.5,
+        targetValue: 25,
+        trend: 'up',
+        trendValue: '+3.5%',
+        impact: '+$42K annual profit',
+        impactFr: '+42K$ profit annuel',
+        chartData: [24, 25, 25.5, 26, 27, 27.8, 28.5],
+        industryBenchmark: [22, 22.5, 23, 23.5, 24, 24.5, 25],
+      },
+      { 
+        name: 'On-Time Delivery', 
+        nameFr: 'Livraison à temps', 
+        formula: 'On-Time Orders / Total Orders', 
+        target: '>95%',
+        currentValue: 96.5,
+        targetValue: 95,
+        trend: 'up',
+        trendValue: '+1.5%',
+        impact: 'Customer satisfaction',
+        impactFr: 'Satisfaction client',
+        chartData: [94, 94.5, 95, 95.5, 96, 96.2, 96.5],
+        industryBenchmark: [92, 92.5, 93, 93.5, 94, 94.5, 95],
+      },
+      { 
+        name: 'Inventory Turnover', 
+        nameFr: 'Rotation stocks', 
+        formula: 'COGS / Avg Inventory', 
+        target: '6-12x/year',
+        currentValue: 9.2,
+        targetValue: 8,
+        trend: 'up',
+        trendValue: '+1.2x',
+        impact: 'Reduced carrying costs',
+        impactFr: 'Coûts stockage réduits',
+        chartData: [7.5, 7.8, 8, 8.3, 8.6, 8.9, 9.2],
+        industryBenchmark: [6.5, 6.7, 6.9, 7.1, 7.3, 7.5, 7.7],
+      },
+      { 
+        name: 'Production Efficiency', 
+        nameFr: 'Efficacité production', 
+        formula: 'Actual Output / Planned Output', 
+        target: '>90%',
+        currentValue: 94,
+        targetValue: 90,
+        trend: 'up',
+        trendValue: '+4%',
+        impact: 'Optimized operations',
+        impactFr: 'Opérations optimisées',
+        chartData: [88, 89, 90, 91, 92, 93, 94],
+        industryBenchmark: [85, 85.5, 86, 86.5, 87, 87.5, 88],
+      },
+      { 
+        name: 'ROI', 
+        nameFr: 'ROI', 
+        formula: '(Profit - Investment) / Investment', 
+        target: '>15%',
+        currentValue: 18.5,
+        targetValue: 15,
+        trend: 'up',
+        trendValue: '+3.5%',
+        impact: 'Strong returns',
+        impactFr: 'Forts rendements',
+        chartData: [14, 14.5, 15, 16, 17, 17.8, 18.5],
+        industryBenchmark: [12, 12.5, 13, 13.5, 14, 14.5, 15],
+      },
+    ],
+  },
+  {
+    id: 'agriculture',
+    name: { en: 'Agriculture', fr: 'Agriculture' },
+    icon: Wheat,
+    roiHighlight: { en: 'Yield optimization savings', fr: 'Économies optimisation rendement' },
+    roiValue: '+22%',
+    kpis: [
+      { 
+        name: 'Yield per Hectare', 
+        nameFr: 'Rendement par hectare', 
+        formula: 'Total Production / Hectares', 
+        target: 'Target',
+        currentValue: 8.5,
+        targetValue: 7.5,
+        trend: 'up',
+        trendValue: '+13%',
+        impact: '+$18K revenue',
+        impactFr: '+18K$ revenus',
+        chartData: [7.0, 7.2, 7.4, 7.6, 7.8, 8.2, 8.5],
+        industryBenchmark: [6.5, 6.6, 6.7, 6.8, 6.9, 7.0, 7.1],
+      },
+      { 
+        name: 'Cost per Unit', 
+        nameFr: 'Coût par unité', 
+        formula: 'Total Costs / Units Produced', 
+        target: 'Minimize',
+        currentValue: 2.85,
+        targetValue: 3.00,
+        trend: 'down',
+        trendValue: '-5%',
+        impact: 'Cost efficiency',
+        impactFr: 'Efficacité coûts',
+        chartData: [3.2, 3.1, 3.05, 3.0, 2.95, 2.90, 2.85],
+        industryBenchmark: [3.4, 3.35, 3.3, 3.25, 3.2, 3.15, 3.1],
+      },
+      { 
+        name: 'Profit Margin %', 
+        nameFr: 'Marge bénéficiaire %', 
+        formula: '(Revenue - Costs) / Revenue', 
+        target: '15-25%',
+        currentValue: 21.5,
+        targetValue: 18,
+        trend: 'up',
+        trendValue: '+3.5%',
+        impact: 'Strong profitability',
+        impactFr: 'Forte rentabilité',
+        chartData: [17, 17.5, 18, 19, 20, 20.8, 21.5],
+        industryBenchmark: [15, 15.5, 16, 16.5, 17, 17.5, 18],
+      },
+      { 
+        name: 'Crop Rotation Efficiency', 
+        nameFr: 'Efficacité rotation', 
+        formula: 'Optimal Rotation / Actual', 
+        target: '>85%',
+        currentValue: 88,
+        targetValue: 85,
+        trend: 'up',
+        trendValue: '+3%',
+        impact: 'Soil health',
+        impactFr: 'Santé sol',
+        chartData: [83, 84, 85, 86, 87, 87.5, 88],
+        industryBenchmark: [80, 81, 82, 83, 84, 84.5, 85],
+      },
+    ],
+  },
+  {
+    id: 'transport',
+    name: { en: 'Transportation', fr: 'Transport' },
+    icon: Truck,
+    roiHighlight: { en: 'Route optimization savings', fr: 'Économies optimisation routes' },
+    roiValue: '$8,500/mo',
+    kpis: [
+      { 
+        name: 'Revenue per Mile', 
+        nameFr: 'Revenus par mile', 
+        formula: 'Total Revenue / Miles Driven', 
+        target: '$2.50-4.00',
+        currentValue: 3.45,
+        targetValue: 3.20,
+        trend: 'up',
+        trendValue: '+8%',
+        impact: '+$12K annual',
+        impactFr: '+12K$ annuel',
+        chartData: [3.0, 3.1, 3.15, 3.2, 3.3, 3.38, 3.45],
+        industryBenchmark: [2.8, 2.85, 2.9, 2.95, 3.0, 3.05, 3.1],
+      },
+      { 
+        name: 'Fuel Efficiency', 
+        nameFr: 'Efficacité carburant', 
+        formula: 'Miles / Gallon', 
+        target: '>6.5 MPG',
+        currentValue: 7.2,
+        targetValue: 6.5,
+        trend: 'up',
+        trendValue: '+11%',
+        impact: 'Lower fuel costs',
+        impactFr: 'Coûts carburant réduits',
+        chartData: [6.2, 6.4, 6.5, 6.7, 6.9, 7.0, 7.2],
+        industryBenchmark: [6.0, 6.05, 6.1, 6.15, 6.2, 6.25, 6.3],
+      },
+      { 
+        name: 'Utilization Rate', 
+        nameFr: 'Taux utilisation', 
+        formula: 'Loaded Miles / Total Miles', 
+        target: '>75%',
+        currentValue: 82,
+        targetValue: 75,
+        trend: 'up',
+        trendValue: '+7%',
+        impact: 'Better asset use',
+        impactFr: 'Meilleure utilisation',
+        chartData: [73, 74, 75, 77, 79, 80.5, 82],
+        industryBenchmark: [70, 71, 72, 73, 74, 74.5, 75],
+      },
+      { 
+        name: 'On-Time Delivery', 
+        nameFr: 'Livraison à temps', 
+        formula: 'On-Time / Total Deliveries', 
+        target: '>95%',
+        currentValue: 97.2,
+        targetValue: 95,
+        trend: 'up',
+        trendValue: '+2.2%',
+        impact: 'Customer satisfaction',
+        impactFr: 'Satisfaction client',
+        chartData: [94, 94.5, 95, 95.8, 96.5, 96.8, 97.2],
+        industryBenchmark: [92, 92.5, 93, 93.5, 94, 94.5, 95],
+      },
+    ],
+  },
+  {
+    id: 'healthcare',
+    name: { en: 'Healthcare', fr: 'Santé' },
+    icon: Heart,
+    roiHighlight: { en: 'Patient retention improvement', fr: 'Amélioration rétention patients' },
+    roiValue: '+28%',
+    kpis: [
+      { 
+        name: 'Revenue per Patient', 
+        nameFr: 'Revenus par patient', 
+        formula: 'Total Revenue / Patients', 
+        target: 'Growth',
+        currentValue: 485,
+        targetValue: 450,
+        trend: 'up',
+        trendValue: '+8%',
+        impact: '+$35K revenue',
+        impactFr: '+35K$ revenus',
+        chartData: [420, 430, 440, 450, 460, 475, 485],
+        industryBenchmark: [400, 405, 410, 415, 420, 425, 430],
+      },
+      { 
+        name: 'Patient Retention', 
+        nameFr: 'Rétention patients', 
+        formula: 'Returning Patients / Total', 
+        target: '>70%',
+        currentValue: 76,
+        targetValue: 70,
+        trend: 'up',
+        trendValue: '+6%',
+        impact: 'Loyalty program working',
+        impactFr: 'Programme fidélité efficace',
+        chartData: [68, 69, 70, 72, 74, 75, 76],
+        industryBenchmark: [65, 66, 67, 68, 69, 69.5, 70],
+      },
+      { 
+        name: 'Appointment Utilization', 
+        nameFr: 'Utilisation rendez-vous', 
+        formula: 'Scheduled / Available Slots', 
+        target: '>85%',
+        currentValue: 89,
+        targetValue: 85,
+        trend: 'up',
+        trendValue: '+4%',
+        impact: 'Better scheduling',
+        impactFr: 'Meilleure planification',
+        chartData: [83, 84, 85, 86, 87, 88, 89],
+        industryBenchmark: [80, 81, 82, 83, 84, 84.5, 85],
+      },
+      { 
+        name: 'Net Margin %', 
+        nameFr: 'Marge nette %', 
+        formula: 'Net Income / Revenue', 
+        target: '12-20%',
+        currentValue: 16.5,
+        targetValue: 15,
+        trend: 'up',
+        trendValue: '+1.5%',
+        impact: 'Strong profitability',
+        impactFr: 'Forte rentabilité',
+        chartData: [14, 14.5, 15, 15.5, 16, 16.2, 16.5],
+        industryBenchmark: [12, 12.5, 13, 13.5, 14, 14.5, 15],
+      },
+    ],
+  },
+  {
+    id: 'education',
+    name: { en: 'Education', fr: 'Éducation' },
+    icon: GraduationCap,
+    roiHighlight: { en: 'Student retention improvement', fr: 'Amélioration rétention étudiants' },
+    roiValue: '+18%',
+    kpis: [
+      { 
+        name: 'Student Retention', 
+        nameFr: 'Rétention étudiants', 
+        formula: 'Returning Students / Total', 
+        target: '>85%',
+        currentValue: 89,
+        targetValue: 85,
+        trend: 'up',
+        trendValue: '+4%',
+        impact: 'Program quality',
+        impactFr: 'Qualité programme',
+        chartData: [83, 84, 85, 86, 87, 88, 89],
+        industryBenchmark: [80, 81, 82, 83, 84, 84.5, 85],
+      },
+      { 
+        name: 'Revenue per Student', 
+        nameFr: 'Revenus par étudiant', 
+        formula: 'Total Revenue / Students', 
+        target: 'Growth',
+        currentValue: 12500,
+        targetValue: 11500,
+        trend: 'up',
+        trendValue: '+9%',
+        impact: '+$1K per student',
+        impactFr: '+1K$ par étudiant',
+        chartData: [11000, 11200, 11400, 11500, 11800, 12200, 12500],
+        industryBenchmark: [10500, 10600, 10700, 10800, 10900, 11000, 11100],
+      },
+      { 
+        name: 'Class Utilization', 
+        nameFr: 'Utilisation classes', 
+        formula: 'Enrolled / Capacity', 
+        target: '>80%',
+        currentValue: 86,
+        targetValue: 80,
+        trend: 'up',
+        trendValue: '+6%',
+        impact: 'Optimal capacity',
+        impactFr: 'Capacité optimale',
+        chartData: [78, 79, 80, 82, 84, 85, 86],
+        industryBenchmark: [75, 76, 77, 78, 79, 79.5, 80],
+      },
+      { 
+        name: 'Net Margin %', 
+        nameFr: 'Marge nette %', 
+        formula: 'Net Income / Revenue', 
+        target: '8-15%',
+        currentValue: 12.5,
+        targetValue: 10,
+        trend: 'up',
+        trendValue: '+2.5%',
+        impact: 'Sustainable growth',
+        impactFr: 'Croissance durable',
+        chartData: [9.5, 10, 10.5, 11, 11.5, 12, 12.5],
+        industryBenchmark: [8, 8.5, 9, 9.5, 10, 10.5, 11],
+      },
+    ],
+  },
+  {
+    id: 'wholesale',
+    name: { en: 'Wholesale', fr: 'Commerce de gros' },
+    icon: ShoppingBag,
+    roiHighlight: { en: 'Inventory optimization', fr: 'Optimisation inventaire' },
+    roiValue: '$15K/yr',
+    kpis: [
+      { 
+        name: 'Gross Margin %', 
+        nameFr: 'Marge brute %', 
+        formula: '(Revenue - COGS) / Revenue', 
+        target: '15-25%',
+        currentValue: 22.5,
+        targetValue: 20,
+        trend: 'up',
+        trendValue: '+2.5%',
+        impact: '+$28K profit',
+        impactFr: '+28K$ profit',
+        chartData: [19, 19.5, 20, 20.5, 21, 21.8, 22.5],
+        industryBenchmark: [17, 17.5, 18, 18.5, 19, 19.5, 20],
+      },
+      { 
+        name: 'Inventory Turnover', 
+        nameFr: 'Rotation stocks', 
+        formula: 'COGS / Avg Inventory', 
+        target: '6-10x/year',
+        currentValue: 8.8,
+        targetValue: 8,
+        trend: 'up',
+        trendValue: '+0.8x',
+        impact: 'Reduced carrying costs',
+        impactFr: 'Coûts stockage réduits',
+        chartData: [7.5, 7.8, 8, 8.2, 8.4, 8.6, 8.8],
+        industryBenchmark: [6.5, 6.7, 6.9, 7.1, 7.3, 7.5, 7.7],
+      },
+      { 
+        name: 'Order Fill Rate', 
+        nameFr: 'Taux remplissage commandes', 
+        formula: 'Filled Orders / Total Orders', 
+        target: '>95%',
+        currentValue: 97.5,
+        targetValue: 95,
+        trend: 'up',
+        trendValue: '+2.5%',
+        impact: 'Customer satisfaction',
+        impactFr: 'Satisfaction client',
+        chartData: [94, 94.5, 95, 95.8, 96.5, 97, 97.5],
+        industryBenchmark: [92, 92.5, 93, 93.5, 94, 94.5, 95],
+      },
+      { 
+        name: 'Days Sales Outstanding', 
+        nameFr: 'Jours ventes en attente', 
+        formula: 'AR / (Revenue / 365)', 
+        target: '<45 days',
+        currentValue: 38,
+        targetValue: 45,
+        trend: 'down',
+        trendValue: '-7 days',
+        impact: 'Faster collections',
+        impactFr: 'Recouvrements rapides',
+        chartData: [48, 46, 44, 42, 40, 39, 38],
+        industryBenchmark: [52, 50, 48, 46, 44, 42, 40],
+      },
+    ],
+  },
+  {
+    id: 'automotive',
+    name: { en: 'Automotive', fr: 'Automobile' },
+    icon: Truck,
+    roiHighlight: { en: 'Service revenue increase', fr: 'Augmentation revenus service' },
+    roiValue: '+24%',
+    kpis: [
+      { 
+        name: 'Service Revenue %', 
+        nameFr: 'Revenus service %', 
+        formula: 'Service Revenue / Total', 
+        target: '>40%',
+        currentValue: 45,
+        targetValue: 40,
+        trend: 'up',
+        trendValue: '+5%',
+        impact: '+$42K revenue',
+        impactFr: '+42K$ revenus',
+        chartData: [38, 39, 40, 41, 42, 43.5, 45],
+        industryBenchmark: [35, 36, 37, 38, 39, 39.5, 40],
+      },
+      { 
+        name: 'Gross Margin %', 
+        nameFr: 'Marge brute %', 
+        formula: '(Revenue - COGS) / Revenue', 
+        target: '18-28%',
+        currentValue: 24.5,
+        targetValue: 22,
+        trend: 'up',
+        trendValue: '+2.5%',
+        impact: 'Better pricing',
+        impactFr: 'Meilleur prix',
+        chartData: [21, 21.5, 22, 22.5, 23, 24, 24.5],
+        industryBenchmark: [19, 19.5, 20, 20.5, 21, 21.5, 22],
+      },
+      { 
+        name: 'Customer Retention', 
+        nameFr: 'Rétention clients', 
+        formula: 'Returning Customers / Total', 
+        target: '>60%',
+        currentValue: 68,
+        targetValue: 60,
+        trend: 'up',
+        trendValue: '+8%',
+        impact: 'Loyalty program',
+        impactFr: 'Programme fidélité',
+        chartData: [58, 59, 60, 62, 64, 66, 68],
+        industryBenchmark: [55, 56, 57, 58, 59, 59.5, 60],
+      },
+      { 
+        name: 'ROI', 
+        nameFr: 'ROI', 
+        formula: '(Profit - Investment) / Investment', 
+        target: '>20%',
+        currentValue: 24.5,
+        targetValue: 20,
+        trend: 'up',
+        trendValue: '+4.5%',
+        impact: 'Strong returns',
+        impactFr: 'Forts rendements',
+        chartData: [18, 19, 20, 21, 22, 23.5, 24.5],
+        industryBenchmark: [16, 16.5, 17, 17.5, 18, 18.5, 19],
+      },
+    ],
+  },
+  {
+    id: 'beauty_wellness',
+    name: { en: 'Beauty & Wellness', fr: 'Beauté & Bien-être' },
+    icon: Heart,
+    roiHighlight: { en: 'Client retention improvement', fr: 'Amélioration rétention clients' },
+    roiValue: '+32%',
+    kpis: [
+      { 
+        name: 'Revenue per Client', 
+        nameFr: 'Revenus par client', 
+        formula: 'Total Revenue / Clients', 
+        target: 'Growth',
+        currentValue: 285,
+        targetValue: 250,
+        trend: 'up',
+        trendValue: '+14%',
+        impact: '+$35 per client',
+        impactFr: '+35$ par client',
+        chartData: [240, 245, 250, 260, 270, 278, 285],
+        industryBenchmark: [220, 225, 230, 235, 240, 245, 250],
+      },
+      { 
+        name: 'Client Retention', 
+        nameFr: 'Rétention clients', 
+        formula: 'Returning Clients / Total', 
+        target: '>65%',
+        currentValue: 72,
+        targetValue: 65,
+        trend: 'up',
+        trendValue: '+7%',
+        impact: 'Loyalty program',
+        impactFr: 'Programme fidélité',
+        chartData: [63, 64, 65, 67, 69, 70.5, 72],
+        industryBenchmark: [60, 61, 62, 63, 64, 64.5, 65],
+      },
+      { 
+        name: 'Service Utilization', 
+        nameFr: 'Utilisation services', 
+        formula: 'Booked Hours / Available', 
+        target: '>75%',
+        currentValue: 82,
+        targetValue: 75,
+        trend: 'up',
+        trendValue: '+7%',
+        impact: 'Better scheduling',
+        impactFr: 'Meilleure planification',
+        chartData: [72, 73, 75, 77, 79, 80.5, 82],
+        industryBenchmark: [70, 71, 72, 73, 74, 74.5, 75],
+      },
+      { 
+        name: 'Net Margin %', 
+        nameFr: 'Marge nette %', 
+        formula: 'Net Income / Revenue', 
+        target: '15-25%',
+        currentValue: 21.5,
+        targetValue: 18,
+        trend: 'up',
+        trendValue: '+3.5%',
+        impact: 'Strong profitability',
+        impactFr: 'Forte rentabilité',
+        chartData: [16, 17, 18, 19, 20, 20.8, 21.5],
+        industryBenchmark: [14, 14.5, 15, 15.5, 16, 16.5, 17],
+      },
+    ],
+  },
 ];
 
 // =====================================================
@@ -683,7 +1125,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
         </div>
         
         {/* Industry Selector */}
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 px-2">
           {INDUSTRY_KPIS.map((industry) => {
             const TabIcon = industry.icon;
             const isSelected = selectedIndustry === industry.id;
@@ -692,7 +1134,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
               <button
                 key={industry.id}
                 onClick={() => setSelectedIndustry(industry.id)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold transition-all duration-200"
                 style={{
                   backgroundColor: isSelected ? colors.green : (isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)'),
                   color: isSelected ? 'white' : (isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)'),
@@ -702,8 +1144,8 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                     : (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)'),
                 }}
               >
-                <TabIcon className="w-4 h-4" style={{ color: isSelected ? 'white' : colors.green }} />
-                <span className="hidden sm:inline">
+                <TabIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" color={isSelected ? 'white' : colors.green} />
+                <span className="hidden min-[375px]:inline">
                   {isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim()}
                 </span>
               </button>
@@ -737,20 +1179,20 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             </div>
             
             {/* Industry Name */}
-            <div className="flex-1 flex items-center justify-center gap-2">
-              <Icon className="w-4 h-4" style={{ color: colors.green }} />
-              <span className="text-[11px] font-semibold" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)' }}>
+            <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0">
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" color={colors.green} />
+              <span className="text-[10px] sm:text-[11px] font-semibold truncate" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)' }}>
                 {isEn ? currentIndustry.name.en : currentIndustry.name.fr}
               </span>
             </div>
             
             {/* Live indicator */}
             <div 
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-medium"
+              className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded text-[8px] sm:text-[9px] font-medium flex-shrink-0"
               style={{ backgroundColor: `${colors.green}15`, color: colors.green }}
             >
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: colors.green }} />
-              {isEn ? 'Live Data' : 'Données en direct'}
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: colors.green }} />
+              <span className="hidden min-[375px]:inline">{isEn ? 'Live Data' : 'Données en direct'}</span>
             </div>
           </div>
           
@@ -763,7 +1205,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           >
             {/* ROI Highlight Banner */}
             <div 
-              className="mb-6 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4"
+              className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4"
               style={{ 
                 background: isDark 
                   ? `linear-gradient(135deg, ${colors.gold}35 0%, ${colors.green}25 100%)`
@@ -774,153 +1216,65 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                   : `0 4px 20px ${colors.gold}10`
               }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div 
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ 
+                      backgroundColor: `${colors.gold}30`,
+                      boxShadow: `0 2px 8px ${colors.gold}20`
+                    }}
+                  >
+                    <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: colors.gold }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
+                      {isEn ? 'ROI Highlight' : 'Point ROI'}
+                    </p>
+                    <p className="text-sm sm:text-base font-bold truncate" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+                      {isEn ? currentIndustry.roiHighlight.en : currentIndustry.roiHighlight.fr}
+                    </p>
+                  </div>
+                </div>
                 <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ 
-                    backgroundColor: `${colors.gold}30`,
-                    boxShadow: `0 2px 8px ${colors.gold}20`
-                  }}
+                  className="text-xl sm:text-2xl lg:text-3xl font-bold flex-shrink-0"
+                  style={{ color: colors.gold }}
                 >
-                  <DollarSign className="w-6 h-6" style={{ color: colors.gold }} />
+                  {currentIndustry.roiValue}
                 </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
-                    {isEn ? 'ROI Highlight' : 'Point ROI'}
-                  </p>
-                  <p className="text-base font-bold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
-                    {isEn ? currentIndustry.roiHighlight.en : currentIndustry.roiHighlight.fr}
-                  </p>
-                </div>
-              </div>
-              <div 
-                className="text-2xl sm:text-3xl font-bold"
-                style={{ color: colors.gold }}
-              >
-                {currentIndustry.roiValue}
               </div>
             </div>
             
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
               {currentIndustry.kpis.map((kpi, idx) => {
                 const isOnTarget = kpi.currentValue >= kpi.targetValue * 0.95 || 
                   (kpi.name.includes('Cost') && kpi.currentValue <= kpi.targetValue * 1.05) ||
                   (kpi.name.includes('Days') && kpi.currentValue <= kpi.targetValue);
                 
+                const isGoodWhenDown = kpi.name.includes('Cost') || kpi.name.includes('Days') || 
+                  kpi.name.includes('Coût') || kpi.name.includes('Jours');
+                
                 return (
-                  <div 
+                  <KPICard
                     key={idx}
-                    className="p-4 rounded-xl transition-all duration-300 cursor-pointer group"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgb(51, 65, 85)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `1px solid ${hoveredKpi === idx ? colors.green : (isDark ? 'rgba(71, 85, 105, 0.8)' : 'rgba(229, 231, 235, 0.8)')}`,
-                      transform: hoveredKpi === idx ? 'translateY(-3px)' : 'none',
-                      boxShadow: hoveredKpi === idx 
-                        ? `0 12px 24px ${colors.green}30` 
-                        : (isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 12px rgba(0, 0, 0, 0.08)')
-                    }}
-                    onMouseEnter={() => setHoveredKpi(idx)}
-                    onMouseLeave={() => setHoveredKpi(null)}
-                  >
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <span className="text-[11px] font-semibold" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
-                        {isEn ? kpi.name : kpi.nameFr}
-                      </span>
-                      <div 
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold"
-                        style={{ 
-                          backgroundColor: kpi.trend === 'up' 
-                            ? `${colors.green}25` 
-                            : kpi.trend === 'down' 
-                              ? (kpi.name.includes('Cost') || kpi.name.includes('Days') || kpi.name.includes('Coût') || kpi.name.includes('Jours'))
-                                ? `${colors.green}25`
-                                : '#fee2e225'
-                              : `${colors.gold}25`,
-                          color: kpi.trend === 'up' 
-                            ? colors.green 
-                            : kpi.trend === 'down'
-                              ? (kpi.name.includes('Cost') || kpi.name.includes('Days') || kpi.name.includes('Coût') || kpi.name.includes('Jours'))
-                                ? colors.green
-                                : '#ef4444'
-                              : colors.gold
-                        }}
-                      >
-                        {kpi.trend === 'up' ? <TrendingUp className="w-3 h-3" /> : 
-                         kpi.trend === 'down' ? <TrendingDown className="w-3 h-3" /> : 
-                         <Target className="w-3 h-3" />}
-                        {kpi.trendValue}
-                      </div>
-                    </div>
-                    
-                    {/* Value */}
-                    <div className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: colors.green }}>
-                      {formatValue(kpi.currentValue, kpi.name)}
-                    </div>
-                    
-                    {/* Chart with Industry Comparison */}
-                    <div className="h-12 mb-2">
-                      <AnimatedSparkline 
-                        data={kpi.chartData} 
-                        benchmarkData={kpi.industryBenchmark}
-                        color={colors.green}
-                        benchmarkColor={isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.6)'}
-                        height={48}
-                        isVisible={isInView}
-                      />
-                    </div>
-                    
-                    {/* Chart Legend */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-0.5 rounded" style={{ backgroundColor: colors.green }}></div>
-                        <span className="text-[8px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
-                          {isEn ? 'You' : 'Vous'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div 
-                          className="w-3 h-0.5 rounded" 
-                          style={{ 
-                            backgroundColor: isDark ? 'rgba(148, 163, 184, 0.7)' : 'rgba(100, 116, 139, 0.6)',
-                            backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, currentColor 2px, currentColor 4px)'
-                          }}
-                        ></div>
-                        <span className="text-[8px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(148, 163, 184)' }}>
-                          {isEn ? 'Industry' : 'Industrie'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Target & Status */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
-                        {isEn ? 'Target:' : 'Cible:'} {kpi.target}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {isOnTarget ? (
-                          <CheckCircle className="w-4 h-4" style={{ color: colors.green }} />
-                        ) : (
-                          <AlertCircle className="w-4 h-4" style={{ color: colors.gold }} />
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Impact on hover */}
-                    <div 
-                      className="mt-3 pt-3 border-t transition-all duration-300"
-                      style={{ 
-                        borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 0.8)',
-                        opacity: hoveredKpi === idx ? 1 : 0.8,
-                        maxHeight: hoveredKpi === idx ? '50px' : '28px',
-                      }}
-                    >
-                      <p className="text-[10px] font-semibold" style={{ color: isDark ? colors.greenLight : colors.green }}>
-                        {isEn ? kpi.impact : kpi.impactFr}
-                      </p>
-                    </div>
-                  </div>
+                    id={`kpi-${idx}`}
+                    label={isEn ? kpi.name : kpi.nameFr}
+                    value={formatValue(kpi.currentValue, kpi.name)}
+                    target={`${isEn ? 'Target:' : 'Cible:'} ${kpi.target}`}
+                    change={kpi.trendValue}
+                    trend={kpi.trend}
+                    isGoodWhenDown={isGoodWhenDown}
+                    chartData={kpi.chartData}
+                    benchmarkData={kpi.industryBenchmark}
+                    impact={isEn ? kpi.impact : kpi.impactFr}
+                    isOnTarget={isOnTarget}
+                    isEn={isEn}
+                    isHovered={hoveredKpi === idx}
+                    onHoverChange={(hovered) => setHoveredKpi(hovered ? idx : null)}
+                    isVisible={isInView}
+                    animateChart={true}
+                  />
                 );
               })}
             </div>
@@ -938,32 +1292,32 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             >
               {/* Header with tabs */}
               <div 
-                className="flex items-center justify-between px-4 py-3 border-b"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-2.5 sm:py-3 border-b"
                 style={{ 
                   borderColor: isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)',
                   backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(248, 250, 252, 0.95)'
                 }}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <div 
-                    className="p-1.5 rounded-lg"
+                    className="p-1 sm:p-1.5 rounded-lg flex-shrink-0"
                     style={{ backgroundColor: `${colors.green}20` }}
                   >
-                    <BarChart3 className="w-4 h-4" style={{ color: colors.green }} />
+                    <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: colors.green }} />
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+                  <span className="text-xs sm:text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
                     {isEn ? 'Formula Builder' : 'Constructeur de formules'}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 sm:gap-1.5">
                   <span 
-                    className="text-[10px] px-2.5 py-1 rounded-md font-medium"
+                    className="text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md font-medium"
                     style={{ backgroundColor: `${colors.green}20`, color: colors.green }}
                   >
                     {isEn ? 'Pre-built' : 'Pré-définies'}
                   </span>
                   <span 
-                    className="text-[10px] px-2.5 py-1 rounded-md font-medium"
+                    className="text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md font-medium"
                     style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
                   >
                     {isEn ? 'Custom' : 'Personnalisées'}
@@ -972,21 +1326,21 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
               </div>
               
               {/* Spreadsheet-like grid */}
-              <div className="overflow-x-auto">
-                <div style={{ minWidth: '500px' }}>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-[320px] sm:min-w-[500px]">
                   {/* Column headers */}
                   <div 
-                    className="grid text-[10px] font-bold uppercase tracking-wider px-4 py-2.5"
+                    className="grid text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-3 sm:px-4 py-2 sm:py-2.5"
                     style={{ 
-                      gridTemplateColumns: '1.5fr 2fr 80px 60px',
+                      gridTemplateColumns: 'minmax(100px, 1.5fr) minmax(120px, 2fr) minmax(60px, 80px) minmax(40px, 60px)',
                       backgroundColor: isDark ? 'rgb(71, 85, 105)' : 'rgba(241, 245, 249, 1)',
                       color: isDark ? 'rgb(248, 250, 252)' : 'rgb(71, 85, 105)',
                       borderBottom: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)'}`
                     }}
                   >
-                    <span className="text-left">{isEn ? 'Metric' : 'Métrique'}</span>
-                    <span className="text-left">{isEn ? 'Formula' : 'Formule'}</span>
-                    <span className="text-left">{isEn ? 'Target' : 'Cible'}</span>
+                    <span className="text-left truncate">{isEn ? 'Metric' : 'Métrique'}</span>
+                    <span className="text-left truncate">{isEn ? 'Formula' : 'Formule'}</span>
+                    <span className="text-left truncate">{isEn ? 'Target' : 'Cible'}</span>
                     <span></span>
                   </div>
                   
@@ -994,9 +1348,9 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                   {currentIndustry.kpis.map((kpi, idx) => (
                     <div 
                       key={idx}
-                      className="grid items-center px-4 py-3 border-b transition-all duration-200 cursor-pointer group"
+                      className="grid items-center px-3 sm:px-4 py-2 sm:py-3 border-b transition-all duration-200 cursor-pointer group"
                       style={{ 
-                        gridTemplateColumns: '1.5fr 2fr 80px 60px',
+                        gridTemplateColumns: 'minmax(100px, 1.5fr) minmax(120px, 2fr) minmax(60px, 80px) minmax(40px, 60px)',
                         borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
                         backgroundColor: hoveredKpi === idx 
                           ? (isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(241, 245, 249, 1)')
@@ -1006,14 +1360,16 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                       onMouseLeave={() => setHoveredKpi(null)}
                     >
                       <span 
-                        className="text-[11px] font-semibold text-left"
+                        className="text-[9px] sm:text-[10px] font-semibold text-left leading-tight line-clamp-2"
                         style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+                        title={isEn ? kpi.name : kpi.nameFr}
                       >
                         {isEn ? kpi.name : kpi.nameFr}
                       </span>
-                      <div className="flex items-center gap-1.5 justify-start">
+                      <div className="flex items-center gap-1 sm:gap-1.5 justify-start min-w-0">
                         <code 
-                          className="text-[10px] px-2.5 py-1.5 rounded-md font-mono font-medium"
+                          className="text-[8px] sm:text-[9px] px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md font-mono font-medium leading-tight"
+                          title={kpi.formula}
                           style={{ 
                             backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(241, 245, 249, 1)',
                             color: isDark ? colors.greenLight : colors.green,
@@ -1025,21 +1381,22 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                         </code>
                       </div>
                       <span 
-                        className="text-[10px] px-2.5 py-1 rounded-full font-semibold text-left inline-block"
+                        className="text-[8px] sm:text-[9px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold text-left inline-block whitespace-nowrap"
                         style={{ 
                           backgroundColor: isDark ? `${colors.green}30` : `${colors.green}18`,
                           color: isDark ? colors.greenLight : colors.green
                         }}
+                        title={kpi.target}
                       >
                         {kpi.target}
                       </span>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          className="p-1.5 rounded-md transition-colors"
+                          className="p-1 sm:p-1.5 rounded-md transition-colors"
                           style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
                           title={isEn ? 'Edit formula' : 'Modifier'}
                         >
-                          <Sparkles className="w-3.5 h-3.5" />
+                          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -1047,22 +1404,22 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                   
                   {/* Add custom formula row */}
                   <div 
-                    className="flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 cursor-pointer transition-all duration-200 hover:bg-opacity-80"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(248, 250, 252, 0.8)',
                     }}
                   >
                     <div 
-                      className="w-6 h-6 rounded-md flex items-center justify-center transition-colors"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center transition-colors flex-shrink-0"
                       style={{ 
                         border: `2px dashed ${isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(148, 163, 184, 0.8)'}`,
                         color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'
                       }}
                     >
-                      <span className="text-sm font-bold">+</span>
+                      <span className="text-xs sm:text-sm font-bold">+</span>
                     </div>
                     <span 
-                      className="text-[11px] font-medium"
+                      className="text-[10px] sm:text-[11px] font-medium truncate"
                       style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}
                     >
                       {isEn ? 'Add custom formula...' : 'Ajouter une formule personnalisée...'}
@@ -1122,5 +1479,4 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   );
 }
 
-export { INDUSTRY_KPIS };
 export type { IndustryData, KPIDefinition };

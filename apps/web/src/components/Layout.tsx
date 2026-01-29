@@ -33,6 +33,16 @@ import {
   BookOpen,
   TrendingUp,
   Receipt,
+  UtensilsCrossed,
+  Hotel,
+  ShoppingBag,
+  Hammer,
+  Briefcase,
+  Factory,
+  Wheat,
+  Truck,
+  Heart,
+  GraduationCap,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -134,16 +144,9 @@ export default function Layout({ children }: LayoutProps) {
           borderColor: 'rgb(var(--color-border))'
         }}
       >
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="icon-btn flex-shrink-0"
-          aria-label={language === 'en' ? 'Open menu' : 'Ouvrir le menu'}
-        >
-          <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
-        <div className="flex items-center gap-2 min-w-0">
-          <Link to="/app/dashboard" className="flex items-center gap-1.5 sm:gap-2 min-w-0 group">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Logo on the left */}
+          <Link to="/app/dashboard" className="flex items-center group">
             <div 
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
               style={{ 
@@ -161,25 +164,14 @@ export default function Layout({ children }: LayoutProps) {
               </svg>
             </div>
           </Link>
-          {/* Mobile Industry KPI Badge - Compact */}
-          <div 
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md"
-            style={{ 
-              background: 'rgb(var(--color-primary-600))',
-              animation: 'pulse-subtle 3s ease-in-out infinite',
-            }}
+          {/* Hamburger menu button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="icon-btn flex-shrink-0"
+            aria-label={language === 'en' ? 'Open menu' : 'Ouvrir le menu'}
           >
-            <Building2 
-              className="w-3 h-3" 
-              style={{ color: 'white' }} 
-            />
-            <span 
-              className="text-[10px] font-semibold hidden sm:inline"
-              style={{ color: 'white' }}
-            >
-              {language === 'en' ? 'Real Estate KPIs' : 'KPIs Immobilier'}
-            </span>
-          </div>
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
         </div>
 
         <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
@@ -603,25 +595,65 @@ export default function Layout({ children }: LayoutProps) {
               {navigation.find((n) => isActive(n.href))?.name || 'PlainLedger'}
             </h1>
             
-            {/* Industry KPI Badge - Real Estate Focus */}
-            <div 
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md group cursor-default"
-              style={{ 
-                background: 'rgb(var(--color-primary-600))',
-                animation: 'pulse-subtle 3s ease-in-out infinite',
-              }}
-            >
-              <Building2 
-                className="w-3.5 h-3.5 transition-transform group-hover:scale-110" 
-                style={{ color: 'white' }} 
-              />
-              <span 
-                className="text-xs font-semibold"
-                style={{ color: 'white' }}
-              >
-                {language === 'en' ? 'Real Estate KPIs' : 'KPIs Immobilier'}
-              </span>
-            </div>
+            {/* Industry Badge - Visible on all pages (smaller version for header) */}
+            {currentTenant?.industry && (() => {
+              const industry = currentTenant.industry;
+              const industryLabels: Record<string, { en: string; fr: string }> = {
+                real_estate: { en: 'Real Estate', fr: 'Immobilier' },
+                restaurant: { en: 'Restaurant', fr: 'Restaurant' },
+                hospitality: { en: 'Hospitality', fr: 'Hôtellerie' },
+                retail: { en: 'Retail', fr: 'Détail' },
+                construction: { en: 'Construction', fr: 'Construction' },
+                professional_services: { en: 'Services', fr: 'Services' },
+                manufacturing: { en: 'Manufacturing', fr: 'Fabrication' },
+                agriculture: { en: 'Agriculture', fr: 'Agriculture' },
+                transport: { en: 'Transport', fr: 'Transport' },
+                healthcare: { en: 'Healthcare', fr: 'Santé' },
+                education: { en: 'Education', fr: 'Éducation' },
+                wholesale: { en: 'Wholesale', fr: 'Gros' },
+                automotive: { en: 'Automotive', fr: 'Auto' },
+                beauty_wellness: { en: 'Beauty', fr: 'Beauté' },
+              };
+              const industryIcons: Record<string, typeof Building2> = {
+                real_estate: Building2,
+                restaurant: UtensilsCrossed,
+                hospitality: Hotel,
+                retail: ShoppingBag,
+                construction: Hammer,
+                professional_services: Briefcase,
+                manufacturing: Factory,
+                agriculture: Wheat,
+                transport: Truck,
+                healthcare: Heart,
+                education: GraduationCap,
+                wholesale: ShoppingBag,
+                automotive: Truck,
+                beauty_wellness: Heart,
+              };
+              const IndustryIcon = industryIcons[industry] || Building2;
+              const label = industryLabels[industry] || industryLabels.real_estate;
+              
+              return (
+                <div 
+                  className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded group cursor-default"
+                  style={{ 
+                    background: 'rgb(var(--color-primary-600) / 0.1)',
+                  }}
+                  title={language === 'en' ? `${label.en} Industry` : `Industrie: ${label.fr}`}
+                >
+                  <IndustryIcon 
+                    className="w-3 h-3 transition-transform group-hover:scale-110" 
+                    style={{ color: 'rgb(var(--color-primary-600))' }} 
+                  />
+                  <span 
+                    className="text-[10px] font-medium"
+                    style={{ color: 'rgb(var(--color-primary-600))' }}
+                  >
+                    {language === 'en' ? label.en : label.fr}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
           
           <div className="flex items-center gap-2">

@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { APP_GUARD } from "@nestjs/core";
+import { ScheduleModule } from "@nestjs/schedule";
 import {
   KeycloakConnectModule,
   ResourceGuard,
@@ -15,6 +16,8 @@ import { AccountEntity } from "@infrastructure/persistence/postgres/entities/acc
 import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
 import { OrganizationSettingsEntity } from "@infrastructure/persistence/postgres/entities/organization-settings.entity";
 import { UserSettingsEntity } from "@infrastructure/persistence/postgres/entities/user-settings.entity";
+import { DecisionEventEntity } from "@infrastructure/persistence/postgres/entities/decision-event.entity";
+import { IndustryPatternEntity } from "@infrastructure/persistence/postgres/entities/industry-pattern.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -84,6 +87,10 @@ import { SESEmailService } from "./infrastructure/notifications/ses-email.servic
 // Email Templates
 import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
 
+// Intelligence Platform
+import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.module";
+import { WeeklyRetrainingJob } from "@infrastructure/jobs/weekly-retraining.job";
+
 @Module({
   imports: [
     // Configuration
@@ -108,6 +115,8 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
           UserProfileEntity,
           OrganizationSettingsEntity,
           UserSettingsEntity,
+          DecisionEventEntity,
+          IndustryPatternEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -140,6 +149,7 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS accounting");
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS reporting");
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS integration");
+          await tempDs.query("CREATE SCHEMA IF NOT EXISTS intelligence");
           console.log("[Database] Schemas created successfully");
           await tempDs.destroy();
         } catch (error) {
@@ -160,6 +170,8 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
       UserProfileEntity,
       OrganizationSettingsEntity,
       UserSettingsEntity,
+      DecisionEventEntity,
+      IndustryPatternEntity,
     ]),
 
     // Keycloak Authentication
@@ -184,6 +196,12 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
 
     // GraphQL API
     GraphQLModule,
+
+    // Intelligence Platform
+    IntelligenceModule,
+
+    // Scheduled Jobs
+    ScheduleModule.forRoot(),
   ],
   controllers: [
     HealthController,
@@ -295,6 +313,9 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
     PostgresOrganizationSettingsRepository,
     PostgresUserSettingsRepository,
     DatabaseInitializerService,
+
+    // Scheduled Jobs
+    WeeklyRetrainingJob,
   ],
 })
 export class AppModule {}

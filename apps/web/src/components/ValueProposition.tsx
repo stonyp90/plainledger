@@ -1,40 +1,41 @@
 import { 
+  Target,
+  TrendingDown,
   Clock, 
-  AlertTriangle, 
-  TrendingUp, 
-  FileText,
+  Lightbulb,
   Zap,
-  Shield,
-  DollarSign,
+  Brain,
+  RefreshCw,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 
-// Pain points section for landing page
+// Pain points section for landing page - ENTREPRENEUR FOCUSED
 export function PainPoints() {
   const { language } = useI18n();
   const isEn = language === 'en';
 
   const painPoints = [
     {
+      icon: Target,
+      problem: isEn ? 'Decisions based on gut, not data' : 'Décisions basées sur l\'intuition, pas les données',
+      solution: isEn ? 'AI-backed recommendations' : 'Recommandations soutenues par l\'IA',
+    },
+    {
+      icon: TrendingDown,
+      problem: isEn ? 'No idea how you compare to competitors' : 'Aucune idée de votre position vs concurrents',
+      solution: isEn ? 'Benchmarks from 75K+ businesses' : 'Benchmarks de 75K+ entreprises',
+    },
+    {
       icon: Clock,
-      problem: isEn ? 'Hours spent on manual reconciliation' : 'Des heures passées en réconciliation manuelle',
-      solution: isEn ? 'Done in minutes' : 'Fait en quelques minutes',
+      problem: isEn ? 'Opportunities discovered too late' : 'Opportunités découvertes trop tard',
+      solution: isEn ? 'Proactive profit alerts' : 'Alertes de profit proactives',
     },
     {
-      icon: AlertTriangle,
-      problem: isEn ? 'Errors discovered too late' : 'Erreurs découvertes trop tard',
-      solution: isEn ? 'Caught before your clients' : 'Détectées avant vos clients',
-    },
-    {
-      icon: FileText,
-      problem: isEn ? 'No time for proper analysis' : 'Pas le temps pour une analyse approfondie',
-      solution: isEn ? 'Clear reports, instantly' : 'Rapports clairs, instantanément',
-    },
-    {
-      icon: DollarSign,
-      problem: isEn ? 'No access to expert advice' : 'Pas accès à des conseils d\'experts',
-      solution: isEn ? 'CPA support included' : 'Support CPA inclus',
+      icon: Lightbulb,
+      problem: isEn ? 'Generic advice that doesn\'t fit your industry' : 'Conseils génériques inadaptés à votre secteur',
+      solution: isEn ? 'Industry-specific intelligence' : 'Intelligence spécifique à votre industrie',
     },
   ];
 
@@ -69,27 +70,31 @@ export function PainPoints() {
   );
 }
 
-// Benefits section
+// Benefits section - COMPOUNDING INTELLIGENCE FOCUSED
 export function Benefits() {
   const { language } = useI18n();
   const isEn = language === 'en';
 
   const benefits = [
     {
-      metric: '90%',
-      label: isEn ? 'Less time on reports' : 'Moins de temps sur les rapports',
+      metric: '92%',
+      label: isEn ? 'Recommendation accuracy' : 'Précision des recommandations',
+      subtext: isEn ? 'Improves daily' : 'S\'améliore chaque jour',
     },
     {
-      metric: '48h',
-      label: isEn ? 'CPA response time' : 'Temps de réponse CPA',
+      metric: '75K+',
+      label: isEn ? 'Businesses analyzed' : 'Entreprises analysées',
+      subtext: isEn ? 'Growing network' : 'Réseau en croissance',
     },
     {
-      metric: '100%',
-      label: isEn ? 'Data security' : 'Sécurité des données',
+      metric: '15+',
+      label: isEn ? 'Industry patterns' : 'Modèles sectoriels',
+      subtext: isEn ? 'Deep expertise' : 'Expertise profonde',
     },
     {
-      metric: '$500',
-      label: isEn ? 'Starting price/month' : 'Prix de départ/mois',
+      metric: '$28K',
+      label: isEn ? 'Avg. annual savings' : 'Économies annuelles moy.',
+      subtext: isEn ? 'Per business' : 'Par entreprise',
     },
   ];
 
@@ -107,10 +112,16 @@ export function Benefits() {
             {item.metric}
           </p>
           <p 
-            className="text-sm"
+            className="text-sm font-medium"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
             {item.label}
+          </p>
+          <p 
+            className="text-xs mt-1"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            {item.subtext}
           </p>
         </div>
       ))}
@@ -118,7 +129,7 @@ export function Benefits() {
   );
 }
 
-// How it works section
+// How it works section - FLYWHEEL FOCUSED
 export function HowItWorks() {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -128,25 +139,25 @@ export function HowItWorks() {
       step: '1',
       title: isEn ? 'Connect' : 'Connectez',
       description: isEn 
-        ? 'Link your QuickBooks, Xero, or Sage account in 2 clicks' 
-        : 'Liez votre compte QuickBooks, Xero ou Sage en 2 clics',
+        ? 'Link your accounting software. We start learning immediately.' 
+        : 'Liez votre logiciel comptable. L\'apprentissage commence immédiatement.',
       icon: Zap,
     },
     {
       step: '2',
-      title: isEn ? 'Analyze' : 'Analysez',
+      title: isEn ? 'Insights' : 'Insights',
       description: isEn 
-        ? 'AI automatically detects anomalies and inconsistencies' 
-        : 'L\'IA détecte automatiquement les anomalies et incohérences',
-      icon: AlertTriangle,
+        ? 'Get recommendations backed by patterns from thousands of similar businesses.' 
+        : 'Obtenez des recommandations basées sur des milliers d\'entreprises similaires.',
+      icon: Brain,
     },
     {
       step: '3',
-      title: isEn ? 'Act' : 'Agissez',
+      title: isEn ? 'Decide & Learn' : 'Décidez & Apprenez',
       description: isEn 
-        ? 'Get clear reports and fix issues before they become problems' 
-        : 'Obtenez des rapports clairs et corrigez les problèmes à temps',
-      icon: TrendingUp,
+        ? 'Every decision you make improves recommendations for everyone in your industry.' 
+        : 'Chaque décision améliore les recommandations pour tous dans votre industrie.',
+      icon: RefreshCw,
     },
   ];
 
@@ -194,7 +205,7 @@ export function HowItWorks() {
   );
 }
 
-// Testimonial placeholder (for future use)
+// Testimonial - ENTREPRENEUR FOCUSED
 export function SocialProof() {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -204,19 +215,28 @@ export function SocialProof() {
       className="p-6 sm:p-8 rounded-2xl text-center"
       style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
     >
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <Sparkles className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-600))' }} />
+        <span 
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: 'rgb(var(--color-primary-600))' }}
+        >
+          {isEn ? 'Compounding Intelligence' : 'Intelligence composée'}
+        </span>
+      </div>
       <p 
         className="text-lg sm:text-xl italic mb-4"
         style={{ color: 'rgb(var(--color-text-secondary))' }}
       >
         "{isEn 
-          ? 'Finally, a tool that makes financial reporting simple. We catch errors before our clients do.'
-          : 'Enfin un outil qui simplifie les rapports financiers. On détecte les erreurs avant nos clients.'}"
+          ? 'The recommendations get better every month. It\'s like having an advisor who knows every business in my industry.'
+          : 'Les recommandations s\'améliorent chaque mois. C\'est comme avoir un conseiller qui connaît toutes les entreprises de mon secteur.'}"
       </p>
       <p 
         className="text-sm font-medium"
         style={{ color: 'rgb(var(--color-text-muted))' }}
       >
-        — {isEn ? 'Early Beta User' : 'Utilisateur Beta'}
+        — {isEn ? 'Restaurant Owner, Montreal' : 'Propriétaire de restaurant, Montréal'}
       </p>
     </div>
   );

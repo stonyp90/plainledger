@@ -111,11 +111,11 @@ export default function TaxCreditTeaser({ onUpgradeClick }: TaxCreditTeaserProps
                   className="px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide"
                   style={{
                     backgroundColor: credit.jurisdiction === 'federal' 
-                      ? 'rgb(var(--color-info) / 0.1)' 
-                      : 'rgb(var(--color-warning) / 0.1)',
+                      ? 'rgb(var(--color-primary-500) / 0.1)' 
+                      : 'rgb(var(--color-accent-500) / 0.1)',
                     color: credit.jurisdiction === 'federal' 
-                      ? 'rgb(var(--color-info))' 
-                      : 'rgb(var(--color-warning))',
+                      ? 'rgb(var(--color-primary-600))' 
+                      : 'rgb(var(--color-accent-600))',
                   }}
                 >
                   {credit.jurisdiction === 'federal' 
@@ -276,10 +276,10 @@ export default function TaxCreditTeaser({ onUpgradeClick }: TaxCreditTeaserProps
       >
         <div className="flex items-start gap-3">
           <div 
-            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
           >
-            <Sparkles className="w-5 h-5" style={{ color: 'rgb(var(--color-info))' }} />
+            <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
           </div>
           <div>
             <h3 className="font-semibold text-sm mb-1" style={{ color: 'rgb(var(--color-text))' }}>
@@ -299,15 +299,15 @@ export default function TaxCreditTeaser({ onUpgradeClick }: TaxCreditTeaserProps
       {/* Federal Credits */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Building2 className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
+          <Building2 className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <h2 className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Federal Tax Credits' : 'Crédits d\'impôt fédéraux'}
           </h2>
           <span 
             className="px-2 py-0.5 rounded text-[10px] font-medium"
             style={{
-              backgroundColor: 'rgb(var(--color-info) / 0.1)',
-              color: 'rgb(var(--color-info))',
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+              color: 'rgb(var(--color-primary-600))',
             }}
           >
             {federalCredits.length}

@@ -1,6 +1,7 @@
 /**
  * AI Query Assistant Component
  * Natural language interface for accountants to query financial data
+ * Enhanced with Decision Context for learning from past decisions
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -20,10 +21,12 @@ import {
   MessageSquare,
   Lightbulb,
   History,
+  Target,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { queryEngine, type QueryResult } from '../lib/nlq/QueryEngine';
+import type { DecisionEvent } from '../lib/decisionContext';
 
 // =====================================================
 // TYPES
@@ -39,6 +42,10 @@ interface QueryHistoryItem {
 interface AIQueryAssistantProps {
   onClose?: () => void;
   isModal?: boolean;
+  /** Recent decisions for context-aware suggestions */
+  recentDecisions?: DecisionEvent[];
+  /** Current industry for context-aware suggestions */
+  industry?: string;
 }
 
 // =====================================================
@@ -61,6 +68,17 @@ const SUGGESTED_QUERIES = {
     { text: "Affiche les 5 comptes avec les plus grandes variances", icon: TrendingUp },
     { text: "Quelles anomalies ont été détectées?", icon: Activity },
     { text: "Quels sont nos ratios financiers actuels?", icon: Table },
+  ],
+};
+
+const DECISION_QUERIES = {
+  en: [
+    { text: "Show my recent decisions", icon: Target },
+    { text: "How did my decisions perform?", icon: TrendingUp },
+  ],
+  fr: [
+    { text: "Afficher mes décisions récentes", icon: Target },
+    { text: "Comment mes décisions ont-elles performé?", icon: TrendingUp },
   ],
 };
 
@@ -318,7 +336,12 @@ function DefaultVisualization({ data }: { data: any }) {
 // MAIN COMPONENT
 // =====================================================
 
-export default function AIQueryAssistant({ onClose, isModal = false }: AIQueryAssistantProps) {
+export default function AIQueryAssistant({ 
+  onClose, 
+  isModal = false,
+  recentDecisions = [],
+  industry = 'general',
+}: AIQueryAssistantProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, isLoading: dataLoading } = useFinancialData();
@@ -331,12 +354,18 @@ export default function AIQueryAssistant({ onClose, isModal = false }: AIQueryAs
   
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize query engine with financial data
+  // Initialize query engine with financial data and decision context
   useEffect(() => {
     if (financialData) {
       queryEngine.setData(financialData);
     }
   }, [financialData]);
+
+  // Update query engine with decision history
+  useEffect(() => {
+    queryEngine.setDecisionHistory(recentDecisions);
+    queryEngine.setIndustry(industry);
+  }, [recentDecisions, industry]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -376,7 +405,12 @@ export default function AIQueryAssistant({ onClose, isModal = false }: AIQueryAs
     setShowHistory(false);
   };
 
-  const suggestions = SUGGESTED_QUERIES[isEn ? 'en' : 'fr'];
+  // Combine standard and decision-aware suggestions
+  const standardSuggestions = SUGGESTED_QUERIES[isEn ? 'en' : 'fr'];
+  const decisionSuggestions = recentDecisions.length > 0 
+    ? DECISION_QUERIES[isEn ? 'en' : 'fr']
+    : [];
+  const suggestions = [...decisionSuggestions, ...standardSuggestions].slice(0, 6);
 
   return (
     <div className={`${isModal ? '' : 'card'} flex flex-col h-full`}>
@@ -444,6 +478,63 @@ export default function AIQueryAssistant({ onClose, isModal = false }: AIQueryAs
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Recent Decisions Summary */}
+        {!currentResult && !showHistory && recentDecisions.length > 0 && (
+          <div 
+            className="p-3 rounded-xl space-y-2"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-success) / 0.08)',
+              border: '1px solid rgb(var(--color-success) / 0.2)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+              <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-success))' }}>
+                {isEn ? 'Recent Decisions' : 'Décisions récentes'}
+              </span>
+              <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-success) / 0.2)', color: 'rgb(var(--color-success))' }}>
+                {recentDecisions.length}
+              </span>
+            </div>
+            <div className="space-y-1">
+              {recentDecisions.slice(0, 2).map((decision) => (
+                <div 
+                  key={decision.id}
+                  className="text-xs p-2 rounded-lg flex items-center justify-between gap-2"
+                  style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+                >
+                  <span className="truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                    {decision.decision.description.slice(0, 40)}{decision.decision.description.length > 40 ? '...' : ''}
+                  </span>
+                  <span 
+                    className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                    style={{ 
+                      backgroundColor: decision.outcome 
+                        ? (decision.outcome.success ? 'rgb(var(--color-success) / 0.2)' : 'rgb(var(--color-warning) / 0.2)')
+                        : 'rgb(var(--color-info) / 0.2)',
+                      color: decision.outcome 
+                        ? (decision.outcome.success ? 'rgb(var(--color-success))' : 'rgb(var(--color-warning))')
+                        : 'rgb(var(--color-info))',
+                    }}
+                  >
+                    {decision.outcome 
+                      ? (decision.outcome.success ? (isEn ? 'Success' : 'Réussi') : (isEn ? 'Review' : 'Revoir'))
+                      : (isEn ? 'Pending' : 'En attente')
+                    }
+                  </span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => handleSuggestedQuery(isEn ? 'Show my recent decisions' : 'Afficher mes décisions récentes')}
+              className="text-xs w-full text-center py-1 rounded-lg transition-colors hover:bg-surface"
+              style={{ color: 'rgb(var(--color-success))' }}
+            >
+              {isEn ? 'View all decisions →' : 'Voir toutes les décisions →'}
+            </button>
           </div>
         )}
 

@@ -8,6 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE SCHEMA IF NOT EXISTS accounting;
 CREATE SCHEMA IF NOT EXISTS reporting;
 CREATE SCHEMA IF NOT EXISTS integration;
+CREATE SCHEMA IF NOT EXISTS intelligence;
 
 -- ============================================
 -- ACCOUNTING SCHEMA - Core Financial Data
@@ -414,13 +415,121 @@ CREATE TABLE reporting.benchmark_refresh_log (
     completed_at TIMESTAMP WITH TIME ZONE
 );
 
+-- ============================================
+-- INTELLIGENCE SCHEMA - Context Intelligence Platform
+-- ============================================
+
+-- Decision Events (captured decisions with context)
+-- Core table for the Context Intelligence flywheel
+CREATE TABLE intelligence.decision_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID NOT NULL REFERENCES accounting.organizations(id),
+    industry VARCHAR(50) NOT NULL CHECK (industry IN (
+        'restaurant', 'retail', 'construction', 'professional_services',
+        'real_estate', 'hospitality', 'healthcare', 'manufacturing', 
+        'agriculture', 'transport', 'education', 'wholesale', 
+        'automotive', 'beauty_wellness', 'technology', 'other'
+    )),
+    business_size VARCHAR(20) NOT NULL CHECK (business_size IN ('small', 'medium', 'large')),
+    
+    -- Trigger context (what triggered the decision)
+    trigger_metric VARCHAR(50) NOT NULL,
+    trigger_metric_label VARCHAR(100),
+    trigger_chart_id VARCHAR(100),
+    trigger_current_value DECIMAL(15, 2) NOT NULL,
+    trigger_benchmark_value DECIMAL(15, 2),
+    trigger_gap_percentage DECIMAL(5, 2),
+    trigger_period VARCHAR(20),
+    trigger_context TEXT,
+    
+    -- Decision (what action was taken)
+    decision_action_type VARCHAR(50) NOT NULL,
+    decision_action_label VARCHAR(100),
+    decision_description TEXT NOT NULL,
+    decision_reasoning TEXT,
+    decision_expected_impact DECIMAL(15, 2) NOT NULL,
+    decision_expected_impact_period VARCHAR(20) DEFAULT 'monthly' CHECK (decision_expected_impact_period IN ('monthly', 'quarterly', 'annual')),
+    decision_confidence VARCHAR(20) NOT NULL CHECK (decision_confidence IN ('low', 'medium', 'high')),
+    decision_tags TEXT[], -- Array of tags for categorization
+    
+    -- Outcome (did it work? - filled in later)
+    outcome_actual_impact DECIMAL(15, 2),
+    outcome_measured_at TIMESTAMP WITH TIME ZONE,
+    outcome_success BOOLEAN,
+    outcome_variance DECIMAL(5, 2), -- Percentage difference between expected and actual
+    outcome_learnings TEXT,
+    outcome_verified_by VARCHAR(20) CHECK (outcome_verified_by IN ('user', 'system')),
+    
+    -- Reminder tracking
+    reminder_scheduled BOOLEAN DEFAULT true,
+    reminder_days INTEGER DEFAULT 30,
+    reminder_sent_at TIMESTAMP WITH TIME ZONE,
+    
+    -- Metadata
+    source VARCHAR(20) NOT NULL CHECK (source IN ('user', 'ai_suggested', 'imported')),
+    created_by UUID,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_decision_events_org ON intelligence.decision_events(organization_id);
+CREATE INDEX idx_decision_events_industry ON intelligence.decision_events(industry);
+CREATE INDEX idx_decision_events_metric ON intelligence.decision_events(trigger_metric);
+CREATE INDEX idx_decision_events_action ON intelligence.decision_events(decision_action_type);
+CREATE INDEX idx_decision_events_outcome ON intelligence.decision_events(outcome_success) WHERE outcome_success IS NOT NULL;
+CREATE INDEX idx_decision_events_created ON intelligence.decision_events(created_at DESC);
+
+-- Industry Patterns (aggregated insights)
+CREATE TABLE intelligence.industry_patterns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    industry VARCHAR(50) NOT NULL,
+    
+    -- Trigger condition
+    trigger_metric VARCHAR(50) NOT NULL,
+    trigger_operator VARCHAR(20) NOT NULL CHECK (trigger_operator IN ('above', 'below', 'between')),
+    trigger_value_low DECIMAL(15, 2),
+    trigger_value_high DECIMAL(15, 2),
+    trigger_business_size VARCHAR(20),
+    
+    -- Aggregated data
+    sample_size INTEGER NOT NULL DEFAULT 0,
+    statistical_significance DECIMAL(3, 2) NOT NULL CHECK (statistical_significance BETWEEN 0 AND 1),
+    
+    -- Common actions (stored as JSONB for flexibility)
+    common_actions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    
+    -- Success rates (stored as JSONB)
+    success_rates JSONB NOT NULL DEFAULT '{}'::jsonb,
+    
+    -- Top performers
+    top_performers_actions JSONB,
+    top_performers_avg_impact DECIMAL(15, 2),
+    top_performers_success_rate DECIMAL(5, 2),
+    top_performers_sample_size INTEGER,
+    
+    -- Metadata
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(industry, trigger_metric, trigger_operator, trigger_value_low, trigger_value_high, trigger_business_size)
+);
+
+CREATE INDEX idx_industry_patterns_industry ON intelligence.industry_patterns(industry);
+CREATE INDEX idx_industry_patterns_metric ON intelligence.industry_patterns(trigger_metric);
+CREATE INDEX idx_industry_patterns_significance ON intelligence.industry_patterns(statistical_significance DESC);
+CREATE INDEX idx_industry_patterns_sample_size ON intelligence.industry_patterns(sample_size DESC);
+CREATE INDEX idx_industry_patterns_updated ON intelligence.industry_patterns(last_updated DESC);
+
 -- Grant permissions
 GRANT USAGE ON SCHEMA accounting TO plainledger;
 GRANT USAGE ON SCHEMA reporting TO plainledger;
 GRANT USAGE ON SCHEMA integration TO plainledger;
+GRANT USAGE ON SCHEMA intelligence TO plainledger;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA accounting TO plainledger;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA reporting TO plainledger;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA integration TO plainledger;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA intelligence TO plainledger;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA accounting TO plainledger;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA reporting TO plainledger;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA integration TO plainledger;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA intelligence TO plainledger;

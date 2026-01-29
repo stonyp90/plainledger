@@ -14,7 +14,7 @@ import {
   CheckCircle,
   Info,
 } from 'lucide-react';
-import { Tooltip } from './Tooltip';
+import { Tooltip, LabelTooltip } from './Tooltip';
 import { useI18n } from '../lib/i18n';
 
 interface QuartileData {
@@ -145,7 +145,14 @@ export default function BenchmarkCard({
             <div className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-primary-600))' }}>{icon}</div>
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-medium text-xs sm:text-sm truncate" style={{ color: 'rgb(var(--color-text))' }}>{title}</h3>
+            <LabelTooltip label={title}>
+              <h3 
+                className="font-medium text-xs sm:text-sm leading-tight line-clamp-2" 
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {title}
+              </h3>
+            </LabelTooltip>
             {description && (
               <Tooltip content={description}>
                 <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 cursor-help inline-block ml-1 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />

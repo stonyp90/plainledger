@@ -14,6 +14,7 @@
  */
 
 import { AccountBalance, FinancialDataPoint } from './anomalyDetection';
+import { getAnomaliesByIndustry } from './demoData';
 
 // =====================================================
 // TYPES
@@ -260,6 +261,20 @@ export interface WaterfallDataPoint {
   category?: 'operations' | 'investing' | 'financing';
 }
 
+export interface DemoAnomalyData {
+  id: string;
+  type: 'duplicate' | 'fraud' | 'spike' | 'timing';
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  titleFr?: string;
+  description: string;
+  descriptionFr?: string;
+  amount: number;
+  date: string;
+  confidence: number;
+  accountId?: string;
+}
+
 export interface FinancialDataResponse {
   balanceSheet: BalanceSheetData;
   incomeStatement?: IncomeStatementData;
@@ -274,6 +289,8 @@ export interface FinancialDataResponse {
   };
   accounts: AccountBalanceExtended[];
   cashFlowWaterfall: WaterfallDataPoint[];
+  demoAnomalies: DemoAnomalyData[];
+  industry: string;
   lastUpdated: string;
   dataSource: string;
 }
@@ -339,7 +356,8 @@ export function generateMockFinancialData(
   organizationId: string,
   organizationName: string,
   currency: string = 'CAD',
-  asOfDate: string = new Date().toISOString().split('T')[0]
+  asOfDate: string = new Date().toISOString().split('T')[0],
+  industry: string = 'real_estate'
 ): FinancialDataResponse {
   // Calculate comparison date (prior year)
   const currentDate = new Date(asOfDate);
@@ -393,8 +411,8 @@ export function generateMockFinancialData(
     },
     { 
       code: '1100', 
-      name: 'Comptes clients', 
-      nameEn: 'Accounts receivable',
+      name: 'Créances locatives', 
+      nameEn: 'Rent Receivable',
       current: applyDateVariation(baseValues.receivables, asOfDate, 15), 
       prior: applyDateVariation(priorBaseValues.receivables, comparisonDate, 12), 
       budget: 170000,
@@ -403,8 +421,8 @@ export function generateMockFinancialData(
     },
     { 
       code: '1200', 
-      name: 'Stocks', 
-      nameEn: 'Inventory',
+      name: 'Dépôts de garantie', 
+      nameEn: 'Security Deposits',
       current: applyDateVariation(baseValues.inventory, asOfDate, 10), 
       prior: applyDateVariation(priorBaseValues.inventory, comparisonDate, 8), 
       budget: 75000,
@@ -426,8 +444,8 @@ export function generateMockFinancialData(
   const fixedAssets: AccountBalanceExtended[] = [
     { 
       code: '1500', 
-      name: 'Immobilisations', 
-      nameEn: 'Property and equipment',
+      name: 'Propriétés immobilières', 
+      nameEn: 'Investment Properties',
       current: applyDateVariation(baseValues.fixedAssets, asOfDate, 5), 
       prior: applyDateVariation(priorBaseValues.fixedAssets, comparisonDate, 5), 
       budget: 430000,
@@ -450,7 +468,7 @@ export function generateMockFinancialData(
     { 
       code: '2000', 
       name: 'Comptes fournisseurs', 
-      nameEn: 'Accounts payable',
+      nameEn: 'Accounts Payable',
       current: applyDateVariation(baseValues.payables, asOfDate, 18), 
       prior: applyDateVariation(priorBaseValues.payables, comparisonDate, 15), 
       budget: 70000,
@@ -482,8 +500,8 @@ export function generateMockFinancialData(
   const longTermLiabilities: AccountBalanceExtended[] = [
     { 
       code: '2500', 
-      name: 'Dette à long terme', 
-      nameEn: 'Long-term debt',
+      name: 'Hypothèques', 
+      nameEn: 'Mortgages Payable',
       current: applyDateVariation(baseValues.longTermDebt, asOfDate, 3), 
       prior: applyDateVariation(priorBaseValues.longTermDebt, comparisonDate, 3), 
       budget: 185000,
@@ -552,32 +570,50 @@ export function generateMockFinancialData(
                    + (referenceDate.getMonth() - targetDate.getMonth());
   const dateGrowthFactor = Math.pow(0.992, monthsDiff);
   
+  // More varied seasonal patterns for clearer period-to-period differences
+  const seasonalFactors = [0.85, 0.80, 0.90, 1.05, 1.10, 1.15, 1.08, 0.95, 1.00, 1.12, 1.20, 1.25];
+  
   const revenueData: FinancialDataPoint[] = months.map((month, i) => {
-    const baseRevenue = 125000 + (i * 6000);
-    const variation = random() * 10000;
+    const baseRevenue = 120000;
+    const seasonalRevenue = baseRevenue * seasonalFactors[i];
+    const growthFactor = 1 + (i * 0.02); // 2% growth per month
+    const variation = (random() - 0.5) * 15000; // Random variation ±7500
     return {
       period: monthsFr[i],
-      value: Math.round((baseRevenue + variation) * dateGrowthFactor),
+      value: Math.round((seasonalRevenue * growthFactor + variation) * dateGrowthFactor),
     };
   });
 
-  const revenueBudget = months.map((_, i) => Math.round((120000 + (i * 5500)) * dateGrowthFactor));
+  const revenueBudget = months.map((_, i) => {
+    const baseBudget = 115000;
+    const seasonalBudget = baseBudget * seasonalFactors[i];
+    const growthFactor = 1 + (i * 0.018); // Slightly lower growth target
+    return Math.round((seasonalBudget * growthFactor) * dateGrowthFactor);
+  });
 
   const expenseData: FinancialDataPoint[] = months.map((month, i) => {
-    const baseExpense = 95000 + (i * 3000);
-    const variation = random() * 5000;
+    const baseExpense = 85000;
+    // Expenses have inverse seasonality (higher in slow months due to fixed costs ratio)
+    const expenseSeasonalFactors = [1.05, 1.08, 1.02, 0.95, 0.92, 0.90, 0.92, 0.98, 0.96, 0.94, 0.93, 0.95];
+    const seasonalExpense = baseExpense * expenseSeasonalFactors[i];
+    const growthFactor = 1 + (i * 0.015); // 1.5% expense growth per month
+    const variation = (random() - 0.5) * 8000;
     return {
       period: monthsFr[i],
-      value: Math.round((baseExpense + variation) * dateGrowthFactor),
+      value: Math.round((seasonalExpense * growthFactor + variation) * dateGrowthFactor),
     };
   });
 
   const cashFlowTrendData: FinancialDataPoint[] = months.map((month, i) => {
-    const baseCashFlow = 45000;
-    const variation = random() * 40000;
+    // Cash flow = revenue - expenses, with additional timing variations
+    const revenue = revenueData[i].value;
+    const expense = expenseData[i].value;
+    const baseCashFlow = revenue - expense;
+    // Add timing variations (collections lag, prepayments, etc.)
+    const timingVariation = (random() - 0.5) * 25000;
     return {
       period: monthsFr[i],
-      value: Math.round((baseCashFlow + variation) * dateGrowthFactor),
+      value: Math.round(baseCashFlow + timingVariation),
     };
   });
 
@@ -599,19 +635,193 @@ export function generateMockFinancialData(
   const debtOutflow = -25000;
   const dividendsOutflow = Math.round(applyDateVariation(-9000, asOfDate, 15));
   
-  const cashFlowWaterfall: WaterfallDataPoint[] = [
-    { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
-    { label: 'Ventes', labelEn: 'Sales', value: salesInflow, type: 'increase', category: 'operations' },
-    { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
-    { label: 'Salaires', labelEn: 'Payroll', value: payrollOutflow, type: 'decrease', category: 'operations' },
-    { label: 'Fournisseurs', labelEn: 'Suppliers', value: suppliersOutflow, type: 'decrease', category: 'operations' },
-    { label: 'Loyer', labelEn: 'Rent', value: rentOutflow, type: 'decrease', category: 'operations' },
-    { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
-    { label: 'Équipement', labelEn: 'CapEx', value: capexOutflow, type: 'decrease', category: 'investing' },
-    { label: 'Dette', labelEn: 'Debt', value: debtOutflow, type: 'decrease', category: 'financing' },
-    { label: 'Dividendes', labelEn: 'Dividends', value: dividendsOutflow, type: 'decrease', category: 'financing' },
-    { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
-  ];
+  // Industry-specific waterfall labels
+  const waterfallLabels: Record<string, WaterfallDataPoint[]> = {
+    real_estate: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Loyers perçus', labelEn: 'Rent Collected', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Gestion immobilière', labelEn: 'Property Management', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Entretien & réparations', labelEn: 'Maintenance & Repairs', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Paiement hypothécaire', labelEn: 'Mortgage Payment', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Améliorations', labelEn: 'Property Improvements', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    restaurant: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Ventes alimentaires', labelEn: 'Food Sales', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Ventes boissons', labelEn: 'Beverage Sales', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Coûts nourriture', labelEn: 'Food Costs', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement', labelEn: 'Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    hospitality: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Revenus chambres', labelEn: 'Room Revenue', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Revenus services', labelEn: 'Service Revenue', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Entretien', labelEn: 'Maintenance', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Services publics', labelEn: 'Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Améliorations', labelEn: 'Property Improvements', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    retail: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Ventes', labelEn: 'Sales', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Coût marchandises', labelEn: 'COGS', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Inventaire', labelEn: 'Inventory', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    construction: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Revenus projets', labelEn: 'Project Revenue', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Matériaux', labelEn: 'Materials', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Sous-traitants', labelEn: 'Subcontractors', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement', labelEn: 'Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    professional_services: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Revenus facturables', labelEn: 'Billable Revenue', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Salaries', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Frais professionnels', labelEn: 'Professional Fees', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement', labelEn: 'Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    manufacturing: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Ventes produits', labelEn: 'Product Sales', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Matériaux', labelEn: 'Raw Materials', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Services publics', labelEn: 'Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Machinerie', labelEn: 'Machinery', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    agriculture: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Ventes récolte', labelEn: 'Crop Sales', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Subventions', labelEn: 'Grants', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Main-d\'œuvre', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Intrants', labelEn: 'Inputs', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Équipement agricole', labelEn: 'Farm Equipment', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Machinerie', labelEn: 'Machinery', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    transport: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Revenus transport', labelEn: 'Transport Revenue', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Driver Wages', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Carburant', labelEn: 'Fuel', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Entretien véhicules', labelEn: 'Vehicle Maintenance', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Véhicules', labelEn: 'Vehicles', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    healthcare: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Revenus patients', labelEn: 'Patient Revenue', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Assurances', labelEn: 'Insurance', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Staff Salaries', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Fournitures médicales', labelEn: 'Medical Supplies', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement médical', labelEn: 'Medical Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    education: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Frais scolarité', labelEn: 'Tuition', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Faculty Salaries', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Fournitures', labelEn: 'Supplies', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement', labelEn: 'Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    wholesale: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Ventes gros', labelEn: 'Wholesale Sales', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Recouvrements', labelEn: 'Collections', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Coût marchandises', labelEn: 'COGS', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Entrepôt', labelEn: 'Warehouse', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Inventaire', labelEn: 'Inventory', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    automotive: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Ventes véhicules', labelEn: 'Vehicle Sales', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Revenus service', labelEn: 'Service Revenue', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Labor', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Pièces', labelEn: 'Parts', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement', labelEn: 'Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+    beauty_wellness: [
+      { label: 'Ouverture', labelEn: 'Opening', value: priorCash, type: 'start' },
+      { label: 'Revenus services', labelEn: 'Service Revenue', value: salesInflow, type: 'increase', category: 'operations' },
+      { label: 'Ventes produits', labelEn: 'Product Sales', value: collectionsInflow, type: 'increase', category: 'operations' },
+      { label: 'Salaires', labelEn: 'Staff Salaries', value: payrollOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Fournitures', labelEn: 'Supplies', value: suppliersOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Loyer & services', labelEn: 'Rent & Utilities', value: rentOutflow, type: 'decrease', category: 'operations' },
+      { label: 'Op. Total', labelEn: 'Op. Total', value: opTotal, type: 'subtotal' },
+      { label: 'Équipement', labelEn: 'Equipment', value: capexOutflow, type: 'decrease', category: 'investing' },
+      { label: 'Remboursement dette', labelEn: 'Debt Repayment', value: debtOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Distributions', labelEn: 'Distributions', value: dividendsOutflow, type: 'decrease', category: 'financing' },
+      { label: 'Clôture', labelEn: 'Closing', value: currentCash, type: 'end' },
+    ],
+  };
+
+  const cashFlowWaterfall = waterfallLabels[industry] || waterfallLabels.real_estate;
 
   // Calculate financial metrics
   const cash = currentAssets.find(a => a.code === '1000')?.current || 0;
@@ -791,8 +1001,8 @@ export function generateMockFinancialData(
       type: 'equity' as const,
     })),
     // Add revenue and expense accounts
-    { code: '4000', name: 'Ventes', nameEn: 'Sales Revenue', debit: 0, credit: annualRevenue, type: 'revenue' as const },
-    { code: '5000', name: 'Coût des ventes', nameEn: 'Cost of Goods Sold', debit: annualExpenses * 0.6, credit: 0, type: 'expense' as const },
+    { code: '4000', name: 'Revenus locatifs', nameEn: 'Rental Income', debit: 0, credit: annualRevenue, type: 'revenue' as const },
+    { code: '5000', name: 'Frais de propriété', nameEn: 'Property Expenses', debit: annualExpenses * 0.6, credit: 0, type: 'expense' as const },
     { code: '6000', name: 'Frais d\'exploitation', nameEn: 'Operating Expenses', debit: annualExpenses * 0.4, credit: 0, type: 'expense' as const },
   ];
 
@@ -913,6 +1123,21 @@ export function generateMockFinancialData(
     },
     accounts: allAccounts,
     cashFlowWaterfall,
+    // Industry-specific demo anomalies
+    demoAnomalies: getAnomaliesByIndustry(industry).map(a => ({
+      id: a.id,
+      type: a.type,
+      severity: a.severity,
+      title: a.title,
+      titleFr: a.titleFr,
+      description: a.description,
+      descriptionFr: a.descriptionFr,
+      amount: a.amount,
+      date: a.date,
+      confidence: a.confidence,
+      accountId: a.accountId,
+    })),
+    industry,
     lastUpdated: new Date().toISOString(),
     dataSource: 'mock', // Would be 'quickbooks', 'xero', etc. in production
   };

@@ -296,7 +296,7 @@ export default function PremiumFeatureGate({
     );
   }
 
-  // Full card mode (default) - Enhanced aspirational design
+  // Full card mode (default) - 80% page width, theme colors
   return (
     <div className={`relative rounded-xl overflow-hidden ${className}`}>
       {/* Grayed out preview of content */}
@@ -306,189 +306,123 @@ export default function PremiumFeatureGate({
         </div>
       )}
       
-      {/* Premium Gate Overlay - Redesigned for better UX */}
+      {/* Premium Gate Overlay - 80% width centered */}
       <div 
-        className={`${showPreview ? 'absolute inset-0 overflow-y-auto' : ''} flex items-center justify-center p-3 sm:p-4 lg:p-6`}
+        className={`${showPreview ? 'absolute inset-0' : 'min-h-[70vh]'} flex items-center justify-center p-4`}
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
         }}
       >
-        {/* Background decorative elements */}
-        <div 
-          className="absolute top-0 right-0 w-48 h-48 opacity-[0.02] pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgb(var(--color-accent-500)) 0%, transparent 70%)',
-          }}
-        />
-        
-        <div className="relative w-full max-w-4xl mx-auto my-auto">
+        <div className="relative w-full max-w-[80%] mx-auto">
           {/* Main content card */}
           <div 
-            className="rounded-xl p-5 sm:p-6 lg:p-8"
+            className="rounded-xl p-6 sm:p-8 text-center"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
-              boxShadow: '0 2px 4px -1px rgb(0 0 0 / 0.03), 0 4px 8px -2px rgb(0 0 0 / 0.04)',
             }}
           >
-            {/* Two-column layout on larger screens */}
-            <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
-              {/* Left Column - Main Info */}
-              <div className="flex-1 text-center lg:text-left">
-                {/* Icon - smaller and tighter */}
-                <div className="relative inline-flex mb-4">
-                  <div 
-                    className="absolute inset-0 rounded-xl"
-                    style={{ 
-                      background: 'rgb(var(--color-accent-500) / 0.15)',
-                      filter: 'blur(10px)',
-                    }}
-                  />
-                  <div 
-                    className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center"
-                    style={{ 
-                      background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
-                      boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.25)',
-                    }}
-                  >
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                </div>
-                
-                {/* Title - smaller */}
-                <h3 
-                  className="text-xl sm:text-2xl font-bold mb-2.5"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {displayTitle}
-                </h3>
-                
-                {/* Description - tighter */}
-                <p 
-                  className="text-sm sm:text-base leading-relaxed mb-5 max-w-lg"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {displayDesc}
-                </p>
-                
-                {/* Feature highlights - more compact */}
-                <div className="flex flex-wrap justify-center lg:justify-start gap-1.5 mb-6">
-                  {highlights.map((highlight, idx) => (
-                    <span 
-                      key={idx}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium"
-                      style={{ 
-                        backgroundColor: 'rgb(var(--color-accent-500) / 0.08)',
-                        color: 'rgb(var(--color-accent-700))',
-                        border: '1px solid rgb(var(--color-accent-500) / 0.15)',
-                      }}
-                    >
-                      <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-accent-600))' }} />
-                      {highlight}
-                    </span>
-                  ))}
-                </div>
-                
-                {/* CTA Buttons - more compact */}
-                {showEmailForm && showEmailFormState ? (
-                  <div className="w-full text-left">
-                    <UpgradeRequestForm
-                      feature={feature}
-                      compact={false}
-                      showCalendlyOption={true}
-                      onSubmitted={handleEmailFormSubmitted}
-                      title={displayTitle}
-                      description={displayDesc}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row gap-2.5 justify-center lg:justify-start">
-                    <button
-                      onClick={handleUpgradeClick}
-                      className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                      style={{ 
-                        background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                        boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.1)',
-                      }}
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>{isEn ? 'Schedule Call' : 'Planifier un appel'}</span>
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </button>
-                    {showEmailForm && (
-                      <button
-                        onClick={() => setShowEmailFormState(true)}
-                        className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                        style={{ 
-                          background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-                          boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.1)',
-                        }}
-                      >
-                        <Mail className="w-4 h-4" />
-                        <span>{isEn ? 'Request Info' : 'Demander info'}</span>
-                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              {/* Right Column - Plan info card - more compact */}
+            {/* Icon + Badge row */}
+            <div className="flex items-center justify-center gap-2 mb-4">
               <div 
-                className="lg:w-56 flex-shrink-0 rounded-lg p-4 mt-2 lg:mt-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted) / 0.4)',
-                  border: '1px solid rgb(var(--color-border) / 0.4)',
+                  backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                 }}
               >
-                {/* Plan badge - smaller */}
-                <div 
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide mb-4"
+                <Icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
+              </div>
+              <span 
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                  color: 'rgb(var(--color-primary-600))',
+                }}
+              >
+                <Crown className="w-2.5 h-2.5" />
+                {requiredPlan}
+              </span>
+            </div>
+            
+            {/* Title */}
+            <h3 
+              className="text-lg sm:text-xl font-bold mb-2"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {displayTitle}
+            </h3>
+            
+            {/* Description */}
+            <p 
+              className="text-sm leading-relaxed mb-5 max-w-lg mx-auto"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {displayDesc}
+            </p>
+            
+            {/* Feature highlights - theme colored */}
+            <div className="flex flex-wrap justify-center gap-2 mb-5">
+              {highlights.map((highlight, idx) => (
+                <span 
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 text-sm"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  {highlight}
+                </span>
+              ))}
+            </div>
+            
+            {/* CTA Buttons */}
+            {showEmailForm && showEmailFormState ? (
+              <div className="w-full max-w-sm mx-auto text-left">
+                <UpgradeRequestForm
+                  feature={feature}
+                  compact={false}
+                  showCalendlyOption={true}
+                  onSubmitted={handleEmailFormSubmitted}
+                  title={displayTitle}
+                  description={displayDesc}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row justify-center gap-2">
+                <button
+                  onClick={handleUpgradeClick}
+                  className="group inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md font-medium text-white text-sm transition-all hover:opacity-90 active:scale-[0.98]"
                   style={{ 
-                    background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
-                    color: 'white',
-                    boxShadow: '0 1px 4px rgb(var(--color-accent-500) / 0.25)',
+                    backgroundColor: 'rgb(var(--color-primary-500))',
                   }}
                 >
-                  <Crown className="w-2.5 h-2.5" />
-                  {requiredPlan.toUpperCase()}
-                </div>
-                
-                {/* Upgrade benefits */}
-                <p className="text-[10px] font-semibold uppercase tracking-wide mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? 'Included in plan' : 'INCLUS DANS LE PLAN'}
-                </p>
-                <ul className="space-y-2">
-                  {[
-                    { icon: Sparkles, textEn: 'Unlimited AI queries', textFr: 'Requêtes IA illimitées' },
-                    { icon: BarChart3, textEn: 'Advanced analytics', textFr: 'Analytique avancée' },
-                    { icon: Zap, textEn: 'Priority support', textFr: 'Support prioritaire' },
-                  ].map((item, idx) => (
-                    <li 
-                      key={idx}
-                      className="flex items-center gap-2 text-xs"
-                      style={{ color: 'rgb(var(--color-text-secondary))' }}
-                    >
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
-                      <span>{isEn ? item.textEn : item.textFr}</span>
-                    </li>
-                  ))}
-                </ul>
-                
-                {/* Current plan */}
-                <div 
-                  className="mt-4 pt-3"
-                  style={{ borderTop: '1px solid rgb(var(--color-border) / 0.4)' }}
-                >
-                  <p className="text-[10px] mb-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Your current plan:' : 'Votre plan actuel:'}
-                  </p>
-                  <p className="text-xs font-semibold capitalize" style={{ color: 'rgb(var(--color-text))' }}>
-                    {currentPlan}
-                  </p>
-                </div>
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{isEn ? 'Schedule Call' : 'Planifier un appel'}</span>
+                  <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                </button>
+                {showEmailForm && (
+                  <button
+                    onClick={() => setShowEmailFormState(true)}
+                    className="group inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md font-medium text-sm transition-all hover:opacity-90 active:scale-[0.98] border"
+                    style={{ 
+                      borderColor: 'rgb(var(--color-primary-500))',
+                      color: 'rgb(var(--color-primary-600))',
+                    }}
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>{isEn ? 'Request Info' : 'Demander info'}</span>
+                    <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                )}
               </div>
-            </div>
+            )}
+            
+            {/* Current plan note */}
+            <p className="mt-5 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Your current plan:' : 'Votre plan actuel:'}{' '}
+              <span className="font-medium capitalize" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                {currentPlan}
+              </span>
+            </p>
           </div>
         </div>
       </div>
@@ -536,7 +470,7 @@ export function PremiumLock({ feature }: { feature: PremiumFeature }) {
 }
 
 /**
- * Premium upgrade banner for pages - Redesigned with better visual hierarchy
+ * Premium upgrade banner for pages - Theme colored design
  */
 export function PremiumUpgradeBanner({ 
   feature, 
@@ -560,89 +494,59 @@ export function PremiumUpgradeBanner({
   
   return (
     <div 
-      className="relative rounded-2xl p-4 sm:p-5 mb-6 overflow-hidden"
+      className="relative rounded-lg p-3"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))',
       }}
     >
-      {/* Subtle gold gradient accent on top */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-1"
-        style={{ 
-          background: 'linear-gradient(90deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-400)) 50%, rgb(var(--color-accent-500)) 100%)',
-        }}
-      />
-      
-      {/* Background decorative circle */}
-      <div 
-        className="absolute -right-12 -top-12 w-40 h-40 opacity-[0.03] pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgb(var(--color-accent-500)) 0%, transparent 70%)',
-        }}
-      />
-      
-      <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        {/* Icon with subtle glow */}
-        <div className="relative">
-          <div 
-            className="absolute inset-0 rounded-xl"
-            style={{ 
-              background: 'rgb(var(--color-accent-500) / 0.2)',
-              filter: 'blur(8px)',
-            }}
-          />
-          <div 
-            className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ 
-              background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
-              boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.3)',
-            }}
-          >
-            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </div>
+      <div className="flex items-center gap-3">
+        {/* Icon - using primary theme color */}
+        <div 
+          className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+        >
+          <Icon className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h4 className="font-semibold text-sm sm:text-base" style={{ color: 'rgb(var(--color-text))' }}>
+          <div className="flex items-center gap-1.5">
+            <h4 className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Unlock Premium Features' : 'Débloquez les fonctionnalités Premium'}
             </h4>
             <span 
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
               style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
-                color: 'white',
-                boxShadow: '0 1px 3px rgb(var(--color-accent-500) / 0.3)',
+                backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                color: 'rgb(var(--color-primary-600))',
               }}
             >
-              <Crown className="w-2.5 h-2.5" />
+              <Crown className="w-2 h-2" />
               {requiredPlan.toUpperCase()}
             </span>
           </div>
-          <p className="text-xs sm:text-sm line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <p className="text-xs line-clamp-1 hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn ? featureInfo.descEn : featureInfo.descFr}
           </p>
         </div>
         
         <button
           onClick={handleUpgradeClick}
-          className="group flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex-shrink-0 text-sm"
+          className="group flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium text-sm transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0"
           style={{ 
-            background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
-            boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.1)',
-            minWidth: '160px',
+            backgroundColor: 'rgb(var(--color-primary-500))',
+            color: 'white',
           }}
         >
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-3 h-3" />
           <span>{isEn ? 'Talk to Sales' : 'Parler aux ventes'}</span>
-          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="w-2.5 h-2.5 transition-transform group-hover:translate-x-0.5" />
         </button>
         
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="absolute top-3 right-3 p-1.5 rounded-lg opacity-50 hover:opacity-100 hover:bg-black/5 transition-all"
+            className="absolute top-2 right-2 p-1 rounded opacity-50 hover:opacity-100 transition-all"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
             <span className="sr-only">Dismiss</span>

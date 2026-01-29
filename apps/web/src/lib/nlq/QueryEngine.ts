@@ -1,9 +1,11 @@
 /**
  * Natural Language Query Engine
  * Allows accountants to ask questions in plain language and get dynamic insights
+ * Enhanced with Decision Context for learning from past decisions
  */
 
 import type { FinancialDataResponse, AccountBalanceExtended } from '../financialData';
+import type { DecisionEvent } from '../decisionContext';
 
 // =====================================================
 // TYPES
@@ -21,7 +23,9 @@ export type QueryIntent =
   | 'rank'
   | 'filter'
   | 'hiring_analysis'
-  | 'runway_analysis';
+  | 'runway_analysis'
+  | 'decision_history'
+  | 'decision_impact';
 
 export type VisualizationType = 
   | 'bar_chart'
@@ -182,6 +186,26 @@ const QUERY_PATTERNS: Array<{
     intent: 'runway_analysis',
     visualization: 'gauge',
   },
+  {
+    patterns: [
+      /decisions?|décisions?|what decisions|quelles décisions/i,
+      /past decisions|recent decisions|décisions récentes/i,
+      /show.*decisions|afficher.*décisions/i,
+      /what.*decided|qu'avons-nous.*décidé/i,
+    ],
+    intent: 'decision_history',
+    visualization: 'table',
+  },
+  {
+    patterns: [
+      /decision.*impact|impact.*décision/i,
+      /did.*decision work|la décision.*fonctionné/i,
+      /outcome.*decision|résultat.*décision/i,
+      /how.*decisions.*performed|comment.*décisions.*performé/i,
+    ],
+    intent: 'decision_impact',
+    visualization: 'bar_chart',
+  },
 ];
 
 const METRIC_KEYWORDS: Record<string, string[]> = {
@@ -215,9 +239,63 @@ const TIME_KEYWORDS: Record<TimeFrame, string[]> = {
 
 export class QueryEngine {
   private financialData: FinancialDataResponse | null = null;
+  private decisionHistory: DecisionEvent[] = [];
+  private industry: string = 'general';
 
   setData(data: FinancialDataResponse): void {
     this.financialData = data;
+  }
+
+  setDecisionHistory(decisions: DecisionEvent[]): void {
+    this.decisionHistory = decisions;
+  }
+
+  setIndustry(industry: string): void {
+    this.industry = industry;
+  }
+
+  addDecision(decision: DecisionEvent): void {
+    this.decisionHistory = [decision, ...this.decisionHistory].slice(0, 100);
+  }
+
+  getDecisionHistory(): DecisionEvent[] {
+    return this.decisionHistory;
+  }
+
+  getDecisionSuggestions(): string[] {
+    // Generate decision-aware suggestions based on history
+    const suggestions: string[] = [];
+    
+    if (this.decisionHistory.length > 0) {
+      suggestions.push('Show my recent decisions');
+      suggestions.push('How did my decisions perform?');
+    }
+    
+    // Industry-specific decision suggestions
+    const industrySuggestions: Record<string, string[]> = {
+      real_estate: [
+        'What rent adjustments did I make?',
+        'Show property investment decisions',
+      ],
+      restaurant: [
+        'What menu pricing decisions worked?',
+        'Show staffing decisions impact',
+      ],
+      retail: [
+        'What inventory decisions were made?',
+        'Show pricing strategy outcomes',
+      ],
+      construction: [
+        'What project bid decisions were made?',
+        'Show equipment purchase outcomes',
+      ],
+    };
+    
+    if (industrySuggestions[this.industry]) {
+      suggestions.push(...industrySuggestions[this.industry]);
+    }
+    
+    return suggestions;
   }
 
   parseQuery(query: string): ParsedQuery {
@@ -318,6 +396,10 @@ export class QueryEngine {
         return this.executeHiringAnalysisQuery(parsedQuery);
       case 'runway_analysis':
         return this.executeRunwayAnalysisQuery(parsedQuery);
+      case 'decision_history':
+        return this.executeDecisionHistoryQuery(parsedQuery);
+      case 'decision_impact':
+        return this.executeDecisionImpactQuery(parsedQuery);
       default:
         return this.executeTotalQuery(parsedQuery);
     }
@@ -876,6 +958,139 @@ export class QueryEngine {
         'What actions extend runway the most?',
         'Show runway with hiring scenarios',
         'Compare runway to industry benchmarks',
+      ],
+    };
+  }
+
+  private executeDecisionHistoryQuery(query: ParsedQuery): QueryResult {
+    if (this.decisionHistory.length === 0) {
+      return {
+        success: true,
+        data: [],
+        visualization: {
+          type: 'table',
+          title: 'Historique des décisions',
+          titleEn: 'Decision History',
+          config: { data: [] },
+        },
+        summary: {
+          text: 'Aucune décision enregistrée pour le moment. Utilisez le bouton "Décider" sur les graphiques pour capturer vos décisions.',
+          textEn: 'No decisions recorded yet. Use the "Decide" button on charts to capture your decisions.',
+          highlights: [],
+        },
+        suggestedFollowUps: [
+          'Show revenue trend',
+          'What anomalies were detected?',
+          'Show cash flow breakdown',
+        ],
+      };
+    }
+
+    // Format decisions for display
+    const decisionData = this.decisionHistory.slice(0, 10).map(d => ({
+      date: new Date(d.timestamp).toLocaleDateString(),
+      description: d.decision.description.slice(0, 50) + (d.decision.description.length > 50 ? '...' : ''),
+      type: d.decision.actionType,
+      expectedImpact: this.formatCurrency(d.decision.expectedImpact),
+      status: d.outcome ? (d.outcome.success ? 'Success' : 'Needs Review') : 'Pending',
+      metric: d.context.metricType,
+    }));
+
+    // Calculate summary stats
+    const totalDecisions = this.decisionHistory.length;
+    const successfulDecisions = this.decisionHistory.filter(d => d.outcome?.success).length;
+    const pendingDecisions = this.decisionHistory.filter(d => !d.outcome).length;
+    const totalExpectedImpact = this.decisionHistory.reduce((sum, d) => sum + d.decision.expectedImpact, 0);
+
+    return {
+      success: true,
+      data: decisionData,
+      visualization: {
+        type: 'table',
+        title: 'Historique des décisions',
+        titleEn: 'Decision History',
+        config: { 
+          data: decisionData,
+          columns: ['date', 'description', 'type', 'expectedImpact', 'status'],
+        },
+      },
+      summary: {
+        text: `${totalDecisions} décisions enregistrées. ${successfulDecisions} réussies, ${pendingDecisions} en attente d'évaluation.`,
+        textEn: `${totalDecisions} decisions recorded. ${successfulDecisions} successful, ${pendingDecisions} pending evaluation.`,
+        highlights: [
+          { label: 'Total Decisions', value: totalDecisions.toString() },
+          { label: 'Success Rate', value: totalDecisions > 0 ? `${((successfulDecisions / (totalDecisions - pendingDecisions)) * 100 || 0).toFixed(0)}%` : 'N/A', trend: 'up' },
+          { label: 'Expected Impact', value: this.formatCurrency(totalExpectedImpact), trend: 'up' },
+        ],
+      },
+      suggestedFollowUps: [
+        'How did my decisions perform?',
+        'Show revenue trend',
+        'What anomalies were detected?',
+      ],
+    };
+  }
+
+  private executeDecisionImpactQuery(query: ParsedQuery): QueryResult {
+    if (this.decisionHistory.length === 0) {
+      return this.executeDecisionHistoryQuery(query);
+    }
+
+    // Analyze decisions with outcomes
+    const completedDecisions = this.decisionHistory.filter(d => d.outcome);
+    const successfulDecisions = completedDecisions.filter(d => d.outcome!.success);
+    const failedDecisions = completedDecisions.filter(d => !d.outcome!.success);
+
+    // Calculate actual vs expected impact
+    const totalExpected = completedDecisions.reduce((sum, d) => sum + d.decision.expectedImpact, 0);
+    const totalActual = completedDecisions.reduce((sum, d) => sum + (d.outcome!.actualImpact || 0), 0);
+    const accuracyRate = totalExpected > 0 ? (totalActual / totalExpected) * 100 : 0;
+
+    // Group by action type
+    const byActionType = this.decisionHistory.reduce((acc, d) => {
+      const type = d.decision.actionType;
+      if (!acc[type]) acc[type] = { count: 0, expected: 0, actual: 0, successful: 0 };
+      acc[type].count++;
+      acc[type].expected += d.decision.expectedImpact;
+      if (d.outcome) {
+        acc[type].actual += d.outcome.actualImpact || 0;
+        if (d.outcome.success) acc[type].successful++;
+      }
+      return acc;
+    }, {} as Record<string, { count: number; expected: number; actual: number; successful: number }>);
+
+    const actionTypeData = Object.entries(byActionType).map(([type, data]) => ({
+      name: type.replace(/_/g, ' '),
+      value: data.actual,
+      expected: data.expected,
+      count: data.count,
+      successRate: data.count > 0 ? (data.successful / data.count) * 100 : 0,
+    })).sort((a, b) => b.value - a.value);
+
+    return {
+      success: true,
+      data: actionTypeData,
+      visualization: {
+        type: 'bar_chart',
+        title: 'Impact des décisions',
+        titleEn: 'Decision Impact',
+        config: { 
+          data: actionTypeData.slice(0, 5),
+        },
+      },
+      summary: {
+        text: `${successfulDecisions.length}/${completedDecisions.length} décisions réussies. Précision des prévisions: ${accuracyRate.toFixed(0)}%.`,
+        textEn: `${successfulDecisions.length}/${completedDecisions.length} decisions successful. Forecast accuracy: ${accuracyRate.toFixed(0)}%.`,
+        highlights: [
+          { label: 'Success Rate', value: `${completedDecisions.length > 0 ? ((successfulDecisions.length / completedDecisions.length) * 100).toFixed(0) : 0}%`, trend: 'up' },
+          { label: 'Total Impact', value: this.formatCurrency(totalActual), trend: totalActual >= totalExpected ? 'up' : 'down' },
+          { label: 'Forecast Accuracy', value: `${accuracyRate.toFixed(0)}%`, trend: accuracyRate >= 80 ? 'up' : 'neutral' },
+        ],
+      },
+      suggestedFollowUps: [
+        'Show recent decisions',
+        'What decisions worked best?',
+        'Compare to industry benchmarks',
       ],
     };
   }

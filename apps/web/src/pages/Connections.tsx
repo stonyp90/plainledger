@@ -34,6 +34,7 @@ import { InfoBanner } from '../components/HelpTooltip';
 import { useTenant, useCanPerform } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import UpgradeRequestForm from '../components/UpgradeRequestForm';
+import { PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -87,22 +88,22 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
   const currentStep = steps[activeStep];
 
   return (
-    <div className="mb-10">
+    <div className="mb-6">
 
       {/* Progress Timeline */}
-      <div className="mb-8 max-w-4xl mx-auto w-full">
+      <div className="mb-4 max-w-2xl mx-auto w-full">
         <div className="flex items-center justify-between relative">
           {/* Progress Line Background */}
           <div 
-            className="absolute top-5 left-0 right-0 h-1 rounded-full z-0"
+            className="absolute top-4 left-0 right-0 h-0.5 rounded-full z-0"
             style={{ backgroundColor: 'rgb(var(--color-border))' }}
           />
           
           {/* Progress Line Fill */}
           <div 
-            className="absolute top-5 left-0 h-1 rounded-full z-10 transition-all duration-500 ease-out"
+            className="absolute top-4 left-0 h-0.5 rounded-full z-10 transition-all duration-500 ease-out"
             style={{ 
-              backgroundColor: 'rgb(var(--color-primary-600))',
+              backgroundColor: 'rgb(var(--color-primary-500))',
               width: `${((activeStep + 1) / steps.length) * 100}%`,
             }}
           />
@@ -120,32 +121,32 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
                 aria-label={isEn ? `Go to step ${step.number}: ${step.titleEn}` : `Aller à l'étape ${step.number}: ${step.titleFr}`}
               >
                 <div 
-                  className={`w-14 h-14 rounded-full flex items-center justify-center text-base font-bold transition-all duration-300 shadow-lg group-hover:scale-110 ${
-                    isActive ? 'scale-125 ring-4' : 'scale-100'
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300 shadow-sm group-hover:scale-105 ${
+                    isActive ? 'scale-105 ring-2' : 'scale-100'
                   }`}
                   style={{ 
                     backgroundColor: isActive || isCompleted
-                      ? 'rgb(var(--color-primary-600))'
+                      ? 'rgb(var(--color-primary-500))'
                       : 'rgb(var(--color-bg-muted))',
                     color: isActive || isCompleted ? 'white' : 'rgb(var(--color-text-muted))',
-                    border: isActive ? '3px solid rgb(var(--color-primary-400))' : '2px solid transparent',
+                    border: isActive ? '2px solid rgb(var(--color-primary-300))' : '1px solid transparent',
                     ringColor: isActive ? 'rgb(var(--color-primary-200))' : 'transparent',
                   }}
                 >
                   {isCompleted ? (
-                    <Check className="w-7 h-7" />
+                    <Check className="w-3 h-3" />
                   ) : (
                     step.number
                   )}
                 </div>
                 <span 
-                  className={`mt-2 text-xs font-medium text-center max-w-[120px] hidden sm:block transition-all ${
-                    isActive ? 'font-bold scale-105' : 'group-hover:font-semibold'
+                  className={`mt-1.5 text-[10px] font-medium text-center max-w-[100px] hidden sm:block transition-all ${
+                    isActive ? 'font-semibold' : ''
                   }`}
                   style={{ 
                     color: isActive 
                       ? 'rgb(var(--color-primary-600))' 
-                      : 'rgb(var(--color-text-secondary))' 
+                      : 'rgb(var(--color-text-muted))' 
                   }}
                 >
                   {isEn ? step.titleEn : step.titleFr}
@@ -157,14 +158,14 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
       </div>
 
       {/* Active Step Display with Zoom Effect */}
-      <div id="timeline-content" className="max-w-4xl mx-auto">
+      <div id="timeline-content" className="max-w-3xl mx-auto">
         <div
-          className={`rounded-2xl p-8 relative overflow-hidden transition-all duration-500 shadow-2xl ${
+          className={`rounded-xl p-5 sm:p-6 relative overflow-hidden transition-all duration-500 shadow-lg ${
             isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
-            border: '3px solid rgb(var(--color-primary-600))',
+            border: '2px solid rgb(var(--color-primary-500))',
           }}
         >
           {/* Background gradient */}
@@ -177,49 +178,49 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
 
           <div className="relative">
             {/* Navigation Arrows - Top Right */}
-            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <div className="absolute top-0 right-0 flex items-center gap-1 z-10">
               <button
                 onClick={handlePrevious}
-                className="p-2 rounded-lg transition-all hover:scale-110 hover:shadow-md"
+                className="p-1.5 rounded-md transition-all hover:scale-105"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-bg-muted))',
                   color: 'rgb(var(--color-text))',
                 }}
                 aria-label={isEn ? 'Previous step' : 'Étape précédente'}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleNext}
-                className="p-2 rounded-lg transition-all hover:scale-110 hover:shadow-md"
+                className="p-1.5 rounded-md transition-all hover:scale-105"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-bg-muted))',
                   color: 'rgb(var(--color-text))',
                 }}
                 aria-label={isEn ? 'Next step' : 'Étape suivante'}
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {/* Step Header */}
-            <div className="flex items-start gap-6 mb-6">
+            <div className="flex items-start gap-3 mb-3">
               {/* Icon - Clickable */}
               <button
                 onClick={() => handleStepClick((activeStep + 1) % steps.length)}
-                className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transition-all hover:scale-110 hover:rotate-3 cursor-pointer"
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm transition-all hover:scale-105 cursor-pointer"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-primary-600))',
                 }}
                 aria-label={isEn ? 'Go to next step' : 'Aller à l\'étape suivante'}
               >
-                <currentStep.icon className="w-10 h-10 text-white" />
+                <currentStep.icon className="w-4 h-4 text-white" />
               </button>
 
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-2 mb-0.5">
                   <span 
-                    className="px-3 py-1 rounded-full text-xs font-bold"
+                    className="px-1.5 py-0.5 rounded text-[10px] font-semibold"
                     style={{ 
                       backgroundColor: 'rgb(var(--color-primary-100))',
                       color: 'rgb(var(--color-primary-700))',
@@ -228,14 +229,14 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
                     {isEn ? `Step ${currentStep.number}` : `Étape ${currentStep.number}`}
                   </span>
                   <span 
-                    className="text-sm font-medium"
+                    className="text-[10px] font-medium"
                     style={{ color: 'rgb(var(--color-text-muted))' }}
                   >
                     {activeStep + 1} / {steps.length}
                   </span>
                 </div>
                 <h3 
-                  className="text-2xl sm:text-3xl font-bold mb-3"
+                  className="text-base sm:text-lg font-semibold mb-1"
                   style={{ color: 'rgb(var(--color-text))' }}
                 >
                   {isEn ? currentStep.titleEn : currentStep.titleFr}
@@ -245,25 +246,21 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
 
             {/* Description */}
             <p 
-              className="text-base sm:text-lg mb-6 leading-relaxed"
+              className="text-xs sm:text-sm mb-3"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn ? currentStep.descEn : currentStep.descFr}
             </p>
 
-            {/* Benefits */}
-            <div className="flex flex-wrap gap-3">
+            {/* Benefits - Compact theme colored */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
               {(isEn ? currentStep.benefitsEn : currentStep.benefitsFr).map((benefit, idx) => (
                 <span 
                   key={idx}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-success) / 0.1)',
-                    color: 'rgb(var(--color-success))',
-                    border: '1px solid rgb(var(--color-success) / 0.2)',
-                  }}
+                  className="inline-flex items-center gap-1 text-xs"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
                   {benefit}
                 </span>
               ))}
@@ -271,17 +268,17 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
 
             {/* CTA for last step */}
             {activeStep === steps.length - 1 && (
-              <div className="mt-8 pt-6 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
                 <button
                   onClick={onSelectProvider}
-                  className="group flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-lg mx-auto"
+                  className="group flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-90 mx-auto"
                   style={{ 
                     backgroundColor: 'rgb(var(--color-primary-600))',
                     color: 'white',
                   }}
                 >
                   {isEn ? 'Get Started' : 'Commencer'}
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                 </button>
               </div>
             )}
@@ -345,44 +342,19 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
 
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col">
-      {/* Enhanced Header with Actionable Banner */}
-      <div className="text-center mb-8">
-        {/* Actionable Subscription Banner */}
-        <div 
-          className="inline-flex flex-col sm:flex-row items-center justify-center gap-3 px-5 py-3 rounded-xl mb-6 max-w-2xl mx-auto transition-all hover:shadow-md"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
-            border: '2px solid rgb(var(--color-warning) / 0.3)',
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5" style={{ color: 'rgb(var(--color-warning))' }} />
-            <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-warning))' }}>
-              {isEn ? 'Subscription Required' : 'Abonnement requis'}
-            </span>
-          </div>
-          <div className="hidden sm:block w-px h-6" style={{ backgroundColor: 'rgb(var(--color-warning) / 0.3)' }} />
-          <button
-            onClick={() => setShowEmailForm(true)}
-            className="group flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-warning))',
-              color: 'white',
-            }}
-          >
-            {isEn ? 'Upgrade Now' : 'Mettre à niveau'}
-            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-          </button>
-        </div>
-        
+      {/* Premium Upgrade Banner - Consistent with other pages */}
+      <PremiumUpgradeBanner feature="customReports" />
+      
+      {/* Header */}
+      <div className="text-center mb-5 mt-3">
         <h1 
-          className="text-3xl sm:text-4xl font-bold mb-4"
+          className="text-xl sm:text-2xl font-semibold mb-2"
           style={{ color: 'rgb(var(--color-text))' }}
         >
           {isEn ? 'Connect Your Accounting Software' : 'Connectez votre logiciel comptable'}
         </h1>
         <p 
-          className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed"
+          className="text-xs sm:text-sm max-w-xl mx-auto"
           style={{ color: 'rgb(var(--color-text-muted))' }}
         >
           {isEn 
@@ -400,46 +372,33 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
 
       {/* Enhanced Upgrade CTA Section - No Green Background */}
       <div 
-        className="rounded-2xl p-8 sm:p-10 text-center relative overflow-hidden shadow-lg"
+        className="rounded-xl p-5 sm:p-6 text-center relative overflow-hidden"
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
           border: '1px solid rgb(var(--color-border))',
         }}
       >
-        {/* Animated background decoration */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `radial-gradient(circle at 30% 20%, white 2px, transparent 2px), radial-gradient(circle at 70% 80%, white 1px, transparent 1px)`,
-            backgroundSize: '60px 60px, 40px 40px',
-          }}
-        />
-        
-        {/* Sparkle accents - Subtle */}
-        <Sparkles className="absolute top-6 left-6 w-6 h-6 animate-pulse" style={{ color: 'rgb(var(--color-primary-300) / 0.3)' }} />
-        <Sparkles className="absolute bottom-6 right-6 w-5 h-5 animate-pulse" style={{ color: 'rgb(var(--color-primary-300) / 0.3)', animationDelay: '1s' }} />
-
         <div className="relative">
-          {/* Enhanced Crown icon with animation */}
+          {/* Crown icon - smaller */}
           <div 
-            className="w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
-            style={{ backgroundColor: 'rgb(var(--color-primary-100))' }}
+            className="w-8 h-8 mx-auto mb-2 rounded-lg flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
             onClick={() => setShowEmailForm(true)}
           >
-            <Crown className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-600))' }} />
+            <Crown className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-600))' }} />
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+          <h2 className="text-sm sm:text-base font-semibold mb-1" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Ready to unlock the full power of PlainLedger?' : 'Prêt à débloquer toute la puissance de PlainLedger?'}
           </h2>
-          <p className="mb-8 max-w-xl mx-auto text-base leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+          <p className="mb-3 max-w-md mx-auto text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn 
               ? 'Subscribe now and connect your accounting software in minutes. Our team is here to help you every step of the way.'
               : 'Abonnez-vous maintenant et connectez votre logiciel comptable en quelques minutes. Notre équipe est là pour vous aider à chaque étape.'}
           </p>
 
-          {/* What's included */}
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
+          {/* What's included - compact */}
+          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mb-3">
             {[
               isEn ? 'Unlimited connections' : 'Connexions illimitées',
               isEn ? 'Daily auto-sync' : 'Sync auto quotidien',
@@ -448,27 +407,27 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
             ].map((item, idx) => (
               <span 
                 key={idx}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-100))',
-                  color: 'rgb(var(--color-primary-700))',
-                }}
+                className="inline-flex items-center gap-1 text-xs"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
-                <Check className="w-4 h-4" />
+                <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
                 {item}
               </span>
             ))}
           </div>
 
-          {/* Enhanced CTA Buttons */}
+          {/* CTA Buttons - Compact */}
           {showEmailForm ? (
             <div 
-              className="max-w-md mx-auto rounded-xl p-6 text-left shadow-xl"
-              style={{ backgroundColor: 'white' }}
+              className="max-w-xs mx-auto rounded-lg p-3 text-left"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
             >
               <UpgradeRequestForm
                 feature="customReports"
-                compact={false}
+                compact={true}
                 showCalendlyOption={true}
                 onSubmitted={() => setShowEmailForm(false)}
                 title={isEn ? 'Connect Accounting Software' : 'Connecter un logiciel comptable'}
@@ -476,60 +435,53 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
               />
               <button
                 onClick={() => setShowEmailForm(false)}
-                className="mt-4 text-sm underline opacity-70 hover:opacity-100 transition-opacity"
+                className="mt-2 text-[10px] underline opacity-70 hover:opacity-100 transition-opacity"
                 style={{ color: 'rgb(var(--color-text-muted))' }}
               >
-                {isEn ? '← Back to options' : '← Retour aux options'}
+                {isEn ? '← Back' : '← Retour'}
               </button>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <button
-                onClick={() => setShowEmailForm(true)}
-                className="group flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-lg border-2"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-100))',
-                  color: 'rgb(var(--color-primary-700))',
-                  borderColor: 'rgb(var(--color-primary-300))',
-                }}
-              >
-                <Mail className="w-5 h-5" />
-                {isEn ? 'Request Information' : 'Demander des infos'}
-              </button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
               <button
                 onClick={handleUpgradeClick}
-                className="group flex items-center gap-2 px-10 py-3.5 rounded-xl font-semibold transition-all hover:scale-105 hover:shadow-2xl shadow-lg"
+                className="group flex items-center gap-1 px-3 py-1.5 rounded-md font-medium text-xs transition-all hover:opacity-90 active:scale-[0.98]"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-600))',
+                  backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
                 }}
               >
-                <Calendar className="w-5 h-5" />
+                <Calendar className="w-3 h-3" />
                 {isEn ? 'Schedule a Call' : 'Planifier un appel'}
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="w-2.5 h-2.5 transition-transform group-hover:translate-x-0.5" />
+              </button>
+              <button
+                onClick={() => setShowEmailForm(true)}
+                className="group flex items-center gap-1 px-3 py-1.5 rounded-md font-medium text-xs transition-all hover:opacity-90 active:scale-[0.98] border"
+                style={{ 
+                  borderColor: 'rgb(var(--color-primary-500))',
+                  color: 'rgb(var(--color-primary-600))',
+                }}
+              >
+                <Mail className="w-3 h-3" />
+                {isEn ? 'Request Info' : 'Demander info'}
+                <ArrowRight className="w-2.5 h-2.5 transition-transform group-hover:translate-x-0.5" />
               </button>
             </div>
           )}
-          
-          {/* Quick action hint */}
-          {!showEmailForm && (
-            <p className="text-sm mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? '✨ Start your journey in under 5 minutes' : '✨ Commencez votre parcours en moins de 5 minutes'}
-            </p>
-          )}
 
           {/* Trust badges */}
-          <div className="mt-8 flex flex-wrap justify-center gap-6 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
+          <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <div className="flex items-center gap-1">
+              <Lock className="w-3 h-3" />
               {isEn ? 'AES-256 Encryption' : 'Chiffrement AES-256'}
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4" />
+            <div className="flex items-center gap-1">
+              <Shield className="w-3 h-3" />
               {isEn ? 'Bank-Level Security' : 'Sécurité bancaire'}
             </div>
-            <div className="flex items-center gap-2">
-              <Headphones className="w-4 h-4" />
+            <div className="flex items-center gap-1">
+              <Headphones className="w-3 h-3" />
               {isEn ? 'Customer Success Support' : 'Support client dédié'}
             </div>
           </div>

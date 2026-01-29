@@ -244,6 +244,42 @@ resource "aws_glue_trigger" "daily_etl" {
   }
 }
 
+# ------------------------------------------------------------------------------
+# Decision Pattern Aggregation ETL Job
+# ------------------------------------------------------------------------------
+resource "aws_glue_job" "aggregate_decision_patterns" {
+  name     = "${var.project}-${var.environment}-aggregate-patterns"
+  role_arn = aws_iam_role.glue_etl.arn
+
+  command {
+    script_location = "s3://${aws_s3_bucket.etl_scripts.id}/aggregate_decision_patterns.py"
+    python_version  = "3"
+  }
+
+  default_arguments = {
+    "--job-language"                     = "python"
+    "--enable-continuous-cloudwatch-log" = "true"
+    "--enable-metrics"                   = "true"
+    "--TempDir"                          = "s3://${aws_s3_bucket.etl_scripts.id}/temp/"
+    "--S3_GOLD_BUCKET"                   = aws_s3_bucket.gold.id
+  }
+
+  glue_version      = "4.0"
+  worker_type       = "G.1X"
+  number_of_workers = 2
+  timeout           = 30
+
+  execution_property {
+    max_concurrent_runs = 1
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-aggregate-patterns"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
 # Chain the KPI calculator after silver_to_gold completes
 resource "aws_glue_trigger" "kpi_after_gold" {
   name = "${var.project}-${var.environment}-kpi-after-gold"
@@ -266,6 +302,23 @@ resource "aws_glue_trigger" "kpi_after_gold" {
 
   tags = {
     Name        = "${var.project}-${var.environment}-kpi-after-gold"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+# Trigger pattern aggregation daily (runs independently)
+resource "aws_glue_trigger" "daily_pattern_aggregation" {
+  name     = "${var.project}-${var.environment}-daily-patterns"
+  type     = "SCHEDULED"
+  schedule = "cron(0 7 * * ? *)" # Run at 7 AM UTC daily (after main ETL)
+
+  actions {
+    job_name = aws_glue_job.aggregate_decision_patterns.name
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-daily-patterns"
     Project     = var.project
     Environment = var.environment
   }

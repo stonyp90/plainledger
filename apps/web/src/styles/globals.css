@@ -79,9 +79,9 @@
   /* === LIGHT MODE (Default) === */
   /* Backgrounds */
   --color-bg: var(--color-white);
-  --color-bg-subtle: var(--color-gray-50);
-  --color-bg-muted: var(--color-gray-100);
-  --color-bg-emphasis: var(--color-gray-200);
+  --color-bg-subtle: var(--color-white);
+  --color-bg-muted: var(--color-white);
+  --color-bg-emphasis: var(--color-gray-50);
   
   /* Surfaces */
   --color-surface: var(--color-white);
@@ -206,6 +206,17 @@
   --landing-card-bg: rgba(255, 255, 255, 0.9);
   --landing-card-border-green: rgba(16, 185, 129, 0.15);
   --landing-card-border-gold: rgba(212, 175, 55, 0.15);
+  
+  /* Dynamic Typography Scale - Responsive font sizes using clamp() */
+  --text-label: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);  /* 12-14px - Labels, captions */
+  --text-value: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);      /* 18-24px - KPI values, metrics */
+  --text-title: clamp(1rem, 0.9rem + 0.4vw, 1.25rem);       /* 16-20px - Card titles, section headers */
+  --text-subtitle: clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem); /* 12-13px - Subtitles, metadata */
+  
+  /* Compact Typography Scale - For dense data displays (KPI cards, dashboards) */
+  --text-label-compact: clamp(0.625rem, 0.6rem + 0.15vw, 0.6875rem);  /* 10-11px - Compact labels */
+  --text-value-compact: clamp(0.875rem, 0.8rem + 0.3vw, 1.125rem);    /* 14-18px - Compact values */
+  --text-subtitle-compact: clamp(0.5625rem, 0.55rem + 0.1vw, 0.625rem); /* 9-10px - Compact subtitles */
 }
 
 /* === DARK MODE - Corporate Navy === */
@@ -221,11 +232,11 @@
   --color-surface-raised: var(--color-gray-850);
   --color-surface-overlay: var(--color-gray-800);
   
-  /* Text - Crisp on dark */
+  /* Text - Crisp on dark (improved visibility) */
   --color-text: var(--color-gray-50);
-  --color-text-secondary: var(--color-gray-300);
-  --color-text-muted: var(--color-gray-400);
-  --color-text-subtle: var(--color-gray-500);
+  --color-text-secondary: var(--color-gray-200);
+  --color-text-muted: var(--color-gray-300);
+  --color-text-subtle: var(--color-gray-400);
   --color-text-inverted: var(--color-gray-950);
   
   /* Borders - Refined */
@@ -314,7 +325,7 @@
   
   /* Fallback backgrounds to prevent flash during CSS variable resolution */
   html {
-    background: #f8fafc; /* Light mode fallback (gray-50) */
+    background: #ffffff; /* Light mode fallback (white) */
   }
   
   html.dark {
@@ -1905,4 +1916,40 @@ input[type="range"]:focus::-moz-range-thumb {
 }
 .dark .help-article-link:hover {
   color: rgb(var(--color-primary-400));
+}
+
+/* ============================================================================
+   UTILITIES - Dynamic Responsive Typography
+   ============================================================================ */
+
+@layer utilities {
+  /* Dynamic font sizes that adapt to viewport width */
+  .text-dynamic-label {
+    font-size: var(--text-label);
+  }
+  
+  .text-dynamic-value {
+    font-size: var(--text-value);
+  }
+  
+  .text-dynamic-title {
+    font-size: var(--text-title);
+  }
+  
+  .text-dynamic-subtitle {
+    font-size: var(--text-subtitle);
+  }
+  
+  /* Compact typography for dense data displays */
+  .text-compact-label {
+    font-size: var(--text-label-compact);
+  }
+  
+  .text-compact-value {
+    font-size: var(--text-value-compact);
+  }
+  
+  .text-compact-subtitle {
+    font-size: var(--text-subtitle-compact);
+  }
 }

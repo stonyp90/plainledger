@@ -207,7 +207,8 @@ export function useFinancialData(options: {
         currentTenant.id,
         currentTenant.name,
         currentTenant.currency || 'CAD',
-        new Date().toISOString().split('T')[0]
+        new Date().toISOString().split('T')[0],
+        currentTenant.industry || 'real_estate'
       );
 
       // Transform GraphQL trends to expected format
@@ -356,6 +357,9 @@ export function useFinancialData(options: {
               category: item.category as 'operations' | 'investing' | 'financing' | undefined,
             }))
           : mockData.cashFlowWaterfall,
+        // Include industry-specific demo anomalies from mock data
+        demoAnomalies: mockData.demoAnomalies,
+        industry: currentTenant.industry || 'real_estate',
         lastUpdated: new Date().toISOString(),
         dataSource: 'graphql-gold-layer', // Data comes from S3 Gold layer via GraphQL
       };
@@ -366,7 +370,8 @@ export function useFinancialData(options: {
       currentTenant.id,
       currentTenant.name,
       currentTenant.currency || 'CAD',
-      new Date().toISOString().split('T')[0]
+      new Date().toISOString().split('T')[0],
+      currentTenant.industry || 'real_estate'
     );
   }, [currentTenant, hasGraphQLData, summaryData, trendsData, accountsData, trialBalanceData, waterfallData, arAgingData, apAgingData, taxDeadlinesData, budgetData]);
 

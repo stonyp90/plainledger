@@ -5,9 +5,10 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Target, Calendar, ArrowRight, Crown, Check, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useTenant } from '../contexts/TenantContext';
 import {
   Scenario,
   PlannedExpense,
@@ -27,10 +28,14 @@ import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
 
+// Calendly link for upgrade consultations
+const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
+
 export default function StrategicPlanning() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, isLoading: dataLoading } = useFinancialData();
+  const { currentTenant } = useTenant();
   const { hasAccess } = usePremiumFeature('strategicPlanning');
   
 
@@ -277,43 +282,282 @@ export default function StrategicPlanning() {
     );
   }
 
+  const handleUpgradeClick = () => {
+    window.open(CALENDLY_URL, '_blank');
+  };
+
   // If user doesn't have access, show premium gate with preview
   if (!hasAccess) {
     return (
       <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 
+              className="text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap" 
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              <Target className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-600))' }} />
+              <span className="whitespace-nowrap">
+                {isEn ? 'Strategic Planning' : 'Planification stratégique'}
+              </span>
+              <span 
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full uppercase tracking-wide"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
+                  color: 'white',
+                }}
+              >
+                <Crown className="w-3 h-3" />
+                PRO
+              </span>
+            </h1>
+            <p 
+              className="mt-1 text-sm line-clamp-2 sm:line-clamp-none" 
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn 
+                ? 'Plan your cash runway with confidence. Model expenses, forecast scenarios, and make data-driven decisions for sustainable growth.'
+                : 'Planifiez votre trésorerie en toute confiance. Modélisez vos dépenses, prévoyez des scénarios et prenez des décisions éclairées pour une croissance durable.'}
+            </p>
+          </div>
+        </div>
+
         {/* Premium Upgrade Banner */}
         <PremiumUpgradeBanner feature="strategicPlanning" />
         
-        {/* Grayed out preview with fixed height for better scrolling */}
-        <PremiumFeatureGate 
-          feature="strategicPlanning" 
-          showPreview={false}
-          description={isEn 
-            ? "Plan your cash runway with confidence. Model expenses, forecast scenarios, and visualize how strategic decisions impact your financial future. Make data-driven choices for sustainable growth."
-            : "Planifiez votre trésorerie en toute confiance. Modélisez vos dépenses, prévoyez des scénarios et visualisez l'impact de vos décisions stratégiques sur votre avenir financier."
-          }
+        {/* Value Proposition Card */}
+        <div 
+          className="relative rounded-2xl p-6 sm:p-8 overflow-hidden"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
         >
-          <div className="space-y-6">
-            {/* Quick Metrics - Top bar style */}
-            <QuickMetrics
-              cash={currentCash}
-              burnRate={runwayData.monthlyBurnRate}
-              runwayMonths={runwayData.runwayMonths}
-              zeroDate={runwayData.zeroDate}
-            />
-
-            {/* Live Cash Chart */}
-            <div className="p-4 sm:p-6">
-              <LiveCashChart
-                currentCash={currentCash}
-                currentDate={currentDate}
-                expenses={expenses}
-                baseRevenue={baseRevenue}
-                months={24}
-              />
+          {/* Gold accent stripe at top */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-1"
+            style={{ 
+              background: 'linear-gradient(90deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-400)) 50%, rgb(var(--color-accent-500)) 100%)',
+            }}
+          />
+          
+          {/* Background decoration */}
+          <div 
+            className="absolute -right-12 -top-12 w-64 h-64 opacity-[0.03] pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgb(var(--color-accent-500)) 0%, transparent 70%)',
+            }}
+          />
+          
+          <div className="relative flex flex-col lg:flex-row items-start gap-6">
+            {/* Left: Value Props */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-3">
+                <div 
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ 
+                    background: 'linear-gradient(135deg, rgb(var(--color-accent-500)) 0%, rgb(var(--color-accent-600)) 100%)',
+                    boxShadow: '0 2px 8px rgb(var(--color-accent-500) / 0.25)',
+                  }}
+                >
+                  <Target className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn 
+                      ? 'Unlock Strategic Planning' 
+                      : 'Débloquez la planification stratégique'}
+                  </h2>
+                  <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Model scenarios and forecast your cash runway' : 'Modélisez des scénarios et prévoyez votre trésorerie'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                {[
+                  { en: 'Scenario modeling', fr: 'Modélisation de scénarios' },
+                  { en: 'Cash flow forecasting', fr: 'Prévision trésorerie' },
+                  { en: 'Budget planning', fr: 'Planification budget' },
+                  { en: 'Runway visualization', fr: 'Visualisation de la trésorerie' },
+                ].map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-1.5 text-xs"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    {isEn ? item.en : item.fr}
+                  </div>
+                ))}
+              </div>
+              
+              <button
+                onClick={handleUpgradeClick}
+                className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-medium text-white text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                style={{ 
+                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
+                  boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
+                }}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                {isEn ? 'Schedule Demo' : 'Planifier une démo'}
+                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
+            
+            {/* Right: Runway Chart Preview */}
+            <div 
+              className="lg:w-64 w-full rounded-xl p-4"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-3">
+                <Sparkles className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Cash Runway Preview' : 'Aperçu de la trésorerie'}
+                </span>
+              </div>
+              
+              {/* Blurred Chart Preview */}
+              <div className="relative rounded-lg p-3 overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                <div className="space-y-2">
+                  {/* Chart bars */}
+                  {[0.8, 0.6, 0.4, 0.2, 0.1].map((height, idx) => (
+                    <div key={idx} className="flex items-end gap-1">
+                      <div 
+                        className="flex-1 rounded-t"
+                        style={{ 
+                          height: `${height * 60}px`,
+                          backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Overlay blur effect */}
+                <div 
+                  className="absolute inset-0 backdrop-blur-sm flex items-center justify-center rounded-lg"
+                  style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
+                >
+                  <div className="text-center">
+                    <Target className="w-6 h-6 mx-auto mb-1 opacity-50" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    <span className="text-xs font-medium opacity-50" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? 'Pro Feature' : 'Fonctionnalité Pro'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </PremiumFeatureGate>
+        </div>
+
+        {/* Quick Metrics Preview */}
+        <div 
+          className="rounded-2xl p-4 sm:p-5"
+          style={{
+            backgroundColor: 'rgb(var(--color-bg-muted))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {[
+              { 
+                label: isEn ? 'Cash Balance' : 'Solde de trésorerie', 
+                value: '$850K', 
+                icon: TrendingUp,
+                iconColor: '#10B981',
+                iconBg: 'rgba(16, 185, 129, 0.1)',
+                borderColor: 'rgba(16, 185, 129, 0.15)',
+              },
+              { 
+                label: isEn ? 'Monthly Burn' : 'Brûlage mensuel', 
+                value: '$25K', 
+                suffix: isEn ? '/mo' : '/mois',
+                icon: TrendingDown,
+                iconColor: '#EF4444',
+                iconBg: 'rgba(239, 68, 68, 0.1)',
+                borderColor: 'rgba(239, 68, 68, 0.15)',
+              },
+              { 
+                label: isEn ? 'Runway' : 'Trésorerie', 
+                value: '34', 
+                suffix: isEn ? 'months' : 'mois',
+                icon: Target,
+                iconColor: '#10B981',
+                iconBg: 'rgba(16, 185, 129, 0.1)',
+                borderColor: 'rgba(16, 185, 129, 0.15)',
+                badge: isEn ? 'Healthy' : 'Sain',
+              },
+              { 
+                label: isEn ? 'Zero Date' : 'Date zéro', 
+                value: isEn ? 'Nov 2028' : 'nov. 2028',
+                icon: Calendar,
+                iconColor: '#6B7280',
+                iconBg: 'rgba(107, 114, 128, 0.1)',
+                borderColor: 'rgba(107, 114, 128, 0.15)',
+              },
+            ].map((metric, idx) => (
+              <div 
+                key={idx}
+                className="group relative flex items-center gap-2.5 p-3 rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02]"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: `1px solid ${metric.borderColor}`,
+                  boxShadow: '0 1px 3px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.02)',
+                }}
+              >
+                {/* Subtle gradient glow on hover */}
+                <div 
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{ 
+                    background: `radial-gradient(circle at 30% 30%, ${metric.iconBg}, transparent 70%)`,
+                  }}
+                />
+                
+                {/* Icon container */}
+                <div 
+                  className="relative w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
+                  style={{ 
+                    backgroundColor: metric.iconBg,
+                    border: `1px solid ${metric.iconColor}20`,
+                  }}
+                >
+                  <metric.icon className="w-4 h-4" style={{ color: metric.iconColor }} />
+                </div>
+                
+                {/* Content */}
+                <div className="relative flex-1 min-w-0">
+                  <p 
+                    className="text-[9px] font-medium uppercase tracking-wide mb-0.5"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {metric.label}
+                  </p>
+                  <div className="flex items-baseline gap-0.5">
+                    <span 
+                      className="text-base font-bold tabular-nums tracking-tight"
+                      style={{ color: metric.iconColor }}
+                    >
+                      {metric.value}
+                    </span>
+                    {metric.suffix && (
+                      <span 
+                        className="text-[10px] font-medium"
+                        style={{ color: `${metric.iconColor}99` }}
+                      >
+                        {metric.suffix}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

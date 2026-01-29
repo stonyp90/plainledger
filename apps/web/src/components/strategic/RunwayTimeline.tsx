@@ -7,6 +7,7 @@
 import { useMemo } from 'react';
 import { AlertTriangle, TrendingDown, Calendar, Target, DollarSign, Clock, ArrowRight } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
+import { LabelTooltip } from '../Tooltip';
 import { RunwayAnalysis, Milestone } from '../../lib/strategicPlanning';
 
 interface RunwayTimelineProps {
@@ -297,9 +298,14 @@ export default function RunwayTimeline({
                       }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                        {isEn ? milestone.nameEn : milestone.name}
-                      </p>
+                      <LabelTooltip label={isEn ? milestone.nameEn : milestone.name}>
+                        <p 
+                          className="text-sm font-medium leading-tight line-clamp-2" 
+                          style={{ color: 'rgb(var(--color-text))' }}
+                        >
+                          {isEn ? milestone.nameEn : milestone.name}
+                        </p>
+                      </LabelTooltip>
                     </div>
                     <span className="text-xs flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       {mDate.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short', day: 'numeric' })}

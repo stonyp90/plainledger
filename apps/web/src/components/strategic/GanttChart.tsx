@@ -10,6 +10,7 @@ import {
   GripVertical, Move, ChevronDown, Save
 } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
+import { LabelTooltip } from '../Tooltip';
 import { Initiative, generatePlanningId } from '../../lib/strategicPlanning';
 
 interface GanttChartProps {
@@ -437,9 +438,14 @@ export default function GanttChart({
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: CATEGORY_COLORS[selectedInit.category] }}
                 />
-                <h4 className="font-semibold text-sm truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? selectedInit.nameEn : selectedInit.name}
-                </h4>
+                <LabelTooltip label={isEn ? selectedInit.nameEn : selectedInit.name}>
+                  <h4 
+                    className="font-semibold text-sm leading-tight line-clamp-2" 
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
+                    {isEn ? selectedInit.nameEn : selectedInit.name}
+                  </h4>
+                </LabelTooltip>
               </div>
               <p className="text-xs mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {new Date(selectedInit.startDate).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short', day: 'numeric' })}

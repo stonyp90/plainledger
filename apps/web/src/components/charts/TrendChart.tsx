@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback } from 'react';
-import { AlertTriangle, TrendingUp, TrendingDown, Settings2 } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, Settings2, Target } from 'lucide-react';
 import { 
   DEFAULT_THRESHOLDS, 
   formatCurrency,
@@ -9,6 +9,7 @@ import {
 } from '../../lib/anomalyDetection';
 import { ChartTooltip, DataPointTooltip } from './ChartTooltip';
 import { ChartEmptyState } from '../EmptyDataState';
+import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
 
 interface TrendChartProps {
   data: FinancialDataPoint[];
@@ -28,6 +29,25 @@ interface TrendChartProps {
   isEn?: boolean;
   /** Compact mode for smaller containers */
   compact?: boolean;
+  
+  // Decision capture integration
+  /** Enable decision capture button on chart */
+  enableDecisions?: boolean;
+  /** Callback when user wants to record a decision */
+  onRecordDecision?: (trigger: {
+    metricType: DataMetric;
+    metricLabel: string;
+    chartId: string;
+    currentValue: number;
+    benchmarkValue?: number;
+    period?: string;
+  }) => void;
+  /** Recent decisions for this metric (to show on chart) */
+  recentDecisions?: DecisionEvent[];
+  /** Metric type for decision context */
+  metricType?: DataMetric;
+  /** Benchmark value for decision context */
+  benchmarkValue?: number;
 }
 
 export default function TrendChart({
@@ -46,9 +66,60 @@ export default function TrendChart({
   color = 'rgb(var(--color-text))',
   isEn = false,
   compact = false,
+  enableDecisions = false,
+  onRecordDecision,
+  recentDecisions,
+  metricType = 'revenue',
+  benchmarkValue,
 }: TrendChartProps) {
   // Responsive height: use prop if provided, otherwise responsive defaults
   const height = propHeight ?? (compact ? 160 : 200);
+  
+  // Convert CSS variable color to actual hex color for SVG gradients
+  // SVG gradients don't support CSS variables, so we need actual color values
+  // For all industry charts, we want green fills to match the theme
+  const getActualColor = (colorString: string): string => {
+    // Primary colors - always use green (this is what Dashboard passes)
+    if (colorString.includes('--color-primary') || colorString.includes('primary')) {
+      return '#10b981'; // emerald-500 (green) - theme color
+    }
+    // Success colors - use green
+    if (colorString.includes('--color-success') || colorString.includes('success')) {
+      return '#16a34a'; // green-600
+    }
+    // Text colors - default to green instead of dark for chart fills
+    if (colorString.includes('--color-text')) {
+      return '#10b981'; // Use green instead of dark text color
+    }
+    // Error colors - use red
+    if (colorString.includes('--color-error') || colorString.includes('error')) {
+      return '#ef4444'; // red-500
+    }
+    // Warning colors - use amber
+    if (colorString.includes('--color-warning') || colorString.includes('warning')) {
+      return '#f59e0b'; // amber-500
+    }
+    // Info colors - use blue
+    if (colorString.includes('--color-info') || colorString.includes('info')) {
+      return '#3b82f6'; // blue-500
+    }
+    // If it's already a hex color, return as-is
+    if (colorString.startsWith('#')) {
+      return colorString;
+    }
+    // If it's already an rgb() color without CSS variables, return as-is
+    if (colorString.startsWith('rgb(') && !colorString.includes('var(')) {
+      return colorString;
+    }
+    // Default to green for all charts (theme color) - ensures no gray/black fills
+    // This covers cases where color might be 'rgb(var(--color-text))' or other defaults
+    return '#10b981';
+  };
+  
+  const actualColor = getActualColor(color);
+  
+  // Debug: Log the color conversion (remove in production if needed)
+  // console.log('Color conversion:', { original: color, converted: actualColor });
   const [showBands, setShowBands] = useState(showThresholdBands);
   const [showMA, setShowMA] = useState(showMovingAverage);
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
@@ -221,10 +292,16 @@ export default function TrendChart({
   if (!data || data.length === 0) {
     return (
       <div 
-        className="rounded-xl p-4 sm:p-5"
+        className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md"
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
           border: '1px solid rgb(var(--color-border))'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
         }}
       >
         <h3 
@@ -307,10 +384,16 @@ export default function TrendChart({
 
   return (
     <div 
-      className="rounded-xl p-4 sm:p-5"
+      className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md group"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
       }}
     >
       {/* Header */}
@@ -362,6 +445,30 @@ export default function TrendChart({
         
         {/* Controls */}
         <div className="flex items-center gap-1">
+          {enableDecisions && onRecordDecision && (
+            <button
+              onClick={() => {
+                const lastPoint = data[data.length - 1];
+                onRecordDecision({
+                  metricType,
+                  metricLabel: isEn && titleEn ? titleEn : title,
+                  chartId: `trend-${title.toLowerCase().replace(/\s/g, '-')}`,
+                  currentValue: lastPoint?.value ?? 0,
+                  benchmarkValue,
+                  period: lastPoint?.period,
+                });
+              }}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors hover:scale-105"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-success) / 0.15)',
+                color: 'rgb(var(--color-success))'
+              }}
+              title={isEn ? 'Record a decision based on this data' : 'Enregistrer une décision basée sur ces données'}
+            >
+              <Target className="w-3 h-3" />
+              {isEn ? 'Decide' : 'Décider'}
+            </button>
+          )}
           <button
             onClick={() => setShowMA(!showMA)}
             className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors"
@@ -392,7 +499,7 @@ export default function TrendChart({
         <span className="flex items-center gap-1">
           <span 
             className="w-6 h-0.5 rounded"
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: '#10b981' }}
           />
           {isEn ? 'Actual' : 'Réel'}
         </span>
@@ -510,18 +617,18 @@ export default function TrendChart({
             </>
           )}
 
-          {/* Area fill with gradient */}
+          {/* Area fill with gradient - using green color for all charts */}
           <defs>
-            <linearGradient id={`areaGradient-${title.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-              <stop offset="50%" stopColor={color} stopOpacity="0.15" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.03" />
+            <linearGradient id={`areaGradient-${title.replace(/[^a-zA-Z0-9]/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+              <stop offset="50%" stopColor="#10b981" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#10b981" stopOpacity="0.03" />
             </linearGradient>
           </defs>
           {areaPath && (
             <path
               d={areaPath}
-              fill={`url(#areaGradient-${title.replace(/\s/g, '')})`}
+              fill={`url(#areaGradient-${title.replace(/[^a-zA-Z0-9]/g, '')})`}
             />
           )}
 
@@ -553,7 +660,7 @@ export default function TrendChart({
             <path
               d={linePath}
               fill="none"
-              stroke={color}
+              stroke="#10b981"
               strokeWidth="1.2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -801,6 +908,41 @@ export default function TrendChart({
             >
               <span className="font-medium">{anomaly.affectedPeriod}:</span>{' '}
               {anomaly.description}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Recent decisions */}
+      {recentDecisions && recentDecisions.length > 0 && (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {isEn ? 'Recent decisions:' : 'Décisions récentes:'}
+          </p>
+          {recentDecisions.slice(0, 2).map((decision) => (
+            <div 
+              key={decision.id}
+              className="text-xs p-2 rounded flex items-start gap-2"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-success) / 0.08)',
+                color: 'rgb(var(--color-success))'
+              }}
+            >
+              <Target className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <span className="font-medium">{decision.decision.description.slice(0, 50)}{decision.decision.description.length > 50 ? '...' : ''}</span>
+                <div className="text-[10px] mt-0.5 opacity-80">
+                  {isEn ? 'Expected:' : 'Attendu:'} ${decision.decision.expectedImpact.toLocaleString()}/{decision.decision.expectedImpactPeriod === 'monthly' ? (isEn ? 'mo' : 'mois') : decision.decision.expectedImpactPeriod === 'quarterly' ? (isEn ? 'qtr' : 'trim') : (isEn ? 'yr' : 'an')}
+                  {decision.outcome && (
+                    <span className="ml-2">
+                      {decision.outcome.success 
+                        ? (isEn ? '✓ Successful' : '✓ Réussi')
+                        : (isEn ? '✗ Needs review' : '✗ À revoir')
+                      }
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>
