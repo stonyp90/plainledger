@@ -276,13 +276,15 @@ export class DatalakeDataService implements IDatalakeDataService {
 
     try {
       // Fetch data from Gold layer (S3)
-      this.logger.log(`[S3 Gold] Fetching accounts, contacts, and transactions from S3...`);
+      this.logger.log(
+        `[S3 Gold] Fetching accounts, contacts, and transactions from S3...`,
+      );
       const [accounts, contacts, transactions] = await Promise.all([
         this.fetchAccounts(organizationId),
         this.fetchContacts(organizationId),
         this.fetchTransactions(organizationId),
       ]);
-      
+
       this.logger.log(
         `[S3 Gold] Fetched ${accounts.length} accounts, ${contacts.length} contacts, ${transactions.length} transactions from S3 Gold bucket`,
       );
@@ -387,7 +389,7 @@ export class DatalakeDataService implements IDatalakeDataService {
       const prefix = `dim_account/${organizationId}/`;
       this.logger.log(`[S3 Gold] Listing accounts files at prefix: ${prefix}`);
       const files = await this.listFiles(prefix);
-      
+
       if (files.length === 0) {
         this.logger.log(
           `[S3 Gold] No accounts found for org: ${organizationId} at ${prefix}, trying e2e test data`,
@@ -395,13 +397,17 @@ export class DatalakeDataService implements IDatalakeDataService {
         // Try the e2e test data
         const e2eFiles = await this.listFiles(`dim_account/e2e-org-123/`);
         if (e2eFiles.length > 0) {
-          this.logger.log(`[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`);
+          this.logger.log(
+            `[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`,
+          );
           return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
         }
-        this.logger.log(`[S3 Gold] No accounts data found in S3 for org: ${organizationId}`);
+        this.logger.log(
+          `[S3 Gold] No accounts data found in S3 for org: ${organizationId}`,
+        );
         return [];
       }
-      
+
       if (files.length > 0) {
         const latestFile = files[files.length - 1];
         this.logger.log(
@@ -447,24 +453,32 @@ export class DatalakeDataService implements IDatalakeDataService {
     organizationId: string,
   ): Promise<FactTransaction[]> {
     try {
-      this.logger.log(`[S3 Gold] Fetching transactions for org: ${organizationId}`);
-      
+      this.logger.log(
+        `[S3 Gold] Fetching transactions for org: ${organizationId}`,
+      );
+
       // Check direct organization path first (QuickBooks format)
       let files = await this.listFiles(`fact_transaction/${organizationId}/`);
-      this.logger.log(`[S3 Gold] Found ${files.length} transaction file(s) at fact_transaction/${organizationId}/`);
+      this.logger.log(
+        `[S3 Gold] Found ${files.length} transaction file(s) at fact_transaction/${organizationId}/`,
+      );
 
       // Try partition structure if direct path is empty
       if (files.length === 0) {
         files = await this.listFiles(
           `fact_transaction/organization_id=${organizationId}/`,
         );
-        this.logger.log(`[S3 Gold] Found ${files.length} transaction file(s) at partition path`);
+        this.logger.log(
+          `[S3 Gold] Found ${files.length} transaction file(s) at partition path`,
+        );
       }
 
       // Fallback to e2e test data
       if (files.length === 0) {
         files = await this.listFiles(`fact_transaction/e2e-org-123/`);
-        this.logger.log(`[S3 Gold] Using e2e test data: ${files.length} file(s)`);
+        this.logger.log(
+          `[S3 Gold] Using e2e test data: ${files.length} file(s)`,
+        );
       }
 
       // Also check partition structure with org-123
@@ -472,18 +486,24 @@ export class DatalakeDataService implements IDatalakeDataService {
         files = await this.listFiles(
           `fact_transaction/organization_id=org-123/`,
         );
-        this.logger.log(`[S3 Gold] Using org-123 partition: ${files.length} file(s)`);
+        this.logger.log(
+          `[S3 Gold] Using org-123 partition: ${files.length} file(s)`,
+        );
       }
 
       if (files.length === 0) {
-        this.logger.log(`[S3 Gold] No transaction data found in S3 for org: ${organizationId}`);
+        this.logger.log(
+          `[S3 Gold] No transaction data found in S3 for org: ${organizationId}`,
+        );
         return [];
       }
 
       const allTransactions: FactTransaction[] = [];
       const filesToLoad = files.slice(-5); // Last 5 files
-      this.logger.log(`[S3 Gold] Loading transactions from ${filesToLoad.length} file(s): ${filesToLoad.map(f => f.split('/').pop()).join(', ')}`);
-      
+      this.logger.log(
+        `[S3 Gold] Loading transactions from ${filesToLoad.length} file(s): ${filesToLoad.map((f) => f.split("/").pop()).join(", ")}`,
+      );
+
       for (const file of filesToLoad) {
         const data = await this.fetchJsonFile<FactTransaction[]>(file);
         allTransactions.push(...data);

@@ -2,7 +2,7 @@
  * Upload Controller
  *
  * Handles file uploads for logos, profile pictures, and other assets.
- * 
+ *
  * SECURITY NOTE: Uses @Unprotected() to bypass the global Keycloak guard,
  * allowing both real Keycloak tokens and mock development tokens.
  * User extraction is handled manually to support development mode.
@@ -72,7 +72,8 @@ export class UploadController {
     }
 
     // In development mode, try to extract from Authorization header (mock token support)
-    const isProduction = this.configService.get<string>("NODE_ENV") === "production";
+    const isProduction =
+      this.configService.get<string>("NODE_ENV") === "production";
     if (isProduction) {
       return null; // No fallback in production
     }
@@ -91,9 +92,11 @@ export class UploadController {
 
       // Decode the payload (second part)
       const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
-      
+
       if (payload.sub) {
-        this.logger.debug(`Development mode: extracted user ${payload.sub} from token`);
+        this.logger.debug(
+          `Development mode: extracted user ${payload.sub} from token`,
+        );
         return {
           sub: payload.sub,
           email: payload.email,
@@ -103,7 +106,9 @@ export class UploadController {
         };
       }
     } catch (error) {
-      this.logger.warn(`Failed to parse token in development mode: ${error.message}`);
+      this.logger.warn(
+        `Failed to parse token in development mode: ${error.message}`,
+      );
     }
 
     return null;
@@ -260,7 +265,9 @@ export class UploadController {
 
     const userInfo = this.extractUserInfo(req);
     if (!userInfo?.sub) {
-      throw new BadRequestException("User ID not found in token - please login again");
+      throw new BadRequestException(
+        "User ID not found in token - please login again",
+      );
     }
 
     const userId = userInfo.sub;
@@ -305,7 +312,9 @@ export class UploadController {
   ): Promise<{ success: boolean }> {
     const userInfo = this.extractUserInfo(req);
     if (!userInfo?.sub) {
-      throw new BadRequestException("User ID not found in token - please login again");
+      throw new BadRequestException(
+        "User ID not found in token - please login again",
+      );
     }
 
     const userId = userInfo.sub;

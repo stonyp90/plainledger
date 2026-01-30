@@ -334,7 +334,13 @@ export class HubSpotService implements OnModuleInit {
               dealResponse.id,
               "contacts",
               contactId,
-              [{ associationCategory: AssociationSpecAssociationCategoryEnum.HubspotDefined, associationTypeId: 3 }],
+              [
+                {
+                  associationCategory:
+                    AssociationSpecAssociationCategoryEnum.HubspotDefined,
+                  associationTypeId: 3,
+                },
+              ],
             );
           } catch (assocError) {
             // Log but don't fail if association fails

@@ -66,9 +66,12 @@ export class GqlAuthGuard implements CanActivate {
 
     // SECURITY: Only skip auth in development mode - NEVER in production
     // Check multiple sources: process.env, configService, and .env file directly (for hot reload)
-    let nodeEnv = process.env.NODE_ENV || this.configService.get<string>("NODE_ENV");
-    let skipAuth = process.env.SKIP_AUTH === "true" || this.configService.get<string>("SKIP_AUTH") === "true";
-    
+    let nodeEnv =
+      process.env.NODE_ENV || this.configService.get<string>("NODE_ENV");
+    let skipAuth =
+      process.env.SKIP_AUTH === "true" ||
+      this.configService.get<string>("SKIP_AUTH") === "true";
+
     // If not found, try reading .env file directly (for development hot reload)
     if (!skipAuth || !nodeEnv) {
       try {
@@ -89,7 +92,7 @@ export class GqlAuthGuard implements CanActivate {
         // Ignore file read errors
       }
     }
-    
+
     // Default to development if not set
     if (!nodeEnv) nodeEnv = "development";
     const isProduction = nodeEnv === "production";
@@ -229,8 +232,9 @@ export class GqlAuthGuard implements CanActivate {
    */
   private getMockUser() {
     // Try multiple sources for MOCK_ORG_ID
-    let mockOrgId = process.env.MOCK_ORG_ID || this.configService.get<string>("MOCK_ORG_ID");
-    
+    let mockOrgId =
+      process.env.MOCK_ORG_ID || this.configService.get<string>("MOCK_ORG_ID");
+
     // If not found, read from .env file directly
     if (!mockOrgId) {
       try {
@@ -246,7 +250,7 @@ export class GqlAuthGuard implements CanActivate {
         // Ignore file read errors
       }
     }
-    
+
     return {
       sub: "dev-user-123",
       email: "dev@plainledger.ca",
