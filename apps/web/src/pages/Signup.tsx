@@ -32,6 +32,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useI18n, LanguageToggle } from '../lib/i18n';
 import ThemeToggle from '../components/ThemeToggle';
 import Checkbox from '../components/Checkbox';
+import TermsModal from '../components/TermsModal';
 import { analytics } from '../lib/analytics';
 import { CompanyInfoStep, IndustryPreviewStep, InviteTeamStep, type OnboardingData } from '../components/Onboarding';
 
@@ -150,6 +151,7 @@ export default function Signup() {
   // Step management
   const [currentStep, setCurrentStep] = useState<SignupStep>(1);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<SignupFormData>(INITIAL_FORM_DATA);
@@ -772,35 +774,53 @@ export default function Signup() {
                 </div>
 
                 {/* Terms */}
-                <Checkbox
-                  checked={formData.agreeToTerms}
-                  onChange={(checked) => updateField('agreeToTerms', checked)}
-                  label={
-                    isEn ? (
-                      <>
-                        I agree to the{' '}
-                        <Link to="/terms" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                          Terms of Service
-                        </Link>{' '}
-                        and{' '}
-                        <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                          Privacy Policy
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        J'accepte les{' '}
-                        <Link to="/terms" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                          Conditions d'utilisation
-                        </Link>{' '}
-                        et la{' '}
-                        <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                          Politique de confidentialité
-                        </Link>
-                      </>
-                    )
-                  }
-                />
+                <div>
+                  <Checkbox
+                    checked={formData.agreeToTerms}
+                    onChange={() => {
+                      // Don't allow direct checkbox toggle - user must go through modal
+                      if (!formData.agreeToTerms) {
+                        setShowTermsModal(true);
+                      }
+                    }}
+                    disabled={formData.agreeToTerms}
+                    label={
+                      isEn ? (
+                        <>
+                          I agree to the{' '}
+                          <button
+                            type="button"
+                            onClick={() => setShowTermsModal(true)}
+                            className="underline hover:no-underline font-medium"
+                            style={{ color: 'rgb(var(--color-primary-500))' }}
+                          >
+                            Terms of Service
+                          </button>{' '}
+                          and{' '}
+                          <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                            Privacy Policy
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          J'accepte les{' '}
+                          <button
+                            type="button"
+                            onClick={() => setShowTermsModal(true)}
+                            className="underline hover:no-underline font-medium"
+                            style={{ color: 'rgb(var(--color-primary-500))' }}
+                          >
+                            Conditions d'utilisation
+                          </button>{' '}
+                          et la{' '}
+                          <Link to="/privacy" className="underline hover:no-underline" style={{ color: 'rgb(var(--color-primary-500))' }}>
+                            Politique de confidentialité
+                          </Link>
+                        </>
+                      )
+                    }
+                  />
+                </div>
 
                 {/* Submit Button */}
                 <button
@@ -883,6 +903,18 @@ export default function Signup() {
             : 'Besoin d\'aide ? Contactez support@plainledger.ca'}
         </p>
       </footer>
+
+      {/* Terms Modal */}
+      <TermsModal
+        isOpen={showTermsModal}
+        onAccept={() => {
+          updateField('agreeToTerms', true);
+          setShowTermsModal(false);
+        }}
+        onDecline={() => {
+          setShowTermsModal(false);
+        }}
+      />
     </div>
   );
 }

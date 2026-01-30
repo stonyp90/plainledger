@@ -5,7 +5,7 @@
 
 import config from './config';
 
-const API_BASE = config.apiUrl || 'http://localhost:3000/api/v1';
+const API_BASE = `${config.api.baseUrl}/api/v1`;
 
 /**
  * Get authentication headers

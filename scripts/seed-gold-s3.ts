@@ -12,8 +12,8 @@ import {
 } from "@aws-sdk/client-s3";
 
 // Configuration
-const S3_ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:4566";
-const S3_REGION = process.env.S3_REGION || "us-east-1";
+const S3_ENDPOINT = process.env.S3_ENDPOINT || ""; // Empty string = use real AWS
+const S3_REGION = process.env.S3_REGION || "ca-central-1";
 const GOLD_BUCKET = process.env.S3_BUCKET_GOLD || "plainledger-gold";
 
 // Demo organization ID
@@ -21,13 +21,13 @@ const DEMO_ORG_ID = "demo-org";
 
 // S3 Client
 const s3Client = new S3Client({
-  endpoint: S3_ENDPOINT,
+  ...(S3_ENDPOINT ? { endpoint: S3_ENDPOINT, forcePathStyle: true } : {}),
   region: S3_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "test",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "test",
+    ...(process.env.AWS_SESSION_TOKEN ? { sessionToken: process.env.AWS_SESSION_TOKEN } : {}),
   },
-  forcePathStyle: true,
 });
 
 // ============================================
