@@ -199,9 +199,9 @@ export default function TrendChart({
       };
     }
     
-    const values = data.map(d => d.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
+    const values = data.map(d => d.value ?? 0);
+    const min = values.length > 0 ? Math.min(...values) : 0;
+    const max = values.length > 0 ? Math.max(...values) : 0;
     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
     const base = baseline || avg;
     
@@ -235,7 +235,7 @@ export default function TrendChart({
     if (data.length >= 3) {
       const recentAvg = values.slice(-3).reduce((a, b) => a + b, 0) / 3;
       const olderAvg = values.slice(0, -3).reduce((a, b) => a + b, 0) / Math.max(1, values.length - 3);
-      const trendChange = ((recentAvg - olderAvg) / olderAvg) * 100;
+      const trendChange = olderAvg !== 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
       if (trendChange > 5) trendDirection = 'up';
       else if (trendChange < -5) trendDirection = 'down';
     }
@@ -269,8 +269,11 @@ export default function TrendChart({
     let rangeMax = Math.max(max, criticalHigh) * 1.05;
     
     if (budget && budget.length > 0) {
-      rangeMin = Math.min(rangeMin, ...budget) * 0.95;
-      rangeMax = Math.max(rangeMax, ...budget) * 1.05;
+      const budgetValues = budget.filter(b => b != null && !isNaN(b));
+      if (budgetValues.length > 0) {
+        rangeMin = Math.min(rangeMin, ...budgetValues) * 0.95;
+        rangeMax = Math.max(rangeMax, ...budgetValues) * 1.05;
+      }
     }
     
     return {
@@ -288,35 +291,9 @@ export default function TrendChart({
     };
   }, [data, baseline, budget, thresholds, title, movingAveragePeriod]);
 
-  // Early return for empty or insufficient data - must be after all hooks
+  // Early return - hide chart completely if no data
   if (!data || data.length === 0) {
-    return (
-      <div 
-        className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md"
-        style={{ 
-          backgroundColor: 'rgb(var(--color-surface))',
-          border: '1px solid rgb(var(--color-border))'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
-        }}
-      >
-        <h3 
-          className="font-semibold mb-2"
-          style={{ color: 'rgb(var(--color-text))' }}
-        >
-          {isEn && titleEn ? titleEn : title}
-        </h3>
-        <div style={{ height: `${height}px` }}>
-          <ChartEmptyState 
-            message={isEn ? 'No trend data available' : 'Aucune donnée de tendance disponible'}
-          />
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const getYPosition = (value: number) => {

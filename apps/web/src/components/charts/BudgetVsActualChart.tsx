@@ -44,6 +44,11 @@ export default function BudgetVsActualChart({
   formatValue = (v) => `$${Math.abs(v).toLocaleString()}`,
   isEn = false,
 }: BudgetVsActualChartProps) {
+  // Early return - hide chart completely if no data
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'category' | 'variance'>('variance');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
@@ -61,9 +66,12 @@ export default function BudgetVsActualChart({
     let unfavorable = 0;
     
     const processed = data.map(item => {
-      const variance = item.actual - item.budget;
-      const variancePct = item.budget !== 0 
-        ? (variance / Math.abs(item.budget)) * 100 
+      const actual = item.actual ?? 0;
+      const budget = item.budget ?? 0;
+      const priorYear = item.priorYear ?? 0;
+      const variance = actual - budget;
+      const variancePct = budget !== 0 
+        ? (variance / Math.abs(budget)) * 100 
         : 0;
       
       // Determine if variance is favorable
@@ -100,9 +108,9 @@ export default function BudgetVsActualChart({
     }
     
     // Calculate totals
-    const totalActual = data.reduce((sum, d) => sum + d.actual, 0);
-    const totalBudget = data.reduce((sum, d) => sum + d.budget, 0);
-    const totalPrior = data.reduce((sum, d) => sum + (d.priorYear || 0), 0);
+    const totalActual = data.reduce((sum, d) => sum + (d.actual ?? 0), 0);
+    const totalBudget = data.reduce((sum, d) => sum + (d.budget ?? 0), 0);
+    const totalPrior = data.reduce((sum, d) => sum + (d.priorYear ?? 0), 0);
     
     return {
       processedData: processed,

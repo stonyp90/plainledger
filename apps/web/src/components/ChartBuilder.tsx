@@ -9,6 +9,8 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useHasRealData } from '../hooks/useHasRealData';
+import { useFinancialData } from '../hooks/useFinancialData';
 import {
   X,
   ChevronDown,
@@ -387,7 +389,7 @@ function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
               <ChartTooltip visible={true} position={tooltipPosition}>
                 <div className="min-w-[200px]">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{info.icon}</span>
+                    <Icon className="w-4 h-4 text-white" />
                     <span className="text-white font-medium">{isEn ? info.labelEn : info.label}</span>
                   </div>
                   <p className="text-gray-400 text-xs mb-2">
@@ -615,20 +617,82 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const enabledFields = fields.filter(f => f.enabled);
+  const { hasRealData, shouldShowSandboxData } = useHasRealData();
+  const { data: financialData } = useFinancialData();
   
-  // Generate consistent mock data based on fields
-  const mockData = useMemo(() => {
-    const periods = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return periods.map((period, i) => {
-      const dataPoint: any = { period };
-      enabledFields.forEach((field, j) => {
-        const base = 50000 + j * 20000;
-        const variance = Math.sin(i * 0.8 + j) * 15000;
-        dataPoint[field.id] = Math.round(base + variance + i * 3000);
+  // Use real data if available, otherwise generate mock data only if sandbox is enabled
+  const previewData = useMemo(() => {
+    // Try to use real financial data if available
+    if (hasRealData && financialData) {
+      // Transform real data to preview format
+      const trends = financialData.trends || {};
+      const periods = trends.revenue?.data?.map((d: any) => d.date) || [];
+      
+      if (periods.length > 0) {
+        return periods.map((period: string, i: number) => {
+          const dataPoint: any = { period };
+          enabledFields.forEach((field) => {
+            // Map fields to real data
+            switch (field.id) {
+              case 'revenue':
+                dataPoint[field.id] = trends.revenue?.data?.[i]?.value || 0;
+                break;
+              case 'expenses':
+                dataPoint[field.id] = trends.expenses?.data?.[i]?.value || 0;
+                break;
+              case 'cashFlow':
+                dataPoint[field.id] = trends.cashFlow?.data?.[i]?.value || 0;
+                break;
+              default:
+                dataPoint[field.id] = 0;
+            }
+          });
+          return dataPoint;
+        });
+      }
+    }
+    
+    // Only generate mock data if sandbox should be shown (free users only)
+    if (!shouldShowSandboxData) {
+      return null; // Will show empty state
+    }
+    
+    // Generate consistent mock data based on fields
+    const mockData = (() => {
+      const periods = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      return periods.map((period, i) => {
+        const dataPoint: any = { period };
+        enabledFields.forEach((field, j) => {
+          const base = 50000 + j * 20000;
+          const variance = Math.sin(i * 0.8 + j) * 15000;
+          dataPoint[field.id] = Math.round(base + variance + i * 3000);
+        });
+        return dataPoint;
       });
-      return dataPoint;
-    });
-  }, [enabledFields]);
+    })();
+    
+    return mockData;
+  }, [hasRealData, shouldShowSandboxData, financialData, enabledFields]);
+  
+  // Show empty state if no data available
+  if (!previewData || previewData.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-sm mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'No data available for preview' : 'Aucune donnée disponible pour l\'aperçu'}
+          </p>
+          <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn 
+              ? 'Connect your accounting software to see real data' 
+              : 'Connectez votre logiciel comptable pour voir les données réelles'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  const mockData = previewData;
 
   const formatValue = (value: number) => {
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
@@ -661,8 +725,9 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
   }
 
   const chartType = config.chartType || 'line';
-  const maxValue = Math.max(...mockData.flatMap(d => enabledFields.map(f => d[f.id])));
-  const minValue = Math.min(...mockData.flatMap(d => enabledFields.map(f => d[f.id])));
+  const allValues = mockData.flatMap(d => enabledFields.map(f => d?.[f.id] ?? 0));
+  const maxValue = allValues.length > 0 ? Math.max(...allValues) : 0;
+  const minValue = allValues.length > 0 ? Math.min(...allValues) : 0;
   const range = maxValue - minValue || 1;
 
   // Render different chart types
@@ -877,7 +942,10 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
   };
 
   const renderPieDonutChart = () => {
-    const total = enabledFields.reduce((sum, field) => sum + mockData[mockData.length - 1][field.id], 0);
+    const total = enabledFields.reduce((sum, field) => {
+      const lastDataPoint = mockData.length > 0 ? mockData[mockData.length - 1] : {};
+      return sum + (lastDataPoint?.[field.id] ?? 0);
+    }, 0);
     const isDonut = chartType === 'donut';
     
     let currentAngle = -90;
@@ -1342,13 +1410,13 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
         {enabledFields.slice(0, 4).map((field) => {
           const info = METRIC_INFO[field.id];
           const color = field.color || info.color;
-          const values = mockData.map(d => d[field.id]);
-          const sparkMax = Math.max(...values);
-          const sparkMin = Math.min(...values);
+          const values = mockData.map(d => d?.[field.id] ?? 0);
+          const sparkMax = values.length > 0 ? Math.max(...values) : 0;
+          const sparkMin = values.length > 0 ? Math.min(...values) : 0;
           const sparkRange = sparkMax - sparkMin || 1;
-          const lastValue = values[values.length - 1];
-          const firstValue = values[0];
-          const change = ((lastValue - firstValue) / firstValue) * 100;
+          const lastValue = values.length > 0 ? values[values.length - 1] : 0;
+          const firstValue = values.length > 0 ? values[0] : 0;
+          const change = firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
 
           const points = values.map((v, i) => ({
             x: (i / (values.length - 1)) * 100,
@@ -1422,9 +1490,9 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
       };
     });
 
-    const allValues = waterfallData.flatMap(d => [d.start, d.end]);
-    const wfMax = Math.max(...allValues);
-    const wfMin = Math.min(...allValues);
+    const allValues = waterfallData.flatMap(d => [d?.start ?? 0, d?.end ?? 0]);
+    const wfMax = allValues.length > 0 ? Math.max(...allValues) : 0;
+    const wfMin = allValues.length > 0 ? Math.min(...allValues) : 0;
     const wfRange = wfMax - wfMin || 1;
 
     const barWidth = (chartWidth / waterfallData.length) * 0.6;

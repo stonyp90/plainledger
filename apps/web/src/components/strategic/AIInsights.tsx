@@ -46,8 +46,8 @@ export default function AIInsights({ driver, value, periodKey, allDrivers, isEn 
         d.name.toLowerCase().includes('cash')
       );
       if (cashDriver) {
-        const cashValue = cashDriver.values[periodKey];
-        if (cashValue && cashValue > 0) {
+        const cashValue = cashDriver?.values?.[periodKey];
+        if (cashValue && cashValue > 0 && value !== 0) {
           const months = cashValue / value;
           if (months < 6) {
             insights.push({

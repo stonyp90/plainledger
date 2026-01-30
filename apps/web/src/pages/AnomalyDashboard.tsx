@@ -37,6 +37,10 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import { ChartEmptyState } from '../components/EmptyDataState';
 import {
   runFullAnalysis,
   DEFAULT_THRESHOLDS,
@@ -165,6 +169,22 @@ export default function AnomalyDashboard() {
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
   
+  // Check data availability
+  const {
+    hasRealData,
+    hasQuickBooksConnection,
+    hasSandboxData,
+    shouldShowSandboxData,
+    isFreeUser,
+    hasTrends,
+    hasRevenueTrends,
+    hasExpenseTrends,
+    hasAccounts,
+    hasSummaryMetrics,
+  } = useHasRealData();
+  
+  const shouldShowData = hasRealData || shouldShowSandboxData;
+  
   const [thresholds, setThresholds] = useState<ThresholdConfig>(() => {
     const saved = localStorage.getItem('plainledger-thresholds');
     return saved ? JSON.parse(saved) : DEFAULT_THRESHOLDS;
@@ -188,30 +208,30 @@ export default function AnomalyDashboard() {
 
   // Transform financial data to account balances for anomaly detection
   const accountsData: AccountBalance[] = useMemo(() => {
-    if (!financialData) return [];
-    return financialData.accounts.map(a => ({
-      code: a.code,
-      name: a.name,
-      current: a.current,
-      prior: a.prior,
-      type: a.type,
+    if (!financialData?.accounts) return [];
+    return (financialData.accounts ?? []).map(a => ({
+      code: a?.code ?? '',
+      name: a?.name ?? '',
+      current: a?.current ?? 0,
+      prior: a?.prior ?? 0,
+      type: a?.type ?? 'asset',
     }));
   }, [financialData]);
 
   // Get revenue trend data
   const revenueData = useMemo(() => {
-    if (!financialData) return [];
-    return financialData.trends.revenue.data;
+    return financialData?.trends?.revenue?.data ?? [];
   }, [financialData]);
 
   // Get expense trend data
   const expenseData = useMemo(() => {
-    if (!financialData) return [];
-    return financialData.trends.expenses.data;
+    return financialData?.trends?.expenses?.data ?? [];
   }, [financialData]);
 
-  // Get industry-specific demo anomalies
+  // Get industry-specific demo anomalies - ONLY show when in sandbox mode (no real connection)
   const demoAnomalies = useMemo(() => {
+    // Only include demo anomalies for free users showing sandbox data (not real data)
+    if (hasRealData || !shouldShowSandboxData || !isFreeUser) return [];
     if (!financialData?.demoAnomalies) return [];
     // Convert demo anomalies to the Anomaly format with proper language support
     return financialData.demoAnomalies.map(da => ({
@@ -232,7 +252,7 @@ export default function AnomalyDashboard() {
       detectedAt: new Date(da.date),
       confidence: da.confidence,
     }));
-  }, [financialData?.demoAnomalies, isEn]);
+  }, [financialData?.demoAnomalies, isEn, hasRealData, shouldShowSandboxData, isFreeUser]);
 
   // Standard analysis - combines dynamic detection with demo anomalies
   const analysis = useMemo(() => {
@@ -309,10 +329,11 @@ export default function AnomalyDashboard() {
         }));
         
         // Ratio history for drift detection
+        const currentRatioValue = financialData?.metrics?.currentRatio ?? 1.5;
         const ratioHistory = financialData ? [
           Array.from({ length: 8 }, (_, i) => ({
             period: `T${i + 1}`,
-            value: financialData.metrics.currentRatio * (1 - i * 0.03 + Math.random() * 0.05),
+            value: currentRatioValue * (1 - i * 0.03 + Math.random() * 0.05),
             ratioName: 'Ratio de liquidité',
           })),
         ] : [];
@@ -361,13 +382,13 @@ export default function AnomalyDashboard() {
 
   // Calculate ratios from financial data
   const ratios = useMemo(() => {
-    if (!financialData) {
+    if (!financialData?.metrics) {
       return { currentRatio: 0, quickRatio: 0, debtToEquity: 0 };
     }
     return {
-      currentRatio: financialData.metrics.currentRatio,
-      quickRatio: financialData.metrics.quickRatio,
-      debtToEquity: financialData.metrics.debtToEquity,
+      currentRatio: financialData.metrics?.currentRatio ?? 0,
+      quickRatio: financialData.metrics?.quickRatio ?? 0,
+      debtToEquity: financialData.metrics?.debtToEquity ?? 0,
     };
   }, [financialData]);
 
@@ -593,6 +614,29 @@ export default function AnomalyDashboard() {
         </div>
       </div>
 
+      {/* Data Readiness Checklist */}
+      {financialData && (
+        <DataReadinessChecklist 
+          context="anomalies" 
+          compact={combinedAnalysis.anomalies.length > 0}
+        />
+      )}
+
+      {/* Accountant Guidance - Show when data quality is insufficient */}
+      {financialData && (!financialData.accounts?.length || !financialData.trends?.revenue?.data?.length) && (
+        <AccountantGuidanceCard 
+          type={!financialData.accounts?.length ? 'connect-software' : 'reconcile-accounts'}
+        />
+      )}
+
+      {/* AI Mode Requirements Guidance */}
+      {useAIDetection && hasAIAccess && financialData && financialData.trends?.revenue?.data?.length < 6 && (
+        <AccountantGuidanceCard 
+          type="historical-data"
+          compact={true}
+        />
+      )}
+
       {/* AI Model Info Banner - Compact & Responsive */}
       {useAIDetection && combinedAnalysis.modelInfo && (
         <div 
@@ -670,55 +714,73 @@ export default function AnomalyDashboard() {
       />
 
       {/* Financial Analysis Section - Responsive grid */}
-      <div className="space-y-4">
-        {/* Section header */}
-        <h3 className="text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'Financial Analysis' : 'Analyse financière'}
-        </h3>
+      {shouldShowData && hasSummaryMetrics ? (
+        <div className="space-y-4">
+          {/* Section header */}
+          <h3 className="text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn ? 'Financial Analysis' : 'Analyse financière'}
+          </h3>
 
-        {/* Ratios + Trends Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-          {/* Financial Ratios - 4 columns on XL */}
-          <div className="xl:col-span-4 space-y-3">
-            <CurrentRatioCard value={ratios.currentRatio} industry={selectedIndustry} isEn={isEn} />
-            <QuickRatioCard value={ratios.quickRatio} industry={selectedIndustry} isEn={isEn} />
-            <DebtToEquityCard value={ratios.debtToEquity} industry={selectedIndustry} isEn={isEn} />
-          </div>
+          {/* Ratios + Trends Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+            {/* Financial Ratios - 4 columns on XL */}
+            {hasAccounts ? (
+              <div className="xl:col-span-4 space-y-3">
+                <CurrentRatioCard value={ratios.currentRatio} industry={selectedIndustry} isEn={isEn} />
+                <QuickRatioCard value={ratios.quickRatio} industry={selectedIndustry} isEn={isEn} />
+                <DebtToEquityCard value={ratios.debtToEquity} industry={selectedIndustry} isEn={isEn} />
+              </div>
+            ) : null}
 
-          {/* Trend Charts - 8 columns on XL, stacked on mobile */}
-          <div className="xl:col-span-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TrendChart
-                data={revenueData}
-                title={isEn 
-                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn)
-                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.title || INDUSTRY_CHART_LABELS.default.revenue.title)}
-                titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn}
-                subtitle={isEn 
-                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn)
-                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitle || INDUSTRY_CHART_LABELS.default.revenue.subtitle)}
-                subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn}
-                height={220}
-                isEn={isEn}
-              />
-              <TrendChart
-                data={expenseData}
-                title={isEn 
-                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn)
-                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.title || INDUSTRY_CHART_LABELS.default.expenses.title)}
-                titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn}
-                subtitle={isEn 
-                  ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn)
-                  : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitle || INDUSTRY_CHART_LABELS.default.expenses.subtitle)}
-                subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn}
-                color="rgb(var(--color-text-muted))"
-                height={220}
-                isEn={isEn}
-              />
-            </div>
+            {/* Trend Charts - 8 columns on XL, stacked on mobile */}
+            {hasTrends ? (
+              <div className={`${hasAccounts ? 'xl:col-span-8' : 'xl:col-span-12'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {hasRevenueTrends && revenueData.length > 0 ? (
+                    <TrendChart
+                      data={revenueData}
+                      title={isEn 
+                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn)
+                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.title || INDUSTRY_CHART_LABELS.default.revenue.title)}
+                      titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn}
+                      subtitle={isEn 
+                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn)
+                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitle || INDUSTRY_CHART_LABELS.default.revenue.subtitle)}
+                      subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn}
+                      height={220}
+                      isEn={isEn}
+                    />
+                  ) : (
+                    <div className="card">
+                      <ChartEmptyState message={isEn ? 'No revenue data available' : 'Aucune donnée de revenus disponible'} />
+                    </div>
+                  )}
+                  {hasExpenseTrends && expenseData.length > 0 ? (
+                    <TrendChart
+                      data={expenseData}
+                      title={isEn 
+                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn)
+                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.title || INDUSTRY_CHART_LABELS.default.expenses.title)}
+                      titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn}
+                      subtitle={isEn 
+                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn)
+                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitle || INDUSTRY_CHART_LABELS.default.expenses.subtitle)}
+                      subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn}
+                      color="rgb(var(--color-text-muted))"
+                      height={220}
+                      isEn={isEn}
+                    />
+                  ) : (
+                    <div className="card">
+                      <ChartEmptyState message={isEn ? 'No expense data available' : 'Aucune donnée de dépenses disponible'} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Anomaly List - Responsive */}
       <div ref={anomalyListRef} className="card">
@@ -757,7 +819,14 @@ export default function AnomalyDashboard() {
           </div>
         </div>
 
-        {filteredAnomalies.length === 0 ? (
+        {!hasQuickBooksConnection && !hasSandboxData ? (
+          <div className="text-center py-12">
+            <ChartEmptyState 
+              message={isEn ? 'Connect your accounting software to detect anomalies' : 'Connectez votre logiciel comptable pour détecter les anomalies'}
+              showConnectLink={true}
+            />
+          </div>
+        ) : filteredAnomalies.length === 0 ? (
           <div className="text-center py-12">
             <CheckCircle 
               className="w-12 h-12 mx-auto mb-4"

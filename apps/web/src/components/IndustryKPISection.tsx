@@ -25,6 +25,8 @@ import {
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../contexts/ThemeContext';
 import KPICard from './KPICard';
+import { useHasRealData } from '../hooks/useHasRealData';
+import EmptyDataState from './EmptyDataState';
 
 // Theme colors - Corporate green palette (consistent with Landing page)
 const colors = {
@@ -157,20 +159,6 @@ export const INDUSTRY_KPIS: IndustryData[] = [
         impactFr: 'Forts rendements cash',
         chartData: [8.5, 9, 9.5, 9.8, 10, 10.2, 10.5],
         industryBenchmark: [7.5, 7.6, 7.8, 8.0, 8.1, 8.2, 8.3],
-      },
-      { 
-        name: 'DSCR', 
-        nameFr: 'Ratio de couverture dette', 
-        formula: 'NOI / Debt Service', 
-        target: '>1.25x',
-        currentValue: 1.35,
-        targetValue: 1.25,
-        trend: 'up',
-        trendValue: '+8%',
-        impact: 'Strong debt coverage',
-        impactFr: 'Forte couverture dette',
-        chartData: [1.20, 1.22, 1.25, 1.28, 1.30, 1.32, 1.35],
-        industryBenchmark: [1.15, 1.16, 1.17, 1.18, 1.19, 1.20, 1.21],
       },
     ],
     benchmarkNote: { 
@@ -1060,25 +1048,45 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
+  const { hasRealData, shouldShowSandboxData } = useHasRealData();
   const [selectedIndustry, setSelectedIndustry] = useState<string>('real_estate');
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
   const { ref: sectionRef, isInView } = useInView(0.1);
+  
+  // Only show industry KPIs if we have real data or should show sandbox data (free users only)
+  if (!hasRealData && !shouldShowSandboxData) {
+    return (
+      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+        <div className="max-w-7xl mx-auto">
+          <EmptyDataState 
+            title={isEn ? 'Industry KPIs' : 'KPI de l\'industrie'}
+            message={isEn 
+              ? 'Connect your accounting software to view industry-specific KPIs' 
+              : 'Connectez votre logiciel comptable pour voir les KPI spécifiques à l\'industrie'}
+          />
+        </div>
+      </section>
+    );
+  }
   
   const currentIndustry = INDUSTRY_KPIS.find(ind => ind.id === selectedIndustry) || INDUSTRY_KPIS[0];
   const Icon = currentIndustry.icon;
   
   // Format value for display
-  const formatValue = (value: number, name: string): string => {
+  const formatValue = (value: number | null | undefined, name: string): string => {
+    const numValue = value ?? 0;
+    if (isNaN(numValue) || !isFinite(numValue)) return '—';
+    
     if (name.includes('Revenue') || name.includes('NOI') || name.includes('Revenus')) {
-      return `$${(value / 1000).toFixed(0)}K`;
+      return `$${(numValue / 1000).toFixed(0)}K`;
     }
     if (name.includes('Rate') || name.includes('Taux') || name.includes('%') || name.includes('Margin') || name.includes('Marge')) {
-      return `${value}%`;
+      return `${numValue}%`;
     }
     if (name.includes('ADR') || name.includes('TJM') || name.includes('Effective') || name.includes('effectif')) {
-      return `$${value}`;
+      return `$${numValue}`;
     }
-    return `${value}`;
+    return `${numValue}`;
   };
   
   return (

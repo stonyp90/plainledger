@@ -20,6 +20,8 @@ import {
 import { GqlExecutionContext } from "@nestjs/graphql";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
+import * as fs from "fs";
+import * as path from "path";
 
 // Simple rate limiter for GraphQL
 interface RateLimitEntry {
@@ -63,9 +65,34 @@ export class GqlAuthGuard implements CanActivate {
     const { req } = ctx.getContext();
 
     // SECURITY: Only skip auth in development mode - NEVER in production
-    const nodeEnv = this.configService.get<string>("NODE_ENV");
+    // Check multiple sources: process.env, configService, and .env file directly (for hot reload)
+    let nodeEnv = process.env.NODE_ENV || this.configService.get<string>("NODE_ENV");
+    let skipAuth = process.env.SKIP_AUTH === "true" || this.configService.get<string>("SKIP_AUTH") === "true";
+    
+    // If not found, try reading .env file directly (for development hot reload)
+    if (!skipAuth || !nodeEnv) {
+      try {
+        const envPath = path.join(process.cwd(), ".env");
+        if (fs.existsSync(envPath)) {
+          const envContent = fs.readFileSync(envPath, "utf-8");
+          const envVars: Record<string, string> = {};
+          envContent.split("\n").forEach((line) => {
+            const match = line.match(/^([^#=]+)=(.*)$/);
+            if (match) {
+              envVars[match[1].trim()] = match[2].trim();
+            }
+          });
+          if (!nodeEnv && envVars.NODE_ENV) nodeEnv = envVars.NODE_ENV;
+          if (!skipAuth && envVars.SKIP_AUTH === "true") skipAuth = true;
+        }
+      } catch (error) {
+        // Ignore file read errors
+      }
+    }
+    
+    // Default to development if not set
+    if (!nodeEnv) nodeEnv = "development";
     const isProduction = nodeEnv === "production";
-    const skipAuth = this.configService.get<string>("SKIP_AUTH") === "true";
 
     if (isProduction && skipAuth) {
       this.logger.error(
@@ -201,12 +228,29 @@ export class GqlAuthGuard implements CanActivate {
    * Organization ID can be set via MOCK_ORG_ID environment variable
    */
   private getMockUser() {
-    const mockOrgId =
-      this.configService.get<string>("MOCK_ORG_ID") || "default";
+    // Try multiple sources for MOCK_ORG_ID
+    let mockOrgId = process.env.MOCK_ORG_ID || this.configService.get<string>("MOCK_ORG_ID");
+    
+    // If not found, read from .env file directly
+    if (!mockOrgId) {
+      try {
+        const envPath = path.join(process.cwd(), ".env");
+        if (fs.existsSync(envPath)) {
+          const envContent = fs.readFileSync(envPath, "utf-8");
+          const match = envContent.match(/^MOCK_ORG_ID=(.+)$/m);
+          if (match) {
+            mockOrgId = match[1].trim();
+          }
+        }
+      } catch (error) {
+        // Ignore file read errors
+      }
+    }
+    
     return {
       sub: "dev-user-123",
       email: "dev@plainledger.ca",
-      organizationId: mockOrgId,
+      organizationId: mockOrgId || "demo-org",
       roles: ["user", "admin"],
       name: "Development User",
     };

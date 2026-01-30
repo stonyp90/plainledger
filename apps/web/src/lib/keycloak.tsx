@@ -28,20 +28,21 @@ const keycloakConfig = {
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web',
 };
 
-// Mock user for development - Set to free-org to test free tier features
+// Mock user for development - Set to demo-org to test with real S3 data
+// Added 'plainledger-staff' role to allow testing of all features including connections
 const MOCK_USER: UserProfile = {
-  id: 'mock-user-free',
-  email: 'free@plainledger.ca',
-  name: 'Free User',
-  firstName: 'Free',
+  id: 'mock-user-demo',
+  email: 'demo@plainledger.ca',
+  name: 'Demo User',
+  firstName: 'Demo',
   lastName: 'User',
-  organization: 'free-org',  // Matches free tier mock tenant
-  roles: ['user'],
+  organization: 'demo-org',  // Matches demo organization with seeded S3 data
+  roles: ['user', 'plainledger-staff'],  // Staff role allows testing connections page
   locale: 'en',
   emailVerified: true,
   identityProvider: 'local',
   // Professional avatar from DiceBear API
-  picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=FreeUser&backgroundColor=b6e3f4&clothesColor=3c4f5c&clothingGraphic=bear&eyebrows=default&eyes=default&facialHair=blank&hairColor=2c1b18&mouth=smile&skinColor=f8d25c&top=shortHair',
+  picture: 'https://api.dicebear.com/7.x/avataaars/svg?seed=DemoUser&backgroundColor=b6e3f4&clothesColor=3c4f5c&clothingGraphic=bear&eyebrows=default&eyes=default&facialHair=blank&hairColor=2c1b18&mouth=smile&skinColor=f8d25c&top=shortHair',
 };
 
 // Singleton keycloak instance
@@ -239,6 +240,36 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
       // Clear any logged out state - always auto-login in mock mode for development
       localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
       console.log('🔓 Mock authentication enabled - auto-login with free tier user');
+      
+      // Create a mock JWT token for API calls in development
+      // This allows file uploads and other authenticated endpoints to work
+      const mockTokenPayload = {
+        sub: MOCK_USER.id,
+        email: MOCK_USER.email,
+        name: MOCK_USER.name,
+        given_name: MOCK_USER.firstName,
+        family_name: MOCK_USER.lastName,
+        organization: MOCK_USER.organization,
+        realm_access: { roles: MOCK_USER.roles },
+        exp: Math.floor(Date.now() / 1000) + 86400, // 24 hours from now
+        iat: Math.floor(Date.now() / 1000),
+      };
+      
+      // Create a base64-encoded mock token (header.payload.signature format)
+      const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify(mockTokenPayload));
+      const mockToken = `${header}.${payload}.mock-signature`;
+      
+      // Set mock token on keycloak instance and expose to window
+      (keycloak as any).token = mockToken;
+      (keycloak as any).authenticated = true;
+      (keycloak as any).subject = MOCK_USER.id;
+      (keycloak as any).tokenParsed = mockTokenPayload;
+      (keycloak as any).realmAccess = mockTokenPayload.realm_access;
+      
+      // Expose keycloak to window for other modules (like uploads.ts) to access token
+      (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
+      
       setAuthenticated(true);
       setUser(MOCK_USER);
       setInitialized(true);

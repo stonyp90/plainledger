@@ -759,7 +759,9 @@ export default function HealthScoreGauge({
     if (score > 0) return score;
     // If score is 0, calculate from metrics
     if (displayMetrics.length > 0) {
-      const avgScore = displayMetrics.reduce((acc, m) => acc + m.value, 0) / displayMetrics.length;
+      const avgScore = displayMetrics.length > 0 
+        ? displayMetrics.reduce((acc, m) => acc + (m.value ?? 0), 0) / displayMetrics.length 
+        : 0;
       return Math.round(avgScore);
     }
     return score;

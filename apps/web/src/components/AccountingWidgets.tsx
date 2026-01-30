@@ -51,7 +51,7 @@ export function AgingWidget({
   hasData = true, // Default to true for backwards compatibility
   onViewDetails 
 }: AgingWidgetProps) {
-  const total = data.reduce((sum, bucket) => sum + bucket.amount, 0);
+  const total = (data ?? []).reduce((sum, bucket) => sum + (bucket?.amount ?? 0), 0);
   const overduePercent = total > 0 ? (totalOverdue / total) * 100 : 0;
   
   // Show empty state when no data (e.g., no bills tracked for AP)
@@ -259,8 +259,8 @@ export function BankReconciliationWidget({ accounts, isEn }: BankReconciliationW
     }).format(value);
   };
 
-  const hasDiscrepancy = accounts.some(a => a.status === 'discrepancy');
-  const totalDifference = accounts.reduce((sum, a) => sum + Math.abs(a.difference), 0);
+  const hasDiscrepancy = (accounts ?? []).some(a => a?.status === 'discrepancy');
+  const totalDifference = (accounts ?? []).reduce((sum, a) => sum + Math.abs(a?.difference ?? 0), 0);
 
   return (
     <div className="card">
@@ -388,8 +388,8 @@ export function BudgetWidget({ data, isEn }: BudgetWidgetProps) {
     }).format(value);
   };
 
-  const totalActual = data.reduce((sum, item) => sum + item.actual, 0);
-  const totalBudget = data.reduce((sum, item) => sum + item.budget, 0);
+  const totalActual = (data ?? []).reduce((sum, item) => sum + (item?.actual ?? 0), 0);
+  const totalBudget = (data ?? []).reduce((sum, item) => sum + (item?.budget ?? 0), 0);
   const totalVariance = totalActual - totalBudget;
   const totalVariancePercent = totalBudget > 0 ? (totalVariance / totalBudget) * 100 : 0;
 

@@ -30,6 +30,11 @@ export default function VarianceChart({
   showThresholdLines = true,
   maxValue: propMaxValue,
 }: VarianceChartProps) {
+  // Early return - hide chart completely if no data
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
@@ -38,8 +43,10 @@ export default function VarianceChart({
     let anomalyCount = 0;
     
     const processed = data.map(item => {
-      const variance = item.prior !== 0 
-        ? ((item.current - item.prior) / Math.abs(item.prior)) * 100 
+      const current = item.current ?? 0;
+      const prior = item.prior ?? 0;
+      const variance = prior !== 0 
+        ? ((current - prior) / Math.abs(prior)) * 100 
         : 0;
       const absVariance = Math.abs(variance);
       
@@ -52,10 +59,12 @@ export default function VarianceChart({
         anomalyCount++;
       }
       
-      max = Math.max(max, Math.abs(item.current), Math.abs(item.prior));
+      max = Math.max(max, Math.abs(current), Math.abs(prior));
       
       return {
         ...item,
+        current,
+        prior,
         variance,
         absVariance,
         status,

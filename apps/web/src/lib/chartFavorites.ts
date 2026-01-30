@@ -273,6 +273,11 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
 };
 
+// Chart colors aligned with design system:
+// - Primary green (#059669, #10B981) for positive financial metrics
+// - Accent gold (#d97706, #f59e0b) for secondary/operational metrics  
+// - Red (#EF4444) for expenses/liabilities (semantic)
+// - Teal (#14B8A6) for neutral operational metrics
 export const METRIC_INFO: Record<DataMetric, {
   label: string;
   labelEn: string;
@@ -280,24 +285,24 @@ export const METRIC_INFO: Record<DataMetric, {
   unit: 'currency' | 'percentage' | 'days' | 'number';
   color: string;
 }> = {
-  revenue: { label: 'Revenus', labelEn: 'Revenue', category: 'financial', unit: 'currency', color: '#10B981' },
+  revenue: { label: 'Revenus', labelEn: 'Revenue', category: 'financial', unit: 'currency', color: '#059669' },
   expenses: { label: 'Dépenses', labelEn: 'Expenses', category: 'financial', unit: 'currency', color: '#EF4444' },
-  profit: { label: 'Bénéfice', labelEn: 'Profit', category: 'financial', unit: 'currency', color: '#3B82F6' },
-  cashFlow: { label: 'Flux de trésorerie', labelEn: 'Cash Flow', category: 'financial', unit: 'currency', color: '#8B5CF6' },
-  accountsReceivable: { label: 'Comptes à recevoir', labelEn: 'Accounts Receivable', category: 'operational', unit: 'currency', color: '#F59E0B' },
-  accountsPayable: { label: 'Comptes à payer', labelEn: 'Accounts Payable', category: 'operational', unit: 'currency', color: '#EC4899' },
+  profit: { label: 'Bénéfice', labelEn: 'Profit', category: 'financial', unit: 'currency', color: '#10B981' },
+  cashFlow: { label: 'Flux de trésorerie', labelEn: 'Cash Flow', category: 'financial', unit: 'currency', color: '#047857' },
+  accountsReceivable: { label: 'Comptes à recevoir', labelEn: 'Accounts Receivable', category: 'operational', unit: 'currency', color: '#d97706' },
+  accountsPayable: { label: 'Comptes à payer', labelEn: 'Accounts Payable', category: 'operational', unit: 'currency', color: '#b91c1c' },
   inventory: { label: 'Stocks', labelEn: 'Inventory', category: 'operational', unit: 'currency', color: '#14B8A6' },
-  equity: { label: 'Capitaux propres', labelEn: 'Equity', category: 'financial', unit: 'currency', color: '#6366F1' },
-  assets: { label: 'Actifs', labelEn: 'Assets', category: 'financial', unit: 'currency', color: '#22C55E' },
-  liabilities: { label: 'Passifs', labelEn: 'Liabilities', category: 'financial', unit: 'currency', color: '#F43F5E' },
-  currentRatio: { label: 'Ratio de liquidité', labelEn: 'Current Ratio', category: 'ratio', unit: 'number', color: '#0EA5E9' },
-  quickRatio: { label: 'Ratio rapide', labelEn: 'Quick Ratio', category: 'ratio', unit: 'number', color: '#06B6D4' },
-  debtToEquity: { label: 'Dette/Capitaux', labelEn: 'Debt to Equity', category: 'ratio', unit: 'number', color: '#D946EF' },
-  grossMargin: { label: 'Marge brute', labelEn: 'Gross Margin', category: 'ratio', unit: 'percentage', color: '#84CC16' },
-  netMargin: { label: 'Marge nette', labelEn: 'Net Margin', category: 'ratio', unit: 'percentage', color: '#22D3EE' },
-  dso: { label: 'DSO', labelEn: 'DSO', category: 'operational', unit: 'days', color: '#FB923C' },
-  dpo: { label: 'DPO', labelEn: 'DPO', category: 'operational', unit: 'days', color: '#A855F7' },
-  workingCapital: { label: 'Fonds de roulement', labelEn: 'Working Capital', category: 'financial', unit: 'currency', color: '#2DD4BF' },
+  equity: { label: 'Capitaux propres', labelEn: 'Equity', category: 'financial', unit: 'currency', color: '#059669' },
+  assets: { label: 'Actifs', labelEn: 'Assets', category: 'financial', unit: 'currency', color: '#10B981' },
+  liabilities: { label: 'Passifs', labelEn: 'Liabilities', category: 'financial', unit: 'currency', color: '#dc2626' },
+  currentRatio: { label: 'Ratio de liquidité', labelEn: 'Current Ratio', category: 'ratio', unit: 'number', color: '#059669' },
+  quickRatio: { label: 'Ratio rapide', labelEn: 'Quick Ratio', category: 'ratio', unit: 'number', color: '#10B981' },
+  debtToEquity: { label: 'Dette/Capitaux', labelEn: 'Debt to Equity', category: 'ratio', unit: 'number', color: '#d97706' },
+  grossMargin: { label: 'Marge brute', labelEn: 'Gross Margin', category: 'ratio', unit: 'percentage', color: '#10B981' },
+  netMargin: { label: 'Marge nette', labelEn: 'Net Margin', category: 'ratio', unit: 'percentage', color: '#059669' },
+  dso: { label: 'DSO', labelEn: 'DSO', category: 'operational', unit: 'days', color: '#d97706' },
+  dpo: { label: 'DPO', labelEn: 'DPO', category: 'operational', unit: 'days', color: '#f59e0b' },
+  workingCapital: { label: 'Fonds de roulement', labelEn: 'Working Capital', category: 'financial', unit: 'currency', color: '#047857' },
   customQuery: { label: 'Requête personnalisée', labelEn: 'Custom Query', category: 'financial', unit: 'number', color: '#6B7280' },
 };
 

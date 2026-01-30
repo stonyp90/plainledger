@@ -1104,7 +1104,22 @@ export default function ModelSpreadsheet({
                       }
                     }}
                     disabled={!customGroupName.trim()}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 text-white rounded-lg text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    style={{
+                      backgroundColor: !customGroupName.trim() 
+                        ? 'rgb(var(--color-gray-300))' 
+                        : 'rgb(var(--color-primary-500))',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (customGroupName.trim()) {
+                        e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (customGroupName.trim()) {
+                        e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+                      }
+                    }}
                   >
                     {isEn ? 'Create' : 'Créer'}
                   </button>

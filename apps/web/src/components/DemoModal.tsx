@@ -176,8 +176,8 @@ function AnimatedSparkline({
   }, [data, delay]);
   
   const points = useMemo(() => {
-    const max = Math.max(...data);
-    const min = Math.min(...data);
+    const max = data.length > 0 ? Math.max(...data) : 0;
+    const min = data.length > 0 ? Math.min(...data) : 0;
     const range = max - min || 1;
     
     return data.map((value, i) => ({
@@ -374,7 +374,9 @@ function AnimatedBarChart({
     return () => clearTimeout(timeoutId);
   }, [delay]);
   
-  const maxValue = Math.max(...data.map(d => Math.max(d.actual, d.budget)));
+  const maxValue = data.length > 0 
+    ? Math.max(...data.map(d => Math.max(d?.actual ?? 0, d?.budget ?? 0))) 
+    : 0;
   
   return (
     <div className="w-full">

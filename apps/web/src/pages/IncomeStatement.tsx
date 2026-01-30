@@ -3,10 +3,14 @@ import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, Ale
 import { Link } from 'react-router-dom';
 import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
 import Toggle from '../components/Toggle';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 export default function IncomeStatement() {
   const { currentTenant } = useTenant();
@@ -20,6 +24,8 @@ export default function IncomeStatement() {
   const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
+  const { hasIncomeStatement, hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasRevenueTrends, hasExpenseTrends } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -64,10 +70,10 @@ export default function IncomeStatement() {
     if (!financialData) return null;
 
     // Using trend data to create income statement line items
-    const annualRevenue = financialData.trends.revenue.data.reduce((sum, d) => sum + d.value, 0);
+    const annualRevenue = (financialData.trends?.revenue?.data ?? []).reduce((sum, d) => sum + d.value, 0);
     const priorRevenue = annualRevenue * 0.92; // Simulated prior year
     
-    const annualExpenses = financialData.trends.expenses?.data.reduce((sum, d) => sum + d.value, 0) || annualRevenue * 0.75;
+    const annualExpenses = (financialData.trends?.expenses?.data ?? []).reduce((sum, d) => sum + (d?.value ?? 0), 0) || annualRevenue * 0.75;
     const priorExpenses = annualExpenses * 0.88;
 
     const cogs = annualRevenue * 0.45;
@@ -113,23 +119,23 @@ export default function IncomeStatement() {
       prior: items.reduce((sum, item) => sum + item.prior, 0),
     });
 
-    const totalRevenue = sumSection(incomeData.revenue);
-    const totalCogs = sumSection(incomeData.costOfGoodsSold);
+    const totalRevenue = sumSection(incomeData.revenue ?? []);
+    const totalCogs = sumSection(incomeData.costOfGoodsSold ?? []);
     const grossProfit = {
       current: totalRevenue.current - totalCogs.current,
       prior: totalRevenue.prior - totalCogs.prior,
     };
-    const totalOpex = sumSection(incomeData.operatingExpenses);
+    const totalOpex = sumSection(incomeData.operatingExpenses ?? []);
     const operatingIncome = {
       current: grossProfit.current - totalOpex.current,
       prior: grossProfit.prior - totalOpex.prior,
     };
-    const totalOther = sumSection(incomeData.otherIncomeExpenses);
+    const totalOther = sumSection(incomeData.otherIncomeExpenses ?? []);
     const incomeBeforeTax = {
       current: operatingIncome.current + totalOther.current,
       prior: operatingIncome.prior + totalOther.prior,
     };
-    const totalTaxes = sumSection(incomeData.taxes);
+    const totalTaxes = sumSection(incomeData.taxes ?? []);
     const netIncome = {
       current: incomeBeforeTax.current - totalTaxes.current,
       prior: incomeBeforeTax.prior - totalTaxes.prior,
@@ -145,9 +151,9 @@ export default function IncomeStatement() {
       incomeBeforeTax,
       totalTaxes,
       netIncome,
-      grossMargin: (grossProfit.current / totalRevenue.current) * 100,
-      operatingMargin: (operatingIncome.current / totalRevenue.current) * 100,
-      netMargin: (netIncome.current / totalRevenue.current) * 100,
+      grossMargin: totalRevenue.current !== 0 ? (grossProfit.current / totalRevenue.current) * 100 : 0,
+      operatingMargin: totalRevenue.current !== 0 ? (operatingIncome.current / totalRevenue.current) * 100 : 0,
+      netMargin: totalRevenue.current !== 0 ? (netIncome.current / totalRevenue.current) * 100 : 0,
     };
   }, [incomeData]);
 
@@ -159,6 +165,41 @@ export default function IncomeStatement() {
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <p className="text-muted">{isEn ? 'Loading income statement...' : 'Chargement de l\'état des résultats...'}</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no real data and no sandbox data
+  if (!shouldShowData || !hasIncomeStatement || (!hasRevenueTrends && !hasExpenseTrends)) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              to="/app/reports"
+              className="p-2 rounded-lg transition-colors flex-shrink-0"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+              title={isEn ? 'Back to reports' : 'Retour aux rapports'}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Income Statement' : 'État des résultats'}
+              </h2>
+              <p className="text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Statement of Operations' : 'État des opérations'}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <EmptyDataState 
+          context="income-statement"
+          hasConnection={false}
+          onConnect={() => window.location.href = '/app/settings?tab=connections'}
+        />
       </div>
     );
   }
@@ -272,6 +313,22 @@ export default function IncomeStatement() {
         </div>
       </div>
 
+      {/* Data Readiness Checklist */}
+      {financialData && (
+        <DataReadinessChecklist 
+          context="reports" 
+          compact={!!incomeData}
+        />
+      )}
+
+      {/* Accountant Guidance - Show when transaction data is missing */}
+      {financialData && !financialData.trends?.revenue?.data?.length && (
+        <AccountantGuidanceCard 
+          type="connect-software"
+          compact={true}
+        />
+      )}
+
       {/* Controls */}
       <div className="card">
         <div className="flex flex-wrap items-center gap-6">
@@ -353,7 +410,7 @@ export default function IncomeStatement() {
                   {isEn ? 'REVENUE' : 'REVENUS'}
                 </td>
               </tr>
-              {incomeData.revenue.map(renderRow)}
+              {(incomeData.revenue ?? []).map(renderRow)}
               {renderTotalRow('Total des revenus', 'Total Revenue', totals.totalRevenue)}
 
               {/* Cost of Goods Sold */}
@@ -362,7 +419,7 @@ export default function IncomeStatement() {
                   {isEn ? 'Cost of Goods Sold' : 'Coût des ventes'}
                 </td>
               </tr>
-              {incomeData.costOfGoodsSold.map(renderRow)}
+              {(incomeData.costOfGoodsSold ?? []).map(renderRow)}
               {renderTotalRow('Total coût des ventes', 'Total COGS', totals.totalCogs)}
               {renderTotalRow('Bénéfice brut', 'Gross Profit', totals.grossProfit, true)}
 
@@ -372,7 +429,7 @@ export default function IncomeStatement() {
                   {isEn ? 'Operating Expenses' : 'Charges d\'exploitation'}
                 </td>
               </tr>
-              {incomeData.operatingExpenses.map(renderRow)}
+              {(incomeData.operatingExpenses ?? []).map(renderRow)}
               {renderTotalRow('Total charges d\'exploitation', 'Total Operating Expenses', totals.totalOpex)}
               {renderTotalRow('Résultat d\'exploitation', 'Operating Income', totals.operatingIncome, true)}
 
@@ -386,7 +443,7 @@ export default function IncomeStatement() {
               {renderTotalRow('Résultat avant impôts', 'Income Before Taxes', totals.incomeBeforeTax, true)}
 
               {/* Taxes */}
-              {incomeData.taxes.map(renderRow)}
+              {(incomeData.taxes ?? []).map(renderRow)}
 
               {/* Net Income */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}>

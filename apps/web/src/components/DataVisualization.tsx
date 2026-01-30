@@ -10,6 +10,7 @@
 
 import { useState } from 'react';
 import ShareModal from './ShareModal';
+import { useHasRealData } from '../hooks/useHasRealData';
 import {
   Pin,
   PinOff,
@@ -50,6 +51,11 @@ import {
   Clock,
   GitBranch,
   TrendingDown as TrendingDownIcon,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  Plus,
+  Sliders,
   type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
@@ -185,7 +191,7 @@ export function ChartTypeSelector({
                           className="font-medium text-sm"
                           style={{ color: 'rgb(var(--color-text))' }}
                         >
-                          {info.icon} {isEn ? info.labelEn : info.label}
+                          {isEn ? info.labelEn : info.label}
                         </span>
                         {isSelected && (
                           <Check 
@@ -289,6 +295,7 @@ export function DataVisualizationCard({
 }: DataVisualizationCardProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const { hasRealData, shouldShowSandboxData } = useHasRealData();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -340,26 +347,44 @@ export function DataVisualizationCard({
     setShowOptions(false);
   };
   
-  // Generate mock visualization based on chart type
+  // Generate visualization based on chart type
+  // Only use mock data if we have sandbox data and no real data
   const renderChart = () => {
-    const mockData = data || generateMockData(config);
+    // If we have real data, use it; otherwise only use mock if sandbox is available
+    const chartData = data || (shouldShowSandboxData ? generateMockData(config) : null);
+    
+    // If no data and not sandbox mode, show empty state
+    if (!chartData) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'No data available' : 'Aucune donnée disponible'}
+            </p>
+            <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Connect your accounting software to view data' : 'Connectez votre logiciel comptable pour voir les données'}
+            </p>
+          </div>
+        </div>
+      );
+    }
     
     switch (config.chartType) {
       case 'gauge':
-        return <GaugeChart data={mockData} config={config} isEn={isEn} />;
+        return <GaugeChart data={chartData} config={config} isEn={isEn} />;
       case 'donut':
       case 'pie':
-        return <PieDonutChart data={mockData} config={config} isEn={isEn} />;
+        return <PieDonutChart data={chartData} config={config} isEn={isEn} />;
       case 'radar':
-        return <RadarChart data={mockData} config={config} isEn={isEn} />;
+        return <RadarChart data={chartData} config={config} isEn={isEn} />;
       case 'table':
-        return <TableView data={mockData} config={config} isEn={isEn} />;
+        return <TableView data={chartData} config={config} isEn={isEn} />;
       case 'heatmap':
-        return <HeatmapChart data={mockData} config={config} isEn={isEn} />;
+        return <HeatmapChart data={chartData} config={config} isEn={isEn} />;
       case 'waterfall':
-        return <WaterfallChart data={mockData} config={config} isEn={isEn} />;
+        return <WaterfallChart data={chartData} config={config} isEn={isEn} />;
       default:
-        return <LineBarAreaChart data={mockData} config={config} isEn={isEn} />;
+        return <LineBarAreaChart data={chartData} config={config} isEn={isEn} />;
     }
   };
   
@@ -492,145 +517,262 @@ export function DataVisualizationCard({
                     }}
                   />
                   <div 
-                    className="absolute top-full right-0 mt-2 w-56 rounded-xl border shadow-xl z-50 overflow-hidden py-1"
+                    className="absolute top-full right-0 mt-2 w-64 rounded-xl border shadow-2xl z-50 overflow-hidden"
                     style={{
                       backgroundColor: 'rgb(var(--color-surface))',
                       borderColor: 'rgb(var(--color-border))',
                     }}
                   >
-                    {/* Share */}
-                    <button
-                      onClick={() => {
-                        setShowShareModal(true);
-                        setShowOptions(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      <Share2 className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                      {isEn ? 'Share' : 'Partager'}
-                    </button>
-                    
-                    {/* Bookmark */}
-                    <button
-                      onClick={handleBookmark}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      {localBookmarked ? (
-                        <BookmarkCheck className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
-                      ) : (
-                        <Bookmark className="w-4 h-4" />
-                      )}
-                      {localBookmarked 
-                        ? (isEn ? 'Bookmarked' : 'Enregistré')
-                        : (isEn ? 'Bookmark' : 'Enregistrer')}
-                    </button>
-                    
-                    {/* Add to View */}
-                    <div className="relative">
+                    {/* Actions Section */}
+                    <div className="p-1.5">
+                      <p 
+                        className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
+                        {isEn ? 'Actions' : 'Actions'}
+                      </p>
+                      
+                      {/* Share */}
                       <button
-                        onClick={() => setShowViewMenu(!showViewMenu)}
-                        className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors"
+                        onClick={() => {
+                          setShowShareModal(true);
+                          setShowOptions(false);
+                        }}
+                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors group"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
-                        <div className="flex items-center gap-2">
-                          <Layers className="w-4 h-4" />
-                          {isEn ? 'Add to View' : 'Ajouter à une vue'}
+                        <div className="flex items-center gap-2.5">
+                          <div 
+                            className="w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                          >
+                            <Share2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                          </div>
+                          <span className="font-medium">{isEn ? 'Share' : 'Partager'}</span>
                         </div>
-                        <ChevronDown className={`w-4 h-4 transition-transform ${showViewMenu ? 'rotate-180' : ''}`} />
-                      </button>
-                      
-                      {showViewMenu && (
-                        <div 
-                          className="border-t py-1"
+                        <span 
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
                           style={{ 
                             backgroundColor: 'rgb(var(--color-bg-muted))',
-                            borderColor: 'rgb(var(--color-border))',
+                            color: 'rgb(var(--color-text-muted))'
                           }}
                         >
-                          {savedViews.map((view) => (
-                            <button
-                              key={view.id}
-                              onClick={() => handleAddToView(view.id)}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors"
-                              style={{ color: 'rgb(var(--color-text))' }}
-                            >
-                              <Eye className="w-3 h-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                              {view.name}
-                            </button>
-                          ))}
+                          ⌘S
+                        </span>
+                      </button>
+                      
+                      {/* Bookmark */}
+                      <button
+                        onClick={handleBookmark}
+                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        <div className="flex items-center gap-2.5">
                           <div 
-                            className="border-t mt-1 pt-1"
-                            style={{ borderColor: 'rgb(var(--color-border))' }}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ 
+                              backgroundColor: localBookmarked 
+                                ? 'rgb(var(--color-warning) / 0.1)' 
+                                : 'rgb(var(--color-bg-muted))' 
+                            }}
                           >
+                            {localBookmarked ? (
+                              <BookmarkCheck className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-warning))' }} />
+                            ) : (
+                              <Bookmark className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                            )}
+                          </div>
+                          <span className="font-medium">
+                            {localBookmarked 
+                              ? (isEn ? 'Saved' : 'Enregistré')
+                              : (isEn ? 'Save' : 'Enregistrer')}
+                          </span>
+                        </div>
+                        <span 
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-bg-muted))',
+                            color: 'rgb(var(--color-text-muted))'
+                          }}
+                        >
+                          ⌘B
+                        </span>
+                      </button>
+                      
+                      {/* Add to View */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowViewMenu(!showViewMenu)}
+                          className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div 
+                              className="w-7 h-7 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                            >
+                              <Layers className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                            </div>
+                            <span className="font-medium">{isEn ? 'Add to View' : 'Ajouter à une vue'}</span>
+                          </div>
+                          <ChevronDown 
+                            className={`w-4 h-4 transition-transform ${showViewMenu ? 'rotate-180' : ''}`}
+                            style={{ color: 'rgb(var(--color-text-muted))' }}
+                          />
+                        </button>
+                        
+                        {showViewMenu && (
+                          <div 
+                            className="mx-2.5 mb-1 rounded-lg overflow-hidden"
+                            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                          >
+                            {savedViews.map((view) => (
+                              <button
+                                key={view.id}
+                                onClick={() => handleAddToView(view.id)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface transition-colors"
+                                style={{ color: 'rgb(var(--color-text))' }}
+                              >
+                                <Eye className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                                {view.name}
+                              </button>
+                            ))}
                             <button
                               onClick={() => {
-                                // Create new view
                                 setShowViewMenu(false);
                                 setShowOptions(false);
                               }}
-                              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors"
-                              style={{ color: 'rgb(var(--color-primary-500))' }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface transition-colors border-t"
+                              style={{ 
+                                color: 'rgb(var(--color-primary-500))',
+                                borderColor: 'rgb(var(--color-border))'
+                              }}
                             >
-                              <Layers className="w-3 h-3" />
-                              {isEn ? 'Create New View' : 'Créer une nouvelle vue'}
+                              <Plus className="w-3.5 h-3.5" />
+                              {isEn ? 'New View' : 'Nouvelle vue'}
                             </button>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                     
                     <div 
-                      className="my-1 border-t"
+                      className="mx-3 border-t"
                       style={{ borderColor: 'rgb(var(--color-border))' }}
                     />
                     
-                    {/* Export Options */}
-                    <button
-                      onClick={() => handleExport('png')}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      <Download className="w-4 h-4" />
-                      {isEn ? 'Export as PNG' : 'Exporter en PNG'}
-                    </button>
-                    <button
-                      onClick={() => handleExport('csv')}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      <Download className="w-4 h-4" />
-                      {isEn ? 'Export as CSV' : 'Exporter en CSV'}
-                    </button>
-                    <button
-                      onClick={() => handleExport('pdf')}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      <Download className="w-4 h-4" />
-                      {isEn ? 'Export as PDF' : 'Exporter en PDF'}
-                    </button>
+                    {/* Export Section */}
+                    <div className="p-1.5">
+                      <p 
+                        className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
+                        {isEn ? 'Export' : 'Exporter'}
+                      </p>
+                      
+                      <div className="flex gap-1.5 px-2.5">
+                        <button
+                          onClick={() => handleExport('png')}
+                          className="flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors group"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                          title={isEn ? 'Export as PNG image' : 'Exporter en image PNG'}
+                        >
+                          <div 
+                            className="w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
+                            style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
+                          >
+                            <FileImage className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
+                          </div>
+                          <span className="text-[11px] font-medium">PNG</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => handleExport('csv')}
+                          className="flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors group"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                          title={isEn ? 'Export as CSV spreadsheet' : 'Exporter en fichier CSV'}
+                        >
+                          <div 
+                            className="w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
+                            style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+                          >
+                            <FileSpreadsheet className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+                          </div>
+                          <span className="text-[11px] font-medium">CSV</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => handleExport('pdf')}
+                          className="flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors group"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                          title={isEn ? 'Export as PDF document' : 'Exporter en document PDF'}
+                        >
+                          <div 
+                            className="w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
+                            style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
+                          >
+                            <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+                          </div>
+                          <span className="text-[11px] font-medium">PDF</span>
+                        </button>
+                      </div>
+                    </div>
                     
                     <div 
-                      className="my-1 border-t"
+                      className="mx-3 border-t"
                       style={{ borderColor: 'rgb(var(--color-border))' }}
                     />
                     
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      <Copy className="w-4 h-4" />
-                      {isEn ? 'Duplicate' : 'Dupliquer'}
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      <Settings2 className="w-4 h-4" />
-                      {isEn ? 'Configure' : 'Configurer'}
-                    </button>
+                    {/* More Section */}
+                    <div className="p-1.5">
+                      <button
+                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div 
+                            className="w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                          >
+                            <Copy className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          </div>
+                          <span className="font-medium">{isEn ? 'Duplicate' : 'Dupliquer'}</span>
+                        </div>
+                        <span 
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-bg-muted))',
+                            color: 'rgb(var(--color-text-muted))'
+                          }}
+                        >
+                          ⌘D
+                        </span>
+                      </button>
+                      
+                      <button
+                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div 
+                            className="w-7 h-7 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                          >
+                            <Sliders className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          </div>
+                          <span className="font-medium">{isEn ? 'Configure' : 'Configurer'}</span>
+                        </div>
+                        <span 
+                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-bg-muted))',
+                            color: 'rgb(var(--color-text-muted))'
+                          }}
+                        >
+                          ⌘,
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -675,8 +817,9 @@ export function DataVisualizationCard({
 function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   
-  const maxValue = Math.max(...data.map(d => d.value));
-  const minValue = Math.min(...data.map(d => d.value));
+  const values = data.length > 0 ? data.map(d => d.value ?? 0) : [0];
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
   const range = maxValue - minValue || 1;
   
   const metricInfo = METRIC_INFO[config.metrics[0]];
@@ -877,14 +1020,14 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
 // Pie/Donut Chart with Hover
 function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const total = (data ?? []).reduce((sum, d) => sum + (d?.value ?? 0), 0);
   
   const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
   
   // Pre-calculate angles for all segments
-  const segments = data.map((d, i) => {
-    const prevAngles = data.slice(0, i).reduce((sum, item) => sum + (item.value / total) * 360, 0);
-    const angle = (d.value / total) * 360;
+  const segments = (data ?? []).map((d, i) => {
+    const prevAngles = data.slice(0, i).reduce((sum, item) => sum + ((item?.value ?? 0) / (total || 1)) * 360, 0);
+    const angle = ((d?.value ?? 0) / (total || 1)) * 360;
     return {
       ...d,
       startAngle: prevAngles,
@@ -1001,7 +1144,8 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
 
 // Radar Chart
 function RadarChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
-  const maxValue = Math.max(...data.map(d => d.value));
+  const values = data.length > 0 ? data.map(d => d.value ?? 0) : [0];
+  const maxValue = Math.max(...values);
   const numPoints = data.length;
   const angleStep = (2 * Math.PI) / numPoints;
   
@@ -1094,9 +1238,9 @@ function RadarChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
 
 // Gauge Chart
 function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
-  const value = data[0]?.value || 0;
-  const maxValue = data[0]?.max || 3;
-  const percentage = Math.min(100, (value / maxValue) * 100);
+  const value = data[0]?.value ?? 0;
+  const maxValue = data[0]?.max ?? 3;
+  const percentage = maxValue !== 0 ? Math.min(100, (value / maxValue) * 100) : 0;
   
   const getColor = () => {
     if (percentage < 33) return 'rgb(var(--color-error))';
@@ -1163,7 +1307,8 @@ function HeatmapChart({ data, config: _config }: { data: any[]; config: ChartCon
   const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
   const weeks = Array.from({ length: 12 }, (_, i) => i + 1);
   
-  const maxValue = Math.max(...data.map(d => d.value));
+  const values = data.length > 0 ? data.map(d => d.value ?? 0) : [0];
+  const maxValue = Math.max(...values);
   
   const getColor = (value: number) => {
     const intensity = value / maxValue;
@@ -1241,8 +1386,12 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
     };
   });
   
-  const maxValue = Math.max(...processedData.map(d => Math.max(d.start, d.end)));
-  const minValue = Math.min(...processedData.map(d => Math.min(d.start, d.end)));
+  const maxValue = processedData.length > 0 
+    ? Math.max(...processedData.map(d => Math.max(d?.start ?? 0, d?.end ?? 0))) 
+    : 0;
+  const minValue = processedData.length > 0 
+    ? Math.min(...processedData.map(d => Math.min(d?.start ?? 0, d?.end ?? 0))) 
+    : 0;
   const range = maxValue - minValue || 1;
   
   return (

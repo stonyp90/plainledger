@@ -285,7 +285,7 @@ const MOCK_TENANTS: Tenant[] = [
   },
   {
     id: 'demo-org',  // Matches the organization key in Keycloak and MinIO data
-    name: 'Demo Corporation',
+    name: 'Demo Real Estate Corp',
     slug: 'demo-corp',
     plan: 'professional',  // Professional plan - has real data access
     status: 'active',
@@ -297,7 +297,7 @@ const MOCK_TENANTS: Tenant[] = [
     },
     members: 1,
     role: 'owner',
-    industry: 'professional_services',
+    industry: 'real_estate',  // Match seeded QuickBooks data industry
     region: 'canada',
   },
   {
@@ -438,13 +438,19 @@ export function TenantProvider({ children }: TenantProviderProps) {
       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
       setTenants(MOCK_TENANTS);
       
-      // Restore last selected tenant or use first one
+      // First try to find tenant matching user's organization
+      const userOrgTenant = user?.organization 
+        ? MOCK_TENANTS.find(t => t.id === user.organization)
+        : null;
+      
+      // Then try to restore last selected tenant
       const savedTenantId = localStorage.getItem(STORAGE_KEY);
       const savedTenant = savedTenantId 
         ? MOCK_TENANTS.find(t => t.id === savedTenantId)
         : null;
       
-      setCurrentTenantState(savedTenant || MOCK_TENANTS[0] || null);
+      // Priority: user's org tenant > saved tenant > first tenant
+      setCurrentTenantState(userOrgTenant || savedTenant || MOCK_TENANTS[0] || null);
     } catch (err) {
       setError('Impossible de charger les organisations');
       console.error('Failed to load tenants:', err);

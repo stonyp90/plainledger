@@ -7,22 +7,30 @@
 
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle, AlertCircle, Loader2, User, Mail, Tag, MessageSquare } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Loader2, User, Mail, Tag, MessageSquare, Building2, Phone, Briefcase, HelpCircle } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import config from '../lib/config';
 
 interface ContactFormData {
   name: string;
   email: string;
+  company: string;
+  phone: string;
+  industry: string;
   subject: string;
   message: string;
+  referralSource: string;
 }
 
 interface FieldFocus {
   name: boolean;
   email: boolean;
+  company: boolean;
+  phone: boolean;
+  industry: boolean;
   subject: boolean;
   message: boolean;
+  referralSource: boolean;
 }
 
 interface ContactFormProps {
@@ -54,8 +62,12 @@ export function ContactForm({
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
+    company: '',
+    phone: '',
+    industry: '',
     subject: '',
     message: '',
+    referralSource: '',
   });
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -87,7 +99,7 @@ export function ContactForm({
       }
 
       setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      setFormData({ name: '', email: '', company: '', phone: '', industry: '', subject: '', message: '', referralSource: '' });
       onSuccess?.();
       
       // Reset to idle after 5 seconds
@@ -112,10 +124,38 @@ export function ContactForm({
     { value: 'feedback', label: isEn ? 'Feedback' : 'Commentaires' },
   ];
 
+  const industries = [
+    { value: '', label: isEn ? 'Select your industry...' : 'Sélectionnez votre industrie...' },
+    { value: 'accounting', label: isEn ? 'Accounting / CPA Firm' : 'Comptabilité / Cabinet CPA' },
+    { value: 'construction', label: isEn ? 'Construction' : 'Construction' },
+    { value: 'healthcare', label: isEn ? 'Healthcare' : 'Santé' },
+    { value: 'manufacturing', label: isEn ? 'Manufacturing' : 'Fabrication' },
+    { value: 'professional-services', label: isEn ? 'Professional Services' : 'Services professionnels' },
+    { value: 'real-estate', label: isEn ? 'Real Estate' : 'Immobilier' },
+    { value: 'retail', label: isEn ? 'Retail / E-commerce' : 'Commerce de détail' },
+    { value: 'restaurant', label: isEn ? 'Restaurant / Hospitality' : 'Restauration / Hôtellerie' },
+    { value: 'technology', label: isEn ? 'Technology / SaaS' : 'Technologie / SaaS' },
+    { value: 'transportation', label: isEn ? 'Transportation / Logistics' : 'Transport / Logistique' },
+    { value: 'nonprofit', label: isEn ? 'Non-profit' : 'Organisme à but non lucratif' },
+    { value: 'other', label: isEn ? 'Other' : 'Autre' },
+  ];
+
+  const referralSources = [
+    { value: '', label: isEn ? 'How did you hear about us?' : 'Comment avez-vous entendu parler de nous?' },
+    { value: 'google', label: isEn ? 'Google Search' : 'Recherche Google' },
+    { value: 'linkedin', label: 'LinkedIn' },
+    { value: 'referral', label: isEn ? 'Referral / Word of mouth' : 'Référence / Bouche à oreille' },
+    { value: 'accountant', label: isEn ? 'My Accountant / CPA' : 'Mon comptable / CPA' },
+    { value: 'social', label: isEn ? 'Social Media' : 'Médias sociaux' },
+    { value: 'event', label: isEn ? 'Conference / Event' : 'Conférence / Événement' },
+    { value: 'other', label: isEn ? 'Other' : 'Autre' },
+  ];
+
   // Landing page styles
   if (landingStyle && theme) {
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Name & Email Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label 
@@ -170,35 +210,121 @@ export function ContactForm({
             />
           </div>
         </div>
-        
-        <div>
-          <label 
-            htmlFor="contact-subject" 
-            className="block text-sm font-medium mb-1.5"
-            style={{ color: 'rgb(var(--color-text-secondary))' }}
-          >
-            {isEn ? 'Subject' : 'Sujet'} *
-          </label>
-          <select
-            id="contact-subject"
-            name="subject"
-            value={formData.subject}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              borderColor: 'rgb(var(--color-border))',
-              color: 'rgb(var(--color-text))',
-              '--tw-ring-color': theme.green,
-            } as React.CSSProperties}
-          >
-            {subjects.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+
+        {/* Company & Phone Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label 
+              htmlFor="contact-company" 
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? 'Company' : 'Entreprise'} *
+            </label>
+            <input
+              id="contact-company"
+              type="text"
+              name="company"
+              value={formData.company}
+              onChange={handleChange}
+              required
+              maxLength={200}
+              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                borderColor: 'rgb(var(--color-border))',
+                color: 'rgb(var(--color-text))',
+                '--tw-ring-color': theme.green,
+              } as React.CSSProperties}
+              placeholder={isEn ? 'Your company name' : 'Nom de votre entreprise'}
+            />
+          </div>
+          <div>
+            <label 
+              htmlFor="contact-phone" 
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? 'Phone' : 'Téléphone'} <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
+            </label>
+            <input
+              id="contact-phone"
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              maxLength={20}
+              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                borderColor: 'rgb(var(--color-border))',
+                color: 'rgb(var(--color-text))',
+                '--tw-ring-color': theme.green,
+              } as React.CSSProperties}
+              placeholder={isEn ? '(555) 123-4567' : '(555) 123-4567'}
+            />
+          </div>
+        </div>
+
+        {/* Industry & Subject Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label 
+              htmlFor="contact-industry" 
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? 'Industry' : 'Industrie'} *
+            </label>
+            <select
+              id="contact-industry"
+              name="industry"
+              value={formData.industry}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                borderColor: 'rgb(var(--color-border))',
+                color: 'rgb(var(--color-text))',
+                '--tw-ring-color': theme.green,
+              } as React.CSSProperties}
+            >
+              {industries.map(i => (
+                <option key={i.value} value={i.value}>{i.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label 
+              htmlFor="contact-subject" 
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn ? 'Subject' : 'Sujet'} *
+            </label>
+            <select
+              id="contact-subject"
+              name="subject"
+              value={formData.subject}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                borderColor: 'rgb(var(--color-border))',
+                color: 'rgb(var(--color-text))',
+                '--tw-ring-color': theme.green,
+              } as React.CSSProperties}
+            >
+              {subjects.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
         
+        {/* Message */}
         <div>
           <label 
             htmlFor="contact-message" 
@@ -225,6 +351,34 @@ export function ContactForm({
             } as React.CSSProperties}
             placeholder={isEn ? 'How can we help you?' : 'Comment pouvons-nous vous aider?'}
           />
+        </div>
+
+        {/* How did you hear about us */}
+        <div>
+          <label 
+            htmlFor="contact-referral" 
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: 'rgb(var(--color-text-secondary))' }}
+          >
+            {isEn ? 'How did you hear about us?' : 'Comment avez-vous entendu parler de nous?'} <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
+          </label>
+          <select
+            id="contact-referral"
+            name="referralSource"
+            value={formData.referralSource}
+            onChange={handleChange}
+            className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              borderColor: 'rgb(var(--color-border))',
+              color: 'rgb(var(--color-text))',
+              '--tw-ring-color': theme.green,
+            } as React.CSSProperties}
+          >
+            {referralSources.map(r => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
         </div>
 
         <AnimatePresence mode="wait">
@@ -287,8 +441,12 @@ export function ContactForm({
   const [fieldFocus, setFieldFocus] = useState<FieldFocus>({
     name: false,
     email: false,
+    company: false,
+    phone: false,
+    industry: false,
     subject: false,
     message: false,
+    referralSource: false,
   });
   const messageRef = useRef<HTMLTextAreaElement>(null);
 
@@ -386,6 +544,116 @@ export function ContactForm({
           </div>
         </div>
       </div>
+
+      {/* Company & Phone Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {/* Company Field */}
+        <div className="space-y-1.5">
+          <label 
+            htmlFor="contact-company-app" 
+            className="flex items-center gap-1.5 text-sm font-medium"
+            style={{ color: fieldFocus.company ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-secondary))' }}
+          >
+            {isEn ? 'Company' : 'Entreprise'} <span style={{ color: 'rgb(var(--color-primary-500))' }}>*</span>
+          </label>
+          <div className="relative">
+            <div 
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors"
+              style={{ color: fieldFocus.company ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }}
+            >
+              <Building2 className="w-4 h-4" />
+            </div>
+            <input
+              id="contact-company-app"
+              type="text"
+              name="company"
+              value={formData.company}
+              onChange={handleChange}
+              onFocus={() => handleFocus('company')}
+              onBlur={() => handleBlur('company')}
+              required
+              maxLength={200}
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none"
+              style={getInputStyle('company', !!formData.company)}
+              placeholder={isEn ? 'Your company name' : 'Nom de votre entreprise'}
+            />
+          </div>
+        </div>
+
+        {/* Phone Field */}
+        <div className="space-y-1.5">
+          <label 
+            htmlFor="contact-phone-app" 
+            className="flex items-center gap-1.5 text-sm font-medium"
+            style={{ color: fieldFocus.phone ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-secondary))' }}
+          >
+            {isEn ? 'Phone' : 'Téléphone'} <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
+          </label>
+          <div className="relative">
+            <div 
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors"
+              style={{ color: fieldFocus.phone ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }}
+            >
+              <Phone className="w-4 h-4" />
+            </div>
+            <input
+              id="contact-phone-app"
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              onFocus={() => handleFocus('phone')}
+              onBlur={() => handleBlur('phone')}
+              maxLength={20}
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none"
+              style={getInputStyle('phone', !!formData.phone)}
+              placeholder={isEn ? '(555) 123-4567' : '(555) 123-4567'}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Industry Field */}
+      <div className="space-y-1.5">
+        <label 
+          htmlFor="contact-industry-app" 
+          className="flex items-center gap-1.5 text-sm font-medium"
+          style={{ color: fieldFocus.industry ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-secondary))' }}
+        >
+          {isEn ? 'Industry' : 'Industrie'} <span style={{ color: 'rgb(var(--color-primary-500))' }}>*</span>
+        </label>
+        <div className="relative">
+          <div 
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors"
+            style={{ color: fieldFocus.industry ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }}
+          >
+            <Briefcase className="w-4 h-4" />
+          </div>
+          <select
+            id="contact-industry-app"
+            name="industry"
+            value={formData.industry}
+            onChange={handleChange}
+            onFocus={() => handleFocus('industry')}
+            onBlur={() => handleBlur('industry')}
+            required
+            className="w-full pl-10 pr-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none appearance-none cursor-pointer"
+            style={getInputStyle('industry', !!formData.industry)}
+          >
+            {industries.map(i => (
+              <option key={i.value} value={i.value}>{i.label}</option>
+            ))}
+          </select>
+          <div 
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
       
       {/* Subject Field */}
       <div className="space-y-1.5">
@@ -475,6 +743,47 @@ export function ContactForm({
             style={getInputStyle('message', !!formData.message)}
             placeholder={isEn ? 'How can we help you?' : 'Comment pouvons-nous vous aider?'}
           />
+        </div>
+      </div>
+
+      {/* How did you hear about us */}
+      <div className="space-y-1.5">
+        <label 
+          htmlFor="contact-referral-app" 
+          className="flex items-center gap-1.5 text-sm font-medium"
+          style={{ color: fieldFocus.referralSource ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-secondary))' }}
+        >
+          {isEn ? 'How did you hear about us?' : 'Comment avez-vous entendu parler de nous?'} <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
+        </label>
+        <div className="relative">
+          <div 
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors"
+            style={{ color: fieldFocus.referralSource ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }}
+          >
+            <HelpCircle className="w-4 h-4" />
+          </div>
+          <select
+            id="contact-referral-app"
+            name="referralSource"
+            value={formData.referralSource}
+            onChange={handleChange}
+            onFocus={() => handleFocus('referralSource')}
+            onBlur={() => handleBlur('referralSource')}
+            className="w-full pl-10 pr-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none appearance-none cursor-pointer"
+            style={getInputStyle('referralSource', !!formData.referralSource)}
+          >
+            {referralSources.map(r => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+          <div 
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
 

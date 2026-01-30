@@ -62,8 +62,8 @@ function MiniSparkline({
   
   // Calculate min/max across both datasets for consistent scale
   const allData = benchmarkData ? [...data, ...benchmarkData] : data;
-  const max = Math.max(...allData);
-  const min = Math.min(...allData);
+  const max = allData.length > 0 ? Math.max(...allData) : 0;
+  const min = allData.length > 0 ? Math.min(...allData) : 0;
   const range = max - min || 1;
   
   const getPoints = (values: number[]) => values.map((v, i) => {

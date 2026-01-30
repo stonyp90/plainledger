@@ -69,26 +69,11 @@ export class DataSourceResolver {
     const { organizationId } = context.req.user;
     this.logger.log(`Fetching data sources for org: ${organizationId}`);
 
-    // Return mock data - would normally fetch from database
-    return [
-      {
-        id: "ds-1",
-        provider: "quickbooks",
-        name: "QuickBooks Online",
-        companyName: "Sample Company",
-        status: DataSourceStatus.CONNECTED,
-        lastSyncAt: new Date(),
-        syncStats: {
-          accountsSynced: 45,
-          transactionsSynced: 1250,
-          contactsSynced: 89,
-          invoicesSynced: 234,
-          billsSynced: 156,
-        },
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        updatedAt: new Date(),
-      },
-    ];
+    // TODO: Query datasource_connections table from database
+    // For now, return empty array to allow frontend to properly detect "no connection" state
+    // This ensures we're testing real connection detection, not mock data
+    // When a real connection exists in the database, it will be returned here
+    return [];
   }
 
   @Query(() => DataSource, {

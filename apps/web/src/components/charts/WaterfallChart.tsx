@@ -61,6 +61,11 @@ export default function WaterfallChart({
   metricType = 'cash_flow',
   benchmarkValue,
 }: WaterfallChartProps) {
+  // Early return - hide chart completely if no data
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

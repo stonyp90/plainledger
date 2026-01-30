@@ -271,16 +271,21 @@ export class DatalakeDataService implements IDatalakeDataService {
     industryId?: string,
   ): Promise<DashboardData> {
     this.logger.log(
-      `Fetching dashboard data for organization: ${organizationId}${industryId ? `, industry: ${industryId}` : ""}`,
+      `[S3 Gold] Fetching dashboard data for organization: ${organizationId}${industryId ? `, industry: ${industryId}` : ""} from bucket: ${this.goldBucket}`,
     );
 
     try {
-      // Fetch data from Gold layer
+      // Fetch data from Gold layer (S3)
+      this.logger.log(`[S3 Gold] Fetching accounts, contacts, and transactions from S3...`);
       const [accounts, contacts, transactions] = await Promise.all([
         this.fetchAccounts(organizationId),
         this.fetchContacts(organizationId),
         this.fetchTransactions(organizationId),
       ]);
+      
+      this.logger.log(
+        `[S3 Gold] Fetched ${accounts.length} accounts, ${contacts.length} contacts, ${transactions.length} transactions from S3 Gold bucket`,
+      );
 
       // Calculate summary metrics
       const summary = this.calculateSummary(accounts, transactions);
@@ -379,26 +384,36 @@ export class DatalakeDataService implements IDatalakeDataService {
    */
   private async fetchAccounts(organizationId: string): Promise<DimAccount[]> {
     try {
-      const files = await this.listFiles(`dim_account/${organizationId}/`);
+      const prefix = `dim_account/${organizationId}/`;
+      this.logger.log(`[S3 Gold] Listing accounts files at prefix: ${prefix}`);
+      const files = await this.listFiles(prefix);
+      
       if (files.length === 0) {
-        this.logger.warn(
-          `No accounts found for org: ${organizationId}, trying e2e data`,
+        this.logger.log(
+          `[S3 Gold] No accounts found for org: ${organizationId} at ${prefix}, trying e2e test data`,
         );
         // Try the e2e test data
         const e2eFiles = await this.listFiles(`dim_account/e2e-org-123/`);
         if (e2eFiles.length > 0) {
+          this.logger.log(`[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`);
           return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
         }
+        this.logger.log(`[S3 Gold] No accounts data found in S3 for org: ${organizationId}`);
+        return [];
       }
+      
       if (files.length > 0) {
+        const latestFile = files[files.length - 1];
         this.logger.log(
-          `Fetched accounts from ${files[files.length - 1]} for org: ${organizationId}`,
+          `[S3 Gold] Found ${files.length} account file(s), using latest: ${latestFile} for org: ${organizationId}`,
         );
-        return this.fetchJsonFile(files[files.length - 1]);
+        const accounts = await this.fetchJsonFile<DimAccount[]>(latestFile);
+        this.logger.log(`[S3 Gold] Loaded ${accounts.length} accounts from S3`);
+        return accounts;
       }
       return [];
     } catch (error) {
-      this.logger.warn(`Failed to fetch accounts: ${error}`);
+      this.logger.error(`[S3 Gold] Failed to fetch accounts: ${error}`);
       return [];
     }
   }
@@ -432,19 +447,24 @@ export class DatalakeDataService implements IDatalakeDataService {
     organizationId: string,
   ): Promise<FactTransaction[]> {
     try {
+      this.logger.log(`[S3 Gold] Fetching transactions for org: ${organizationId}`);
+      
       // Check direct organization path first (QuickBooks format)
       let files = await this.listFiles(`fact_transaction/${organizationId}/`);
+      this.logger.log(`[S3 Gold] Found ${files.length} transaction file(s) at fact_transaction/${organizationId}/`);
 
       // Try partition structure if direct path is empty
       if (files.length === 0) {
         files = await this.listFiles(
           `fact_transaction/organization_id=${organizationId}/`,
         );
+        this.logger.log(`[S3 Gold] Found ${files.length} transaction file(s) at partition path`);
       }
 
       // Fallback to e2e test data
       if (files.length === 0) {
         files = await this.listFiles(`fact_transaction/e2e-org-123/`);
+        this.logger.log(`[S3 Gold] Using e2e test data: ${files.length} file(s)`);
       }
 
       // Also check partition structure with org-123
@@ -452,21 +472,29 @@ export class DatalakeDataService implements IDatalakeDataService {
         files = await this.listFiles(
           `fact_transaction/organization_id=org-123/`,
         );
+        this.logger.log(`[S3 Gold] Using org-123 partition: ${files.length} file(s)`);
+      }
+
+      if (files.length === 0) {
+        this.logger.log(`[S3 Gold] No transaction data found in S3 for org: ${organizationId}`);
+        return [];
       }
 
       const allTransactions: FactTransaction[] = [];
-      for (const file of files.slice(-5)) {
-        // Last 5 files
+      const filesToLoad = files.slice(-5); // Last 5 files
+      this.logger.log(`[S3 Gold] Loading transactions from ${filesToLoad.length} file(s): ${filesToLoad.map(f => f.split('/').pop()).join(', ')}`);
+      
+      for (const file of filesToLoad) {
         const data = await this.fetchJsonFile<FactTransaction[]>(file);
         allTransactions.push(...data);
       }
 
       this.logger.log(
-        `Fetched ${allTransactions.length} transactions for org: ${organizationId}`,
+        `[S3 Gold] Successfully loaded ${allTransactions.length} transactions from S3 Gold bucket for org: ${organizationId}`,
       );
       return allTransactions;
     } catch (error) {
-      this.logger.warn(`Failed to fetch transactions: ${error}`);
+      this.logger.error(`[S3 Gold] Failed to fetch transactions: ${error}`);
       return [];
     }
   }

@@ -216,12 +216,12 @@ export default function OpExCapExChart({
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set(categories.map(c => c.id)));
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  // Generate data if not provided
-  const historical = useMemo(() => {
-    if (historicalData && historicalData.length > 0) return historicalData;
-    return generateSampleData(12, categories);
-  }, [historicalData, categories]);
-  
+  // Return null if no real data - no fallback to sample data
+  if (!historicalData || historicalData.length === 0) {
+    return null;
+  }
+
+  const historical = historicalData;
   const projected = useMemo(() => {
     if (projectedData && projectedData.length > 0) return projectedData;
     return generateProjections(historical, 12, settings, categories);

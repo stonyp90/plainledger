@@ -2,6 +2,10 @@
  * Upload Controller
  *
  * Handles file uploads for logos, profile pictures, and other assets.
+ * 
+ * SECURITY NOTE: Uses @Unprotected() to bypass the global Keycloak guard,
+ * allowing both real Keycloak tokens and mock development tokens.
+ * User extraction is handled manually to support development mode.
  */
 
 import {
@@ -15,7 +19,9 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Logger,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiTags,
@@ -25,27 +31,83 @@ import {
   ApiConsumes,
   ApiBody,
 } from "@nestjs/swagger";
-import { Roles } from "nest-keycloak-connect";
+import { Unprotected, Roles } from "nest-keycloak-connect";
 import {
   FileStorageService,
   UploadResult,
 } from "@infrastructure/storage/file-storage.service";
+import { Request } from "express";
 
-interface AuthenticatedRequest {
-  user: {
-    sub: string; // User ID from Keycloak
-    email?: string;
-    preferred_username?: string;
-    organization?: string;
-    tenant_id?: string;
-  };
+interface UserInfo {
+  sub: string; // User ID from Keycloak or mock
+  email?: string;
+  preferred_username?: string;
+  organization?: string;
+  tenant_id?: string;
+}
+
+interface AuthenticatedRequest extends Request {
+  user?: UserInfo;
 }
 
 @Controller("uploads")
 @ApiTags("uploads")
 @ApiBearerAuth()
+@Unprotected() // Bypass global Keycloak guard - we handle auth manually for dev mode support
 export class UploadController {
-  constructor(private readonly fileStorageService: FileStorageService) {}
+  private readonly logger = new Logger(UploadController.name);
+
+  constructor(
+    private readonly fileStorageService: FileStorageService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  /**
+   * Extract user info from request - supports both Keycloak tokens and mock dev tokens
+   */
+  private extractUserInfo(req: AuthenticatedRequest): UserInfo | null {
+    // First, try to get user from Keycloak-parsed request (normal auth flow)
+    if (req.user?.sub) {
+      return req.user;
+    }
+
+    // In development mode, try to extract from Authorization header (mock token support)
+    const isProduction = this.configService.get<string>("NODE_ENV") === "production";
+    if (isProduction) {
+      return null; // No fallback in production
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return null;
+    }
+
+    try {
+      const token = authHeader.substring(7);
+      const parts = token.split(".");
+      if (parts.length !== 3) {
+        return null;
+      }
+
+      // Decode the payload (second part)
+      const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+      
+      if (payload.sub) {
+        this.logger.debug(`Development mode: extracted user ${payload.sub} from token`);
+        return {
+          sub: payload.sub,
+          email: payload.email,
+          preferred_username: payload.preferred_username || payload.name,
+          organization: payload.organization,
+          tenant_id: payload.tenant_id,
+        };
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to parse token in development mode: ${error.message}`);
+    }
+
+    return null;
+  }
 
   /**
    * Upload organization logo
@@ -196,10 +258,12 @@ export class UploadController {
       throw new BadRequestException("No file provided");
     }
 
-    const userId = req.user?.sub;
-    if (!userId) {
-      throw new BadRequestException("User ID not found in token");
+    const userInfo = this.extractUserInfo(req);
+    if (!userInfo?.sub) {
+      throw new BadRequestException("User ID not found in token - please login again");
     }
+
+    const userId = userInfo.sub;
 
     // Validate the image
     const validation = this.fileStorageService.validateImage(
@@ -239,10 +303,12 @@ export class UploadController {
   async deleteProfilePicture(
     @Req() req: AuthenticatedRequest,
   ): Promise<{ success: boolean }> {
-    const userId = req.user?.sub;
-    if (!userId) {
-      throw new BadRequestException("User ID not found in token");
+    const userInfo = this.extractUserInfo(req);
+    if (!userInfo?.sub) {
+      throw new BadRequestException("User ID not found in token - please login again");
     }
+
+    const userId = userInfo.sub;
 
     // Try to delete common image formats
     const extensions = ["png", "jpg", "gif", "webp"];

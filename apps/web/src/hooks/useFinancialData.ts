@@ -9,13 +9,15 @@
  * - Fallback to mock data when GraphQL is unavailable
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useDemoMode } from '../contexts/DemoModeContext';
+import { isMockAuthEnabled } from '../lib/keycloak';
 import { 
   useDashboardSummary, 
   useFinancialTrends, 
   useAccounts,
+  useDataSources,
   useBalanceSheet as useBalanceSheetQuery,
   useIncomeStatement as useIncomeStatementQuery,
   useTrialBalance,
@@ -83,23 +85,119 @@ export function useFinancialData(options: {
   const { isDemoMode } = useDemoMode();
   
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const hasLoggedMockAuth = useRef(false);
+
+  // Check for real data source connections
+  const { data: dataSourcesQueryResult, loading: dataSourcesLoading } = useDataSources();
+  
+  // Check if QuickBooks (or any accounting software) is connected
+  const hasRealConnection = useMemo(() => {
+    if (dataSourcesLoading) return false;
+    const dataSources = dataSourcesQueryResult?.dataSources;
+    if (!dataSources || !Array.isArray(dataSources)) return false;
+    
+    const connected = dataSources.some(
+      (ds: { provider: string; status: string }) => {
+        const provider = (ds.provider || '').toLowerCase();
+        const status = (ds.status || '').toUpperCase();
+        const isConnected = status === 'CONNECTED' || status === 'ACTIVE' || status === 'connected';
+        return (
+          (provider === 'quickbooks' || provider === 'xero' || provider === 'sage' || provider === 'freshbooks') &&
+          isConnected
+        );
+      }
+    );
+    
+    if (connected) {
+      console.log('[useFinancialData] Real connection detected:', {
+        dataSources: dataSources.map((ds: { provider: string; status: string }) => ({
+          provider: ds.provider,
+          status: ds.status,
+        })),
+      });
+    }
+    
+    return connected;
+  }, [dataSourcesQueryResult, dataSourcesLoading]);
 
   // Check if we should use mock/demo data
-  // Free tier accounts and demo mode users always see demo data
+  // IMPORTANT: 
+  // 1. If user has a real connection, ALWAYS use real data
+  // 2. Mock data is ONLY for free/starter tier users when no connection exists
+  // 3. Paid users (professional/enterprise) NEVER see mock data - they see empty states
   const shouldUseMockData = useMemo(() => {
-    const isFreeAccount = currentTenant?.plan === 'free';
-    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
-    const useMock = isFreeAccount || hasDemoModeEnabled;
-    if (useMock) {
-      console.log('[useFinancialData] Using mock data - free tier or demo mode', {
-        isFreeAccount,
-        hasDemoModeEnabled,
+    // If we have a real connection, NEVER use mock data - always show real data
+    if (hasRealConnection) {
+      console.log('[useFinancialData] Using REAL data - connection detected, ignoring free tier/demo mode', {
+        hasConnection: true,
         plan: currentTenant?.plan,
         isDemoMode,
       });
+      return false;
     }
+    
+    // Determine if user is on free tier (free or starter plans)
+    const plan = currentTenant?.plan || 'free';
+    const isFreeUser = plan === 'free' || plan === 'starter';
+    
+    // PAID USERS (professional/enterprise) NEVER get mock data
+    if (!isFreeUser) {
+      console.log('[useFinancialData] Paid user detected - NOT using mock data, will show empty states', {
+        plan,
+        hasConnection: false,
+      });
+      return false;
+    }
+    
+    // In mock auth mode (local dev), check if we want to test with real data
+    // Allow real data fetching if VITE_TEST_REAL_DATA is set to 'true'
+    if (isMockAuthEnabled()) {
+      const testRealData = import.meta.env.VITE_TEST_REAL_DATA === 'true';
+      
+      if (testRealData) {
+        // In test mode, allow GraphQL queries to run even in mock auth mode
+        // This allows testing real S3 data connections
+        if (!hasLoggedMockAuth.current) {
+          console.log('[useFinancialData] Mock auth enabled but TEST_REAL_DATA=true - allowing GraphQL queries', {
+            hasConnection: hasRealConnection,
+            plan: currentTenant?.plan,
+            isDemoMode,
+          });
+          hasLoggedMockAuth.current = true;
+        }
+        // Don't skip queries - allow them to run and fetch from S3
+        return false;
+      }
+      
+      // Only log once when mock auth is detected, not on every render
+      if (!hasLoggedMockAuth.current) {
+        console.log('[useFinancialData] Using mock/sandbox data - mock auth mode enabled (local dev)', {
+          hasConnection: false,
+          plan: currentTenant?.plan,
+          isDemoMode,
+        });
+        hasLoggedMockAuth.current = true;
+      }
+      return true;
+    }
+    
+    // Only use mock data if no connection AND free tier (free or starter)
+    // Demo mode is also allowed for free users
+    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
+    const useMock = isFreeUser && hasDemoModeEnabled;
+    
+    if (useMock) {
+      console.log('[useFinancialData] Using mock/sandbox data - free user, no connection, demo mode enabled', {
+        isFreeUser,
+        hasDemoModeEnabled,
+        plan: currentTenant?.plan,
+        isDemoMode,
+        hasConnection: false,
+      });
+    }
+    
     return useMock;
-  }, [currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
+  }, [hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
 
   // Fetch dashboard summary from GraphQL (no filter - use defaults)
   // Skip if using mock data
@@ -178,84 +276,117 @@ export function useFinancialData(options: {
   const budgetData = shouldUseMockData ? null : budgetQueryData?.budgetSettings;
 
   // Check if we have real data from GraphQL
+  // Only consider GraphQL data if queries were NOT skipped (i.e., shouldUseMockData is false)
+  // This ensures we're serving from S3 bucket, not mock data
   const hasGraphQLData = useMemo(() => {
-    const hasData = !!(summaryData?.dashboardSummary || trendsData?.financialTrends || accountsData?.accounts);
-    console.log('[useFinancialData] GraphQL data check:', {
-      hasData,
-      summaryData: summaryData?.dashboardSummary,
-      summaryError: summaryError?.message,
-      trendsData: trendsData?.financialTrends,
-      trendsError: trendsError?.message,
-      accountsData: accountsData?.accounts?.nodes?.length,
-      accountsError: accountsError?.message,
-    });
-    return hasData;
-  }, [summaryData, trendsData, accountsData, summaryError, trendsError, accountsError]);
+    // If we're using mock data, queries are skipped, so we don't have GraphQL data
+    if (shouldUseMockData) {
+      return false;
+    }
+    
+    // If queries have completed (not loading) and we have responses (even if empty), we have GraphQL data
+    const queriesCompleted = !summaryLoading && !trendsLoading && !accountsLoading;
+    
+    // Check if we have actual data (not null - null means query was skipped)
+    // When queries are skipped, summaryData is set to null, so we check for !== null
+    const hasActualData = !!(summaryData?.dashboardSummary || trendsData?.financialTrends || accountsData?.accounts);
+    
+    // Check if queries completed successfully (no errors)
+    const queriesSuccessful = queriesCompleted && !summaryError && !trendsError && !accountsError;
+    
+    // Only log when queries are actually running (not skipped) and completed
+    if (!shouldUseMockData && queriesCompleted) {
+      console.log('[useFinancialData] GraphQL data check:', {
+        hasActualData,
+        queriesCompleted,
+        queriesSuccessful,
+        summaryData: summaryData?.dashboardSummary ? 'present' : (summaryData === null ? 'skipped' : 'empty'),
+        summaryError: summaryError?.message,
+        trendsData: trendsData?.financialTrends?.length || (trendsData === null ? 'skipped' : 0),
+        trendsError: trendsError?.message,
+        accountsData: accountsData?.accounts?.nodes?.length || (accountsData === null ? 'skipped' : 0),
+        accountsError: accountsError?.message,
+      });
+    }
+    
+    // Return true if we have actual data OR if queries completed successfully (even if empty)
+    // Empty data from S3 is still considered GraphQL data (served from S3, not mock)
+    return hasActualData || (queriesSuccessful && summaryData !== null && trendsData !== null && accountsData !== null);
+  }, [shouldUseMockData, summaryData, trendsData, accountsData, summaryError, trendsError, accountsError, summaryLoading, trendsLoading, accountsLoading]);
 
   // Transform GraphQL data to FinancialDataResponse format
   const transformedData = useMemo((): FinancialDataResponse | null => {
     if (!currentTenant) return null;
 
-    // If we have GraphQL data, use it
-    if (hasGraphQLData) {
-      const summary = summaryData?.dashboardSummary;
-      const trends = trendsData?.financialTrends || [];
-      const accounts = accountsData?.accounts?.nodes || [];
-
-      // Get mock data as fallback for fields not yet in GraphQL
-      const mockData = generateMockFinancialData(
+    // If we should use mock data (no connection AND free tier/demo mode), generate and return it
+    if (shouldUseMockData) {
+      return generateMockFinancialData(
         currentTenant.id,
         currentTenant.name,
         currentTenant.currency || 'CAD',
         new Date().toISOString().split('T')[0],
         currentTenant.industry || 'real_estate'
       );
+    }
 
-      // Transform GraphQL trends to expected format
+    // If we have GraphQL data (from S3), use ONLY real data (no mock fallbacks)
+    // This includes cases where GraphQL returns empty arrays (data exists in S3 but is empty)
+    if (hasGraphQLData) {
+      const hasActualData = !!(summaryData?.dashboardSummary || (trendsData?.financialTrends || []).length > 0 || (accountsData?.accounts?.nodes || []).length > 0);
+      console.log(`[useFinancialData] Serving data from S3 Gold bucket via GraphQL${hasActualData ? ' (real data)' : ' (empty - no data in S3 yet)'}`, {
+        organizationId: currentTenant.id,
+        hasSummary: !!summaryData?.dashboardSummary,
+        hasTrends: (trendsData?.financialTrends || []).length > 0,
+        hasAccounts: (accountsData?.accounts?.nodes || []).length > 0,
+      });
+      const summary = summaryData?.dashboardSummary;
+      const trends = trendsData?.financialTrends || [];
+      const accounts = accountsData?.accounts?.nodes || [];
+
+      // Transform GraphQL trends to expected format - return empty array if no data
       const revenueTrend = trends.find((t: { metricName: string }) => t.metricName.toLowerCase() === 'revenue');
       const expensesTrend = trends.find((t: { metricName: string }) => t.metricName.toLowerCase() === 'expenses');
       const cashFlowTrend = trends.find((t: { metricName: string }) => t.metricName.toLowerCase() === 'cashflow');
 
       const transformTrendData = (trendData: { data: Array<{ date: string; value: number }> } | undefined) => {
-        if (!trendData?.data || trendData.data.length === 0) return mockData.trends.revenue.data;
+        if (!trendData?.data || trendData.data.length === 0) return [];
         return trendData.data.map((d: { date: string; value: number }) => ({
-          // The date field from GraphQL is already a month abbreviation like "Jan", "Feb"
-          // Use it directly instead of trying to parse as ISO date
           period: d.date,
           value: d.value,
         }));
       };
 
-      // Build response with real data where available
+      // Build response with ONLY real data - no mock fallbacks
       return {
-        ...mockData,
-        // Override with real data from GraphQL
-        summary: summary ? {
-          ...mockData.summary,
+        summary: {
           revenue: {
-            ...mockData.summary.revenue,
-            current: summary.totalRevenue?.amount || mockData.summary.revenue.current,
-            ytd: summary.totalRevenue?.amount || mockData.summary.revenue.ytd,
+            current: summary?.totalRevenue?.amount || 0,
+            prior: 0,
+            change: 0,
+            ytd: summary?.totalRevenue?.amount || 0,
           },
           expenses: {
-            ...mockData.summary.expenses,
-            current: summary.totalExpenses?.amount || mockData.summary.expenses.current,
-            ytd: summary.totalExpenses?.amount || mockData.summary.expenses.ytd,
+            current: summary?.totalExpenses?.amount || 0,
+            prior: 0,
+            change: 0,
+            ytd: summary?.totalExpenses?.amount || 0,
           },
           netIncome: {
-            ...mockData.summary.netIncome,
-            current: summary.netIncome?.amount || mockData.summary.netIncome.current,
-            ytd: summary.netIncome?.amount || mockData.summary.netIncome.ytd,
+            current: summary?.netIncome?.amount || 0,
+            prior: 0,
+            change: 0,
+            ytd: summary?.netIncome?.amount || 0,
           },
           cash: {
-            ...mockData.summary.cash,
-            current: summary.cashOnHand?.amount || mockData.summary.cash.current,
+            current: summary?.cashOnHand?.amount || 0,
+            prior: 0,
+            change: 0,
           },
           receivables: {
-            ...mockData.summary.receivables,
-            current: summary.accountsReceivable?.amount || mockData.summary.receivables.current,
-            hasData: arAgingData?.hasData ?? true, // Default to true for mock data
-            // Use real AR aging data if available
+            current: summary?.accountsReceivable?.amount || 0,
+            prior: 0,
+            change: 0,
+            hasData: arAgingData?.hasData ?? false,
             ...(arAgingData?.hasData ? {
               aging: arAgingData.buckets.map(b => ({
                 label: b.label,
@@ -268,10 +399,10 @@ export function useFinancialData(options: {
             } : {}),
           },
           payables: {
-            ...mockData.summary.payables,
-            current: summary.accountsPayable?.amount || mockData.summary.payables.current,
-            hasData: apAgingData?.hasData ?? true, // Will be false if no bills tracked
-            // Use real AP aging data if available (hasData: false means no bills tracked)
+            current: summary?.accountsPayable?.amount || 0,
+            prior: 0,
+            change: 0,
+            hasData: apAgingData?.hasData ?? false,
             ...(apAgingData?.hasData ? {
               aging: apAgingData.buckets.map(b => ({
                 label: b.label,
@@ -283,7 +414,6 @@ export function useFinancialData(options: {
               averageDaysPayable: apAgingData.averageDays,
             } : {}),
           },
-          // Use real trial balance data if available
           trialBalance: trialBalanceData ? {
             totalDebits: trialBalanceData.totalDebits,
             totalCredits: trialBalanceData.totalCredits,
@@ -296,9 +426,8 @@ export function useFinancialData(options: {
               credit: e.creditBalance,
               type: e.accountType.toLowerCase() as 'asset' | 'liability' | 'equity' | 'revenue' | 'expense',
             })),
-          } : mockData.summary.trialBalance,
-          // Use real tax deadlines if available
-          upcomingDeadlines: taxDeadlinesData?.deadlines.length 
+          } : { totalDebits: 0, totalCredits: 0, isBalanced: true, entries: [] },
+          upcomingDeadlines: taxDeadlinesData?.deadlines?.length 
             ? taxDeadlinesData.deadlines.map(d => ({
                 id: d.id,
                 title: d.title,
@@ -309,17 +438,17 @@ export function useFinancialData(options: {
                 status: d.status as 'upcoming' | 'urgent' | 'overdue',
                 category: d.category as 'tax' | 'filing' | 'payroll' | 'other',
               }))
-            : mockData.summary.upcomingDeadlines,
-          // Budget data
+            : [],
           hasBudget: budgetData?.hasBudget ?? false,
           budgetYear: budgetData?.year,
-        } : mockData.summary,
+          cashBalance: summary?.cashOnHand?.amount || 0,
+        },
         trends: {
           revenue: {
             label: 'Revenus',
             labelEn: 'Revenue',
             data: transformTrendData(revenueTrend),
-            budget: mockData.trends.revenue.budget,
+            budget: [], // Real budget data would come from budgetData if available
           },
           expenses: {
             label: 'Dépenses',
@@ -331,9 +460,13 @@ export function useFinancialData(options: {
             labelEn: 'Cash Flow',
             data: transformTrendData(cashFlowTrend),
           },
-          profit: mockData.trends.profit,
+          profit: {
+            label: 'Bénéfice',
+            labelEn: 'Profit',
+            data: [], // Would need separate query for profit trend
+          },
         },
-        accounts: accounts.length > 0 ? accounts.map((a: {
+        accounts: accounts.map((a: {
           code: string;
           name: string;
           type: string;
@@ -346,9 +479,8 @@ export function useFinancialData(options: {
           current: a.balance || 0,
           prior: 0,
           type: a.type?.toLowerCase() as 'asset' | 'liability' | 'equity' | 'revenue' | 'expense',
-        })) : mockData.accounts,
-        // Use real waterfall data if available
-        cashFlowWaterfall: waterfallData && waterfallData.length > 0 
+        })),
+        cashFlowWaterfall: waterfallData?.length 
           ? waterfallData.map(item => ({
               label: item.label,
               labelEn: item.labelEn,
@@ -356,24 +488,64 @@ export function useFinancialData(options: {
               type: item.type as 'start' | 'increase' | 'decrease' | 'subtotal' | 'end',
               category: item.category as 'operations' | 'investing' | 'financing' | undefined,
             }))
-          : mockData.cashFlowWaterfall,
-        // Include industry-specific demo anomalies from mock data
-        demoAnomalies: mockData.demoAnomalies,
+          : [],
+        // No demo anomalies for real data - only real anomalies would be detected
+        demoAnomalies: [],
         industry: currentTenant.industry || 'real_estate',
         lastUpdated: new Date().toISOString(),
-        dataSource: 'graphql-gold-layer', // Data comes from S3 Gold layer via GraphQL
+        dataSource: 'graphql-gold-layer',
       };
     }
 
-    // Fall back to mock data if GraphQL fails
-    return generateMockFinancialData(
-      currentTenant.id,
-      currentTenant.name,
-      currentTenant.currency || 'CAD',
-      new Date().toISOString().split('T')[0],
-      currentTenant.industry || 'real_estate'
-    );
-  }, [currentTenant, hasGraphQLData, summaryData, trendsData, accountsData, trialBalanceData, waterfallData, arAgingData, apAgingData, taxDeadlinesData, budgetData]);
+    // If we have a real connection but no GraphQL data yet
+    if (hasRealConnection) {
+      // If queries are still loading, return null to show loading state
+      if (summaryLoading || trendsLoading || accountsLoading) {
+        return null;
+      }
+      
+      // If queries failed, let error handling logic handle it (don't return empty structure)
+      if (summaryError || trendsError || accountsError) {
+        return null;
+      }
+      
+      // Queries have completed successfully but returned empty data - return empty structure
+      // This ensures we're serving from S3 (even if empty) rather than showing error
+      console.log('[useFinancialData] Serving empty data structure from S3 Gold bucket - queries completed successfully but returned no data', {
+        organizationId: currentTenant.id,
+        hasConnection: true,
+      });
+      return {
+        summary: {
+          revenue: { current: 0, prior: 0, change: 0, ytd: 0 },
+          expenses: { current: 0, prior: 0, change: 0, ytd: 0 },
+          netIncome: { current: 0, prior: 0, change: 0, ytd: 0 },
+          cash: { current: 0, prior: 0, change: 0 },
+          receivables: { current: 0, prior: 0, change: 0, hasData: false },
+          payables: { current: 0, prior: 0, change: 0, hasData: false },
+          trialBalance: { totalDebits: 0, totalCredits: 0, isBalanced: true, entries: [] },
+          upcomingDeadlines: [],
+          hasBudget: false,
+          cashBalance: 0,
+        },
+        trends: {
+          revenue: { label: 'Revenus', labelEn: 'Revenue', data: [], budget: [] },
+          expenses: { label: 'Dépenses', labelEn: 'Expenses', data: [] },
+          cashFlow: { label: 'Flux de trésorerie', labelEn: 'Cash Flow', data: [] },
+          profit: { label: 'Bénéfice', labelEn: 'Profit', data: [] },
+        },
+        accounts: [],
+        cashFlowWaterfall: [],
+        demoAnomalies: [],
+        industry: currentTenant.industry || 'real_estate',
+        lastUpdated: new Date().toISOString(),
+        dataSource: 'graphql-gold-layer',
+      };
+    }
+
+    // No connection and not using mock data - return null
+    return null;
+  }, [currentTenant, hasGraphQLData, hasRealConnection, shouldUseMockData, summaryData, trendsData, accountsData, trialBalanceData, waterfallData, arAgingData, apAgingData, taxDeadlinesData, budgetData]);
 
   // Update lastUpdated when data changes
   useEffect(() => {
@@ -430,7 +602,46 @@ export function useFinancialData(options: {
  */
 export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
   const { currentTenant } = useTenant();
+  const { isDemoMode } = useDemoMode();
   const asOfDateObj = asOfDate ? new Date(asOfDate) : new Date();
+  
+  // Check for real data source connections
+  const { data: dataSourcesQueryResult, loading: dataSourcesLoading } = useDataSources();
+  
+  const hasRealConnection = useMemo(() => {
+    if (dataSourcesLoading) return false;
+    const dataSources = dataSourcesQueryResult?.dataSources;
+    if (!dataSources || !Array.isArray(dataSources)) return false;
+    return dataSources.some(
+      (ds: { provider: string; status: string }) => {
+        const provider = (ds.provider || '').toLowerCase();
+        const status = (ds.status || '').toUpperCase();
+        const isConnected = status === 'CONNECTED' || status === 'ACTIVE' || status === 'connected';
+        return (
+          (provider === 'quickbooks' || provider === 'xero' || provider === 'sage' || provider === 'freshbooks') &&
+          isConnected
+        );
+      }
+    );
+  }, [dataSourcesQueryResult, dataSourcesLoading]);
+  
+  // Check if we should use mock data
+  // IMPORTANT: Only free/starter users get mock data. Paid users see empty states.
+  const shouldUseMockData = useMemo(() => {
+    if (hasRealConnection) return false;
+    
+    const plan = currentTenant?.plan || 'free';
+    const isFreeUser = plan === 'free' || plan === 'starter';
+    
+    // Paid users never get mock data
+    if (!isFreeUser) return false;
+    
+    // In mock auth mode (local dev), always use mock data as fallback for free users
+    if (isMockAuthEnabled()) return true;
+    
+    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
+    return hasDemoModeEnabled;
+  }, [hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
   
   const { 
     data: queryData, 
@@ -442,15 +653,18 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
   // Transform GraphQL response to BalanceSheetData format
   const transformedData = useMemo((): BalanceSheetData | null => {
     if (!queryData?.balanceSheet) {
-      // Fall back to mock data if no GraphQL data
-      if (!currentTenant) return null;
-      const mockData = generateMockFinancialData(
-        currentTenant.id,
-        currentTenant.name,
-        currentTenant.currency || 'CAD',
-        asOfDate
-      );
-      return mockData.balanceSheet;
+      // Only fall back to mock if we should use mock data
+      if (shouldUseMockData && currentTenant) {
+        const mockData = generateMockFinancialData(
+          currentTenant.id,
+          currentTenant.name,
+          currentTenant.currency || 'CAD',
+          asOfDate
+        );
+        return mockData.balanceSheet;
+      }
+      // Real connection but no data yet - return null (loading/empty state)
+      return null;
     }
 
     const bs = queryData.balanceSheet;
@@ -499,7 +713,7 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
       totalLiabilitiesAndEquity: (bs.totalLiabilities || 0) + (bs.totalEquity || 0),
       currency: bs.currency || 'CAD',
     };
-  }, [queryData, currentTenant, asOfDate]);
+  }, [queryData, currentTenant, asOfDate, shouldUseMockData]);
 
   const error = queryError ? new Error(queryError.message) : null;
 
@@ -520,8 +734,47 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
  */
 export function useIncomeStatement(startDate: string, endDate: string): UseIncomeStatementResult {
   const { currentTenant } = useTenant();
+  const { isDemoMode } = useDemoMode();
   const startDateObj = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), 0, 1);
   const endDateObj = endDate ? new Date(endDate) : new Date();
+  
+  // Check for real data source connections
+  const { data: dataSourcesQueryResult, loading: dataSourcesLoading } = useDataSources();
+  
+  const hasRealConnection = useMemo(() => {
+    if (dataSourcesLoading) return false;
+    const dataSources = dataSourcesQueryResult?.dataSources;
+    if (!dataSources || !Array.isArray(dataSources)) return false;
+    return dataSources.some(
+      (ds: { provider: string; status: string }) => {
+        const provider = (ds.provider || '').toLowerCase();
+        const status = (ds.status || '').toUpperCase();
+        const isConnected = status === 'CONNECTED' || status === 'ACTIVE' || status === 'connected';
+        return (
+          (provider === 'quickbooks' || provider === 'xero' || provider === 'sage' || provider === 'freshbooks') &&
+          isConnected
+        );
+      }
+    );
+  }, [dataSourcesQueryResult, dataSourcesLoading]);
+  
+  // Check if we should use mock data
+  // IMPORTANT: Only free/starter users get mock data. Paid users see empty states.
+  const shouldUseMockData = useMemo(() => {
+    if (hasRealConnection) return false;
+    
+    const plan = currentTenant?.plan || 'free';
+    const isFreeUser = plan === 'free' || plan === 'starter';
+    
+    // Paid users never get mock data
+    if (!isFreeUser) return false;
+    
+    // In mock auth mode (local dev), always use mock data as fallback for free users
+    if (isMockAuthEnabled()) return true;
+    
+    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
+    return hasDemoModeEnabled;
+  }, [hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
   
   const { 
     data: queryData, 
@@ -533,15 +786,18 @@ export function useIncomeStatement(startDate: string, endDate: string): UseIncom
   // Transform GraphQL response to IncomeStatementData format
   const transformedData = useMemo((): IncomeStatementData | null => {
     if (!queryData?.incomeStatement) {
-      // Fall back to mock data if no GraphQL data
-      if (!currentTenant) return null;
-      const mockData = generateMockFinancialData(
-        currentTenant.id,
-        currentTenant.name,
-        currentTenant.currency || 'CAD',
-        endDate
-      );
-      return mockData.incomeStatement;
+      // Only fall back to mock if we should use mock data
+      if (shouldUseMockData && currentTenant) {
+        const mockData = generateMockFinancialData(
+          currentTenant.id,
+          currentTenant.name,
+          currentTenant.currency || 'CAD',
+          endDate
+        );
+        return mockData.incomeStatement;
+      }
+      // Real connection but no data yet - return null (loading/empty state)
+      return null;
     }
 
     const is = queryData.incomeStatement;
@@ -573,7 +829,7 @@ export function useIncomeStatement(startDate: string, endDate: string): UseIncom
       netIncome: is.netIncome || 0,
       currency: is.currency || 'CAD',
     };
-  }, [queryData, currentTenant, endDate]);
+  }, [queryData, currentTenant, endDate, shouldUseMockData]);
 
   const error = queryError ? new Error(queryError.message) : null;
 

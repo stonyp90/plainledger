@@ -261,7 +261,22 @@ export default function TaxCreditPartnerModal({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: isSubmitting 
+                        ? 'rgb(var(--color-gray-400))' 
+                        : 'rgb(var(--color-primary-500))',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSubmitting) {
+                        e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSubmitting) {
+                        e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+                      }
+                    }}
                   >
                     {isSubmitting
                       ? language === 'fr'

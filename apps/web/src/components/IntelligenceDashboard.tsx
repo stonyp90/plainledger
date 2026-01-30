@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { intelligenceApi } from '../lib/intelligence-api';
+import { useHasRealData } from '../hooks/useHasRealData';
 
 export interface IntelligenceMetrics {
   // Scale metrics
@@ -66,29 +67,69 @@ export default function IntelligenceDashboard({
 }: IntelligenceDashboardProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
-  const [metrics, setMetrics] = useState<IntelligenceMetrics>(initialMetrics || DEFAULT_METRICS);
+  const { hasRealData, shouldShowSandboxData } = useHasRealData();
+  const [metrics, setMetrics] = useState<IntelligenceMetrics | null>(initialMetrics || null);
   const [loading, setLoading] = useState(!initialMetrics);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch metrics from API
   useEffect(() => {
     if (!initialMetrics) {
       setLoading(true);
+      setError(null);
       intelligenceApi.getMetrics()
         .then(response => {
           if (response.data) {
             setMetrics(response.data);
+          } else {
+            setError('No data available');
           }
         })
         .catch(error => {
           console.error('Failed to fetch intelligence metrics:', error);
-          // Use default metrics on error
-          setMetrics(DEFAULT_METRICS);
+          setError('Failed to load metrics');
+          // Only use default metrics if sandbox data should be shown (free users only)
+          if (shouldShowSandboxData) {
+            setMetrics(DEFAULT_METRICS);
+          }
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, [initialMetrics]);
+  }, [initialMetrics, hasRealData, shouldShowSandboxData]);
+  
+  // Show loading or error state if no real data
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <p style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? 'Loading intelligence metrics...' : 'Chargement des métriques d\'intelligence...'}
+        </p>
+      </div>
+    );
+  }
+  
+  if (error && !metrics) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-sm mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'Unable to load intelligence metrics' : 'Impossible de charger les métriques d\'intelligence'}
+          </p>
+          <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn 
+              ? 'Connect your accounting software to view metrics' 
+              : 'Connectez votre logiciel comptable pour voir les métriques'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!metrics) {
+    return null;
+  }
 
   // Accuracy trend data (mock)
   const accuracyTrend = [
@@ -97,14 +138,17 @@ export default function IntelligenceDashboard({
     { month: 'M6', accuracy: 84, decisions: 15000 },
     { month: 'M9', accuracy: 88, decisions: 35000 },
     { month: 'M12', accuracy: 92, decisions: 75000 },
-    { month: 'M18', accuracy: metrics.patternAccuracy, decisions: metrics.totalDecisionsCaptured },
+    { month: 'M18', accuracy: metrics?.patternAccuracy ?? 0, decisions: metrics?.totalDecisionsCaptured ?? 0 },
   ];
 
   if (loading) {
     return (
       <div className="w-full max-w-7xl mx-auto p-6 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+          <div 
+            className="w-8 h-8 border-4 border-gray-300 rounded-full animate-spin mx-auto mb-4"
+            style={{ borderTopColor: 'rgb(var(--color-primary-500))' }}
+          />
           <p style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
             {isEn ? 'Loading intelligence metrics...' : 'Chargement des métriques...'}
           </p>
@@ -128,8 +172,8 @@ export default function IntelligenceDashboard({
           style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
         >
           {isEn 
-            ? `Every decision captured makes our recommendations smarter. We've analyzed ${metrics.totalDecisionsCaptured.toLocaleString()} real business decisions to build proprietary industry patterns that no competitor can replicate.`
-            : `Chaque décision capturée rend nos recommandations plus intelligentes. Nous avons analysé ${metrics.totalDecisionsCaptured.toLocaleString()} vraies décisions d'affaires pour créer des modèles sectoriels propriétaires qu'aucun concurrent ne peut répliquer.`}
+            ? `Every decision captured makes our recommendations smarter. We've analyzed ${(metrics?.totalDecisionsCaptured ?? 0).toLocaleString()} real business decisions to build proprietary industry patterns that no competitor can replicate.`
+            : `Chaque décision capturée rend nos recommandations plus intelligentes. Nous avons analysé ${(metrics?.totalDecisionsCaptured ?? 0).toLocaleString()} vraies décisions d'affaires pour créer des modèles sectoriels propriétaires qu'aucun concurrent ne peut répliquer.`}
         </p>
       </div>
 
@@ -137,7 +181,7 @@ export default function IntelligenceDashboard({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           icon={Database}
-          value={metrics.totalDecisionsCaptured.toLocaleString()}
+          value={(metrics?.totalDecisionsCaptured ?? 0).toLocaleString()}
           label={isEn ? 'Decisions Analyzed' : 'Décisions analysées'}
           trend="+12% this week"
           trendUp={true}
@@ -146,7 +190,7 @@ export default function IntelligenceDashboard({
         />
         <MetricCard
           icon={Target}
-          value={`${metrics.patternAccuracy}%`}
+          value={`${metrics?.patternAccuracy ?? 0}%`}
           label={isEn ? 'Pattern Accuracy' : 'Précision des modèles'}
           trend={`Up from 72% at launch`}
           trendUp={true}
@@ -155,7 +199,7 @@ export default function IntelligenceDashboard({
         />
         <MetricCard
           icon={Layers}
-          value={metrics.industriesCovered.toString()}
+          value={(metrics?.industriesCovered ?? 0).toString()}
           label={isEn ? 'Industries Covered' : 'Industries couvertes'}
           trend={isEn ? 'Deep expertise' : 'Expertise profonde'}
           theme={theme}
@@ -163,7 +207,7 @@ export default function IntelligenceDashboard({
         />
         <MetricCard
           icon={Shield}
-          value={metrics.monthsOfData.toString()}
+          value={(metrics?.monthsOfData ?? 0).toString()}
           label={isEn ? 'Months of Data' : 'Mois de données'}
           trend={isEn ? 'Competitive moat' : 'Avantage concurrentiel'}
           theme={theme}
@@ -282,13 +326,13 @@ export default function IntelligenceDashboard({
           >
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(metrics.monthsOfData / 24) * 100}%` }}
+              animate={{ width: `${((metrics?.monthsOfData ?? 0) / 24) * 100}%` }}
               transition={{ duration: 1, delay: 0.5 }}
               className="h-full rounded-lg flex items-center justify-center"
               style={{ backgroundColor: theme.gold }}
             >
               <span className="text-xs font-bold text-white">
-                {metrics.monthsOfData} {isEn ? 'months' : 'mois'}
+                {metrics?.monthsOfData ?? 0} {isEn ? 'months' : 'mois'}
               </span>
             </motion.div>
           </div>
@@ -299,8 +343,8 @@ export default function IntelligenceDashboard({
           style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
         >
           {isEn 
-            ? `With ${metrics.monthsOfData} months of decision data across ${metrics.industriesCovered} industries, a competitor would need ${metrics.competitorCatchUpTime} to match our insight depth at current growth rates.`
-            : `Avec ${metrics.monthsOfData} mois de données de décisions dans ${metrics.industriesCovered} industries, un concurrent aurait besoin de ${metrics.competitorCatchUpTime} pour égaler notre profondeur d'insight aux taux de croissance actuels.`}
+            ? `With ${metrics?.monthsOfData ?? 0} months of decision data across ${metrics?.industriesCovered ?? 0} industries, a competitor would need ${metrics?.competitorCatchUpTime ?? 0} to match our insight depth at current growth rates.`
+            : `Avec ${metrics?.monthsOfData ?? 0} mois de données de décisions dans ${metrics?.industriesCovered ?? 0} industries, un concurrent aurait besoin de ${metrics?.competitorCatchUpTime ?? 0} pour égaler notre profondeur d'insight aux taux de croissance actuels.`}
         </p>
       </div>
 
@@ -324,8 +368,8 @@ export default function IntelligenceDashboard({
           style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
         >
           {isEn 
-            ? `Better insights → More users → More decisions → Richer patterns → Better insights. This flywheel compounds our competitive advantage daily. Our intelligence improves with scale. Each new business adds to our pattern library, creating recommendations that are ${metrics.patternAccuracy}% accurate - up from 72% at launch.`
-            : `Meilleurs insights → Plus d'utilisateurs → Plus de décisions → Modèles plus riches → Meilleurs insights. Ce volant renforce notre avantage concurrentiel quotidiennement. Notre intelligence s'améliore avec l'échelle. Chaque nouvelle entreprise ajoute à notre bibliothèque de modèles, créant des recommandations qui sont précises à ${metrics.patternAccuracy}% - en hausse depuis 72% au lancement.`}
+            ? `Better insights → More users → More decisions → Richer patterns → Better insights. This flywheel compounds our competitive advantage daily. Our intelligence improves with scale. Each new business adds to our pattern library, creating recommendations that are ${metrics?.patternAccuracy ?? 0}% accurate - up from 72% at launch.`
+            : `Meilleurs insights → Plus d'utilisateurs → Plus de décisions → Modèles plus riches → Meilleurs insights. Ce volant renforce notre avantage concurrentiel quotidiennement. Notre intelligence s'améliore avec l'échelle. Chaque nouvelle entreprise ajoute à notre bibliothèque de modèles, créant des recommandations qui sont précises à ${metrics?.patternAccuracy ?? 0}% - en hausse depuis 72% au lancement.`}
         </p>
       </div>
     </div>

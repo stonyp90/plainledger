@@ -4,10 +4,9 @@
  * In-app contact form and support options
  */
 
-import { Mail, MessageCircle, Calendar, ArrowLeft } from 'lucide-react';
+import { Mail, Calendar, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../lib/i18n';
-import { crispUtils } from '../components/CrispChat';
 import config from '../lib/config';
 import ContactForm from '../components/ContactForm';
 
@@ -15,20 +14,12 @@ export default function Contact() {
   const { language } = useI18n();
   const isEn = language === 'en';
 
-  const handleOpenChat = () => {
-    if (config.crisp.enabled) {
-      crispUtils.open();
-    } else {
-      window.location.href = `mailto:${config.support.email}`;
-    }
-  };
-
   const handleScheduleCall = () => {
     window.open('https://calendly.com/anthonypaquet1508', '_blank');
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Back Link */}
       <Link 
         to="/app/settings"
@@ -54,10 +45,10 @@ export default function Contact() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Contact Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Contact Form - Takes 2 columns */}
         <div 
-          className="p-6 rounded-2xl border"
+          className="lg:col-span-2 p-6 rounded-2xl border"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
             borderColor: 'rgb(var(--color-border))',
@@ -72,7 +63,7 @@ export default function Contact() {
           <ContactForm source="app-contact-page" />
         </div>
 
-        {/* Quick Contact Options */}
+        {/* Quick Contact Options - Takes 1 column */}
         <div className="space-y-4">
           {/* Response Time */}
           <div 
@@ -97,34 +88,6 @@ export default function Contact() {
                 : 'Nous répondons généralement dans les 24 heures'}
             </p>
           </div>
-
-          {/* Live Chat */}
-          <button
-            onClick={handleOpenChat}
-            className="w-full p-4 rounded-xl border flex items-center gap-4 transition-all text-left hover:shadow-md"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              borderColor: 'rgb(var(--color-border))',
-            }}
-          >
-            <div 
-              className="p-3 rounded-xl"
-              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-            >
-              <MessageCircle className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Live Chat' : 'Chat en direct'}
-              </p>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Chat with our support team' : 'Discutez avec notre équipe'}
-              </p>
-              <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-success))' }}>
-                {isEn ? '24/7 available' : 'Disponible 24/7'}
-              </p>
-            </div>
-          </button>
 
           {/* Email */}
           <a

@@ -45,20 +45,22 @@ export default function BenchmarkCard({
   const { language } = useI18n();
 
   // Format value based on type
-  const formatValue = (value: number): string => {
+  const formatValue = (value: number | null | undefined): string => {
+    const numValue = value ?? 0;
+    if (isNaN(numValue) || !isFinite(numValue)) return '—';
     switch (format) {
       case 'percentage':
-        return `${(value * 100).toFixed(1)}%`;
+        return `${(numValue * 100).toFixed(1)}%`;
       case 'ratio':
-        return value.toFixed(2);
+        return numValue.toFixed(2);
       case 'currency':
         return new Intl.NumberFormat(language === 'fr' ? 'fr-CA' : 'en-CA', {
           style: 'currency',
           currency: 'CAD',
           maximumFractionDigits: 0,
-        }).format(value);
+        }).format(numValue);
       default:
-        return value.toFixed(2);
+        return numValue.toFixed(2);
     }
   };
 

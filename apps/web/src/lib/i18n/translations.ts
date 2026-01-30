@@ -114,6 +114,14 @@ export const translations = {
       en: 'Refreshing...',
       fr: 'Actualisation...',
     },
+    retry: {
+      en: 'Retry',
+      fr: 'Réessayer',
+    },
+    error: {
+      en: 'Error',
+      fr: 'Erreur',
+    },
     viewAll: {
       en: 'View all',
       fr: 'Voir tout',

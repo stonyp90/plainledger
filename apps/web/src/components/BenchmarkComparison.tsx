@@ -67,22 +67,31 @@ export default function BenchmarkComparison({
 
   // Calculate percentile rank for a metric
   const calculatePercentile = (
-    value: number,
+    value: number | null | undefined,
     quartile: QuartileData,
     higherIsBetter: boolean
   ): number => {
+    const numValue = value ?? 0;
+    if (isNaN(numValue) || !isFinite(numValue)) return 50; // Default to median if invalid
+    
     let percentile: number;
     const { q1, median, q3 } = quartile;
+    
+    // Guard against division by zero
+    if (q1 === 0 || median === 0 || q3 === 0) return 50;
 
-    if (value <= q1) {
-      percentile = (value / q1) * 25;
-    } else if (value <= median) {
-      percentile = 25 + ((value - q1) / (median - q1)) * 25;
-    } else if (value <= q3) {
-      percentile = 50 + ((value - median) / (q3 - median)) * 25;
+    if (numValue <= q1) {
+      percentile = q1 !== 0 ? (numValue / q1) * 25 : 0;
+    } else if (numValue <= median) {
+      const range = median - q1;
+      percentile = range !== 0 ? 25 + ((numValue - q1) / range) * 25 : 25;
+    } else if (numValue <= q3) {
+      const range = q3 - median;
+      percentile = range !== 0 ? 50 + ((numValue - median) / range) * 25 : 50;
     } else {
       const estimatedMax = q3 + (q3 - median);
-      percentile = 75 + Math.min(((value - q3) / (estimatedMax - q3)) * 25, 25);
+      const range = estimatedMax - q3;
+      percentile = range !== 0 ? 75 + Math.min(((numValue - q3) / range) * 25, 25) : 75;
     }
 
     percentile = Math.max(0, Math.min(100, percentile));
@@ -102,36 +111,36 @@ export default function BenchmarkComparison({
       id: 'gross_margin',
       name: 'Gross Margin',
       nameFr: 'Marge brute',
-      userValue: userMetrics.grossMargin,
-      industryMedian: benchmark.grossMargin.median,
-      percentileRank: calculatePercentile(userMetrics.grossMargin, benchmark.grossMargin, true),
-      status: getStatus(calculatePercentile(userMetrics.grossMargin, benchmark.grossMargin, true)),
+      userValue: userMetrics?.grossMargin ?? 0,
+      industryMedian: benchmark?.grossMargin?.median ?? 0,
+      percentileRank: calculatePercentile(userMetrics?.grossMargin, benchmark?.grossMargin ?? { q1: 0, median: 0, q3: 0 }, true),
+      status: getStatus(calculatePercentile(userMetrics?.grossMargin, benchmark?.grossMargin ?? { q1: 0, median: 0, q3: 0 }, true)),
       higherIsBetter: true,
     },
     {
       id: 'net_margin',
       name: 'Net Margin',
       nameFr: 'Marge nette',
-      userValue: userMetrics.netMargin,
-      industryMedian: benchmark.netMargin.median,
-      percentileRank: calculatePercentile(userMetrics.netMargin, benchmark.netMargin, true),
-      status: getStatus(calculatePercentile(userMetrics.netMargin, benchmark.netMargin, true)),
+      userValue: userMetrics?.netMargin ?? 0,
+      industryMedian: benchmark?.netMargin?.median ?? 0,
+      percentileRank: calculatePercentile(userMetrics?.netMargin, benchmark?.netMargin ?? { q1: 0, median: 0, q3: 0 }, true),
+      status: getStatus(calculatePercentile(userMetrics?.netMargin, benchmark?.netMargin ?? { q1: 0, median: 0, q3: 0 }, true)),
       higherIsBetter: true,
     },
     {
       id: 'current_ratio',
       name: 'Current Ratio',
       nameFr: 'Ratio de liquidité',
-      userValue: userMetrics.currentRatio,
-      industryMedian: benchmark.currentRatio,
+      userValue: userMetrics?.currentRatio ?? 0,
+      industryMedian: benchmark?.currentRatio ?? 0,
       percentileRank: calculatePercentile(
-        userMetrics.currentRatio, 
-        { q1: benchmark.currentRatio * 0.7, median: benchmark.currentRatio, q3: benchmark.currentRatio * 1.4 },
+        userMetrics?.currentRatio ?? 0, 
+        { q1: (benchmark?.currentRatio ?? 0) * 0.7, median: benchmark?.currentRatio ?? 0, q3: (benchmark?.currentRatio ?? 0) * 1.4 },
         true
       ),
       status: getStatus(calculatePercentile(
-        userMetrics.currentRatio,
-        { q1: benchmark.currentRatio * 0.7, median: benchmark.currentRatio, q3: benchmark.currentRatio * 1.4 },
+        userMetrics?.currentRatio ?? 0,
+        { q1: (benchmark?.currentRatio ?? 0) * 0.7, median: benchmark?.currentRatio ?? 0, q3: (benchmark?.currentRatio ?? 0) * 1.4 },
         true
       )),
       higherIsBetter: true,
@@ -140,16 +149,16 @@ export default function BenchmarkComparison({
       id: 'debt_to_equity',
       name: 'Debt-to-Equity',
       nameFr: 'Dette/Capitaux propres',
-      userValue: userMetrics.debtToEquity,
-      industryMedian: benchmark.debtToEquity,
+      userValue: userMetrics?.debtToEquity ?? 0,
+      industryMedian: benchmark?.debtToEquity ?? 0,
       percentileRank: calculatePercentile(
-        userMetrics.debtToEquity,
-        { q1: benchmark.debtToEquity * 0.6, median: benchmark.debtToEquity, q3: benchmark.debtToEquity * 1.5 },
+        userMetrics?.debtToEquity ?? 0,
+        { q1: (benchmark?.debtToEquity ?? 0) * 0.6, median: benchmark?.debtToEquity ?? 0, q3: (benchmark?.debtToEquity ?? 0) * 1.5 },
         false
       ),
       status: getStatus(calculatePercentile(
-        userMetrics.debtToEquity,
-        { q1: benchmark.debtToEquity * 0.6, median: benchmark.debtToEquity, q3: benchmark.debtToEquity * 1.5 },
+        userMetrics?.debtToEquity ?? 0,
+        { q1: (benchmark?.debtToEquity ?? 0) * 0.6, median: benchmark?.debtToEquity ?? 0, q3: (benchmark?.debtToEquity ?? 0) * 1.5 },
         false
       )),
       higherIsBetter: false,
@@ -158,16 +167,16 @@ export default function BenchmarkComparison({
       id: 'opex_ratio',
       name: 'Operating Expense Ratio',
       nameFr: 'Ratio dépenses d\'exploitation',
-      userValue: userMetrics.operatingExpenseRatio,
-      industryMedian: benchmark.operatingExpenseRatio,
+      userValue: userMetrics?.operatingExpenseRatio ?? 0,
+      industryMedian: benchmark?.operatingExpenseRatio ?? 0,
       percentileRank: calculatePercentile(
-        userMetrics.operatingExpenseRatio,
-        { q1: benchmark.operatingExpenseRatio * 0.8, median: benchmark.operatingExpenseRatio, q3: benchmark.operatingExpenseRatio * 1.2 },
+        userMetrics?.operatingExpenseRatio ?? 0,
+        { q1: (benchmark?.operatingExpenseRatio ?? 0) * 0.8, median: benchmark?.operatingExpenseRatio ?? 0, q3: (benchmark?.operatingExpenseRatio ?? 0) * 1.2 },
         false
       ),
       status: getStatus(calculatePercentile(
-        userMetrics.operatingExpenseRatio,
-        { q1: benchmark.operatingExpenseRatio * 0.8, median: benchmark.operatingExpenseRatio, q3: benchmark.operatingExpenseRatio * 1.2 },
+        userMetrics?.operatingExpenseRatio ?? 0,
+        { q1: (benchmark?.operatingExpenseRatio ?? 0) * 0.8, median: benchmark?.operatingExpenseRatio ?? 0, q3: (benchmark?.operatingExpenseRatio ?? 0) * 1.2 },
         false
       )),
       higherIsBetter: false,

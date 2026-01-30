@@ -34,8 +34,20 @@ export function useConnections(): UseConnectionsResult {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  
+  // Check if we're in mock/demo mode (no real backend)
+  const isMockMode = import.meta.env.VITE_MOCK_AUTH === 'true' || 
+                     import.meta.env.VITE_DEMO_MODE === 'true' ||
+                     import.meta.env.DEV;
 
   const loadConnections = useCallback(async () => {
+    // Skip API call in mock/demo mode - no real backend available
+    if (isMockMode) {
+      setConnections([]);
+      setIsLoading(false);
+      return;
+    }
+    
     if (!currentTenant) {
       setConnections([]);
       setIsLoading(false);
@@ -49,11 +61,18 @@ export function useConnections(): UseConnectionsResult {
       const response = await connectionsApi.list();
       setConnections(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch connections'));
+      // Silently handle 404 errors (API not available in dev/demo mode)
+      // Only set error for other failures
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (!errorMessage.includes('404') && !errorMessage.includes('Not Found')) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch connections'));
+      }
+      // Return empty connections on error
+      setConnections([]);
     } finally {
       setIsLoading(false);
     }
-  }, [currentTenant]);
+  }, [currentTenant, isMockMode]);
 
   useEffect(() => {
     loadConnections();

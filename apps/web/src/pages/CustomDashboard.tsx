@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { InfoTooltip, LabelTooltip } from '../components/Tooltip';
 import {
   DataVisualizationCard,
@@ -75,6 +76,9 @@ import ChartBuilder from '../components/ChartBuilder';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
 import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 import { useTenant } from '../contexts/TenantContext';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -83,6 +87,8 @@ export default function CustomDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, refresh } = useFinancialData();
+  const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasTrends, hasAccounts } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   const { currentTenant } = useTenant();
   const { hasAccess } = usePremiumFeature('advancedAnalytics');
   
@@ -685,72 +691,70 @@ export default function CustomDashboard() {
         </div>
       )}
       
-      {/* Enhanced Header Card - Mobile-first responsive */}
-      <div 
-        className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6"
-        style={{ 
-          background: 'linear-gradient(135deg, rgb(var(--color-primary-700)) 0%, rgb(var(--color-primary-800)) 100%)',
-          boxShadow: '0 10px 40px -10px rgba(30, 64, 175, 0.4)',
-        }}
-      >
-        {/* Background Pattern */}
-        <div 
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
+      {/* Header - Clean without fill background */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        {/* Left: Title & Info */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div 
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
+            <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base sm:text-lg lg:text-xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+              {currentReportName || (isEn ? 'Dashboard' : 'Tableau de bord')}
+            </h1>
+            <p className="text-[10px] sm:text-xs flex items-center gap-1.5 flex-wrap" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <span>{pinnedCharts.length} {isEn ? (pinnedCharts.length !== 1 ? 'charts' : 'chart') : (pinnedCharts.length !== 1 ? 'graphiques' : 'graphique')}</span>
+              {hasUnsavedChanges && (
+                <span className="flex items-center gap-0.5" style={{ color: 'rgb(var(--color-warning))' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-warning))' }}></span>
+                  {isEn ? 'Unsaved' : 'Non enregistré'}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
         
-        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Left: Title & Info */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
-              <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">
-                {currentReportName || (isEn ? 'Dashboard' : 'Tableau de bord')}
-              </h1>
-              <p className="text-[10px] sm:text-xs text-white/80 flex items-center gap-1.5 flex-wrap">
-                <span>{pinnedCharts.length} {isEn ? (pinnedCharts.length !== 1 ? 'charts' : 'chart') : (pinnedCharts.length !== 1 ? 'graphiques' : 'graphique')}</span>
-                {hasUnsavedChanges && (
-                  <span className="text-yellow-300 flex items-center gap-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-300"></span>
-                    {isEn ? 'Unsaved' : 'Non enregistré'}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-          
-          {/* Right: Actions - Responsive button group */}
-          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-            <button
-              onClick={handleNewDashboard}
-              className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white/10 hover:bg-white/20 active:scale-95 text-white backdrop-blur flex items-center gap-1.5"
-              title={isEn ? 'New dashboard' : 'Nouveau tableau'}
-            >
-              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{isEn ? 'New' : 'Nouveau'}</span>
-            </button>
-            <button
-              onClick={() => setShowLoadModal(true)}
-              className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white/10 hover:bg-white/20 active:scale-95 text-white backdrop-blur flex items-center gap-1.5"
-              title={isEn ? 'Open saved report' : 'Ouvrir un rapport'}
-            >
-              <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{isEn ? 'Open' : 'Ouvrir'}</span>
-            </button>
-            <button
-              onClick={() => setShowSaveModal(true)}
-              className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white hover:bg-white/90 active:scale-95 flex items-center gap-1.5"
-              style={{ color: 'rgb(var(--color-primary-600))' }}
-              title={isEn ? 'Save dashboard' : 'Enregistrer'}
-            >
-              <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{isEn ? 'Save' : 'Enregistrer'}</span>
-            </button>
-          </div>
+        {/* Right: Actions - Responsive button group */}
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+          <button
+            onClick={handleNewDashboard}
+            className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all hover:opacity-80 active:scale-95 flex items-center gap-1.5"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+            title={isEn ? 'New dashboard' : 'Nouveau tableau'}
+          >
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{isEn ? 'New' : 'Nouveau'}</span>
+          </button>
+          <button
+            onClick={() => setShowLoadModal(true)}
+            className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all hover:opacity-80 active:scale-95 flex items-center gap-1.5"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+            title={isEn ? 'Open saved report' : 'Ouvrir un rapport'}
+          >
+            <FolderOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{isEn ? 'Open' : 'Ouvrir'}</span>
+          </button>
+          <button
+            onClick={() => setShowSaveModal(true)}
+            className="p-2 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all hover:opacity-90 active:scale-95 flex items-center gap-1.5"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-500))',
+              color: 'white',
+            }}
+            title={isEn ? 'Save dashboard' : 'Enregistrer'}
+          >
+            <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{isEn ? 'Save' : 'Enregistrer'}</span>
+          </button>
         </div>
       </div>
       
@@ -918,6 +922,30 @@ export default function CustomDashboard() {
       {/* Dashboard Tab */}
       {activeTab === 'dashboard' && (
         <>
+      {/* Data Readiness Checklist - Show when user has access */}
+      {hasAccess && financialData && (
+        <DataReadinessChecklist 
+          context="analytics" 
+          compact={pinnedCharts.length > 0}
+        />
+      )}
+      
+      {/* Accountant Guidance - Show when data is missing */}
+      {/* Show empty state if no real data */}
+      {hasAccess && !hasQuickBooksConnection && !hasSandboxData && (
+        <EmptyDataState 
+          context="dashboard"
+          hasConnection={false}
+          onConnect={() => window.location.href = '/app/settings?tab=connections'}
+        />
+      )}
+
+      {hasAccess && shouldShowData && (!hasAccounts || !hasTrends) && (
+        <AccountantGuidanceCard 
+          type={!hasAccounts ? 'connect-software' : 'historical-data'}
+        />
+      )}
+      
       {/* Enhanced Empty State - Mobile-first */}
       {pinnedCharts.length === 0 && (
         <div 
@@ -992,7 +1020,7 @@ export default function CustomDashboard() {
               </p>
               <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-3">
                 {suggestedCharts.map((chart) => {
-                  const Icon = ChartTypeIcon[chart.chartType];
+                  const Icon = ChartTypeIcon[chart.chartType] || BarChart3;
                   return (
                     <button
                       key={chart.id}
@@ -1180,8 +1208,8 @@ export default function CustomDashboard() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {suggestedCharts.map((chart) => {
-              const Icon = ChartTypeIcon[chart.chartType];
-              const chartTypeInfo = CHART_TYPE_INFO[chart.chartType];
+              const Icon = ChartTypeIcon[chart.chartType] || BarChart3;
+              const chartTypeInfo = CHART_TYPE_INFO[chart.chartType] || { label: chart.chartType, labelEn: chart.chartType };
               return (
                 <button
                   key={chart.id}
@@ -1242,7 +1270,7 @@ export default function CustomDashboard() {
                     <ChartTooltip visible={true} position={tooltipPosition}>
                       <div className="min-w-[240px]">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{chartTypeInfo.icon}</span>
+                          <Icon className="w-4 h-4 text-white" />
                           <span className="text-white font-medium">{isEn ? chart.nameEn : chart.name}</span>
                         </div>
                         <p className="text-gray-400 text-xs mb-3">
@@ -1255,7 +1283,7 @@ export default function CustomDashboard() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500">{isEn ? 'Metrics' : 'Métriques'}</span>
-                            <span className="text-gray-300">{chart.metrics.length}</span>
+                            <span className="text-gray-300">{chart.metrics?.length ?? 0}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-500">{isEn ? 'Time Range' : 'Période'}</span>
@@ -1270,7 +1298,7 @@ export default function CustomDashboard() {
                           ))}
                           {chart.metrics.length > 3 && (
                             <span className="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
-                              +{chart.metrics.length - 3}
+                              +{(chart.metrics?.length ?? 0) - 3}
                             </span>
                           )}
                         </div>

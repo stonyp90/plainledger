@@ -84,7 +84,10 @@ export default function TaxCreditsSection({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div 
+          className="animate-spin rounded-full h-8 w-8 border-b-2"
+          style={{ borderColor: 'rgb(var(--color-primary-500))' }}
+        ></div>
       </div>
     );
   }
@@ -255,7 +258,16 @@ export default function TaxCreditsSection({
                         {eligibility.taxCredit.partnerReferralEnabled && (
                           <button
                             onClick={() => handleGetExpertHelp(eligibility)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors"
+                            style={{
+                              backgroundColor: 'rgb(var(--color-primary-500))',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+                            }}
                           >
                             <Users className="w-4 h-4" />
                             {language === 'fr' ? 'Obtenir de l\'aide experte' : 'Get Expert Help'}

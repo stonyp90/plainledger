@@ -549,8 +549,8 @@ export default function Layout({ children }: LayoutProps) {
     }
   });
   
-  // Track which navigation categories are expanded
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['overview']));
+  // Track which navigation categories are expanded (all open by default)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['overview', 'analytics', 'reports', 'planning', 'data']));
   
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => {

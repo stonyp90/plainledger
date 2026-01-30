@@ -35,6 +35,48 @@ import { useTenant, useCanPerform } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import UpgradeRequestForm from '../components/UpgradeRequestForm';
 import { PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
+import { useDisconnectDataSource, useDataSources, useSyncDataSource } from '../lib/graphql/hooks';
+
+// Sync cooldown period (1 hour in milliseconds)
+const SYNC_COOLDOWN_MS = 60 * 60 * 1000;
+
+/**
+ * Format a timestamp as relative time (e.g., "5 minutes ago")
+ */
+function formatRelativeTime(date: Date, isEn: boolean): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return isEn ? 'Just now' : 'À l\'instant';
+  if (diffMins < 60) return isEn ? `${diffMins} min ago` : `Il y a ${diffMins} min`;
+  if (diffHours < 24) return isEn ? `${diffHours}h ago` : `Il y a ${diffHours}h`;
+  if (diffDays === 1) return isEn ? 'Yesterday' : 'Hier';
+  return date.toLocaleDateString();
+}
+
+/**
+ * Calculate time until next sync is allowed
+ */
+function getTimeUntilNextSync(lastSyncAt: string | undefined): number {
+  if (!lastSyncAt) return 0;
+  const lastSync = new Date(lastSyncAt);
+  const timeSinceLastSync = Date.now() - lastSync.getTime();
+  return Math.max(0, SYNC_COOLDOWN_MS - timeSinceLastSync);
+}
+
+/**
+ * Format remaining cooldown time
+ */
+function formatCooldownTime(ms: number, isEn: boolean): string {
+  if (ms <= 0) return '';
+  const mins = Math.ceil(ms / 60000);
+  if (mins < 60) return isEn ? `${mins} min` : `${mins} min`;
+  const hours = Math.ceil(ms / 3600000);
+  return isEn ? `${hours}h` : `${hours}h`;
+}
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -252,16 +294,20 @@ function InteractiveTimeline({ steps, isEn, onSelectProvider }: {
               {isEn ? currentStep.descEn : currentStep.descFr}
             </p>
 
-            {/* Benefits - Compact theme colored */}
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {/* Benefits - Pill badges */}
+            <div className="flex flex-wrap gap-2">
               {(isEn ? currentStep.benefitsEn : currentStep.benefitsFr).map((benefit, idx) => (
                 <span 
                   key={idx}
-                  className="inline-flex items-center gap-1 text-xs"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-50))',
+                    color: 'rgb(var(--color-primary-700))',
+                    border: '1px solid rgb(var(--color-primary-200))',
+                  }}
                 >
-                  <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                  {benefit}
+                  <Check className="w-3 h-3 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  <span className="font-medium">{benefit}</span>
                 </span>
               ))}
             </div>
@@ -331,13 +377,13 @@ const SUBSCRIPTION_STEPS: StepType[] = [
   },
   {
     number: 3,
-    titleEn: 'Automatic sync',
-    titleFr: 'Synchronisation automatique',
-    descEn: 'Your financial data syncs automatically every day. No manual exports or uploads needed — ever. Set it once and always have up-to-date financial insights.',
-    descFr: 'Vos données financières se synchronisent automatiquement chaque jour. Aucune exportation ou téléchargement manuel n\'est nécessaire — jamais. Configurez une fois et ayez toujours des insights à jour.',
+    titleEn: 'Always up to date',
+    titleFr: 'Toujours à jour',
+    descEn: 'Once connected, your data stays fresh automatically. We sync your books daily in the background — no exports, no uploads, no maintenance. Just accurate insights, every time you log in.',
+    descFr: 'Une fois connecté, vos données restent fraîches automatiquement. Nous synchronisons vos comptes chaque jour en arrière-plan — aucun export, aucun téléchargement, aucune maintenance. Des insights précis à chaque connexion.',
     icon: RefreshCw,
-    benefitsEn: ['Daily auto-sync', 'Zero manual work', 'Real-time updates'],
-    benefitsFr: ['Sync auto quotidien', 'Zéro travail manuel', 'Mises à jour en temps réel'],
+    benefitsEn: ['Syncs daily, automatically', 'Set it and forget it', 'Always current data'],
+    benefitsFr: ['Synchronisation quotidienne', 'Configurez et oubliez', 'Données toujours actuelles'],
   },
   {
     number: 4,
@@ -365,7 +411,7 @@ function FreeUserSubscriptionGate({ isEn }: { isEn: boolean }) {
   // Memoized benefits list
   const ctaBenefits = useMemo(() => [
     isEn ? 'Unlimited connections' : 'Connexions illimitées',
-    isEn ? 'Daily auto-sync' : 'Sync auto quotidien',
+    isEn ? 'Automatic daily sync' : 'Synchronisation quotidienne',
     isEn ? 'Board-ready reports' : 'Rapports prêts pour le CA',
     isEn ? 'Priority support' : 'Support prioritaire',
   ], [isEn]);
@@ -717,8 +763,10 @@ interface Provider {
   color: string;
   status: 'connected' | 'disconnected' | 'syncing' | 'error';
   lastSync?: string;
+  lastSyncAt?: string; // Raw ISO timestamp for cooldown calculations
   accountsCount?: number;
   transactionsCount?: number;
+  dataSourceId?: string; // Real database ID for API calls
 }
 
 // Mock data - would come from API
@@ -730,7 +778,10 @@ const providers: Provider[] = [
     descriptionFr: 'Logiciel comptable Intuit QuickBooks',
     logo: '/providers/quickbooks.svg',
     color: '#2CA01C',
-    status: 'disconnected',
+    status: 'connected',  // Default to connected for testing disconnect
+    lastSync: 'Just now',
+    accountsCount: 24,
+    transactionsCount: 847,
   },
   {
     id: 'xero',
@@ -904,7 +955,7 @@ function StatusBadge({ status, isEn }: { status: Provider['status']; isEn: boole
 }
 
 // Provider Card Component
-function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalStaff, isEn, readOnly = false }: {
+function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalStaff, isEn, readOnly = false, isDisconnecting = false }: {
   provider: Provider;
   onConnect: (id: string) => void;
   onDisconnect: (id: string) => void;
@@ -912,10 +963,23 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalSta
   isInternalStaff: boolean;
   isEn: boolean;
   readOnly?: boolean;
+  isDisconnecting?: boolean;
 }) {
   const isConnected = provider.status === 'connected';
   const isSyncing = provider.status === 'syncing';
   const [isHovered, setIsHovered] = useState(false);
+  
+  // Calculate cooldown status
+  const cooldownTimeRemaining = useMemo(() => {
+    return getTimeUntilNextSync(provider.lastSyncAt);
+  }, [provider.lastSyncAt]);
+  
+  const isOnCooldown = cooldownTimeRemaining > 0;
+  const cooldownText = isOnCooldown 
+    ? (isEn 
+        ? `Available in ${formatCooldownTime(cooldownTimeRemaining, isEn)}` 
+        : `Disponible dans ${formatCooldownTime(cooldownTimeRemaining, isEn)}`)
+    : '';
   
   return (
     <div 
@@ -1095,16 +1159,26 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalSta
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onSync(provider.id); }}
-                disabled={isSyncing || readOnly}
+                disabled={isSyncing || readOnly || isOnCooldown}
                 className="flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 text-xs"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-bg-muted))',
                   color: 'rgb(var(--color-text-secondary))',
                 }}
-                title={readOnly ? (isEn ? 'Admin only' : 'Admin seulement') : ''}
+                title={readOnly 
+                  ? (isEn ? 'Admin only' : 'Admin seulement') 
+                  : isOnCooldown 
+                    ? cooldownText 
+                    : ''}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>{isSyncing ? (isEn ? 'Syncing...' : 'Sync...') : (isEn ? 'Sync Now' : 'Synchroniser')}</span>
+                <span>
+                  {isSyncing 
+                    ? (isEn ? 'Syncing...' : 'Sync...') 
+                    : isOnCooldown 
+                      ? cooldownText
+                      : (isEn ? 'Sync Now' : 'Synchroniser')}
+                </span>
               </button>
               {isInternalStaff && (
                 <button
@@ -1122,14 +1196,19 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalSta
               {!readOnly && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDisconnect(provider.id); }}
-                  className="p-2 rounded-lg transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20"
+                  disabled={isDisconnecting}
+                  className="p-2 rounded-lg transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ 
                     backgroundColor: 'rgb(var(--color-bg-muted))',
                     color: 'rgb(var(--color-text-muted))' 
                   }}
                   title={isEn ? 'Disconnect' : 'Déconnecter'}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  {isDisconnecting ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
                 </button>
               )}
             </>
@@ -2637,6 +2716,50 @@ export default function Connections() {
   const [providerList, setProviderList] = useState(providers);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState<string | null>(null);
+  
+  // GraphQL hooks for actual data sources
+  // Skip the query if we're in mock/demo mode to avoid auth errors
+  const { data: dataSourcesData, refetch: refetchDataSources, error: dataSourcesError } = useDataSources();
+  const [disconnectDataSource] = useDisconnectDataSource();
+  const [syncDataSource] = useSyncDataSource();
+  
+  // State for sync error messages
+  const [syncError, setSyncError] = useState<string | null>(null);
+  
+  // Log any GraphQL errors for debugging
+  useEffect(() => {
+    if (dataSourcesError) {
+      console.log('[Connections] GraphQL data sources error (expected in demo mode):', dataSourcesError.message);
+    }
+  }, [dataSourcesError]);
+  
+  // Map real data sources to provider list
+  useEffect(() => {
+    if (dataSourcesData?.dataSources) {
+      setProviderList(prev => prev.map(provider => {
+        const matchingSource = dataSourcesData.dataSources.find(
+          (ds: any) => ds.provider.toLowerCase() === provider.id.toLowerCase()
+        );
+        if (matchingSource) {
+          return {
+            ...provider,
+            dataSourceId: matchingSource.id, // Store the real ID for API calls
+            status: matchingSource.status === 'ACTIVE' ? 'connected' : 
+                   matchingSource.status === 'SYNCING' ? 'syncing' :
+                   matchingSource.status === 'ERROR' ? 'error' : 'disconnected',
+            lastSync: matchingSource.lastSyncAt 
+              ? formatRelativeTime(new Date(matchingSource.lastSyncAt), isEn)
+              : undefined,
+            lastSyncAt: matchingSource.lastSyncAt, // Store raw timestamp for cooldown
+            accountsCount: matchingSource.syncStats?.accountsSynced,
+            transactionsCount: matchingSource.syncStats?.transactionsSynced,
+          };
+        }
+        return provider;
+      }));
+    }
+  }, [dataSourcesData, isEn]);
   
   const connectedCount = providerList.filter(p => p.status === 'connected').length;
   
@@ -2664,27 +2787,137 @@ export default function Connections() {
     }
   };
   
-  const handleDisconnect = (id: string) => {
+  const handleDisconnect = async (id: string) => {
+    const provider = providerList.find(p => p.id === id);
     const confirmMsg = isEn 
-      ? 'Are you sure you want to disconnect this provider?' 
-      : 'Êtes-vous sûr de vouloir déconnecter ce fournisseur?';
-    if (confirm(confirmMsg)) {
+      ? 'Are you sure you want to disconnect this provider? This will stop syncing data.' 
+      : 'Êtes-vous sûr de vouloir déconnecter ce fournisseur? Cela arrêtera la synchronisation des données.';
+    
+    // Skip confirmation in dev/test mode for easier testing
+    const isDev = import.meta.env.DEV;
+    if (!isDev && !confirm(confirmMsg)) return;
+    
+    // If we have a real data source ID, call the API
+    if (provider?.dataSourceId) {
+      setIsDisconnecting(id);
+      try {
+        const result = await disconnectDataSource({
+          variables: { id: provider.dataSourceId }
+        });
+        
+        if (result.data?.disconnectDataSource?.success) {
+          // Refetch to get updated state from server
+          await refetchDataSources();
+          
+          // Also update local state immediately for better UX
+          setProviderList(prev => prev.map(p => 
+            p.id === id ? { 
+              ...p, 
+              status: 'disconnected', 
+              lastSync: undefined, 
+              accountsCount: undefined, 
+              transactionsCount: undefined,
+              dataSourceId: undefined 
+            } : p
+          ));
+        } else {
+          const errorMsg = result.data?.disconnectDataSource?.message || 
+            (isEn ? 'Failed to disconnect' : 'Échec de la déconnexion');
+          alert(errorMsg);
+        }
+      } catch (error) {
+        console.error('Disconnect error:', error);
+        alert(isEn 
+          ? 'An error occurred while disconnecting. Please try again.' 
+          : 'Une erreur s\'est produite lors de la déconnexion. Veuillez réessayer.');
+      } finally {
+        setIsDisconnecting(null);
+      }
+    } else {
+      // No real data source, just update local state (demo mode)
+      console.log('[Connections] Demo mode disconnect for provider:', id);
       setProviderList(prev => prev.map(p => 
         p.id === id ? { ...p, status: 'disconnected', lastSync: undefined, accountsCount: undefined, transactionsCount: undefined } : p
       ));
     }
   };
   
-  const handleSync = (id: string) => {
-    setProviderList(prev => prev.map(p => 
-      p.id === id ? { ...p, status: 'syncing' } : p
-    ));
+  const handleSync = async (id: string) => {
+    const provider = providerList.find(p => p.id === id);
+    setSyncError(null);
     
-    setTimeout(() => {
+    // Check cooldown
+    if (provider?.lastSyncAt) {
+      const timeUntilNextSync = getTimeUntilNextSync(provider.lastSyncAt);
+      if (timeUntilNextSync > 0) {
+        const cooldownMsg = isEn 
+          ? `Please wait ${formatCooldownTime(timeUntilNextSync, isEn)} before syncing again`
+          : `Veuillez attendre ${formatCooldownTime(timeUntilNextSync, isEn)} avant de synchroniser à nouveau`;
+        setSyncError(cooldownMsg);
+        return;
+      }
+    }
+    
+    // If we have a real data source ID, call the API
+    if (provider?.dataSourceId) {
+      // Update UI to show syncing
       setProviderList(prev => prev.map(p => 
-        p.id === id ? { ...p, status: 'connected', lastSync: isEn ? 'Just now' : 'À l\'instant' } : p
+        p.id === id ? { ...p, status: 'syncing' } : p
       ));
-    }, 3000);
+      
+      try {
+        const result = await syncDataSource({
+          variables: { id: provider.dataSourceId }
+        });
+        
+        if (result.data?.syncDataSource?.success) {
+          // Refetch to get updated state from server
+          await refetchDataSources();
+          
+          // Show any warnings
+          if (result.data.syncDataSource.warnings?.length > 0) {
+            console.log('[Connections] Sync warnings:', result.data.syncDataSource.warnings);
+          }
+        } else {
+          const errorMsg = result.data?.syncDataSource?.message || 
+            (isEn ? 'Sync failed. Please try again.' : 'La synchronisation a échoué. Veuillez réessayer.');
+          setSyncError(errorMsg);
+          
+          // Revert status
+          setProviderList(prev => prev.map(p => 
+            p.id === id ? { ...p, status: 'connected' } : p
+          ));
+        }
+      } catch (error) {
+        console.error('Sync error:', error);
+        setSyncError(isEn 
+          ? 'An error occurred during sync. Please try again.' 
+          : 'Une erreur s\'est produite lors de la synchronisation. Veuillez réessayer.');
+        
+        // Revert status
+        setProviderList(prev => prev.map(p => 
+          p.id === id ? { ...p, status: 'connected' } : p
+        ));
+      }
+    } else {
+      // No real data source - demo mode mock sync
+      console.log('[Connections] Demo mode sync for provider:', id);
+      setProviderList(prev => prev.map(p => 
+        p.id === id ? { ...p, status: 'syncing' } : p
+      ));
+      
+      setTimeout(() => {
+        const now = new Date();
+        setProviderList(prev => prev.map(p => 
+          p.id === id ? { 
+            ...p, 
+            status: 'connected', 
+            lastSync: formatRelativeTime(now, isEn),
+            lastSyncAt: now.toISOString()
+          } : p
+        ));
+      }, 3000);
+    }
   };
   
   // Show subscription gate for free users (not internal staff)
@@ -2727,6 +2960,29 @@ export default function Connections() {
           </span>
         </div>
       </div>
+
+      {/* Sync Error Banner */}
+      {syncError && (
+        <div 
+          className="p-3 rounded-lg flex items-center gap-3"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+            border: '1px solid rgb(var(--color-warning) / 0.3)'
+          }}
+        >
+          <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-warning))' }} />
+          <p className="text-sm flex-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            {syncError}
+          </p>
+          <button
+            onClick={() => setSyncError(null)}
+            className="text-xs font-medium px-2 py-1 rounded hover:opacity-80"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            {isEn ? 'Dismiss' : 'Fermer'}
+          </button>
+        </div>
+      )}
 
       {/* Internal Staff Banner */}
       {isInternalStaff && (
@@ -2863,6 +3119,7 @@ export default function Connections() {
             isInternalStaff={isInternalStaff}
             isEn={isEn}
             readOnly={!canManageConnections}
+            isDisconnecting={isDisconnecting === provider.id}
           />
         ))}
       </div>

@@ -580,8 +580,8 @@ export function MiniSparkline({
 
   if (data.length < 2) return null;
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  const min = data.length > 0 ? Math.min(...data) : 0;
+  const max = data.length > 0 ? Math.max(...data) : 0;
   const range = max - min || 1;
   const padding = 2;
 

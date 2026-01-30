@@ -1167,12 +1167,12 @@
 
 /* Navigation - Corporate sidebar, touch-optimized */
 .nav-item {
-  @apply flex items-center gap-3 px-3 py-2.5 sm:py-2 font-medium text-sm;
+  @apply flex items-center gap-2.5 px-2.5 py-2 sm:py-1.5 font-medium text-sm;
   border-radius: var(--radius-md);
   color: rgb(var(--color-text-muted));
   /* Use specific transitions instead of 'all' to prevent flash issues */
   transition: background-color var(--transition-normal), color var(--transition-fast), transform var(--transition-fast);
-  min-height: 44px;
+  min-height: 40px;
   /* Ensure nav items always have a proper background to prevent flash-through */
   background-color: transparent;
 }

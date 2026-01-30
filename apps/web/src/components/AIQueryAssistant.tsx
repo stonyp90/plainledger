@@ -181,7 +181,8 @@ function KPIVisualization({ config }: { config: any }) {
 
 function BarChartVisualization({ config }: { config: any }) {
   const data = config.data || [];
-  const maxValue = Math.max(...data.map((d: any) => d.value));
+  const values = data.length > 0 ? data.map((d: any) => d?.value ?? 0) : [0];
+  const maxValue = Math.max(...values);
 
   return (
     <div className="space-y-2">

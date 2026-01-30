@@ -24,29 +24,31 @@ export default function QuickMetrics({
   const { language } = useI18n();
   const isEn = language === 'en';
 
-  const formatCurrency = (value: number) => {
-    if (Math.abs(value) >= 1000000) {
+  const formatCurrency = (value: number | null | undefined) => {
+    const numValue = value ?? 0;
+    if (isNaN(numValue) || !isFinite(numValue)) return '—';
+    if (Math.abs(numValue) >= 1000000) {
       return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
         style: 'currency',
         currency: 'CAD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 1,
-      }).format(value / 1000000) + 'M';
+      }).format(numValue / 1000000) + 'M';
     }
-    if (Math.abs(value) >= 1000) {
+    if (Math.abs(numValue) >= 1000) {
       return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
         style: 'currency',
         currency: 'CAD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-      }).format(value / 1000) + 'K';
+      }).format(numValue / 1000) + 'K';
     }
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
       style: 'currency',
       currency: 'CAD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(numValue);
   };
 
   const formatDate = (dateString?: string) => {

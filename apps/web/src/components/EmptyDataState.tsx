@@ -17,6 +17,7 @@ import {
   PieChart,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import { useTenant } from '../contexts/TenantContext';
 
 export type EmptyStateContext = 
   | 'dashboard'
@@ -107,9 +108,14 @@ export default function EmptyDataState({
   onConnect,
 }: EmptyDataStateProps) {
   const { language } = useI18n();
+  const { currentTenant } = useTenant();
   const isEn = language === 'en';
   const config = contextConfig[context];
   const Icon = config.icon;
+  
+  // Determine organization size for context-aware messaging
+  const isLargeOrg = currentTenant?.plan === 'enterprise' || currentTenant?.plan === 'professional';
+  const isSmallOrg = currentTenant?.plan === 'free' || currentTenant?.plan === 'starter';
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -121,16 +127,44 @@ export default function EmptyDataState({
         {isEn ? config.titleEn : config.titleFr}
       </h3>
       
-      <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mb-6">
+      <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mb-4">
         {isEn ? config.descriptionEn : config.descriptionFr}
       </p>
+      
+      {/* Context-aware additional guidance */}
+      {!hasConnection && (
+        <div className="max-w-md mb-6 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-xs text-slate-700 dark:text-slate-300">
+            {isEn 
+              ? isLargeOrg
+                ? '💡 For larger organizations: Connecting your accounting software enables automated reporting, multi-entity consolidation, and real-time financial dashboards for all stakeholders.'
+                : isSmallOrg
+                  ? '💡 For small businesses: Connecting your accounting software saves hours of manual work each month and gives you real-time visibility into your financial health.'
+                  : '💡 Connecting your accounting software automates data sync and provides real-time financial insights.'
+              : isLargeOrg
+                ? '💡 Pour les grandes organisations : Connecter votre logiciel comptable permet la génération automatique de rapports, la consolidation multi-entités et des tableaux de bord financiers en temps réel pour toutes les parties prenantes.'
+                : isSmallOrg
+                  ? '💡 Pour les petites entreprises : Connecter votre logiciel comptable économise des heures de travail manuel chaque mois et vous donne une visibilité en temps réel sur votre santé financière.'
+                  : '💡 Connecter votre logiciel comptable automatise la synchronisation des données et fournit des insights financiers en temps réel.'}
+          </p>
+        </div>
+      )}
 
       <div className="flex gap-3">
         {!hasConnection && (
           <Link
             to="/settings?tab=connections"
             onClick={onConnect}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'rgb(var(--color-primary-500))',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+            }}
           >
             <Link2 className="w-4 h-4" />
             {isEn ? 'Connect Accounting Software' : 'Connecter un logiciel comptable'}
@@ -182,7 +216,10 @@ export function ChartEmptyState({
       {showConnectLink && (
         <Link
           to="/settings?tab=connections"
-          className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+          className="text-xs hover:underline"
+          style={{
+            color: 'rgb(var(--color-primary-600))',
+          }}
         >
           {isEn ? 'Connect data source' : 'Connecter une source de données'}
         </Link>

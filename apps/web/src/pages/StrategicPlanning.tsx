@@ -8,6 +8,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2, Target, Calendar, ArrowRight, Crown, Check, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { useTenant } from '../contexts/TenantContext';
 import {
   Scenario,
@@ -25,6 +26,9 @@ import QuickMetrics from '../components/strategic/QuickMetrics';
 import LiveCashChart from '../components/strategic/LiveCashChart';
 import ExpenseDrawer from '../components/strategic/ExpenseDrawer';
 import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 const STORAGE_KEY = 'plainledger-strategic-planning';
 
@@ -35,6 +39,8 @@ export default function StrategicPlanning() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { data: financialData, isLoading: dataLoading } = useFinancialData();
+  const { hasCashBalance, hasRealData: hasRealDataFromHook, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasExpenseTrends } = useHasRealData();
+  const shouldShowData = hasRealDataFromHook || shouldShowSandboxData;
   const { currentTenant } = useTenant();
   const { hasAccess } = usePremiumFeature('strategicPlanning');
   
@@ -45,12 +51,13 @@ export default function StrategicPlanning() {
   const [showExpenseDrawer, setShowExpenseDrawer] = useState(false);
   const [editingExpense, setEditingExpense] = useState<PlannedExpense | null>(null);
 
-  // Demo financial data for when no real data is available
-  const DEMO_FINANCIAL = {
+  // Only use demo data if explicitly in sandbox mode (free users only)
+  // Paid users without data should see empty state
+  const DEMO_FINANCIAL = shouldShowSandboxData ? {
     currentCash: 850000,
     monthlyRevenue: 120000,
     monthlyExpenses: 145000,
-  };
+  } : null;
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -76,15 +83,15 @@ export default function StrategicPlanning() {
   // Initialize with base scenario if none exists
   useEffect(() => {
     if (scenarios.length === 0 && !dataLoading) {
-      const hasRealData = financialData && (
+      const hasFinancialData = financialData && (
         financialData.summary?.cashBalance > 0 ||
         financialData.metrics?.revenue > 0 ||
         financialData.metrics?.expenses > 0
       );
       
-      const cashToUse = hasRealData ? (financialData.summary?.cashBalance || 0) : DEMO_FINANCIAL.currentCash;
-      const revenueToUse = hasRealData ? (financialData.metrics?.revenue || 0) : DEMO_FINANCIAL.monthlyRevenue;
-      const expensesToUse = hasRealData ? (financialData.metrics?.expenses || 0) : DEMO_FINANCIAL.monthlyExpenses;
+      const cashToUse = hasFinancialData ? (financialData.summary?.cashBalance || 0) : (DEMO_FINANCIAL?.currentCash || 0);
+      const revenueToUse = hasFinancialData ? (financialData.metrics?.revenue || 0) : (DEMO_FINANCIAL?.monthlyRevenue || 0);
+      const expensesToUse = hasFinancialData ? (financialData.metrics?.expenses || 0) : (DEMO_FINANCIAL?.monthlyExpenses || 0);
       
       const base = createBaseScenario(cashToUse, revenueToUse, expensesToUse);
       const optimistic = createOptimisticScenario(base);
@@ -100,12 +107,13 @@ export default function StrategicPlanning() {
 
   // Compute active scenario
   const activeScenario = useMemo(() => {
-    return scenarios.find(s => s.id === activeScenarioId) || scenarios[0];
+    const found = scenarios.find(s => s.id === activeScenarioId);
+    return found || (scenarios.length > 0 ? scenarios[0] : null);
   }, [scenarios, activeScenarioId]);
 
   // Sync expenses when active scenario changes
   useEffect(() => {
-    if (activeScenarioId && activeScenario) {
+    if (activeScenarioId && activeScenario && activeScenario.initiatives) {
       const convertedExpenses = activeScenario.initiatives.map(initiativeToExpense);
       setExpenses(convertedExpenses);
     }
@@ -138,11 +146,11 @@ export default function StrategicPlanning() {
     }
   }, []);
 
-  const hasRealData = financialData && (
+  const hasFinancialData = financialData && (
     financialData.summary?.cashBalance > 0 ||
     financialData.metrics?.revenue > 0
   );
-  const currentCash = hasRealData ? (financialData.summary?.cashBalance || 0) : DEMO_FINANCIAL.currentCash;
+  const currentCash = hasFinancialData ? (financialData.summary?.cashBalance || 0) : (DEMO_FINANCIAL?.currentCash || 0);
   const currentDate = new Date();
   
   // Get base revenue from assumptions
@@ -263,7 +271,7 @@ export default function StrategicPlanning() {
   }
 
   // If still no activeScenario but we have scenarios, use the first one
-  const displayScenario = activeScenario || scenarios[0];
+  const displayScenario = activeScenario || (scenarios.length > 0 ? scenarios[0] : null);
   if (!displayScenario) {
     return (
       <div className="card p-8 text-center" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -422,51 +430,11 @@ export default function StrategicPlanning() {
                 </span>
               </div>
               
-              {/* Chart Preview with Sample Data */}
-              <div className="relative rounded-lg p-3 overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                {/* Sample runway data visualization */}
-                <div className="flex items-end justify-between gap-1 h-20">
-                  {[
-                    { month: isEn ? 'Jan' : 'Jan', cash: 850, color: '#10B981' },
-                    { month: isEn ? 'Feb' : 'Fév', cash: 825, color: '#10B981' },
-                    { month: isEn ? 'Mar' : 'Mar', cash: 800, color: '#10B981' },
-                    { month: isEn ? 'Apr' : 'Avr', cash: 775, color: '#10B981' },
-                    { month: isEn ? 'May' : 'Mai', cash: 750, color: '#10B981' },
-                    { month: isEn ? 'Jun' : 'Jun', cash: 720, color: '#F59E0B' },
-                    { month: isEn ? 'Jul' : 'Jul', cash: 690, color: '#F59E0B' },
-                    { month: isEn ? 'Aug' : 'Aoû', cash: 655, color: '#F59E0B' },
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex flex-col items-center flex-1">
-                      <div 
-                        className="w-full rounded-t transition-all"
-                        style={{ 
-                          height: `${(item.cash / 850) * 56}px`,
-                          backgroundColor: `${item.color}40`,
-                          borderTop: `2px solid ${item.color}`,
-                        }}
-                      />
-                      <span className="text-[7px] mt-1 font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                        {item.month}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                {/* Cash labels */}
-                <div className="flex justify-between mt-2 text-[8px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  <span>$850K</span>
-                  <span>$655K</span>
-                </div>
-                {/* Runway indicator */}
-                <div className="mt-2 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? 'Runway' : 'Piste'}
-                    </span>
-                    <span className="text-[10px] font-bold" style={{ color: '#10B981' }}>
-                      8 {isEn ? 'months' : 'mois'}
-                    </span>
-                  </div>
-                </div>
+              {/* Preview placeholder */}
+              <div className="relative rounded-lg p-3 overflow-hidden flex items-center justify-center h-20" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                <p className="text-xs text-center" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Connect your accounting software to see cash runway' : 'Connectez votre logiciel comptable pour voir la trésorerie'}
+                </p>
               </div>
             </div>
           </div>
@@ -630,7 +598,7 @@ export default function StrategicPlanning() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen space-y-4 sm:space-y-6">
       {/* Quick Metrics - Top bar style */}
       <QuickMetrics
         cash={currentCash}
@@ -639,16 +607,47 @@ export default function StrategicPlanning() {
         zeroDate={runwayData.zeroDate}
       />
 
-      {/* Live Cash Chart */}
-      <div className="p-4 sm:p-6">
-        <LiveCashChart
-          currentCash={currentCash}
-          currentDate={currentDate}
-          expenses={expenses}
-          baseRevenue={baseRevenue}
-          months={24}
-        />
-      </div>
+      {/* Data Readiness Checklist */}
+      {hasAccess && financialData && (
+        <div className="px-4 sm:px-6">
+          <DataReadinessChecklist 
+            context="planning" 
+          />
+        </div>
+      )}
+
+      {/* Show empty state if no real data */}
+      {hasAccess && !hasQuickBooksConnection && !hasSandboxData && (
+        <div className="px-4 sm:px-6">
+          <EmptyDataState 
+            context="cash-flow"
+            hasConnection={false}
+            onConnect={() => window.location.href = '/app/settings?tab=connections'}
+          />
+        </div>
+      )}
+
+      {/* Accountant Guidance - Show when cash data is missing or incomplete */}
+      {hasAccess && shouldShowData && financialData && (!hasCashBalance || !hasExpenseTrends) && (
+        <div className="px-4 sm:px-6">
+          <AccountantGuidanceCard 
+            type={!hasCashBalance ? 'reconcile-accounts' : 'categorize-expenses'}
+          />
+        </div>
+      )}
+
+      {/* Live Cash Chart - Only show when we have real data or user has added expenses */}
+      {hasAccess && (shouldShowData || expenses.length > 0) && (
+        <div className="p-4 sm:p-6">
+          <LiveCashChart
+            currentCash={currentCash}
+            currentDate={currentDate}
+            expenses={expenses}
+            baseRevenue={baseRevenue}
+            months={24}
+          />
+        </div>
+      )}
 
       {/* Expense Drawer */}
       <ExpenseDrawer

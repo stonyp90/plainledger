@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react';
 import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, Printer, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useBalanceSheet } from '../hooks/useFinancialData';
+import { useBalanceSheet, useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
 import Toggle from '../components/Toggle';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 // Date preset type
 type DatePreset = 'today' | 'month_end' | 'quarter_end' | 'year_end' | 'last_month_end' | 'last_quarter_end' | 'last_year_end' | 'custom';
@@ -63,6 +67,9 @@ export default function BalanceSheet() {
 
   // Fetch balance sheet data from the financial data service
   const { data: balanceSheetData, isLoading, error, refresh } = useBalanceSheet(asOfDate);
+  const { data: financialData } = useFinancialData();
+  const { hasBalanceSheet, hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -118,14 +125,14 @@ export default function BalanceSheet() {
       prior: currentAssetsTotal.prior + fixedAssetsTotal.prior,
     };
 
-    const currentLiabilitiesTotal = sumSection(balanceSheetData.liabilities.currentLiabilities);
-    const longTermLiabilitiesTotal = sumSection(balanceSheetData.liabilities.longTermLiabilities);
+    const currentLiabilitiesTotal = sumSection(balanceSheetData.liabilities?.currentLiabilities ?? []);
+    const longTermLiabilitiesTotal = sumSection(balanceSheetData.liabilities?.longTermLiabilities ?? []);
     const totalLiabilities = {
       current: currentLiabilitiesTotal.current + longTermLiabilitiesTotal.current,
       prior: currentLiabilitiesTotal.prior + longTermLiabilitiesTotal.prior,
     };
 
-    const equityTotal = sumSection(balanceSheetData.equity);
+    const equityTotal = sumSection(balanceSheetData.equity ?? []);
     const totalLiabilitiesAndEquity = {
       current: totalLiabilities.current + equityTotal.current,
       prior: totalLiabilities.prior + equityTotal.prior,
@@ -151,6 +158,41 @@ export default function BalanceSheet() {
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <p className="text-muted">{language === 'en' ? 'Loading balance sheet...' : 'Chargement du bilan...'}</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no real data and no sandbox data
+  if (!shouldShowData || !hasBalanceSheet) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              to="/app/reports"
+              className="p-2 rounded-lg transition-colors flex-shrink-0"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+              title={isEn ? 'Back to reports' : 'Retour aux rapports'}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Balance Sheet' : 'Bilan'}
+              </h2>
+              <p className="text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Statement of Financial Position' : 'État de la situation financière'}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <EmptyDataState 
+          context="balance-sheet"
+          hasConnection={false}
+          onConnect={() => window.location.href = '/app/settings?tab=connections'}
+        />
       </div>
     );
   }
@@ -286,6 +328,22 @@ export default function BalanceSheet() {
           </button>
         </div>
       </div>
+
+      {/* Data Readiness Checklist */}
+      {financialData && (
+        <DataReadinessChecklist 
+          context="reports" 
+          compact={!!balanceSheetData}
+        />
+      )}
+
+      {/* Accountant Guidance - Show when accounts data is missing */}
+      {financialData && !financialData.accounts?.length && (
+        <AccountantGuidanceCard 
+          type="connect-software"
+          compact={true}
+        />
+      )}
 
       {/* Controls */}
       <div className="card">
@@ -425,7 +483,7 @@ export default function BalanceSheet() {
                   {isEn ? 'Current Assets' : 'Actifs courants'}
                 </td>
               </tr>
-            {balanceSheetData.assets.currentAssets.map(renderRow)}
+            {(balanceSheetData.assets?.currentAssets ?? []).map(renderRow)}
             {renderTotalRow(isEn ? 'Total Current Assets' : 'Total actifs courants', currentAssetsTotal)}
 
             {/* Fixed Assets */}
@@ -434,7 +492,7 @@ export default function BalanceSheet() {
                 {isEn ? 'Fixed Assets' : 'Immobilisations'}
               </td>
             </tr>
-            {balanceSheetData.assets.fixedAssets.map(renderRow)}
+            {(balanceSheetData.assets?.fixedAssets ?? []).map(renderRow)}
             {renderTotalRow(isEn ? 'Total Fixed Assets' : 'Total immobilisations', fixedAssetsTotal)}
 
             {renderTotalRow(isEn ? 'TOTAL ASSETS' : 'TOTAL ACTIF', totalAssets, true)}
@@ -452,7 +510,7 @@ export default function BalanceSheet() {
                 {isEn ? 'Current Liabilities' : 'Passifs courants'}
               </td>
             </tr>
-            {balanceSheetData.liabilities.currentLiabilities.map(renderRow)}
+            {(balanceSheetData.liabilities?.currentLiabilities ?? []).map(renderRow)}
             {renderTotalRow(isEn ? 'Total Current Liabilities' : 'Total passifs courants', currentLiabilitiesTotal)}
 
             {/* Long-term Liabilities */}
@@ -461,7 +519,7 @@ export default function BalanceSheet() {
                 {isEn ? 'Long-term Liabilities' : 'Passifs à long terme'}
               </td>
             </tr>
-            {balanceSheetData.liabilities.longTermLiabilities.map(renderRow)}
+            {(balanceSheetData.liabilities?.longTermLiabilities ?? []).map(renderRow)}
             {renderTotalRow(isEn ? 'Total Long-term Liabilities' : 'Total passifs à long terme', longTermLiabilitiesTotal)}
 
             {renderTotalRow(isEn ? 'TOTAL LIABILITIES' : 'TOTAL PASSIF', totalLiabilities, true)}
@@ -472,7 +530,7 @@ export default function BalanceSheet() {
                 {isEn ? 'EQUITY' : 'CAPITAUX PROPRES'}
               </td>
             </tr>
-            {balanceSheetData.equity.map(renderRow)}
+            {(balanceSheetData.equity ?? []).map(renderRow)}
             {renderTotalRow(isEn ? 'TOTAL EQUITY' : 'TOTAL CAPITAUX PROPRES', equityTotal, true)}
 
             {/* Grand Total */}

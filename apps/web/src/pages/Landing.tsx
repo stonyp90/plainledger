@@ -353,7 +353,9 @@ function AnimatedBarChart({
     return () => clearTimeout(timeoutId);
   }, [delay, trigger]);
   
-  const maxValue = Math.max(...data.map(d => Math.max(d.actual, d.budget)));
+  const maxValue = data.length > 0 
+    ? Math.max(...data.map(d => Math.max(d?.actual ?? 0, d?.budget ?? 0))) 
+    : 0;
   
   return (
     <div className="w-full">

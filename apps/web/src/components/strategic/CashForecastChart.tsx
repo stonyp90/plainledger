@@ -21,6 +21,11 @@ export default function CashForecastChart({
   currentCash,
   onPointHover,
 }: CashForecastChartProps) {
+  // Early return - hide chart completely if no forecast data
+  if (!forecast || ((!forecast.historical || forecast.historical.length === 0) && (!forecast.projected || forecast.projected.length === 0))) {
+    return null;
+  }
+
   const { language } = useI18n();
   const isEn = language === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -36,8 +41,12 @@ export default function CashForecastChart({
     })),
   ];
 
-  const maxCash = Math.max(...allData.map(d => d.cash), currentCash);
-  const minCash = Math.min(...allData.map(d => d.cash), 0);
+  const maxCash = allData.length > 0 
+    ? Math.max(...allData.map(d => d.cash ?? 0), currentCash) 
+    : currentCash;
+  const minCash = allData.length > 0 
+    ? Math.min(...allData.map(d => d.cash ?? 0), 0) 
+    : 0;
   const range = maxCash - minCash || 1;
 
   const formatCurrency = (value: number) => {

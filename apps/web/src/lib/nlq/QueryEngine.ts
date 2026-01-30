@@ -840,11 +840,14 @@ export class QueryEngine {
   private calculateTrendHighlights(data: Array<{ period: string; value: number }>): Array<{ label: string; value: string; trend?: 'up' | 'down' | 'neutral' }> {
     if (data.length < 2) return [];
     
-    const first = data[0].value;
-    const last = data[data.length - 1].value;
-    const avg = data.reduce((sum, d) => sum + d.value, 0) / data.length;
-    const max = Math.max(...data.map(d => d.value));
-    const min = Math.min(...data.map(d => d.value));
+    if (data.length === 0) return [];
+    
+    const first = data[0]?.value ?? 0;
+    const last = data[data.length - 1]?.value ?? 0;
+    const avg = data.reduce((sum, d) => sum + (d?.value ?? 0), 0) / data.length;
+    const values = data.map(d => d?.value ?? 0);
+    const max = values.length > 0 ? Math.max(...values) : 0;
+    const min = values.length > 0 ? Math.min(...values) : 0;
     
     return [
       { label: 'Current', value: this.formatCurrency(last), trend: last > first ? 'up' : 'down' },

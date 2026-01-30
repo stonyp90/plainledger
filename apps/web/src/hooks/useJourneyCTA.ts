@@ -156,18 +156,24 @@ export function useJourneyCTA(options: UseJourneyCTAOptions = {}) {
         return true;
       }
       
-      // Fetch from API
-      const response = await fetch('/api/datasources', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-      
-      if (!response.ok) return false;
-      
-      const data = await response.json();
-      const hasConnections = Array.isArray(data) && data.length > 0;
+      // Fetch from API - gracefully handle if endpoint not available
+      let hasConnections = false;
+      try {
+        const response = await fetch('/api/datasources', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          hasConnections = Array.isArray(data) && data.length > 0;
+        }
+      } catch {
+        // Network error or API unavailable - assume no connections
+        hasConnections = false;
+      }
       
       // Update cache
       saveJourneyState({

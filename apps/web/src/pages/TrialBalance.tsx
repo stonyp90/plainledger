@@ -2,9 +2,13 @@ import { useState, useMemo } from 'react';
 import { ArrowLeft, Download, Calendar, RefreshCw, Printer, Share2, Loader2, AlertTriangle, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 interface TrialBalanceAccount {
   code: string;
@@ -26,6 +30,8 @@ export default function TrialBalance() {
   const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
+  const { hasTrialBalance, hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasAccounts } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -168,6 +174,36 @@ export default function TrialBalance() {
     );
   }
 
+  // Show empty state if no real data and no sandbox data
+  if (!shouldShowData || !hasTrialBalance || !hasAccounts || !trialBalanceData.length) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link to="/app/reports" className="p-2 rounded-lg transition-colors flex-shrink-0" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Trial Balance' : 'Balance de vérification'}
+              </h2>
+              <p className="text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'All accounts with balances' : 'Liste de tous les comptes avec soldes'}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <EmptyDataState 
+          context="accounts"
+          hasConnection={false}
+          onConnect={() => window.location.href = '/app/settings?tab=connections'}
+        />
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="card p-8 text-center">
@@ -209,6 +245,22 @@ export default function TrialBalance() {
           </button>
         </div>
       </div>
+
+      {/* Data Readiness Checklist */}
+      {financialData && (
+        <DataReadinessChecklist 
+          context="reports" 
+          compact={trialBalanceData.length > 0}
+        />
+      )}
+
+      {/* Accountant Guidance - Show when accounts data is missing */}
+      {financialData && !financialData.accounts?.length && (
+        <AccountantGuidanceCard 
+          type="connect-software"
+          compact={true}
+        />
+      )}
 
       {/* Controls */}
       <div className="card">

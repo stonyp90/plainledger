@@ -67,9 +67,13 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import Toggle from '../components/Toggle';
 import Checkbox from '../components/Checkbox';
 import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 import {
   boardMeetingService,
   generateExecutiveSummarySlides,
@@ -225,7 +229,7 @@ function KPISlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
 
 function ChartSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
   const data = slide.content?.data || [];
-  const maxValue = Math.max(...data.map((d: any) => d.value));
+  const maxValue = data.length > 0 ? Math.max(...data.map((d: any) => d.value ?? 0)) : 0;
   
   return (
     <div className="h-full flex flex-col px-8 py-6">
@@ -253,14 +257,22 @@ function ChartSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
               
               {/* Area fill */}
               <path
-                d={`M 40 180 ${data.map((d: any, i: number) => `L ${40 + (i * 350) / (data.length - 1)} ${180 - ((d.value / maxValue) * 140)}`).join(' ')} L ${40 + 350} 180 Z`}
+                d={`M 40 180 ${data.map((d: any, i: number) => {
+                  const divisor = Math.max(data.length - 1, 1);
+                  const valueRatio = maxValue !== 0 ? (d.value ?? 0) / maxValue : 0;
+                  return `L ${40 + (i * 350) / divisor} ${180 - (valueRatio * 140)}`;
+                }).join(' ')} L ${40 + 350} 180 Z`}
                 fill="rgb(var(--color-primary-500))"
                 fillOpacity="0.1"
               />
               
               {/* Line */}
               <path
-                d={`M ${data.map((d: any, i: number) => `${40 + (i * 350) / (data.length - 1)} ${180 - ((d.value / maxValue) * 140)}`).join(' L ')}`}
+                d={`M ${data.map((d: any, i: number) => {
+                  const divisor = Math.max(data.length - 1, 1);
+                  const valueRatio = maxValue !== 0 ? (d.value ?? 0) / maxValue : 0;
+                  return `${40 + (i * 350) / divisor} ${180 - (valueRatio * 140)}`;
+                }).join(' L ')}`}
                 fill="none"
                 stroke="rgb(var(--color-primary-500))"
                 strokeWidth="3"
@@ -272,7 +284,7 @@ function ChartSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
               {data.map((d: any, i: number) => (
                 <circle
                   key={i}
-                  cx={40 + (i * 350) / (data.length - 1)}
+                  cx={40 + (i * 350) / Math.max(data.length - 1, 1)}
                   cy={180 - ((d.value / maxValue) * 140)}
                   r="4"
                   fill="rgb(var(--color-primary-500))"
@@ -291,7 +303,7 @@ function ChartSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
           </div>
           
           {/* Insights */}
-          {slide.content?.insights && (
+          {slide.content?.insights && Array.isArray(slide.content.insights) && (
             <div className="mt-4 flex gap-4">
               {slide.content.insights.map((insight: string, i: number) => (
                 <div 
@@ -1303,6 +1315,8 @@ export default function BoardMeeting() {
   const { hasAccess } = usePremiumFeature('boardMeeting');
   
   const { data: financialData } = useFinancialData();
+  const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasSummaryMetrics, hasTrends } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   
   // State
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1402,7 +1416,9 @@ export default function BoardMeeting() {
     return generateExecutiveSummarySlides(financialData, isEn);
   }, [financialData, isEn]);
   
-  const currentSlide = slides[currentSlideIndex];
+  const currentSlide = slides.length > 0 && currentSlideIndex >= 0 && currentSlideIndex < slides.length 
+    ? slides[currentSlideIndex] 
+    : null;
   
   // Get elements for current slide
   const currentSlideElements = useMemo(() => {
@@ -2075,6 +2091,37 @@ export default function BoardMeeting() {
           existingPanels={existingPanelTypes}
         />
         
+        {/* Data Readiness Checklist - Show when user has access */}
+        {hasAccess && financialData && (
+          <div className="px-4 pb-4">
+            <DataReadinessChecklist 
+              context="board" 
+              compact={boardPanels.length > 0 || slides.length > 0}
+            />
+          </div>
+        )}
+
+        {/* Show empty state if no real data */}
+        {hasAccess && !hasRealData && (
+          <div className="px-4 pb-4">
+            <EmptyDataState 
+              context="reports"
+              hasConnection={false}
+              onConnect={() => window.location.href = '/app/settings?tab=connections'}
+            />
+          </div>
+        )}
+
+        {/* Accountant Guidance - Show when financial data is incomplete */}
+        {hasAccess && shouldShowData && financialData && (!hasSummaryMetrics || !hasTrends) && (
+          <div className="px-4 pb-4">
+            <AccountantGuidanceCard 
+              type={!hasSummaryMetrics ? 'reconcile-accounts' : 'historical-data'}
+              compact={true}
+            />
+          </div>
+        )}
+
         {/* Panels View */}
         {viewMode === 'panels' && (
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">

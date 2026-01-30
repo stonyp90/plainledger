@@ -2,11 +2,15 @@ import { useState, useMemo } from 'react';
 import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, TrendingUp, TrendingDown, Printer, Share2, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import { ChartTooltip } from '../components/charts/ChartTooltip';
 import ShareModal from '../components/ShareModal';
 import Toggle from '../components/Toggle';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 // Period presets type
 type PeriodPreset = 'mtd' | 'qtd' | 'ytd' | 'last_month' | 'last_quarter' | 'last_year' | 'custom';
@@ -97,6 +101,8 @@ export default function CashFlowStatement() {
   };
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
+  const { hasCashFlowStatement, hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasCashFlowTrends } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -174,9 +180,9 @@ export default function CashFlowStatement() {
       prior: items.reduce((sum, item) => sum + item.prior, 0),
     });
 
-    const operatingTotal = sumSection(cashFlowData.operating);
-    const investingTotal = sumSection(cashFlowData.investing);
-    const financingTotal = sumSection(cashFlowData.financing);
+    const operatingTotal = sumSection(cashFlowData.operating ?? []);
+    const investingTotal = sumSection(cashFlowData.investing ?? []);
+    const financingTotal = sumSection(cashFlowData.financing ?? []);
 
     const netChange = {
       current: operatingTotal.current + investingTotal.current + financingTotal.current,
@@ -184,8 +190,8 @@ export default function CashFlowStatement() {
     };
 
     const closingCash = {
-      current: cashFlowData.openingCash.current + netChange.current,
-      prior: cashFlowData.openingCash.prior + netChange.prior,
+      current: (cashFlowData.openingCash?.current ?? 0) + netChange.current,
+      prior: (cashFlowData.openingCash?.prior ?? 0) + netChange.prior,
     };
 
     return {
@@ -193,7 +199,7 @@ export default function CashFlowStatement() {
       investingTotal,
       financingTotal,
       netChange,
-      openingCash: cashFlowData.openingCash,
+      openingCash: cashFlowData.openingCash ?? { current: 0, prior: 0 },
       closingCash,
     };
   }, [cashFlowData]);
@@ -205,6 +211,36 @@ export default function CashFlowStatement() {
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <p className="text-muted">{isEn ? 'Loading...' : 'Chargement...'}</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no real data and no sandbox data
+  if (!shouldShowData || !hasCashFlowStatement || !hasCashFlowTrends) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link to="/app/reports" className="p-2 rounded-lg transition-colors flex-shrink-0" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Cash Flow Statement' : 'Flux de trésorerie'}
+              </h2>
+              <p className="text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {isEn ? 'Statement of Cash Flows' : 'État des flux de trésorerie'}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <EmptyDataState 
+          context="cash-flow"
+          hasConnection={false}
+          onConnect={() => window.location.href = '/app/settings?tab=connections'}
+        />
       </div>
     );
   }
@@ -403,6 +439,22 @@ export default function CashFlowStatement() {
         </div>
       </div>
 
+      {/* Data Readiness Checklist */}
+      {financialData && (
+        <DataReadinessChecklist 
+          context="reports" 
+          compact={!!cashFlowData}
+        />
+      )}
+
+      {/* Accountant Guidance - Show when cash flow data is missing */}
+      {financialData && (!financialData.summary?.cash?.current || !financialData.trends?.cashFlow?.data?.length) && (
+        <AccountantGuidanceCard 
+          type={!financialData.summary?.cash?.current ? 'reconcile-accounts' : 'connect-software'}
+          compact={true}
+        />
+      )}
+
       {/* Controls */}
       <div className="card">
         <div className="flex flex-col gap-4">
@@ -542,7 +594,7 @@ export default function CashFlowStatement() {
                   {isEn ? 'OPERATING ACTIVITIES' : 'ACTIVITÉS D\'EXPLOITATION'}
                 </td>
               </tr>
-              {cashFlowData.operating.map(item => renderRow(item, isEn ? 'Operations' : 'Exploitation'))}
+              {(cashFlowData.operating ?? []).map(item => renderRow(item, isEn ? 'Operations' : 'Exploitation'))}
               {renderTotalRow('Flux net - Exploitation', 'Net Cash from Operations', totals.operatingTotal, true)}
 
               {/* Investing Activities */}
@@ -551,7 +603,7 @@ export default function CashFlowStatement() {
                   {isEn ? 'INVESTING ACTIVITIES' : 'ACTIVITÉS D\'INVESTISSEMENT'}
                 </td>
               </tr>
-              {cashFlowData.investing.map(item => renderRow(item, isEn ? 'Investing' : 'Investissement'))}
+              {(cashFlowData.investing ?? []).map(item => renderRow(item, isEn ? 'Investing' : 'Investissement'))}
               {renderTotalRow('Flux net - Investissement', 'Net Cash from Investing', totals.investingTotal, true)}
 
               {/* Financing Activities */}
@@ -560,7 +612,7 @@ export default function CashFlowStatement() {
                   {isEn ? 'FINANCING ACTIVITIES' : 'ACTIVITÉS DE FINANCEMENT'}
                 </td>
               </tr>
-              {cashFlowData.financing.map(item => renderRow(item, isEn ? 'Financing' : 'Financement'))}
+              {(cashFlowData.financing ?? []).map(item => renderRow(item, isEn ? 'Financing' : 'Financement'))}
               {renderTotalRow('Flux net - Financement', 'Net Cash from Financing', totals.financingTotal, true)}
 
               {/* Summary */}
@@ -685,7 +737,7 @@ export default function CashFlowStatement() {
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-500">{isEn ? '% of Net Cash Change' : '% du flux net'}</span>
                             <span className="text-gray-300">
-                              {Math.abs((item.value.current / totals.netChange.current) * 100).toFixed(0)}%
+                              {totals.netChange.current !== 0 ? Math.abs((item.value.current / totals.netChange.current) * 100).toFixed(0) : '0'}%
                             </span>
                           </div>
                         </div>

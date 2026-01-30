@@ -49,11 +49,15 @@ import {
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
+import { useHasRealData } from '../hooks/useHasRealData';
 import { useBenchmark, type RevenueRange } from '../hooks/useBenchmarks';
 import BenchmarkCard from '../components/BenchmarkCard';
 import BenchmarkComparison from '../components/BenchmarkComparison';
 import MarketInsightsPanel, { generateInsightsFromComparison } from '../components/MarketInsightsPanel';
 import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
+import DataReadinessChecklist from '../components/DataReadinessChecklist';
+import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
+import EmptyDataState from '../components/EmptyDataState';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -100,6 +104,8 @@ export default function MarketAnalysis() {
   const { currentTenant } = useTenant();
   const { language } = useI18n();
   const { data: financialData } = useFinancialData();
+  const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasSummaryMetrics, hasRevenueTrends } = useHasRealData();
+  const shouldShowData = hasRealData || shouldShowSandboxData;
   const isEn = language === 'en';
   const { hasAccess } = usePremiumFeature('marketAnalysis');
   
@@ -528,6 +534,20 @@ export default function MarketAnalysis() {
         </div>
       </div>
 
+      {/* Data Readiness Checklist */}
+      {hasAccess && financialData && (
+        <DataReadinessChecklist 
+          context="market-analysis" 
+        />
+      )}
+
+      {/* Accountant Guidance - Show when data is insufficient for benchmarking */}
+      {hasAccess && financialData && (!financialData.trends?.revenue?.data?.length || financialData.trends?.revenue?.data?.length < 12) && (
+        <AccountantGuidanceCard 
+          type="historical-data"
+        />
+      )}
+
       {/* Organization Market Focus Banner - Only show if organization has industry set */}
       {currentTenant?.industry && (
         <div 
@@ -671,8 +691,8 @@ export default function MarketAnalysis() {
         )}
       </div>
 
-      {/* Basic Benchmark Cards - Available to all users */}
-      {legacyBenchmark && (
+      {/* Basic Benchmark Cards - Only show when we have real user data */}
+      {hasAccess && shouldShowData && hasSummaryMetrics && legacyBenchmark && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <BenchmarkCard
             title={isEn ? 'Gross Margin' : 'Marge brute'}
@@ -716,8 +736,19 @@ export default function MarketAnalysis() {
         </div>
       )}
 
-      {/* AI-Powered Insights Panel */}
-      {userMetrics && benchmark && (
+      {/* Show empty state if no real data */}
+      {hasAccess && !hasQuickBooksConnection && !hasSandboxData && (
+        <div className="rounded-xl border p-8" style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+          <EmptyDataState 
+            context="dashboard"
+            hasConnection={false}
+            onConnect={() => window.location.href = '/app/settings?tab=connections'}
+          />
+        </div>
+      )}
+
+      {/* AI-Powered Insights Panel - Only show when we have real user data */}
+      {hasAccess && shouldShowData && hasSummaryMetrics && userMetrics && benchmark && (
         <div className="rounded-xl border p-4 sm:p-6" style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
           <MarketInsightsPanel
             insights={aiInsights}
@@ -729,8 +760,8 @@ export default function MarketAnalysis() {
         </div>
       )}
 
-      {/* Additional Benchmark Cards */}
-      {legacyBenchmark && (
+      {/* Additional Benchmark Cards - Only show when we have real user data */}
+      {hasAccess && shouldShowData && hasSummaryMetrics && legacyBenchmark && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <BenchmarkCard
             title={isEn ? 'Debt-to-Equity' : 'Dette/Capitaux propres'}
@@ -767,7 +798,7 @@ export default function MarketAnalysis() {
           <BenchmarkCard
             title={isEn ? 'YoY Growth' : 'Croissance annuelle'}
             icon={<TrendingUp className="w-5 h-5" />}
-            userValue={null}
+            userValue={hasRevenueTrends ? userMetrics?.grossMargin : null}
             benchmark={{ 
               q1: legacyBenchmark.revenueYoY * 0.5, 
               median: legacyBenchmark.revenueYoY, 
@@ -782,8 +813,8 @@ export default function MarketAnalysis() {
         </div>
       )}
 
-      {/* Detailed Industry Position */}
-      {userMetrics && legacyBenchmark && (
+      {/* Detailed Industry Position - Only show when we have real user data */}
+      {hasAccess && hasRealData && hasSummaryMetrics && userMetrics && legacyBenchmark && (
         <div className="rounded-xl border p-4 sm:p-6" style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
           <button
             onClick={() => setShowComparison(!showComparison)}

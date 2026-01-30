@@ -29,14 +29,19 @@ export default function BurnRateChart({
   projected,
   onPointHover,
 }: BurnRateChartProps) {
+  // Early return - hide chart completely if no data
+  if ((!historical || historical.length === 0) && (!projected || projected.length === 0)) {
+    return null;
+  }
+
   const { language } = useI18n();
   const isEn = language === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const allData = [...historical, ...projected];
-  const maxBurn = Math.max(...allData.map(d => Math.abs(d.netBurn)));
-  const minBurn = Math.min(...allData.map(d => Math.abs(d.netBurn)));
+  const maxBurn = allData.length > 0 ? Math.max(...allData.map(d => Math.abs(d.netBurn ?? 0))) : 0;
+  const minBurn = allData.length > 0 ? Math.min(...allData.map(d => Math.abs(d.netBurn ?? 0))) : 0;
   const range = maxBurn - minBurn || 1;
 
   const formatCurrency = (value: number) => {

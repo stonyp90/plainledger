@@ -30,6 +30,11 @@ export default function Sparkline({
   highlightAnomalies = true,
   anomalyThreshold = 2,
 }: SparklineProps) {
+  // Early return - hide chart completely if no data
+  if (!data || data.length === 0) {
+    return null;
+  }
+
   const {
     normalizedData,
     min,
@@ -55,13 +60,13 @@ export default function Sparkline({
       };
     }
 
-    const minVal = Math.min(...data);
-    const maxVal = Math.max(...data);
+    const minVal = data.length > 0 ? Math.min(...data) : 0;
+    const maxVal = data.length > 0 ? Math.max(...data) : 0;
     const range = maxVal - minVal || 1;
     
     // Calculate mean and standard deviation for anomaly detection
-    const meanVal = data.reduce((a, b) => a + b, 0) / data.length;
-    const variance = data.reduce((a, b) => a + Math.pow(b - meanVal, 2), 0) / data.length;
+    const meanVal = data.length > 0 ? data.reduce((a, b) => (a ?? 0) + (b ?? 0), 0) / data.length : 0;
+    const variance = data.length > 0 ? data.reduce((a, b) => (a ?? 0) + Math.pow((b ?? 0) - meanVal, 2), 0) / data.length : 0;
     const std = Math.sqrt(variance);
     
     // Find anomalies
