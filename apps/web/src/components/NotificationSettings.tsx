@@ -1290,25 +1290,29 @@ export default function NotificationSettings() {
                     >
                       Catégorie
                     </th>
-                    {channels.map((channel) => (
-                      <th 
-                        key={channel.id}
-                        className="py-3 px-4 text-center"
-                      >
-                        <div className="flex flex-col items-center gap-1.5">
-                          <channel.icon 
-                            className="w-5 h-5" 
-                            style={{ color: 'rgb(var(--color-text-muted))' }}
-                          />
-                          <span 
-                            className="text-xs font-medium"
-                            style={{ color: 'rgb(var(--color-text-secondary))' }}
-                          >
-                            {channel.labelFr}
-                          </span>
-                        </div>
-                      </th>
-                    ))}
+                    {channels.map((channel) => {
+                      const IconComponent = channel?.icon;
+                      if (!IconComponent) return null;
+                      return (
+                        <th 
+                          key={channel.id}
+                          className="py-3 px-4 text-center"
+                        >
+                          <div className="flex flex-col items-center gap-1.5">
+                            <IconComponent 
+                              className="w-5 h-5" 
+                              style={{ color: 'rgb(var(--color-text-muted))' }}
+                            />
+                            <span 
+                              className="text-xs font-medium"
+                              style={{ color: 'rgb(var(--color-text-secondary))' }}
+                            >
+                              {channel.labelFr}
+                            </span>
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -1418,6 +1422,9 @@ export default function NotificationSettings() {
                       const isMessagingChannel = channel.id === 'slack' || channel.id === 'teams';
                       const isConnected = channel.id === 'slack' ? isSlackConnected : channel.id === 'teams' ? isTeamsConnected : true;
                       const isDisabled = isMessagingChannel && !isConnected;
+                      const IconComponent = channel?.icon;
+                      
+                      if (!IconComponent) return null;
                       
                       return (
                       <button
@@ -1438,7 +1445,7 @@ export default function NotificationSettings() {
                         }}
                         title={isDisabled ? `Connectez ${channel.label} d'abord` : ''}
                       >
-                        <channel.icon 
+                        <IconComponent 
                           className="w-4 h-4" 
                           style={{ 
                             color: localPrefs.channels[category][channel.id] && !isDisabled

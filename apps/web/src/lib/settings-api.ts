@@ -145,20 +145,32 @@ export const userSettingsApi = {
    * Get user settings
    */
   async get(): Promise<any> {
-    const response = await fetch(`${API_BASE}/settings/user`, {
-      method: 'GET',
-      headers: await getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/settings/user`, {
+        method: 'GET',
+        headers: await getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      // 404 means no settings exist yet, return empty object
-      if (response.status === 404) {
-        return {};
+      if (!response.ok) {
+        // 404 means no settings exist yet, return empty object with proper structure
+        if (response.status === 404) {
+          return {
+            notificationPreferences: undefined,
+            uiPreferences: undefined,
+          };
+        }
+        throw new Error(`Failed to fetch user settings: ${response.statusText}`);
       }
-      throw new Error(`Failed to fetch user settings: ${response.statusText}`);
-    }
 
-    return response.json();
+      return response.json();
+    } catch (error) {
+      // Network errors or other issues - return empty object
+      console.warn('Failed to fetch user settings, using defaults:', error);
+      return {
+        notificationPreferences: undefined,
+        uiPreferences: undefined,
+      };
+    }
   },
 
   /**
