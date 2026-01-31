@@ -6,7 +6,7 @@
  */
 
 import { FinancialContext } from './jamesPrompts';
-import { ChatMessage } from './jamesAI';
+import { ChatMessage } from './chatTypes';
 import { QueryIntent } from './queryRouter';
 import { Initiative } from './strategicPlanning';
 

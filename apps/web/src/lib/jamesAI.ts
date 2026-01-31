@@ -25,39 +25,10 @@ import { classifyQuery, getModelTier, isLocalHandler, QueryHandler } from './que
 import { pruneContext, buildPrunedContextString } from './contextPruner';
 import { enforceTokenBudget, getBudgetInfo } from './tokenBudget';
 import { validateAIResponse } from './responseGuardrails';
+import { ChatMessage, ChatResponse, ChatStreamChunk } from './chatTypes';
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-  metadata?: {
-    initiatives?: Initiative[];
-    okrs?: OKR[];
-    type?: 'strategy' | 'initiative' | 'okr' | 'general';
-    error?: string;
-    retryCount?: number;
-  };
-}
-
-export interface ChatResponse {
-  message: string;
-  streaming?: boolean;
-  metadata?: {
-    initiatives?: Initiative[];
-    okrs?: OKR[];
-    type?: 'strategy' | 'initiative' | 'okr' | 'general';
-    tokensUsed?: number;
-    latency?: number;
-  };
-  error?: string;
-}
-
-export interface ChatStreamChunk {
-  content: string;
-  done: boolean;
-  error?: string;
-}
+// Re-export types for backward compatibility
+export type { ChatMessage, ChatResponse, ChatStreamChunk };
 
 interface PendingRequest {
   abortController: AbortController;
