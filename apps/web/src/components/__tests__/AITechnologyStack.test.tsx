@@ -64,16 +64,18 @@ describe('AITechnologyStack', () => {
   it('should display data privacy messaging', () => {
     render(<AITechnologyStack theme={mockTheme} isDark={false} />);
     
-    expect(screen.getByText(/Your data trains YOUR industry model/i)).toBeInTheDocument();
+    // Check for actual privacy messaging in the component
+    expect(screen.getByText(/Your data improves YOUR industry insights/i)).toBeInTheDocument();
   });
 
-  it('should display open source foundations', () => {
+  it('should display AI providers', () => {
     render(<AITechnologyStack theme={mockTheme} isDark={false} />);
     
-    expect(screen.getByText(/Mistral 7B/i)).toBeInTheDocument();
-    expect(screen.getByText(/HuggingFace/i)).toBeInTheDocument();
-    expect(screen.getByText(/PyTorch/i)).toBeInTheDocument();
-    expect(screen.getByText(/LoRA/i)).toBeInTheDocument();
+    // Check for actual AI providers in the component
+    expect(screen.getByText(/Mistral/i)).toBeInTheDocument();
+    expect(screen.getByText(/OpenAI/i)).toBeInTheDocument();
+    expect(screen.getByText(/Google/i)).toBeInTheDocument();
+    expect(screen.getByText(/PlainLedger AI/i)).toBeInTheDocument();
   });
 
   it('should apply dark theme styles when isDark is true', () => {

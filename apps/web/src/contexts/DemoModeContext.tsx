@@ -23,14 +23,14 @@ interface DemoModeProviderProps {
 }
 
 export function DemoModeProvider({ children }: DemoModeProviderProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, authenticated } = useAuth();
   
   // Check if user is in demo-signup organization - auto-enable demo mode
   const isDemoSignupUser = user?.organization === 'demo-signup';
   
   // Check if user has a real organization (not demo-signup)
   // Users with real orgs should see real data by default
-  const hasRealOrganization = isAuthenticated && user?.organization && user.organization !== 'demo-signup';
+  const hasRealOrganization = authenticated && user?.organization && user.organization !== 'demo-signup';
   
   // Load demo mode preference from localStorage or auto-enable for demo-signup users
   const [isDemoMode, setIsDemoModeState] = useState<boolean>(() => {

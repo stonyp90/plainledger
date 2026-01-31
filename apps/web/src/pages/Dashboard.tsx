@@ -51,7 +51,7 @@ import {
   DEFAULT_THRESHOLDS,
   type AccountBalance,
 } from '../lib/anomalyDetection';
-import { INDUSTRY_KPIS } from '../components/IndustryKPISection';
+import { INDUSTRY_KPIS } from '../lib/industryBenchmarkDisplay';
 import type { DataMetric, DecisionEvent } from '../lib/decisionContext';
 import EmptyDataState from '../components/EmptyDataState';
 import ConnectionWizard from '../components/ConnectionWizard';
@@ -183,6 +183,31 @@ export default function Dashboard() {
     }
     return runFullAnalysis(accountsData, revenueData, DEFAULT_THRESHOLDS);
   }, [accountsData, revenueData]);
+
+  // Decision capture state (moved before dashboardSections useMemo to avoid TDZ error)
+  const [showDecisionCapture, setShowDecisionCapture] = useState(false);
+  const [decisionTrigger, setDecisionTrigger] = useState<{
+    metricType: DataMetric;
+    metricLabel: string;
+    chartId: string;
+    currentValue: number;
+    benchmarkValue?: number;
+    period?: string;
+  } | null>(null);
+  const [recentDecisions, setRecentDecisions] = useState<DecisionEvent[]>([]);
+
+  // Handle opening decision capture from a chart
+  const handleRecordDecision = useCallback((trigger: {
+    metricType: DataMetric;
+    metricLabel: string;
+    chartId: string;
+    currentValue: number;
+    benchmarkValue?: number;
+    period?: string;
+  }) => {
+    setDecisionTrigger(trigger);
+    setShowDecisionCapture(true);
+  }, []);
 
   // Collect all available dashboard sections dynamically
   const dashboardSections = useMemo((): DashboardSection[] => {
@@ -566,31 +591,6 @@ export default function Dashboard() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  
-  // Decision capture state
-  const [showDecisionCapture, setShowDecisionCapture] = useState(false);
-  const [decisionTrigger, setDecisionTrigger] = useState<{
-    metricType: DataMetric;
-    metricLabel: string;
-    chartId: string;
-    currentValue: number;
-    benchmarkValue?: number;
-    period?: string;
-  } | null>(null);
-  const [recentDecisions, setRecentDecisions] = useState<DecisionEvent[]>([]);
-
-  // Handle opening decision capture from a chart
-  const handleRecordDecision = useCallback((trigger: {
-    metricType: DataMetric;
-    metricLabel: string;
-    chartId: string;
-    currentValue: number;
-    benchmarkValue?: number;
-    period?: string;
-  }) => {
-    setDecisionTrigger(trigger);
-    setShowDecisionCapture(true);
-  }, []);
 
   // Handle decision submission
   const handleDecisionSubmit = useCallback(async (decision: DecisionEvent) => {
