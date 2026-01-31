@@ -148,7 +148,8 @@ export function DataPointTooltip({
     success: { style: { color: 'rgb(var(--color-success))' }, icon: CheckCircle },
   };
 
-  const StatusIcon = status ? statusConfig[status].icon : null;
+  const statusInfo = status ? statusConfig[status] : null;
+  const StatusIcon = statusInfo?.icon ?? null;
 
   return (
     <div className="min-w-[180px]">
@@ -160,8 +161,8 @@ export function DataPointTooltip({
         >
           {label}
         </span>
-        {StatusIcon && (
-          <StatusIcon className="w-4 h-4" style={statusConfig[status!].style} />
+        {StatusIcon && statusInfo && (
+          <StatusIcon className="w-4 h-4" style={statusInfo.style} />
         )}
       </div>
 

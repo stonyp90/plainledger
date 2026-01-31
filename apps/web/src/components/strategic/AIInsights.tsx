@@ -89,6 +89,12 @@ export default function AIInsights({ driver, value, periodKey, allDrivers, isEn 
     <div className="absolute left-full top-0 ml-2 z-50 w-64">
       {insights.map((insight, index) => {
         const colorScheme = colors[insight.type];
+        
+        // Safety check - skip if insight type not found
+        if (!colorScheme) {
+          return null;
+        }
+        
         const Icon = colorScheme.icon;
         
         return (

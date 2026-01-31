@@ -111,6 +111,13 @@ export default function EmptyDataState({
   const { currentTenant } = useTenant();
   const isEn = language === 'en';
   const config = contextConfig[context];
+  
+  // Safety check - if context not found, use dashboard as fallback
+  if (!config) {
+    console.warn(`EmptyDataState: Unknown context "${context}", using dashboard fallback`);
+    return null;
+  }
+  
   const Icon = config.icon;
   
   // Determine organization size for context-aware messaging

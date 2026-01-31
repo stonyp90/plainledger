@@ -1070,6 +1070,12 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   }
   
   const currentIndustry = INDUSTRY_KPIS.find(ind => ind.id === selectedIndustry) || INDUSTRY_KPIS[0];
+  
+  // Safety check - if no industry data found, don't render
+  if (!currentIndustry) {
+    return null;
+  }
+  
   const Icon = currentIndustry.icon;
   
   // Format value for display

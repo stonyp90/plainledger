@@ -1392,6 +1392,12 @@ function IndustryBenchmarksSection({ industry, isEn }: IndustryBenchmarksSection
   const [isExpanded, setIsExpanded] = useState(false);
   // Find industry data or default to real_estate
   const industryData = INDUSTRY_KPIS.find(ind => ind.id === industry) || INDUSTRY_KPIS[0];
+  
+  // Safety check - if no industry data found, don't render
+  if (!industryData) {
+    return null;
+  }
+  
   const Icon = industryData.icon;
   
   // Get top 4-5 KPIs for dashboard (prioritize ROI/profitability metrics)

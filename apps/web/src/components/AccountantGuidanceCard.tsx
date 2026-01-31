@@ -203,6 +203,13 @@ export default function AccountantGuidanceCard({
   const { language } = useI18n();
   const isEn = language === 'en';
   const config = GUIDANCE_CONFIG[type];
+  
+  // Safety check - if type not found, don't render
+  if (!config) {
+    console.warn(`AccountantGuidanceCard: Unknown type "${type}"`);
+    return null;
+  }
+  
   const Icon = config.icon;
 
   const handleActionClick = () => {

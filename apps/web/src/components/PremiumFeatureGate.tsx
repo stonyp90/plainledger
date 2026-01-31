@@ -219,6 +219,13 @@ export default function PremiumFeatureGate({
   const [showEmailFormState, setShowEmailFormState] = useState(defaultToEmailForm);
   
   const featureInfo = FEATURE_INFO[feature];
+  
+  // Safety check - if feature not found, just render children (fail open)
+  if (!featureInfo) {
+    console.warn(`PremiumFeatureGate: Unknown feature "${feature}"`);
+    return <>{children}</>;
+  }
+  
   const Icon = featureInfo.icon;
   const highlights = isEn ? featureInfo.highlightsEn : featureInfo.highlightsFr;
   
@@ -486,6 +493,13 @@ export function PremiumUpgradeBanner({
   if (hasAccess) return null;
   
   const featureInfo = FEATURE_INFO[feature];
+  
+  // Safety check - if feature not found, don't render badge
+  if (!featureInfo) {
+    console.warn(`PremiumBadge: Unknown feature "${feature}"`);
+    return null;
+  }
+  
   const Icon = featureInfo.icon;
   
   const handleUpgradeClick = () => {
