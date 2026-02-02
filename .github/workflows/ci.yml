@@ -32,6 +32,11 @@ on:
         required: false
         default: 'false'
         type: boolean
+      no_cache:
+        description: 'Build without Docker cache (force fresh dependencies)'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   id-token: write
@@ -377,8 +382,9 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/${{ matrix.app.ecr_repo }}:${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/${{ matrix.app.ecr_repo }}:latest
-          cache-from: type=gha,scope=${{ matrix.app.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.app.name }}
+          # Use ECR registry cache instead of GHA cache to avoid stale dependency issues
+          cache-from: ${{ github.event.inputs.no_cache != 'true' && format('type=registry,ref={0}/{1}:cache', steps.login-ecr.outputs.registry, matrix.app.ecr_repo) || '' }}
+          cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ matrix.app.ecr_repo }}:cache,mode=max
           provenance: false
           build-args: |
             NODE_ENV=production
@@ -408,12 +414,37 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
       
+      - name: Get ECR registry
+        id: ecr-registry
+        run: |
+          echo "registry=$(aws ecr describe-repositories --repository-names plainledger-prod-api --query 'repositories[0].repositoryUri' --output text | sed 's|/plainledger-prod-api||')" >> $GITHUB_OUTPUT
+      
+      - name: Update API task definition with specific image tag
+        id: update-api-task
+        run: |
+          echo "🔄 Updating API task definition to use commit SHA: ${{ github.sha }}"
+          
+          # Get current task definition
+          TASK_DEF=$(aws ecs describe-task-definition --task-definition plainledger-prod-api --query 'taskDefinition' --output json)
+          
+          # Update image to use specific commit SHA tag (not :latest to avoid cache issues)
+          NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "${{ steps.ecr-registry.outputs.registry }}/plainledger-prod-api:${{ github.sha }}" \
+            'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) | 
+             .containerDefinitions[0].image = $IMAGE')
+          
+          # Register new task definition
+          echo "$NEW_TASK_DEF" > /tmp/task-def.json
+          NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file:///tmp/task-def.json --query 'taskDefinition.revision' --output text)
+          echo "revision=$NEW_REVISION" >> $GITHUB_OUTPUT
+          echo "✅ Registered new task definition revision: $NEW_REVISION"
+      
       - name: Deploy API service
         run: |
-          echo "🚀 Deploying API service..."
+          echo "🚀 Deploying API service with task definition revision ${{ steps.update-api-task.outputs.revision }}..."
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service plainledger-prod-api \
+            --task-definition plainledger-prod-api:${{ steps.update-api-task.outputs.revision }} \
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ API service not found - infrastructure may need to be deployed first"
       
@@ -522,6 +553,23 @@ jobs:
             echo "Waiting for REST API... ($i/5)"
             sleep 10
           done
+      
+      - name: Verify API Routes (no double /api prefix)
+        run: |
+          echo "🔍 Checking for double /api/api prefix issues..."
+          SWAGGER_ROUTES=$(curl -sf https://plainledger.ca/api/docs-json | jq -r '.paths | keys[]' || echo "")
+          
+          DOUBLE_PREFIX_COUNT=$(echo "$SWAGGER_ROUTES" | grep -c "^/api/api" || echo "0")
+          
+          if [ "$DOUBLE_PREFIX_COUNT" -gt "0" ]; then
+            echo "❌ ERROR: Found $DOUBLE_PREFIX_COUNT routes with double /api/api prefix!"
+            echo "$SWAGGER_ROUTES" | grep "^/api/api" | head -5
+            echo "This indicates Docker cache may have stale code. Re-run with no_cache=true"
+            exit 1
+          else
+            echo "✅ No double /api prefix issues found"
+            echo "Total routes: $(echo "$SWAGGER_ROUTES" | wc -l | tr -d ' ')"
+          fi
       
       - name: Verify GraphQL API Health
         run: |
