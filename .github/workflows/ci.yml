@@ -72,14 +72,14 @@ jobs:
       
       - name: Cache API node_modules
         id: cache-api
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
       
       - name: Cache Web node_modules
         id: cache-web
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
@@ -108,7 +108,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore API cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
@@ -129,7 +129,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore Web cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
@@ -150,7 +150,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore API cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
@@ -184,7 +184,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore Web cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
@@ -242,7 +242,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       
       - name: Restore API cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
@@ -359,7 +359,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
@@ -409,7 +409,7 @@ jobs:
     environment: production
     steps:
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
