@@ -145,10 +145,7 @@ export class TenantGuard implements CanActivate {
   /**
    * Check if user is a super-admin
    */
-  private isSuperAdmin(user: {
-    roles?: string[];
-    email?: string;
-  }): boolean {
+  private isSuperAdmin(user: { roles?: string[]; email?: string }): boolean {
     // Check for super-admin role
     if (user.roles?.includes("super-admin")) {
       return true;

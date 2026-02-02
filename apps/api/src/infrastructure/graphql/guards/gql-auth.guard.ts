@@ -251,10 +251,10 @@ export class GqlAuthGuard implements CanActivate {
       }
     }
 
-    const configService = this.moduleRef.get(ConfigService, { strict: false });
-    const demoOrgId = configService?.get<string>("DEMO_ORG_ID") || "demo-org";
-    const demoEmail = configService?.get<string>("DEMO_EMAIL") || "demo@plainledger.ca";
-    
+    const demoOrgId = this.configService?.get<string>("DEMO_ORG_ID") || "demo-org";
+    const demoEmail =
+      this.configService?.get<string>("DEMO_EMAIL") || "demo@plainledger.ca";
+
     return {
       sub: "dev-user-123",
       email: demoEmail,

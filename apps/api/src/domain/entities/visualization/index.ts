@@ -1,6 +1,6 @@
 /**
  * Visualization Domain Entities
- * 
+ *
  * Domain-driven design entities for the visualization system.
  * These entities encapsulate business rules and validation logic.
  */
@@ -19,7 +19,7 @@ export {
   JoinType,
   DataSourceRelationship,
   DataSourceRelationshipProps,
-} from './DataSource';
+} from "./DataSource";
 
 // Visualization Query entities
 export {
@@ -39,4 +39,4 @@ export {
   SortSpecification,
   SortSpecificationProps,
   SortDirection,
-} from './VisualizationQuery';
+} from "./VisualizationQuery";

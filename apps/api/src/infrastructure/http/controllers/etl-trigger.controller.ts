@@ -21,13 +21,13 @@ class TriggerETLDto {
 
 /**
  * ETL Trigger Controller
- * 
+ *
  * Internal endpoint for triggering ETL pipeline runs.
  * Can be called from:
  * - GitHub Actions webhooks
  * - Scheduled jobs
  * - Manual admin triggers
- * 
+ *
  * This endpoint triggers the ETL pipeline which:
  * 1. Extracts data from QuickBooks → S3 Bronze
  * 2. Transforms Bronze → Silver
@@ -93,21 +93,22 @@ export class ETLTriggerController {
     // 1. Queue an ETL job (AWS Step Functions, SQS, etc.)
     // 2. Return job ID for tracking
     // 3. Optionally trigger GitHub Actions workflow via API
-    
+
     // For now, log the trigger and return success
     // The actual ETL will be handled by GitHub Actions workflow
-    
+
     const jobId = `etl-${organization_id}-${Date.now()}`;
-    
+
     this.logger.log(`ETL job queued: ${jobId}`);
-    
+
     return {
       success: true,
       job_id: jobId,
       organization_id,
       action,
       industry: industry || "all",
-      message: "ETL pipeline triggered. Check GitHub Actions for execution status.",
+      message:
+        "ETL pipeline triggered. Check GitHub Actions for execution status.",
       status: "queued",
     };
   }
@@ -137,16 +138,20 @@ export class ETLTriggerController {
       throw new BadRequestException("organization_id is required");
     }
 
-    this.logger.log(`Cache refresh triggered for organization: ${organization_id}`);
+    this.logger.log(
+      `Cache refresh triggered for organization: ${organization_id}`,
+    );
 
     // In production, this would:
     // 1. Invalidate Redis cache keys for the organization
     // 2. Trigger GraphQL schema refresh if needed
     // 3. Notify subscribers via WebSocket/SSE
-    
+
     // For now, log and return success
-    this.logger.log(`Cache refresh completed for organization: ${organization_id}`);
-    
+    this.logger.log(
+      `Cache refresh completed for organization: ${organization_id}`,
+    );
+
     return {
       success: true,
       organization_id,

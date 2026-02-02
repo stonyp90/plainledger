@@ -1,42 +1,42 @@
 /**
  * DataSource Domain Entity
- * 
+ *
  * Represents a data source that can be used in visualizations.
  * Part of the Gold layer star schema (dimensions and facts).
- * 
+ *
  * Domain Rules:
  * - Each data source has a unique identifier
  * - Fields must be validated before use
  * - Relationships define joinable sources
  */
 
-import { DomainError } from '../../errors/DomainError';
+import { DomainError } from "../../errors/DomainError";
 
 // =====================================================
 // VALUE OBJECTS
 // =====================================================
 
-export type FieldType = 
-  | 'STRING' 
-  | 'NUMBER' 
-  | 'CURRENCY' 
-  | 'DATE' 
-  | 'DATETIME' 
-  | 'BOOLEAN' 
-  | 'PERCENT';
+export type FieldType =
+  | "STRING"
+  | "NUMBER"
+  | "CURRENCY"
+  | "DATE"
+  | "DATETIME"
+  | "BOOLEAN"
+  | "PERCENT";
 
-export type AggregationType = 
-  | 'SUM' 
-  | 'AVG' 
-  | 'COUNT' 
-  | 'COUNT_DISTINCT' 
-  | 'MIN' 
-  | 'MAX' 
-  | 'NONE';
+export type AggregationType =
+  | "SUM"
+  | "AVG"
+  | "COUNT"
+  | "COUNT_DISTINCT"
+  | "MIN"
+  | "MAX"
+  | "NONE";
 
-export type JoinType = 'inner' | 'left' | 'right' | 'full';
+export type JoinType = "inner" | "left" | "right" | "full";
 
-export type DataSourceType = 'dimension' | 'fact';
+export type DataSourceType = "dimension" | "fact";
 
 /**
  * DataSourceId Value Object
@@ -46,10 +46,12 @@ export class DataSourceId {
 
   static create(value: string): DataSourceId {
     if (!value || value.trim().length === 0) {
-      throw new DomainError('DataSourceId cannot be empty');
+      throw new DomainError("DataSourceId cannot be empty");
     }
     if (!/^[a-z_]+$/.test(value)) {
-      throw new DomainError('DataSourceId must be lowercase with underscores only');
+      throw new DomainError(
+        "DataSourceId must be lowercase with underscores only",
+      );
     }
     return new DataSourceId(value);
   }
@@ -71,7 +73,7 @@ export class FieldId {
 
   static create(value: string): FieldId {
     if (!value || value.trim().length === 0) {
-      throw new DomainError('FieldId cannot be empty');
+      throw new DomainError("FieldId cannot be empty");
     }
     return new FieldId(value);
   }
@@ -134,7 +136,7 @@ export class DataField {
     this._aggregatable = props.aggregatable;
     this._filterable = props.filterable;
     this._sortable = props.sortable;
-    this._defaultAggregation = props.defaultAggregation || 'NONE';
+    this._defaultAggregation = props.defaultAggregation || "NONE";
     this._format = props.format;
     this._isPrimaryKey = props.isPrimaryKey || false;
     this._isForeignKey = props.isForeignKey || false;
@@ -145,66 +147,101 @@ export class DataField {
   static create(props: DataFieldProps): DataField {
     // Validation
     if (!props.name || !props.nameEn) {
-      throw new DomainError('Field must have both French and English names');
+      throw new DomainError("Field must have both French and English names");
     }
 
     // Currency and Number fields should be aggregatable by default
-    if ((props.type === 'CURRENCY' || props.type === 'NUMBER') && !props.aggregatable) {
+    if (
+      (props.type === "CURRENCY" || props.type === "NUMBER") &&
+      !props.aggregatable
+    ) {
       // Allow non-aggregatable numeric fields (e.g., IDs)
     }
 
     // Foreign keys should reference a source
     if (props.isForeignKey && !props.referencesSource) {
-      throw new DomainError('Foreign key fields must reference a source');
+      throw new DomainError("Foreign key fields must reference a source");
     }
 
     return new DataField(props);
   }
 
   // Getters
-  get id(): string { return this._id.getValue(); }
-  get name(): string { return this._name; }
-  get nameEn(): string { return this._nameEn; }
-  get type(): FieldType { return this._type; }
-  get description(): string | undefined { return this._description; }
-  get descriptionEn(): string | undefined { return this._descriptionEn; }
-  get aggregatable(): boolean { return this._aggregatable; }
-  get filterable(): boolean { return this._filterable; }
-  get sortable(): boolean { return this._sortable; }
-  get defaultAggregation(): AggregationType { return this._defaultAggregation; }
-  get format(): string | undefined { return this._format; }
-  get isPrimaryKey(): boolean { return this._isPrimaryKey; }
-  get isForeignKey(): boolean { return this._isForeignKey; }
-  get referencesSource(): string | undefined { return this._referencesSource; }
-  get referencesField(): string | undefined { return this._referencesField; }
+  get id(): string {
+    return this._id.getValue();
+  }
+  get name(): string {
+    return this._name;
+  }
+  get nameEn(): string {
+    return this._nameEn;
+  }
+  get type(): FieldType {
+    return this._type;
+  }
+  get description(): string | undefined {
+    return this._description;
+  }
+  get descriptionEn(): string | undefined {
+    return this._descriptionEn;
+  }
+  get aggregatable(): boolean {
+    return this._aggregatable;
+  }
+  get filterable(): boolean {
+    return this._filterable;
+  }
+  get sortable(): boolean {
+    return this._sortable;
+  }
+  get defaultAggregation(): AggregationType {
+    return this._defaultAggregation;
+  }
+  get format(): string | undefined {
+    return this._format;
+  }
+  get isPrimaryKey(): boolean {
+    return this._isPrimaryKey;
+  }
+  get isForeignKey(): boolean {
+    return this._isForeignKey;
+  }
+  get referencesSource(): string | undefined {
+    return this._referencesSource;
+  }
+  get referencesField(): string | undefined {
+    return this._referencesField;
+  }
 
   /**
    * Check if field can be aggregated
    */
   canAggregate(): boolean {
-    return this._aggregatable && this._type !== 'STRING' && this._type !== 'BOOLEAN';
+    return (
+      this._aggregatable && this._type !== "STRING" && this._type !== "BOOLEAN"
+    );
   }
 
   /**
    * Get valid aggregations for this field
    */
   getValidAggregations(): AggregationType[] {
-    if (!this._aggregatable) return ['NONE'];
+    if (!this._aggregatable) return ["NONE"];
 
     switch (this._type) {
-      case 'NUMBER':
-      case 'CURRENCY':
-      case 'PERCENT':
-        return ['SUM', 'AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'NONE'];
-      case 'DATE':
-      case 'DATETIME':
-        return ['COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'NONE'];
-      case 'STRING':
-        return ['COUNT', 'COUNT_DISTINCT', 'NONE'];
-      case 'BOOLEAN':
-        return ['COUNT', 'NONE'];
+      case "NUMBER":
+      case "CURRENCY":
+      case "PERCENT":
+        return ["SUM", "AVG", "COUNT", "COUNT_DISTINCT", "MIN", "MAX", "NONE"];
+      case "DATE":
+      case "DATETIME":
+        return ["COUNT", "COUNT_DISTINCT", "MIN", "MAX", "NONE"];
+      case "STRING":
+        return ["COUNT", "COUNT_DISTINCT", "NONE"];
+      case "BOOLEAN":
+        return ["COUNT", "NONE"];
       default:
-        return ['NONE'];
+        return ["NONE"];
     }
   }
 
@@ -263,11 +300,21 @@ export class DataSourceRelationship {
     return new DataSourceRelationship(props);
   }
 
-  get targetSource(): string { return this._targetSource.getValue(); }
-  get sourceField(): string { return this._sourceField.getValue(); }
-  get targetField(): string { return this._targetField.getValue(); }
-  get joinType(): JoinType { return this._joinType; }
-  get description(): string | undefined { return this._description; }
+  get targetSource(): string {
+    return this._targetSource.getValue();
+  }
+  get sourceField(): string {
+    return this._sourceField.getValue();
+  }
+  get targetField(): string {
+    return this._targetField.getValue();
+  }
+  get joinType(): JoinType {
+    return this._joinType;
+  }
+  get description(): string | undefined {
+    return this._description;
+  }
 
   toJSON(): DataSourceRelationshipProps {
     return {
@@ -309,55 +356,83 @@ export class DataSource {
   private readonly _fields: Map<string, DataField>;
   private readonly _relationships: DataSourceRelationship[];
 
-  private constructor(props: DataSourceProps, fields: DataField[], relationships: DataSourceRelationship[]) {
+  private constructor(
+    props: DataSourceProps,
+    fields: DataField[],
+    relationships: DataSourceRelationship[],
+  ) {
     this._id = DataSourceId.create(props.id);
     this._name = props.name;
     this._nameEn = props.nameEn;
     this._description = props.description;
     this._descriptionEn = props.descriptionEn;
     this._type = props.type;
-    this._icon = props.icon || (props.type === 'dimension' ? '📊' : '📈');
+    this._icon = props.icon || (props.type === "dimension" ? "📊" : "📈");
     this._tableName = props.tableName;
-    this._fields = new Map(fields.map(f => [f.id, f]));
+    this._fields = new Map(fields.map((f) => [f.id, f]));
     this._relationships = relationships;
   }
 
   static create(props: DataSourceProps): DataSource {
     // Validate
     if (!props.name || !props.nameEn) {
-      throw new DomainError('DataSource must have both French and English names');
+      throw new DomainError(
+        "DataSource must have both French and English names",
+      );
     }
 
     if (!props.fields || props.fields.length === 0) {
-      throw new DomainError('DataSource must have at least one field');
+      throw new DomainError("DataSource must have at least one field");
     }
 
     // Must have a primary key
-    const hasPrimaryKey = props.fields.some(f => f.isPrimaryKey);
+    const hasPrimaryKey = props.fields.some((f) => f.isPrimaryKey);
     if (!hasPrimaryKey) {
-      throw new DomainError('DataSource must have a primary key field');
+      throw new DomainError("DataSource must have a primary key field");
     }
 
     // Create field entities
-    const fields = props.fields.map(f => DataField.create(f));
+    const fields = props.fields.map((f) => DataField.create(f));
 
     // Create relationships
-    const relationships = (props.relationships || []).map(r => DataSourceRelationship.create(r));
+    const relationships = (props.relationships || []).map((r) =>
+      DataSourceRelationship.create(r),
+    );
 
     return new DataSource(props, fields, relationships);
   }
 
   // Getters
-  get id(): string { return this._id.getValue(); }
-  get name(): string { return this._name; }
-  get nameEn(): string { return this._nameEn; }
-  get description(): string | undefined { return this._description; }
-  get descriptionEn(): string | undefined { return this._descriptionEn; }
-  get type(): DataSourceType { return this._type; }
-  get icon(): string { return this._icon; }
-  get tableName(): string { return this._tableName; }
-  get fields(): DataField[] { return Array.from(this._fields.values()); }
-  get relationships(): DataSourceRelationship[] { return [...this._relationships]; }
+  get id(): string {
+    return this._id.getValue();
+  }
+  get name(): string {
+    return this._name;
+  }
+  get nameEn(): string {
+    return this._nameEn;
+  }
+  get description(): string | undefined {
+    return this._description;
+  }
+  get descriptionEn(): string | undefined {
+    return this._descriptionEn;
+  }
+  get type(): DataSourceType {
+    return this._type;
+  }
+  get icon(): string {
+    return this._icon;
+  }
+  get tableName(): string {
+    return this._tableName;
+  }
+  get fields(): DataField[] {
+    return Array.from(this._fields.values());
+  }
+  get relationships(): DataSourceRelationship[] {
+    return [...this._relationships];
+  }
 
   /**
    * Get field by ID
@@ -370,48 +445,51 @@ export class DataSource {
    * Get primary key field
    */
   getPrimaryKey(): DataField | undefined {
-    return this.fields.find(f => f.isPrimaryKey);
+    return this.fields.find((f) => f.isPrimaryKey);
   }
 
   /**
    * Get foreign key fields
    */
   getForeignKeys(): DataField[] {
-    return this.fields.filter(f => f.isForeignKey);
+    return this.fields.filter((f) => f.isForeignKey);
   }
 
   /**
    * Get filterable fields
    */
   getFilterableFields(): DataField[] {
-    return this.fields.filter(f => f.filterable);
+    return this.fields.filter((f) => f.filterable);
   }
 
   /**
    * Get aggregatable fields
    */
   getAggregatableFields(): DataField[] {
-    return this.fields.filter(f => f.aggregatable);
+    return this.fields.filter((f) => f.aggregatable);
   }
 
   /**
    * Check if can join with another source
    */
   canJoinWith(targetSourceId: string): boolean {
-    return this._relationships.some(r => r.targetSource === targetSourceId);
+    return this._relationships.some((r) => r.targetSource === targetSourceId);
   }
 
   /**
    * Get suggested join for a target source
    */
   getSuggestedJoin(targetSourceId: string): DataSourceRelationship | undefined {
-    return this._relationships.find(r => r.targetSource === targetSourceId);
+    return this._relationships.find((r) => r.targetSource === targetSourceId);
   }
 
   /**
    * Validate a field selection
    */
-  validateFieldSelection(fieldIds: string[]): { valid: boolean; errors: string[] } {
+  validateFieldSelection(fieldIds: string[]): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
     for (const fieldId of fieldIds) {
@@ -439,8 +517,8 @@ export class DataSource {
       type: this.type,
       icon: this.icon,
       tableName: this.tableName,
-      fields: this.fields.map(f => f.toJSON()),
-      relationships: this.relationships.map(r => r.toJSON()),
+      fields: this.fields.map((f) => f.toJSON()),
+      relationships: this.relationships.map((r) => r.toJSON()),
     };
   }
 }

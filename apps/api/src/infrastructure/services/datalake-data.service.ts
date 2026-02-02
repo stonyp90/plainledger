@@ -412,7 +412,9 @@ export class DatalakeDataService implements IDatalakeDataService {
               `[S3 Gold] No accounts found for org: ${organizationId} at ${prefix}, trying e2e test data`,
             );
             // Try the e2e test data
-            const e2eFiles = await this.listFiles(`dim_account/${this.appConfig.e2eOrgId}/`);
+            const e2eFiles = await this.listFiles(
+              `dim_account/${this.appConfig.e2eOrgId}/`,
+            );
             if (e2eFiles.length > 0) {
               this.logger.log(
                 `[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`,
@@ -461,7 +463,9 @@ export class DatalakeDataService implements IDatalakeDataService {
         try {
           const files = await this.listFiles(`dim_contact/${organizationId}/`);
           if (files.length === 0) {
-            const e2eFiles = await this.listFiles(`dim_contact/${this.appConfig.e2eOrgId}/`);
+            const e2eFiles = await this.listFiles(
+              `dim_contact/${this.appConfig.e2eOrgId}/`,
+            );
             if (e2eFiles.length > 0) {
               return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
             }
@@ -518,7 +522,9 @@ export class DatalakeDataService implements IDatalakeDataService {
 
           // Fallback to e2e test data
           if (files.length === 0) {
-            files = await this.listFiles(`fact_transaction/${this.appConfig.e2eOrgId}/`);
+            files = await this.listFiles(
+              `fact_transaction/${this.appConfig.e2eOrgId}/`,
+            );
             this.logger.log(
               `[S3 Gold] Using e2e test data: ${files.length} file(s)`,
             );
@@ -831,11 +837,17 @@ export class DatalakeDataService implements IDatalakeDataService {
       }
       if (beverageSales > 0) {
         kpis.beverage_cost_pct =
-          Math.round((beverageCost / beverageSales) * this.appConfig.percentageRoundingPrecision) / this.appConfig.financialRoundingPrecision;
+          Math.round(
+            (beverageCost / beverageSales) *
+              this.appConfig.percentageRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision;
       }
       if (totalRevenue > 0) {
         kpis.labor_cost_pct =
-          Math.round((laborCost / totalRevenue) * this.appConfig.percentageRoundingPrecision) / this.appConfig.financialRoundingPrecision;
+          Math.round(
+            (laborCost / totalRevenue) *
+              this.appConfig.percentageRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision;
         kpis.prime_cost_pct =
           Math.round(
             ((foodCost + beverageCost + laborCost) / totalRevenue) * 10000,
@@ -864,14 +876,19 @@ export class DatalakeDataService implements IDatalakeDataService {
       const propertyValue = categoryTotals.get("property_value") || 0;
 
       const noi = rentalIncome - operatingExpenses;
-      kpis.re_noi = Math.round(noi * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision;
+      kpis.re_noi =
+        Math.round(noi * this.appConfig.financialRoundingPrecision) /
+        this.appConfig.financialRoundingPrecision;
 
       if (propertyValue > 0) {
         kpis.re_cap_rate = Math.round((noi / propertyValue) * 10000) / 100;
       }
       if (rentalIncome > 0) {
         kpis.re_expense_ratio =
-          Math.round((operatingExpenses / rentalIncome) * this.appConfig.percentageRoundingPrecision) / this.appConfig.financialRoundingPrecision;
+          Math.round(
+            (operatingExpenses / rentalIncome) *
+              this.appConfig.percentageRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision;
       }
     }
 
@@ -887,7 +904,9 @@ export class DatalakeDataService implements IDatalakeDataService {
             ((projectRevenue - directCosts) / projectRevenue) * 10000,
           ) / 100;
       }
-      kpis.wip_balance = Math.round(wip * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision;
+      kpis.wip_balance =
+        Math.round(wip * this.appConfig.financialRoundingPrecision) /
+        this.appConfig.financialRoundingPrecision;
     }
 
     return kpis;
@@ -1102,7 +1121,9 @@ export class DatalakeDataService implements IDatalakeDataService {
       {
         label: "Ouverture",
         labelEn: "Opening Cash",
-        value: Math.round(openingCash * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          Math.round(openingCash * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
         type: "start",
         category: "opening",
       },
@@ -1110,35 +1131,55 @@ export class DatalakeDataService implements IDatalakeDataService {
       {
         label: "Ventes",
         labelEn: "Sales/Collections",
-        value: Math.round(operatingInflows * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          Math.round(
+            operatingInflows * this.appConfig.financialRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision,
         type: "increase",
         category: "operating",
       },
       {
         label: "Salaires",
         labelEn: "Salaries",
-        value: -Math.round(operatingOutflows * this.appConfig.cashFlowSalaryPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          -Math.round(
+            operatingOutflows *
+              this.appConfig.cashFlowSalaryPercentage *
+              this.appConfig.financialRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "operating",
       },
       {
         label: "Fournisseurs",
         labelEn: "Suppliers",
-        value: -Math.round(operatingOutflows * this.appConfig.cashFlowSupplierPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          -Math.round(
+            operatingOutflows *
+              this.appConfig.cashFlowSupplierPercentage *
+              this.appConfig.financialRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "operating",
       },
       {
         label: "Loyer",
         labelEn: "Rent/Lease",
-        value: -Math.round(operatingOutflows * this.appConfig.cashFlowRentPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          -Math.round(
+            operatingOutflows *
+              this.appConfig.cashFlowRentPercentage *
+              this.appConfig.financialRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "operating",
       },
       {
         label: "Op. Total",
         labelEn: "Operating Total",
-        value: Math.round(operatingNet * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          Math.round(operatingNet * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
         type: "subtotal",
         category: "operating",
       },
@@ -1163,14 +1204,21 @@ export class DatalakeDataService implements IDatalakeDataService {
       {
         label: "Dividendes",
         labelEn: "Dividends",
-        value: -Math.round(financingOutflows * this.appConfig.cashFlowDividendPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          -Math.round(
+            financingOutflows *
+              this.appConfig.cashFlowDividendPercentage *
+              this.appConfig.financialRoundingPrecision,
+          ) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "financing",
       },
       {
         label: "Clôture",
         labelEn: "Closing Cash",
-        value: Math.round(closingCash * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        value:
+          Math.round(closingCash * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
         type: "end",
         category: "closing",
       },
@@ -1292,8 +1340,12 @@ export class DatalakeDataService implements IDatalakeDataService {
 
       return {
         buckets,
-        total: Math.round(total * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
-        totalOverdue: Math.round(totalOverdue * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        total:
+          Math.round(total * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
+        totalOverdue:
+          Math.round(totalOverdue * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
         averageDays,
         hasData: true,
       };
@@ -1470,8 +1522,12 @@ export class DatalakeDataService implements IDatalakeDataService {
 
       return {
         buckets,
-        total: Math.round(total * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
-        totalOverdue: Math.round(totalOverdue * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        total:
+          Math.round(total * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
+        totalOverdue:
+          Math.round(totalOverdue * this.appConfig.financialRoundingPrecision) /
+          this.appConfig.financialRoundingPrecision,
         averageDays,
         hasData: true,
       };

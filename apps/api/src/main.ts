@@ -73,9 +73,8 @@ async function bootstrap() {
   });
 
   // Swagger API Documentation (dynamically generated from decorators)
-  const { createSwaggerConfig } = await import(
-    "./infrastructure/http/swagger.config"
-  );
+  const { createSwaggerConfig } =
+    await import("./infrastructure/http/swagger.config");
   const config = createSwaggerConfig();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api/docs", app, document, {

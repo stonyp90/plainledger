@@ -1,6 +1,6 @@
 /**
  * VisualizationQuery Domain Entity
- * 
+ *
  * Represents a complete query configuration for visualization.
  * Encapsulates all the query parameters including:
  * - Selected data sources
@@ -9,7 +9,7 @@
  * - Filters
  * - Calculated fields
  * - Sorting and pagination
- * 
+ *
  * Domain Rules:
  * - Query must have at least one source
  * - Query must have at least one field
@@ -17,37 +17,37 @@
  * - Filters must reference valid fields
  */
 
-import { DomainError } from '../../errors/DomainError';
-import { 
-  DataSource, 
-  DataField, 
-  FieldType, 
-  AggregationType, 
-  JoinType 
-} from './DataSource';
+import { DomainError } from "../../errors/DomainError";
+import {
+  DataSource,
+  DataField,
+  FieldType,
+  AggregationType,
+  JoinType,
+} from "./DataSource";
 
 // =====================================================
 // VALUE OBJECTS
 // =====================================================
 
-export type FilterOperator = 
-  | 'equals'
-  | 'not_equals'
-  | 'contains'
-  | 'not_contains'
-  | 'starts_with'
-  | 'ends_with'
-  | 'greater_than'
-  | 'less_than'
-  | 'greater_or_equal'
-  | 'less_or_equal'
-  | 'between'
-  | 'in'
-  | 'not_in'
-  | 'is_null'
-  | 'is_not_null';
+export type FilterOperator =
+  | "equals"
+  | "not_equals"
+  | "contains"
+  | "not_contains"
+  | "starts_with"
+  | "ends_with"
+  | "greater_than"
+  | "less_than"
+  | "greater_or_equal"
+  | "less_or_equal"
+  | "between"
+  | "in"
+  | "not_in"
+  | "is_null"
+  | "is_not_null";
 
-export type SortDirection = 'asc' | 'desc';
+export type SortDirection = "asc" | "desc";
 
 /**
  * QueryId Value Object
@@ -56,7 +56,8 @@ export class QueryId {
   private constructor(private readonly value: string) {}
 
   static create(value?: string): QueryId {
-    const id = value || `query_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id =
+      value || `query_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     return new QueryId(id);
   }
 
@@ -77,7 +78,7 @@ export class OrganizationId {
 
   static create(value: string): OrganizationId {
     if (!value || value.trim().length === 0) {
-      throw new DomainError('OrganizationId cannot be empty');
+      throw new DomainError("OrganizationId cannot be empty");
     }
     return new OrganizationId(value);
   }
@@ -117,23 +118,35 @@ export class FieldSelection {
     this._fieldId = props.fieldId;
     this._alias = props.alias;
     this._aliasEn = props.aliasEn;
-    this._aggregation = props.aggregation || 'NONE';
+    this._aggregation = props.aggregation || "NONE";
     this._enabled = props.enabled !== false;
   }
 
   static create(props: FieldSelectionProps): FieldSelection {
     if (!props.sourceId || !props.fieldId) {
-      throw new DomainError('FieldSelection requires sourceId and fieldId');
+      throw new DomainError("FieldSelection requires sourceId and fieldId");
     }
     return new FieldSelection(props);
   }
 
-  get sourceId(): string { return this._sourceId; }
-  get fieldId(): string { return this._fieldId; }
-  get alias(): string | undefined { return this._alias; }
-  get aliasEn(): string | undefined { return this._aliasEn; }
-  get aggregation(): AggregationType { return this._aggregation; }
-  get enabled(): boolean { return this._enabled; }
+  get sourceId(): string {
+    return this._sourceId;
+  }
+  get fieldId(): string {
+    return this._fieldId;
+  }
+  get alias(): string | undefined {
+    return this._alias;
+  }
+  get aliasEn(): string | undefined {
+    return this._aliasEn;
+  }
+  get aggregation(): AggregationType {
+    return this._aggregation;
+  }
+  get enabled(): boolean {
+    return this._enabled;
+  }
 
   /**
    * Get unique identifier for this selection
@@ -192,22 +205,36 @@ export class JoinCondition {
 
   static create(props: JoinConditionProps): JoinCondition {
     if (!props.leftSource || !props.rightSource) {
-      throw new DomainError('JoinCondition requires both left and right sources');
+      throw new DomainError(
+        "JoinCondition requires both left and right sources",
+      );
     }
     if (!props.leftField || !props.rightField) {
-      throw new DomainError('JoinCondition requires both left and right fields');
+      throw new DomainError(
+        "JoinCondition requires both left and right fields",
+      );
     }
     if (props.leftSource === props.rightSource) {
-      throw new DomainError('Cannot join a source to itself');
+      throw new DomainError("Cannot join a source to itself");
     }
     return new JoinCondition(props);
   }
 
-  get leftSource(): string { return this._leftSource; }
-  get rightSource(): string { return this._rightSource; }
-  get leftField(): string { return this._leftField; }
-  get rightField(): string { return this._rightField; }
-  get type(): JoinType { return this._type; }
+  get leftSource(): string {
+    return this._leftSource;
+  }
+  get rightSource(): string {
+    return this._rightSource;
+  }
+  get leftField(): string {
+    return this._leftField;
+  }
+  get rightField(): string {
+    return this._rightField;
+  }
+  get type(): JoinType {
+    return this._type;
+  }
 
   /**
    * Check if this join involves a specific source
@@ -259,23 +286,35 @@ export class FilterCondition {
 
   static create(props: FilterConditionProps): FilterCondition {
     if (!props.sourceId || !props.fieldId) {
-      throw new DomainError('FilterCondition requires sourceId and fieldId');
+      throw new DomainError("FilterCondition requires sourceId and fieldId");
     }
     return new FilterCondition(props);
   }
 
-  get id(): string { return this._id; }
-  get sourceId(): string { return this._sourceId; }
-  get fieldId(): string { return this._fieldId; }
-  get operator(): FilterOperator { return this._operator; }
-  get value(): unknown { return this._value; }
-  get enabled(): boolean { return this._enabled; }
+  get id(): string {
+    return this._id;
+  }
+  get sourceId(): string {
+    return this._sourceId;
+  }
+  get fieldId(): string {
+    return this._fieldId;
+  }
+  get operator(): FilterOperator {
+    return this._operator;
+  }
+  get value(): unknown {
+    return this._value;
+  }
+  get enabled(): boolean {
+    return this._enabled;
+  }
 
   /**
    * Check if filter requires a value
    */
   requiresValue(): boolean {
-    return this._operator !== 'is_null' && this._operator !== 'is_not_null';
+    return this._operator !== "is_null" && this._operator !== "is_not_null";
   }
 
   /**
@@ -287,22 +326,25 @@ export class FilterCondition {
     }
 
     if (this._value === null || this._value === undefined) {
-      return { valid: false, error: 'Filter value is required' };
+      return { valid: false, error: "Filter value is required" };
     }
 
     // Type-specific validation
     switch (fieldType) {
-      case 'NUMBER':
-      case 'CURRENCY':
-      case 'PERCENT':
-        if (this._operator === 'between') {
+      case "NUMBER":
+      case "CURRENCY":
+      case "PERCENT":
+        if (this._operator === "between") {
           if (!Array.isArray(this._value) || this._value.length !== 2) {
-            return { valid: false, error: 'Between operator requires two values' };
+            return {
+              valid: false,
+              error: "Between operator requires two values",
+            };
           }
         }
         break;
-      case 'DATE':
-      case 'DATETIME':
+      case "DATE":
+      case "DATETIME":
         // Date validation would go here
         break;
     }
@@ -354,20 +396,34 @@ export class CalculatedField {
 
   static create(props: CalculatedFieldProps): CalculatedField {
     if (!props.formula || props.formula.trim().length === 0) {
-      throw new DomainError('CalculatedField requires a formula');
+      throw new DomainError("CalculatedField requires a formula");
     }
     if (!props.name || !props.nameEn) {
-      throw new DomainError('CalculatedField requires both French and English names');
+      throw new DomainError(
+        "CalculatedField requires both French and English names",
+      );
     }
     return new CalculatedField(props);
   }
 
-  get id(): string { return this._id; }
-  get name(): string { return this._name; }
-  get nameEn(): string { return this._nameEn; }
-  get formula(): string { return this._formula; }
-  get returnType(): FieldType { return this._returnType; }
-  get description(): string | undefined { return this._description; }
+  get id(): string {
+    return this._id;
+  }
+  get name(): string {
+    return this._name;
+  }
+  get nameEn(): string {
+    return this._nameEn;
+  }
+  get formula(): string {
+    return this._formula;
+  }
+  get returnType(): FieldType {
+    return this._returnType;
+  }
+  get description(): string | undefined {
+    return this._description;
+  }
 
   /**
    * Extract field references from formula
@@ -422,8 +478,12 @@ export class SortSpecification {
     return new SortSpecification(props);
   }
 
-  get fieldKey(): string { return this._fieldKey; }
-  get direction(): SortDirection { return this._direction; }
+  get fieldKey(): string {
+    return this._fieldKey;
+  }
+  get direction(): SortDirection {
+    return this._direction;
+  }
 
   toJSON(): SortSpecificationProps {
     return {
@@ -491,79 +551,116 @@ export class VisualizationQuery {
   static create(props: VisualizationQueryProps): VisualizationQuery {
     // Validate sources
     if (!props.sources || props.sources.length === 0) {
-      throw new DomainError('Query must have at least one data source');
+      throw new DomainError("Query must have at least one data source");
     }
 
     // Validate fields
     if (!props.fields || props.fields.length === 0) {
-      throw new DomainError('Query must have at least one field selection');
+      throw new DomainError("Query must have at least one field selection");
     }
 
     // Create value objects
-    const fields = props.fields.map(f => FieldSelection.create(f));
-    const joins = (props.joins || []).map(j => JoinCondition.create(j));
-    const filters = (props.filters || []).map(f => FilterCondition.create(f));
-    const calculatedFields = (props.calculatedFields || []).map(c => CalculatedField.create(c));
-    const sort = (props.sort || []).map(s => SortSpecification.create(s));
+    const fields = props.fields.map((f) => FieldSelection.create(f));
+    const joins = (props.joins || []).map((j) => JoinCondition.create(j));
+    const filters = (props.filters || []).map((f) => FilterCondition.create(f));
+    const calculatedFields = (props.calculatedFields || []).map((c) =>
+      CalculatedField.create(c),
+    );
+    const sort = (props.sort || []).map((s) => SortSpecification.create(s));
 
     // Validate field sources are in the source list
     const sourceSet = new Set(props.sources);
     for (const field of fields) {
       if (!sourceSet.has(field.sourceId)) {
-        throw new DomainError(`Field '${field.fieldId}' references unknown source '${field.sourceId}'`);
+        throw new DomainError(
+          `Field '${field.fieldId}' references unknown source '${field.sourceId}'`,
+        );
       }
     }
 
     // Validate join sources are in the source list
     for (const join of joins) {
       if (!sourceSet.has(join.leftSource) || !sourceSet.has(join.rightSource)) {
-        throw new DomainError('Join references unknown source');
+        throw new DomainError("Join references unknown source");
       }
     }
 
     // Validate filter sources are in the source list
     for (const filter of filters) {
       if (!sourceSet.has(filter.sourceId)) {
-        throw new DomainError(`Filter references unknown source '${filter.sourceId}'`);
+        throw new DomainError(
+          `Filter references unknown source '${filter.sourceId}'`,
+        );
       }
     }
 
-    return new VisualizationQuery(props, fields, joins, filters, calculatedFields, sort);
+    return new VisualizationQuery(
+      props,
+      fields,
+      joins,
+      filters,
+      calculatedFields,
+      sort,
+    );
   }
 
   // Getters
-  get id(): string { return this._id.getValue(); }
-  get organizationId(): string { return this._organizationId.getValue(); }
-  get name(): string | undefined { return this._name; }
-  get nameEn(): string | undefined { return this._nameEn; }
-  get sources(): string[] { return Array.from(this._sources); }
-  get fields(): FieldSelection[] { return [...this._fields]; }
-  get joins(): JoinCondition[] { return [...this._joins]; }
-  get filters(): FilterCondition[] { return [...this._filters]; }
-  get calculatedFields(): CalculatedField[] { return [...this._calculatedFields]; }
-  get sort(): SortSpecification[] { return [...this._sort]; }
-  get limit(): number | undefined { return this._limit; }
-  get offset(): number | undefined { return this._offset; }
+  get id(): string {
+    return this._id.getValue();
+  }
+  get organizationId(): string {
+    return this._organizationId.getValue();
+  }
+  get name(): string | undefined {
+    return this._name;
+  }
+  get nameEn(): string | undefined {
+    return this._nameEn;
+  }
+  get sources(): string[] {
+    return Array.from(this._sources);
+  }
+  get fields(): FieldSelection[] {
+    return [...this._fields];
+  }
+  get joins(): JoinCondition[] {
+    return [...this._joins];
+  }
+  get filters(): FilterCondition[] {
+    return [...this._filters];
+  }
+  get calculatedFields(): CalculatedField[] {
+    return [...this._calculatedFields];
+  }
+  get sort(): SortSpecification[] {
+    return [...this._sort];
+  }
+  get limit(): number | undefined {
+    return this._limit;
+  }
+  get offset(): number | undefined {
+    return this._offset;
+  }
 
   /**
    * Get enabled fields only
    */
   getEnabledFields(): FieldSelection[] {
-    return this._fields.filter(f => f.enabled);
+    return this._fields.filter((f) => f.enabled);
   }
 
   /**
    * Get enabled filters only
    */
   getEnabledFilters(): FilterCondition[] {
-    return this._filters.filter(f => f.enabled);
+    return this._filters.filter((f) => f.enabled);
   }
 
   /**
    * Check if query has aggregations
    */
   hasAggregations(): boolean {
-    return this._fields.some(f => f.aggregation !== 'NONE');
+    return this._fields.some((f) => f.aggregation !== "NONE");
   }
 
   /**
@@ -571,15 +668,18 @@ export class VisualizationQuery {
    */
   getGroupByFields(): FieldSelection[] {
     if (!this.hasAggregations()) return [];
-    return this._fields.filter(f => f.enabled && f.aggregation === 'NONE');
+    return this._fields.filter((f) => f.enabled && f.aggregation === "NONE");
   }
 
   /**
    * Validate query against available data sources
    */
-  validate(availableSources: DataSource[]): { valid: boolean; errors: string[] } {
+  validate(availableSources: DataSource[]): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
-    const sourceMap = new Map(availableSources.map(s => [s.id, s]));
+    const sourceMap = new Map(availableSources.map((s) => [s.id, s]));
 
     // Check all sources exist
     for (const sourceId of this._sources) {
@@ -594,8 +694,10 @@ export class VisualizationQuery {
       if (source) {
         const dataField = source.getField(field.fieldId);
         if (!dataField) {
-          errors.push(`Unknown field '${field.fieldId}' in source '${field.sourceId}'`);
-        } else if (field.aggregation !== 'NONE' && !dataField.aggregatable) {
+          errors.push(
+            `Unknown field '${field.fieldId}' in source '${field.sourceId}'`,
+          );
+        } else if (field.aggregation !== "NONE" && !dataField.aggregatable) {
           errors.push(`Field '${field.fieldId}' is not aggregatable`);
         }
       }
@@ -606,7 +708,9 @@ export class VisualizationQuery {
       const refs = calcField.getFieldReferences();
       for (const ref of refs) {
         if (!this._sources.has(ref.sourceId)) {
-          errors.push(`Calculated field '${calcField.name}' references unknown source '${ref.sourceId}'`);
+          errors.push(
+            `Calculated field '${calcField.name}' references unknown source '${ref.sourceId}'`,
+          );
         }
       }
     }
@@ -627,11 +731,11 @@ export class VisualizationQuery {
       name: this.name,
       nameEn: this.nameEn,
       sources: this.sources,
-      fields: this.fields.map(f => f.toJSON()),
-      joins: this.joins.map(j => j.toJSON()),
-      filters: this.filters.map(f => f.toJSON()),
-      calculatedFields: this.calculatedFields.map(c => c.toJSON()),
-      sort: this.sort.map(s => s.toJSON()),
+      fields: this.fields.map((f) => f.toJSON()),
+      joins: this.joins.map((j) => j.toJSON()),
+      filters: this.filters.map((f) => f.toJSON()),
+      calculatedFields: this.calculatedFields.map((c) => c.toJSON()),
+      sort: this.sort.map((s) => s.toJSON()),
       limit: this.limit,
       offset: this.offset,
     };

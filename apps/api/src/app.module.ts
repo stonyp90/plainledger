@@ -142,9 +142,13 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       useFactory: (configService: ConfigService) => ({
         type: "postgres",
         host: configService.get<string>("DATABASE_HOST") || "localhost",
-        port: parseInt(configService.get<string>("DATABASE_PORT") || "5432", 10),
+        port: parseInt(
+          configService.get<string>("DATABASE_PORT") || "5432",
+          10,
+        ),
         username: configService.get<string>("DATABASE_USER") || "plainledger",
-        password: configService.get<string>("DATABASE_PASSWORD") || "plainledger",
+        password:
+          configService.get<string>("DATABASE_PASSWORD") || "plainledger",
         database: configService.get<string>("DATABASE_NAME") || "plainledger",
         entities: [
           OrganizationEntity,
@@ -419,7 +423,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     // Centralized Application Configuration
     {
       provide: AppConfig,
-      useFactory: (configService: ConfigService) => new AppConfig(configService),
+      useFactory: (configService: ConfigService) =>
+        new AppConfig(configService),
       inject: [ConfigService],
     },
   ],

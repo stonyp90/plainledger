@@ -1,9 +1,9 @@
 /**
  * Application Configuration Constants
- * 
+ *
  * Centralized configuration for all hardcoded values.
  * All values should be configurable via environment variables with sensible defaults.
- * 
+ *
  * Exception: Demo data for free users is intentionally hardcoded as per requirements.
  */
 
@@ -15,7 +15,7 @@ export class AppConfig {
   // ============================================================================
   // ORGANIZATION IDs
   // ============================================================================
-  
+
   /**
    * Demo organization ID for local development and testing
    * Can be overridden via DEMO_ORG_ID environment variable
@@ -43,13 +43,15 @@ export class AppConfig {
   // ============================================================================
   // USER EMAILS (for development/testing only)
   // ============================================================================
-  
+
   /**
    * Admin user email for development
    * Can be overridden via ADMIN_EMAIL environment variable
    */
   get adminEmail(): string {
-    return this.configService.get<string>("ADMIN_EMAIL") || "admin@plainledger.ca";
+    return (
+      this.configService.get<string>("ADMIN_EMAIL") || "admin@plainledger.ca"
+    );
   }
 
   /**
@@ -57,7 +59,9 @@ export class AppConfig {
    * Can be overridden via DEMO_EMAIL environment variable
    */
   get demoEmail(): string {
-    return this.configService.get<string>("DEMO_EMAIL") || "demo@plainledger.ca";
+    return (
+      this.configService.get<string>("DEMO_EMAIL") || "demo@plainledger.ca"
+    );
   }
 
   /**
@@ -65,19 +69,24 @@ export class AppConfig {
    * Can be overridden via ACCOUNTANT_EMAIL environment variable
    */
   get accountantEmail(): string {
-    return this.configService.get<string>("ACCOUNTANT_EMAIL") || "accountant@plainledger.ca";
+    return (
+      this.configService.get<string>("ACCOUNTANT_EMAIL") ||
+      "accountant@plainledger.ca"
+    );
   }
 
   // ============================================================================
   // S3 CONFIGURATION
   // ============================================================================
-  
+
   /**
    * S3 Gold bucket name
    * Can be overridden via S3_BUCKET_GOLD environment variable
    */
   get s3GoldBucket(): string {
-    return this.configService.get<string>("S3_BUCKET_GOLD") || "plainledger-gold";
+    return (
+      this.configService.get<string>("S3_BUCKET_GOLD") || "plainledger-gold"
+    );
   }
 
   /**
@@ -99,7 +108,7 @@ export class AppConfig {
   // ============================================================================
   // QUICKBOOKS CONFIGURATION
   // ============================================================================
-  
+
   /**
    * QuickBooks Sandbox API URL
    * Can be overridden via QUICKBOOKS_SANDBOX_URL environment variable
@@ -125,14 +134,14 @@ export class AppConfig {
   // ============================================================================
   // FINANCIAL CALCULATION CONSTANTS
   // ============================================================================
-  
+
   /**
    * Accounting tolerance for balance checks (default: 0.01)
    * Can be overridden via ACCOUNTING_TOLERANCE environment variable
    */
   get accountingTolerance(): number {
     return parseFloat(
-      this.configService.get<string>("ACCOUNTING_TOLERANCE") || "0.01"
+      this.configService.get<string>("ACCOUNTING_TOLERANCE") || "0.01",
     );
   }
 
@@ -143,7 +152,7 @@ export class AppConfig {
    */
   get cashFlowSalaryPercentage(): number {
     return parseFloat(
-      this.configService.get<string>("CASH_FLOW_SALARY_PCT") || "0.4"
+      this.configService.get<string>("CASH_FLOW_SALARY_PCT") || "0.4",
     );
   }
 
@@ -153,7 +162,7 @@ export class AppConfig {
    */
   get cashFlowSupplierPercentage(): number {
     return parseFloat(
-      this.configService.get<string>("CASH_FLOW_SUPPLIER_PCT") || "0.35"
+      this.configService.get<string>("CASH_FLOW_SUPPLIER_PCT") || "0.35",
     );
   }
 
@@ -163,7 +172,7 @@ export class AppConfig {
    */
   get cashFlowRentPercentage(): number {
     return parseFloat(
-      this.configService.get<string>("CASH_FLOW_RENT_PCT") || "0.15"
+      this.configService.get<string>("CASH_FLOW_RENT_PCT") || "0.15",
     );
   }
 
@@ -173,7 +182,7 @@ export class AppConfig {
    */
   get cashFlowDebtPercentage(): number {
     return parseFloat(
-      this.configService.get<string>("CASH_FLOW_DEBT_PCT") || "0.7"
+      this.configService.get<string>("CASH_FLOW_DEBT_PCT") || "0.7",
     );
   }
 
@@ -183,7 +192,7 @@ export class AppConfig {
    */
   get cashFlowDividendPercentage(): number {
     return parseFloat(
-      this.configService.get<string>("CASH_FLOW_DIVIDEND_PCT") || "0.3"
+      this.configService.get<string>("CASH_FLOW_DIVIDEND_PCT") || "0.3",
     );
   }
 
@@ -194,7 +203,7 @@ export class AppConfig {
   get financialRoundingPrecision(): number {
     return parseInt(
       this.configService.get<string>("FINANCIAL_ROUNDING_PRECISION") || "100",
-      10
+      10,
     );
   }
 
@@ -204,15 +213,16 @@ export class AppConfig {
    */
   get percentageRoundingPrecision(): number {
     return parseInt(
-      this.configService.get<string>("PERCENTAGE_ROUNDING_PRECISION") || "10000",
-      10
+      this.configService.get<string>("PERCENTAGE_ROUNDING_PRECISION") ||
+        "10000",
+      10,
     );
   }
 
   // ============================================================================
   // CACHE CONFIGURATION
   // ============================================================================
-  
+
   /**
    * Cache TTL for Gold layer data in seconds (default: 300 = 5 minutes)
    * Can be overridden via CACHE_TTL_GOLD_SECONDS environment variable
@@ -220,14 +230,14 @@ export class AppConfig {
   get cacheTtlGoldSeconds(): number {
     return parseInt(
       this.configService.get<string>("CACHE_TTL_GOLD_SECONDS") || "300",
-      10
+      10,
     );
   }
 
   // ============================================================================
   // DATA RECENCY THRESHOLDS
   // ============================================================================
-  
+
   /**
    * Hours threshold for considering data "recent" (default: 24 hours)
    * Can be overridden via DATA_RECENCY_HOURS environment variable
@@ -235,14 +245,14 @@ export class AppConfig {
   get dataRecencyHours(): number {
     return parseInt(
       this.configService.get<string>("DATA_RECENCY_HOURS") || "24",
-      10
+      10,
     );
   }
 
   // ============================================================================
   // FILE LIMITS
   // ============================================================================
-  
+
   /**
    * Maximum number of transaction files to load for trend calculations (default: 5)
    * Can be overridden via MAX_TRANSACTION_FILES environment variable
@@ -250,14 +260,14 @@ export class AppConfig {
   get maxTransactionFiles(): number {
     return parseInt(
       this.configService.get<string>("MAX_TRANSACTION_FILES") || "5",
-      10
+      10,
     );
   }
 
   // ============================================================================
   // AI SERVICE CONFIGURATION
   // ============================================================================
-  
+
   /**
    * AI rate limit: requests per window per tenant (default: 30)
    * Can be overridden via AI_RATE_LIMIT_REQUESTS environment variable
@@ -265,7 +275,7 @@ export class AppConfig {
   get aiRateLimitRequests(): number {
     return parseInt(
       this.configService.get<string>("AI_RATE_LIMIT_REQUESTS") || "30",
-      10
+      10,
     );
   }
 
@@ -276,7 +286,7 @@ export class AppConfig {
   get aiRateLimitWindowMs(): number {
     return parseInt(
       this.configService.get<string>("AI_RATE_LIMIT_WINDOW_MS") || "60000",
-      10
+      10,
     );
   }
 
@@ -286,8 +296,9 @@ export class AppConfig {
    */
   get aiCircuitBreakerFailureThreshold(): number {
     return parseInt(
-      this.configService.get<string>("AI_CIRCUIT_BREAKER_FAILURE_THRESHOLD") || "5",
-      10
+      this.configService.get<string>("AI_CIRCUIT_BREAKER_FAILURE_THRESHOLD") ||
+        "5",
+      10,
     );
   }
 
@@ -297,8 +308,9 @@ export class AppConfig {
    */
   get aiCircuitBreakerResetTimeout(): number {
     return parseInt(
-      this.configService.get<string>("AI_CIRCUIT_BREAKER_RESET_TIMEOUT") || "60000",
-      10
+      this.configService.get<string>("AI_CIRCUIT_BREAKER_RESET_TIMEOUT") ||
+        "60000",
+      10,
     );
   }
 
@@ -309,7 +321,7 @@ export class AppConfig {
   get aiCacheTtlMs(): number {
     return parseInt(
       this.configService.get<string>("AI_CACHE_TTL_MS") || "300000",
-      10
+      10,
     );
   }
 
@@ -330,7 +342,9 @@ export class AppConfig {
    * Can be overridden via CORS_ORIGIN environment variable
    */
   get corsOrigin(): string {
-    return this.configService.get<string>("CORS_ORIGIN") || "http://localhost:5173";
+    return (
+      this.configService.get<string>("CORS_ORIGIN") || "http://localhost:5173"
+    );
   }
 
   /**
@@ -338,10 +352,7 @@ export class AppConfig {
    * Can be overridden via PORT environment variable
    */
   get port(): number {
-    return parseInt(
-      this.configService.get<string>("PORT") || "3000",
-      10
-    );
+    return parseInt(this.configService.get<string>("PORT") || "3000", 10);
   }
 }
 

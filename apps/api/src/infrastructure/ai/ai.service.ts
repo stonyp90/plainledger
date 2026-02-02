@@ -145,8 +145,10 @@ export class AIService implements IAIService {
     // Initialize configurable values from AppConfig or defaults
     this.RATE_LIMIT_REQUESTS = this.appConfig?.aiRateLimitRequests ?? 30;
     this.RATE_LIMIT_WINDOW_MS = this.appConfig?.aiRateLimitWindowMs ?? 60000;
-    this.CIRCUIT_BREAKER_FAILURE_THRESHOLD = this.appConfig?.aiCircuitBreakerFailureThreshold ?? 5;
-    this.CIRCUIT_BREAKER_RESET_TIMEOUT = this.appConfig?.aiCircuitBreakerResetTimeout ?? 60000;
+    this.CIRCUIT_BREAKER_FAILURE_THRESHOLD =
+      this.appConfig?.aiCircuitBreakerFailureThreshold ?? 5;
+    this.CIRCUIT_BREAKER_RESET_TIMEOUT =
+      this.appConfig?.aiCircuitBreakerResetTimeout ?? 60000;
     this.CACHE_TTL_MS = this.appConfig?.aiCacheTtlMs ?? 300000;
 
     // Initialize all providers

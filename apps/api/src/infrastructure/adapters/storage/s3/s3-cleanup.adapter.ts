@@ -89,7 +89,8 @@ export class S3CleanupAdapter {
     // Initialize S3 client
     const s3Endpoint = this.configService.get<string>("S3_ENDPOINT");
     const isLocalDev = !!s3Endpoint;
-    const region = this.configService.get<string>("S3_REGION") || "ca-central-1";
+    const region =
+      this.configService.get<string>("S3_REGION") || "ca-central-1";
 
     this.s3Client = new S3Client({
       endpoint: s3Endpoint || undefined,
@@ -116,9 +117,11 @@ export class S3CleanupAdapter {
 
     // Configure buckets
     this.bronzeBucket =
-      this.configService.get<string>("S3_BUCKET_BRONZE") || "plainledger-bronze";
+      this.configService.get<string>("S3_BUCKET_BRONZE") ||
+      "plainledger-bronze";
     this.silverBucket =
-      this.configService.get<string>("S3_BUCKET_SILVER") || "plainledger-silver";
+      this.configService.get<string>("S3_BUCKET_SILVER") ||
+      "plainledger-silver";
     this.goldBucket =
       this.configService.get<string>("S3_BUCKET_GOLD") || "plainledger-gold";
     this.uploadsBucket =
@@ -394,7 +397,9 @@ export class S3CleanupAdapter {
       return false;
     }
 
-    return uuidRegex.test(organizationId) || alphanumericRegex.test(organizationId);
+    return (
+      uuidRegex.test(organizationId) || alphanumericRegex.test(organizationId)
+    );
   }
 
   /**

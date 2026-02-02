@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Settings2, TrendingUp, FileText, X } from 'lucide-react';
 import { useGraphConfig, saveUserPreferences } from '../../hooks/useGraphConfig';
 import type { GraphConfig, PartialGraphConfig } from '../../lib/graphConfig';
-import { useI18n } from '../../hooks/useI18n';
+import { useI18n } from '../../lib/i18n';
 
 interface GraphConfigPanelProps {
   chartId?: string;
