@@ -109,7 +109,9 @@ export default function WaterfallChart({
   });
   
   const [showConfigPanel, setShowConfigPanel] = useState(false);
-  const [chartConfig, setChartConfig] = useState({});
+  
+  // Generate stable chart ID for config persistence
+  const effectiveChartId = chartId || `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`;
   
   const height = propHeight ?? graphConfig.visual.height;
   const showVarianceThreshold = propShowVarianceThreshold ?? graphConfig.waterfall?.varianceThreshold ?? 20;
@@ -744,10 +746,9 @@ export default function WaterfallChart({
       {/* Configuration Panel */}
       {showConfigPanel && (
         <GraphConfigPanel
-          chartId={chartId || `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`}
+          chartId={effectiveChartId}
           chartName={isEn && titleEn ? titleEn : title}
-          currentConfig={chartConfig}
-          onConfigChange={setChartConfig}
+          currentConfig={graphConfig}
           onClose={() => setShowConfigPanel(false)}
         />
       )}

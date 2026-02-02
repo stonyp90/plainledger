@@ -136,10 +136,12 @@ export default function TrendChart({
   
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [chartConfig, setChartConfig] = useState({});
   const [shareError, setShareError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const { chartRef, capture } = useChartCapture<HTMLDivElement>();
+  
+  // Generate stable chart ID for config persistence
+  const effectiveChartId = chartId || `trend-${title.toLowerCase().replace(/\s/g, '-')}`;
   
   // Use config values with prop overrides
   const height = propHeight ?? graphConfig.visual.height;
@@ -1248,10 +1250,9 @@ export default function TrendChart({
       {/* Configuration Panel */}
       {showConfigPanel && (
         <GraphConfigPanel
-          chartId={chartId || `trend-${title.toLowerCase().replace(/\s/g, '-')}`}
+          chartId={effectiveChartId}
           chartName={isEn && titleEn ? titleEn : title}
-          currentConfig={chartConfig}
-          onConfigChange={setChartConfig}
+          currentConfig={graphConfig}
           onClose={() => setShowConfigPanel(false)}
         />
       )}

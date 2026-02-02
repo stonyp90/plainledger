@@ -89,7 +89,9 @@ export default function BudgetVsActualChart({
   const showIBCSLegend = graphConfig.ibcs?.showLegend ?? propShowIBCSLegend;
   
   const [showConfigPanel, setShowConfigPanel] = useState(false);
-  const [chartConfig, setChartConfig] = useState({});
+  
+  // Generate stable chart ID for config persistence
+  const effectiveChartId = chartId || `budget-vs-actual-${title.toLowerCase().replace(/\s/g, '-')}`;
   
   const showPriorYear = propShowPriorYear ?? graphConfig.budgetVsActual?.showPriorYear ?? true;
   const varianceThreshold = propVarianceThreshold ?? graphConfig.budgetVsActual?.varianceThreshold ?? 10;
@@ -593,10 +595,9 @@ export default function BudgetVsActualChart({
       {/* Configuration Panel */}
       {showConfigPanel && (
         <GraphConfigPanel
-          chartId={chartId || `budget-vs-actual-${title.toLowerCase().replace(/\s/g, '-')}`}
+          chartId={effectiveChartId}
           chartName={isEn && titleEn ? titleEn : title}
-          currentConfig={chartConfig}
-          onConfigChange={setChartConfig}
+          currentConfig={graphConfig}
           onClose={() => setShowConfigPanel(false)}
         />
       )}
