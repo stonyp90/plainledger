@@ -24,7 +24,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.0",
+    "@playwright/test": "^1.58.1",
     "@testcontainers/postgresql": "^11.11.0",
     "@testcontainers/redis": "^11.11.0",
     "concurrently": "^8.2.2",
