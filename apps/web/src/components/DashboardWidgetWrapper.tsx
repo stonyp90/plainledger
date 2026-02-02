@@ -4,36 +4,16 @@
  * Wraps dashboard widgets with:
  * - Drag-and-drop reordering
  * - Remove controls
- * - Resize functionality (height adjustment with persistence)
- * - Pin functionality (prevents removal when pinned)
+ * - Resize functionality (height adjustment with auto-save)
  * 
  * Only shows controls to users with customize:dashboard permission.
+ * Settings are automatically saved - no need for pinning.
  */
 
 import { useState, useRef, useCallback, ReactNode } from 'react';
-import { GripVertical, X, Lock, Unlock, Maximize2, Minimize2, RotateCcw, GripHorizontal, Pin, PinOff } from 'lucide-react';
+import { X, Lock, Unlock, Maximize2, Minimize2, RotateCcw, GripHorizontal, Move } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useSingleChartSize } from '../hooks/useChartSize';
-
-// Pin state stored in localStorage
-const PIN_STORAGE_KEY = 'plainledger:pinned-widgets';
-
-function getPinnedWidgets(pageId: string): Set<string> {
-  try {
-    const stored = localStorage.getItem(`${PIN_STORAGE_KEY}:${pageId}`);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function savePinnedWidgets(pageId: string, widgets: Set<string>): void {
-  try {
-    localStorage.setItem(`${PIN_STORAGE_KEY}:${pageId}`, JSON.stringify([...widgets]));
-  } catch {
-    console.warn('Failed to save pinned widgets');
-  }
-}
 
 interface DashboardWidgetWrapperProps {
   id: string;
@@ -83,21 +63,7 @@ export default function DashboardWidgetWrapper({
   const [showSizeMenu, setShowSizeMenu] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   
-  // Pin state - prevents widget from being removed
-  const [isPinned, setIsPinned] = useState(() => getPinnedWidgets(pageId).has(id));
-  
-  const handleTogglePin = useCallback(() => {
-    const pinned = getPinnedWidgets(pageId);
-    if (isPinned) {
-      pinned.delete(id);
-    } else {
-      pinned.add(id);
-    }
-    savePinnedWidgets(pageId, pinned);
-    setIsPinned(!isPinned);
-  }, [pageId, id, isPinned]);
-  
-  // Use chart size hook for persistence
+  // Use chart size hook for persistence (auto-saves)
   const {
     height: savedHeight,
     locked,
@@ -110,7 +76,7 @@ export default function DashboardWidgetWrapper({
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  // Handle resize start
+  // Handle resize start - maintains proportional sizing
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (locked || !enableResize) return;
     
@@ -143,12 +109,12 @@ export default function DashboardWidgetWrapper({
     document.addEventListener('touchend', handleEnd);
   }, [locked, enableResize, savedHeight, minHeight, maxHeight, setHeight]);
 
-  // Size presets
+  // Size presets - proportional options
   const sizePresets = [
-    { label: isEn ? 'Small' : 'Petit', height: 200 },
-    { label: isEn ? 'Medium' : 'Moyen', height: 300 },
+    { label: isEn ? 'Compact' : 'Compact', height: 200 },
+    { label: isEn ? 'Standard' : 'Standard', height: 300 },
     { label: isEn ? 'Large' : 'Grand', height: 420 },
-    { label: isEn ? 'X-Large' : 'Très grand', height: 550 },
+    { label: isEn ? 'Full' : 'Plein', height: 550 },
   ];
 
   const currentHeight = savedHeight;
@@ -244,6 +210,9 @@ export default function DashboardWidgetWrapper({
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-1">
+                  <div className="px-2 py-1 text-[10px] uppercase tracking-wide font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Size presets' : 'Tailles prédéfinies'}
+                  </div>
                   {sizePresets.map((preset) => (
                     <button
                       key={preset.height}
@@ -290,7 +259,7 @@ export default function DashboardWidgetWrapper({
             )}
           </div>
 
-          {/* Lock toggle */}
+          {/* Lock toggle - locks size to prevent accidental changes */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -308,52 +277,8 @@ export default function DashboardWidgetWrapper({
         </div>
       )}
 
-      {/* Pin Button - top right, visible on hover */}
-      {canCustomize && isHovered && !isResizing && id !== 'add-widget' && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleTogglePin();
-          }}
-          className="absolute right-8 top-2 z-20 p-1.5 rounded-md transition-all hover:scale-105"
-          style={{
-            backgroundColor: isPinned 
-              ? 'rgb(var(--color-warning) / 0.1)' 
-              : 'rgb(var(--color-surface))',
-            border: '1px solid',
-            borderColor: isPinned 
-              ? 'rgb(var(--color-warning) / 0.3)' 
-              : 'rgb(var(--color-border))',
-            color: isPinned 
-              ? 'rgb(var(--color-warning))' 
-              : 'rgb(var(--color-text-muted))',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-          }}
-          title={isPinned 
-            ? (isEn ? 'Unpin (allow removal)' : 'Détacher (permettre la suppression)')
-            : (isEn ? 'Pin (prevent removal)' : 'Épingler (empêcher la suppression)')
-          }
-        >
-          {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-        </button>
-      )}
-
-      {/* Pin Indicator - always visible when pinned */}
-      {isPinned && !isHovered && id !== 'add-widget' && (
-        <div
-          className="absolute right-2 top-2 z-10 p-1 rounded-md"
-          style={{
-            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
-            color: 'rgb(var(--color-warning))',
-          }}
-          title={isEn ? 'Pinned' : 'Épinglé'}
-        >
-          <Pin className="w-3 h-3" />
-        </div>
-      )}
-
-      {/* Remove Button - visible on hover (but not for add-widget or pinned widgets) */}
-      {canCustomize && isHovered && !isResizing && onRemove && id !== 'add-widget' && !isPinned && (
+      {/* Remove Button - visible on hover (but not for add-widget) */}
+      {canCustomize && isHovered && !isResizing && onRemove && id !== 'add-widget' && (
         <button
           onClick={(e) => {
             e.stopPropagation();
