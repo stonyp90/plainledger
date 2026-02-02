@@ -27,7 +27,7 @@
     "@aws-sdk/client-bedrock-agent-runtime": "^3.978.0",
     "@aws-sdk/client-glue": "^3.980.0",
     "@aws-sdk/client-s3": "^3.975.0",
-    "@aws-sdk/client-sagemaker": "^3.978.0",
+    "@aws-sdk/client-sagemaker": "^3.980.0",
     "@aws-sdk/client-sagemaker-runtime": "^3.978.0",
     "@aws-sdk/client-ses": "^3.975.0",
     "@aws-sdk/s3-request-presigner": "^3.975.0",
