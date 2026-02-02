@@ -5,6 +5,8 @@
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 WORKDIR /app
+# Cache bust arg - forces npm ci to run fresh when package.json changes
+ARG CACHE_BUST
 COPY apps/api/package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 

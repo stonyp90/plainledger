@@ -387,6 +387,7 @@ jobs:
             VITE_KEYCLOAK_REALM=plainledger
             VITE_KEYCLOAK_CLIENT_ID=plainledger-web
             VITE_MOCK_AUTH=false
+            CACHE_BUST=${{ github.sha }}
 
   # ==========================================================================
   # Stage 5: Deploy to ECS
