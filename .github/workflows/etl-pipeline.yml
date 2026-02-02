@@ -22,6 +22,7 @@ permissions:
 env:
   AWS_REGION: ca-central-1
   PYTHON_VERSION: '3.11'
+  QUICKBOOKS_ENVIRONMENT: ${{ github.event.inputs.environment || 'sandbox' }}
 
 jobs:
   extract:
@@ -335,49 +336,3 @@ jobs:
           echo "${{ steps.failures.outputs.failed_stages }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Notification email sent to: pipelines@plainledger.ca" >> $GITHUB_STEP_SUMMARY
-
-  notify-failure:
-    name: Send Failure Notification
-    runs-on: ubuntu-latest
-    needs: [extract, transform-bronze-silver, transform-silver-gold, invalidate-cache]
-    if: failure()
-    steps:
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
-          aws-region: ${{ env.AWS_REGION }}
-      
-      - name: Send failure email via SES
-        env:
-          ALERT_EMAILS: "tony@plainledger.ca,bartosz@plainledger.ca"
-        run: |
-          # Determine which step(s) failed
-          FAILED_STEPS=""
-          if [ "${{ needs.extract.result }}" == "failure" ]; then
-            FAILED_STEPS="Extract (QuickBooks → Bronze)"
-          fi
-          if [ "${{ needs.transform-bronze-silver.result }}" == "failure" ]; then
-            [ -n "$FAILED_STEPS" ] && FAILED_STEPS="$FAILED_STEPS, "
-            FAILED_STEPS="${FAILED_STEPS}Transform (Bronze → Silver)"
-          fi
-          if [ "${{ needs.transform-silver-gold.result }}" == "failure" ]; then
-            [ -n "$FAILED_STEPS" ] && FAILED_STEPS="$FAILED_STEPS, "
-            FAILED_STEPS="${FAILED_STEPS}Transform (Silver → Gold)"
-          fi
-          if [ "${{ needs.invalidate-cache.result }}" == "failure" ]; then
-            [ -n "$FAILED_STEPS" ] && FAILED_STEPS="$FAILED_STEPS, "
-            FAILED_STEPS="${FAILED_STEPS}Cache Invalidation"
-          fi
-          
-          # Send email to each recipient
-          for EMAIL in $(echo $ALERT_EMAILS | tr ',' ' '); do
-            aws ses send-email \
-              --region us-east-1 \
-              --from "noreply@plainledger.ca" \
-              --destination "ToAddresses=$EMAIL" \
-              --message "Subject={Data='[ALERT] ETL Pipeline Failed - PlainLedger',Charset=UTF-8},Body={Html={Data='<html><body style=\"font-family: Arial, sans-serif;\"><div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\"><div style=\"background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 20px; text-align: center;\"><h1>✗ ETL Pipeline Failed</h1></div><div style=\"padding: 20px; background: #f8fafc;\"><p>The ETL pipeline has failed for organization: <strong>${{ github.event.inputs.organization_id || 'demo-org' }}</strong></p><div style=\"background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 10px 0;\"><p><strong>Failed Step(s):</strong> ${FAILED_STEPS}</p><p><strong>Workflow Run:</strong> <a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Details</a></p><p><strong>Commit:</strong> ${{ github.sha }}</p><p><strong>Trigger:</strong> ${{ github.event_name }}</p></div><p>Please investigate the failure and take appropriate action.</p></div></div></body></html>',Charset=UTF-8}}" \
-              || echo "Failed to send email to $EMAIL"
-          done
-          
-          echo "✅ Failure notifications sent to: $ALERT_EMAILS"
