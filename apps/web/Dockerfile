@@ -14,7 +14,9 @@ WORKDIR /app
 # Install build dependencies for native modules (rollup, etc.)
 RUN apk add --no-cache python3 make g++
 COPY apps/web/package*.json ./
-RUN npm ci
+# Install dependencies including optional ones and rebuild native modules
+RUN npm ci --include=optional
+RUN npm rebuild || true
 COPY apps/web/ ./
 
 # Build arguments for Vite environment variables
