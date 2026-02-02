@@ -1,56 +1,87 @@
 <!-- Payment Failed Email Template -->
-<h1 class="email-title">Payment Failed</h1>
+<h1 class="email-title">
+  {{#if isEn}}
+    Payment Failed
+  {{else}}
+    Échec du paiement
+  {{/if}}
+</h1>
 
 <p class="email-text">
-  Hello {{firstName}},
+  {{#if isEn}}
+    Hello {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
 </p>
 
 <p class="email-text">
-  We were unable to process your payment for your PlainLedger {{plan}} subscription.
+  {{#if isEn}}
+    We were unable to process your payment for your PlainLedger {{plan}} subscription.
+  {{else}}
+    Nous n'avons pas pu traiter votre paiement pour votre abonnement PlainLedger {{plan}}.
+  {{/if}}
 </p>
 
 <div class="info-box danger">
-  <strong>Payment Details:</strong>
+  <strong>{{#if isEn}}Payment Details{{else}}Détails du paiement{{/if}}:</strong>
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
     <tr>
-      <td style="padding: 4px 0; color: #64748b; width: 140px;">Amount:</td>
+      <td style="padding: 4px 0; color: #64748b; width: 140px;">{{#if isEn}}Amount{{else}}Montant{{/if}}:</td>
       <td style="padding: 4px 0; color: #1e293b; font-weight: 600;">{{amount}}</td>
     </tr>
     <tr>
-      <td style="padding: 4px 0; color: #64748b;">Card:</td>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Card{{else}}Carte{{/if}}:</td>
       <td style="padding: 4px 0; color: #1e293b;">•••• {{lastFour}}</td>
     </tr>
     <tr>
-      <td style="padding: 4px 0; color: #64748b;">Reason:</td>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Reason{{else}}Raison{{/if}}:</td>
       <td style="padding: 4px 0; color: #dc2626; font-weight: 500;">{{failureReason}}</td>
     </tr>
   </table>
 </div>
 
 <p class="email-text">
-  To avoid any service interruption, please update your payment information.
+  {{#if isEn}}
+    To avoid any service interruption, please update your payment information.
+  {{else}}
+    Pour éviter toute interruption de service, veuillez mettre à jour vos informations de paiement.
+  {{/if}}
 </p>
 
 <div style="text-align: center; margin: 32px 0;">
   <a href="{{baseUrl}}/app/settings?tab=billing" class="email-button">
-    Update Payment Method
+    {{#if isEn}}
+      Update Payment Method
+    {{else}}
+      Mettre à jour le paiement
+    {{/if}}
   </a>
 </div>
 
 <div class="info-box warning">
-  <strong>Important:</strong>
+  <strong>{{#if isEn}}Important{{else}}Important{{/if}}:</strong>
   <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
-    If your payment fails again, your account will be downgraded to the free plan on {{downgradeDate}}.
+    {{#if isEn}}
+      If your payment fails again, your account will revert to demo mode on {{downgradeDate}}, and you'll only see sample data.
+    {{else}}
+      Si votre paiement échoue à nouveau, votre compte reviendra en mode démo le {{downgradeDate}}, et vous ne verrez que des données d'exemple.
+    {{/if}}
   </p>
 </div>
 
 <hr class="email-divider">
 
 <p class="email-text" style="font-size: 14px; color: #64748b;">
-  Questions about billing?<br>
+  {{#if isEn}}
+    Questions about billing?
+  {{else}}
+    Questions sur la facturation?
+  {{/if}}
+  <br>
   <a href="mailto:billing@plainledger.ca" style="color: #059669;">billing@plainledger.ca</a>
 </p>
 
 <div class="email-signature">
-  <p>Best regards,<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
 </div>

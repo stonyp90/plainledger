@@ -1,0 +1,78 @@
+<!-- Terms of Service Update Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Updates to Our Terms of Service
+  {{else}}
+    Mises à jour de nos conditions d'utilisation
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    We're updating our Terms of Service to better serve you and clarify our commitments. These changes take effect on <strong>{{effectiveDate}}</strong>.
+  {{else}}
+    Nous mettons à jour nos conditions d'utilisation pour mieux vous servir et clarifier nos engagements. Ces changements prennent effet le <strong>{{effectiveDate}}</strong>.
+  {{/if}}
+</p>
+
+<!-- Summary of Changes -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Key Changes{{else}}Changements clés{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each changes}}
+  <tr>
+    <td style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
+      <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+        {{#if ../isEn}}{{titleEn}}{{else}}{{title}}{{/if}}
+      </div>
+      <div style="font-size: 14px; color: #64748b;">
+        {{#if ../isEn}}{{descriptionEn}}{{else}}{{description}}{{/if}}
+      </div>
+    </td>
+  </tr>
+  <tr><td style="height: 8px;"></td></tr>
+  {{/each}}
+</table>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{termsUrl}}" class="email-button">
+    {{#if isEn}}
+      Read Full Terms of Service
+    {{else}}
+      Lire les conditions complètes
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text">
+  {{#if isEn}}
+    By continuing to use PlainLedger after {{effectiveDate}}, you agree to the updated Terms of Service. If you have questions about these changes, please contact us.
+  {{else}}
+    En continuant à utiliser PlainLedger après le {{effectiveDate}}, vous acceptez les conditions d'utilisation mises à jour. Si vous avez des questions sur ces changements, veuillez nous contacter.
+  {{/if}}
+</p>
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions? Contact us at
+  {{else}}
+    Questions? Contactez-nous à
+  {{/if}}
+  <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

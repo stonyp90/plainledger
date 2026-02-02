@@ -1,0 +1,132 @@
+<!-- Account Deleted Confirmation Template (PIPEDA Compliance) -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your Account Has Been Deleted
+  {{else}}
+    Votre compte a été supprimé
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    As requested, your PlainLedger account and associated data have been permanently deleted. We're sorry to see you go.
+  {{else}}
+    Comme demandé, votre compte PlainLedger et les données associées ont été supprimés de façon permanente. Nous sommes désolés de vous voir partir.
+  {{/if}}
+</p>
+
+<!-- What was deleted -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}What Has Been Deleted{{else}}Ce qui a été supprimé{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon danger">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Your profile and account information{{else}}Votre profil et informations de compte{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon danger">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}All synced financial data{{else}}Toutes les données financières synchronisées{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon danger">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Generated reports and exports{{else}}Rapports générés et exportations{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon danger">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Connected accounting integrations{{else}}Intégrations comptables connectées{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon danger">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Preferences and settings{{else}}Préférences et paramètres{{/if}}
+    </td>
+  </tr>
+</table>
+
+<div class="info-box info">
+  <strong>{{#if isEn}}Data Retention Notice{{else}}Avis de conservation des données{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      In accordance with Canadian law and our legal obligations, we may retain certain anonymized data for analytics and some records for tax/legal purposes. All personally identifiable information has been removed.
+    {{else}}
+      Conformément à la loi canadienne et à nos obligations légales, nous pouvons conserver certaines données anonymisées à des fins d'analyse et certains dossiers à des fins fiscales/légales. Toutes les informations personnellement identifiables ont été supprimées.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<!-- Subscription info if applicable -->
+{{#if hadSubscription}}
+<div class="info-box warning">
+  <strong>{{#if isEn}}Subscription Cancelled{{else}}Abonnement annulé{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Your {{planName}} subscription has been cancelled. If you had any remaining balance, a prorated refund will be processed within 5-10 business days.
+    {{else}}
+      Votre abonnement {{planName}} a été annulé. Si vous aviez un solde restant, un remboursement au prorata sera traité dans les 5 à 10 jours ouvrables.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+{{/if}}
+
+<p class="email-text">
+  {{#if isEn}}
+    If you change your mind in the future, you're always welcome to create a new account at <a href="{{baseUrl}}" style="color: #059669;">plainledger.ca</a>.
+  {{else}}
+    Si vous changez d'avis à l'avenir, vous êtes toujours le bienvenu pour créer un nouveau compte sur <a href="{{baseUrl}}" style="color: #059669;">plainledger.ca</a>.
+  {{/if}}
+</p>
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    We'd appreciate your feedback on why you left. <a href="{{feedbackUrl}}" style="color: #059669;">Share your thoughts →</a>
+  {{else}}
+    Nous apprécierions vos commentaires sur les raisons de votre départ. <a href="{{feedbackUrl}}" style="color: #059669;">Partagez vos réflexions →</a>
+  {{/if}}
+</p>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions about data deletion? Contact our Privacy Officer at
+  {{else}}
+    Questions sur la suppression des données? Contactez notre responsable de la confidentialité à
+  {{/if}}
+  <a href="mailto:privacy@plainledger.ca" style="color: #059669;">privacy@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Thank you for trying PlainLedger{{else}}Merci d'avoir essayé PlainLedger{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

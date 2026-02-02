@@ -1,0 +1,69 @@
+<!-- Email Verification Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Verify Your Email Address
+  {{else}}
+    Vérifiez votre adresse courriel
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    Thank you for signing up for PlainLedger. Please verify your email address to complete your registration.
+  {{else}}
+    Merci de vous être inscrit à PlainLedger. Veuillez vérifier votre adresse courriel pour compléter votre inscription.
+  {{/if}}
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{verificationUrl}}" class="email-button">
+    {{#if isEn}}
+      Verify Email Address
+    {{else}}
+      Vérifier l'adresse courriel
+    {{/if}}
+  </a>
+</div>
+
+<div class="email-link-text">
+  {{#if isEn}}
+    Or copy and paste this link into your browser:<br>
+  {{else}}
+    Ou copiez et collez ce lien dans votre navigateur :<br>
+  {{/if}}
+  <a href="{{verificationUrl}}">{{verificationUrl}}</a>
+</div>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}This link expires in 24 hours{{else}}Ce lien expire dans 24 heures{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      If you didn't create an account with PlainLedger, you can safely ignore this email.
+    {{else}}
+      Si vous n'avez pas créé de compte PlainLedger, vous pouvez ignorer ce courriel.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Having trouble? Contact us at
+  {{else}}
+    Des difficultés? Contactez-nous à
+  {{/if}}
+  <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Welcome to PlainLedger{{else}}Bienvenue sur PlainLedger{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

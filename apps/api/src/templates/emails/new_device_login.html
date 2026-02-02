@@ -1,0 +1,128 @@
+<!-- New Device Login Alert Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    New Sign-In to Your Account
+  {{else}}
+    Nouvelle connexion à votre compte
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    We noticed a new sign-in to your PlainLedger account. If this was you, no action is needed.
+  {{else}}
+    Nous avons détecté une nouvelle connexion à votre compte PlainLedger. Si c'était vous, aucune action n'est requise.
+  {{/if}}
+</p>
+
+<!-- Device Info Box -->
+<div class="info-box">
+  <strong>{{#if isEn}}Sign-in Details{{else}}Détails de la connexion{{/if}}</strong>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px; width: 100%;">
+    <tr>
+      <td style="padding: 6px 0; color: #64748b; width: 120px;">{{#if isEn}}Device{{else}}Appareil{{/if}}:</td>
+      <td style="padding: 6px 0; color: #1e293b;">{{deviceName}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #64748b;">{{#if isEn}}Browser{{else}}Navigateur{{/if}}:</td>
+      <td style="padding: 6px 0; color: #1e293b;">{{browser}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #64748b;">{{#if isEn}}Location{{else}}Emplacement{{/if}}:</td>
+      <td style="padding: 6px 0; color: #1e293b;">{{location}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #64748b;">{{#if isEn}}IP Address{{else}}Adresse IP{{/if}}:</td>
+      <td style="padding: 6px 0; color: #1e293b;">{{ipAddress}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #64748b;">{{#if isEn}}Time{{else}}Heure{{/if}}:</td>
+      <td style="padding: 6px 0; color: #1e293b;">{{loginTime}}</td>
+    </tr>
+  </table>
+</div>
+
+<div class="info-box danger">
+  <strong>{{#if isEn}}Wasn't you?{{else}}Ce n'était pas vous?{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      If you don't recognize this activity, your account may be compromised. Please secure your account immediately.
+    {{else}}
+      Si vous ne reconnaissez pas cette activité, votre compte pourrait être compromis. Veuillez sécuriser votre compte immédiatement.
+    {{/if}}
+  </p>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/settings?tab=security" class="email-button" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);">
+    {{#if isEn}}
+      Secure My Account
+    {{else}}
+      Sécuriser mon compte
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<h2 style="font-size: 16px; color: #1e293b; margin-bottom: 12px;">
+  {{#if isEn}}Recommended Actions{{else}}Actions recommandées{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon danger">!</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Change your password immediately{{else}}Changez votre mot de passe immédiatement{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon warning">!</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Enable two-factor authentication{{else}}Activez l'authentification à deux facteurs{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon info">i</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Review your active sessions{{else}}Vérifiez vos sessions actives{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon info">i</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Check for unauthorized changes{{else}}Vérifiez les modifications non autorisées{{/if}}
+    </td>
+  </tr>
+</table>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Need help? Contact us at
+  {{else}}
+    Besoin d'aide? Contactez-nous à
+  {{/if}}
+  <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Stay secure{{else}}Restez en sécurité{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

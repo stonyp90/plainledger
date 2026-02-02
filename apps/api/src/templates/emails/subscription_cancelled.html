@@ -1,0 +1,166 @@
+<!-- Subscription Cancelled Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your Subscription Has Been Cancelled
+  {{else}}
+    Votre abonnement a été annulé
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    We're sorry to see you go. Your PlainLedger {{planName}} subscription has been cancelled as requested.
+  {{else}}
+    Nous sommes désolés de vous voir partir. Votre abonnement PlainLedger {{planName}} a été annulé comme demandé.
+  {{/if}}
+</p>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}Your access continues until {{endDate}}{{else}}Votre accès continue jusqu'au {{endDate}}{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      You'll still have full access to your paid features until the end of your billing period.
+    {{else}}
+      Vous aurez toujours accès à toutes les fonctionnalités payantes jusqu'à la fin de votre période de facturation.
+    {{/if}}
+  </p>
+</div>
+
+<!-- What happens next -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}What happens next{{else}}Ce qui se passe ensuite{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 12px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="tick-icon warning">1</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+              {{#if isEn}}Access until {{endDate}}{{else}}Accès jusqu'au {{endDate}}{{/if}}
+            </div>
+            <div style="font-size: 14px; color: #64748b;">
+              {{#if isEn}}Continue using all paid features{{else}}Continuez à utiliser toutes les fonctionnalités payantes{{/if}}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="tick-icon danger">2</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+              {{#if isEn}}After {{endDate}}{{else}}Après le {{endDate}}{{/if}}
+            </div>
+            <div style="font-size: 14px; color: #64748b;">
+              {{#if isEn}}Your account will revert to demo mode with sample data only{{else}}Votre compte reviendra en mode démo avec des données d'exemple uniquement{{/if}}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="tick-icon">✓</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+              {{#if isEn}}Your data is safe{{else}}Vos données sont en sécurité{{/if}}
+            </div>
+            <div style="font-size: 14px; color: #64748b;">
+              {{#if isEn}}We'll keep your data for 90 days in case you want to resubscribe{{else}}Nous conserverons vos données pendant 90 jours au cas où vous voudriez vous réabonner{{/if}}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<hr class="email-divider">
+
+<!-- Export Data CTA -->
+<div class="info-box info">
+  <strong>{{#if isEn}}Export your data{{else}}Exportez vos données{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Before your subscription ends, you can export all your reports and data.
+    {{else}}
+      Avant la fin de votre abonnement, vous pouvez exporter tous vos rapports et données.
+    {{/if}}
+  </p>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/settings?tab=data" class="email-button-slim">
+    {{#if isEn}}
+      Export My Data
+    {{else}}
+      Exporter mes données
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<!-- Changed your mind? -->
+<p class="email-text" style="font-weight: 600;">
+  {{#if isEn}}
+    Changed your mind?
+  {{else}}
+    Vous avez changé d'avis?
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    You can reactivate your subscription anytime before {{endDate}} to keep uninterrupted access.
+  {{else}}
+    Vous pouvez réactiver votre abonnement à tout moment avant le {{endDate}} pour conserver un accès ininterrompu.
+  {{/if}}
+</p>
+
+<div style="text-align: center; margin: 24px 0;">
+  <a href="{{baseUrl}}/app/settings?tab=billing" class="email-button">
+    {{#if isEn}}Reactivate Subscription{{else}}Réactiver l'abonnement{{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<!-- Feedback -->
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    We'd love to know why you cancelled. Your feedback helps us improve.
+  {{else}}
+    Nous aimerions savoir pourquoi vous avez annulé. Vos commentaires nous aident à nous améliorer.
+  {{/if}}
+  <br>
+  <a href="{{feedbackUrl}}" style="color: #059669;">{{#if isEn}}Share feedback{{else}}Partager vos commentaires{{/if}} →</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Thank you for being a customer{{else}}Merci d'avoir été client{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

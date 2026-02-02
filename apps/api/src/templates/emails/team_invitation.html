@@ -1,0 +1,111 @@
+<!-- Team Invitation Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    You've Been Invited to Join {{organizationName}}
+  {{else}}
+    Vous avez été invité à rejoindre {{organizationName}}
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi{{#if firstName}} {{firstName}}{{/if}},
+  {{else}}
+    Bonjour{{#if firstName}} {{firstName}}{{/if}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    <strong>{{inviterName}}</strong> has invited you to join <strong>{{organizationName}}</strong> on PlainLedger as a <strong>{{roleName}}</strong>.
+  {{else}}
+    <strong>{{inviterName}}</strong> vous a invité à rejoindre <strong>{{organizationName}}</strong> sur PlainLedger en tant que <strong>{{roleNameFr}}</strong>.
+  {{/if}}
+</p>
+
+<!-- Organization Info -->
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  {{#if organizationLogo}}
+  <img src="{{organizationLogo}}" alt="{{organizationName}}" width="64" height="64" style="width: 64px; height: 64px; border-radius: 12px; margin-bottom: 16px;">
+  {{else}}
+  <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 12px; margin: 0 auto 16px; line-height: 64px; text-align: center;">
+    <span style="font-size: 28px; color: #fff; font-weight: 600;">{{organizationInitial}}</span>
+  </div>
+  {{/if}}
+  <div style="font-size: 20px; font-weight: 600; color: #1e293b; margin-bottom: 4px;">{{organizationName}}</div>
+  <div style="font-size: 14px; color: #64748b;">{{#if isEn}}Your role{{else}}Votre rôle{{/if}}: <span style="color: #059669; font-weight: 500;">{{#if isEn}}{{roleName}}{{else}}{{roleNameFr}}{{/if}}</span></div>
+</div>
+
+<!-- What you can do -->
+<p class="email-text" style="font-weight: 600;">
+  {{#if isEn}}
+    As a {{roleName}}, you'll be able to:
+  {{else}}
+    En tant que {{roleNameFr}}, vous pourrez :
+  {{/if}}
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each permissions}}
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if ../isEn}}{{textEn}}{{else}}{{text}}{{/if}}
+    </td>
+  </tr>
+  {{/each}}
+</table>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{inviteUrl}}" class="email-button">
+    {{#if isEn}}
+      Accept Invitation
+    {{else}}
+      Accepter l'invitation
+    {{/if}}
+  </a>
+</div>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}This invitation expires in 7 days{{else}}Cette invitation expire dans 7 jours{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      If you don't recognize this invitation or believe it was sent in error, you can safely ignore this email.
+    {{else}}
+      Si vous ne reconnaissez pas cette invitation ou pensez qu'elle a été envoyée par erreur, vous pouvez ignorer ce courriel.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<!-- About PlainLedger -->
+{{#unless hasAccount}}
+<div class="info-box info">
+  <strong>{{#if isEn}}New to PlainLedger?{{else}}Nouveau sur PlainLedger?{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      PlainLedger is a financial reporting platform that connects to your accounting software and generates professional IBCS-compliant reports. When you accept, you'll create your free account.
+    {{else}}
+      PlainLedger est une plateforme de rapports financiers qui se connecte à votre logiciel comptable et génère des rapports professionnels conformes à l'IBCS. Lorsque vous acceptez, vous créerez votre compte gratuit.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+{{/unless}}
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions? Contact the person who invited you or reach out to us at
+  {{else}}
+    Questions? Contactez la personne qui vous a invité ou écrivez-nous à
+  {{/if}}
+  <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

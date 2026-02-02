@@ -2,9 +2,9 @@
 
 <h1 class="email-title">
   {{#if isEn}}
-    🎉 Congratulations {{firstName}}!
+    Congratulations {{firstName}}!
   {{else}}
-    🎉 Félicitations {{firstName}}!
+    Félicitations {{firstName}}!
   {{/if}}
 </h1>
 
@@ -18,9 +18,8 @@
 
 <!-- Milestone Banner -->
 <div style="background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 50%, #10b981 100%); border-radius: 16px; padding: 32px; margin: 24px 0; text-align: center;">
-  <div style="font-size: 48px; margin-bottom: 8px;">🏆</div>
   <div style="font-size: 14px; color: #047857; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
-    {{#if isEn}}Achievement Unlocked{{else}}Accomplissement débloqué{{/if}}
+    {{#if isEn}}Milestone Reached{{else}}Jalon atteint{{/if}}
   </div>
   <div style="font-size: 28px; font-weight: bold; color: #065f46;">
     {{milestoneValue}} {{#if isEn}}{{milestoneLabel}}{{else}}{{milestoneLabelFr}}{{/if}}
@@ -64,16 +63,16 @@
 <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; margin: 24px 0;">
   <p style="font-weight: 600; color: #334155; margin: 0 0 12px 0;">
     {{#if isEn}}
-      🚀 Ready to level up?
+      Ready for more advanced features?
     {{else}}
-      🚀 Prêt à passer au niveau supérieur?
+      Prêt pour des fonctionnalités plus avancées?
     {{/if}}
   </p>
   <p style="font-size: 14px; color: #64748b; margin: 0 0 16px 0;">
     {{#if isEn}}
-      Upgrade to {{planName}} and unlock:
+      Upgrade to {{planName}} and access:
     {{else}}
-      Passez à {{planName}} et débloquez :
+      Passez à {{planName}} et accédez à :
     {{/if}}
   </p>
   <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px;">

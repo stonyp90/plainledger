@@ -1,0 +1,109 @@
+<!-- Data Export Ready Template (PIPEDA Right to Access) -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your Data Export is Ready
+  {{else}}
+    Votre exportation de données est prête
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    The data export you requested is now ready for download. This export contains a copy of your personal information and data stored in PlainLedger.
+  {{else}}
+    L'exportation de données que vous avez demandée est maintenant prête à être téléchargée. Cette exportation contient une copie de vos renseignements personnels et données stockés dans PlainLedger.
+  {{/if}}
+</p>
+
+<!-- Export Details -->
+<div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding: 8px 0; color: #64748b; width: 140px;">{{#if isEn}}Request Date{{else}}Date de demande{{/if}}:</td>
+      <td style="padding: 8px 0; color: #1e293b;">{{requestDate}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #64748b;">{{#if isEn}}Export Size{{else}}Taille de l'export{{/if}}:</td>
+      <td style="padding: 8px 0; color: #1e293b;">{{exportSize}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #64748b;">{{#if isEn}}Format{{else}}Format{{/if}}:</td>
+      <td style="padding: 8px 0; color: #1e293b;">{{exportFormat}}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- What's Included -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}What's Included{{else}}Ce qui est inclus{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each includedData}}
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if ../isEn}}{{textEn}}{{else}}{{text}}{{/if}}
+    </td>
+  </tr>
+  {{/each}}
+</table>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{downloadUrl}}" class="email-button">
+    {{#if isEn}}
+      Download Your Data
+    {{else}}
+      Télécharger vos données
+    {{/if}}
+  </a>
+</div>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}Download link expires in 7 days{{else}}Le lien de téléchargement expire dans 7 jours{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      For security reasons, this download link will expire on {{expiryDate}}. After that, you'll need to request a new export.
+    {{else}}
+      Pour des raisons de sécurité, ce lien de téléchargement expirera le {{expiryDate}}. Après cela, vous devrez demander une nouvelle exportation.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<div class="info-box info">
+  <strong>{{#if isEn}}Your Privacy Rights{{else}}Vos droits à la vie privée{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Under Canada's PIPEDA, you have the right to access, correct, and request deletion of your personal information. Visit <a href="{{baseUrl}}/app/settings?tab=privacy" style="color: #059669;">Settings → Privacy</a> to manage your data.
+    {{else}}
+      En vertu de la LPRPDE du Canada, vous avez le droit d'accéder, de corriger et de demander la suppression de vos renseignements personnels. Visitez <a href="{{baseUrl}}/app/settings?tab=privacy" style="color: #059669;">Paramètres → Vie privée</a> pour gérer vos données.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions about your data? Contact our Privacy Officer at
+  {{else}}
+    Questions sur vos données? Contactez notre responsable de la confidentialité à
+  {{/if}}
+  <a href="mailto:privacy@plainledger.ca" style="color: #059669;">privacy@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

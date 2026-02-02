@@ -1,0 +1,120 @@
+<!-- Product Update / Changelog Email Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    What's New in PlainLedger
+  {{else}}
+    Quoi de neuf dans PlainLedger
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    We've been busy improving PlainLedger! Here's what's new in our <strong>{{releaseName}}</strong> release.
+  {{else}}
+    Nous avons travaillé dur pour améliorer PlainLedger! Voici les nouveautés de notre version <strong>{{releaseName}}</strong>.
+  {{/if}}
+</p>
+
+<!-- Headline Feature -->
+{{#if headlineFeature}}
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+  {{#if headlineFeature.icon}}
+  <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+    <img src="{{baseUrl}}/email-assets/{{headlineFeature.icon}}.png" alt="" width="32" height="32" style="display: block;" />
+  </div>
+  {{/if}}
+  <div style="font-size: 12px; color: #059669; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
+    {{#if isEn}}New Feature{{else}}Nouvelle fonctionnalité{{/if}}
+  </div>
+  <h2 style="font-size: 20px; color: #047857; margin: 0 0 8px 0;">
+    {{#if isEn}}{{headlineFeature.titleEn}}{{else}}{{headlineFeature.title}}{{/if}}
+  </h2>
+  <p style="font-size: 14px; color: #065f46; margin: 0;">
+    {{#if isEn}}{{headlineFeature.descriptionEn}}{{else}}{{headlineFeature.description}}{{/if}}
+  </p>
+</div>
+{{/if}}
+
+<!-- Other Updates -->
+{{#if updates}}
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Other Updates{{else}}Autres mises à jour{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each updates}}
+  <tr>
+    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+          <td style="width: 70px; vertical-align: top;">
+            <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+              {{#if (eq type 'feature')}}background: #d1fae5; color: #059669;{{/if}}
+              {{#if (eq type 'improvement')}}background: #dbeafe; color: #2563eb;{{/if}}
+              {{#if (eq type 'fix')}}background: #fef3c7; color: #92400e;{{/if}}
+            ">
+              {{#if (eq type 'feature')}}{{#if ../isEn}}New{{else}}Nouveau{{/if}}{{/if}}
+              {{#if (eq type 'improvement')}}{{#if ../isEn}}Improved{{else}}Amélioré{{/if}}{{/if}}
+              {{#if (eq type 'fix')}}{{#if ../isEn}}Fixed{{else}}Corrigé{{/if}}{{/if}}
+            </span>
+          </td>
+          <td style="padding-left: 12px;">
+            <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+              {{#if ../isEn}}{{titleEn}}{{else}}{{title}}{{/if}}
+            </div>
+            {{#if description}}
+            <div style="font-size: 14px; color: #64748b;">
+              {{#if ../isEn}}{{descriptionEn}}{{else}}{{description}}{{/if}}
+            </div>
+            {{/if}}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {{/each}}
+</table>
+{{/if}}
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app" class="email-button">
+    {{#if isEn}}
+      Try These Features Now
+    {{else}}
+      Essayer ces fonctionnalités
+    {{/if}}
+  </a>
+</div>
+
+<!-- Full changelog link -->
+<p style="text-align: center; margin-top: 16px;">
+  <a href="{{changelogUrl}}" style="font-size: 13px; color: #059669; text-decoration: underline;">
+    {{#if isEn}}View full changelog →{{else}}Voir le journal complet →{{/if}}
+  </a>
+</p>
+
+<hr class="email-divider">
+
+<!-- Feedback -->
+<div class="info-box info">
+  <strong>{{#if isEn}}We'd Love Your Feedback{{else}}Nous aimerions vos commentaires{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Have ideas for PlainLedger? We're always listening. <a href="{{feedbackUrl}}" style="color: #059669;">Share your suggestions →</a>
+    {{else}}
+      Vous avez des idées pour PlainLedger? Nous sommes toujours à l'écoute. <a href="{{feedbackUrl}}" style="color: #059669;">Partagez vos suggestions →</a>
+    {{/if}}
+  </p>
+</div>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Happy reporting{{else}}Bons rapports{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

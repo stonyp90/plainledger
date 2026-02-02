@@ -1,0 +1,151 @@
+<!-- Referral Program Invitation Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Share PlainLedger, Earn Rewards
+  {{else}}
+    Partagez PlainLedger, gagnez des récompenses
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    Love using PlainLedger? Share it with your network and earn rewards when they subscribe!
+  {{else}}
+    Vous aimez utiliser PlainLedger? Partagez-le avec votre réseau et gagnez des récompenses quand ils s'abonnent!
+  {{/if}}
+</p>
+
+<!-- Reward highlight -->
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  <div style="font-size: 14px; color: #047857; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
+    {{#if isEn}}You Both Get{{else}}Vous obtenez tous les deux{{/if}}
+  </div>
+  <div style="font-size: 32px; font-weight: bold; color: #059669; margin-bottom: 8px;">
+    {{rewardAmount}}
+  </div>
+  <div style="font-size: 14px; color: #065f46;">
+    {{#if isEn}}in account credit{{else}}en crédit de compte{{/if}}
+  </div>
+</div>
+
+<!-- How it works -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}How It Works{{else}}Comment ça marche{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 10px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="step-circle">1</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <strong style="color: #1e293b;">{{#if isEn}}Share your link{{else}}Partagez votre lien{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}Send it to colleagues, clients, or friends{{else}}Envoyez-le à vos collègues, clients ou amis{{/if}}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="step-circle">2</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <strong style="color: #1e293b;">{{#if isEn}}They subscribe{{else}}Ils s'abonnent{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}They get {{rewardAmount}} off their first month{{else}}Ils obtiennent {{rewardAmount}} de rabais sur leur premier mois{{/if}}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="step-circle">3</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <strong style="color: #1e293b;">{{#if isEn}}You earn credit{{else}}Vous gagnez du crédit{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}{{rewardAmount}} is added to your account{{else}}{{rewardAmount}} est ajouté à votre compte{{/if}}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- Referral Link -->
+<div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+  <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+    {{#if isEn}}Your Referral Link{{else}}Votre lien de parrainage{{/if}}
+  </div>
+  <div style="background: #fff; border: 2px solid #10b981; border-radius: 8px; padding: 12px 16px; font-size: 14px; color: #059669; word-break: break-all;">
+    {{referralLink}}
+  </div>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/referrals" class="email-button">
+    {{#if isEn}}
+      View Referral Dashboard
+    {{else}}
+      Voir le tableau de parrainage
+    {{/if}}
+  </a>
+</div>
+
+<!-- Share buttons -->
+<p style="text-align: center; font-size: 13px; color: #64748b;">
+  {{#if isEn}}Share via{{else}}Partager via{{/if}}:
+  <a href="{{shareUrl.linkedin}}" style="color: #059669; margin: 0 8px;">LinkedIn</a>
+  <a href="{{shareUrl.twitter}}" style="color: #059669; margin: 0 8px;">Twitter</a>
+  <a href="{{shareUrl.email}}" style="color: #059669; margin: 0 8px;">Email</a>
+</p>
+
+<hr class="email-divider">
+
+<!-- Current stats if applicable -->
+{{#if referralStats}}
+<div class="info-box success">
+  <strong>{{#if isEn}}Your Referral Stats{{else}}Vos statistiques de parrainage{{/if}}</strong>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
+    <tr>
+      <td style="padding: 4px 0; color: #64748b; width: 140px;">{{#if isEn}}People referred{{else}}Personnes parrainées{{/if}}:</td>
+      <td style="padding: 4px 0; color: #059669; font-weight: 600;">{{referralStats.referred}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Credits earned{{else}}Crédits gagnés{{/if}}:</td>
+      <td style="padding: 4px 0; color: #059669; font-weight: 600;">{{referralStats.earned}}</td>
+    </tr>
+  </table>
+</div>
+{{/if}}
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions about the referral program? <a href="{{baseUrl}}/help/referrals" style="color: #059669;">Learn more</a>
+  {{else}}
+    Questions sur le programme de parrainage? <a href="{{baseUrl}}/help/referrals" style="color: #059669;">En savoir plus</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Thanks for spreading the word{{else}}Merci de faire passer le mot{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

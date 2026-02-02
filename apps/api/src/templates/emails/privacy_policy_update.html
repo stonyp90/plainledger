@@ -1,0 +1,88 @@
+<!-- Privacy Policy Update Template (PIPEDA Compliance) -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Updates to Our Privacy Policy
+  {{else}}
+    Mises à jour de notre politique de confidentialité
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    We're writing to inform you of updates to PlainLedger's Privacy Policy. These changes take effect on <strong>{{effectiveDate}}</strong>.
+  {{else}}
+    Nous vous écrivons pour vous informer des mises à jour de la politique de confidentialité de PlainLedger. Ces changements prennent effet le <strong>{{effectiveDate}}</strong>.
+  {{/if}}
+</p>
+
+<!-- Summary of Changes -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Summary of Changes{{else}}Résumé des changements{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each changes}}
+  <tr>
+    <td style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
+      <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+        {{#if ../isEn}}{{titleEn}}{{else}}{{title}}{{/if}}
+      </div>
+      <div style="font-size: 14px; color: #64748b;">
+        {{#if ../isEn}}{{descriptionEn}}{{else}}{{description}}{{/if}}
+      </div>
+    </td>
+  </tr>
+  <tr><td style="height: 8px;"></td></tr>
+  {{/each}}
+</table>
+
+<div class="info-box info">
+  <strong>{{#if isEn}}Your Rights Under Canadian Privacy Law{{else}}Vos droits en vertu de la loi canadienne sur la vie privée{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Under PIPEDA, you have the right to access, correct, and request deletion of your personal information. You can exercise these rights at any time through your account settings.
+    {{else}}
+      En vertu de la LPRPDE, vous avez le droit d'accéder, de corriger et de demander la suppression de vos renseignements personnels. Vous pouvez exercer ces droits à tout moment via les paramètres de votre compte.
+    {{/if}}
+  </p>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{privacyPolicyUrl}}" class="email-button">
+    {{#if isEn}}
+      Read Full Privacy Policy
+    {{else}}
+      Lire la politique complète
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text">
+  {{#if isEn}}
+    By continuing to use PlainLedger after {{effectiveDate}}, you acknowledge and accept these changes. If you have concerns or questions, please contact our Privacy Officer.
+  {{else}}
+    En continuant à utiliser PlainLedger après le {{effectiveDate}}, vous reconnaissez et acceptez ces changements. Si vous avez des préoccupations ou des questions, veuillez contacter notre responsable de la confidentialité.
+  {{/if}}
+</p>
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Privacy Officer: <a href="mailto:privacy@plainledger.ca" style="color: #059669;">privacy@plainledger.ca</a>
+  {{else}}
+    Responsable de la confidentialité : <a href="mailto:privacy@plainledger.ca" style="color: #059669;">privacy@plainledger.ca</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

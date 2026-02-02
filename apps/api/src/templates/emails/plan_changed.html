@@ -1,0 +1,125 @@
+<!-- Plan Changed (Upgrade/Downgrade) Template -->
+<h1 class="email-title">
+  {{#if isUpgrade}}
+    {{#if isEn}}
+      You've Upgraded to {{newPlanName}}!
+    {{else}}
+      Vous avez mis à niveau vers {{newPlanName}}!
+    {{/if}}
+  {{else}}
+    {{#if isEn}}
+      Your Plan Has Been Changed
+    {{else}}
+      Votre forfait a été modifié
+    {{/if}}
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+{{#if isUpgrade}}
+<p class="email-text">
+  {{#if isEn}}
+    Congratulations! Your PlainLedger account has been upgraded from <strong>{{oldPlanName}}</strong> to <strong>{{newPlanName}}</strong>. You now have access to more powerful features.
+  {{else}}
+    Félicitations! Votre compte PlainLedger a été mis à niveau de <strong>{{oldPlanName}}</strong> à <strong>{{newPlanName}}</strong>. Vous avez maintenant accès à des fonctionnalités plus puissantes.
+  {{/if}}
+</p>
+
+<!-- New Features Unlocked -->
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <h3 style="font-size: 16px; color: #047857; margin: 0 0 16px 0;">
+    {{#if isEn}}New features unlocked{{else}}Nouvelles fonctionnalités débloquées{{/if}}
+  </h3>
+  <table width="100%" cellpadding="0" cellspacing="0">
+    {{#each newFeatures}}
+    <tr>
+      <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+        <span class="tick-icon">✓</span>
+      </td>
+      <td style="padding: 8px 0; padding-left: 12px; color: #065f46;">
+        {{#if ../isEn}}{{textEn}}{{else}}{{text}}{{/if}}
+      </td>
+    </tr>
+    {{/each}}
+  </table>
+</div>
+
+{{else}}
+<p class="email-text">
+  {{#if isEn}}
+    Your PlainLedger plan has been changed from <strong>{{oldPlanName}}</strong> to <strong>{{newPlanName}}</strong>.
+  {{else}}
+    Votre forfait PlainLedger a été changé de <strong>{{oldPlanName}}</strong> à <strong>{{newPlanName}}</strong>.
+  {{/if}}
+</p>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}Change takes effect {{effectiveDate}}{{else}}Le changement prend effet le {{effectiveDate}}{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      You'll continue to have access to {{oldPlanName}} features until then.
+    {{else}}
+      Vous continuerez à avoir accès aux fonctionnalités de {{oldPlanName}} jusqu'à cette date.
+    {{/if}}
+  </p>
+</div>
+{{/if}}
+
+<!-- Plan Comparison -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Your New Plan{{else}}Votre nouveau forfait{{/if}}
+</h2>
+
+<div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding: 8px 0; color: #64748b; width: 160px;">{{#if isEn}}Plan{{else}}Forfait{{/if}}:</td>
+      <td style="padding: 8px 0; color: #059669; font-weight: 600;">{{newPlanName}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #64748b;">{{#if isEn}}Price{{else}}Prix{{/if}}:</td>
+      <td style="padding: 8px 0; color: #1e293b;">{{newPlanPrice}} / {{#if isEn}}{{billingCycle}}{{else}}{{billingCycleFr}}{{/if}}</td>
+    </tr>
+    {{#if proratedAmount}}
+    <tr>
+      <td style="padding: 8px 0; color: #64748b;">{{#if isEn}}Prorated Charge{{else}}Montant au prorata{{/if}}:</td>
+      <td style="padding: 8px 0; color: #1e293b;">{{proratedAmount}}</td>
+    </tr>
+    {{/if}}
+    <tr>
+      <td style="padding: 8px 0; color: #64748b;">{{#if isEn}}Next Billing{{else}}Prochaine facturation{{/if}}:</td>
+      <td style="padding: 8px 0; color: #1e293b;">{{nextBillingDate}}</td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app" class="email-button">
+    {{#if isEn}}
+      Go to Dashboard
+    {{else}}
+      Aller au tableau de bord
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Manage your subscription in <a href="{{baseUrl}}/app/settings?tab=billing" style="color: #059669;">Settings → Billing</a>
+  {{else}}
+    Gérez votre abonnement dans <a href="{{baseUrl}}/app/settings?tab=billing" style="color: #059669;">Paramètres → Facturation</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Thank you for choosing PlainLedger{{else}}Merci d'avoir choisi PlainLedger{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

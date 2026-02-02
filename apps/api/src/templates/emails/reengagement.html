@@ -1,0 +1,131 @@
+<!-- Re-engagement Email Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    We Miss You, {{firstName}}!
+  {{else}}
+    Vous nous manquez, {{firstName}}!
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    It's been <strong>{{daysSinceLastVisit}} days</strong> since you last logged into PlainLedger. We wanted to check in and let you know about some things you might have missed.
+  {{else}}
+    Cela fait <strong>{{daysSinceLastVisit}} jours</strong> depuis votre dernière connexion à PlainLedger. Nous voulions prendre de vos nouvelles et vous informer de ce que vous avez peut-être manqué.
+  {{/if}}
+</p>
+
+<!-- What's new -->
+{{#if newFeatures}}
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}What's New{{else}}Quoi de neuf{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each newFeatures}}
+  <tr>
+    <td style="padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
+      <div style="font-weight: 600; color: #059669; margin-bottom: 4px;">
+        {{#if ../isEn}}{{titleEn}}{{else}}{{title}}{{/if}}
+      </div>
+      <div style="font-size: 14px; color: #64748b;">
+        {{#if ../isEn}}{{descriptionEn}}{{else}}{{description}}{{/if}}
+      </div>
+    </td>
+  </tr>
+  <tr><td style="height: 8px;"></td></tr>
+  {{/each}}
+</table>
+{{/if}}
+
+<!-- Account status reminder -->
+{{#if isDemo}}
+<div class="info-box warning">
+  <strong>{{#if isEn}}You're Still in Demo Mode{{else}}Vous êtes toujours en mode démo{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      You're viewing sample data. Subscribe to connect your accounting software and see your real financial reports.
+    {{else}}
+      Vous visualisez des données d'exemple. Abonnez-vous pour connecter votre logiciel comptable et voir vos vrais rapports financiers.
+    {{/if}}
+  </p>
+</div>
+{{else}}
+<div class="info-box info">
+  <strong>{{#if isEn}}Your Data is Waiting{{else}}Vos données vous attendent{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Your {{provider}} data was last synced on {{lastSyncDate}}. Log in to see your latest financial reports.
+    {{else}}
+      Vos données {{provider}} ont été synchronisées pour la dernière fois le {{lastSyncDate}}. Connectez-vous pour voir vos derniers rapports financiers.
+    {{/if}}
+  </p>
+</div>
+{{/if}}
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app" class="email-button">
+    {{#if isEn}}
+      Return to PlainLedger
+    {{else}}
+      Retourner à PlainLedger
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<!-- Quick tips -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Quick Wins to Try{{else}}Actions rapides à essayer{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">→</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Generate a cash flow forecast{{else}}Générez une prévision de flux de trésorerie{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">→</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Compare your metrics to industry benchmarks{{else}}Comparez vos métriques aux références de l'industrie{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">→</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Export a presentation-ready report{{else}}Exportez un rapport prêt pour présentation{{/if}}
+    </td>
+  </tr>
+</table>
+
+<hr class="email-divider">
+
+<!-- Need help -->
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Running into issues? Our team is here to help: <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+  {{else}}
+    Vous rencontrez des problèmes? Notre équipe est là pour vous aider : <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}See you soon{{else}}À bientôt{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

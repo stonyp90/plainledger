@@ -1,0 +1,72 @@
+<!-- Two-Factor Authentication Code Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your Verification Code
+  {{else}}
+    Votre code de vérification
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    Use the following code to complete your sign-in to PlainLedger:
+  {{else}}
+    Utilisez le code suivant pour compléter votre connexion à PlainLedger :
+  {{/if}}
+</p>
+
+<!-- Verification Code -->
+<div style="text-align: center; margin: 32px 0;">
+  <div style="display: inline-block; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 2px solid #10b981; border-radius: 12px; padding: 24px 48px;">
+    <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #059669; font-family: 'Monaco', 'Consolas', monospace;">{{code}}</span>
+  </div>
+</div>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}This code expires in 10 minutes{{else}}Ce code expire dans 10 minutes{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      If you didn't try to sign in, someone may be trying to access your account. Please change your password immediately.
+    {{else}}
+      Si vous n'avez pas essayé de vous connecter, quelqu'un essaie peut-être d'accéder à votre compte. Veuillez changer votre mot de passe immédiatement.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    <strong>Request details:</strong><br>
+    Time: {{requestTime}}<br>
+    IP Address: {{ipAddress}}<br>
+    {{#if location}}Location: {{location}}{{/if}}
+  {{else}}
+    <strong>Détails de la demande :</strong><br>
+    Heure : {{requestTime}}<br>
+    Adresse IP : {{ipAddress}}<br>
+    {{#if location}}Emplacement : {{location}}{{/if}}
+  {{/if}}
+</p>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Didn't request this code? <a href="{{baseUrl}}/app/settings?tab=security" style="color: #059669;">Secure your account</a>
+  {{else}}
+    Vous n'avez pas demandé ce code? <a href="{{baseUrl}}/app/settings?tab=security" style="color: #059669;">Sécurisez votre compte</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Stay secure{{else}}Restez en sécurité{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

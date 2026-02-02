@@ -1,49 +1,80 @@
 <!-- Connection Error Email Template -->
-<h1 class="email-title">Issue with Your {{provider}} Connection</h1>
+<h1 class="email-title">
+  {{#if isEn}}
+    Issue with Your {{provider}} Connection
+  {{else}}
+    Problème avec votre connexion {{provider}}
+  {{/if}}
+</h1>
 
 <p class="email-text">
-  Hello {{firstName}},
+  {{#if isEn}}
+    Hello {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
 </p>
 
 <p class="email-text">
-  We've detected an issue with your {{provider}} connection. Data synchronization has been interrupted.
+  {{#if isEn}}
+    We've detected an issue with your {{provider}} connection. Data synchronization has been interrupted.
+  {{else}}
+    Nous avons détecté un problème avec votre connexion {{provider}}. La synchronisation des données a été interrompue.
+  {{/if}}
 </p>
 
 <div class="info-box danger">
-  <strong>Error Details:</strong>
+  <strong>{{#if isEn}}Error Details{{else}}Détails de l'erreur{{/if}}:</strong>
   <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
     {{errorMessage}}
   </p>
 </div>
 
 <p class="email-text">
-  To resolve this issue, you may need to reconnect your {{provider}} account.
+  {{#if isEn}}
+    To resolve this issue, you may need to reconnect your {{provider}} account.
+  {{else}}
+    Pour résoudre ce problème, vous devrez peut-être reconnecter votre compte {{provider}}.
+  {{/if}}
 </p>
 
 <div style="text-align: center; margin: 32px 0;">
   <a href="{{baseUrl}}/app/connections" class="email-button">
-    Reconnect {{provider}}
+    {{#if isEn}}
+      Reconnect {{provider}}
+    {{else}}
+      Reconnecter {{provider}}
+    {{/if}}
   </a>
 </div>
 
 <hr class="email-divider">
 
-<h2 style="font-size: 16px; color: #1e293b; margin-bottom: 12px; letter-spacing: -0.02em;">Possible Causes:</h2>
+<h2 style="font-size: 16px; color: #1e293b; margin-bottom: 12px; letter-spacing: -0.02em;">
+  {{#if isEn}}Possible Causes{{else}}Causes possibles{{/if}}:
+</h2>
 
 <ul style="color: #64748b; padding-left: 20px; margin: 0;">
-  <li style="margin-bottom: 8px;">Your {{provider}} authorization has expired</li>
-  <li style="margin-bottom: 8px;">Your {{provider}} password was changed</li>
-  <li style="margin-bottom: 8px;">App permissions were revoked</li>
-  <li style="margin-bottom: 8px;">{{provider}} is temporarily unavailable</li>
+  <li style="margin-bottom: 8px;">{{#if isEn}}Your {{provider}} authorization has expired{{else}}Votre autorisation {{provider}} a expiré{{/if}}</li>
+  <li style="margin-bottom: 8px;">{{#if isEn}}Your {{provider}} password was changed{{else}}Votre mot de passe {{provider}} a été changé{{/if}}</li>
+  <li style="margin-bottom: 8px;">{{#if isEn}}App permissions were revoked{{else}}Les permissions de l'application ont été révoquées{{/if}}</li>
+  <li style="margin-bottom: 8px;">{{#if isEn}}{{provider}} is temporarily unavailable{{else}}{{provider}} est temporairement indisponible{{/if}}</li>
 </ul>
 
 <hr class="email-divider">
 
 <p class="email-text" style="font-size: 14px; color: #64748b;">
-  Need help reconnecting your account?<br>
-  <a href="{{baseUrl}}/help/connections" style="color: #059669;">View our guide</a> or contact us at <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
+  {{#if isEn}}
+    Need help reconnecting your account?
+  {{else}}
+    Besoin d'aide pour reconnecter votre compte?
+  {{/if}}
+  <br>
+  <a href="{{baseUrl}}/help/connections" style="color: #059669;">{{#if isEn}}View our guide{{else}}Voir notre guide{{/if}}</a>
+  {{#if isEn}}or contact us at{{else}}ou contactez-nous à{{/if}}
+  <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
 </p>
 
 <div class="email-signature">
-  <p>Best regards,<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
 </div>

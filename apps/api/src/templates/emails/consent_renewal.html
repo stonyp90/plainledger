@@ -1,0 +1,120 @@
+<!-- CASL Consent Renewal Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Confirm Your Communication Preferences
+  {{else}}
+    Confirmez vos préférences de communication
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    Under Canada's Anti-Spam Legislation (CASL), we need to confirm that you'd like to continue receiving marketing and promotional emails from PlainLedger.
+  {{else}}
+    En vertu de la Loi canadienne anti-pourriel (LCAP), nous devons confirmer que vous souhaitez continuer à recevoir des courriels marketing et promotionnels de PlainLedger.
+  {{/if}}
+</p>
+
+<div class="info-box warning">
+  <strong>{{#if isEn}}Action Required{{else}}Action requise{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      If you don't confirm by <strong>{{expiryDate}}</strong>, you'll be automatically unsubscribed from our marketing emails. You'll still receive transactional emails about your account.
+    {{else}}
+      Si vous ne confirmez pas avant le <strong>{{expiryDate}}</strong>, vous serez automatiquement désabonné de nos courriels marketing. Vous continuerez à recevoir les courriels transactionnels concernant votre compte.
+    {{/if}}
+  </p>
+</div>
+
+<!-- What you'll receive -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Stay subscribed to receive{{else}}Restez abonné pour recevoir{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Product updates and new features{{else}}Mises à jour de produits et nouvelles fonctionnalités{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Financial tips and best practices{{else}}Conseils financiers et meilleures pratiques{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Special offers and promotions{{else}}Offres spéciales et promotions{{/if}}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px; color: #475569;">
+      {{#if isEn}}Industry news and insights{{else}}Nouvelles et perspectives de l'industrie{{/if}}
+    </td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{confirmUrl}}" class="email-button">
+    {{#if isEn}}
+      Yes, Keep Me Subscribed
+    {{else}}
+      Oui, gardez-moi abonné
+    {{/if}}
+  </a>
+</div>
+
+<p style="text-align: center; font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Or <a href="{{unsubscribeUrl}}" style="color: #64748b; text-decoration: underline;">unsubscribe from marketing emails</a>
+  {{else}}
+    Ou <a href="{{unsubscribeUrl}}" style="color: #64748b; text-decoration: underline;">désabonnez-vous des courriels marketing</a>
+  {{/if}}
+</p>
+
+<hr class="email-divider">
+
+<div class="info-box info">
+  <strong>{{#if isEn}}Transactional Emails{{else}}Courriels transactionnels{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      Regardless of your choice, you'll continue to receive important transactional emails about your account, billing, and security. These are not affected by your marketing preferences.
+    {{else}}
+      Peu importe votre choix, vous continuerez à recevoir des courriels transactionnels importants concernant votre compte, la facturation et la sécurité. Ceux-ci ne sont pas affectés par vos préférences marketing.
+    {{/if}}
+  </p>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Manage all your email preferences at any time in <a href="{{baseUrl}}/app/settings/notifications" style="color: #059669;">Settings → Notifications</a>
+  {{else}}
+    Gérez toutes vos préférences de courriel à tout moment dans <a href="{{baseUrl}}/app/settings/notifications" style="color: #059669;">Paramètres → Notifications</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

@@ -1,0 +1,116 @@
+<!-- Subscription Confirmed - User upgraded from demo to paid -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your Subscription is Active!
+  {{else}}
+    Votre abonnement est actif!
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    Welcome to PlainLedger <strong>{{planName}}</strong>! Your subscription is now active and you have full access to your real financial data.
+  {{else}}
+    Bienvenue sur PlainLedger <strong>{{planName}}</strong>! Votre abonnement est maintenant actif et vous avez un accès complet à vos données financières réelles.
+  {{/if}}
+</p>
+
+<!-- Subscription Summary -->
+<div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  <div style="font-size: 14px; color: #047857; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
+    {{#if isEn}}Your Plan{{else}}Votre forfait{{/if}}
+  </div>
+  <div style="font-size: 28px; font-weight: bold; color: #059669; margin-bottom: 8px;">
+    {{planName}}
+  </div>
+  <div style="font-size: 16px; color: #065f46;">
+    {{planPrice}} / {{#if isEn}}{{billingCycle}}{{else}}{{billingCycleFr}}{{/if}}
+  </div>
+</div>
+
+<!-- What's Unlocked -->
+<p class="email-text" style="font-weight: 600;">
+  {{#if isEn}}
+    What you now have access to:
+  {{else}}
+    Ce à quoi vous avez maintenant accès :
+  {{/if}}
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  {{#each features}}
+  <tr>
+    <td style="padding: 8px 0; vertical-align: top; width: 32px;">
+      <span class="tick-icon">✓</span>
+    </td>
+    <td style="padding: 8px 0; padding-left: 12px;">
+      <div style="color: #1e293b;">{{#if ../isEn}}{{textEn}}{{else}}{{text}}{{/if}}</div>
+    </td>
+  </tr>
+  {{/each}}
+</table>
+
+<div class="info-box success">
+  <strong>{{#if isEn}}Your real data is ready{{else}}Vos données réelles sont prêtes{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      You're no longer viewing demo data. Connect your accounting software to see your actual financial reports.
+    {{else}}
+      Vous ne visualisez plus les données de démonstration. Connectez votre logiciel comptable pour voir vos vrais rapports financiers.
+    {{/if}}
+  </p>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/connections" class="email-button">
+    {{#if isEn}}
+      Connect Your Accounting Software
+    {{else}}
+      Connecter votre logiciel comptable
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<!-- Subscription Details -->
+<h2 style="font-size: 16px; color: #1e293b; margin-bottom: 12px;">
+  {{#if isEn}}Subscription Details{{else}}Détails de l'abonnement{{/if}}
+</h2>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+  <tr>
+    <td style="padding: 6px 0; color: #64748b; width: 160px;">{{#if isEn}}Start Date{{else}}Date de début{{/if}}:</td>
+    <td style="padding: 6px 0; color: #1e293b;">{{startDate}}</td>
+  </tr>
+  <tr>
+    <td style="padding: 6px 0; color: #64748b;">{{#if isEn}}Next Billing Date{{else}}Prochaine facturation{{/if}}:</td>
+    <td style="padding: 6px 0; color: #1e293b;">{{nextBillingDate}}</td>
+  </tr>
+  <tr>
+    <td style="padding: 6px 0; color: #64748b;">{{#if isEn}}Payment Method{{else}}Méthode de paiement{{/if}}:</td>
+    <td style="padding: 6px 0; color: #1e293b;">{{cardBrand}} •••• {{lastFour}}</td>
+  </tr>
+</table>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Manage your subscription anytime in <a href="{{baseUrl}}/app/settings?tab=billing" style="color: #059669;">Settings → Billing</a>
+  {{else}}
+    Gérez votre abonnement à tout moment dans <a href="{{baseUrl}}/app/settings?tab=billing" style="color: #059669;">Paramètres → Facturation</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Welcome aboard{{else}}Bienvenue à bord{{/if}}!<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

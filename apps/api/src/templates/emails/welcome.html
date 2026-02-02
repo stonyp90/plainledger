@@ -1,27 +1,62 @@
 <!-- Welcome Email Template -->
-<h1 class="email-title">Welcome to PlainLedger!</h1>
+<h1 class="email-title">
+  {{#if isEn}}
+    Welcome to PlainLedger!
+  {{else}}
+    Bienvenue sur PlainLedger!
+  {{/if}}
+</h1>
 
 <p class="email-text">
-  Hello {{firstName}},
+  {{#if isEn}}
+    Hello {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
 </p>
 
 <p class="email-text">
-  Thank you for creating your PlainLedger account. We're thrilled to have you on board!
+  {{#if isEn}}
+    Thank you for creating your PlainLedger account. We're thrilled to have you on board!
+  {{else}}
+    Merci d'avoir créé votre compte PlainLedger. Nous sommes ravis de vous avoir parmi nous!
+  {{/if}}
 </p>
 
 <p class="email-text">
-  PlainLedger lets you connect your accounting software and generate IBCS-compliant financial reports in just a few clicks.
+  {{#if isEn}}
+    PlainLedger lets you connect your accounting software and generate IBCS-compliant financial reports in just a few clicks.
+  {{else}}
+    PlainLedger vous permet de connecter votre logiciel comptable et de générer des rapports financiers conformes à l'IBCS en quelques clics.
+  {{/if}}
 </p>
+
+<div class="info-box info">
+  <strong>{{#if isEn}}You're in Demo Mode{{else}}Vous êtes en mode démo{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{#if isEn}}
+      You're currently viewing sample data. Subscribe to connect your accounting software and see your real financial reports.
+    {{else}}
+      Vous visualisez actuellement des données d'exemple. Abonnez-vous pour connecter votre logiciel comptable et voir vos vrais rapports financiers.
+    {{/if}}
+  </p>
+</div>
 
 <div style="text-align: center; margin: 32px 0;">
-  <a href="{{baseUrl}}/app/connections" class="email-button">
-    Connect Your First Account
+  <a href="{{baseUrl}}/app" class="email-button">
+    {{#if isEn}}
+      Explore PlainLedger
+    {{else}}
+      Explorer PlainLedger
+    {{/if}}
   </a>
 </div>
 
 <hr class="email-divider">
 
-<h2 style="font-size: 18px; color: #1e293b; margin-bottom: 16px; letter-spacing: -0.02em;">Getting Started:</h2>
+<h2 style="font-size: 18px; color: #1e293b; margin-bottom: 16px; letter-spacing: -0.02em;">
+  {{#if isEn}}Getting Started:{{else}}Pour commencer :{{/if}}
+</h2>
 
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
   <tr>
@@ -29,11 +64,11 @@
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
           <td style="width: 40px; vertical-align: top;">
-            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 50%; text-align: center; line-height: 32px; font-weight: 600; color: #fff;">1</div>
+            <span class="step-circle">1</span>
           </td>
           <td style="padding-left: 16px;">
-            <strong style="color: #1e293b;">Connect your accounting software</strong><br>
-            <span style="color: #64748b; font-size: 14px;">QuickBooks, Xero, Sage and more</span>
+            <strong style="color: #1e293b;">{{#if isEn}}Explore with demo data{{else}}Explorez avec des données de démo{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}See what PlainLedger can do{{else}}Découvrez ce que PlainLedger peut faire{{/if}}</span>
           </td>
         </tr>
       </table>
@@ -44,11 +79,11 @@
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
           <td style="width: 40px; vertical-align: top;">
-            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 50%; text-align: center; line-height: 32px; font-weight: 600; color: #fff;">2</div>
+            <span class="step-circle">2</span>
           </td>
           <td style="padding-left: 16px;">
-            <strong style="color: #1e293b;">Sync your data</strong><br>
-            <span style="color: #64748b; font-size: 14px;">Your transactions will be imported automatically</span>
+            <strong style="color: #1e293b;">{{#if isEn}}Subscribe when ready{{else}}Abonnez-vous quand vous êtes prêt{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}Unlock your real financial data{{else}}Débloquez vos vraies données financières{{/if}}</span>
           </td>
         </tr>
       </table>
@@ -59,11 +94,11 @@
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
           <td style="width: 40px; vertical-align: top;">
-            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 50%; text-align: center; line-height: 32px; font-weight: 600; color: #fff;">3</div>
+            <span class="step-circle">3</span>
           </td>
           <td style="padding-left: 16px;">
-            <strong style="color: #1e293b;">Generate your reports</strong><br>
-            <span style="color: #64748b; font-size: 14px;">Balance sheet, income statement, cash flow</span>
+            <strong style="color: #1e293b;">{{#if isEn}}Connect your accounting software{{else}}Connectez votre logiciel comptable{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}QuickBooks, Xero, Sage and more{{else}}QuickBooks, Xero, Sage et plus{{/if}}</span>
           </td>
         </tr>
       </table>
@@ -74,10 +109,15 @@
 <hr class="email-divider">
 
 <p class="email-text" style="font-size: 14px; color: #64748b;">
-  Questions? Our team is here to help.<br>
+  {{#if isEn}}
+    Questions? Our team is here to help.
+  {{else}}
+    Questions? Notre équipe est là pour vous aider.
+  {{/if}}
+  <br>
   <a href="mailto:support@plainledger.ca" style="color: #059669;">support@plainledger.ca</a>
 </p>
 
 <div class="email-signature">
-  <p>Welcome aboard!<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+  <p>{{#if isEn}}Welcome aboard{{else}}Bienvenue à bord{{/if}}!<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
 </div>

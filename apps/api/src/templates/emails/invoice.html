@@ -1,0 +1,166 @@
+<!-- Invoice/Receipt Email Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your PlainLedger Receipt
+  {{else}}
+    Votre reçu PlainLedger
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    Thank you for your payment. Here's your receipt for your records.
+  {{else}}
+    Merci pour votre paiement. Voici votre reçu pour vos dossiers.
+  {{/if}}
+</p>
+
+<!-- Invoice Details -->
+<div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td>
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+                {{#if isEn}}Invoice Number{{else}}Numéro de facture{{/if}}
+              </div>
+              <div style="font-size: 16px; color: #1e293b; font-weight: 600; margin-top: 4px;">{{invoiceNumber}}</div>
+            </td>
+            <td style="text-align: right;">
+              <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+                {{#if isEn}}Date{{else}}Date{{/if}}
+              </div>
+              <div style="font-size: 16px; color: #1e293b; font-weight: 600; margin-top: 4px;">{{invoiceDate}}</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 16px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding: 8px 0; color: #475569;">{{planName}} {{#if isEn}}Subscription{{else}}Abonnement{{/if}}</td>
+            <td style="padding: 8px 0; color: #1e293b; text-align: right;">{{planPrice}}</td>
+          </tr>
+          {{#if additionalItems}}
+          {{#each additionalItems}}
+          <tr>
+            <td style="padding: 8px 0; color: #475569;">{{description}}</td>
+            <td style="padding: 8px 0; color: #1e293b; text-align: right;">{{amount}}</td>
+          </tr>
+          {{/each}}
+          {{/if}}
+          {{#if discount}}
+          <tr>
+            <td style="padding: 8px 0; color: #059669;">{{#if ../isEn}}Discount{{else}}Rabais{{/if}} ({{discountCode}})</td>
+            <td style="padding: 8px 0; color: #059669; text-align: right;">-{{discountAmount}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 16px 0; border-top: 1px solid #e2e8f0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="padding: 4px 0; color: #64748b; font-size: 14px;">{{#if isEn}}Subtotal{{else}}Sous-total{{/if}}</td>
+            <td style="padding: 4px 0; color: #475569; text-align: right; font-size: 14px;">{{subtotal}}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #64748b; font-size: 14px;">{{#if isEn}}GST/HST{{else}}TPS/TVH{{/if}} ({{taxRate}})</td>
+            <td style="padding: 4px 0; color: #475569; text-align: right; font-size: 14px;">{{taxAmount}}</td>
+          </tr>
+          {{#if qstAmount}}
+          <tr>
+            <td style="padding: 4px 0; color: #64748b; font-size: 14px;">{{#if isEn}}QST{{else}}TVQ{{/if}} ({{qstRate}})</td>
+            <td style="padding: 4px 0; color: #475569; text-align: right; font-size: 14px;">{{qstAmount}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding-top: 16px; border-top: 2px solid #059669;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="font-size: 18px; font-weight: 600; color: #1e293b;">{{#if isEn}}Total Paid{{else}}Total payé{{/if}}</td>
+            <td style="font-size: 18px; font-weight: 700; color: #059669; text-align: right;">{{totalAmount}}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Payment Method -->
+<div class="info-box">
+  <strong>{{#if isEn}}Payment Method{{else}}Méthode de paiement{{/if}}</strong>
+  <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b;">
+    {{cardBrand}} •••• {{lastFour}}
+  </p>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{invoiceUrl}}" class="email-button">
+    {{#if isEn}}
+      Download PDF Invoice
+    {{else}}
+      Télécharger la facture PDF
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<!-- Billing Info -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  <tr>
+    <td style="width: 50%; vertical-align: top; padding-right: 16px;">
+      <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+        {{#if isEn}}Billed To{{else}}Facturé à{{/if}}
+      </div>
+      <div style="font-size: 14px; color: #475569;">
+        {{billingName}}<br>
+        {{#if companyName}}{{companyName}}<br>{{/if}}
+        {{billingAddress}}
+      </div>
+    </td>
+    <td style="width: 50%; vertical-align: top; padding-left: 16px;">
+      <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+        {{#if isEn}}From{{else}}De{{/if}}
+      </div>
+      <div style="font-size: 14px; color: #475569;">
+        PlainLedger Inc.<br>
+        Montreal, Quebec<br>
+        Canada<br>
+        GST/HST: {{gstNumber}}
+      </div>
+    </td>
+  </tr>
+</table>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions about your invoice? Contact us at
+  {{else}}
+    Questions sur votre facture? Contactez-nous à
+  {{/if}}
+  <a href="mailto:billing@plainledger.ca" style="color: #059669;">billing@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Thank you for your business{{else}}Merci de votre confiance{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

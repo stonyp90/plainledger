@@ -1,0 +1,197 @@
+<!-- Unlock Real Data - Prompt demo users to subscribe -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Ready to See Your Real Financial Data?
+  {{else}}
+    Prêt à voir vos vraies données financières?
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    You've been exploring PlainLedger with demo data for <strong>{{daysInDemo}} days</strong>. You've seen what's possible — now imagine those insights with your <em>actual</em> numbers.
+  {{else}}
+    Vous explorez PlainLedger avec des données de démonstration depuis <strong>{{daysInDemo}} jours</strong>. Vous avez vu ce qui est possible — maintenant imaginez ces analyses avec vos <em>vrais</em> chiffres.
+  {{/if}}
+</p>
+
+<!-- Demo vs Real comparison -->
+<div style="margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="width: 48%; vertical-align: top;">
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; height: 100%;">
+          <div style="font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+            {{#if isEn}}Demo Mode{{else}}Mode démo{{/if}}
+          </div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding: 6px 0; vertical-align: top; width: 28px;">
+                <span class="tick-icon" style="background: #f1f5f9; color: #94a3b8;">–</span>
+              </td>
+              <td style="padding: 6px 0; padding-left: 8px; color: #94a3b8; font-size: 14px;">{{#if isEn}}Sample data{{else}}Données d'exemple{{/if}}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; vertical-align: top; width: 28px;">
+                <span class="tick-icon" style="background: #f1f5f9; color: #94a3b8;">–</span>
+              </td>
+              <td style="padding: 6px 0; padding-left: 8px; color: #94a3b8; font-size: 14px;">{{#if isEn}}Example reports{{else}}Rapports d'exemple{{/if}}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; vertical-align: top; width: 28px;">
+                <span class="tick-icon" style="background: #f1f5f9; color: #94a3b8;">–</span>
+              </td>
+              <td style="padding: 6px 0; padding-left: 8px; color: #94a3b8; font-size: 14px;">{{#if isEn}}Limited features{{else}}Fonctionnalités limitées{{/if}}</td>
+            </tr>
+          </table>
+        </div>
+      </td>
+      <td style="width: 4%;"></td>
+      <td style="width: 48%; vertical-align: top;">
+        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 2px solid #10b981; border-radius: 12px; padding: 20px; height: 100%;">
+          <div style="font-size: 12px; color: #059669; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; font-weight: 600;">
+            {{#if isEn}}With Subscription{{else}}Avec abonnement{{/if}}
+          </div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding: 6px 0; vertical-align: top; width: 28px;">
+                <span class="tick-icon">✓</span>
+              </td>
+              <td style="padding: 6px 0; padding-left: 8px; color: #047857; font-size: 14px;">{{#if isEn}}Your real data{{else}}Vos vraies données{{/if}}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; vertical-align: top; width: 28px;">
+                <span class="tick-icon">✓</span>
+              </td>
+              <td style="padding: 6px 0; padding-left: 8px; color: #047857; font-size: 14px;">{{#if isEn}}Custom reports{{else}}Rapports personnalisés{{/if}}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; vertical-align: top; width: 28px;">
+                <span class="tick-icon">✓</span>
+              </td>
+              <td style="padding: 6px 0; padding-left: 8px; color: #047857; font-size: 14px;">{{#if isEn}}All features{{else}}Toutes les fonctionnalités{{/if}}</td>
+            </tr>
+          </table>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Your activity -->
+{{#if activityStats}}
+<div class="info-box success">
+  <strong>{{#if isEn}}Your Demo Activity{{else}}Votre activité démo{{/if}}</strong>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
+    <tr>
+      <td style="padding: 4px 0; color: #64748b; width: 180px;">{{#if isEn}}Reports generated{{else}}Rapports générés{{/if}}:</td>
+      <td style="padding: 4px 0; color: #059669; font-weight: 600;">{{activityStats.reportsGenerated}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Features explored{{else}}Fonctionnalités explorées{{/if}}:</td>
+      <td style="padding: 4px 0; color: #059669; font-weight: 600;">{{activityStats.featuresExplored}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Time saved (estimated){{else}}Temps économisé (estimé){{/if}}:</td>
+      <td style="padding: 4px 0; color: #059669; font-weight: 600;">{{activityStats.timeSaved}}</td>
+    </tr>
+  </table>
+</div>
+{{/if}}
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/settings?tab=billing&upgrade=true" class="email-button">
+    {{#if isEn}}
+      Unlock Your Real Data
+    {{else}}
+      Débloquer vos vraies données
+    {{/if}}
+  </a>
+</div>
+
+<!-- Pricing -->
+<p style="text-align: center; font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Starting at <strong style="color: #059669;">${{starterPrice}}/month</strong> • Cancel anytime
+  {{else}}
+    À partir de <strong style="color: #059669;">{{starterPrice}} $/mois</strong> • Annulez à tout moment
+  {{/if}}
+</p>
+
+<hr class="email-divider">
+
+<!-- Quick setup steps -->
+<h2 style="font-size: 16px; color: #1e293b; margin: 24px 0 12px 0;">
+  {{#if isEn}}Get started in 3 minutes{{else}}Démarrez en 3 minutes{{/if}}
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0;">
+  <tr>
+    <td style="padding: 10px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="step-circle">1</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <strong style="color: #1e293b;">{{#if isEn}}Subscribe{{else}}Abonnez-vous{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}Choose the plan that fits{{else}}Choisissez le forfait qui convient{{/if}}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="step-circle">2</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <strong style="color: #1e293b;">{{#if isEn}}Connect{{else}}Connectez{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}Link QuickBooks, Xero, or Sage{{else}}Liez QuickBooks, Xero ou Sage{{/if}}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 10px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="width: 40px; vertical-align: top;">
+            <span class="step-circle">3</span>
+          </td>
+          <td style="padding-left: 12px;">
+            <strong style="color: #1e293b;">{{#if isEn}}Analyze{{else}}Analysez{{/if}}</strong><br>
+            <span style="color: #64748b; font-size: 14px;">{{#if isEn}}Generate reports with your real data{{else}}Générez des rapports avec vos vraies données{{/if}}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions? <a href="mailto:support@plainledger.ca" style="color: #059669;">We're here to help</a>
+  {{else}}
+    Questions? <a href="mailto:support@plainledger.ca" style="color: #059669;">Nous sommes là pour vous aider</a>
+  {{/if}}
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>

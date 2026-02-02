@@ -1,0 +1,76 @@
+<!-- Card Expiring Soon Template -->
+<h1 class="email-title">
+  {{#if isEn}}
+    Your Payment Card is Expiring Soon
+  {{else}}
+    Votre carte de paiement expire bientôt
+  {{/if}}
+</h1>
+
+<p class="email-text">
+  {{#if isEn}}
+    Hi {{firstName}},
+  {{else}}
+    Bonjour {{firstName}},
+  {{/if}}
+</p>
+
+<p class="email-text">
+  {{#if isEn}}
+    The payment card on file for your PlainLedger subscription is expiring soon. Please update your payment method to avoid any service interruption.
+  {{else}}
+    La carte de paiement enregistrée pour votre abonnement PlainLedger expire bientôt. Veuillez mettre à jour votre méthode de paiement pour éviter toute interruption de service.
+  {{/if}}
+</p>
+
+<!-- Card Info -->
+<div class="info-box warning">
+  <strong>{{#if isEn}}Card Expiring{{else}}Carte expirante{{/if}}</strong>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
+    <tr>
+      <td style="padding: 4px 0; color: #64748b; width: 120px;">{{#if isEn}}Card{{else}}Carte{{/if}}:</td>
+      <td style="padding: 4px 0; color: #1e293b;">{{cardBrand}} •••• {{lastFour}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Expires{{else}}Expire{{/if}}:</td>
+      <td style="padding: 4px 0; color: #dc2626; font-weight: 600;">{{expiryDate}}</td>
+    </tr>
+    <tr>
+      <td style="padding: 4px 0; color: #64748b;">{{#if isEn}}Next Charge{{else}}Prochain paiement{{/if}}:</td>
+      <td style="padding: 4px 0; color: #1e293b;">{{nextChargeDate}} ({{nextChargeAmount}})</td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{baseUrl}}/app/settings?tab=billing" class="email-button">
+    {{#if isEn}}
+      Update Payment Method
+    {{else}}
+      Mettre à jour le paiement
+    {{/if}}
+  </a>
+</div>
+
+<hr class="email-divider">
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    If you've already updated your card, please disregard this email.
+  {{else}}
+    Si vous avez déjà mis à jour votre carte, veuillez ignorer ce courriel.
+  {{/if}}
+</p>
+
+<p class="email-text" style="font-size: 14px; color: #64748b;">
+  {{#if isEn}}
+    Questions about billing? Contact us at
+  {{else}}
+    Questions sur la facturation? Contactez-nous à
+  {{/if}}
+  <a href="mailto:billing@plainledger.ca" style="color: #059669;">billing@plainledger.ca</a>
+</p>
+
+<div class="email-signature">
+  <p>{{#if isEn}}Best regards{{else}}Cordialement{{/if}},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+</div>
