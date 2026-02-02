@@ -317,7 +317,9 @@ jobs:
           BODY="PlainLedger ETL Pipeline Failure Alert - Organization: ${{ github.event.inputs.organization_id || 'demo-org' }} - Environment: ${{ env.QUICKBOOKS_ENVIRONMENT }} - Trigger: ${{ github.event_name }} - Run: ${{ github.run_id }} - Failed: ${{ steps.failures.outputs.failed_stages }} - Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
           # Try to send via SES (requires ses:SendEmail permission in IAM role)
+          # SES is configured in us-east-1
           aws ses send-email \
+            --region us-east-1 \
             --from "noreply@plainledger.ca" \
             --destination "ToAddresses=pipelines@plainledger.ca" \
             --message "Subject={Data=\"$SUBJECT\",Charset=UTF-8},Body={Text={Data=\"$BODY\",Charset=UTF-8}}" \
