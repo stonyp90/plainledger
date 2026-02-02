@@ -7,6 +7,14 @@ on:
         description: 'Organization ID to process'
         required: true
         default: 'demo-org'
+      environment:
+        description: 'QuickBooks environment'
+        required: true
+        type: choice
+        options:
+          - sandbox
+          - production
+        default: 'sandbox'
       industry:
         description: 'Industry to sync (or "all" for all industries)'
         required: false
