@@ -60,20 +60,24 @@ jobs:
       - name: Extract QuickBooks data to Bronze
         env:
           # Use sandbox or production credentials based on environment selection
+          # Tokens can also be fetched from AWS Secrets Manager (plainledger/prod/quickbooks)
           QUICKBOOKS_CLIENT_ID: ${{ env.QUICKBOOKS_ENVIRONMENT == 'production' && secrets.QUICKBOOKS_CLIENT_ID || secrets.QUICKBOOKS_SANDBOX_CLIENT_ID }}
           QUICKBOOKS_CLIENT_SECRET: ${{ env.QUICKBOOKS_ENVIRONMENT == 'production' && secrets.QUICKBOOKS_CLIENT_SECRET || secrets.QUICKBOOKS_SANDBOX_CLIENT_SECRET }}
           QUICKBOOKS_REFRESH_TOKEN: ${{ env.QUICKBOOKS_ENVIRONMENT == 'production' && secrets.QUICKBOOKS_REFRESH_TOKEN || secrets.QUICKBOOKS_SANDBOX_REFRESH_TOKEN }}
           QUICKBOOKS_REALM_ID: ${{ env.QUICKBOOKS_ENVIRONMENT == 'production' && secrets.QUICKBOOKS_REALM_ID || secrets.QUICKBOOKS_SANDBOX_REALM_ID }}
           QUICKBOOKS_ENVIRONMENT: ${{ env.QUICKBOOKS_ENVIRONMENT }}
+          QUICKBOOKS_SECRET_NAME: plainledger/prod/quickbooks
+          SECRETS_REGION: ${{ env.AWS_REGION }}
           S3_BUCKET_BRONZE: plainledger-prod-bronze
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
           echo "Running ETL with QuickBooks $QUICKBOOKS_ENVIRONMENT environment"
+          # Note: refresh-token and realm-id can be omitted if stored in Secrets Manager
           python3 pipelines/orchestration/github/etl_runner.py \
             --step extract \
             --organization-id "${{ github.event.inputs.organization_id || 'demo-org' }}" \
-            --refresh-token "$QUICKBOOKS_REFRESH_TOKEN" \
-            --realm-id "$QUICKBOOKS_REALM_ID"
+            ${QUICKBOOKS_REFRESH_TOKEN:+--refresh-token "$QUICKBOOKS_REFRESH_TOKEN"} \
+            ${QUICKBOOKS_REALM_ID:+--realm-id "$QUICKBOOKS_REALM_ID"}
       
       - name: Upload extraction logs
         if: always()

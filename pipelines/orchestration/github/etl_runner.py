@@ -33,6 +33,55 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
+# Secrets Manager configuration
+SECRETS_REGION = os.getenv("SECRETS_REGION", "ca-central-1")
+QUICKBOOKS_SECRET_NAME = os.getenv("QUICKBOOKS_SECRET_NAME", "plainledger/prod/quickbooks")
+
+def get_secrets_client():
+    """Get AWS Secrets Manager client"""
+    return boto3.client("secretsmanager", region_name=SECRETS_REGION)
+
+
+def get_quickbooks_credentials_from_secrets() -> dict:
+    """Fetch QuickBooks credentials from AWS Secrets Manager"""
+    try:
+        client = get_secrets_client()
+        response = client.get_secret_value(SecretId=QUICKBOOKS_SECRET_NAME)
+        return json.loads(response["SecretString"])
+    except ClientError as e:
+        logger.warning(f"Could not fetch QuickBooks credentials from Secrets Manager: {e}")
+        return {}
+
+
+def update_quickbooks_refresh_token(new_refresh_token: str) -> bool:
+    """
+    Update the refresh token in AWS Secrets Manager after a token refresh.
+    This ensures the next pipeline run uses the latest valid token.
+    """
+    try:
+        client = get_secrets_client()
+        
+        # Get current secret
+        response = client.get_secret_value(SecretId=QUICKBOOKS_SECRET_NAME)
+        secret_data = json.loads(response["SecretString"])
+        
+        # Update refresh token
+        secret_data["refresh_token"] = new_refresh_token
+        secret_data["last_refreshed"] = datetime.utcnow().isoformat()
+        
+        # Store updated secret
+        client.put_secret_value(
+            SecretId=QUICKBOOKS_SECRET_NAME,
+            SecretString=json.dumps(secret_data),
+        )
+        
+        logger.info("✅ Updated refresh token in Secrets Manager")
+        return True
+    except ClientError as e:
+        logger.error(f"❌ Failed to update refresh token in Secrets Manager: {e}")
+        return False
+
+
 # Add pipelines to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -213,15 +262,34 @@ async def run_extract_step(
     
     s3_client = get_s3_client()
     
-    # Validate credentials
-    if not os.getenv("QUICKBOOKS_CLIENT_ID") or not os.getenv("QUICKBOOKS_CLIENT_SECRET"):
+    # Get credentials - try Secrets Manager first, then environment variables
+    secrets_creds = get_quickbooks_credentials_from_secrets()
+    
+    client_id = os.getenv("QUICKBOOKS_CLIENT_ID") or secrets_creds.get("client_id")
+    client_secret = os.getenv("QUICKBOOKS_CLIENT_SECRET") or secrets_creds.get("client_secret")
+    
+    # Use provided refresh token, or fall back to Secrets Manager
+    actual_refresh_token = refresh_token or secrets_creds.get("refresh_token")
+    actual_realm_id = realm_id or secrets_creds.get("realm_id")
+    
+    if not client_id or not client_secret:
         raise ValueError("Missing QUICKBOOKS_CLIENT_ID or QUICKBOOKS_CLIENT_SECRET")
+    
+    if not actual_refresh_token:
+        raise ValueError("Missing refresh token - provide via --refresh-token or store in Secrets Manager")
+    
+    # Set environment variables for the extractor
+    os.environ["QUICKBOOKS_CLIENT_ID"] = client_id
+    os.environ["QUICKBOOKS_CLIENT_SECRET"] = client_secret
+    
+    logger.info(f"  Using realm_id: {actual_realm_id}")
+    logger.info(f"  Refresh token source: {'CLI arg' if refresh_token else 'Secrets Manager'}")
     
     # Create OAuth tokens
     tokens = OAuthTokens(
         access_token="",
-        refresh_token=refresh_token,
-        expires_at=datetime.utcnow(),
+        refresh_token=actual_refresh_token,
+        expires_at=datetime.utcnow(),  # Force initial refresh
         token_type="Bearer",
     )
     
@@ -229,7 +297,7 @@ async def run_extract_step(
     extractor = QuickBooksExtractor(
         organization_id=organization_id,
         tokens=tokens,
-        realm_id=realm_id,
+        realm_id=actual_realm_id,
     )
     
     # Entity types to extract
@@ -267,6 +335,12 @@ async def run_extract_step(
             extraction_stats[entity_type.value] = 0
     
     logger.info(f"  ✅ Extraction complete: {extraction_stats}")
+    
+    # Save the refreshed token back to Secrets Manager for future runs
+    # The extractor may have refreshed the token during extraction
+    if extractor.tokens.refresh_token != actual_refresh_token:
+        logger.info("  🔄 Token was refreshed during extraction, saving new token...")
+        update_quickbooks_refresh_token(extractor.tokens.refresh_token)
     
     # Save stats
     with open("extraction_stats.json", "w") as f:
@@ -690,19 +764,18 @@ async def main():
     parser.add_argument("--step", required=True, choices=["extract", "bronze-to-silver", "silver-to-gold"],
                        help="ETL step to run")
     parser.add_argument("--organization-id", default="demo-org", help="Organization ID")
-    parser.add_argument("--refresh-token", help="QuickBooks refresh token (required for extract)")
-    parser.add_argument("--realm-id", help="QuickBooks realm ID (required for extract)")
+    parser.add_argument("--refresh-token", help="QuickBooks refresh token (optional if stored in Secrets Manager)")
+    parser.add_argument("--realm-id", help="QuickBooks realm ID (optional if stored in Secrets Manager)")
     
     args = parser.parse_args()
     
     try:
         if args.step == "extract":
-            if not args.refresh_token or not args.realm_id:
-                raise ValueError("--refresh-token and --realm-id required for extract step")
-            
+            # Refresh token and realm ID can be provided via CLI args or fetched from Secrets Manager
+            # The run_extract_step function handles the fallback logic
             await run_extract_step(
-                refresh_token=args.refresh_token,
-                realm_id=args.realm_id,
+                refresh_token=args.refresh_token or "",
+                realm_id=args.realm_id or "",
                 organization_id=args.organization_id,
             )
             
