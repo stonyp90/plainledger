@@ -71,7 +71,7 @@ interface AccessTokenResponse {
 
 @ApiTags("Power BI Data")
 @ApiBearerAuth()
-@Controller("api/v1/analytics/data")
+@Controller("v1/analytics/data")
 export class BIDataController {
   private readonly logger = new Logger(BIDataController.name);
   private readonly allowedIPs: string[];

@@ -27,9 +27,10 @@ const httpLink = createHttpLink({
 
 // Auth Link - adds the JWT token and CSRF prevention headers to requests
 const authLink = new ApolloLink((operation, forward) => {
-  // Get the authentication token from localStorage or Keycloak
-  const token = localStorage.getItem("kc-token") || 
-                sessionStorage.getItem("kc-token");
+  // Get the authentication token from Keycloak or localStorage
+  // Note: Keycloak stores tokens with underscore (kc_token), not hyphen
+  const token = sessionStorage.getItem("kc_token") || 
+                localStorage.getItem("kc_token");
 
   operation.setContext(({ headers = {} }) => ({
     headers: {
@@ -113,9 +114,9 @@ export const apolloClient = new ApolloClient({
 // Export a function to update the auth token
 export function updateAuthToken(token: string | null): void {
   if (token) {
-    localStorage.setItem("kc-token", token);
+    sessionStorage.setItem("kc_token", token);
   } else {
-    localStorage.removeItem("kc-token");
+    sessionStorage.removeItem("kc_token");
   }
   
   // Clear the Apollo cache to refetch with new auth
@@ -124,6 +125,8 @@ export function updateAuthToken(token: string | null): void {
 
 // Export a function to reset the client (for logout)
 export function resetApolloClient(): Promise<unknown[]> {
-  localStorage.removeItem("kc-token");
+  sessionStorage.removeItem("kc_token");
+  sessionStorage.removeItem("kc_refresh_token");
+  sessionStorage.removeItem("kc_id_token");
   return apolloClient.resetStore();
 }

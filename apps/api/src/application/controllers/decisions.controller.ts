@@ -31,7 +31,7 @@ import {
   DECISION_REPOSITORY_TOKEN,
 } from "../ports/outbound/IDecisionRepository";
 
-@Controller("api/v1/decisions")
+@Controller("v1/decisions")
 @UseGuards(JwtAuthGuard)
 export class DecisionsController {
   constructor(

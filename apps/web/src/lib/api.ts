@@ -33,8 +33,8 @@ export interface RequestOptions extends RequestInit {
   timeout?: number;
 }
 
-// Storage keys
-const TOKEN_KEY = 'plainledger-auth-token';
+// Storage keys (Keycloak stores token as kc_token in sessionStorage)
+const TOKEN_KEY = 'kc_token';
 const TENANT_KEY = 'plainledger-current-tenant';
 
 // API Error class
@@ -95,12 +95,12 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
 
 // Get auth token
 function getAuthToken(): string | null {
-  // Try to get from Keycloak first (if available)
+  // Try to get from Keycloak instance first (if available)
   if (typeof window !== 'undefined' && (window as unknown as { keycloak?: { token?: string } }).keycloak?.token) {
     return (window as unknown as { keycloak: { token: string } }).keycloak.token;
   }
-  // Fall back to localStorage
-  return localStorage.getItem(TOKEN_KEY);
+  // Fall back to sessionStorage where Keycloak stores tokens
+  return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
 }
 
 // Get current tenant ID

@@ -597,7 +597,7 @@ resource "aws_ecs_task_definition" "web" {
       ]
 
       environment = [
-        { name = "VITE_API_URL", value = "https://${var.domain_name}/api" },
+        { name = "VITE_API_URL", value = "https://${var.domain_name}" },
         { name = "VITE_GRAPHQL_URL", value = "https://${var.domain_name}/graphql" },
         { name = "VITE_KEYCLOAK_URL", value = "https://auth.${var.domain_name}" },
         { name = "VITE_KEYCLOAK_REALM", value = "plainledger" },

@@ -152,7 +152,7 @@ const mockConnections: ConnectionSyncStatusDto[] = [
 
 @ApiTags("Sync Admin")
 @ApiBearerAuth()
-@Controller("api/admin/sync")
+@Controller("admin/sync")
 @UseGuards(CPAAdminGuard)
 @Roles({ roles: ["plainledger_cpa_admin"] })
 export class SyncAdminController {

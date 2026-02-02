@@ -18,7 +18,7 @@ class CategorizeAccountDto {
  * Similarity Search Controller
  * Provides semantic search endpoints using pgvector
  */
-@Controller("api/v1/similarity")
+@Controller("v1/similarity")
 @ApiTags("similarity")
 @ApiBearerAuth()
 export class SimilarityController {

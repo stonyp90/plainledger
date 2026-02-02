@@ -17,12 +17,12 @@ export interface UploadResult {
  * Get auth token from Keycloak
  */
 function getAuthToken(): string | null {
-  // Try to get from Keycloak first (if available)
+  // Try to get from Keycloak instance first (if available)
   if (typeof window !== 'undefined' && (window as unknown as { keycloak?: { token?: string } }).keycloak?.token) {
     return (window as unknown as { keycloak: { token: string } }).keycloak.token;
   }
-  // Fall back to localStorage
-  return localStorage.getItem('plainledger-auth-token');
+  // Fall back to sessionStorage where Keycloak stores tokens
+  return sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token');
 }
 
 /**

@@ -106,7 +106,7 @@ setInterval(() => {
 
 @ApiTags("Data Sources")
 @ApiBearerAuth()
-@Controller("api/datasources")
+@Controller("datasources")
 export class DataSourceController {
   private readonly logger = new Logger(DataSourceController.name);
   private readonly quickbooksService: QuickBooksService;

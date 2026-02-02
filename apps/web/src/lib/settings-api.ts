@@ -28,11 +28,10 @@ async function getAuthHeaders(): Promise<HeadersInit> {
       }
     }
     
-    // Fallback: Check localStorage/sessionStorage (for compatibility)
+    // Fallback: Check sessionStorage (where Keycloak stores tokens)
     if (!token) {
-      token = localStorage.getItem('keycloak-token') || 
-              sessionStorage.getItem('keycloak-token') ||
-              localStorage.getItem('plainledger-auth-token') ||
+      token = sessionStorage.getItem('kc_token') || 
+              localStorage.getItem('kc_token') ||
               undefined;
     }
   }

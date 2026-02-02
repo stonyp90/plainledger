@@ -231,8 +231,13 @@ class SecretsService {
    * Get authorization header for API requests
    */
   private async getAuthHeader(): Promise<Record<string, string>> {
-    // In production, get JWT token from Keycloak
-    const token = localStorage.getItem('auth_token') || '';
+    // Get JWT token from Keycloak (window.keycloak or sessionStorage)
+    let token = '';
+    if (typeof window !== 'undefined' && (window as unknown as { keycloak?: { token?: string } }).keycloak?.token) {
+      token = (window as unknown as { keycloak: { token: string } }).keycloak.token;
+    } else {
+      token = sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token') || '';
+    }
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',

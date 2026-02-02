@@ -34,7 +34,7 @@ export const connectedDataSources: Array<{
 }> = [];
 
 @ApiTags("OAuth")
-@Controller("api/v1/datasources/oauth")
+@Controller("v1/datasources/oauth")
 export class OAuthCallbackController {
   private readonly logger = new Logger(OAuthCallbackController.name);
   private readonly quickbooksService: QuickBooksService;
