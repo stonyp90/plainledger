@@ -369,7 +369,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     DataRetentionJob,
     TaxCreditSyncJob,
     S3CleanupAdapter,
-    BenchmarkRefreshService,
+    // BenchmarkRefreshService - disabled until IndustryBenchmarkEntity is registered
     JobConfigurationService,
     {
       provide: "IPowerBIAdapter",
@@ -398,7 +398,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     FinancialResolver,
     OrganizationResolver,
     DataSourceResolver,
-    MarketAnalysisResolver,
+    // MarketAnalysisResolver - disabled until BenchmarkRefreshService is fixed
     TaxCreditResolver,
     ETLSubscriptionResolver,
     AccountBalanceSubscriptionResolver,
