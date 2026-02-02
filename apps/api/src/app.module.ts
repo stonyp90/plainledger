@@ -113,6 +113,7 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
 // Journey Tracking
 import { JourneyTrackingService } from "@application/services/journey-tracking.service";
 import { CustomerJourneyJob } from "@infrastructure/jobs/customer-journey.job";
+import { DataRetentionJob } from "@infrastructure/jobs/data-retention.job";
 
 // MongoDB (Analytics & Audit)
 import {
@@ -347,6 +348,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     DocumentShareService,
     JourneyTrackingService,
     CustomerJourneyJob,
+    DataRetentionJob,
     {
       provide: "IPowerBIAdapter",
       useClass: PowerBIAdapter,
