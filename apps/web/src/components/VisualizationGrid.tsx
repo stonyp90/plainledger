@@ -24,6 +24,7 @@ interface VisualizationGridProps {
   onReorder?: (newOrder: string[]) => void;
   onRemove?: (id: string) => void;
   canCustomize?: boolean;
+  /** @deprecated Use CSS to control chart heights instead */
   minHeight?: number;
   className?: string;
 }
@@ -33,7 +34,7 @@ export default function VisualizationGrid({
   onReorder,
   onRemove,
   canCustomize = false,
-  minHeight = 380,
+  minHeight: _minHeight, // Deprecated - charts control their own height
   className = '',
 }: VisualizationGridProps) {
   const { language } = useI18n();
@@ -136,13 +137,7 @@ export default function VisualizationGrid({
     <div className={`space-y-3 ${className}`}>
       {/* Half-width items in 2-column grid */}
       {halfWidthItems.length > 0 && (
-        <div 
-          className="grid grid-cols-1 lg:grid-cols-2 gap-3"
-          style={{
-            // Ensure equal heights for all items in the grid
-            gridAutoRows: `minmax(${minHeight}px, auto)`,
-          }}
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {halfWidthItems.map((item) => {
             const isDragging = draggedId === item.id;
             const isDragOver = dragOverId === item.id;
@@ -152,7 +147,7 @@ export default function VisualizationGrid({
             return (
               <div
                 key={item.id}
-                className={`relative group transition-all duration-150 h-full ${
+                className={`relative group transition-all duration-150 ${
                   isDragging ? 'opacity-40 scale-[0.98]' : ''
                 }`}
                 draggable={canCustomize}
@@ -227,8 +222,8 @@ export default function VisualizationGrid({
                   </div>
                 )}
                 
-                {/* Chart content - fills grid cell */}
-                <div className="h-full">
+                {/* Chart content */}
+                <div>
                   {item.component}
                 </div>
               </div>

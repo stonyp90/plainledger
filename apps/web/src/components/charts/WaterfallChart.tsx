@@ -358,7 +358,7 @@ export default function WaterfallChart({
     <div 
       ref={chartRef}
       className={`rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group flex flex-col ${
-        isFullscreen ? 'fixed inset-0 overflow-auto' : 'h-full'
+        isFullscreen ? 'fixed inset-0 overflow-auto' : ''
       }`}
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',

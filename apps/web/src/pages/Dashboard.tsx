@@ -27,7 +27,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Tooltip } from '../components/Tooltip';
+import { Tooltip, ActionTooltip } from '../components/Tooltip';
 import { TrendChart, WaterfallChart } from '../components/charts';
 import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
 import KPICard from '../components/KPICard';
@@ -581,10 +581,12 @@ export default function Dashboard() {
     }
 
     // Visualizations Section - Groups all charts together with equal heights
+    // Built-in charts always show when data is available (not dependent on widget visibility)
+    // Only custom charts use isWidgetVisible for user control
     const visualizationItems: { id: string; component: React.ReactNode; size: 'half' | 'full' }[] = [];
     
-    // Cash Flow Chart (left side)
-    if (hasCashFlowTrends && cashFlowData.length > 0 && isWidgetVisible('cashflow-chart')) {
+    // Cash Flow Chart (left side) - always show when data available
+    if (hasCashFlowTrends && cashFlowData.length > 0) {
       visualizationItems.push({
         id: 'cashflow-chart',
         size: 'half',
@@ -608,7 +610,7 @@ export default function Dashboard() {
                   : `Full year (${cashFlowData.length} months)`
             }
             color="rgb(var(--color-primary-500))"
-            height={280}
+            height={220}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             showVarianceShading={ibcsMode}
@@ -624,8 +626,8 @@ export default function Dashboard() {
       });
     }
 
-    // Revenue Chart (right side)
-    if (hasRevenueTrends && revenueData.length > 0 && isWidgetVisible('revenue-chart')) {
+    // Revenue Chart (right side) - always show when data available
+    if (hasRevenueTrends && revenueData.length > 0) {
       visualizationItems.push({
         id: 'revenue-chart',
         size: 'half',
@@ -651,7 +653,7 @@ export default function Dashboard() {
             budget={revenueBudget}
             planData={revenuePlanData}
             color="rgb(var(--color-primary-500))"
-            height={280}
+            height={220}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             showVarianceShading={ibcsMode}
@@ -668,8 +670,8 @@ export default function Dashboard() {
       });
     }
 
-    // Cash Flow Waterfall (full width)
-    if (cashFlowWaterfallData && cashFlowWaterfallData.length > 0 && isWidgetVisible('cashflow-waterfall')) {
+    // Cash Flow Waterfall (full width) - always show when data available
+    if (cashFlowWaterfallData && cashFlowWaterfallData.length > 0) {
       visualizationItems.push({
         id: 'cashflow-waterfall',
         size: 'full',
@@ -681,7 +683,7 @@ export default function Dashboard() {
             subtitle={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', isEn)}
             subtitleEn={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', true)}
             isEn={language === 'en'}
-            height={280}
+            height={220}
             ibcsMode={ibcsMode}
             showIBCSLegend={ibcsMode}
             chartId="dashboard-cashflow-waterfall"
@@ -754,7 +756,6 @@ export default function Dashboard() {
             <VisualizationGrid
               items={visualizationItems}
               canCustomize={canCustomize}
-              minHeight={340}
               onReorder={(newOrder) => {
                 // Reorder visualizations
                 const allIds = widgetConfigs.map(w => w.id);
@@ -783,15 +784,116 @@ export default function Dashboard() {
         priority: 4,
         gridSpan: 'full',
       });
-    } else if (canCustomize) {
-      // Show Add Widget card if no visualizations but user can customize
+    } else {
+      // Always show Visualizations section with industry-specific guidance
+      const industry = currentTenant?.industry || 'real_estate';
+      const industryCharts = getIndustryDefaultCharts(industry, isEn);
+      
       sections.push({
-        id: 'add-widget',
+        id: 'visualizations-empty',
         component: (
-          <AddWidgetCard onClick={() => setShowChartGallery(true)} />
+          <div className="space-y-4">
+            {/* Section header */}
+            <div className="flex items-center justify-between">
+              <h2 
+                className="text-sm font-semibold uppercase tracking-wider"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn ? 'Visualizations' : 'Visualisations'}
+              </h2>
+              <Link
+                to="/app/visualizations"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                style={{
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                }}
+              >
+                <BarChart2 className="w-3.5 h-3.5" />
+                {isEn ? 'Create Charts' : 'Créer des graphiques'}
+              </Link>
+            </div>
+            
+            {/* Empty state with industry guidance */}
+            <div 
+              className="rounded-xl border-2 border-dashed p-6"
+              style={{ 
+                borderColor: 'rgb(var(--color-border))',
+                backgroundColor: 'rgb(var(--color-surface-elevated))',
+              }}
+            >
+              <div className="text-center max-w-md mx-auto">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <BarChart2 className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                </div>
+                
+                <h3 className="text-lg font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn 
+                    ? `${getIndustryName(industry, isEn)} Dashboard` 
+                    : `Tableau de bord ${getIndustryName(industry, isEn)}`}
+                </h3>
+                
+                <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn 
+                    ? 'Connect your accounting software or create custom visualizations to see your financial data here.'
+                    : 'Connectez votre logiciel comptable ou créez des visualisations personnalisées pour voir vos données financières ici.'}
+                </p>
+                
+                {/* Industry-specific chart suggestions */}
+                <div className="mb-4">
+                  <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Suggested charts for your industry:' : 'Graphiques suggérés pour votre industrie:'}
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {industryCharts.slice(0, 4).map((chart, i) => (
+                      <span 
+                        key={i}
+                        className="px-2 py-1 rounded-md text-xs"
+                        style={{ 
+                          backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                          color: 'rgb(var(--color-primary-500))',
+                        }}
+                      >
+                        {chart}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  <Link
+                    to="/app/visualizations"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-primary-500))',
+                      color: 'white',
+                    }}
+                  >
+                    <BarChart2 className="w-4 h-4" />
+                    {isEn ? 'Build Custom Dashboard' : 'Créer un tableau de bord'}
+                  </Link>
+                  <Link
+                    to="/app/connections"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border"
+                    style={{
+                      borderColor: 'rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))',
+                    }}
+                  >
+                    <Link2 className="w-4 h-4" />
+                    {isEn ? 'Connect Data Source' : 'Connecter une source'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
         ),
         priority: 4,
-        gridSpan: 'half',
+        gridSpan: 'full',
       });
     }
 
@@ -841,6 +943,10 @@ export default function Dashboard() {
     const visibleSections = sections.filter(section => {
       // Add Widget card is always visible if user can customize
       if (section.id === 'add-widget') return true;
+      // Visualizations section is always visible (it has its own internal filtering)
+      if (section.id === 'visualizations' || section.id === 'visualizations-empty') return true;
+      // No-anomalies state is always visible when present
+      if (section.id === 'no-anomalies') return true;
       return isWidgetVisible(section.id);
     });
 
@@ -1007,81 +1113,141 @@ export default function Dashboard() {
                   isEn={isEn}
                 />
                 
-                {/* Lock/Unlock Dashboard - Only show if user has permission */}
+                {/* Lock/Unlock Dashboard - Prevents move/delete on graphs */}
                 {hasCustomizePermission && (
-                  <button
-                    onClick={() => {
-                      const newLocked = toggleDashboardLock();
-                      toast.show(
-                        newLocked 
-                          ? (isEn ? 'Dashboard locked' : 'Tableau de bord verrouillé')
-                          : (isEn ? 'Dashboard unlocked' : 'Tableau de bord déverrouillé'),
-                        'success'
-                      );
-                    }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border"
-                    style={{
-                      backgroundColor: isDashboardLocked 
-                        ? 'rgb(var(--color-warning) / 0.1)' 
-                        : 'rgb(var(--color-surface))',
-                      borderColor: isDashboardLocked 
-                        ? 'rgb(var(--color-warning) / 0.3)' 
-                        : 'rgb(var(--color-border))',
-                      color: isDashboardLocked 
-                        ? 'rgb(var(--color-warning))' 
-                        : 'rgb(var(--color-text-muted))',
-                    }}
-                    title={isDashboardLocked 
-                      ? (isEn ? 'Unlock to enable customization' : 'Déverrouiller pour personnaliser')
-                      : (isEn ? 'Lock to prevent changes' : 'Verrouiller pour empêcher les modifications')
+                  <ActionTooltip
+                    content={
+                      <div>
+                        <p className="font-medium text-xs mb-1">
+                          {isDashboardLocked 
+                            ? (isEn ? 'Dashboard Locked' : 'Tableau verrouillé')
+                            : (isEn ? 'Lock Dashboard' : 'Verrouiller')
+                          }
+                        </p>
+                        <p className="text-xs opacity-70">
+                          {isDashboardLocked 
+                            ? (isEn 
+                                ? 'Click to unlock. Move and delete controls are hidden on charts.' 
+                                : 'Cliquer pour déverrouiller. Les contrôles de déplacement et suppression sont masqués.')
+                            : (isEn 
+                                ? 'Lock to hide move and delete controls on charts.' 
+                                : 'Verrouiller pour masquer les contrôles de déplacement et suppression.')
+                          }
+                        </p>
+                      </div>
                     }
+                    position="bottom"
+                    maxWidth={220}
                   >
-                    {isDashboardLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                    <span className="hidden sm:inline">
-                      {isDashboardLocked 
-                        ? (isEn ? 'Locked' : 'Verrouillé') 
-                        : (isEn ? 'Lock' : 'Verrouiller')
-                      }
-                    </span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        const newLocked = toggleDashboardLock();
+                        toast.success(
+                          newLocked 
+                            ? (isEn ? 'Dashboard locked' : 'Tableau verrouillé')
+                            : (isEn ? 'Dashboard unlocked' : 'Tableau déverrouillé'),
+                          newLocked 
+                            ? (isEn ? 'Move and delete controls are hidden' : 'Contrôles de déplacement et suppression masqués')
+                            : (isEn ? 'Editing enabled' : 'Modification activée')
+                        );
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border"
+                      style={{
+                        backgroundColor: isDashboardLocked 
+                          ? 'rgb(var(--color-warning) / 0.1)' 
+                          : 'rgb(var(--color-surface))',
+                        borderColor: isDashboardLocked 
+                          ? 'rgb(var(--color-warning) / 0.3)' 
+                          : 'rgb(var(--color-border))',
+                        color: isDashboardLocked 
+                          ? 'rgb(var(--color-warning))' 
+                          : 'rgb(var(--color-text-muted))',
+                      }}
+                    >
+                      {isDashboardLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                      <span className="hidden sm:inline">
+                        {isDashboardLocked 
+                          ? (isEn ? 'Locked' : 'Verrouillé') 
+                          : (isEn ? 'Lock' : 'Verrouiller')
+                        }
+                      </span>
+                    </button>
+                  </ActionTooltip>
                 )}
                 
-                {/* Reset to Defaults - Only show if user can customize */}
+                {/* Reset to Defaults - Restores industry default dashboard */}
                 {canCustomize && (
+                  <ActionTooltip
+                    content={
+                      <div>
+                        <p className="font-medium text-xs mb-1">{isEn ? 'Reset Dashboard' : 'Réinitialiser'}</p>
+                        <p className="text-xs opacity-70">
+                          {isEn 
+                            ? 'Restore default industry dashboard layout and widgets.'
+                            : 'Restaurer la disposition et les widgets par défaut de l\'industrie.'}
+                        </p>
+                      </div>
+                    }
+                    position="bottom"
+                    maxWidth={200}
+                  >
+                    <button
+                      onClick={() => {
+                        resetToDefaults();
+                        toast.success(
+                          isEn ? 'Dashboard reset' : 'Tableau réinitialisé',
+                          isEn ? 'Restored to industry defaults' : 'Restauré aux valeurs par défaut de l\'industrie'
+                        );
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-surface))',
+                        borderColor: 'rgb(var(--color-border))',
+                        color: 'rgb(var(--color-text-muted))',
+                      }}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{isEn ? 'Reset' : 'Réinit.'}</span>
+                    </button>
+                  </ActionTooltip>
+                )}
+                
+                {/* Charts Dropdown - Add existing or create new */}
+                <ChartActionsDropdown
+                  isEn={isEn}
+                  onAddExisting={() => setShowChartGallery(true)}
+                  canCustomize={canCustomize}
+                />
+                
+                {/* Refresh - Data sync (once daily, can trigger hourly) */}
+                <ActionTooltip
+                  content={
+                    <div>
+                      <p className="font-medium text-xs mb-1">{isEn ? 'Sync Data' : 'Synchroniser les données'}</p>
+                      <p className="text-xs opacity-70">
+                        {isEn 
+                          ? 'Data syncs daily. Manual refresh available once per hour.'
+                          : 'Synchronisation quotidienne. Actualisation manuelle possible toutes les heures.'}
+                      </p>
+                    </div>
+                  }
+                  position="bottom"
+                  maxWidth={220}
+                >
                   <button
-                    onClick={() => {
-                      resetToDefaults();
-                      toast.show(
-                        isEn ? 'Dashboard reset to defaults' : 'Tableau de bord réinitialisé',
-                        'success'
-                      );
-                    }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
+                    onClick={handleRefresh}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
                     style={{
                       backgroundColor: 'rgb(var(--color-surface))',
                       borderColor: 'rgb(var(--color-border))',
                       color: 'rgb(var(--color-text-muted))',
                     }}
+                    disabled={isRefreshing}
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">{isEn ? 'Reset' : 'Réinit.'}</span>
+                    <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">{isEn ? 'Refresh' : 'Actualiser'}</span>
                   </button>
-                )}
-                
-                {/* Refresh */}
-                <button
-                  onClick={handleRefresh}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
-                  style={{
-                    backgroundColor: 'rgb(var(--color-surface))',
-                    borderColor: 'rgb(var(--color-border))',
-                    color: 'rgb(var(--color-text-muted))',
-                  }}
-                  disabled={isRefreshing}
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">{isEn ? 'Refresh' : 'Actualiser'}</span>
-                </button>
+                </ActionTooltip>
               </div>
             </div>
             
@@ -1124,14 +1290,15 @@ export default function Dashboard() {
           hasAttention={analysis.summary.critical > 0}
         />
         <QuickAction
-          to="/app/reports/balance-sheet"
-          icon={<FileText className="w-5 h-5" />}
-          title={t('dashboard.quickActions.balanceSheet')}
-          subtitle={t('dashboard.quickActions.financialStatement')}
+          to="/app/visualizations"
+          icon={<BarChart2 className="w-5 h-5" />}
+          title={isEn ? 'Visualizations' : 'Visualisations'}
+          subtitle={isEn ? 'Create custom charts' : 'Créer des graphiques'}
+          isPrimary
         />
         <QuickAction
           to="/app/reports"
-          icon={<BarChart2 className="w-5 h-5" />}
+          icon={<FileText className="w-5 h-5" />}
           title={t('dashboard.quickActions.reports')}
           subtitle={t('dashboard.quickActions.allReports')}
         />
@@ -1438,22 +1605,23 @@ interface QuickActionProps {
   title: string;
   subtitle: string;
   hasAttention?: boolean;
+  isPrimary?: boolean;
 }
 
-function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionProps) {
+function QuickAction({ to, icon, title, subtitle, hasAttention, isPrimary }: QuickActionProps) {
   return (
     <Link
       to={to}
       className="relative overflow-hidden rounded-lg sm:rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] group"
       style={{ 
-        backgroundColor: 'rgb(var(--color-surface))',
-        border: `1px solid ${hasAttention ? 'rgb(var(--color-error) / 0.4)' : 'rgb(var(--color-border))'}`,
+        backgroundColor: isPrimary ? 'rgb(var(--color-primary-500) / 0.05)' : 'rgb(var(--color-surface))',
+        border: `1px solid ${hasAttention ? 'rgb(var(--color-error) / 0.4)' : isPrimary ? 'rgb(var(--color-primary-500) / 0.3)' : 'rgb(var(--color-border))'}`,
       }}
     >
       {/* Hover background overlay */}
       <div 
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+        style={{ backgroundColor: isPrimary ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))' }}
       />
       <div className="relative flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 lg:p-4">
         <div 
@@ -1461,10 +1629,14 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
           style={{ 
             backgroundColor: hasAttention 
               ? 'rgb(var(--color-error) / 0.1)' 
-              : 'rgb(var(--color-primary-500) / 0.1)',
+              : isPrimary
+                ? 'rgb(var(--color-primary-500))'
+                : 'rgb(var(--color-primary-500) / 0.1)',
             color: hasAttention 
               ? 'rgb(var(--color-error))' 
-              : 'rgb(var(--color-primary-500))'
+              : isPrimary
+                ? 'white'
+                : 'rgb(var(--color-primary-500))'
           }}
         >
           <span className="[&>svg]:w-3.5 [&>svg]:h-3.5 sm:[&>svg]:w-4 sm:[&>svg]:h-4 lg:[&>svg]:w-5 lg:[&>svg]:h-5">{icon}</span>
@@ -1583,6 +1755,116 @@ function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodF
               </button>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================
+// CHART ACTIONS DROPDOWN
+// =====================================================
+
+interface ChartActionsDropdownProps {
+  isEn: boolean;
+  onAddExisting: () => void;
+  canCustomize: boolean;
+}
+
+function ChartActionsDropdown({ isEn, onAddExisting, canCustomize }: ChartActionsDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95"
+        style={{
+          backgroundColor: 'rgb(var(--color-primary-500))',
+          color: 'white',
+        }}
+      >
+        <BarChart2 className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">{isEn ? 'Charts' : 'Graphiques'}</span>
+        <ChevronDown 
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div 
+          className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[200px] animate-in fade-in slide-in-from-top-1 duration-150"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+            boxShadow: '0 4px 12px rgb(0 0 0 / 0.15)',
+          }}
+        >
+          {/* Add existing chart to dashboard */}
+          {canCustomize && (
+            <button
+              onClick={() => {
+                onAddExisting();
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium transition-colors text-left hover:bg-[rgb(var(--color-bg-muted))]"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              <div 
+                className="w-7 h-7 rounded-md flex items-center justify-center"
+                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+              >
+                <BarChart2 className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              </div>
+              <div>
+                <span>{isEn ? 'Add to Dashboard' : 'Ajouter au tableau'}</span>
+                <p className="text-[10px] mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'Choose from gallery' : 'Choisir de la galerie'}
+                </p>
+              </div>
+            </button>
+          )}
+
+          {/* Divider */}
+          {canCustomize && (
+            <div 
+              className="mx-3 my-1 border-t"
+              style={{ borderColor: 'rgb(var(--color-border))' }}
+            />
+          )}
+
+          {/* Create new visualization */}
+          <Link
+            to="/app/visualizations"
+            onClick={() => setIsOpen(false)}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium transition-colors text-left hover:bg-[rgb(var(--color-bg-muted))]"
+            style={{ color: 'rgb(var(--color-text))' }}
+          >
+            <div 
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+            >
+              <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+            </div>
+            <div>
+              <span>{isEn ? 'Create New Chart' : 'Créer un graphique'}</span>
+              <p className="text-[10px] mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Open chart builder' : 'Ouvrir le constructeur'}
+              </p>
+            </div>
+          </Link>
         </div>
       )}
     </div>
@@ -1731,6 +2013,95 @@ function getIndustryChartSubtitle(industry: string, isEn: boolean): string {
   };
   
   return subtitles[industry]?.[isEn ? 'en' : 'fr'] || subtitles.real_estate[isEn ? 'en' : 'fr'];
+}
+
+/**
+ * Get industry display name
+ */
+function getIndustryName(industry: string, isEn: boolean): string {
+  const names: Record<string, { en: string; fr: string }> = {
+    real_estate: { en: 'Real Estate', fr: 'Immobilier' },
+    restaurant: { en: 'Restaurant', fr: 'Restaurant' },
+    hospitality: { en: 'Hospitality', fr: 'Hôtellerie' },
+    retail: { en: 'Retail', fr: 'Commerce de détail' },
+    construction: { en: 'Construction', fr: 'Construction' },
+    professional_services: { en: 'Professional Services', fr: 'Services professionnels' },
+    manufacturing: { en: 'Manufacturing', fr: 'Fabrication' },
+    agriculture: { en: 'Agriculture', fr: 'Agriculture' },
+    transport: { en: 'Transport', fr: 'Transport' },
+    healthcare: { en: 'Healthcare', fr: 'Santé' },
+    education: { en: 'Education', fr: 'Éducation' },
+    wholesale: { en: 'Wholesale', fr: 'Commerce de gros' },
+    automotive: { en: 'Automotive', fr: 'Automobile' },
+    beauty_wellness: { en: 'Beauty & Wellness', fr: 'Beauté & Bien-être' },
+  };
+  return names[industry]?.[isEn ? 'en' : 'fr'] || names.real_estate[isEn ? 'en' : 'fr'];
+}
+
+/**
+ * Get default chart suggestions for each industry
+ */
+function getIndustryDefaultCharts(industry: string, isEn: boolean): string[] {
+  const chartSuggestions: Record<string, { en: string[]; fr: string[] }> = {
+    real_estate: {
+      en: ['Rental Income Trend', 'Occupancy Rate', 'NOI by Property', 'Operating Expenses', 'Cap Rate Analysis'],
+      fr: ['Tendance des revenus locatifs', 'Taux d\'occupation', 'NOI par propriété', 'Dépenses d\'exploitation', 'Analyse du taux de capitalisation'],
+    },
+    restaurant: {
+      en: ['Daily Sales', 'Food Cost %', 'Labor Cost %', 'Revenue by Day', 'Inventory Turnover'],
+      fr: ['Ventes quotidiennes', 'Coût alimentaire %', 'Coût main-d\'œuvre %', 'Revenus par jour', 'Rotation des stocks'],
+    },
+    hospitality: {
+      en: ['RevPAR Trend', 'Occupancy Rate', 'ADR Analysis', 'Revenue by Channel', 'GOP Margin'],
+      fr: ['Tendance RevPAR', 'Taux d\'occupation', 'Analyse ADR', 'Revenus par canal', 'Marge GOP'],
+    },
+    retail: {
+      en: ['Sales Trend', 'Inventory Turnover', 'Gross Margin', 'Sales per Sqft', 'Customer Traffic'],
+      fr: ['Tendance des ventes', 'Rotation des stocks', 'Marge brute', 'Ventes par m²', 'Trafic client'],
+    },
+    construction: {
+      en: ['Project Revenue', 'Job Costing', 'Backlog Analysis', 'Equipment Utilization', 'Gross Profit by Job'],
+      fr: ['Revenus projets', 'Coûts par projet', 'Analyse du carnet', 'Utilisation équipement', 'Profit brut par projet'],
+    },
+    professional_services: {
+      en: ['Billable Hours', 'Utilization Rate', 'Revenue per FTE', 'Realization Rate', 'Project Profitability'],
+      fr: ['Heures facturables', 'Taux d\'utilisation', 'Revenus par ETP', 'Taux de réalisation', 'Rentabilité projet'],
+    },
+    manufacturing: {
+      en: ['Production Output', 'OEE', 'Cost per Unit', 'Inventory Levels', 'Quality Rate'],
+      fr: ['Production', 'TRS', 'Coût par unité', 'Niveaux de stock', 'Taux de qualité'],
+    },
+    agriculture: {
+      en: ['Crop Yield', 'Revenue per Acre', 'Input Costs', 'Equipment Costs', 'Seasonal Trends'],
+      fr: ['Rendement des cultures', 'Revenus par acre', 'Coûts des intrants', 'Coûts équipement', 'Tendances saisonnières'],
+    },
+    transport: {
+      en: ['Revenue per Mile', 'Fuel Costs', 'Fleet Utilization', 'On-Time Delivery', 'Load Factor'],
+      fr: ['Revenus par km', 'Coûts carburant', 'Utilisation flotte', 'Livraison à temps', 'Facteur de charge'],
+    },
+    healthcare: {
+      en: ['Patient Revenue', 'Bed Occupancy', 'Cost per Patient', 'Staff Productivity', 'AR Days'],
+      fr: ['Revenus patients', 'Occupation des lits', 'Coût par patient', 'Productivité du personnel', 'Jours AR'],
+    },
+    education: {
+      en: ['Enrollment Trend', 'Revenue per Student', 'Cost per Student', 'Retention Rate', 'Program Mix'],
+      fr: ['Tendance inscriptions', 'Revenus par étudiant', 'Coût par étudiant', 'Taux de rétention', 'Mix programmes'],
+    },
+    wholesale: {
+      en: ['Sales Volume', 'Gross Margin', 'Inventory Turnover', 'Customer Concentration', 'Order Fulfillment'],
+      fr: ['Volume des ventes', 'Marge brute', 'Rotation des stocks', 'Concentration clients', 'Exécution des commandes'],
+    },
+    automotive: {
+      en: ['Units Sold', 'Gross per Unit', 'Service Revenue', 'F&I Income', 'Inventory Days'],
+      fr: ['Unités vendues', 'Marge par unité', 'Revenus service', 'Revenus F&I', 'Jours de stock'],
+    },
+    beauty_wellness: {
+      en: ['Service Revenue', 'Client Retention', 'Revenue per Chair', 'Product Sales', 'Booking Rate'],
+      fr: ['Revenus services', 'Rétention clients', 'Revenus par chaise', 'Ventes produits', 'Taux de réservation'],
+    },
+  };
+  
+  return chartSuggestions[industry]?.[isEn ? 'en' : 'fr'] || chartSuggestions.real_estate[isEn ? 'en' : 'fr'];
 }
 
 // =====================================================

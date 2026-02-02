@@ -344,7 +344,7 @@ function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
   const chartTypes: ChartType[] = ['line', 'bar', 'area', 'pie', 'donut', 'waterfall', 'gauge', 'radar', 'heatmap', 'table', 'gantt', 'runway', 'scenario', 'burnRate', 'cashForecast'];
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-5 gap-3 overflow-visible">
       {chartTypes.map((type) => {
         const info = CHART_TYPE_INFO[type];
         const Icon = ChartTypeIcon[type];
@@ -355,7 +355,7 @@ function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
           <button
             key={type}
             onClick={() => onChange(type)}
-            className="relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all"
+            className="relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all overflow-visible"
             style={{
               backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : isHovered ? 'rgb(var(--color-bg-muted))' : 'transparent',
               border: isSelected ? 'none' : '1px solid rgb(var(--color-border))',
@@ -1931,7 +1931,7 @@ export default function ChartBuilder({
           )}
 
           {activeStep === 1 && (
-            <div>
+            <div className="mt-2">
               <h3 className="text-lg font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Choose Chart Type' : 'Choisir le type de graphique'}
               </h3>

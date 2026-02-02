@@ -554,9 +554,9 @@ export function DataVisualizationCard({
                     }}
                   >
                     {/* Actions Section */}
-                    <div className="p-1.5">
+                    <div className="py-2">
                       <p 
-                        className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+                        className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider"
                         style={{ color: 'rgb(var(--color-text-muted))' }}
                       >
                         {isEn ? 'Actions' : 'Actions'}
@@ -569,27 +569,11 @@ export function DataVisualizationCard({
                             onUnpin();
                             setShowOptions(false);
                           }}
-                          className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-[rgb(var(--color-error)/0.1)] transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-error)/0.08)] transition-colors"
                           style={{ color: 'rgb(var(--color-error))' }}
                         >
-                          <div className="flex items-center gap-2.5">
-                            <div 
-                              className="w-7 h-7 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-error))' }} />
-                            </div>
-                            <span className="font-medium">{isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}</span>
-                          </div>
-                          <span 
-                            className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                            style={{ 
-                              backgroundColor: 'rgb(var(--color-error) / 0.1)',
-                              color: 'rgb(var(--color-error))'
-                            }}
-                          >
-                            ⌫
-                          </span>
+                          <Trash2 className="w-4 h-4" />
+                          <span className="font-medium flex-1 text-left">{isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}</span>
                         </button>
                       )}
                       
@@ -599,24 +583,14 @@ export function DataVisualizationCard({
                           setShowShareModal(true);
                           setShowOptions(false);
                         }}
-                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors group"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-                          >
-                            <Share2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                          </div>
-                          <span className="font-medium">{isEn ? 'Share' : 'Partager'}</span>
-                        </div>
+                        <Share2 className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        <span className="font-medium flex-1 text-left">{isEn ? 'Share' : 'Partager'}</span>
                         <span 
-                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: 'rgb(var(--color-bg-muted))',
-                            color: 'rgb(var(--color-text-muted))'
-                          }}
+                          className="text-[10px] font-mono"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
                         >
                           ⌘S
                         </span>
@@ -625,36 +599,22 @@ export function DataVisualizationCard({
                       {/* Bookmark */}
                       <button
                         onClick={handleBookmark}
-                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ 
-                              backgroundColor: localBookmarked 
-                                ? 'rgb(var(--color-warning) / 0.1)' 
-                                : 'rgb(var(--color-bg-muted))' 
-                            }}
-                          >
-                            {localBookmarked ? (
-                              <BookmarkCheck className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-warning))' }} />
-                            ) : (
-                              <Bookmark className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                            )}
-                          </div>
-                          <span className="font-medium">
-                            {localBookmarked 
-                              ? (isEn ? 'Saved' : 'Enregistré')
-                              : (isEn ? 'Save' : 'Enregistrer')}
-                          </span>
-                        </div>
+                        {localBookmarked ? (
+                          <BookmarkCheck className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
+                        ) : (
+                          <Bookmark className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                        )}
+                        <span className="font-medium flex-1 text-left">
+                          {localBookmarked 
+                            ? (isEn ? 'Saved' : 'Enregistré')
+                            : (isEn ? 'Save' : 'Enregistrer')}
+                        </span>
                         <span 
-                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: 'rgb(var(--color-bg-muted))',
-                            color: 'rgb(var(--color-text-muted))'
-                          }}
+                          className="text-[10px] font-mono"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
                         >
                           ⌘B
                         </span>
@@ -664,18 +624,11 @@ export function DataVisualizationCard({
                       <div className="relative">
                         <button
                           onClick={() => setShowViewMenu(!showViewMenu)}
-                          className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                           style={{ color: 'rgb(var(--color-text))' }}
                         >
-                          <div className="flex items-center gap-2.5">
-                            <div 
-                              className="w-7 h-7 rounded-lg flex items-center justify-center"
-                              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                            >
-                              <Layers className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                            </div>
-                            <span className="font-medium">{isEn ? 'Add to View' : 'Ajouter à une vue'}</span>
-                          </div>
+                          <Layers className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          <span className="font-medium flex-1 text-left">{isEn ? 'Add to View' : 'Ajouter à une vue'}</span>
                           <ChevronDown 
                             className={`w-4 h-4 transition-transform ${showViewMenu ? 'rotate-180' : ''}`}
                             style={{ color: 'rgb(var(--color-text-muted))' }}
@@ -684,14 +637,17 @@ export function DataVisualizationCard({
                         
                         {showViewMenu && (
                           <div 
-                            className="mx-2.5 mb-1 rounded-lg overflow-hidden"
-                            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                            className="mx-3 mt-1 mb-2 rounded-lg overflow-hidden border"
+                            style={{ 
+                              backgroundColor: 'rgb(var(--color-bg))',
+                              borderColor: 'rgb(var(--color-border))'
+                            }}
                           >
                             {savedViews.map((view) => (
                               <button
                                 key={view.id}
                                 onClick={() => handleAddToView(view.id)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface transition-colors"
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                                 style={{ color: 'rgb(var(--color-text))' }}
                               >
                                 <Eye className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
@@ -703,7 +659,7 @@ export function DataVisualizationCard({
                                 setShowViewMenu(false);
                                 setShowOptions(false);
                               }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface transition-colors border-t"
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors border-t"
                               style={{ 
                                 color: 'rgb(var(--color-primary-500))',
                                 borderColor: 'rgb(var(--color-border))'
@@ -723,58 +679,52 @@ export function DataVisualizationCard({
                     />
                     
                     {/* Export Section */}
-                    <div className="p-1.5">
+                    <div className="py-2">
                       <p 
-                        className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider"
+                        className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider"
                         style={{ color: 'rgb(var(--color-text-muted))' }}
                       >
                         {isEn ? 'Export' : 'Exporter'}
                       </p>
                       
-                      <div className="flex gap-1.5 px-2.5">
+                      <div className="grid grid-cols-3 gap-1 px-3">
                         <button
                           onClick={() => handleExport('png')}
-                          className="flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors group"
-                          style={{ color: 'rgb(var(--color-text))' }}
+                          className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ 
+                            color: 'rgb(var(--color-text))',
+                            borderColor: 'rgb(var(--color-border))'
+                          }}
                           title={isEn ? 'Export as PNG image' : 'Exporter en image PNG'}
                         >
-                          <div 
-                            className="w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
-                            style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
-                          >
-                            <FileImage className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
-                          </div>
-                          <span className="text-[11px] font-medium">PNG</span>
+                          <FileImage className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
+                          <span className="text-xs font-medium">PNG</span>
                         </button>
                         
                         <button
                           onClick={() => handleExport('csv')}
-                          className="flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors group"
-                          style={{ color: 'rgb(var(--color-text))' }}
+                          className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ 
+                            color: 'rgb(var(--color-text))',
+                            borderColor: 'rgb(var(--color-border))'
+                          }}
                           title={isEn ? 'Export as CSV spreadsheet' : 'Exporter en fichier CSV'}
                         >
-                          <div 
-                            className="w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
-                            style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
-                          >
-                            <FileSpreadsheet className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-                          </div>
-                          <span className="text-[11px] font-medium">CSV</span>
+                          <FileSpreadsheet className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+                          <span className="text-xs font-medium">CSV</span>
                         </button>
                         
                         <button
                           onClick={() => handleExport('pdf')}
-                          className="flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-lg hover:bg-muted transition-colors group"
-                          style={{ color: 'rgb(var(--color-text))' }}
+                          className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ 
+                            color: 'rgb(var(--color-text))',
+                            borderColor: 'rgb(var(--color-border))'
+                          }}
                           title={isEn ? 'Export as PDF document' : 'Exporter en document PDF'}
                         >
-                          <div 
-                            className="w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
-                            style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-                          >
-                            <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
-                          </div>
-                          <span className="text-[11px] font-medium">PDF</span>
+                          <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+                          <span className="text-xs font-medium">PDF</span>
                         </button>
                       </div>
                     </div>
@@ -785,50 +735,30 @@ export function DataVisualizationCard({
                     />
                     
                     {/* More Section */}
-                    <div className="p-1.5">
+                    <div className="py-2">
                       <button
-                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                          >
-                            <Copy className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                          </div>
-                          <span className="font-medium">{isEn ? 'Duplicate' : 'Dupliquer'}</span>
-                        </div>
+                        <Copy className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                        <span className="font-medium flex-1 text-left">{isEn ? 'Duplicate' : 'Dupliquer'}</span>
                         <span 
-                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: 'rgb(var(--color-bg-muted))',
-                            color: 'rgb(var(--color-text-muted))'
-                          }}
+                          className="text-[10px] font-mono"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
                         >
                           ⌘D
                         </span>
                       </button>
                       
                       <button
-                        className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-muted transition-colors"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
-                        <div className="flex items-center gap-2.5">
-                          <div 
-                            className="w-7 h-7 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                          >
-                            <Sliders className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                          </div>
-                          <span className="font-medium">{isEn ? 'Configure' : 'Configurer'}</span>
-                        </div>
+                        <Sliders className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                        <span className="font-medium flex-1 text-left">{isEn ? 'Configure' : 'Configurer'}</span>
                         <span 
-                          className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                          style={{ 
-                            backgroundColor: 'rgb(var(--color-bg-muted))',
-                            color: 'rgb(var(--color-text-muted))'
-                          }}
+                          className="text-[10px] font-mono"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
                         >
                           ⌘,
                         </span>

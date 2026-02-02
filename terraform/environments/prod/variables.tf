@@ -123,7 +123,7 @@ variable "quickbooks_client_secret" {
 variable "quickbooks_environment" {
   description = "QuickBooks environment (sandbox or production)"
   type        = string
-  default     = "production"  # Production uses real QBO data
+  default     = "production" # Production uses real QBO data
 }
 
 # Keycloak
@@ -139,14 +139,14 @@ variable "ses_smtp_user" {
   description = "AWS SES SMTP username (IAM Access Key ID)"
   type        = string
   sensitive   = true
-  default     = ""  # Set via terraform.tfvars or environment
+  default     = "" # Set via terraform.tfvars or environment
 }
 
 variable "ses_smtp_password" {
   description = "AWS SES SMTP password (IAM Secret converted for SES)"
   type        = string
   sensitive   = true
-  default     = ""  # Set via terraform.tfvars or environment
+  default     = "" # Set via terraform.tfvars or environment
 }
 
 # MongoDB Atlas (Analytics & Audit)
@@ -154,7 +154,7 @@ variable "mongodb_uri" {
   description = "MongoDB Atlas connection URI"
   type        = string
   sensitive   = true
-  default     = ""  # Set via terraform.tfvars or environment
+  default     = "" # Set via terraform.tfvars or environment
 }
 
 variable "mongodb_database" {
@@ -168,7 +168,7 @@ variable "hubspot_access_token" {
   description = "HubSpot Private App access token"
   type        = string
   sensitive   = true
-  default     = ""  # Set via terraform.tfvars or environment
+  default     = "" # Set via terraform.tfvars or environment
 }
 
 # PostHog Analytics
@@ -176,7 +176,7 @@ variable "posthog_api_key" {
   description = "PostHog API key for server-side tracking"
   type        = string
   sensitive   = true
-  default     = ""  # Set via terraform.tfvars or environment
+  default     = "" # Set via terraform.tfvars or environment
 }
 
 variable "posthog_host" {

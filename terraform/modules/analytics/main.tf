@@ -72,8 +72,8 @@ resource "azuread_service_principal" "powerbi" {
 
 resource "azuread_service_principal_password" "powerbi" {
   service_principal_id = azuread_service_principal.powerbi.id
-  display_name          = "${var.project}-${var.environment}-powerbi-secret"
-  end_date_relative     = "8760h" # 1 year
+  display_name         = "${var.project}-${var.environment}-powerbi-secret"
+  end_date_relative    = "8760h" # 1 year
 }
 
 # ------------------------------------------------------------------------------

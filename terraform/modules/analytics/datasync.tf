@@ -84,13 +84,13 @@ resource "aws_glue_job" "gold_to_azure" {
   }
 
   default_arguments = {
-    "--TempDir"                        = "s3://${var.gold_bucket_name}/temp/"
-    "--enable-metrics"                 = ""
-    "--enable-spark-ui"                = "true"
-    "--spark-event-logs-path"          = "s3://${var.gold_bucket_name}/spark-logs/"
+    "--TempDir"                          = "s3://${var.gold_bucket_name}/temp/"
+    "--enable-metrics"                   = ""
+    "--enable-spark-ui"                  = "true"
+    "--spark-event-logs-path"            = "s3://${var.gold_bucket_name}/spark-logs/"
     "--enable-continuous-cloudwatch-log" = "true"
-    "--azure_storage_account"          = azurerm_storage_account.powerbi.name
-    "--azure_container"                = "gold"
+    "--azure_storage_account"            = azurerm_storage_account.powerbi.name
+    "--azure_container"                  = "gold"
   }
 
   max_retries = 2

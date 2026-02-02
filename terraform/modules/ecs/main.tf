@@ -253,7 +253,7 @@ resource "aws_lb" "main" {
   security_groups    = [var.alb_security_group_id]
   subnets            = var.public_subnet_ids
 
-  enable_deletion_protection = false  # Allow deletion during development
+  enable_deletion_protection = false # Allow deletion during development
   enable_http2               = true
 
   tags = {
@@ -709,12 +709,12 @@ resource "aws_ecs_task_definition" "api" {
           name      = "STRIPE_PUBLISHABLE_KEY"
           valueFrom = "${var.stripe_secret_arn}:publishable_key::"
         }
-      ], var.keycloak_client_secret_arn != "" ? [
+        ], var.keycloak_client_secret_arn != "" ? [
         {
           name      = "KEYCLOAK_CLIENT_SECRET"
           valueFrom = "${var.keycloak_client_secret_arn}:secret::"
         }
-      ] : [], var.quickbooks_secret_arn != "" ? [
+        ] : [], var.quickbooks_secret_arn != "" ? [
         {
           name      = "QUICKBOOKS_CLIENT_ID"
           valueFrom = "${var.quickbooks_secret_arn}:client_id::"
@@ -731,7 +731,7 @@ resource "aws_ecs_task_definition" "api" {
           name      = "QUICKBOOKS_ENVIRONMENT"
           valueFrom = "${var.quickbooks_secret_arn}:environment::"
         }
-      ] : [], var.mongodb_secret_arn != "" ? [
+        ] : [], var.mongodb_secret_arn != "" ? [
         {
           name      = "MONGODB_URI"
           valueFrom = "${var.mongodb_secret_arn}:uri::"
@@ -740,12 +740,12 @@ resource "aws_ecs_task_definition" "api" {
           name      = "MONGODB_DATABASE"
           valueFrom = "${var.mongodb_secret_arn}:database::"
         }
-      ] : [], var.hubspot_secret_arn != "" ? [
+        ] : [], var.hubspot_secret_arn != "" ? [
         {
           name      = "HUBSPOT_ACCESS_TOKEN"
           valueFrom = "${var.hubspot_secret_arn}:access_token::"
         }
-      ] : [], var.posthog_secret_arn != "" ? [
+        ] : [], var.posthog_secret_arn != "" ? [
         {
           name      = "POSTHOG_API_KEY"
           valueFrom = "${var.posthog_secret_arn}:api_key::"
@@ -837,7 +837,7 @@ resource "aws_ecs_task_definition" "keycloak" {
           name      = "SMTP_PASSWORD"
           valueFrom = "${var.keycloak_smtp_secret_arn}:password::"
         }
-      ], var.keycloak_client_secret_arn != "" ? [
+        ], var.keycloak_client_secret_arn != "" ? [
         {
           # This secret is used by Keycloak during realm import to substitute
           # ${API_CLIENT_SECRET:default} placeholders in plainledger-realm.json
@@ -868,14 +868,14 @@ resource "aws_ecs_task_definition" "keycloak" {
 # ECS Services
 # ------------------------------------------------------------------------------
 resource "aws_ecs_service" "web" {
-  name                               = "${var.project}-${var.environment}-web"
-  cluster                            = aws_ecs_cluster.main.id
-  task_definition                    = aws_ecs_task_definition.web.arn
-  desired_count                      = var.web_desired_count
-  launch_type                        = "FARGATE"
-  platform_version                   = "LATEST"
-  health_check_grace_period_seconds  = 60
-  enable_execute_command             = true
+  name                              = "${var.project}-${var.environment}-web"
+  cluster                           = aws_ecs_cluster.main.id
+  task_definition                   = aws_ecs_task_definition.web.arn
+  desired_count                     = var.web_desired_count
+  launch_type                       = "FARGATE"
+  platform_version                  = "LATEST"
+  health_check_grace_period_seconds = 60
+  enable_execute_command            = true
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -906,14 +906,14 @@ resource "aws_ecs_service" "web" {
 }
 
 resource "aws_ecs_service" "api" {
-  name                               = "${var.project}-${var.environment}-api"
-  cluster                            = aws_ecs_cluster.main.id
-  task_definition                    = aws_ecs_task_definition.api.arn
-  desired_count                      = var.api_desired_count
-  launch_type                        = "FARGATE"
-  platform_version                   = "LATEST"
-  health_check_grace_period_seconds  = 60
-  enable_execute_command             = true
+  name                              = "${var.project}-${var.environment}-api"
+  cluster                           = aws_ecs_cluster.main.id
+  task_definition                   = aws_ecs_task_definition.api.arn
+  desired_count                     = var.api_desired_count
+  launch_type                       = "FARGATE"
+  platform_version                  = "LATEST"
+  health_check_grace_period_seconds = 60
+  enable_execute_command            = true
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -944,14 +944,14 @@ resource "aws_ecs_service" "api" {
 }
 
 resource "aws_ecs_service" "keycloak" {
-  name                               = "${var.project}-${var.environment}-keycloak"
-  cluster                            = aws_ecs_cluster.main.id
-  task_definition                    = aws_ecs_task_definition.keycloak.arn
-  desired_count                      = var.keycloak_desired_count
-  launch_type                        = "FARGATE"
-  platform_version                   = "LATEST"
-  health_check_grace_period_seconds  = 120
-  enable_execute_command             = true
+  name                              = "${var.project}-${var.environment}-keycloak"
+  cluster                           = aws_ecs_cluster.main.id
+  task_definition                   = aws_ecs_task_definition.keycloak.arn
+  desired_count                     = var.keycloak_desired_count
+  launch_type                       = "FARGATE"
+  platform_version                  = "LATEST"
+  health_check_grace_period_seconds = 120
+  enable_execute_command            = true
 
   network_configuration {
     subnets          = var.private_subnet_ids

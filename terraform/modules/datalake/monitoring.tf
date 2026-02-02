@@ -380,7 +380,6 @@ resource "aws_iam_role_policy" "glue_etl_s3" {
     ]
   })
 }
-
 # ------------------------------------------------------------------------------
 # Glue Job for Silver to Gold Transformation
 # ------------------------------------------------------------------------------
@@ -416,3 +415,4 @@ resource "aws_glue_job" "silver_to_gold" {
     Environment = var.environment
   }
 }
+

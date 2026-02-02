@@ -34,7 +34,7 @@ resource "aws_opensearchserverless_access_policy" "bedrock_access" {
         {
           ResourceType = "collection"
           Resource     = ["collection/${aws_opensearchserverless_collection.industry_patterns.name}"]
-          Permission    = [
+          Permission = [
             "aoss:CreateCollectionItems",
             "aoss:DeleteCollectionItems",
             "aoss:UpdateCollectionItems",
@@ -44,7 +44,7 @@ resource "aws_opensearchserverless_access_policy" "bedrock_access" {
         {
           ResourceType = "index"
           Resource     = ["index/${aws_opensearchserverless_collection.industry_patterns.name}/*"]
-          Permission    = [
+          Permission = [
             "aoss:CreateIndex",
             "aoss:DeleteIndex",
             "aoss:UpdateIndex",
@@ -186,7 +186,7 @@ resource "aws_bedrockagent_data_source" "gold_patterns" {
     chunking_configuration {
       chunking_strategy = "FIXED_SIZE"
       fixed_size_chunking_configuration {
-        max_tokens = 512
+        max_tokens         = 512
         overlap_percentage = 20
       }
     }

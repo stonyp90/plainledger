@@ -71,19 +71,19 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 resource "aws_lambda_function" "etl_alert_sender" {
   filename         = data.archive_file.etl_alert_sender_zip.output_path
   function_name    = "${var.environment}-etl-alert-sender"
-  role            = aws_iam_role.etl_alert_sender.arn
-  handler         = "index.handler"
+  role             = aws_iam_role.etl_alert_sender.arn
+  handler          = "index.handler"
   source_code_hash = data.archive_file.etl_alert_sender_zip.output_base64sha256
-  runtime         = "nodejs20.x"
-  timeout         = 30
-  memory_size     = 256
+  runtime          = "nodejs20.x"
+  timeout          = 30
+  memory_size      = 256
 
   environment {
     variables = {
-      API_ENDPOINT      = var.api_endpoint
-      ALERT_EMAIL       = var.alert_email
-      SES_REGION        = var.ses_region
-      FROM_EMAIL        = var.from_email
+      API_ENDPOINT       = var.api_endpoint
+      ALERT_EMAIL        = var.alert_email
+      SES_REGION         = var.ses_region
+      FROM_EMAIL         = var.from_email
       INTERNAL_API_TOKEN = var.internal_api_token
     }
   }

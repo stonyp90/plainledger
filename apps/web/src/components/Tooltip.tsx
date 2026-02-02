@@ -743,6 +743,146 @@ export function SimpleTooltip({ text, textEn, children, position = 'top' }: Simp
 }
 
 // =====================================================
+// ACTION TOOLTIP (for action buttons - elevated white card)
+// =====================================================
+
+export interface ActionTooltipProps {
+  children: ReactNode;
+  content: ReactNode;
+  position?: TooltipPosition;
+  maxWidth?: number;
+  delay?: number;
+}
+
+/**
+ * Elevated tooltip for action buttons.
+ * Features a white/surface background with strong shadow that floats above content.
+ * Use for toolbar buttons, action hints, etc.
+ */
+export function ActionTooltip({ 
+  children, 
+  content, 
+  position = 'bottom',
+  maxWidth = 240,
+  delay = 300,
+}: ActionTooltipProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleOpen = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(true);
+    }, delay);
+  };
+
+  const handleClose = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsOpen(false);
+  };
+
+  // Calculate position when open
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+    
+    const updatePosition = () => {
+      if (!triggerRef.current) return;
+      
+      const rect = triggerRef.current.getBoundingClientRect();
+      const tooltipHeight = tooltipRef.current?.offsetHeight || 60;
+      const tooltipWidth = tooltipRef.current?.offsetWidth || maxWidth;
+      
+      let top = 0;
+      let left = 0;
+      const gap = 8;
+      
+      switch (position) {
+        case 'top':
+          top = rect.top - tooltipHeight - gap;
+          left = rect.left + rect.width / 2 - tooltipWidth / 2;
+          break;
+        case 'bottom':
+        default:
+          top = rect.bottom + gap;
+          left = rect.left + rect.width / 2 - tooltipWidth / 2;
+          break;
+        case 'left':
+          top = rect.top + rect.height / 2 - tooltipHeight / 2;
+          left = rect.left - tooltipWidth - gap;
+          break;
+        case 'right':
+          top = rect.top + rect.height / 2 - tooltipHeight / 2;
+          left = rect.right + gap;
+          break;
+      }
+      
+      // Ensure tooltip stays within viewport
+      const padding = 12;
+      left = Math.max(padding, Math.min(left, window.innerWidth - tooltipWidth - padding));
+      top = Math.max(padding, top);
+      
+      setTooltipCoords({ top, left });
+    };
+    
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen, position, maxWidth]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const tooltipContent = isOpen && createPortal(
+    <div
+      ref={tooltipRef}
+      className="animate-in fade-in zoom-in-95 duration-150"
+      style={{
+        position: 'fixed',
+        top: tooltipCoords.top,
+        left: tooltipCoords.left,
+        maxWidth,
+        backgroundColor: 'rgb(var(--color-surface))',
+        color: 'rgb(var(--color-text))',
+        border: '1px solid rgb(var(--color-border))',
+        borderRadius: '10px',
+        padding: '10px 14px',
+        boxShadow: '0 10px 40px -8px rgba(0, 0, 0, 0.25), 0 4px 12px -2px rgba(0, 0, 0, 0.1)',
+        zIndex: 99999,
+        pointerEvents: 'none',
+      }}
+    >
+      {content}
+    </div>,
+    document.body
+  );
+
+  return (
+    <div 
+      ref={triggerRef}
+      className="relative inline-flex"
+      onMouseEnter={handleOpen}
+      onMouseLeave={handleClose}
+    >
+      {children}
+      {tooltipContent}
+    </div>
+  );
+}
+
+// =====================================================
 // LABEL TOOLTIP (for truncated text labels - instant display)
 // =====================================================
 

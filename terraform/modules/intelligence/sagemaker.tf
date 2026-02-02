@@ -68,14 +68,14 @@ resource "aws_sagemaker_training_job" "decision_model" {
   role_arn          = aws_iam_role.sagemaker.arn
 
   algorithm_specification {
-    training_image = "763104351884.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/huggingface-pytorch-training:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04"
+    training_image      = "763104351884.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/huggingface-pytorch-training:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04"
     training_input_mode = "File"
   }
 
   resource_config {
-    instance_type   = "ml.g5.2xlarge"
-    instance_count  = 1
-    volume_size_gb  = 100
+    instance_type  = "ml.g5.2xlarge"
+    instance_count = 1
+    volume_size_gb = 100
   }
 
   input_data_config {
@@ -93,14 +93,14 @@ resource "aws_sagemaker_training_job" "decision_model" {
   }
 
   hyper_parameters = {
-    "model_name"              = "mistralai/Mistral-7B-Instruct-v0.2"
-    "num_train_epochs"        = "3"
+    "model_name"                  = "mistralai/Mistral-7B-Instruct-v0.2"
+    "num_train_epochs"            = "3"
     "per_device_train_batch_size" = "4"
     "gradient_accumulation_steps" = "4"
-    "learning_rate"          = "2e-4"
-    "lora_r"                 = "16"
-    "lora_alpha"             = "32"
-    "lora_dropout"           = "0.05"
+    "learning_rate"               = "2e-4"
+    "lora_r"                      = "16"
+    "lora_alpha"                  = "32"
+    "lora_dropout"                = "0.05"
   }
 
   stopping_condition {
@@ -123,12 +123,12 @@ resource "aws_sagemaker_model" "decision" {
 
   primary_container {
     image = "763104351884.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/huggingface-pytorch-inference:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04"
-    
+
     model_data_url = "s3://${var.gold_bucket_name}/models/${aws_sagemaker_training_job.decision_model.training_job_name}/output/model.tar.gz"
-    
+
     environment = {
-      "HF_MODEL_ID" = "mistralai/Mistral-7B-Instruct-v0.2"
-      "HF_TASK"     = "text-generation"
+      "HF_MODEL_ID"      = "mistralai/Mistral-7B-Instruct-v0.2"
+      "HF_TASK"          = "text-generation"
       "MAX_INPUT_LENGTH" = "2048"
       "MAX_TOTAL_TOKENS" = "4096"
     }
@@ -148,8 +148,8 @@ resource "aws_sagemaker_endpoint_configuration" "serverless" {
   name = "${var.project}-${var.environment}-serverless-config"
 
   production_variants {
-    variant_name           = "AllTraffic"
-    model_name             = aws_sagemaker_model.decision.name
+    variant_name = "AllTraffic"
+    model_name   = aws_sagemaker_model.decision.name
     serverless_config {
       memory_size_in_mb = 4096
       max_concurrency   = 50

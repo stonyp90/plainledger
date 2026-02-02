@@ -14,9 +14,9 @@ resource "aws_glue_catalog_table" "dim_organization" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
-    "typeOfData" = "file"
+    "typeOfData"      = "file"
   }
 
   storage_descriptor {
@@ -33,13 +33,13 @@ resource "aws_glue_catalog_table" "dim_organization" {
     }
 
     columns {
-      name = "organization_key"
-      type = "string"
+      name    = "organization_key"
+      type    = "string"
       comment = "Surrogate key for Power BI"
     }
     columns {
-      name = "organization_id"
-      type = "string"
+      name    = "organization_id"
+      type    = "string"
       comment = "Natural key (UUID)"
     }
     columns {
@@ -55,8 +55,8 @@ resource "aws_glue_catalog_table" "dim_organization" {
       type = "string"
     }
     columns {
-      name = "currency_code"
-      type = "string"
+      name    = "currency_code"
+      type    = "string"
       comment = "CAD, USD"
     }
     columns {
@@ -68,13 +68,13 @@ resource "aws_glue_catalog_table" "dim_organization" {
       type = "string"
     }
     columns {
-      name = "industry_category"
-      type = "string"
+      name    = "industry_category"
+      type    = "string"
       comment = "CONSTRUCTION, MANUFACTURING, RETAIL, etc."
     }
     columns {
-      name = "accounting_standard"
-      type = "string"
+      name    = "accounting_standard"
+      type    = "string"
       comment = "ASPE, IFRS, US_GAAP"
     }
     columns {
@@ -86,8 +86,8 @@ resource "aws_glue_catalog_table" "dim_organization" {
       type = "string"
     }
     columns {
-      name = "is_current"
-      type = "boolean"
+      name    = "is_current"
+      type    = "boolean"
       comment = "SCD Type 2"
     }
     columns {
@@ -114,7 +114,7 @@ resource "aws_glue_catalog_table" "dim_business_unit" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -180,7 +180,7 @@ resource "aws_glue_catalog_table" "dim_account" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -203,8 +203,8 @@ resource "aws_glue_catalog_table" "dim_account" {
       type = "string"
     }
     columns {
-      name = "source_account_id"
-      type = "string"
+      name    = "source_account_id"
+      type    = "string"
       comment = "QuickBooks/Xero ID"
     }
     columns {
@@ -228,8 +228,8 @@ resource "aws_glue_catalog_table" "dim_account" {
       type = "string"
     }
     columns {
-      name = "account_type"
-      type = "string"
+      name    = "account_type"
+      type    = "string"
       comment = "ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE"
     }
     columns {
@@ -332,7 +332,7 @@ resource "aws_glue_catalog_table" "dim_contact" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -363,8 +363,8 @@ resource "aws_glue_catalog_table" "dim_contact" {
       type = "string"
     }
     columns {
-      name = "contact_type"
-      type = "string"
+      name    = "contact_type"
+      type    = "string"
       comment = "CUSTOMER, VENDOR, BOTH"
     }
     columns {
@@ -435,7 +435,7 @@ resource "aws_glue_catalog_table" "dim_item" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -478,8 +478,8 @@ resource "aws_glue_catalog_table" "dim_item" {
       type = "string"
     }
     columns {
-      name = "item_type"
-      type = "string"
+      name    = "item_type"
+      type    = "string"
       comment = "INVENTORY, SERVICE, NON_INVENTORY"
     }
     columns {
@@ -526,7 +526,7 @@ resource "aws_glue_catalog_table" "dim_class" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -596,7 +596,7 @@ resource "aws_glue_catalog_table" "dim_location" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -666,7 +666,7 @@ resource "aws_glue_catalog_table" "dim_date" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -681,8 +681,8 @@ resource "aws_glue_catalog_table" "dim_date" {
     }
 
     columns {
-      name = "date_key"
-      type = "int"
+      name    = "date_key"
+      type    = "int"
       comment = "YYYYMMDD format"
     }
     columns {
@@ -750,8 +750,8 @@ resource "aws_glue_catalog_table" "dim_date" {
       type = "string"
     }
     columns {
-      name = "fiscal_year"
-      type = "int"
+      name    = "fiscal_year"
+      type    = "int"
       comment = "Populated per-org during ETL"
     }
     columns {
@@ -763,8 +763,8 @@ resource "aws_glue_catalog_table" "dim_date" {
       type = "int"
     }
     columns {
-      name = "fiscal_period_name"
-      type = "string"
+      name    = "fiscal_period_name"
+      type    = "string"
       comment = "P1, P2, ... P12"
     }
   }
@@ -778,7 +778,7 @@ resource "aws_glue_catalog_table" "dim_account_type" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -797,8 +797,8 @@ resource "aws_glue_catalog_table" "dim_account_type" {
       type = "string"
     }
     columns {
-      name = "account_type_code"
-      type = "string"
+      name    = "account_type_code"
+      type    = "string"
       comment = "ASSET, LIABILITY, etc."
     }
     columns {
@@ -810,18 +810,18 @@ resource "aws_glue_catalog_table" "dim_account_type" {
       type = "string"
     }
     columns {
-      name = "normal_balance"
-      type = "string"
+      name    = "normal_balance"
+      type    = "string"
       comment = "DEBIT or CREDIT"
     }
     columns {
-      name = "financial_statement"
-      type = "string"
+      name    = "financial_statement"
+      type    = "string"
       comment = "BALANCE_SHEET or INCOME_STATEMENT"
     }
     columns {
-      name = "cash_flow_category"
-      type = "string"
+      name    = "cash_flow_category"
+      type    = "string"
       comment = "OPERATING, INVESTING, FINANCING"
     }
     columns {
@@ -839,7 +839,7 @@ resource "aws_glue_catalog_table" "dim_transaction_type" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -858,8 +858,8 @@ resource "aws_glue_catalog_table" "dim_transaction_type" {
       type = "string"
     }
     columns {
-      name = "transaction_type_code"
-      type = "string"
+      name    = "transaction_type_code"
+      type    = "string"
       comment = "INVOICE, BILL, PAYMENT, JOURNAL, etc."
     }
     columns {
@@ -871,8 +871,8 @@ resource "aws_glue_catalog_table" "dim_transaction_type" {
       type = "string"
     }
     columns {
-      name = "source_system"
-      type = "string"
+      name    = "source_system"
+      type    = "string"
       comment = "QUICKBOOKS, XERO, SAGE, CSV"
     }
     columns {
@@ -906,7 +906,7 @@ resource "aws_glue_catalog_table" "fact_transactions" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -981,8 +981,8 @@ resource "aws_glue_catalog_table" "fact_transactions" {
       type = "decimal(18,2)"
     }
     columns {
-      name = "amount"
-      type = "decimal(18,2)"
+      name    = "amount"
+      type    = "decimal(18,2)"
       comment = "Signed: debit positive, credit negative"
     }
     columns {
@@ -994,8 +994,8 @@ resource "aws_glue_catalog_table" "fact_transactions" {
       type = "decimal(12,6)"
     }
     columns {
-      name = "amount_cad"
-      type = "decimal(18,2)"
+      name    = "amount_cad"
+      type    = "decimal(18,2)"
       comment = "Normalized to CAD"
     }
     columns {
@@ -1042,7 +1042,7 @@ resource "aws_glue_catalog_table" "fact_account_balances" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -1109,8 +1109,8 @@ resource "aws_glue_catalog_table" "fact_account_balances" {
       type = "decimal(18,2)"
     }
     columns {
-      name = "balance_type"
-      type = "string"
+      name    = "balance_type"
+      type    = "string"
       comment = "MTD, QTD, YTD, CUMULATIVE"
     }
     columns {
@@ -1137,7 +1137,7 @@ resource "aws_glue_catalog_table" "fact_monthly_summary" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -1219,7 +1219,7 @@ resource "aws_glue_catalog_table" "fact_industry_kpis" {
   table_type = "EXTERNAL_TABLE"
 
   parameters = {
-    "classification" = "parquet"
+    "classification"  = "parquet"
     "compressionType" = "snappy"
   }
 
@@ -1280,13 +1280,13 @@ resource "aws_glue_catalog_table" "fact_industry_kpis" {
       type = "decimal(5,2)"
     }
     columns {
-      name = "adr"
-      type = "decimal(18,2)"
+      name    = "adr"
+      type    = "decimal(18,2)"
       comment = "Average Daily Rate"
     }
     columns {
-      name = "revpar"
-      type = "decimal(18,2)"
+      name    = "revpar"
+      type    = "decimal(18,2)"
       comment = "Revenue Per Available Room"
     }
     columns {
@@ -1358,38 +1358,38 @@ resource "aws_glue_catalog_table" "fact_industry_kpis" {
     }
     # Real Estate / Immobilier KPIs
     columns {
-      name = "re_occupancy_rate"
-      type = "decimal(5,2)"
+      name    = "re_occupancy_rate"
+      type    = "decimal(5,2)"
       comment = "Real estate occupancy rate (occupied units / total units)"
     }
     columns {
-      name = "re_cap_rate"
-      type = "decimal(5,2)"
+      name    = "re_cap_rate"
+      type    = "decimal(5,2)"
       comment = "Capitalization rate (NOI / property value)"
     }
     columns {
-      name = "re_noi"
-      type = "decimal(18,2)"
+      name    = "re_noi"
+      type    = "decimal(18,2)"
       comment = "Net Operating Income"
     }
     columns {
-      name = "re_rent_per_sqft"
-      type = "decimal(10,2)"
+      name    = "re_rent_per_sqft"
+      type    = "decimal(10,2)"
       comment = "Rent per square foot"
     }
     columns {
-      name = "re_vacancy_rate"
-      type = "decimal(5,2)"
+      name    = "re_vacancy_rate"
+      type    = "decimal(5,2)"
       comment = "Vacancy rate percentage"
     }
     columns {
-      name = "re_cash_on_cash"
-      type = "decimal(5,2)"
+      name    = "re_cash_on_cash"
+      type    = "decimal(5,2)"
       comment = "Cash-on-cash return (annual cash flow / total cash invested)"
     }
     columns {
-      name = "re_expense_ratio"
-      type = "decimal(5,2)"
+      name    = "re_expense_ratio"
+      type    = "decimal(5,2)"
       comment = "Operating expense ratio"
     }
   }

@@ -1,26 +1,44 @@
 /**
- * Visualization Components
+ * Visualization System Components
  * 
- * Advanced visualization builder system for PlainLedger.
- * Provides Looker/Power BI-like capabilities with:
- * - Data source selection
- * - Field configuration with drag-and-drop
- * - Multiple chart types
- * - Calculated fields
- * - Bilingual support (EN/FR)
+ * FP&A-optimized, IBCS-compliant visualization components for PlainLedger
  */
 
-// Main builder
-export { VisualizationBuilder } from './VisualizationBuilder';
+// Main components
+export { default as ResizableChartGrid } from './ResizableChartGrid';
+export { default as ChartColorPicker } from './ChartColorPicker';
+export { default as FullScreenChart } from './FullScreenChart';
+export { default as DataSourceSelector } from './DataSourceSelector';
+export { default as ResponsiveChartWrapper } from './ResponsiveChartWrapper';
+export { default as IBCSChartHeader, getIBCSNotation, formatIBCSVariance, getIBCSAxisLabel } from './IBCSChartHeader';
+export { default as ShareReportModal } from './ShareReportModal';
 
-// Sub-components
-export { DataSourceSelector } from './DataSourceSelector';
-export { FieldPicker } from './FieldPicker';
-export { MetadataEditor } from './MetadataEditor';
-export { JoinBuilder } from './JoinBuilder';
-export { FilterBuilder } from './FilterBuilder';
-export { ChartPreview } from './ChartPreview';
-export { CalculatedFieldBuilder } from './CalculatedFieldBuilder';
+// Hooks
+export {
+  useResponsiveBreakpoint,
+  useIsMobile,
+  useIsTablet,
+  useIsDesktop,
+  getResponsiveFontSize,
+  getResponsivePadding,
+  getResponsiveAxisTicks,
+} from './ResponsiveChartWrapper';
 
-// Error handling
-export { ChartErrorBoundary, withChartErrorBoundary } from './ChartErrorBoundary';
+// Types
+export type {
+  ChartSize,
+  ChartPosition,
+  ChartColorPreset,
+  ResponsiveBreakpoint,
+  ChartWidgetConfig,
+  DataSourceInfo,
+  ShareConfig,
+  FullScreenConfig,
+} from './types';
+
+// Constants
+export {
+  FPA_COLOR_PRESETS,
+  RESPONSIVE_BREAKPOINTS,
+  CHART_KEYBOARD_SHORTCUTS,
+} from './types';
