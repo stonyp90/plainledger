@@ -15,8 +15,8 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, LessThan, Not, IsNull } from "typeorm";
+import { InjectRepository, InjectDataSource } from "@nestjs/typeorm";
+import { Repository, LessThan, Not, IsNull, DataSource } from "typeorm";
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
 import { S3OrganizationCleanupService } from "@infrastructure/services/s3-organization-cleanup.service";
 import { ConfigService } from "@nestjs/config";
@@ -50,6 +50,8 @@ export class DataRetentionJob {
   constructor(
     @InjectRepository(OrganizationEntity)
     private readonly organizationRepository: Repository<OrganizationEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     private readonly s3CleanupService: S3OrganizationCleanupService,
     private readonly configService: ConfigService,
   ) {
@@ -179,6 +181,9 @@ export class DataRetentionJob {
         );
 
         if (cleanupResult.success) {
+          // Cascade delete all related database records
+          await this.cascadeDeleteOrganizationData(org.id, runId);
+
           // Hard delete the organization record
           await this.organizationRepository.delete(org.id);
           result.results.softDeletedOrgsCleanedUp++;
@@ -197,6 +202,81 @@ export class DataRetentionJob {
         this.logger.error(`[${runId}] ${errorMsg}`);
         result.results.errors.push(errorMsg);
       }
+    }
+  }
+
+  /**
+   * Cascade delete all database records related to an organization
+   * This ensures complete data removal for GDPR compliance
+   */
+  private async cascadeDeleteOrganizationData(
+    organizationId: string,
+    runId: string,
+  ): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Delete in order to respect foreign key constraints
+      // 1. Delete integration data
+      await queryRunner.query(
+        `DELETE FROM datasource_sync_logs WHERE connection_id IN (
+          SELECT id FROM datasource_connections WHERE organization_id = $1
+        )`,
+        [organizationId],
+      );
+      await queryRunner.query(
+        `DELETE FROM datasource_connections WHERE organization_id = $1`,
+        [organizationId],
+      );
+      await queryRunner.query(
+        `DELETE FROM integration_credentials WHERE organization_id = $1`,
+        [organizationId],
+      );
+
+      // 2. Delete accounting data
+      await queryRunner.query(
+        `DELETE FROM accounting.journal_entries WHERE organization_id = $1`,
+        [organizationId],
+      );
+      await queryRunner.query(
+        `DELETE FROM accounting.accounts WHERE organization_id = $1`,
+        [organizationId],
+      );
+
+      // 3. Delete reporting data
+      await queryRunner.query(
+        `DELETE FROM reporting.shared_report_links WHERE organization_id = $1`,
+        [organizationId],
+      );
+      await queryRunner.query(
+        `DELETE FROM reporting.tax_credit_eligibility WHERE organization_id = $1`,
+        [organizationId],
+      );
+      await queryRunner.query(
+        `DELETE FROM reporting.tax_credit_leads WHERE organization_id = $1`,
+        [organizationId],
+      );
+
+      // 4. Delete user organization memberships
+      await queryRunner.query(
+        `DELETE FROM user_organizations WHERE organization_id = $1`,
+        [organizationId],
+      );
+
+      await queryRunner.commitTransaction();
+      this.logger.log(
+        `[${runId}] Cascade deleted all database records for org ${organizationId}`,
+      );
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(
+        `[${runId}] Failed to cascade delete for org ${organizationId}: ${error}`,
+      );
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 

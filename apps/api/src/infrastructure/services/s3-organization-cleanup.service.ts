@@ -23,10 +23,17 @@ import { ConfigService } from "@nestjs/config";
 import {
   S3Client,
   ListObjectsV2Command,
+  ListObjectVersionsCommand,
   DeleteObjectsCommand,
   DeleteObjectCommand,
   ListObjectsV2CommandOutput,
+  ListObjectVersionsCommandOutput,
 } from "@aws-sdk/client-s3";
+import {
+  GlueClient,
+  DeletePartitionCommand,
+  GetPartitionsCommand,
+} from "@aws-sdk/client-glue";
 import { v4 as uuidv4 } from "uuid";
 
 export interface CleanupResult {
@@ -59,12 +66,17 @@ export interface CleanupProgress {
 export class S3OrganizationCleanupService {
   private readonly logger = new Logger(S3OrganizationCleanupService.name);
   private readonly s3Client: S3Client;
+  private readonly glueClient: GlueClient;
 
   // Bucket configuration
   private readonly bronzeBucket: string;
   private readonly silverBucket: string;
   private readonly goldBucket: string;
   private readonly uploadsBucket: string;
+
+  // Glue configuration
+  private readonly glueDatabaseName: string;
+  private readonly glueEnabled: boolean;
 
   // Batch size for delete operations (S3 limit is 1000)
   private readonly BATCH_SIZE = 1000;
@@ -77,10 +89,11 @@ export class S3OrganizationCleanupService {
     // Initialize S3 client
     const s3Endpoint = this.configService.get<string>("S3_ENDPOINT");
     const isLocalDev = !!s3Endpoint;
+    const region = this.configService.get<string>("S3_REGION") || "ca-central-1";
 
     this.s3Client = new S3Client({
       endpoint: s3Endpoint || undefined,
-      region: this.configService.get<string>("S3_REGION") || "ca-central-1",
+      region,
       credentials: {
         accessKeyId:
           this.configService.get<string>("AWS_ACCESS_KEY_ID") || "test",
@@ -88,6 +101,17 @@ export class S3OrganizationCleanupService {
           this.configService.get<string>("AWS_SECRET_ACCESS_KEY") || "test",
       },
       forcePathStyle: isLocalDev,
+    });
+
+    // Initialize Glue client (for partition cleanup)
+    this.glueClient = new GlueClient({
+      region,
+      credentials: {
+        accessKeyId:
+          this.configService.get<string>("AWS_ACCESS_KEY_ID") || "test",
+        secretAccessKey:
+          this.configService.get<string>("AWS_SECRET_ACCESS_KEY") || "test",
+      },
     });
 
     // Configure buckets
@@ -100,6 +124,11 @@ export class S3OrganizationCleanupService {
     this.uploadsBucket =
       this.configService.get<string>("S3_BUCKET_UPLOADS") ||
       "plainledger-uploads";
+
+    // Glue configuration
+    const environment = this.configService.get<string>("NODE_ENV") || "dev";
+    this.glueDatabaseName = `plainledger_${environment}_gold`;
+    this.glueEnabled = !isLocalDev; // Disable Glue cleanup in local dev
   }
 
   /**
@@ -187,6 +216,11 @@ export class S3OrganizationCleanupService {
         result.deletedObjects.silver +
         result.deletedObjects.gold +
         result.deletedObjects.uploads;
+
+      // Clean up Glue partitions (Athena/Data Catalog)
+      if (this.glueEnabled && !dryRun) {
+        await this.cleanupGluePartitions(organizationId, runId, result);
+      }
 
       this.logger.log(
         `[${runId}] Cleanup completed: ${result.deletedObjects.total} objects ${dryRun ? "would be" : ""} deleted`,
@@ -420,5 +454,155 @@ export class S3OrganizationCleanupService {
       uploads: counts.uploads,
       total: counts.bronze + counts.silver + counts.gold + counts.uploads,
     };
+  }
+
+  /**
+   * Clean up all Glue partitions for an organization
+   * This ensures Athena queries don't reference deleted data
+   */
+  private async cleanupGluePartitions(
+    organizationId: string,
+    runId: string,
+    result: CleanupResult,
+  ): Promise<void> {
+    // Tables that are partitioned by organization_id
+    const partitionedTables = [
+      "dim_organization",
+      "dim_business_unit",
+      "dim_account",
+      "dim_contact",
+      "dim_item",
+      "dim_class",
+      "dim_location",
+      "fact_transactions",
+      "fact_account_balances",
+      "fact_monthly_summary",
+      "fact_industry_kpis",
+    ];
+
+    for (const tableName of partitionedTables) {
+      try {
+        // Get all partitions for this organization
+        const partitionsResponse = await this.glueClient.send(
+          new GetPartitionsCommand({
+            DatabaseName: this.glueDatabaseName,
+            TableName: tableName,
+            Expression: `organization_id = '${organizationId}'`,
+          }),
+        );
+
+        const partitions = partitionsResponse.Partitions || [];
+
+        if (partitions.length === 0) {
+          continue;
+        }
+
+        this.logger.debug(
+          `[${runId}] Found ${partitions.length} partitions in ${tableName} for org ${organizationId}`,
+        );
+
+        // Delete each partition
+        for (const partition of partitions) {
+          if (!partition.Values) continue;
+
+          try {
+            await this.glueClient.send(
+              new DeletePartitionCommand({
+                DatabaseName: this.glueDatabaseName,
+                TableName: tableName,
+                PartitionValues: partition.Values,
+              }),
+            );
+          } catch (error) {
+            this.logger.warn(
+              `[${runId}] Failed to delete partition ${partition.Values.join("/")} from ${tableName}: ${error}`,
+            );
+          }
+        }
+
+        this.logger.log(
+          `[${runId}] Deleted ${partitions.length} Glue partitions from ${tableName}`,
+        );
+      } catch (error) {
+        // Table might not exist or no partitions
+        this.logger.debug(
+          `[${runId}] Could not cleanup Glue partitions for ${tableName}: ${error}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Delete all object versions (including delete markers) for complete GDPR compliance
+   * This ensures no historical versions remain after organization deletion
+   */
+  async deleteAllObjectVersions(
+    bucket: string,
+    prefix: string,
+    dryRun: boolean,
+    runId: string,
+  ): Promise<number> {
+    let totalDeleted = 0;
+    let keyMarker: string | undefined;
+    let versionIdMarker: string | undefined;
+
+    do {
+      // List all object versions with prefix
+      const listCommand = new ListObjectVersionsCommand({
+        Bucket: bucket,
+        Prefix: prefix,
+        MaxKeys: this.BATCH_SIZE,
+        KeyMarker: keyMarker,
+        VersionIdMarker: versionIdMarker,
+      });
+
+      let response: ListObjectVersionsCommandOutput;
+      try {
+        response = await this.s3Client.send(listCommand);
+      } catch (error) {
+        this.logger.debug(`Bucket ${bucket} not accessible: ${error}`);
+        return 0;
+      }
+
+      const versions = response.Versions || [];
+      const deleteMarkers = response.DeleteMarkers || [];
+      const allObjects = [...versions, ...deleteMarkers];
+
+      if (allObjects.length === 0) {
+        break;
+      }
+
+      // Delete all versions and delete markers
+      if (!dryRun && allObjects.length > 0) {
+        const deleteCommand = new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: {
+            Objects: allObjects.map((obj) => ({
+              Key: obj.Key,
+              VersionId: obj.VersionId,
+            })),
+            Quiet: true,
+          },
+        });
+
+        try {
+          await this.s3Client.send(deleteCommand);
+        } catch (error) {
+          this.logger.error(
+            `[${runId}] Failed to delete versions from ${bucket}: ${error}`,
+          );
+        }
+      }
+
+      totalDeleted += allObjects.length;
+      keyMarker = response.NextKeyMarker;
+      versionIdMarker = response.NextVersionIdMarker;
+
+      this.logger.debug(
+        `[${runId}] ${dryRun ? "Would delete" : "Deleted"} ${allObjects.length} object versions from ${bucket}/${prefix}`,
+      );
+    } while (keyMarker);
+
+    return totalDeleted;
   }
 }
