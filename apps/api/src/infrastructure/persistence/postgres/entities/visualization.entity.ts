@@ -14,9 +14,9 @@ import {
 } from "typeorm";
 
 @Entity("visualizations")
-@Index(["organization_id", "created_by"])
-@Index(["organization_id", "is_public"])
-@Index(["organization_id", "category"])
+@Index(["organizationId", "createdBy"])
+@Index(["organizationId", "isPublic"])
+@Index(["organizationId", "category"])
 export class VisualizationEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;

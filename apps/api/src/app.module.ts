@@ -59,6 +59,7 @@ import { SimilarityController } from "@infrastructure/http/controllers/similarit
 import { ETLProgressController } from "@infrastructure/http/controllers/etl-progress.controller";
 import { DataSourceSyncController } from "@infrastructure/http/controllers/datasource-sync.controller";
 import { ETLTriggerController } from "@infrastructure/http/controllers/etl-trigger.controller";
+import { PermissionsController } from "@infrastructure/http/controllers/permissions.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
@@ -330,6 +331,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     DataSourceSyncController,
     ETLTriggerController,
     JobsController,
+    PermissionsController,
   ],
   providers: [
     // Guards - conditionally register Keycloak guards based on SKIP_AUTH

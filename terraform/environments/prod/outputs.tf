@@ -67,3 +67,18 @@ output "gold_bucket" {
   description = "Data Lake gold bucket"
   value       = module.datalake.gold_bucket_id
 }
+
+output "storybook_url" {
+  description = "Storybook URL"
+  value       = module.storybook.storybook_url
+}
+
+output "storybook_s3_bucket" {
+  description = "Storybook S3 bucket ID"
+  value       = module.storybook.s3_bucket_id
+}
+
+output "storybook_cloudfront_id" {
+  description = "Storybook CloudFront distribution ID"
+  value       = module.storybook.cloudfront_distribution_id
+}

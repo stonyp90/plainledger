@@ -1,0 +1,63 @@
+name: Deploy Storybook
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/src/components/**'
+      - 'apps/web/.storybook/**'
+      - '.github/workflows/storybook.yml'
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Storybook
+        run: pnpm --filter web build-storybook
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.plainledger.ca' }}
+          VITE_KEYCLOAK_URL: ${{ secrets.VITE_KEYCLOAK_URL || 'https://auth.plainledger.ca' }}
+          VITE_KEYCLOAK_REALM: ${{ secrets.VITE_KEYCLOAK_REALM || 'plainledger' }}
+          VITE_KEYCLOAK_CLIENT_ID: ${{ secrets.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web' }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ca-central-1
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync apps/web/storybook-static s3://${{ vars.STORYBOOK_BUCKET }} --delete --cache-control "public, max-age=3600"
+        env:
+          STORYBOOK_BUCKET: ${{ vars.STORYBOOK_BUCKET || 'plainledger-prod-storybook' }}
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ vars.STORYBOOK_CF_ID }} \
+            --paths "/*"
+        env:
+          STORYBOOK_CF_ID: ${{ vars.STORYBOOK_CF_ID }}

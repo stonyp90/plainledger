@@ -14,8 +14,8 @@ import {
 } from "typeorm";
 
 @Entity("custom_entities")
-@Index(["organization_id", "created_by"])
-@Index(["organization_id", "is_public"])
+@Index(["organizationId", "createdBy"])
+@Index(["organizationId", "isPublic"])
 export class CustomEntityEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;

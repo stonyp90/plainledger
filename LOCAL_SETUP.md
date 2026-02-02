@@ -101,7 +101,18 @@ cd apps/api && SKIP_AUTH=true npm run start:dev
 cd apps/web && npm run dev
 ```
 
-### 5. Access the Application
+### 5. Start Storybook (Component Library)
+
+```bash
+# In another terminal
+cd apps/web && pnpm storybook
+```
+
+Access Storybook at http://localhost:6006
+
+**Note:** Storybook uses mock authentication in development mode, so you can view all components without logging in.
+
+### 6. Access the Application
 
 Navigate to http://localhost:5173 and login with:
 
@@ -323,8 +334,43 @@ All local development changes include production safety checks:
 
 ---
 
+## Storybook Component Library
+
+### Local Development
+
+Storybook runs locally on port 6006 and includes all components with interactive documentation:
+
+```bash
+# Start Storybook
+cd apps/web && pnpm storybook
+```
+
+### Features
+
+- **All Components**: Browse 100+ components including charts, UI primitives, and strategic planning tools
+- **Interactive Docs**: See component props, controls, and examples
+- **Bilingual Support**: Test components in English and French
+- **Mock Auth**: Development mode uses mock authentication (no login required)
+
+### Production Deployment
+
+Storybook is deployed to `storybook.plainledger.ca` with:
+- **Keycloak Authentication**: Users must log in via Keycloak
+- **Database Authorization**: Access controlled via `storybook:access` permission
+- **CloudFront CDN**: Fast global delivery
+- **Auto-deployment**: Deploys automatically when components change
+
+### Access Control
+
+To grant Storybook access:
+1. Assign `storybook-viewer` role in Keycloak, OR
+2. Set `featureFlags.storybook:access = true` in user profile
+
+---
+
 ## Next Steps
 
 1. **Real QuickBooks Connection**: Connect your actual QuickBooks sandbox via OAuth
 2. **Sync Data**: Use the Connections page to sync data from QuickBooks
 3. **View Dashboard**: All reports will populate with real financial data
+4. **Explore Components**: Use Storybook to browse and test all UI components

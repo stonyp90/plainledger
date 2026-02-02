@@ -86,6 +86,16 @@ resource "aws_acm_certificate" "main" {
   lifecycle { create_before_destroy = true }
 }
 
+# ACM Certificate for CloudFront (must be in us-east-1)
+# ------------------------------------------------------------------------------
+resource "aws_acm_certificate" "cloudfront" {
+  provider          = aws.us_east_1
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+  subject_alternative_names = ["*.${var.domain_name}"]
+  lifecycle { create_before_destroy = true }
+}
+
 # ------------------------------------------------------------------------------
 # Networking Module
 # ------------------------------------------------------------------------------
@@ -409,6 +419,38 @@ resource "aws_route53_record" "auth" {
 }
 
 # ------------------------------------------------------------------------------
+# Storybook Module (S3 + CloudFront)
+# ------------------------------------------------------------------------------
+module "storybook" {
+  source = "../../modules/storybook"
+
+  project            = var.project
+  environment        = var.environment
+  domain_name        = var.domain_name
+  acm_certificate_arn = aws_acm_certificate.cloudfront.arn
+  route53_zone_id    = module.networking.route53_zone_id
+  kms_key_arn        = module.database.kms_key_arn
+}
+
+# CloudFront Certificate DNS Validation Records
+resource "aws_route53_record" "cloudfront_cert_validation" {
+  for_each = var.create_hosted_zone ? {
+    for dvo in aws_acm_certificate.cloudfront.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  } : {}
+
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = module.networking.route53_zone_id
+}
+
+# ------------------------------------------------------------------------------
 # GitHub OIDC Provider
 # ------------------------------------------------------------------------------
 resource "aws_iam_openid_connect_provider" "github" {
@@ -460,6 +502,28 @@ resource "aws_iam_role_policy" "github_actions" {
         Effect = "Allow"
         Action = ["iam:PassRole"]
         Resource = [module.ecs.ecs_execution_role_arn, module.ecs.ecs_task_role_arn]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "${module.storybook.s3_bucket_arn}",
+          "${module.storybook.s3_bucket_arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudfront:CreateInvalidation",
+          "cloudfront:GetInvalidation",
+          "cloudfront:ListInvalidations"
+        ]
+        Resource = module.storybook.cloudfront_distribution_arn
       }
     ]
   })
