@@ -14,7 +14,6 @@ import { useI18n } from '../lib/i18n';
 import { useTheme } from '../contexts/ThemeContext';
 import KPICard from './KPICard';
 import { useHasRealData } from '../hooks/useHasRealData';
-import EmptyDataState from './EmptyDataState';
 import { INDUSTRY_KPIS, type IndustryData, type KPIDefinition } from '../lib/industryBenchmarkDisplay';
 
 // Theme colors - Corporate green palette (consistent with Landing page)
@@ -74,13 +73,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   
   // Only show industry KPIs if we have real data or should show sandbox data (free users only)
   if (!hasRealData && !shouldShowSandboxData) {
-    return (
-      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
-        <div className="max-w-7xl mx-auto">
-          <EmptyDataState context="dashboard" />
-        </div>
-      </section>
-    );
+    return null;
   }
   
   const currentIndustry = INDUSTRY_KPIS.find(ind => ind.id === selectedIndustry) || INDUSTRY_KPIS[0];
