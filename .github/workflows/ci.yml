@@ -89,9 +89,9 @@ jobs:
         run: npm ci
         working-directory: apps/api
 
-      - name: Install Web dependencies
+      - name: Install Web dependencies (with optional deps for native modules)
         if: steps.cache-web.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm ci --include=optional
         working-directory: apps/web
 
   # ==========================================================================

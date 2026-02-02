@@ -1,22 +1,18 @@
 # ============================================
 # PlainLedger Web - Multi-stage Dockerfile
 # ============================================
+# Using Debian-slim instead of Alpine for better native module compatibility
+# (Rollup v4+ requires glibc-based binaries that work better with Debian)
 
-# Stage 1: Dependencies
-FROM node:22-alpine AS deps
+# Stage 1: Build
+FROM node:22-bookworm-slim AS builder
 WORKDIR /app
-COPY apps/web/package*.json ./
-RUN npm ci && npm cache clean --force
 
-# Stage 2: Build
-FROM node:22-alpine AS builder
-WORKDIR /app
-# Install build dependencies for native modules (rollup, etc.)
-RUN apk add --no-cache python3 make g++
+# Install dependencies including optional ones for native modules (rollup, etc.)
 COPY apps/web/package*.json ./
-# Install dependencies including optional ones and rebuild native modules
 RUN npm ci --include=optional
-RUN npm rebuild || true
+
+# Copy source and build
 COPY apps/web/ ./
 
 # Build arguments for Vite environment variables
@@ -34,7 +30,7 @@ ENV VITE_MOCK_AUTH=$VITE_MOCK_AUTH
 
 RUN npm run build
 
-# Stage 3: Production (nginx)
+# Stage 2: Production (nginx)
 FROM nginx:alpine AS runner
 
 # Copy custom nginx config
