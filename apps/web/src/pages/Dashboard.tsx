@@ -1239,9 +1239,14 @@ export default function Dashboard() {
                   className="flex items-center justify-between p-4 sm:p-6 border-b"
                   style={{ borderColor: 'rgb(var(--color-border))' }}
                 >
-                  <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Add Widget' : 'Ajouter un widget'}
-                  </h2>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Add Widget' : 'Ajouter un widget'}
+                    </h2>
+                    <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn ? 'Select a pre-built chart to add to your dashboard' : 'Sélectionnez un graphique prédéfini à ajouter à votre tableau de bord'}
+                    </p>
+                  </div>
                   <button
                     onClick={() => setShowChartGallery(false)}
                     className="p-2 rounded-lg transition-colors"
@@ -1255,8 +1260,31 @@ export default function Dashboard() {
                 </div>
 
                 {/* Modal Content */}
-                <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+                <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
                   <ChartGallery onSelectChart={handleAddWidget} />
+                </div>
+                
+                {/* Footer with link to visualization builder */}
+                <div 
+                  className="flex items-center justify-between p-4 sm:p-6 border-t"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
+                >
+                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Want to create custom charts?' : 'Vous voulez créer des graphiques personnalisés?'}
+                  </p>
+                  <Link
+                    to="/app/visualizations"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                      color: 'rgb(var(--color-primary-500))',
+                    }}
+                    onClick={() => setShowChartGallery(false)}
+                  >
+                    <BarChart2 className="w-4 h-4" />
+                    {isEn ? 'Open Visualization Builder' : 'Ouvrir le constructeur'}
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
             </div>
