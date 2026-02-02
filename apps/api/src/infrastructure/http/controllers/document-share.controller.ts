@@ -3,6 +3,7 @@
  *
  * API endpoints for password-protected document sharing.
  */
+/// <reference types="multer" />
 
 import {
   Controller,

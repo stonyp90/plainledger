@@ -21,15 +21,16 @@ export default function CashForecastChart({
   currentCash,
   onPointHover,
 }: CashForecastChartProps) {
-  // Early return - hide chart completely if no forecast data
-  if (!forecast || ((!forecast.historical || forecast.historical.length === 0) && (!forecast.projected || forecast.projected.length === 0))) {
-    return null;
-  }
-
+  // Hooks must be called before any early returns (rules of hooks)
   const { language } = useI18n();
   const isEn = language === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  // Early return - hide chart completely if no forecast data (after all hooks)
+  if (!forecast || ((!forecast.historical || forecast.historical.length === 0) && (!forecast.projected || forecast.projected.length === 0))) {
+    return null;
+  }
 
   const allData = [
     ...forecast.historical,

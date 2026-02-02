@@ -196,15 +196,17 @@ export class JobsController {
     let result: { runId: string };
 
     switch (jobId) {
-      case "tax_credit_sync":
+      case "tax_credit_sync": {
         const syncResult = await this.taxCreditSyncJob.runManually();
         result = { runId: syncResult.runId };
         break;
+      }
 
-      case "data_retention":
+      case "data_retention": {
         const retentionResult = await this.dataRetentionJob.runManually(true); // Dry run for safety
         result = { runId: retentionResult.runId };
         break;
+      }
 
       default:
         throw new HttpException(

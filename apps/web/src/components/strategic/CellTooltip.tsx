@@ -17,7 +17,7 @@ export default function CellTooltip({ content, children, delay = 500, showOnlyIf
   const [showTooltip, setShowTooltip] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isTruncated, setIsTruncated] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

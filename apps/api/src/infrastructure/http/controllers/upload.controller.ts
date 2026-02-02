@@ -7,6 +7,7 @@
  * allowing both real Keycloak tokens and mock development tokens.
  * User extraction is handled manually to support development mode.
  */
+/// <reference types="multer" />
 
 import {
   Controller,

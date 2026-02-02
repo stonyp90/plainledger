@@ -38,7 +38,7 @@ describe("BedrockIntelligenceAdapter", () => {
 
   beforeEach(async () => {
     const { BedrockAgentRuntimeClient } =
-       
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("@aws-sdk/client-bedrock-agent-runtime");
     mockBedrockClient = {
       send: jest.fn(),

@@ -29,15 +29,16 @@ export default function BurnRateChart({
   projected,
   onPointHover,
 }: BurnRateChartProps) {
-  // Early return - hide chart completely if no data
-  if ((!historical || historical.length === 0) && (!projected || projected.length === 0)) {
-    return null;
-  }
-
+  // Hooks must be called before any early returns (rules of hooks)
   const { language } = useI18n();
   const isEn = language === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  // Early return - hide chart completely if no data (after all hooks)
+  if ((!historical || historical.length === 0) && (!projected || projected.length === 0)) {
+    return null;
+  }
 
   const allData = [...historical, ...projected];
   const maxBurn = allData.length > 0 ? Math.max(...allData.map(d => Math.abs(d.netBurn ?? 0))) : 0;

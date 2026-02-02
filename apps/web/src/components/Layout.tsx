@@ -226,7 +226,7 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [flyoutPosition, setFlyoutPosition] = useState({ top: 0, left: 0 });
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
   

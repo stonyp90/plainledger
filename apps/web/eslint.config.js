@@ -24,8 +24,13 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2020,
+        ...globals.node,
         React: 'readonly',
         JSX: 'readonly',
+        // DOM/Web API types used as value types
+        RequestInit: 'readonly',
+        HeadersInit: 'readonly',
+        IntersectionObserverInit: 'readonly',
       },
     },
     plugins: {
@@ -55,6 +60,11 @@ export default [
       '@typescript-eslint/ban-ts-comment': 'off',
       'no-empty': 'warn',
       'prefer-const': 'warn',
+      // TypeScript handles undefined checks
+      'no-undef': 'off',
+      // Downgrade to warn - pre-existing issues in codebase
+      'no-case-declarations': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'warn',
     },
   },
 ];

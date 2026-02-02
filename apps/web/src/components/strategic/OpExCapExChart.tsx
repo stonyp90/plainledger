@@ -216,12 +216,7 @@ export default function OpExCapExChart({
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set(categories.map(c => c.id)));
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  // Return null if no real data - no fallback to sample data
-  if (!historicalData || historicalData.length === 0) {
-    return null;
-  }
-
-  const historical = historicalData;
+  const historical = historicalData || [];
   const projected = useMemo(() => {
     if (projectedData && projectedData.length > 0) return projectedData;
     return generateProjections(historical, 12, settings, categories);
@@ -367,6 +362,11 @@ export default function OpExCapExChart({
         return 0;
       });
   }, [categories, visibleCategories, config.showOpex, config.showCapex]);
+
+  // Return null if no real data - no fallback to sample data (after all hooks)
+  if (!historicalData || historicalData.length === 0) {
+    return null;
+  }
 
   // Render stacked bar chart
   const renderStackedBars = () => {

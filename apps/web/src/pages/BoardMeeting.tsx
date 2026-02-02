@@ -1475,7 +1475,7 @@ export default function BoardMeeting() {
   
   // Timer effect
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (meetingStarted && !isPlaying) {
       interval = setInterval(() => {
         setElapsedTime(prev => prev + 1);
@@ -1486,7 +1486,7 @@ export default function BoardMeeting() {
   
   // Auto-advance slides when playing
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     if (isPlaying && currentSlideIndex < slides.length - 1) {
       timeout = setTimeout(() => {
         setCurrentSlideIndex(prev => prev + 1);

@@ -11,6 +11,7 @@
  * Frontend -> PostHog (primary, free)
  * Backend -> MongoDB (secondary, for custom analytics)
  */
+/// <reference types="node" />
 
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import {
@@ -83,7 +84,7 @@ export interface FunnelStep {
 export class AnalyticsRepository implements OnModuleInit {
   private readonly logger = new Logger(AnalyticsRepository.name);
   private eventBuffer: AnalyticsEvent[] = [];
-  private flushInterval: NodeJS.Timeout | null = null;
+  private flushInterval: ReturnType<typeof setInterval> | null = null;
   private readonly BUFFER_SIZE = 100;
   private readonly FLUSH_INTERVAL_MS = 5000;
 

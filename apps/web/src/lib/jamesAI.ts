@@ -43,7 +43,7 @@ class JamesAIService {
   private readonly MAX_CONTEXT_TOKENS = 8000; // Conservative limit
   private readonly CONTEXT_RESET_THRESHOLD = 0.8; // Reset at 80% capacity
   private pendingRequests: Map<string, PendingRequest> = new Map();
-  private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
+  private debounceTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private readonly DEBOUNCE_MS = 300;
   private readonly REQUEST_TIMEOUT = 30000;
   private readonly MAX_RETRIES = 3;

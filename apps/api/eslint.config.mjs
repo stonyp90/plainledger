@@ -20,6 +20,8 @@ export default [
       globals: {
         ...globals.node,
         ...globals.jest,
+        Express: 'readonly',
+        NodeJS: 'readonly',
       },
     },
     plugins: {
@@ -39,6 +41,8 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
+      // TypeScript handles undefined checks
+      'no-undef': 'off',
     },
   },
 ];

@@ -30,11 +30,7 @@ export default function Sparkline({
   highlightAnomalies = true,
   anomalyThreshold = 2,
 }: SparklineProps) {
-  // Early return - hide chart completely if no data
-  if (!data || data.length === 0) {
-    return null;
-  }
-
+  // Hooks must be called before any early returns (rules of hooks)
   const {
     normalizedData,
     min,
@@ -104,7 +100,8 @@ export default function Sparkline({
     };
   }, [data, anomalyThreshold]);
 
-  if (data.length === 0) {
+  // Early return - hide chart completely if no data (after all hooks)
+  if (!data || data.length === 0) {
     return (
       <span 
         className="text-xs"

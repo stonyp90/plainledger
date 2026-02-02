@@ -90,12 +90,7 @@ export default function WaterfallChart({
   metricType = 'cash_flow',
   benchmarkValue,
 }: WaterfallChartProps) {
-  // Early return - hide chart completely if no data
-  if (!data || data.length === 0) {
-    return null;
-  }
-
-  // Get graph configuration
+  // Get graph configuration - must be before any early returns (rules of hooks)
   const graphConfig = useGraphConfig(chartId, {
     visual: {
       height: propHeight ?? 280,
@@ -331,6 +326,11 @@ export default function WaterfallChart({
       totalVariance: planVariance,
     };
   }, [data, showVarianceThreshold]);
+
+  // Early return - hide chart completely if no data (after all hooks)
+  if (!data || data.length === 0) {
+    return null;
+  }
 
   const range = maxCumulative - minCumulative;
   const getYPosition = (value: number) => {

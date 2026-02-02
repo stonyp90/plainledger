@@ -115,7 +115,7 @@ export default function CustomDashboard() {
   // Hover tooltip state
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [tooltipTimeout, setTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   
   // Load pinned charts and saved reports on mount
   useEffect(() => {
