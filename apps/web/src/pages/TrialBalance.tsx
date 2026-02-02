@@ -9,6 +9,7 @@ import ShareModal from '../components/ShareModal';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
 
 interface TrialBalanceAccount {
   code: string;
@@ -165,12 +166,10 @@ export default function TrialBalance() {
 
   if (isLoading && !financialData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <p className="text-muted">{isEn ? 'Loading...' : 'Chargement...'}</p>
-        </div>
-      </div>
+      <ContentLoader 
+        message="Chargement de la balance de vérification..."
+        messageEn="Loading trial balance..."
+      />
     );
   }
 

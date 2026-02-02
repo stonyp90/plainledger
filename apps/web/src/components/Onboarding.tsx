@@ -334,7 +334,7 @@ const ProviderLogos: Record<string, JSX.Element> = {
 // Step 2: Connect Data Source
 function ConnectSourceStep({ 
   data, 
-  onChange: _onChange, 
+  onChange, 
   onNext, 
   onBack 
 }: { 
@@ -755,7 +755,7 @@ export function IndustryPreviewStep({
 // Step 6: Tour/Features
 function TourStep({ 
   onNext, 
-  onBack: _onBack 
+  onBack 
 }: { 
   onNext: () => void;
   onBack: () => void;

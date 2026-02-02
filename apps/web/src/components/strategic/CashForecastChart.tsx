@@ -65,6 +65,11 @@ export default function CashForecastChart({
   };
 
   const historicalEndIndex = forecast.historical.length - 1;
+  
+  // Get projected point data if hovering over projected area
+  const projectedPoint = hoveredIndex !== null && hoveredIndex > historicalEndIndex 
+    ? forecast.projected[hoveredIndex - historicalEndIndex - 1]
+    : null;
 
   return (
     <div className="card p-4 sm:p-6">

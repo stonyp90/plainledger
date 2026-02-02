@@ -77,7 +77,6 @@ export function AnalyticsVisibilityProvider({ children }: { children: ReactNode 
           console.error('Failed to fetch analytics features:', error);
         }
       }
-      setFeatures(response.data);
     } catch (error: any) {
       // If features don't exist, use defaults
       if (error.response?.status === 404) {

@@ -10,8 +10,8 @@
  * - Bilingual support (EN/FR)
  */
 
-import { useMemo, useState, useRef, useCallback } from 'react';
-import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown, Target, Settings2 } from 'lucide-react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown, Target, Settings2, Share2, Maximize2, Minimize2 } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
 import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
 import { useGraphConfig } from '../../hooks/useGraphConfig';
@@ -20,6 +20,8 @@ import GraphConfigPanel from './GraphConfigPanel';
 import { VariancePinCompact } from './ibcs/VariancePin';
 import { IBCSLegendCompact } from './ibcs/IBCSLegend';
 import { IBCSColors, calculateVariance, type IBCSMetricType } from '../../lib/ibcs';
+import { useChartCapture } from '../../hooks/useChartCapture';
+import ShareModal from '../ShareModal';
 
 interface WaterfallItem {
   label: string;
@@ -109,9 +111,113 @@ export default function WaterfallChart({
   });
   
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { chartRef, capture } = useChartCapture<HTMLDivElement>();
   
   // Generate stable chart ID for config persistence
   const effectiveChartId = chartId || `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`;
+  
+  // Check if fullscreen API is supported
+  const isFullscreenSupported = useCallback(() => {
+    return !!(
+      document.fullscreenEnabled ||
+      (document as any).webkitFullscreenEnabled ||
+      (document as any).mozFullScreenEnabled ||
+      (document as any).msFullscreenEnabled
+    );
+  }, []);
+
+  // Handle fullscreen toggle with browser compatibility
+  const toggleFullscreen = useCallback(() => {
+    if (!chartRef.current) return;
+    
+    if (!isFullscreenSupported()) {
+      setIsFullscreen(!isFullscreen);
+      return;
+    }
+    
+    const elem = chartRef.current as any;
+    const doc = document as any;
+    
+    if (!document.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement && !doc.msFullscreenElement) {
+      const requestFullscreen = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+      if (requestFullscreen) {
+        requestFullscreen.call(elem).then(() => {
+          setIsFullscreen(true);
+        }).catch((err: Error) => {
+          console.warn('Fullscreen request failed, using CSS fallback:', err);
+          setIsFullscreen(true);
+        });
+      } else {
+        setIsFullscreen(true);
+      }
+    } else {
+      const exitFullscreen = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+      if (exitFullscreen) {
+        exitFullscreen.call(document).then(() => {
+          setIsFullscreen(false);
+        }).catch((err: Error) => {
+          console.warn('Exit fullscreen failed:', err);
+          setIsFullscreen(false);
+        });
+      } else {
+        setIsFullscreen(false);
+      }
+    }
+  }, [isFullscreen, isFullscreenSupported]);
+
+  // Listen for fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const doc = document as any;
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Handle share button click
+  const handleShareClick = useCallback(async () => {
+    setIsCapturing(true);
+    setShareError(null);
+    
+    try {
+      const imageData = await capture({ backgroundColor: '#ffffff', scale: 2 });
+      if (imageData) {
+        setCapturedImage(imageData);
+        setShowShareModal(true);
+      } else {
+        setShareError(isEn ? 'Could not capture chart image' : 'Impossible de capturer l\'image du graphique');
+        setShowShareModal(true);
+      }
+    } catch (error) {
+      console.error('Failed to capture chart:', error);
+      setShareError(isEn ? 'Failed to capture chart' : 'Échec de la capture du graphique');
+      setShowShareModal(true);
+    } finally {
+      setIsCapturing(false);
+    }
+  }, [capture, isEn]);
   
   const height = propHeight ?? graphConfig.visual.height;
   const showVarianceThreshold = propShowVarianceThreshold ?? graphConfig.waterfall?.varianceThreshold ?? 20;
@@ -247,7 +353,7 @@ export default function WaterfallChart({
 
   return (
     <div 
-      className="rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-200 hover:shadow-md group"
+      className="rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'

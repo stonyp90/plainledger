@@ -75,7 +75,7 @@ export default function DynamicDashboardLayout({
 
   return (
     <div 
-      className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 auto-rows-min transition-all duration-200 ${className}`}
+      className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-2.5 auto-rows-min transition-all duration-200 ${className}`}
       style={{
         // Add subtle visual feedback when dragging
         opacity: isDragging ? 0.95 : 1,

@@ -124,7 +124,7 @@ export default function MarketAnalysis() {
   }, [currentTenant?.industry]);
 
   // Fetch benchmark data from API (with fallback)
-  const { benchmark, isLoading: benchmarkLoading, refetch: refetchBenchmark } = useBenchmark(
+  const { benchmark, isLoading: benchmarkLoading, refetch: refetchBenchmark, dataSource } = useBenchmark(
     selectedIndustry, 
     revenueRange
   );
@@ -844,7 +844,7 @@ export default function MarketAnalysis() {
         </div>
       )}
 
-      {/* Data Sources - Generic attribution */}
+      {/* Data Sources - Government data attribution */}
       <div className="rounded-xl border p-4" style={{ 
         background: 'linear-gradient(to right, rgb(var(--color-primary-50)), rgb(var(--color-primary-100)))',
         borderColor: 'rgb(var(--color-primary-200))'
@@ -855,18 +855,36 @@ export default function MarketAnalysis() {
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="font-medium flex items-center gap-2 text-sm sm:text-base" style={{ color: 'rgb(var(--color-primary-900))' }}>
-              <span className="whitespace-nowrap">{isEn ? 'AI-Analyzed Benchmark Data' : 'Données de référence analysées par IA'}</span>
-              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
+              <span className="whitespace-nowrap">{isEn ? 'Official Government Data' : 'Données gouvernementales officielles'}</span>
+              {dataSource === 'api' ? (
+                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700">
+                  {isEn ? 'LIVE' : 'EN DIRECT'}
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-amber-100 text-amber-700">
+                  {isEn ? 'CACHED' : 'EN CACHE'}
+                </span>
+              )}
             </h3>
             <p className="mt-1 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-primary-700))' }}>
               {isEn 
-                ? 'Our AI aggregates and analyzes data from public and private sources to provide accurate industry benchmarks. Data is updated monthly to ensure relevance.'
-                : 'Notre IA agrège et analyse des données provenant de sources publiques et privées pour fournir des benchmarks sectoriels précis. Les données sont mises à jour mensuellement.'}
+                ? 'Benchmark data sourced from Innovation, Science and Economic Development Canada (ISED) via the Open Canada portal. Data covers 75,000+ Canadian businesses across all provinces.'
+                : 'Données de référence provenant d\'Innovation, Sciences et Développement économique Canada (ISDE) via le portail Ouvert Canada. Les données couvrent plus de 75 000 entreprises canadiennes dans toutes les provinces.'}
             </p>
-            <p className="mt-2 text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-primary-600))' }}>
-              {isEn 
-                ? `Reference year: ${benchmark?.referenceYear || 2023} • Last updated: ${new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', { month: 'long', year: 'numeric' })}`
-                : `Année de référence: ${benchmark?.referenceYear || 2023} • Dernière mise à jour: ${new Date().toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' })}`}
+            <p className="mt-2 text-[10px] sm:text-xs flex items-center gap-2 flex-wrap" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              <span>
+                {isEn 
+                  ? `Reference year: ${benchmark?.referenceYear || 2023}`
+                  : `Année de référence: ${benchmark?.referenceYear || 2023}`}
+              </span>
+              <span>•</span>
+              <span>
+                {isEn ? 'Source: open.canada.ca' : 'Source: ouvert.canada.ca'}
+              </span>
+              <span>•</span>
+              <span>
+                {isEn ? 'Open Government Licence' : 'Licence du gouvernement ouvert'}
+              </span>
             </p>
           </div>
         </div>

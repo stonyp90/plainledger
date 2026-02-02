@@ -1175,8 +1175,8 @@ export default function ModelSpreadsheet({
           onDelete={handleClear}
           onFillDown={handleFillDown}
           onFillRight={handleFillRight}
-          onDeleteColumn={sel.type === 'column' ? () => {
-            if (sel.periodKey) {
+          onDeleteColumn={selection.type === 'column' ? () => {
+            if (selection.periodKey) {
               handleRemovePeriod();
             }
             setShowOperationsMenu(false);

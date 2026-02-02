@@ -13,27 +13,19 @@ import { useState, useEffect } from 'react';
 import {
   Plus,
   LayoutGrid,
-  List,
-  Settings2,
-  RefreshCw,
-  Search,
   X,
   GripVertical,
   Sparkles,
   Save,
   FolderOpen,
-  Trash2,
-  Download,
   FileText,
   Star,
-  StarOff,
   Check,
   Wand2,
   TrendingUp,
   TrendingDown,
   Edit3,
   Copy,
-  Eye,
   BarChart3,
   Calendar,
   ArrowRight,
@@ -94,10 +86,7 @@ export default function CustomDashboard() {
   
   const [pinnedCharts, setPinnedCharts] = useState<PinnedChart[]>([]);
   const [showGallery, setShowGallery] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [editMode, setEditMode] = useState(false);
   
   // Drag and drop state for pinned charts
   const [draggedChartId, setDraggedChartId] = useState<string | null>(null);
@@ -758,37 +747,37 @@ export default function CustomDashboard() {
         </div>
       </div>
       
-      {/* Tab Navigation - Mobile-first responsive */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        {/* Tab switcher */}
+      {/* Simplified Controls - Tab + Actions only */}
+      <div className="flex items-center justify-between gap-3">
+        {/* Tab switcher - compact */}
         <div 
-          className="flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 rounded-lg sm:rounded-xl w-full sm:w-fit overflow-x-auto"
+          className="flex items-center gap-0.5 p-1 rounded-lg"
           style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
         >
           <button
             onClick={() => setActiveTab('dashboard')}
-            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
+            className="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all"
             style={{
               backgroundColor: activeTab === 'dashboard' ? 'rgb(var(--color-surface))' : 'transparent',
               color: activeTab === 'dashboard' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-              boxShadow: activeTab === 'dashboard' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              boxShadow: activeTab === 'dashboard' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             }}
           >
             {isEn ? 'Dashboard' : 'Tableau de bord'}
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 whitespace-nowrap"
+            className="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5"
             style={{
               backgroundColor: activeTab === 'reports' ? 'rgb(var(--color-surface))' : 'transparent',
               color: activeTab === 'reports' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))',
-              boxShadow: activeTab === 'reports' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              boxShadow: activeTab === 'reports' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             }}
           >
             {isEn ? 'Reports' : 'Rapports'}
             {savedReports.length > 0 && (
               <span 
-                className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold"
+                className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
@@ -800,115 +789,34 @@ export default function CustomDashboard() {
           </button>
         </div>
         
-        {/* Quick Actions - Two rows on mobile */}
-        <div className="flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 flex-wrap">
-          {/* Left group - utilities */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Search - hidden on mobile */}
-            <div 
-              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-            >
-              <Search className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={isEn ? 'Search...' : 'Rechercher...'}
-                className="bg-transparent border-none outline-none text-sm w-28"
-                style={{ color: 'rgb(var(--color-text))' }}
-              />
-            </div>
-            
-            {/* View toggle */}
-            <div 
-              className="flex rounded-lg overflow-hidden"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-            >
-              <button
-                onClick={() => setViewMode('grid')}
-                className="p-2 transition-colors"
-                style={{
-                  backgroundColor: viewMode === 'grid' ? 'rgb(var(--color-primary-500))' : 'transparent',
-                  color: viewMode === 'grid' ? 'white' : 'rgb(var(--color-text-muted))',
-                }}
-                title={isEn ? 'Grid view' : 'Vue grille'}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className="p-2 transition-colors"
-                style={{
-                  backgroundColor: viewMode === 'list' ? 'rgb(var(--color-primary-500))' : 'transparent',
-                  color: viewMode === 'list' ? 'white' : 'rgb(var(--color-text-muted))',
-                }}
-                title={isEn ? 'List view' : 'Vue liste'}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-            
-            {/* Edit mode */}
-            <button
-              onClick={() => setEditMode(!editMode)}
-              className="p-2 rounded-lg transition-all"
-              style={{
-                backgroundColor: editMode ? 'rgb(var(--color-warning) / 0.15)' : 'rgb(var(--color-bg-muted))',
-                color: editMode ? 'rgb(var(--color-warning))' : 'rgb(var(--color-text-muted))',
-              }}
-              title={isEn ? 'Edit mode' : 'Mode édition'}
-            >
-              <Settings2 className="w-4 h-4" />
-            </button>
-            
-            {/* Refresh */}
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="p-2 rounded-lg transition-colors hidden sm:flex"
-              style={{
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                color: 'rgb(var(--color-text-muted))',
-              }}
-              title={isEn ? 'Refresh' : 'Actualiser'}
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+        {/* Primary actions only */}
+        <div className="flex items-center gap-1.5">
+          {/* Create button */}
+          <button
+            onClick={() => setShowChartBuilder(true)}
+            className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-all hover:opacity-90 active:scale-95"
+            style={{
+              backgroundColor: 'rgb(var(--color-primary-500))',
+              color: 'white',
+            }}
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            <span>{isEn ? 'Create' : 'Créer'}</span>
+          </button>
           
-          {/* Right group - primary actions */}
-          <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Build button */}
-            <button
-              onClick={() => setShowChartBuilder(true)}
-              className="p-2 px-2.5 sm:px-3 rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all hover:shadow-md active:scale-95"
-              style={{
-                backgroundColor: 'rgb(var(--color-success))',
-                color: 'white',
-                boxShadow: '0 2px 10px -2px rgb(var(--color-success) / 0.4)',
-              }}
-              title={isEn ? 'Build custom chart' : 'Créer un graphique'}
-            >
-              <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{isEn ? 'Create' : 'Créer'}</span>
-            </button>
-            
-            {/* Prebuilt button */}
-            <button
-              onClick={() => setShowGallery(true)}
-              className="p-2 px-2.5 sm:px-3 rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition-all hover:shadow-md active:scale-95"
-              style={{
-                backgroundColor: 'rgb(var(--color-primary-500))',
-                color: 'white',
-                boxShadow: '0 2px 10px -2px rgb(var(--color-primary-500) / 0.4)',
-              }}
-              title={isEn ? 'Add prebuilt chart' : 'Ajouter un graphique prédéfini'}
-            >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{isEn ? 'Prebuilt' : 'Prédéfini'}</span>
-            </button>
-          </div>
+          {/* Gallery button */}
+          <button
+            onClick={() => setShowGallery(true)}
+            className="px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs sm:text-sm font-medium transition-all hover:opacity-90 active:scale-95"
+            style={{
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isEn ? 'Gallery' : 'Galerie'}</span>
+          </button>
         </div>
       </div>
       
@@ -1069,110 +977,32 @@ export default function CustomDashboard() {
         </div>
       )}
       
-      {/* Pinned Charts Grid */}
+      {/* Pinned Charts Grid - Always grid view */}
       {pinnedCharts.length > 0 && (
-        <div className={viewMode === 'grid' 
-          ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4'
-          : 'space-y-3 sm:space-y-4'
-        }>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {pinnedCharts
-            .filter(p => {
-              if (!searchQuery) return true;
-              const config = p.config;
-              const name = isEn ? config.nameEn : config.name;
-              return name.toLowerCase().includes(searchQuery.toLowerCase());
-            })
             .sort((a, b) => a.position - b.position)
             .map((pinned) => (
               <div 
                 key={pinned.chartId}
-                className={`${viewMode === 'grid' ? getSizeClass(pinned.size) : ''} ${
-                  draggedChartId === pinned.chartId ? 'opacity-50' : ''
+                className={`${getSizeClass(pinned.size)} ${
+                  draggedChartId === pinned.chartId ? 'opacity-50 scale-95' : ''
                 } ${
                   dragOverChartId === pinned.chartId ? 'ring-2 ring-primary-500 ring-offset-2 rounded-xl' : ''
-                } transition-all`}
-                draggable={editMode}
+                } transition-all group cursor-grab active:cursor-grabbing`}
+                draggable
                 onDragStart={() => handleDragStart(pinned.chartId)}
                 onDragOver={(e) => handleDragOver(e, pinned.chartId)}
                 onDragLeave={handleDragLeave}
                 onDrop={() => handleDrop(pinned.chartId)}
                 onDragEnd={handleDragEnd}
               >
-                {editMode && (
-                  <div 
-                    className="flex items-center justify-between mb-2 px-2 cursor-grab active:cursor-grabbing"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="w-4 h-4" />
-                      <span className="text-xs">
-                        {isEn ? 'Drag to reorder' : 'Glisser pour réorganiser'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {/* Edit & Duplicate buttons */}
-                      <button
-                        onClick={() => handleEditChart(pinned.chartId)}
-                        className="p-1.5 rounded hover:bg-primary-500/10 transition-colors relative"
-                        style={{ color: 'rgb(var(--color-primary-500))' }}
-                        onMouseEnter={(e) => {
-                          setHoveredElement(`edit-${pinned.chartId}`);
-                          setTooltipPosition({ x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseLeave={() => setHoveredElement(null)}
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        {hoveredElement === `edit-${pinned.chartId}` && (
-                          <ChartTooltip visible={true} position={tooltipPosition}>
-                            <div>
-                              <p className="text-white text-xs font-medium">{isEn ? 'Edit Chart' : 'Modifier'}</p>
-                            </div>
-                          </ChartTooltip>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDuplicateChart(pinned.chartId)}
-                        className="p-1.5 rounded hover:bg-primary-500/10 transition-colors relative"
-                        style={{ color: 'rgb(var(--color-text-muted))' }}
-                        onMouseEnter={(e) => {
-                          setHoveredElement(`dup-${pinned.chartId}`);
-                          setTooltipPosition({ x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseLeave={() => setHoveredElement(null)}
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        {hoveredElement === `dup-${pinned.chartId}` && (
-                          <ChartTooltip visible={true} position={tooltipPosition}>
-                            <div>
-                              <p className="text-white text-xs font-medium">{isEn ? 'Duplicate' : 'Dupliquer'}</p>
-                            </div>
-                          </ChartTooltip>
-                        )}
-                      </button>
-                      <div className="w-px h-4 mx-1" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
-                      {(['small', 'medium', 'large', 'full'] as const).map((size) => (
-                        <button
-                          key={size}
-                          onClick={() => handleSizeChange(pinned.chartId, size)}
-                          className={`px-2 py-1 rounded text-xs ${
-                            pinned.size === size ? 'bg-primary-500 text-white' : ''
-                          }`}
-                          style={pinned.size !== size ? {
-                            backgroundColor: 'rgb(var(--color-bg-muted))',
-                          } : {}}
-                        >
-                          {size === 'small' ? 'S' : size === 'medium' ? 'M' : size === 'large' ? 'L' : 'XL'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 <DataVisualizationCard
                   config={pinned.config}
                   isPinned={true}
                   onUnpin={() => handleUnpinChart(pinned.chartId)}
                   onConfigChange={(config) => handleConfigChange(pinned.chartId, config)}
-                  size={viewMode === 'list' ? 'medium' : pinned.size}
+                  size={pinned.size}
                   showControls={true}
                 />
               </div>

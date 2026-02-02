@@ -66,6 +66,7 @@ import AddWidgetCard from '../components/AddWidgetCard';
 import DashboardWidgetWrapper from '../components/DashboardWidgetWrapper';
 import { ChartGallery } from '../components/DataVisualization';
 import { useDashboardConfig } from '../hooks/useDashboardConfig';
+import PageLoader, { DashboardSkeleton } from '../components/PageLoader';
 import type { ChartConfig } from '../lib/chartFavorites';
 import type { DashboardWidgetConfig } from '../lib/dashboardConfig';
 
@@ -537,12 +538,13 @@ export default function Dashboard() {
                   className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-all hover:opacity-80"
                   style={{ 
                     backgroundColor: 'rgba(70, 78, 184, 0.1)',
-                    color: '#464EB8',
+                    color: '#5059C9',
                   }}
                   title={isEn ? 'Configure Teams alerts' : 'Configurer les alertes Teams'}
                 >
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.625 8.073c.574 0 1.125.226 1.531.629.406.403.635.949.635 1.518v4.559a3.87 3.87 0 0 1-1.133 2.731 3.88 3.88 0 0 1-2.735 1.132h-.293v2.206c0 .37-.098.734-.284 1.054a2.047 2.047 0 0 1-.775.764 2.05 2.05 0 0 1-1.051.285c-.37 0-.733-.098-1.053-.285L11.6 20.029a.26.26 0 0 1-.108-.098.257.257 0 0 1-.041-.14V10.22c0-1.026.41-2.01 1.138-2.736a3.88 3.88 0 0 1 2.735-1.133l5.301-.278zM16.875 3a2.812 2.812 0 0 1 2.813 2.813 2.812 2.812 0 0 1-2.813 2.812 2.812 2.812 0 0 1-2.813-2.812A2.812 2.812 0 0 1 16.875 3zM9.375 6.375a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm0 5.625c2.482 0 4.5 2.018 4.5 4.5v3.375H1.125V16.5c0-2.482 2.018-4.5 4.5-4.5h3.75z"/>
+                  {/* Official Microsoft Teams logo */}
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.625 8.073c.574 0 1.125.228 1.531.634.407.407.636.958.636 1.534v5.166c0 .575-.229 1.127-.636 1.533a2.166 2.166 0 0 1-1.531.635h-4.87v-9.5h4.87v-.002zm-7.578-3.166c0-.575.229-1.127.636-1.534a2.166 2.166 0 0 1 1.531-.634h1.59c.575 0 1.126.228 1.532.634.406.407.635.959.635 1.534v.917a2.167 2.167 0 0 1 1.72.898 2.176 2.176 0 0 1 .422 1.28h-6.066V4.907zM8.25 5.823h6.75v11.844a2.167 2.167 0 0 1-.635 1.534 2.166 2.166 0 0 1-1.531.634H8.25V5.823zm-.75 0v13.927a.083.083 0 0 1-.083.083H2.333a.083.083 0 0 1-.083-.083V8.073c0-.576.229-1.127.636-1.534a2.166 2.166 0 0 1 1.531-.634H7.5v-.082zm5.125-3.157a1.333 1.333 0 1 0 0 2.667 1.333 1.333 0 0 0 0-2.667z"/>
                   </svg>
                   <span className="font-medium">Teams</span>
                 </button>
@@ -848,86 +850,9 @@ export default function Dashboard() {
     toast.success(t('dashboard.dataUpdated'), t('dashboard.allDataUpToDate'));
   };
 
-  // Show cutting-edge skeleton loading state
+  // Show professional loading state while data is loading
   if (isLoading && !financialData) {
-    return (
-      <div className="space-y-2 sm:space-y-4 lg:space-y-6 animate-pulse">
-        {/* Header skeleton */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-          <div>
-            <div className="h-6 sm:h-8 w-36 sm:w-48 rounded-lg bg-gradient-to-r from-[rgb(var(--color-bg-muted))] via-[rgb(var(--color-border))] to-[rgb(var(--color-bg-muted))] animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
-            <div className="h-3 sm:h-4 w-24 sm:w-32 mt-2 rounded bg-[rgb(var(--color-bg-muted))]" />
-          </div>
-          <div className="flex gap-2">
-            <div className="h-8 sm:h-9 w-24 sm:w-32 rounded-lg bg-[rgb(var(--color-bg-muted))]" />
-            <div className="h-8 sm:h-9 w-20 sm:w-24 rounded-lg bg-[rgb(var(--color-bg-muted))]" />
-          </div>
-        </div>
-        
-        {/* KPI cards skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div 
-              key={i}
-              className="rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 relative overflow-hidden"
-              style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
-            >
-              <div className="h-2.5 sm:h-3 w-16 sm:w-20 rounded bg-[rgb(var(--color-bg-muted))] mb-3 sm:mb-4" />
-              <div className="h-6 sm:h-8 w-20 sm:w-28 rounded bg-[rgb(var(--color-bg-muted))] mb-2 sm:mb-3" />
-              <div className="h-3 sm:h-4 w-12 sm:w-16 rounded bg-[rgb(var(--color-bg-muted))]" />
-              {/* Shimmer effect */}
-              <div 
-                className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]"
-                style={{
-                  background: 'linear-gradient(90deg, transparent, rgb(var(--color-bg-muted) / 0.4), transparent)',
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        
-        {/* Ratios skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-          {[...Array(4)].map((_, i) => (
-            <div 
-              key={i}
-              className="rounded-lg sm:rounded-xl p-2.5 sm:p-3"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-            >
-              <div className="h-2.5 sm:h-3 w-20 sm:w-24 rounded bg-[rgb(var(--color-border))] mb-2 sm:mb-3" />
-              <div className="h-5 sm:h-7 w-12 sm:w-16 rounded bg-[rgb(var(--color-border))]" />
-            </div>
-          ))}
-        </div>
-        
-        {/* Charts skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
-          {[...Array(2)].map((_, i) => (
-            <div 
-              key={i}
-              className="rounded-lg sm:rounded-xl p-3 sm:p-4 h-44 sm:h-52 lg:h-60"
-              style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
-            >
-              <div className="h-4 sm:h-5 w-24 sm:w-32 rounded bg-[rgb(var(--color-bg-muted))] mb-2" />
-              <div className="h-2.5 sm:h-3 w-32 sm:w-48 rounded bg-[rgb(var(--color-bg-muted))] mb-4 sm:mb-6" />
-              <div className="h-28 sm:h-32 lg:h-40 rounded bg-[rgb(var(--color-bg-muted))]" />
-            </div>
-          ))}
-        </div>
-        
-        {/* Loading indicator */}
-        <div className="flex items-center justify-center py-3 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative">
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-            </div>
-            <span className="text-xs sm:text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {t('common.loading')}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Show error state
@@ -951,7 +876,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-2 sm:space-y-4 lg:space-y-6" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+    <div className="space-y-1.5 sm:space-y-2 lg:space-y-2.5" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
       {/* Demo Signup Welcome Banner - Shows for new signups */}
       <DemoSignupWelcome />
       

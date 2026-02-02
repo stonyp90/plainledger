@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+.next/
+out/
+
+# Cache
+.cache/
+**/.cache/
+.vite/
+**/.vite/
+
+# Coverage
+coverage/
+**/coverage/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+*.min.js
+*.min.css
+*.d.ts
+
+# Misc
+.git/
+.husky/_/
+*.log
+
+# Terraform
+**/*.tfstate
+**/*.tfstate.backup
+.terraform/

@@ -26,6 +26,9 @@ import {
   JoinType,
 } from "./DataSource";
 
+// Re-export AggregationType for convenience
+export type { AggregationType } from "./DataSource";
+
 // =====================================================
 // VALUE OBJECTS
 // =====================================================

@@ -41,6 +41,7 @@ import { useHasRealData } from '../hooks/useHasRealData';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import { ChartEmptyState } from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
 import {
   runFullAnalysis,
   DEFAULT_THRESHOLDS,
@@ -409,12 +410,10 @@ export default function AnomalyDashboard() {
   // Show loading state
   if (isLoading && !financialData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <p className="text-muted">{isEn ? 'Loading...' : 'Chargement...'}</p>
-        </div>
-      </div>
+      <ContentLoader 
+        message="Analyse des données en cours..."
+        messageEn="Analyzing your data..."
+      />
     );
   }
 

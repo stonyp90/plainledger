@@ -118,6 +118,40 @@ function summarizeConversation(messages: ChatMessage[]): string {
 }
 
 /**
+ * Score context relevance based on query and intent
+ */
+function scoreContextRelevance(
+  section: 'accounts' | 'initiatives' | 'scenarios',
+  query: string,
+  intent: QueryIntent
+): number {
+  const lowerQuery = query.toLowerCase();
+  let score = 0.5; // Base relevance
+  
+  // Intent-based scoring
+  if (section === 'initiatives' && (intent === 'initiative' || intent === 'okr' || intent === 'strategy')) {
+    score += 0.4;
+  }
+  
+  if (section === 'accounts' && (intent === 'data_query' || intent === 'calculation')) {
+    score += 0.3;
+  }
+  
+  // Keyword-based scoring
+  const sectionKeywords: Record<string, string[]> = {
+    accounts: ['account', 'revenue', 'expense', 'cash', 'balance', 'compte', 'revenu', 'dépense'],
+    initiatives: ['initiative', 'project', 'plan', 'strategy', 'initiative', 'projet', 'stratégie'],
+    scenarios: ['scenario', 'planning', 'forecast', 'scénario', 'planification', 'prévision'],
+  };
+  
+  const keywords = sectionKeywords[section] || [];
+  const keywordMatches = keywords.filter(kw => lowerQuery.includes(kw)).length;
+  score += keywordMatches * 0.1;
+  
+  return Math.min(1.0, score);
+}
+
+/**
  * Prune context based on query intent and keywords
  */
 export function pruneContext(
@@ -143,13 +177,17 @@ export function pruneContext(
     tokenEstimate: 0,
   };
   
-  // Add relevant accounts based on keywords
+  // Add relevant accounts based on keywords and relevance score
   if (keywords.accounts.length > 0) {
-    pruned.relevantAccounts = keywords.accounts;
+    const relevanceScore = scoreContextRelevance('accounts', query, intent);
+    if (relevanceScore > 0.5) {
+      pruned.relevantAccounts = keywords.accounts;
+    }
   }
   
-  // Add initiatives only for strategic queries
-  if (intent === 'initiative' || intent === 'okr' || intent === 'strategy') {
+  // Add initiatives only for strategic queries with high relevance
+  const initiativesRelevance = scoreContextRelevance('initiatives', query, intent);
+  if (initiativesRelevance > 0.6 && (intent === 'initiative' || intent === 'okr' || intent === 'strategy')) {
     if (fullContext.initiatives && fullContext.initiatives.length > 0) {
       // Include only top 3 initiatives by impact for strategic queries
       const sortedInitiatives = [...fullContext.initiatives]

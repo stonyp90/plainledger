@@ -11,6 +11,10 @@ import Toggle from '../components/Toggle';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
+import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
+import { IBCSColumnHeaderRow } from '../components/charts/ibcs/IBCSHeader';
+import { calculateVariance as calculateIBCSVariance, type IBCSMetricType } from '../lib/ibcs';
 
 export default function IncomeStatement() {
   const { currentTenant } = useTenant();
@@ -22,6 +26,8 @@ export default function IncomeStatement() {
   const [periodEnd, setPeriodEnd] = useState(`${currentYear}-12-31`);
   const [showComparison, setShowComparison] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  // IBCS mode is always enabled - industry standard for financial reporting
+  const ibcsMode = true;
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
   const { hasIncomeStatement, hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasRevenueTrends, hasExpenseTrends } = useHasRealData();
@@ -63,6 +69,18 @@ export default function IncomeStatement() {
   const calculateVariance = (current: number, prior: number) => {
     if (prior === 0) return current === 0 ? 0 : 100;
     return ((current - prior) / Math.abs(prior)) * 100;
+  };
+  
+  // IBCS variance calculation for income statement
+  // Revenue: increase is favorable; Expenses: decrease is favorable
+  const calculateIBCSVarianceForIncomeStatement = (
+    current: number, 
+    prior: number, 
+    isRevenue: boolean
+  ): { variancePct: number; favorable: boolean } => {
+    const variancePct = calculateVariance(current, prior);
+    const favorable = isRevenue ? variancePct >= 0 : variancePct <= 0;
+    return { variancePct, favorable };
   };
 
   // Generate income statement data from financial data
@@ -160,19 +178,17 @@ export default function IncomeStatement() {
   // Loading state
   if (isLoading && !financialData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <p className="text-muted">{isEn ? 'Loading income statement...' : 'Chargement de l\'état des résultats...'}</p>
-        </div>
-      </div>
+      <ContentLoader 
+        message="Chargement de l'état des résultats..."
+        messageEn="Loading income statement..."
+      />
     );
   }
 
   // Show empty state if no real data and no sandbox data
   if (!shouldShowData || !hasIncomeStatement || (!hasRevenueTrends && !hasExpenseTrends)) {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-2 sm:space-y-4 lg:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -218,14 +234,20 @@ export default function IncomeStatement() {
     );
   }
 
-  const renderRow = (item: { code: string; name: string; nameEn?: string; current: number; prior: number }) => {
+  const renderRow = (
+    item: { code: string; name: string; nameEn?: string; current: number; prior: number },
+    isRevenue = false
+  ) => {
     const variance = calculateVariance(item.current, item.prior);
+    const ibcsVariance = calculateIBCSVarianceForIncomeStatement(item.current, item.prior, isRevenue);
     const displayName = isEn && item.nameEn ? item.nameEn : item.name;
+    const varianceAbs = item.current - item.prior;
+    
     return (
       <tr key={item.code} className="hover:bg-[rgb(var(--color-bg-muted))]">
         <td className="py-2 px-4 font-mono text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{item.code}</td>
         <td className="py-2 px-4" style={{ color: 'rgb(var(--color-text))' }}>{displayName}</td>
-        <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
+        <td className={`py-2 px-4 text-right font-mono tabular-nums ${ibcsMode ? '' : ''}`} style={{ color: 'rgb(var(--color-text))' }}>
           {formatCurrency(item.current)}
         </td>
         {showComparison && (
@@ -233,18 +255,44 @@ export default function IncomeStatement() {
             <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {formatCurrency(item.prior)}
             </td>
-            <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-            </td>
+            {ibcsMode ? (
+              <>
+                <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ 
+                  color: ibcsVariance.favorable ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)' 
+                }}>
+                  {varianceAbs >= 0 ? '+' : ''}{formatCurrency(varianceAbs)}
+                </td>
+                <td className="py-2 px-4 text-right font-mono tabular-nums">
+                  <VariancePinCompact
+                    variancePct={ibcsVariance.variancePct}
+                    favorable={ibcsVariance.favorable}
+                    height={14}
+                  />
+                </td>
+              </>
+            ) : (
+              <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+                {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+              </td>
+            )}
           </>
         )}
       </tr>
     );
   };
 
-  const renderTotalRow = (label: string, labelEn: string, totals: { current: number; prior: number }, isGrandTotal = false) => {
+  const renderTotalRow = (
+    label: string, 
+    labelEn: string, 
+    totals: { current: number; prior: number }, 
+    isGrandTotal = false,
+    isRevenue = false
+  ) => {
     const variance = calculateVariance(totals.current, totals.prior);
+    const ibcsVariance = calculateIBCSVarianceForIncomeStatement(totals.current, totals.prior, isRevenue);
     const displayLabel = isEn ? labelEn : label;
+    const varianceAbs = totals.current - totals.prior;
+    
     return (
       <tr 
         className={`${isGrandTotal ? 'font-bold' : 'font-semibold'}`}
@@ -260,9 +308,26 @@ export default function IncomeStatement() {
             <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {formatCurrency(totals.prior)}
             </td>
-            <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-            </td>
+            {ibcsMode ? (
+              <>
+                <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ 
+                  color: ibcsVariance.favorable ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)' 
+                }}>
+                  {varianceAbs >= 0 ? '+' : ''}{formatCurrency(varianceAbs)}
+                </td>
+                <td className="py-3 px-4 text-right font-mono tabular-nums">
+                  <VariancePinCompact
+                    variancePct={ibcsVariance.variancePct}
+                    favorable={ibcsVariance.favorable}
+                    height={14}
+                  />
+                </td>
+              </>
+            ) : (
+              <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+                {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+              </td>
+            )}
           </>
         )}
       </tr>
@@ -270,9 +335,9 @@ export default function IncomeStatement() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-2 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-3 sm:gap-4">
           <Link
             to="/app/reports"
@@ -379,6 +444,46 @@ export default function IncomeStatement() {
         </div>
 
         <div className="overflow-x-auto">
+          {ibcsMode && showComparison ? (
+            <IBCSColumnHeaderRow
+              columns={[
+                {
+                  key: 'actual',
+                  labelEn: 'Actual',
+                  labelFr: 'Réel',
+                  abbreviation: 'AC',
+                  width: '120px',
+                  align: 'right',
+                },
+                {
+                  key: 'priorYear',
+                  labelEn: 'Prior Year',
+                  labelFr: 'An préc.',
+                  abbreviation: 'PY',
+                  width: '120px',
+                  align: 'right',
+                },
+                {
+                  key: 'variance',
+                  labelEn: 'Variance',
+                  labelFr: 'Écart',
+                  abbreviation: 'ΔPY',
+                  width: '100px',
+                  align: 'right',
+                },
+                {
+                  key: 'variancePct',
+                  labelEn: 'Var %',
+                  labelFr: 'Écart %',
+                  abbreviation: 'ΔPY%',
+                  width: '80px',
+                  align: 'right',
+                },
+              ]}
+              rowLabel={isEn ? 'Account' : 'Compte'}
+              rowLabelEn="Account"
+            />
+          ) : null}
           <table className="w-full">
             <thead style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
               <tr>
@@ -388,17 +493,22 @@ export default function IncomeStatement() {
                 <th className="py-3 px-4 text-left text-sm font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Account' : 'Compte'}
                 </th>
-                <th className="py-3 px-4 text-right text-sm font-semibold w-32" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {currentYear}
+                <th className={`py-3 px-4 text-right text-sm font-semibold w-32 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {ibcsMode ? 'AC' : currentYear}
                 </th>
                 {showComparison && (
                   <>
-                    <th className="py-3 px-4 text-right text-sm font-semibold w-32" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {currentYear - 1}
+                    <th className={`py-3 px-4 text-right text-sm font-semibold w-32 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {ibcsMode ? 'PY' : currentYear - 1}
                     </th>
-                    <th className="py-3 px-4 text-right text-sm font-semibold w-24" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {isEn ? 'Var.' : 'Var.'}
+                    <th className={`py-3 px-4 text-right text-sm font-semibold w-24 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {ibcsMode ? 'ΔPY' : (isEn ? 'Var.' : 'Var.')}
                     </th>
+                    {ibcsMode && (
+                      <th className="py-3 px-4 text-right text-sm font-semibold w-24 font-mono" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                        ΔPY%
+                      </th>
+                    )}
                   </>
                 )}
               </tr>
@@ -406,44 +516,48 @@ export default function IncomeStatement() {
             <tbody>
               {/* Revenue */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-                <td colSpan={showComparison ? 5 : 3} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                   {isEn ? 'REVENUE' : 'REVENUS'}
                 </td>
               </tr>
-              {(incomeData.revenue ?? []).map(renderRow)}
-              {renderTotalRow('Total des revenus', 'Total Revenue', totals.totalRevenue)}
+              {(incomeData.revenue ?? []).map(item => renderRow(item, true))}
+              {renderTotalRow('Total des revenus', 'Total Revenue', totals.totalRevenue, false, true)}
 
               {/* Cost of Goods Sold */}
               <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                <td colSpan={showComparison ? 5 : 3} className="py-2 px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Cost of Goods Sold' : 'Coût des ventes'}
                 </td>
               </tr>
-              {(incomeData.costOfGoodsSold ?? []).map(renderRow)}
-              {renderTotalRow('Total coût des ventes', 'Total COGS', totals.totalCogs)}
-              {renderTotalRow('Bénéfice brut', 'Gross Profit', totals.grossProfit, true)}
+              {(incomeData.costOfGoodsSold ?? []).map(item => renderRow(item, false))}
+              {renderTotalRow('Total coût des ventes', 'Total COGS', totals.totalCogs, false, false)}
+              {renderTotalRow('Bénéfice brut', 'Gross Profit', totals.grossProfit, true, true)}
 
               {/* Operating Expenses */}
               <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                <td colSpan={showComparison ? 5 : 3} className="py-2 px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Operating Expenses' : 'Charges d\'exploitation'}
                 </td>
               </tr>
-              {(incomeData.operatingExpenses ?? []).map(renderRow)}
-              {renderTotalRow('Total charges d\'exploitation', 'Total Operating Expenses', totals.totalOpex)}
-              {renderTotalRow('Résultat d\'exploitation', 'Operating Income', totals.operatingIncome, true)}
+              {(incomeData.operatingExpenses ?? []).map(item => renderRow(item, false))}
+              {renderTotalRow('Total charges d\'exploitation', 'Total Operating Expenses', totals.totalOpex, false, false)}
+              {renderTotalRow('Résultat d\'exploitation', 'Operating Income', totals.operatingIncome, true, true)}
 
               {/* Other Income/Expenses */}
               <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                <td colSpan={showComparison ? 5 : 3} className="py-2 px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Other Income & Expenses' : 'Autres produits et charges'}
                 </td>
               </tr>
-              {incomeData.otherIncomeExpenses.map(renderRow)}
-              {renderTotalRow('Résultat avant impôts', 'Income Before Taxes', totals.incomeBeforeTax, true)}
+              {incomeData.otherIncomeExpenses.map(item => {
+                // Determine if item is income (positive) or expense (negative)
+                const isIncome = item.current >= 0;
+                return renderRow(item, isIncome);
+              })}
+              {renderTotalRow('Résultat avant impôts', 'Income Before Taxes', totals.incomeBeforeTax, true, true)}
 
               {/* Taxes */}
-              {(incomeData.taxes ?? []).map(renderRow)}
+              {(incomeData.taxes ?? []).map(item => renderRow(item, false))}
 
               {/* Net Income */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}>
@@ -457,9 +571,24 @@ export default function IncomeStatement() {
                     <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
                       {formatCurrency(totals.netIncome.prior)}
                     </td>
-                    <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
-                      {calculateVariance(totals.netIncome.current, totals.netIncome.prior).toFixed(1)}%
-                    </td>
+                    {ibcsMode ? (
+                      <>
+                        <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
+                          {formatCurrency(totals.netIncome.current - totals.netIncome.prior)}
+                        </td>
+                        <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
+                          <VariancePinCompact
+                            variancePct={calculateVariance(totals.netIncome.current, totals.netIncome.prior)}
+                            favorable={totals.netIncome.current >= totals.netIncome.prior}
+                            height={16}
+                          />
+                        </td>
+                      </>
+                    ) : (
+                      <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
+                        {calculateVariance(totals.netIncome.current, totals.netIncome.prior).toFixed(1)}%
+                      </td>
+                    )}
                   </>
                 )}
               </tr>

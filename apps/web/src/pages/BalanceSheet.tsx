@@ -10,6 +10,10 @@ import Toggle from '../components/Toggle';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
+import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
+import { IBCSColumnHeaderRow } from '../components/charts/ibcs/IBCSHeader';
+import { calculateVariance as calculateIBCSVariance, type IBCSMetricType } from '../lib/ibcs';
 
 // Date preset type
 type DatePreset = 'today' | 'month_end' | 'quarter_end' | 'year_end' | 'last_month_end' | 'last_quarter_end' | 'last_year_end' | 'custom';
@@ -55,6 +59,8 @@ export default function BalanceSheet() {
   const [customDate, setCustomDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [showComparison, setShowComparison] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  // IBCS mode is always enabled - industry standard for financial reporting
+  const ibcsMode = true;
 
   // Calculate actual date based on preset
   const asOfDate = getPresetDate(datePreset, customDate);
@@ -108,6 +114,14 @@ export default function BalanceSheet() {
     if (prior === 0) return current === 0 ? 0 : 100;
     return ((current - prior) / Math.abs(prior)) * 100;
   };
+  
+  // IBCS variance calculation (for balance sheet items, increases are generally favorable)
+  const calculateIBCSVarianceForBalanceSheet = (current: number, prior: number, isAsset: boolean): { variancePct: number; favorable: boolean } => {
+    const variancePct = calculateVariance(current, prior);
+    // For assets: increase is favorable; for liabilities: decrease is favorable
+    const favorable = isAsset ? variancePct >= 0 : variancePct <= 0;
+    return { variancePct, favorable };
+  };
 
   const sumSection = (items: Array<{ current: number; prior: number }> | undefined | null) => {
     if (!items || !Array.isArray(items)) {
@@ -158,21 +172,19 @@ export default function BalanceSheet() {
   // Loading state
   if (isLoading && !balanceSheetData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <p className="text-muted">{language === 'en' ? 'Loading balance sheet...' : 'Chargement du bilan...'}</p>
-        </div>
-      </div>
+      <ContentLoader 
+        message="Chargement du bilan..."
+        messageEn="Loading balance sheet..."
+      />
     );
   }
 
   // Show empty state if no real data and no sandbox data
   if (!shouldShowData || !hasBalanceSheet) {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-2 sm:space-y-4 lg:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
             <Link
               to="/app/reports"
@@ -227,9 +239,12 @@ export default function BalanceSheet() {
     totalLiabilitiesAndEquity 
   } = totals;
 
-  const renderRow = (item: { code: string; name: string; nameEn?: string; current: number; prior: number }) => {
+  const renderRow = (item: { code: string; name: string; nameEn?: string; current: number; prior: number }, isAsset = true) => {
     const variance = calculateVariance(item.current, item.prior);
+    const ibcsVariance = calculateIBCSVarianceForBalanceSheet(item.current, item.prior, isAsset);
     const displayName = language === 'en' && item.nameEn ? item.nameEn : item.name;
+    const varianceAbs = item.current - item.prior;
+    
     return (
       <tr key={item.code} className="hover:bg-[rgb(var(--color-bg-muted))]">
         <td className="py-2 px-3 sm:px-4 font-mono text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>{item.code}</td>
@@ -242,17 +257,37 @@ export default function BalanceSheet() {
             <td className="py-2 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {formatCurrency(item.prior)}
             </td>
-            <td className="py-2 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-            </td>
+            {ibcsMode ? (
+              <>
+                <td className="py-2 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ 
+                  color: ibcsVariance.favorable ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)' 
+                }}>
+                  {varianceAbs >= 0 ? '+' : ''}{formatCurrency(varianceAbs)}
+                </td>
+                <td className="py-2 px-3 sm:px-4 text-right font-mono tabular-nums text-sm">
+                  <VariancePinCompact
+                    variancePct={ibcsVariance.variancePct}
+                    favorable={ibcsVariance.favorable}
+                    height={14}
+                  />
+                </td>
+              </>
+            ) : (
+              <td className="py-2 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+                {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+              </td>
+            )}
           </>
         )}
       </tr>
     );
   };
 
-  const renderTotalRow = (label: string, totals: { current: number; prior: number }, isGrandTotal = false) => {
+  const renderTotalRow = (label: string, totals: { current: number; prior: number }, isGrandTotal = false, isAsset = true) => {
     const variance = calculateVariance(totals.current, totals.prior);
+    const ibcsVariance = calculateIBCSVarianceForBalanceSheet(totals.current, totals.prior, isAsset);
+    const varianceAbs = totals.current - totals.prior;
+    
     return (
       <tr 
         className={`${isGrandTotal ? 'font-bold' : 'font-semibold'}`}
@@ -268,9 +303,26 @@ export default function BalanceSheet() {
             <td className="py-2 sm:py-3 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {formatCurrency(totals.prior)}
             </td>
-            <td className="py-2 sm:py-3 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-            </td>
+            {ibcsMode ? (
+              <>
+                <td className="py-2 sm:py-3 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ 
+                  color: ibcsVariance.favorable ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)' 
+                }}>
+                  {varianceAbs >= 0 ? '+' : ''}{formatCurrency(varianceAbs)}
+                </td>
+                <td className="py-2 sm:py-3 px-3 sm:px-4 text-right font-mono tabular-nums text-sm">
+                  <VariancePinCompact
+                    variancePct={ibcsVariance.variancePct}
+                    favorable={ibcsVariance.favorable}
+                    height={14}
+                  />
+                </td>
+              </>
+            ) : (
+              <td className="py-2 sm:py-3 px-3 sm:px-4 text-right font-mono tabular-nums text-sm" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+                {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+              </td>
+            )}
           </>
         )}
       </tr>
@@ -278,9 +330,9 @@ export default function BalanceSheet() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-2 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-3 sm:gap-4">
           <Link
             to="/app/reports"
@@ -454,22 +506,67 @@ export default function BalanceSheet() {
         </div>
 
         <div className="overflow-x-auto">
+          {ibcsMode && showComparison ? (
+            <IBCSColumnHeaderRow
+              columns={[
+                {
+                  key: 'actual',
+                  labelEn: 'Actual',
+                  labelFr: 'Réel',
+                  abbreviation: 'AC',
+                  width: '120px',
+                  align: 'right',
+                },
+                {
+                  key: 'priorYear',
+                  labelEn: 'Prior Year',
+                  labelFr: 'An préc.',
+                  abbreviation: 'PY',
+                  width: '120px',
+                  align: 'right',
+                },
+                {
+                  key: 'variance',
+                  labelEn: 'Variance',
+                  labelFr: 'Écart',
+                  abbreviation: 'ΔPY',
+                  width: '100px',
+                  align: 'right',
+                },
+                {
+                  key: 'variancePct',
+                  labelEn: 'Var %',
+                  labelFr: 'Écart %',
+                  abbreviation: 'ΔPY%',
+                  width: '80px',
+                  align: 'right',
+                },
+              ]}
+              rowLabel={isEn ? 'Account' : 'Compte'}
+              rowLabelEn="Account"
+            />
+          ) : null}
           <table className="w-full min-w-[500px]">
             <thead style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
               <tr>
                 <th className="py-3 px-3 sm:px-4 text-left text-xs sm:text-sm font-semibold w-16 sm:w-20" style={{ color: 'rgb(var(--color-text-secondary))' }}>Code</th>
                 <th className="py-3 px-3 sm:px-4 text-left text-xs sm:text-sm font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>{isEn ? 'Account' : 'Compte'}</th>
-                <th className="py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-24 sm:w-32" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {new Date(asOfDate).getFullYear()}
+                <th className={`py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-24 sm:w-32 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {ibcsMode ? 'AC' : new Date(asOfDate).getFullYear()}
                 </th>
                 {showComparison && (
                   <>
-                    <th className="py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-24 sm:w-32" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {new Date(asOfDate).getFullYear() - 1}
+                    <th className={`py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-24 sm:w-32 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {ibcsMode ? 'PY' : new Date(asOfDate).getFullYear() - 1}
                     </th>
-                    <th className="py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-16 sm:w-24" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      Var.
+                    <th className={`py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-16 sm:w-24 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {ibcsMode ? 'ΔPY' : 'Var.'}
                     </th>
+                    {ibcsMode && (
+                      <th className="py-3 px-3 sm:px-4 text-right text-xs sm:text-sm font-semibold w-20 sm:w-24 font-mono" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                        ΔPY%
+                      </th>
+                    )}
                   </>
                 )}
               </tr>
@@ -477,66 +574,66 @@ export default function BalanceSheet() {
             <tbody>
               {/* ASSETS */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-                <td colSpan={showComparison ? 5 : 3} className="py-3 px-3 sm:px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-3 px-3 sm:px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                   {isEn ? 'ASSETS' : 'ACTIF'}
                 </td>
               </tr>
 
               {/* Current Assets */}
               <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                <td colSpan={showComparison ? 5 : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Current Assets' : 'Actifs courants'}
                 </td>
               </tr>
-            {(balanceSheetData.assets?.currentAssets ?? []).map(renderRow)}
-            {renderTotalRow(isEn ? 'Total Current Assets' : 'Total actifs courants', currentAssetsTotal)}
+            {(balanceSheetData.assets?.currentAssets ?? []).map(item => renderRow(item, true))}
+            {renderTotalRow(isEn ? 'Total Current Assets' : 'Total actifs courants', currentAssetsTotal, false, true)}
 
             {/* Fixed Assets */}
             <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <td colSpan={showComparison ? 5 : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn ? 'Fixed Assets' : 'Immobilisations'}
               </td>
             </tr>
-            {(balanceSheetData.assets?.fixedAssets ?? []).map(renderRow)}
-            {renderTotalRow(isEn ? 'Total Fixed Assets' : 'Total immobilisations', fixedAssetsTotal)}
+            {(balanceSheetData.assets?.fixedAssets ?? []).map(item => renderRow(item, true))}
+            {renderTotalRow(isEn ? 'Total Fixed Assets' : 'Total immobilisations', fixedAssetsTotal, false, true)}
 
-            {renderTotalRow(isEn ? 'TOTAL ASSETS' : 'TOTAL ACTIF', totalAssets, true)}
+            {renderTotalRow(isEn ? 'TOTAL ASSETS' : 'TOTAL ACTIF', totalAssets, true, true)}
 
             {/* LIABILITIES */}
             <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-              <td colSpan={showComparison ? 5 : 3} className="py-3 px-3 sm:px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-3 px-3 sm:px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                 {isEn ? 'LIABILITIES' : 'PASSIF'}
               </td>
             </tr>
 
             {/* Current Liabilities */}
             <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <td colSpan={showComparison ? 5 : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn ? 'Current Liabilities' : 'Passifs courants'}
               </td>
             </tr>
-            {(balanceSheetData.liabilities?.currentLiabilities ?? []).map(renderRow)}
-            {renderTotalRow(isEn ? 'Total Current Liabilities' : 'Total passifs courants', currentLiabilitiesTotal)}
+            {(balanceSheetData.liabilities?.currentLiabilities ?? []).map(item => renderRow(item, false))}
+            {renderTotalRow(isEn ? 'Total Current Liabilities' : 'Total passifs courants', currentLiabilitiesTotal, false, false)}
 
             {/* Long-term Liabilities */}
             <tr style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <td colSpan={showComparison ? 5 : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+              <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-2 px-3 sm:px-4 font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                 {isEn ? 'Long-term Liabilities' : 'Passifs à long terme'}
               </td>
             </tr>
-            {(balanceSheetData.liabilities?.longTermLiabilities ?? []).map(renderRow)}
-            {renderTotalRow(isEn ? 'Total Long-term Liabilities' : 'Total passifs à long terme', longTermLiabilitiesTotal)}
+            {(balanceSheetData.liabilities?.longTermLiabilities ?? []).map(item => renderRow(item, false))}
+            {renderTotalRow(isEn ? 'Total Long-term Liabilities' : 'Total passifs à long terme', longTermLiabilitiesTotal, false, false)}
 
-            {renderTotalRow(isEn ? 'TOTAL LIABILITIES' : 'TOTAL PASSIF', totalLiabilities, true)}
+            {renderTotalRow(isEn ? 'TOTAL LIABILITIES' : 'TOTAL PASSIF', totalLiabilities, true, false)}
 
             {/* EQUITY */}
             <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-              <td colSpan={showComparison ? 5 : 3} className="py-3 px-3 sm:px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              <td colSpan={showComparison ? (ibcsMode ? 6 : 5) : 3} className="py-3 px-3 sm:px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                 {isEn ? 'EQUITY' : 'CAPITAUX PROPRES'}
               </td>
             </tr>
-            {(balanceSheetData.equity ?? []).map(renderRow)}
-            {renderTotalRow(isEn ? 'TOTAL EQUITY' : 'TOTAL CAPITAUX PROPRES', equityTotal, true)}
+            {(balanceSheetData.equity ?? []).map(item => renderRow(item, false))}
+            {renderTotalRow(isEn ? 'TOTAL EQUITY' : 'TOTAL CAPITAUX PROPRES', equityTotal, true, false)}
 
             {/* Grand Total */}
             <tr style={{ backgroundColor: 'rgb(var(--color-primary-600))', color: 'white' }}>
@@ -552,9 +649,24 @@ export default function BalanceSheet() {
                   <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-mono tabular-nums font-bold text-sm sm:text-base">
                     {formatCurrency(totalLiabilitiesAndEquity.prior)}
                   </td>
-                  <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-mono tabular-nums font-bold text-sm sm:text-base">
-                    {calculateVariance(totalLiabilitiesAndEquity.current, totalLiabilitiesAndEquity.prior).toFixed(1)}%
-                  </td>
+                  {ibcsMode ? (
+                    <>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-mono tabular-nums font-bold text-sm sm:text-base">
+                        {formatCurrency(totalLiabilitiesAndEquity.current - totalLiabilitiesAndEquity.prior)}
+                      </td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-mono tabular-nums font-bold text-sm sm:text-base">
+                        <VariancePinCompact
+                          variancePct={calculateVariance(totalLiabilitiesAndEquity.current, totalLiabilitiesAndEquity.prior)}
+                          favorable={true}
+                          height={16}
+                        />
+                      </td>
+                    </>
+                  ) : (
+                    <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-mono tabular-nums font-bold text-sm sm:text-base">
+                      {calculateVariance(totalLiabilitiesAndEquity.current, totalLiabilitiesAndEquity.prior).toFixed(1)}%
+                    </td>
+                  )}
                 </>
               )}
             </tr>

@@ -22,6 +22,7 @@ import {
   Users,
   RefreshCw,
   TrendingUp,
+  Target,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
@@ -313,7 +314,7 @@ export default function DataReadinessChecklist({
   const { data: financialData } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection } = useHasRealData();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Start collapsed by default
 
   const checklistItems = items || getDefaultItems(
     context, 
@@ -415,51 +416,36 @@ export default function DataReadinessChecklist({
 
   return (
     <div 
-      className="rounded-xl sm:rounded-2xl overflow-hidden border"
+      className="rounded-xl overflow-hidden border"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         borderColor: 'rgb(var(--color-border))',
       }}
     >
-      {/* Header */}
-      <div className="p-4 sm:p-5 lg:p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+      {/* Compact Header - Clickable to expand */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="w-full p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-[rgb(var(--color-bg-muted)/0.5)] transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div 
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
+            <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          </div>
+          <div className="min-w-0 flex-1 text-left">
+            <h3 className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Data Setup' : 'Configuration des données'}
+            </h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              {/* Mini progress bar */}
               <div 
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-              >
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Data Readiness Checklist' : 'Liste de vérification des données'}
-                </h3>
-                <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn 
-                    ? 'Complete your QuickBooks setup to unlock all insights'
-                    : 'Complétez la configuration de QuickBooks pour débloquer tous les insights'}
-                </p>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs sm:text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Overall Progress' : 'Progression globale'}
-                </span>
-                <span className="text-xs sm:text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                  {completedCount}/{totalCount} {isEn ? 'complete' : 'complétés'}
-                </span>
-              </div>
-              <div 
-                className="h-2.5 sm:h-3 rounded-full overflow-hidden"
+                className="w-16 h-1.5 rounded-full overflow-hidden"
                 style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
               >
                 <div 
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full"
                   style={{ 
                     width: `${progress}%`,
                     backgroundColor: getStatusColor(
@@ -468,47 +454,38 @@ export default function DataReadinessChecklist({
                   }}
                 />
               </div>
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {completedCount}/{totalCount}
+              </span>
               {requiredProgress < 100 && (
-                <p className="text-xs mt-1.5" style={{ color: 'rgb(var(--color-warning))' }}>
-                  {isEn 
-                    ? `⚠️ ${requiredCount - requiredCompletedCount} required item${requiredCount - requiredCompletedCount > 1 ? 's' : ''} missing`
-                    : `⚠️ ${requiredCount - requiredCompletedCount} élément${requiredCount - requiredCompletedCount > 1 ? 's' : ''} requis manquant${requiredCount - requiredCompletedCount > 1 ? 's' : ''}`}
-                </p>
+                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ 
+                  backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                  color: 'rgb(var(--color-warning))',
+                }}>
+                  {requiredCount - requiredCompletedCount} {isEn ? 'required' : 'requis'}
+                </span>
               )}
             </div>
           </div>
-
+        </div>
+        
+        <div className="flex items-center gap-2 flex-shrink-0">
           {onDismiss && (
-            <button
-              onClick={onDismiss}
-              className="p-1.5 rounded-lg hover:bg-[rgb(var(--color-bg-muted))] transition-colors flex-shrink-0"
+            <span
+              onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+              className="p-1 rounded hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
               style={{ color: 'rgb(var(--color-text-muted))' }}
-              aria-label={isEn ? 'Dismiss' : 'Fermer'}
             >
-              <X className="w-4 h-4" />
-            </button>
+              <X className="w-3.5 h-3.5" />
+            </span>
+          )}
+          {isCollapsed ? (
+            <ChevronDown className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+          ) : (
+            <ChevronRight className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
           )}
         </div>
-
-        {/* Collapse/Expand Button */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="flex items-center gap-2 text-xs sm:text-sm font-medium mb-3"
-          style={{ color: 'rgb(var(--color-primary-600))' }}
-        >
-          {isCollapsed ? (
-            <>
-              <ChevronDown className="w-3.5 h-3.5" />
-              {isEn ? 'Show Details' : 'Afficher les détails'}
-            </>
-          ) : (
-            <>
-              <ChevronRight className="w-3.5 h-3.5" />
-              {isEn ? 'Hide Details' : 'Masquer les détails'}
-            </>
-          )}
-        </button>
-      </div>
+      </button>
 
       {/* Checklist Items */}
       {!isCollapsed && (

@@ -11,6 +11,10 @@ import Toggle from '../components/Toggle';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
+import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
+import { IBCSColumnHeaderRow } from '../components/charts/ibcs/IBCSHeader';
+import { calculateVariance as calculateIBCSVariance } from '../lib/ibcs';
 
 // Period presets type
 type PeriodPreset = 'mtd' | 'qtd' | 'ytd' | 'last_month' | 'last_quarter' | 'last_year' | 'custom';
@@ -81,6 +85,8 @@ export default function CashFlowStatement() {
   const [customEnd, setCustomEnd] = useState(`${currentYear}-12-31`);
   const [showComparison, setShowComparison] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  // IBCS mode is always enabled - industry standard for financial reporting
+  const ibcsMode = true;
 
   // Calculate actual dates based on preset
   const { start: periodStart, end: periodEnd } = getDateRange(
@@ -206,21 +212,19 @@ export default function CashFlowStatement() {
 
   if (isLoading && !financialData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <p className="text-muted">{isEn ? 'Loading...' : 'Chargement...'}</p>
-        </div>
-      </div>
+      <ContentLoader 
+        message="Chargement du flux de trésorerie..."
+        messageEn="Loading cash flow statement..."
+      />
     );
   }
 
   // Show empty state if no real data and no sandbox data
   if (!shouldShowData || !hasCashFlowStatement || !hasCashFlowTrends) {
     return (
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-2 sm:space-y-4 lg:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
             <Link to="/app/reports" className="p-2 rounded-lg transition-colors flex-shrink-0" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               <ArrowLeft className="w-5 h-5" />
@@ -258,6 +262,8 @@ export default function CashFlowStatement() {
 
   const renderRow = (item: { code: string; name: string; nameEn?: string; current: number; prior: number }, section: string) => {
     const variance = calculateVariance(item.current, item.prior);
+    // For cash flow, increase is favorable
+    const ibcsVariance = { variancePct: variance, favorable: variance >= 0 };
     const displayName = isEn && item.nameEn ? item.nameEn : item.name;
     const isPositive = item.current >= 0;
     const isHovered = hoveredRow === item.code;
@@ -300,7 +306,7 @@ export default function CashFlowStatement() {
             )}
           </div>
         </td>
-        <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: isPositive ? 'rgb(var(--color-text))' : 'rgb(var(--color-error))' }}>
+        <td className={`py-2 px-4 text-right font-mono tabular-nums ${ibcsMode ? '' : ''}`} style={{ color: isPositive ? 'rgb(var(--color-text))' : 'rgb(var(--color-error))' }}>
           {formatCurrency(item.current)}
         </td>
         {showComparison && (
@@ -308,9 +314,26 @@ export default function CashFlowStatement() {
             <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {formatCurrency(item.prior)}
             </td>
-            <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-            </td>
+            {ibcsMode ? (
+              <>
+                <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ 
+                  color: ibcsVariance.favorable ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)' 
+                }}>
+                  {absoluteChange >= 0 ? '+' : ''}{formatCurrency(absoluteChange)}
+                </td>
+                <td className="py-2 px-4 text-right font-mono tabular-nums">
+                  <VariancePinCompact
+                    variancePct={ibcsVariance.variancePct}
+                    favorable={ibcsVariance.favorable}
+                    height={14}
+                  />
+                </td>
+              </>
+            ) : (
+              <td className="py-2 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+                {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+              </td>
+            )}
           </>
         )}
         
@@ -382,8 +405,11 @@ export default function CashFlowStatement() {
 
   const renderTotalRow = (label: string, labelEn: string, values: { current: number; prior: number }, isGrandTotal = false) => {
     const variance = calculateVariance(values.current, values.prior);
+    // For cash flow, increase is favorable
+    const ibcsVariance = { variancePct: variance, favorable: variance >= 0 };
     const displayLabel = isEn ? labelEn : label;
     const isPositive = values.current >= 0;
+    const varianceAbs = values.current - values.prior;
     
     return (
       <tr 
@@ -399,9 +425,26 @@ export default function CashFlowStatement() {
             <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {formatCurrency(values.prior)}
             </td>
-            <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
-              {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
-            </td>
+            {ibcsMode ? (
+              <>
+                <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ 
+                  color: ibcsVariance.favorable ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)' 
+                }}>
+                  {varianceAbs >= 0 ? '+' : ''}{formatCurrency(varianceAbs)}
+                </td>
+                <td className="py-3 px-4 text-right font-mono tabular-nums">
+                  <VariancePinCompact
+                    variancePct={ibcsVariance.variancePct}
+                    favorable={ibcsVariance.favorable}
+                    height={14}
+                  />
+                </td>
+              </>
+            ) : (
+              <td className="py-3 px-4 text-right font-mono tabular-nums" style={{ color: variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}>
+                {variance >= 0 ? '+' : ''}{variance.toFixed(1)}%
+              </td>
+            )}
           </>
         )}
       </tr>
@@ -409,9 +452,9 @@ export default function CashFlowStatement() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-2 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div className="flex items-center gap-3 sm:gap-4">
           <Link to="/app/reports" className="p-2 rounded-lg transition-colors flex-shrink-0" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             <ArrowLeft className="w-5 h-5" />
@@ -568,21 +611,68 @@ export default function CashFlowStatement() {
         </div>
 
         <div className="overflow-x-auto">
+          {ibcsMode && showComparison ? (
+            <IBCSColumnHeaderRow
+              columns={[
+                {
+                  key: 'actual',
+                  labelEn: 'Actual',
+                  labelFr: 'Réel',
+                  abbreviation: 'AC',
+                  width: '120px',
+                  align: 'right',
+                },
+                {
+                  key: 'priorYear',
+                  labelEn: 'Prior Year',
+                  labelFr: 'An préc.',
+                  abbreviation: 'PY',
+                  width: '120px',
+                  align: 'right',
+                },
+                {
+                  key: 'variance',
+                  labelEn: 'Variance',
+                  labelFr: 'Écart',
+                  abbreviation: 'ΔPY',
+                  width: '100px',
+                  align: 'right',
+                },
+                {
+                  key: 'variancePct',
+                  labelEn: 'Var %',
+                  labelFr: 'Écart %',
+                  abbreviation: 'ΔPY%',
+                  width: '80px',
+                  align: 'right',
+                },
+              ]}
+              rowLabel={isEn ? 'Description' : 'Description'}
+              rowLabelEn="Description"
+            />
+          ) : null}
           <table className="w-full">
             <thead style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
               <tr>
                 <th className="py-3 px-4 text-left text-sm font-semibold" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Description' : 'Description'}
                 </th>
-                <th className="py-3 px-4 text-right text-sm font-semibold w-32" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {new Date(periodEnd).getFullYear()}
+                <th className={`py-3 px-4 text-right text-sm font-semibold w-32 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {ibcsMode ? 'AC' : new Date(periodEnd).getFullYear()}
                 </th>
                 {showComparison && (
                   <>
-                    <th className="py-3 px-4 text-right text-sm font-semibold w-32" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                      {new Date(periodEnd).getFullYear() - 1}
+                    <th className={`py-3 px-4 text-right text-sm font-semibold w-32 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {ibcsMode ? 'PY' : new Date(periodEnd).getFullYear() - 1}
                     </th>
-                    <th className="py-3 px-4 text-right text-sm font-semibold w-24" style={{ color: 'rgb(var(--color-text-secondary))' }}>Var.</th>
+                    <th className={`py-3 px-4 text-right text-sm font-semibold w-24 ${ibcsMode ? 'font-mono' : ''}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {ibcsMode ? 'ΔPY' : 'Var.'}
+                    </th>
+                    {ibcsMode && (
+                      <th className="py-3 px-4 text-right text-sm font-semibold w-24 font-mono" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                        ΔPY%
+                      </th>
+                    )}
                   </>
                 )}
               </tr>
@@ -590,7 +680,7 @@ export default function CashFlowStatement() {
             <tbody>
               {/* Operating Activities */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-                <td colSpan={showComparison ? 4 : 2} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 5 : 4) : 2} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                   {isEn ? 'OPERATING ACTIVITIES' : 'ACTIVITÉS D\'EXPLOITATION'}
                 </td>
               </tr>
@@ -599,7 +689,7 @@ export default function CashFlowStatement() {
 
               {/* Investing Activities */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-                <td colSpan={showComparison ? 4 : 2} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 5 : 4) : 2} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                   {isEn ? 'INVESTING ACTIVITIES' : 'ACTIVITÉS D\'INVESTISSEMENT'}
                 </td>
               </tr>
@@ -608,7 +698,7 @@ export default function CashFlowStatement() {
 
               {/* Financing Activities */}
               <tr style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-                <td colSpan={showComparison ? 4 : 2} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+                <td colSpan={showComparison ? (ibcsMode ? 5 : 4) : 2} className="py-3 px-4 font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
                   {isEn ? 'FINANCING ACTIVITIES' : 'ACTIVITÉS DE FINANCEMENT'}
                 </td>
               </tr>
@@ -626,9 +716,24 @@ export default function CashFlowStatement() {
                 {showComparison && (
                   <>
                     <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">{formatCurrency(totals.closingCash.prior)}</td>
-                    <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
-                      {calculateVariance(totals.closingCash.current, totals.closingCash.prior).toFixed(1)}%
-                    </td>
+                    {ibcsMode ? (
+                      <>
+                        <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
+                          {formatCurrency(totals.closingCash.current - totals.closingCash.prior)}
+                        </td>
+                        <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
+                          <VariancePinCompact
+                            variancePct={calculateVariance(totals.closingCash.current, totals.closingCash.prior)}
+                            favorable={totals.closingCash.current >= totals.closingCash.prior}
+                            height={16}
+                          />
+                        </td>
+                      </>
+                    ) : (
+                      <td className="py-4 px-4 text-right font-mono tabular-nums font-bold">
+                        {calculateVariance(totals.closingCash.current, totals.closingCash.prior).toFixed(1)}%
+                      </td>
+                    )}
                   </>
                 )}
               </tr>

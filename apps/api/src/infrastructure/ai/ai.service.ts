@@ -17,6 +17,8 @@ import { ConfigService } from "@nestjs/config";
 import { AIGuardrailsService } from "./ai-guardrails.service";
 import { IAIService } from "@application/ports/outbound/IAIService";
 import { AppConfig } from "@infrastructure/config/app.config";
+import { AICacheService } from "./ai-cache.service";
+import { EmbeddingService } from "./embedding.service";
 
 export type AIProvider =
   | "openai"
@@ -128,6 +130,8 @@ export class AIService implements IAIService {
   constructor(
     private readonly configService: ConfigService,
     @Optional() @Inject(AppConfig) private readonly appConfig?: AppConfig,
+    @Optional() private readonly aiCacheService?: AICacheService,
+    @Optional() private readonly embeddingService?: EmbeddingService,
   ) {
     this.maxRetries = parseInt(
       this.configService.get<string>("AI_MAX_RETRIES") || "3",
@@ -311,12 +315,50 @@ export class AIService implements IAIService {
         return this.generateSimulatedResponse(prompt);
       }
 
-      // Check cache
+      // Check Redis cache first (if available)
+      if (this.aiCacheService) {
+        const promptHash = this.aiCacheService.generatePromptHash(prompt, {
+          tenantId,
+          modelTier: options.modelTier,
+        });
+
+        const redisCached =
+          await this.aiCacheService.getCachedResponse(promptHash);
+        if (redisCached) {
+          this.logger.debug(
+            `Redis cache hit for prompt: ${prompt.substring(0, 50)}...`,
+          );
+          return redisCached;
+        }
+
+        // Try semantic cache if embedding service is available
+        if (this.embeddingService?.isAvailable()) {
+          try {
+            const queryEmbedding =
+              await this.embeddingService.generateEmbedding(prompt);
+            const semanticCached = await this.aiCacheService.findSimilarCached(
+              queryEmbedding,
+              0.95,
+            );
+            if (semanticCached) {
+              this.logger.debug(
+                `Semantic cache hit for prompt: ${prompt.substring(0, 50)}...`,
+              );
+              return semanticCached;
+            }
+          } catch (error) {
+            // Silently fail semantic cache lookup
+            this.logger.debug(`Semantic cache lookup failed: ${error.message}`);
+          }
+        }
+      }
+
+      // Fall back to in-memory cache
       const cacheKey = this.generateCacheKey(prompt, options);
       const cached = this.requestCache.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) {
         this.logger.debug(
-          `Cache hit for prompt: ${prompt.substring(0, 50)}...`,
+          `In-memory cache hit for prompt: ${prompt.substring(0, 50)}...`,
         );
         return cached.response;
       }
@@ -470,6 +512,45 @@ export class AIService implements IAIService {
             response.latency = Date.now() - startTime;
             response.provider = provider.provider;
             response.model = provider.model;
+
+            // Cache in Redis (if available)
+            if (this.aiCacheService) {
+              const promptHash = this.aiCacheService.generatePromptHash(
+                prompt,
+                {
+                  tenantId,
+                  modelTier: options.modelTier,
+                },
+              );
+
+              // Cache response in Redis
+              await this.aiCacheService.cacheResponse(
+                promptHash,
+                response,
+                Math.floor(this.CACHE_TTL_MS / 1000), // Convert to seconds
+              );
+
+              // Cache embedding for semantic search (if available)
+              if (this.embeddingService?.isAvailable()) {
+                try {
+                  const queryEmbedding =
+                    await this.embeddingService.generateEmbedding(prompt);
+                  await this.aiCacheService.cacheEmbedding(
+                    prompt,
+                    queryEmbedding,
+                    promptHash,
+                    Math.floor(this.CACHE_TTL_MS / 1000),
+                  );
+                } catch (error) {
+                  // Silently fail embedding cache
+                  this.logger.debug(
+                    `Failed to cache embedding: ${error.message}`,
+                  );
+                }
+              }
+            }
+
+            // Also cache in-memory (for faster access)
             this.requestCache.set(cacheKey, {
               response,
               expiresAt: Date.now() + this.CACHE_TTL_MS,

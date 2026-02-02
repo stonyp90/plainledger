@@ -75,8 +75,10 @@ export function validateAIResponse(
 
   confidence = Math.max(0, confidence);
 
+  const isValid = issues.length === 0 && confidence >= 50;
+
   return {
-    isValid: issues.length === 0 && confidence >= 50,
+    isValid,
     confidence,
     warnings,
     issues,

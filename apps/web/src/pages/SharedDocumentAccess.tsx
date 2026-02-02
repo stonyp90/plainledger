@@ -22,6 +22,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import config from '../lib/config';
+import PageLoader from '../components/PageLoader';
 
 interface ShareInfo {
   id: string;
@@ -177,15 +178,11 @@ export default function SharedDocumentAccess() {
   // Loading state
   if (isLoading) {
     return (
-      <div 
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-      >
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
-        </div>
-      </div>
+      <PageLoader 
+        message="Chargement du document partagé..."
+        messageEn="Loading shared document..."
+        fullScreen
+      />
     );
   }
 

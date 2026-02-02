@@ -46,7 +46,7 @@ services:
   # Keycloak - Identity Provider
   # ============================================
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0
+    image: quay.io/keycloak/keycloak:26.1
     container_name: plainledger-keycloak
     environment:
       KEYCLOAK_ADMIN: admin
@@ -97,6 +97,8 @@ services:
       - ./local-dev/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./local-dev/init-datalake.sql:/docker-entrypoint-initdb.d/02-datalake.sql
       - ./local-dev/init-pgvector.sql:/docker-entrypoint-initdb.d/03-pgvector.sql
+      - ./local-dev/init-tax-credits.sql:/docker-entrypoint-initdb.d/04-tax-credits.sql
+      - ./local-dev/init-jobs.sql:/docker-entrypoint-initdb.d/05-jobs.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U plainledger"]
       interval: 5s
@@ -275,6 +277,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - plainledger-network
+
+  # ============================================
+  # Mailhog - Local Email Testing
+  # ============================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: plainledger-mailhog
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8025"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - plainledger-network
 

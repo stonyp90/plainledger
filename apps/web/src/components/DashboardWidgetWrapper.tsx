@@ -213,24 +213,22 @@ export default function DashboardWidgetWrapper({
 
   return (
     <div className="relative">
-      {/* Drop indicator BEFORE - horizontal line with label */}
+      {/* Drop indicator BEFORE - compact line that fits in tight gaps */}
       {showDropIndicator && effectiveDropPosition === 'before' && (
-        <div className="absolute -top-2 left-0 right-0 z-30 flex items-center gap-2">
+        <div 
+          className="absolute left-0 right-0 z-30 flex items-center pointer-events-none"
+          style={{ top: '-5px' }}
+        >
           <div 
-            className="flex-1 h-1 rounded-full animate-pulse"
+            className="flex-1 h-0.5 rounded-full"
             style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
           />
-          <span 
-            className="px-2 py-0.5 text-[10px] font-medium rounded-full whitespace-nowrap"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white',
-            }}
-          >
-            {isEn ? 'Drop here' : 'Déposer ici'}
-          </span>
           <div 
-            className="flex-1 h-1 rounded-full animate-pulse"
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+          />
+          <div 
+            className="flex-1 h-0.5 rounded-full"
             style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
           />
         </div>
@@ -238,7 +236,7 @@ export default function DashboardWidgetWrapper({
 
       <div
         ref={containerRef}
-        className={`relative group transition-all duration-200 ${className}`}
+        className={`relative group transition-all duration-150 ${className}`}
         draggable={canCustomize && !isResizing && id !== 'add-widget'}
         onDragStart={onDragStart}
         onDragEnd={(e) => {
@@ -254,50 +252,42 @@ export default function DashboardWidgetWrapper({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          opacity: isDragging ? 0.4 : 1,
-          transform: isDragging ? 'scale(0.98)' : 'scale(1)',
-          transition: isResizing ? 'none' : 'all 0.2s ease',
+          opacity: isDragging ? 0.3 : 1,
+          transform: isDragging ? 'scale(0.97)' : showDropIndicator ? 'scale(1.01)' : 'scale(1)',
+          transition: isResizing ? 'none' : 'all 0.15s ease',
           height: currentHeight ? `${currentHeight}px` : 'auto',
           minHeight: enableResize ? `${minHeight}px` : undefined,
-          outline: showDropIndicator ? '2px dashed rgb(var(--color-primary-500))' : 'none',
-          outlineOffset: '4px',
+          outline: showDropIndicator ? '2px solid rgb(var(--color-primary-500))' : 'none',
+          outlineOffset: '2px',
           borderRadius: '12px',
         }}
       >
-        {/* Drag handle - visible on hover */}
+        {/* Drag handle - compact pill, visible on hover */}
         {canCustomize && isHovered && !isResizing && !isDragging && id !== 'add-widget' && (
           <div
-            className="absolute left-2 top-2 z-20 cursor-grab active:cursor-grabbing flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all hover:scale-105"
+            className="absolute left-1.5 top-1.5 z-20 cursor-grab active:cursor-grabbing p-1 rounded-md transition-all hover:scale-105 opacity-70 hover:opacity-100"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
             }}
             title={isEn ? 'Drag to reorder' : 'Glisser pour réorganiser'}
           >
             <GripVertical
-              className="w-4 h-4"
+              className="w-3.5 h-3.5"
               style={{ color: 'rgb(var(--color-text-muted))' }}
             />
-            <span 
-              className="text-xs font-medium"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {isEn ? 'Drag' : 'Glisser'}
-            </span>
           </div>
         )}
 
-        {/* Control buttons - top right, visible on hover */}
+        {/* Control buttons - top right, compact, visible on hover */}
         {canCustomize && isHovered && !isResizing && !isDragging && id !== 'add-widget' && (
           <div 
-            className="absolute right-2 top-2 z-20 flex items-center gap-1"
+            className="absolute right-1.5 top-1.5 z-20 flex items-center gap-0.5 opacity-70 hover:opacity-100 transition-opacity"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))',
-              borderRadius: '8px',
-              padding: '4px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              borderRadius: '6px',
+              padding: '2px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
             }}
           >
             {/* Fullscreen button */}
@@ -306,11 +296,11 @@ export default function DashboardWidgetWrapper({
                 e.stopPropagation();
                 toggleFullscreen();
               }}
-              className="p-1.5 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+              className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
               style={{ color: 'rgb(var(--color-text-muted))' }}
               title={isEn ? 'Fullscreen' : 'Plein écran'}
             >
-              <Maximize2 className="w-3.5 h-3.5" />
+              <Maximize2 className="w-3 h-3" />
             </button>
 
             {/* Reset size button - only show if custom size */}
@@ -320,11 +310,11 @@ export default function DashboardWidgetWrapper({
                   e.stopPropagation();
                   reset();
                 }}
-                className="p-1.5 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+                className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
                 style={{ color: 'rgb(var(--color-text-muted))' }}
                 title={isEn ? 'Reset size' : 'Réinitialiser la taille'}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
               </button>
             )}
 
@@ -335,11 +325,11 @@ export default function DashboardWidgetWrapper({
                   e.stopPropagation();
                   onRemove();
                 }}
-                className="p-1.5 rounded transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+                className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
                 style={{ color: 'rgb(var(--color-error))' }}
                 title={isEn ? 'Remove' : 'Retirer'}
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
@@ -376,22 +366,21 @@ export default function DashboardWidgetWrapper({
           {children}
         </div>
 
-        {/* Resize Handle - bottom edge (drag to resize) */}
+        {/* Resize Handle - bottom center, compact */}
         {canCustomize && enableResize && (isHovered || isResizing) && !isDragging && id !== 'add-widget' && (
           <div
-            className={`absolute bottom-0 left-0 right-0 h-5 cursor-ns-resize flex items-center justify-center transition-opacity z-20 ${
-              isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-4 cursor-ns-resize flex items-center justify-center transition-opacity z-20 ${
+              isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100'
             }`}
             onMouseDown={handleResizeStart}
             onTouchStart={handleResizeStart}
           >
             <div 
-              className="flex items-center gap-1 px-4 py-1 rounded-full transition-all"
+              className="px-3 py-0.5 rounded-full transition-all"
               style={{ 
                 backgroundColor: isResizing 
                   ? 'rgb(var(--color-primary-500))' 
                   : 'rgb(var(--color-bg-muted))',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               }}
             >
               <GripHorizontal 
@@ -400,14 +389,6 @@ export default function DashboardWidgetWrapper({
                   color: isResizing ? 'white' : 'rgb(var(--color-text-muted))',
                 }} 
               />
-              <span 
-                className="text-[10px] font-medium"
-                style={{ 
-                  color: isResizing ? 'white' : 'rgb(var(--color-text-muted))',
-                }}
-              >
-                {isEn ? 'Resize' : 'Redim.'}
-              </span>
             </div>
           </div>
         )}
@@ -434,24 +415,22 @@ export default function DashboardWidgetWrapper({
         )}
       </div>
 
-      {/* Drop indicator AFTER - horizontal line with label */}
+      {/* Drop indicator AFTER - compact line that fits in tight gaps */}
       {showDropIndicator && effectiveDropPosition === 'after' && (
-        <div className="absolute -bottom-2 left-0 right-0 z-30 flex items-center gap-2">
+        <div 
+          className="absolute left-0 right-0 z-30 flex items-center pointer-events-none"
+          style={{ bottom: '-5px' }}
+        >
           <div 
-            className="flex-1 h-1 rounded-full animate-pulse"
+            className="flex-1 h-0.5 rounded-full"
             style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
           />
-          <span 
-            className="px-2 py-0.5 text-[10px] font-medium rounded-full whitespace-nowrap"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500))',
-              color: 'white',
-            }}
-          >
-            {isEn ? 'Drop here' : 'Déposer ici'}
-          </span>
           <div 
-            className="flex-1 h-1 rounded-full animate-pulse"
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+          />
+          <div 
+            className="flex-1 h-0.5 rounded-full"
             style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
           />
         </div>

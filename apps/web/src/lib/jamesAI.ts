@@ -20,12 +20,13 @@ import {
 import { Initiative } from './strategicPlanning';
 import { OKR, generateOKRId } from './okrTypes';
 import { generatePlanningId } from './strategicPlanning';
-import { jamesAnalytics } from './jamesAnalytics';
+import { aiAnalytics } from './aiAnalytics';
 import { classifyQuery, getModelTier, isLocalHandler, QueryHandler } from './queryRouter';
 import { pruneContext, buildPrunedContextString } from './contextPruner';
-import { enforceTokenBudget, getBudgetInfo } from './tokenBudget';
+import { enforceTokenBudget, getBudgetInfo, estimateTokens } from './tokenBudget';
 import { validateAIResponse } from './responseGuardrails';
 import { ChatMessage, ChatResponse, ChatStreamChunk } from './chatTypes';
+import { tryLocalHandlers, localResponseToChatResponse } from './handlers';
 
 // Re-export types for backward compatibility
 export type { ChatMessage, ChatResponse, ChatStreamChunk };
@@ -38,6 +39,9 @@ interface PendingRequest {
 class JamesAIService {
   private conversationHistory: ChatMessage[] = [];
   private maxHistoryLength = 20;
+  private contextTokenCount = 0;
+  private readonly MAX_CONTEXT_TOKENS = 8000; // Conservative limit
+  private readonly CONTEXT_RESET_THRESHOLD = 0.8; // Reset at 80% capacity
   private pendingRequests: Map<string, PendingRequest> = new Map();
   private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly DEBOUNCE_MS = 300;
@@ -56,6 +60,12 @@ class JamesAIService {
     
     this.conversationHistory.push(fullMessage);
     
+    // Update token count
+    this.contextTokenCount += estimateTokens(fullMessage.content);
+    
+    // Check context budget and reset if needed
+    this.checkContextBudget();
+    
     // Optimize history: keep only recent messages and compress old ones
     if (this.conversationHistory.length > this.maxHistoryLength) {
       // Keep last 10 messages full, summarize older ones
@@ -69,6 +79,9 @@ class JamesAIService {
       }));
       
       this.conversationHistory = [...compressed, ...recent].slice(-this.maxHistoryLength);
+      
+      // Recalculate token count after compression
+      this.recalculateTokenCount();
     }
     
     return fullMessage;
@@ -86,9 +99,108 @@ class JamesAIService {
    */
   clearHistory(): void {
     this.conversationHistory = [];
+    this.contextTokenCount = 0;
     // Cancel any pending requests
     this.pendingRequests.forEach(req => req.abortController.abort());
     this.pendingRequests.clear();
+  }
+
+  /**
+   * Check context budget and reset if approaching limit
+   */
+  private checkContextBudget(): void {
+    const threshold = this.MAX_CONTEXT_TOKENS * this.CONTEXT_RESET_THRESHOLD;
+    
+    if (this.contextTokenCount > threshold) {
+      console.log(
+        `[ContextWindow] Approaching limit (${this.contextTokenCount}/${this.MAX_CONTEXT_TOKENS} tokens), ` +
+        `summarizing and resetting context`
+      );
+      this.summarizeAndReset();
+    }
+  }
+
+  /**
+   * Summarize conversation history and reset context
+   * Keeps last 3 messages full, summarizes rest
+   */
+  private summarizeAndReset(): void {
+    if (this.conversationHistory.length <= 3) {
+      // Not enough history to summarize
+      return;
+    }
+
+    const recent = this.conversationHistory.slice(-3);
+    const older = this.conversationHistory.slice(0, -3);
+    
+    // Create summary of older messages
+    const summary: ChatMessage = {
+      id: `summary-${Date.now()}`,
+      role: 'system',
+      content: this.createConversationSummary(older),
+      timestamp: new Date(),
+    };
+    
+    // Keep summary + recent messages
+    this.conversationHistory = [summary, ...recent];
+    
+    // Recalculate token count
+    this.recalculateTokenCount();
+    
+    console.log(
+      `[ContextWindow] Context reset: ${older.length} messages summarized, ` +
+      `kept ${recent.length} recent messages. New token count: ${this.contextTokenCount}`
+    );
+  }
+
+  /**
+   * Create a summary of older conversation messages
+   */
+  private createConversationSummary(messages: ChatMessage[]): string {
+    // Extract key topics and decisions
+    const topics = new Set<string>();
+    const decisions: string[] = [];
+    
+    messages.forEach(msg => {
+      const content = msg.content.toLowerCase();
+      
+      // Extract topics
+      if (content.includes('runway')) topics.add('runway analysis');
+      if (content.includes('hire') || content.includes('hiring')) topics.add('hiring');
+      if (content.includes('initiative')) topics.add('initiatives');
+      if (content.includes('okr')) topics.add('OKRs');
+      if (content.includes('cost') || content.includes('expense')) topics.add('cost optimization');
+      if (content.includes('revenue') || content.includes('sales')) topics.add('revenue');
+      
+      // Extract decisions (if message contains action items)
+      if (msg.role === 'assistant' && (
+        content.includes('recommend') ||
+        content.includes('should') ||
+        content.includes('suggest')
+      )) {
+        const decision = msg.content.substring(0, 150);
+        if (decision.length > 0) {
+          decisions.push(decision);
+        }
+      }
+    });
+    
+    const topicList = Array.from(topics).join(', ');
+    const decisionSummary = decisions.length > 0 
+      ? `\n\nKey recommendations discussed: ${decisions.slice(0, 3).join('; ')}`
+      : '';
+    
+    return `Previous conversation covered: ${topicList || 'general financial planning'}.${decisionSummary}`;
+  }
+
+  /**
+   * Recalculate token count for current conversation history
+   */
+  private recalculateTokenCount(): void {
+    this.contextTokenCount = this.conversationHistory.reduce(
+      (total, msg) => total + estimateTokens(msg.content),
+      0
+    );
   }
 
   /**
@@ -115,7 +227,7 @@ class JamesAIService {
     }
 
     // Track message sent
-    jamesAnalytics.trackMessageSent(userMessage.length, options?.type);
+    aiAnalytics.trackMessageSent(userMessage.length, options?.type);
 
     // Sanitize input
     const sanitizedMessage = this.sanitizeInput(userMessage.trim());
@@ -182,11 +294,43 @@ class JamesAIService {
     const handler: QueryHandler = classification.handler;
     const intent = classification.intent;
     
-    // Check if query can be handled locally (no LLM needed)
-    if (isLocalHandler(handler)) {
-      // For now, we'll still send to LLM but with optimized context
-      // TODO: Implement local handlers in future iteration
-      console.log(`[QueryRouter] Query classified as ${handler}, but local handlers not yet implemented`);
+    // Try local handlers first for simple queries (no LLM cost)
+    if (isLocalHandler(handler) && options?.type !== 'strategy' && options?.type !== 'initiative' && options?.type !== 'okr') {
+      const localResponse = tryLocalHandlers(userMessage, intent, context);
+      
+      if (localResponse) {
+        console.log(`[LocalHandler] Query handled locally by ${localResponse.handlerType} (cost: $0, latency: ${localResponse.latencyMs}ms)`);
+        
+        // Add user message to history
+        this.addMessage({
+          role: 'user',
+          content: userMessage,
+        });
+        
+        // Add assistant response to history
+        this.addMessage({
+          role: 'assistant',
+          content: localResponse.message,
+          metadata: {
+            type: 'general',
+          },
+        });
+        
+        // Track as zero-cost query
+        aiAnalytics.trackLocalQuery(localResponse.handlerType, localResponse.latencyMs);
+        
+        return {
+          message: localResponse.message,
+          metadata: {
+            type: 'general',
+            tokensUsed: 0,
+            latency: localResponse.latencyMs,
+          },
+        };
+      }
+      
+      // Local handler couldn't handle - fall through to LLM
+      console.log(`[LocalHandler] Query classified as ${handler} but couldn't be handled locally, falling back to LLM`);
     }
     
     // Add user message to history
@@ -332,10 +476,10 @@ class JamesAIService {
 
           // Track analytics
           if (initiatives && initiatives.length > 0) {
-            jamesAnalytics.trackInitiativeGenerated(initiatives.length);
+            aiAnalytics.trackInitiativeGenerated(initiatives.length);
           }
           if (okrs && okrs.length > 0) {
-            jamesAnalytics.trackOKRGenerated();
+            aiAnalytics.trackOKRGenerated();
           }
 
           return {
@@ -360,7 +504,7 @@ class JamesAIService {
         lastError = error instanceof Error ? error : new Error(String(error));
         
         // Track error
-        jamesAnalytics.trackError(
+        aiAnalytics.trackError(
           lastError.name || 'UnknownError',
           lastError.message
         );

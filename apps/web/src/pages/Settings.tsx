@@ -26,6 +26,7 @@ import {
   Loader2,
   FileText,
   Copy,
+  Target,
 } from 'lucide-react';
 import { useAuth, useKeycloak } from '../lib/keycloak';
 import Avatar, { IDPBadge } from '../components/Avatar';
@@ -44,6 +45,8 @@ import RolesPermissionsSection from '../components/RolesPermissions';
 import SubscriptionManagement from '../components/SubscriptionManagement';
 import SecretsManagement from '../components/SecretsManagement';
 import DemoModeBanner from '../components/DemoModeBanner';
+import ChartGlobalSettings from '../components/ChartGlobalSettings';
+import JobsSettings from '../components/JobsSettings';
 import { 
   uploadLogo, 
   deleteLogo, 
@@ -265,6 +268,13 @@ export default function Settings() {
       show: canManageBilling 
     },
     { 
+      id: 'charts', 
+      name: isEn ? 'Charts & IBCS' : 'Graphiques & IBCS', 
+      description: isEn ? 'Default chart preferences' : 'Préférences graphiques par défaut',
+      icon: Target, 
+      show: true 
+    },
+    { 
       id: 'anomalies', 
       name: isEn ? 'Anomaly Detection' : 'Anomalies', 
       description: isEn ? 'Alert thresholds config' : 'Config. seuils d\'alerte',
@@ -313,6 +323,13 @@ export default function Settings() {
       name: 'API Documentation', 
       description: 'Swagger/OpenAPI docs',
       icon: FileText, 
+      show: isInternalStaff 
+    },
+    { 
+      id: 'jobs', 
+      name: isEn ? 'Scheduled Jobs' : 'Tâches planifiées', 
+      description: isEn ? 'Configure automated tasks' : 'Configurer les tâches automatisées',
+      icon: Clock, 
       show: isInternalStaff 
     },
   ];
@@ -924,6 +941,12 @@ export default function Settings() {
           {activeTab === 'api-docs' && isInternalStaff && (
             <APIDocumentationSection />
           )}
+
+          {activeTab === 'jobs' && isInternalStaff && (
+            <JobsSettings userRole={isInternalStaff ? 'super_admin' : undefined} />
+          )}
+
+          {activeTab === 'charts' && <ChartGlobalSettings />}
 
           {activeTab === 'anomalies' && <ThresholdSettings />}
 

@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { useFinancialData } from './useFinancialData';
 import { useDataSources } from '../lib/graphql/hooks';
 import { useTenant } from '../contexts/TenantContext';
+import { isMockAuthEnabled } from '../lib/keycloak';
 
 export interface DataAvailability {
   // Core financial data
@@ -136,8 +137,16 @@ export function useHasRealData(): HasRealDataResult {
     return hasMockAccounts || hasMockTrends || hasMockSummary;
   }, [data, dataSource, hasQuickBooksConnection, hasRealData]);
   
-  // Sandbox data should ONLY be shown to free users when no connection exists
+  // Sandbox data should be shown:
+  // 1. Free users when no connection exists
+  // 2. ALL users in mock auth mode (local dev) when no connection exists
   const shouldShowSandboxData = useMemo(() => {
+    // In mock auth mode (local dev), always show sandbox data if available (for all users)
+    if (isMockAuthEnabled() && hasSandboxData) {
+      return true;
+    }
+    
+    // Otherwise, only show to free users
     return isFreeUser && !hasQuickBooksConnection && hasSandboxData;
   }, [isFreeUser, hasQuickBooksConnection, hasSandboxData]);
   

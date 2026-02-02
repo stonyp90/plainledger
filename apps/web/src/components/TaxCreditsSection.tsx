@@ -50,12 +50,60 @@ export default function TaxCreditsSection({
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [selectedCredit, setSelectedCredit] = useState<any>(null);
 
-  // Mock data for now - will be replaced with actual API call
+  // Fetch eligibility data from API
   useEffect(() => {
-    // TODO: Fetch actual eligibility data from GraphQL API
-    const mockData: TaxCreditEligibility[] = [];
-    setEligibilityData(mockData);
-    setLoading(false);
+    const fetchEligibility = async () => {
+      if (!organizationId) {
+        setEligibilityData([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Import API dynamically to avoid circular dependencies
+        const { taxCreditsApi } = await import('../lib/api');
+        const currentYear = new Date().getFullYear();
+        
+        const response = await taxCreditsApi.getEligibility(organizationId, currentYear);
+        
+        // Transform API response to component format
+        const eligibilityResults: TaxCreditEligibility[] = (response.data || []).map((item: any) => ({
+          taxCredit: {
+            id: item.creditId,
+            name: { en: item.creditName, fr: item.creditName },
+            shortName: { en: item.shortName, fr: item.shortName },
+            jurisdiction: 'federal',
+            creditType: 'refundable',
+            industries: [],
+            maxBenefit: {
+              type: 'percentage',
+              value: 0,
+              description: { en: '', fr: '' },
+            },
+            documentationUrl: item.documentationUrl || '',
+            partnerReferralEnabled: item.partnerReferralEnabled || false,
+            description: { en: '', fr: '' },
+          },
+          eligibilityStatus: item.eligibilityStatus,
+          eligibilityScore: item.eligibilityScore,
+          criteriaMet: item.criteriaMet || [],
+          criteriaNotMet: item.criteriaNotMet || [],
+          estimatedBenefitMin: item.estimatedBenefitMin || 0,
+          estimatedBenefitMax: item.estimatedBenefitMax || 0,
+          calculationTimestamp: item.calculationTimestamp || new Date().toISOString(),
+        }));
+
+        setEligibilityData(eligibilityResults);
+      } catch (error) {
+        console.error('Failed to fetch tax credit eligibility:', error);
+        setEligibilityData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEligibility();
   }, [industryId, province, organizationId]);
 
   const likelyEligible = eligibilityData.filter((e) => e.eligibilityStatus === 'likely');

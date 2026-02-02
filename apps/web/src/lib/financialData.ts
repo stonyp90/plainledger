@@ -1109,11 +1109,25 @@ export function generateMockFinancialData(
         label: 'Dépenses',
         labelEn: 'Expenses',
         data: expenseData,
+        budget: expenseData.map((_, i) => {
+          // Generate expense budget (slightly lower than actual for variance)
+          const baseBudget = 80000;
+          const expenseSeasonalFactors = [1.05, 1.08, 1.02, 0.95, 0.92, 0.90, 0.92, 0.98, 0.96, 0.94, 0.93, 0.95];
+          const seasonalBudget = baseBudget * expenseSeasonalFactors[i];
+          const growthFactor = 1 + (i * 0.014); // Slightly lower growth target
+          return Math.round((seasonalBudget * growthFactor) * dateGrowthFactor);
+        }),
       },
       cashFlow: {
         label: 'Flux de trésorerie',
         labelEn: 'Cash Flow',
         data: cashFlowTrendData,
+        budget: cashFlowTrendData.map((_, i) => {
+          // Cash flow budget = revenue budget - expense budget
+          const revBudget = revenueBudget[i] || 0;
+          const expBudget = expenseData[i] ? (expenseData[i].value * 0.95) : 0; // 95% of actual expense
+          return Math.round(revBudget - expBudget);
+        }),
       },
       profit: {
         label: 'Résultat net',

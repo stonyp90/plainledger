@@ -4,12 +4,14 @@
   "description": "PlainLedger - Financial Reporting SaaS Platform",
   "scripts": {
     "install:all": "cd apps/api && npm install && cd ../web && npm install && cd ../..",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev": "concurrently -n api,web -c cyan,magenta --kill-others-on-fail \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:all": "./local-dev/dev.sh",
     "dev:infra": "docker-compose up -d keycloak-db app-db redis keycloak localstack minio",
     "dev:api": "cd apps/api && npm run start:dev",
     "dev:web": "cd apps/web && npm run dev",
-    "dev:stop": "pkill -f 'nest start' && pkill -f 'vite'",
-    "dev:logs": "tail -f /tmp/plainledger-api.log /tmp/plainledger-web.log",
+    "dev:stop": "pkill -f 'nest start' 2>/dev/null; pkill -f 'vite' 2>/dev/null; echo 'Stopped'",
+    "dev:logs": "tail -f /tmp/plainledger-logs/*.log",
+    "dev:clean": "rm -rf apps/api/dist apps/web/dist apps/api/node_modules/.cache apps/web/node_modules/.vite",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -24,18 +26,18 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.0",
-    "@testcontainers/postgresql": "^11.11.0",
-    "@testcontainers/redis": "^11.11.0",
-    "concurrently": "^8.2.2",
+    "@playwright/test": "^1.50.1",
+    "@testcontainers/postgresql": "^11.0.0",
+    "@testcontainers/redis": "^11.0.0",
+    "concurrently": "^9.1.2",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "pg": "^8.11.3",
+    "lint-staged": "^15.4.3",
+    "pg": "^8.14.0",
     "@types/pg": "^8.16.0",
-    "testcontainers": "^11.11.0"
+    "testcontainers": "^11.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.980.0"
+    "@aws-sdk/client-s3": "^3.750.0"
   },
   "lint-staged": {
     "apps/api/**/*.{ts,tsx}": [

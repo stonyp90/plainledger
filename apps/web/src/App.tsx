@@ -38,7 +38,13 @@ import TaxCredits from './pages/TaxCredits';
 import DocumentShares from './pages/DocumentShares';
 import SharedDocumentAccess from './pages/SharedDocumentAccess';
 import Contact from './pages/Contact';
+import Quebec from './pages/Quebec';
+import Canada from './pages/Canada';
+import SREDCalculatorPage from './pages/SREDCalculator';
+import Montreal from './pages/cities/Montreal';
+import Security from './pages/Security';
 import CrispChat from './components/CrispChat';
+import CookieConsent from './components/CookieConsent';
 import { AnalyticsVisibilityProvider } from './contexts/AnalyticsVisibilityContext';
 import config from './lib/config';
 import { analytics } from './lib/analytics';
@@ -226,6 +232,9 @@ function App() {
           <CrispChat websiteId={config.crisp.websiteId} />
         )}
         
+        {/* Cookie Consent Banner - GDPR/Law 25 Compliant */}
+        <CookieConsent />
+        
         <Routes>
         {/* Public routes - Main marketing website at root */}
         <Route 
@@ -306,6 +315,48 @@ function App() {
         <Route 
           path="/privacy" 
           element={<PrivacyPolicy />} 
+        />
+
+        {/* Security & Compliance - public page */}
+        <Route 
+          path="/security" 
+          element={<Security />} 
+        />
+
+        {/* Quebec Landing Page - public */}
+        <Route 
+          path="/quebec" 
+          element={<Quebec />} 
+        />
+        <Route 
+          path="/qc" 
+          element={<Quebec />} 
+        />
+
+        {/* Canada Landing Page - public */}
+        <Route 
+          path="/canada" 
+          element={<Canada />} 
+        />
+
+        {/* SR&ED Calculator - public tool */}
+        <Route 
+          path="/tools/sred-calculator" 
+          element={<SREDCalculatorPage />} 
+        />
+        <Route 
+          path="/calculateur-rsde" 
+          element={<SREDCalculatorPage />} 
+        />
+
+        {/* City Landing Pages - Quebec */}
+        <Route 
+          path="/quebec/montreal" 
+          element={<Montreal />} 
+        />
+        <Route 
+          path="/quebec/montréal" 
+          element={<Montreal />} 
         />
 
         {/* Shared Document Access - public page (no auth required) */}

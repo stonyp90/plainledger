@@ -663,6 +663,170 @@ export class SessionStorageService implements IStorageService {
 | i18n | No | Deep integration, unlikely to change |
 | Styling | No | TailwindCSS is fundamental |
 
+## IBCS (International Business Communication Standards) Patterns
+
+### Overview
+
+All financial charts and reports follow IBCS compliance for consistent, professional financial communication. IBCS provides standardized notation, colors, and variance indicators.
+
+### IBCS Library Structure
+
+```
+src/lib/ibcs/
+├── theme.ts          # Color definitions (AC, PL, FC, PY, variance colors)
+├── notation.ts       # Abbreviations (AC, PL, ΔPL, ΔPL%)
+├── variance.ts       # Variance calculation utilities
+├── formatters.ts    # Number/currency/percentage formatting
+└── index.ts         # Re-exports all modules
+```
+
+### IBCS Components
+
+```
+src/components/charts/ibcs/
+├── VariancePin.tsx       # Lollipop variance indicator
+├── ScenarioBar.tsx       # AC|PL|FC bars with correct styling
+├── IBCSLegend.tsx        # Standard legend
+├── IBCSHeader.tsx        # Chart headers with column abbreviations
+└── index.ts             # Re-exports all
+```
+
+### Chart Configuration System
+
+**File:** `src/lib/chartConfig.ts`
+
+Provides unified interfaces for multi-data source charts:
+
+```typescript
+interface IBCSChartConfig {
+  dataSources: ChartDataSource[];  // Multiple data sources (AC, PL, FC, PY)
+  labels: ChartLabels;              // Bilingual labels
+  ibcsMode: boolean;                // Enable IBCS compliance
+  showVariancePins: boolean;        // Show variance indicators
+  showLegend: boolean;              // Show IBCS legend
+  metricType: IBCSMetricType;      // 'revenue' | 'expense' | 'profit' | 'ratio'
+  accessibility: {                  // ARIA labels
+    ariaLabel: string;
+    ariaLabelEn?: string;
+    description: string;
+    descriptionEn?: string;
+  };
+}
+```
+
+**Hook:** `useIBCSChart(config)` - Manages IBCS chart state and calculations
+
+### IBCS Notation Standards
+
+| Abbreviation | Meaning | Usage |
+|--------------|---------|-------|
+| AC | Actual | Current period actual values |
+| PL | Plan | Budget/plan values |
+| FC | Forecast | Forecasted values |
+| PY | Prior Year | Previous period values |
+| ΔPL | Variance vs Plan | Absolute variance |
+| ΔPL% | Variance % vs Plan | Percentage variance |
+| ΔPY | Variance vs Prior Year | YoY absolute variance |
+| ΔPY% | Variance % vs Prior Year | YoY percentage variance |
+
+### Variance Colors
+
+- **Green (rgb(34, 197, 94))**: Favorable variance
+- **Red (rgb(239, 68, 68))**: Unfavorable variance
+- **Gray (rgb(148, 163, 184))**: Neutral variance
+
+### Bar Styles
+
+- **AC (Actual)**: Solid filled dark bar
+- **PL (Plan)**: Outline only (transparent fill with stroke)
+- **FC (Forecast)**: Hatched/dashed pattern
+- **PY (Prior Year)**: Light gray, smaller
+
+### Report Enhancement Pattern
+
+All financial reports (Balance Sheet, Income Statement, Cash Flow) support IBCS mode:
+
+```tsx
+// 1. Add IBCS mode toggle
+const [ibcsMode, setIBCSMode] = useState(true);
+
+// 2. Add IBCS header row (when comparison enabled)
+{ibcsMode && showComparison ? (
+  <IBCSColumnHeaderRow
+    columns={[
+      { key: 'actual', abbreviation: 'AC', ... },
+      { key: 'priorYear', abbreviation: 'PY', ... },
+      { key: 'variance', abbreviation: 'ΔPY', ... },
+      { key: 'variancePct', abbreviation: 'ΔPY%', ... },
+    ]}
+  />
+) : null}
+
+// 3. Update table headers to show abbreviations
+<th className={ibcsMode ? 'font-mono' : ''}>
+  {ibcsMode ? 'AC' : currentYear}
+</th>
+
+// 4. Use VariancePinCompact in variance cells
+{ibcsMode ? (
+  <>
+    <td>{formatCurrency(varianceAbs)}</td>
+    <td>
+      <VariancePinCompact
+        variancePct={variancePct}
+        favorable={isFavorable}
+      />
+    </td>
+  </>
+) : (
+  <td>{variancePct.toFixed(1)}%</td>
+)}
+```
+
+### Accessibility Requirements
+
+All IBCS SVG components must include:
+
+```tsx
+<g
+  role="graphics-symbol"
+  aria-label="Favorable variance: +15%"
+  aria-roledescription="variance indicator"
+  tabIndex={0}
+>
+  <title>Favorable variance</title>
+  <desc>Variance of +15% from plan</desc>
+  {/* SVG elements */}
+</g>
+```
+
+### Testing IBCS Compliance
+
+**Unit Tests:** `src/components/charts/ibcs/__tests__/`
+- VariancePin.test.tsx - Color, formatting, accessibility
+- ScenarioBar.test.tsx - Bar styling, keyboard navigation
+- visual.test.tsx - Snapshot tests for visual consistency
+
+**E2E Tests:** `e2e/ibcs-compliance.spec.ts`
+- Verifies IBCS abbreviations appear
+- Checks variance pin colors
+- Validates accessibility attributes
+- Tests FP&A features (action recommendations, ROI impact)
+
+### Best Practices
+
+1. **Always use IBCS colors** from `IBCSColors` constant
+2. **Calculate favorability correctly** based on metric type:
+   - Revenue: increase is favorable
+   - Expenses: decrease is favorable
+   - Assets: increase is favorable
+   - Liabilities: decrease is favorable
+3. **Use VariancePinCompact** in tables and KPI cards
+4. **Use full VariancePin** in charts for visual variance indicators
+5. **Support bilingual labels** using `useI18n()` hook
+6. **Enable IBCS mode by default** for financial reports
+7. **Provide toggle** to disable IBCS mode for users who prefer traditional format
+
 ## Testing Patterns
 
 ### Unit Tests (Vitest)

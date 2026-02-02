@@ -10,6 +10,7 @@ import { TenantProvider } from './contexts/TenantContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { DemoModeProvider } from './contexts/DemoModeContext';
 import { I18nProvider } from './lib/i18n';
+import { ConsentProvider } from './components/CookieConsent';
 import './styles/globals.css';
 
 const queryClient = new QueryClient({
@@ -26,26 +27,28 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <I18nProvider defaultLanguage="fr">
       <ThemeProvider defaultTheme="light">
-        <KeycloakProvider>
-          <TenantProvider>
-            <DemoModeProvider>
-              <QueryClientProvider client={queryClient}>
-                <BrowserRouter
-                  future={{
-                    v7_startTransition: true,
-                    v7_relativeSplatPath: true,
-                  }}
-                >
-                  <NotificationProvider>
-                    <ToastProvider>
-                      <App />
-                    </ToastProvider>
-                  </NotificationProvider>
-                </BrowserRouter>
-              </QueryClientProvider>
-            </DemoModeProvider>
-          </TenantProvider>
-        </KeycloakProvider>
+        <ConsentProvider>
+          <KeycloakProvider>
+            <TenantProvider>
+              <DemoModeProvider>
+                <QueryClientProvider client={queryClient}>
+                  <BrowserRouter
+                    future={{
+                      v7_startTransition: true,
+                      v7_relativeSplatPath: true,
+                    }}
+                  >
+                    <NotificationProvider>
+                      <ToastProvider>
+                        <App />
+                      </ToastProvider>
+                    </NotificationProvider>
+                  </BrowserRouter>
+                </QueryClientProvider>
+              </DemoModeProvider>
+            </TenantProvider>
+          </KeycloakProvider>
+        </ConsentProvider>
       </ThemeProvider>
     </I18nProvider>
   </React.StrictMode>,

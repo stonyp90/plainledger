@@ -139,6 +139,12 @@ S3_ENDPOINT=http://localhost:4566
 S3_REGION=us-east-1
 AWS_ACCESS_KEY_ID=test
 AWS_SECRET_ACCESS_KEY=test
+# Email (for local testing with Mailhog)
+SES_ENDPOINT=http://localhost:1025  # Mailhog SMTP endpoint
+SES_REGION=us-east-1
+SES_FROM_ADDRESS=noreply@plainledger.local
+SES_FROM_NAME=PlainLedger
+APP_URL=http://localhost:5173
 ```
 
 ### Web Environment (apps/web/.env)
@@ -176,6 +182,33 @@ All 4 items show as complete when running locally with `SKIP_AUTH=true`.
 | Redis | localhost:6379 | ✅ |
 | MinIO Console | http://localhost:9001 | ✅ |
 | LocalStack (S3) | http://localhost:4566 | ✅ |
+| Mailhog (SMTP) | localhost:1025 | ✅ |
+| Mailhog (Web UI) | http://localhost:8025 | ✅ |
+
+---
+
+## Email Testing with Mailhog
+
+Mailhog is included for local email testing. When you share visualizations or send emails from the app, they will be captured by Mailhog instead of being sent to real recipients.
+
+### Access Mailhog Web UI
+
+Open http://localhost:8025 in your browser to view all captured emails.
+
+### Testing Email Features
+
+1. **Share Visualization**: Click the share button on any chart, enter email addresses, and send
+2. **View in Mailhog**: Open http://localhost:8025 to see the email with embedded chart image
+3. **Verify Email Content**: Check that chart images render correctly, links work, etc.
+
+### Email Configuration
+
+**Note**: The current SES adapter uses AWS SDK which doesn't support SMTP endpoints directly. For local email testing with Mailhog, you have two options:
+
+1. **Production Testing**: Use AWS SES sandbox mode (recommended for testing email templates)
+2. **Local SMTP**: Enhance the SES adapter to support nodemailer with Mailhog's SMTP endpoint (`localhost:1025`) for local development
+
+Mailhog is included in docker-compose for future SMTP support. Currently, emails sent from the API will use AWS SES (or fail gracefully if not configured).
 
 ---
 

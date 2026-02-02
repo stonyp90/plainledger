@@ -10,11 +10,16 @@
  * - Responsive sizing with compact mode option
  * - Dark/light theme support via CSS variables
  * - Hover effects and animations
+ * - IBCS-compliant variance display
+ * - ROI dollar impact calculation
+ * - Action recommendations
  */
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Target, CheckCircle, AlertCircle, type LucideIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, CheckCircle, AlertCircle, DollarSign, Lightbulb, type LucideIcon } from 'lucide-react';
 import { LabelTooltip } from './Tooltip';
+import { VariancePinCompact } from './charts/ibcs/VariancePin';
+import { IBCSColors } from '../lib/ibcs';
 
 // Mini sparkline component for KPI cards with optional animation
 interface SparklineProps {
@@ -177,6 +182,28 @@ export interface KPICardProps {
   /** Whether the component is visible (for scroll-triggered animations) */
   isVisible?: boolean;
   /** Whether to animate the sparkline chart */
+  
+  // IBCS and FP&A enhancements
+  /** Enable IBCS-compliant display with variance pins */
+  ibcsMode?: boolean;
+  /** Plan/budget value for variance calculation */
+  planValue?: number;
+  /** Actual numeric value (for calculations) */
+  actualValue?: number;
+  /** Variance percentage */
+  variancePct?: number;
+  /** Whether variance is favorable */
+  isFavorable?: boolean;
+  /** ROI dollar impact (e.g., "$12,500 saved") */
+  roiImpact?: string;
+  /** Numeric ROI value for formatting */
+  roiValue?: number;
+  /** Action recommendation text */
+  actionRecommendation?: string;
+  /** Action recommendation in English */
+  actionRecommendationEn?: string;
+  /** Benchmark comparison label (e.g., "vs Industry: 4.2x") */
+  benchmarkLabel?: string;
   animateChart?: boolean;
 }
 
@@ -202,6 +229,17 @@ export default function KPICard({
   onHoverChange,
   isVisible = true,
   animateChart = false,
+  // IBCS and FP&A props
+  ibcsMode = false,
+  planValue,
+  actualValue,
+  variancePct,
+  isFavorable,
+  roiImpact,
+  roiValue,
+  actionRecommendation,
+  actionRecommendationEn,
+  benchmarkLabel,
 }: KPICardProps) {
   const [internalHovered, setInternalHovered] = useState(false);
   const isHovered = controlledHovered ?? internalHovered;
@@ -299,7 +337,15 @@ export default function KPICard({
               </span>
             </LabelTooltip>
           )}
-          {change && trend && (
+          
+          {/* IBCS Variance display */}
+          {ibcsMode && variancePct !== undefined && isFavorable !== undefined ? (
+            <VariancePinCompact
+              variancePct={variancePct}
+              favorable={isFavorable}
+              height={14}
+            />
+          ) : change && trend ? (
             <span 
               className="flex items-center gap-0.5 text-[9px] sm:text-[10px] font-medium whitespace-nowrap"
               style={{ color: trendColor }}
@@ -307,8 +353,40 @@ export default function KPICard({
               <TrendIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
               <span>{change}</span>
             </span>
-          )}
+          ) : null}
         </div>
+        
+        {/* IBCS: ROI Impact row */}
+        {roiImpact && (
+          <div 
+            className="flex items-center gap-1 mt-1 text-[9px] sm:text-[10px]"
+            style={{ color: IBCSColors.variance.favorable }}
+          >
+            <DollarSign className="w-3 h-3 flex-shrink-0" />
+            <span className="font-semibold">{roiImpact}</span>
+          </div>
+        )}
+        
+        {/* IBCS: Action recommendation */}
+        {actionRecommendation && (
+          <div 
+            className="flex items-center gap-1 mt-1 text-[9px] sm:text-[10px]"
+            style={{ color: 'rgb(var(--color-warning))' }}
+          >
+            <Lightbulb className="w-3 h-3 flex-shrink-0" />
+            <span className="line-clamp-1">{isEn && actionRecommendationEn ? actionRecommendationEn : actionRecommendation}</span>
+          </div>
+        )}
+        
+        {/* Benchmark comparison */}
+        {benchmarkLabel && (
+          <div 
+            className="text-[9px] sm:text-[10px] mt-1"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            {benchmarkLabel}
+          </div>
+        )}
       </div>
     );
   }

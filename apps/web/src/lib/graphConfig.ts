@@ -228,6 +228,51 @@ export interface BudgetVsActualConfig {
 }
 
 // ============================================================================
+// IBCS CONFIGURATION
+// ============================================================================
+
+/**
+ * IBCS (International Business Communication Standards) Configuration
+ * 
+ * IMPORTANT: IBCS is always enforced as the industry standard for financial reporting.
+ * The `enabled` property should always be `true` - it cannot be disabled by users.
+ * Only individual IBCS options can be customized.
+ */
+export interface IBCSConfig {
+  /** 
+   * IBCS enabled state - ALWAYS TRUE
+   * @readonly This is enforced and cannot be changed by users
+   */
+  enabled: boolean;
+  /** Show variance pins (+/- indicators on bars) */
+  showVariancePins: boolean;
+  /** Show IBCS scenario notation legend */
+  showLegend: boolean;
+  /** Show industry benchmark comparison */
+  showBenchmark: boolean;
+  /** Show variance shading between actual and comparison (for trend charts) */
+  showVarianceShading: boolean;
+  /** 
+   * Metric type for variance calculations
+   * - revenue: ↑ is favorable (green)
+   * - expense: ↓ is favorable (green)
+   * - profit: ↑ is favorable (green)
+   * - ratio: depends on the specific ratio
+   */
+  metricType: 'revenue' | 'expense' | 'profit' | 'ratio';
+  /** Show plan/budget values (PL - outlined bars) */
+  showPlan: boolean;
+  /** Show forecast values (FC - hatched pattern) */
+  showForecast: boolean;
+  /** Show prior year values (PY - gray reference) */
+  showPriorYear: boolean;
+  /** Variance threshold for highlighting (%). Variances above this % are emphasized */
+  varianceHighlightThreshold: number;
+  /** Use semantic colors (green=favorable, red=unfavorable) */
+  useSemanticColors: boolean;
+}
+
+// ============================================================================
 // COMPREHENSIVE GRAPH CONFIGURATION
 // ============================================================================
 
@@ -248,6 +293,8 @@ export interface GraphConfig {
   waterfall?: WaterfallConfig;
   /** Budget vs Actual config */
   budgetVsActual?: BudgetVsActualConfig;
+  /** IBCS compliance configuration */
+  ibcs?: IBCSConfig;
   /** Locale for formatting (e.g., 'en-CA', 'fr-CA') */
   locale?: string;
 }
@@ -339,6 +386,18 @@ export function validateGraphConfig(config: PartialGraphConfig): ValidationResul
     }
     if (config.cpa.roundingTolerance !== undefined && config.cpa.roundingTolerance < 0) {
       errors.push('Rounding tolerance must be non-negative');
+    }
+  }
+
+  // IBCS config validation
+  if (config.ibcs) {
+    if (config.ibcs.varianceHighlightThreshold !== undefined) {
+      if (config.ibcs.varianceHighlightThreshold < 0 || config.ibcs.varianceHighlightThreshold > 100) {
+        errors.push('IBCS variance highlight threshold must be between 0 and 100');
+      }
+    }
+    if (config.ibcs.metricType && !['revenue', 'expense', 'profit', 'ratio'].includes(config.ibcs.metricType)) {
+      errors.push('IBCS metric type must be one of: revenue, expense, profit, ratio');
     }
   }
 
@@ -471,6 +530,20 @@ export const DEFAULT_BUDGET_VS_ACTUAL_CONFIG: BudgetVsActualConfig = {
   expandAllRows: false,
 };
 
+export const DEFAULT_IBCS_CONFIG: IBCSConfig = {
+  enabled: true,
+  showVariancePins: true,
+  showLegend: true,
+  showBenchmark: false,
+  showVarianceShading: true,
+  metricType: 'revenue',
+  showPlan: true,
+  showForecast: false,
+  showPriorYear: true,
+  varianceHighlightThreshold: 10,
+  useSemanticColors: true,
+};
+
 export const DEFAULT_GRAPH_CONFIG: GraphConfig = {
   period: DEFAULT_PERIOD_CONFIG,
   display: DEFAULT_DISPLAY_CONFIG,
@@ -479,6 +552,7 @@ export const DEFAULT_GRAPH_CONFIG: GraphConfig = {
   cpa: DEFAULT_CPA_CONFIG,
   waterfall: DEFAULT_WATERFALL_CONFIG,
   budgetVsActual: DEFAULT_BUDGET_VS_ACTUAL_CONFIG,
+  ibcs: DEFAULT_IBCS_CONFIG,
 };
 
 // ============================================================================
@@ -539,6 +613,12 @@ export function mergeGraphConfig(
       ...orgSettings?.budgetVsActual,
       ...userPreferences?.budgetVsActual,
       ...chartOverrides?.budgetVsActual,
+    },
+    ibcs: {
+      ...DEFAULT_IBCS_CONFIG,
+      ...orgSettings?.ibcs,
+      ...userPreferences?.ibcs,
+      ...chartOverrides?.ibcs,
     },
   };
   

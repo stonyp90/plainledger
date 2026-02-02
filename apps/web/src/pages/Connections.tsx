@@ -753,7 +753,7 @@ function OnboardingSteps({ isEn, onSelectProvider }: { isEn: boolean; onSelectPr
   );
 }
 
-// Provider types
+// Provider types - Enhanced for Airbyte-style experience
 interface Provider {
   id: string;
   name: string;
@@ -767,6 +767,13 @@ interface Provider {
   accountsCount?: number;
   transactionsCount?: number;
   dataSourceId?: string; // Real database ID for API calls
+  // Enhanced fields for Airbyte-style experience
+  syncSchedule?: 'manual' | 'hourly' | 'daily' | 'weekly';
+  nextSyncAt?: string;
+  healthStatus?: 'healthy' | 'warning' | 'error' | 'unknown';
+  credentialsConfigured?: boolean;
+  syncHistory?: { date: string; status: 'success' | 'failed'; recordsSync: number }[];
+  errorMessage?: string;
 }
 
 // Mock data - would come from API
@@ -778,10 +785,18 @@ const providers: Provider[] = [
     descriptionFr: 'Logiciel comptable Intuit QuickBooks',
     logo: '/providers/quickbooks.svg',
     color: '#2CA01C',
-    status: 'connected',  // Default to connected for testing disconnect
+    status: 'connected',
     lastSync: 'Just now',
     accountsCount: 24,
     transactionsCount: 847,
+    syncSchedule: 'daily',
+    nextSyncAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // 12 hours from now
+    healthStatus: 'healthy',
+    credentialsConfigured: true,
+    syncHistory: [
+      { date: new Date().toISOString(), status: 'success', recordsSync: 847 },
+      { date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), status: 'success', recordsSync: 842 },
+    ],
   },
   {
     id: 'xero',
@@ -791,6 +806,8 @@ const providers: Provider[] = [
     logo: '/providers/xero.svg',
     color: '#13B5EA',
     status: 'disconnected',
+    healthStatus: 'unknown',
+    credentialsConfigured: false,
   },
   {
     id: 'sage',
@@ -800,6 +817,8 @@ const providers: Provider[] = [
     logo: '/providers/sage.svg',
     color: '#00D639',
     status: 'disconnected',
+    healthStatus: 'unknown',
+    credentialsConfigured: false,
   },
   {
     id: 'freshbooks',
@@ -809,6 +828,8 @@ const providers: Provider[] = [
     logo: '/providers/freshbooks.svg',
     color: '#0075DD',
     status: 'disconnected',
+    healthStatus: 'unknown',
+    credentialsConfigured: false,
   },
   {
     id: 'wave',
@@ -818,6 +839,8 @@ const providers: Provider[] = [
     logo: '/providers/wave.svg',
     color: '#2E77BC',
     status: 'disconnected',
+    healthStatus: 'unknown',
+    credentialsConfigured: false,
   },
   {
     id: 'csv',
@@ -827,10 +850,20 @@ const providers: Provider[] = [
     logo: '/providers/csv.svg',
     color: '#6B7280',
     status: 'disconnected',
+    healthStatus: 'unknown',
+    credentialsConfigured: false,
   },
 ];
 
-// Provider Logo Component
+// Sync schedule options
+const SYNC_SCHEDULES = [
+  { id: 'manual', labelEn: 'Manual', labelFr: 'Manuel', descEn: 'Sync only when triggered', descFr: 'Sync uniquement sur demande' },
+  { id: 'hourly', labelEn: 'Every hour', labelFr: 'Chaque heure', descEn: 'Sync every 60 minutes', descFr: 'Sync toutes les 60 minutes' },
+  { id: 'daily', labelEn: 'Daily', labelFr: 'Quotidien', descEn: 'Sync once per day at 2:00 AM', descFr: 'Sync une fois par jour à 2h00' },
+  { id: 'weekly', labelEn: 'Weekly', labelFr: 'Hebdomadaire', descEn: 'Sync every Monday at 2:00 AM', descFr: 'Sync chaque lundi à 2h00' },
+] as const;
+
+// Provider Logo Component - Using official brand logos
 function ProviderLogo({ provider, size = 'md' }: { provider: Provider; size?: 'sm' | 'md' | 'lg' }) {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -838,57 +871,98 @@ function ProviderLogo({ provider, size = 'md' }: { provider: Provider; size?: 's
     lg: 'w-12 h-12',
   };
   
-  // Official brand logos matching the IntegrationLogos component
-  const logoMap: Record<string, JSX.Element> = {
+  const sizePx = {
+    sm: 32,
+    md: 40,
+    lg: 48,
+  };
+  
+  // Official brand logos - using high-quality CDN images with SVG fallbacks
+  // Using SimpleIcons CDN (cdn.simpleicons.org) for consistent, high-quality brand icons
+  const logoUrls: Record<string, string> = {
+    quickbooks: 'https://cdn.simpleicons.org/quickbooks/2CA01C',
+    xero: 'https://cdn.simpleicons.org/xero/13B5EA',
+    sage: 'https://cdn.simpleicons.org/sage/00D639',
+    freshbooks: 'https://cdn.simpleicons.org/freshbooks/0075DD',
+    wave: 'https://cdn.simpleicons.org/wave/2E77BC',
+  };
+  
+  // Fallback SVG logos - accurate recreations of official brand marks
+  const fallbackLogos: Record<string, JSX.Element> = {
     quickbooks: (
-      <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <circle cx="20" cy="20" r="20" fill="#2CA01C"/>
-        {/* Outer ring of the "q" */}
-        <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none"/>
-        {/* Vertical stem for "q" going down */}
-        <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-        {/* Inner "b" shape */}
-        <path d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <svg viewBox="0 0 48 48" className={sizeClasses[size]}>
+        <circle cx="24" cy="24" r="24" fill="#2CA01C"/>
+        <g transform="translate(10, 10)" fill="none" stroke="white" strokeWidth="2.5">
+          <circle cx="14" cy="14" r="10"/>
+          <path d="M14 6v16M8 14h12" strokeLinecap="round"/>
+        </g>
       </svg>
     ),
     xero: (
-      <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <circle cx="20" cy="20" r="20" fill="#13B5EA"/>
-        <text x="20" y="25" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="14" letterSpacing="-0.5">xero</text>
-        <circle cx="33" cy="20" r="1.5" fill="white"/>
+      <svg viewBox="0 0 48 48" className={sizeClasses[size]}>
+        <circle cx="24" cy="24" r="24" fill="#13B5EA"/>
+        <g transform="translate(8, 14)" fill="white">
+          <path d="M6.5 0L10 10L13.5 0h3L11 20H9L3.5 0h3z"/>
+          <path d="M18 0h8v3h-5v5h4v3h-4v6h5v3h-8V0z"/>
+        </g>
       </svg>
     ),
     sage: (
-      <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <circle cx="20" cy="20" r="20" fill="#1D1D1B"/>
-        <text x="20" y="25" textAnchor="middle" fill="#00D639" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="12">Sage</text>
+      <svg viewBox="0 0 48 48" className={sizeClasses[size]}>
+        <rect width="48" height="48" rx="10" fill="#00D639"/>
+        <text x="24" y="30" textAnchor="middle" fill="white" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="700" fontSize="13">Sage</text>
       </svg>
     ),
     freshbooks: (
-      <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <rect width="40" height="40" rx="6" fill="#0075DD"/>
-        <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white"/>
-        <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white"/>
+      <svg viewBox="0 0 48 48" className={sizeClasses[size]}>
+        <rect width="48" height="48" rx="10" fill="#0075DD"/>
+        <g transform="translate(14, 10)" fill="white">
+          <rect x="0" y="0" width="18" height="3.5" rx="1"/>
+          <rect x="0" y="7" width="14" height="3.5" rx="1"/>
+          <rect x="0" y="14" width="10" height="3.5" rx="1"/>
+          <rect x="0" y="21" width="3.5" height="7" rx="1"/>
+        </g>
       </svg>
     ),
     wave: (
-      <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <path d="M6 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v12z" fill="#003D79"/>
-        <path d="M16 32c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v24z" fill="#2E77BC"/>
-        <path d="M26 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v16z" fill="#6AB8F7"/>
+      <svg viewBox="0 0 48 48" className={sizeClasses[size]}>
+        <rect width="48" height="48" rx="10" fill="#003D79"/>
+        <g transform="translate(8, 10)">
+          <rect x="0" y="14" width="8" height="14" rx="4" fill="#6AB8F7"/>
+          <rect x="12" y="6" width="8" height="22" rx="4" fill="#2E77BC"/>
+          <rect x="24" y="10" width="8" height="18" rx="4" fill="white"/>
+        </g>
       </svg>
     ),
     csv: (
-      <svg viewBox="0 0 40 40" className={sizeClasses[size]}>
-        <rect x="0" y="0" width="40" height="40" rx="8" fill="#6B7280"/>
-        <text x="20" y="26" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">CSV</text>
+      <svg viewBox="0 0 48 48" className={sizeClasses[size]}>
+        <rect width="48" height="48" rx="10" fill="#64748B"/>
+        <text x="24" y="30" textAnchor="middle" fill="white" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="700" fontSize="12">CSV</text>
       </svg>
     ),
   };
+
+  const [imageError, setImageError] = useState(false);
+  const logoUrl = logoUrls[provider.id];
   
-  return logoMap[provider.id] || (
+  // Use image if available and not errored, otherwise use fallback SVG
+  if (logoUrl && !imageError) {
+    return (
+      <img 
+        src={logoUrl}
+        alt={`${provider.name} logo`}
+        className={`${sizeClasses[size]} object-contain`}
+        width={sizePx[size]}
+        height={sizePx[size]}
+        onError={() => setImageError(true)}
+        loading="lazy"
+      />
+    );
+  }
+  
+  return fallbackLogos[provider.id] || (
     <div 
-      className={`${sizeClasses[size]} rounded-full flex items-center justify-center text-white font-bold`} 
+      className={`${sizeClasses[size]} rounded-lg flex items-center justify-center text-white font-bold text-sm`} 
       style={{ backgroundColor: provider.color }}
     >
       {provider.name.charAt(0)}
@@ -954,7 +1028,7 @@ function StatusBadge({ status, isEn }: { status: Provider['status']; isEn: boole
   );
 }
 
-// Provider Card Component
+// Provider Card Component - Clean Airbyte-style design
 function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalStaff, isEn, readOnly = false, isDisconnecting = false }: {
   provider: Provider;
   onConnect: (id: string) => void;
@@ -967,7 +1041,8 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalSta
 }) {
   const isConnected = provider.status === 'connected';
   const isSyncing = provider.status === 'syncing';
-  const [isHovered, setIsHovered] = useState(false);
+  const [showScheduleMenu, setShowScheduleMenu] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState(provider.syncSchedule || 'daily');
   
   // Calculate cooldown status
   const cooldownTimeRemaining = useMemo(() => {
@@ -975,246 +1050,286 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalSta
   }, [provider.lastSyncAt]);
   
   const isOnCooldown = cooldownTimeRemaining > 0;
-  const cooldownText = isOnCooldown 
-    ? (isEn 
-        ? `Available in ${formatCooldownTime(cooldownTimeRemaining, isEn)}` 
-        : `Disponible dans ${formatCooldownTime(cooldownTimeRemaining, isEn)}`)
-    : '';
+  
+  const currentSchedule = SYNC_SCHEDULES.find(s => s.id === selectedSchedule);
+  
+  // Format next sync time
+  const formatNextSync = (isoString?: string) => {
+    if (!isoString) return isEn ? 'Not scheduled' : 'Non planifié';
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffHours = Math.round((date.getTime() - now.getTime()) / (1000 * 60 * 60));
+    if (diffHours < 1) return isEn ? '< 1h' : '< 1h';
+    if (diffHours < 24) return isEn ? `${diffHours}h` : `${diffHours}h`;
+    const diffDays = Math.round(diffHours / 24);
+    return isEn ? `${diffDays}d` : `${diffDays}j`;
+  };
   
   return (
     <div 
-      className="group rounded-xl transition-all duration-200 cursor-pointer relative"
+      className="rounded-xl overflow-hidden transition-all duration-200 hover:shadow-md"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: isConnected 
-          ? '1px solid rgb(var(--color-primary-400))' 
+          ? '2px solid rgb(var(--color-primary-400))' 
           : '1px solid rgb(var(--color-border))',
-        boxShadow: isHovered 
-          ? '0 4px 12px rgba(0,0,0,0.08)' 
-          : 'none',
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Top accent line - thin and subtle */}
-      <div 
-        className="h-0.5 rounded-t-xl transition-all duration-200"
-        style={{ 
-          backgroundColor: isConnected 
-            ? 'rgb(var(--color-primary-500))' 
-            : isHovered 
-              ? 'rgb(var(--color-primary-400))' 
-              : 'rgb(var(--color-primary-200))',
-        }}
-      />
-      
-      {/* Card content */}
-      <div className="p-4 sm:p-5">
-        {/* Header - Logo, Name, Status */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="relative p-2 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+      {/* Card Header */}
+      <div className="p-4">
+        <div className="flex items-center gap-3">
+          {/* Logo */}
+          <div 
+            className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 p-2"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
             <ProviderLogo provider={provider} size="md" />
-            {isConnected && (
-              <div 
-                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-500))',
-                  borderColor: 'rgb(var(--color-surface))'
-                }}
-              >
-                <CheckCircle2 className="w-3 h-3 text-white" />
-              </div>
-            )}
           </div>
+          
+          {/* Title & Description */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 
-                className="font-semibold text-sm truncate"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {provider.name}
-              </h3>
-              {isConnected && (
-                <span 
-                  className="px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-primary-100))',
-                    color: 'rgb(var(--color-primary-700))',
-                  }}
-                >
-                  {isEn ? 'Connected' : 'Connecté'}
-                </span>
-              )}
-            </div>
+            <h3 
+              className="font-semibold text-sm"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {provider.name}
+            </h3>
             <p 
-              className="text-xs line-clamp-2"
+              className="text-xs mt-0.5 line-clamp-1"
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
               {isEn ? provider.description : provider.descriptionFr}
             </p>
           </div>
-        </div>
-        
-        {/* Security badge for non-connected */}
-        {!isConnected && (
-          <div 
-            className="mb-4 flex items-center gap-2"
-          >
-            <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-            <p 
-              className="text-xs"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {isEn 
-                ? 'Read-only • AES-256 encryption' 
-                : 'Lecture seule • Chiffrement AES-256'}
-            </p>
-          </div>
-        )}
-        
-        {/* Connected Stats */}
-        {isConnected && (
-          <div 
-            className="mb-4 p-3 rounded-lg"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-bg-muted))',
-            }}
-          >
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <p 
-                  className="text-base font-semibold"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {provider.accountsCount || 0}
-                </p>
-                <p 
-                  className="text-xs"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {isEn ? 'Accounts' : 'Comptes'}
-                </p>
-              </div>
-              <div>
-                <p 
-                  className="text-base font-semibold"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {provider.transactionsCount?.toLocaleString() || 0}
-                </p>
-                <p 
-                  className="text-xs"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {isEn ? 'Transactions' : 'Transactions'}
-                </p>
-              </div>
-              <div>
-                <p 
-                  className="text-xs font-semibold flex items-center justify-center gap-1"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  <Clock className="w-3 h-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  <span className="truncate">{provider.lastSync || (isEn ? 'Never' : 'Jamais')}</span>
-                </p>
-                <p 
-                  className="text-xs"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {isEn ? 'Last sync' : 'Dernière sync'}
-                </p>
-              </div>
+          
+          {/* Status Indicator */}
+          {isConnected ? (
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: 'rgb(var(--color-success))' }} />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: 'rgb(var(--color-success))' }} />
+              </span>
+              <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-success))' }}>
+                {isEn ? 'Active' : 'Actif'}
+              </span>
             </div>
-          </div>
-        )}
-        
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {!isConnected ? (
-            readOnly ? (
-              <div 
-                className="flex-1 px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-xs"
+          ) : (
+            <span 
+              className="text-xs px-2 py-1 rounded-md"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                color: 'rgb(var(--color-text-muted))',
+              }}
+            >
+              {isEn ? 'Not connected' : 'Non connecté'}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      {/* Connected Content */}
+      {isConnected ? (
+        <>
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid rgb(var(--color-border))' }} />
+          
+          {/* Sync Info Row - Mobile optimized */}
+          <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style={{ backgroundColor: 'rgb(var(--color-bg-muted) / 0.5)' }}>
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+              {/* Last Sync */}
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+                <span className="text-xs whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {provider.lastSync || '—'}
+                </span>
+              </div>
+              
+              {/* Separator - hidden on mobile */}
+              <span className="hidden sm:inline" style={{ color: 'rgb(var(--color-border))' }}>•</span>
+              
+              {/* Records */}
+              <span className="text-xs whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                {provider.transactionsCount?.toLocaleString() || 0} {isEn ? 'records' : 'enreg.'}
+              </span>
+            </div>
+            
+            {/* Schedule Badge - Touch friendly */}
+            <div className="relative">
+              <button
+                onClick={() => !readOnly && setShowScheduleMenu(!showScheduleMenu)}
+                disabled={readOnly}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all active:scale-95 disabled:opacity-60"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text-muted))'
+                  backgroundColor: 'rgb(var(--color-primary-100))',
+                  color: 'rgb(var(--color-primary-700))',
                 }}
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Clock className="w-3.5 h-3.5" />
+                <span className="font-medium">{isEn ? currentSchedule?.labelEn : currentSchedule?.labelFr}</span>
+              </button>
+              
+              {/* Schedule Dropdown - Full width on mobile */}
+              {showScheduleMenu && (
+                <>
+                  {/* Backdrop for mobile */}
+                  <div 
+                    className="fixed inset-0 z-10 sm:hidden"
+                    onClick={() => setShowScheduleMenu(false)}
+                  />
+                  <div 
+                    className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 bottom-4 sm:bottom-auto sm:top-full sm:mt-1 sm:w-64 rounded-xl shadow-2xl z-20 py-2 border"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      borderColor: 'rgb(var(--color-border))',
+                    }}
+                  >
+                    <div className="px-4 py-2 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                      <p className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                        {isEn ? 'Sync Schedule' : 'Fréquence de sync'}
+                      </p>
+                    </div>
+                    {SYNC_SCHEDULES.map((schedule) => (
+                      <button
+                        key={schedule.id}
+                        onClick={() => {
+                          setSelectedSchedule(schedule.id);
+                          setShowScheduleMenu(false);
+                        }}
+                        className="w-full flex items-center justify-between px-4 py-3 active:bg-gray-100 dark:active:bg-gray-800/50 transition-all"
+                        style={{ 
+                          backgroundColor: selectedSchedule === schedule.id ? 'rgb(var(--color-primary-50))' : 'transparent',
+                        }}
+                      >
+                        <div className="text-left">
+                          <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                            {isEn ? schedule.labelEn : schedule.labelFr}
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                            {isEn ? schedule.descEn : schedule.descFr}
+                          </p>
+                        </div>
+                        {selectedSchedule === schedule.id && (
+                          <Check className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid rgb(var(--color-border))' }} />
+          
+          {/* Action Buttons - Touch optimized (min 44px) */}
+          <div className="p-3 flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); onSync(provider.id); }}
+              disabled={isSyncing || readOnly || isOnCooldown}
+              className="flex-1 h-11 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 text-sm active:scale-[0.98]"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-primary-500))',
+                color: 'white',
+              }}
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>
+                {isSyncing 
+                  ? (isEn ? 'Syncing...' : 'Sync...') 
+                  : isOnCooldown 
+                    ? `${formatCooldownTime(cooldownTimeRemaining, isEn)}`
+                    : (isEn ? 'Sync now' : 'Synchroniser')}
+              </span>
+            </button>
+            
+            <button
+              onClick={(e) => { e.stopPropagation(); window.location.href = `/app/settings?tab=integrations&provider=${provider.id}`; }}
+              className="h-11 w-11 rounded-lg transition-all duration-200 active:scale-95 flex items-center justify-center"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                color: 'rgb(var(--color-text-muted))',
+              }}
+              title={isEn ? 'Settings' : 'Paramètres'}
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            
+            {!readOnly && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDisconnect(provider.id); }}
+                disabled={isDisconnecting}
+                className="h-11 w-11 rounded-lg transition-all duration-200 active:bg-red-50 dark:active:bg-red-900/30 disabled:opacity-50 flex items-center justify-center"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-muted))',
+                }}
+                title={isEn ? 'Disconnect' : 'Déconnecter'}
+              >
+                {isDisconnecting ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-5 h-5" />
+                )}
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Disconnected Content */
+        <>
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid rgb(var(--color-border))' }} />
+          
+          {/* Features Row */}
+          <div className="px-4 py-3 flex items-center justify-center gap-4" style={{ backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)' }}>
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Read-only' : 'Lecture seule'}
+              </span>
+            </div>
+            <span style={{ color: 'rgb(var(--color-border))' }}>•</span>
+            <div className="flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                AES-256
+              </span>
+            </div>
+          </div>
+          
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid rgb(var(--color-border))' }} />
+          
+          {/* Connect Button - Touch optimized */}
+          <div className="p-3">
+            {readOnly ? (
+              <div 
+                className="w-full h-12 rounded-lg font-medium flex items-center justify-center gap-2 text-sm"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-muted))',
+                }}
+              >
+                <Lock className="w-4 h-4" />
                 {isEn ? 'Admin required' : 'Admin requis'}
               </div>
             ) : (
               <button
                 onClick={(e) => { e.stopPropagation(); onConnect(provider.id); }}
-                className="flex-1 px-3 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 text-xs hover:opacity-90"
+                className="w-full h-12 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-base active:scale-[0.98]"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-600))',
+                  backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
                 }}
               >
-                <Link2 className="w-3.5 h-3.5" />
+                <Link2 className="w-5 h-5" />
                 <span>{isEn ? 'Connect' : 'Connecter'}</span>
               </button>
-            )
-          ) : (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onSync(provider.id); }}
-                disabled={isSyncing || readOnly || isOnCooldown}
-                className="flex-1 px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 text-xs"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text-secondary))',
-                }}
-                title={readOnly 
-                  ? (isEn ? 'Admin only' : 'Admin seulement') 
-                  : isOnCooldown 
-                    ? cooldownText 
-                    : ''}
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>
-                  {isSyncing 
-                    ? (isEn ? 'Syncing...' : 'Sync...') 
-                    : isOnCooldown 
-                      ? cooldownText
-                      : (isEn ? 'Sync Now' : 'Synchroniser')}
-                </span>
-              </button>
-              {isInternalStaff && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); }}
-                  className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-bg-muted))',
-                    color: 'rgb(var(--color-text-muted))' 
-                  }}
-                  title={isEn ? 'Advanced settings (staff only)' : 'Paramètres avancés (staff uniquement)'}
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                </button>
-              )}
-              {!readOnly && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDisconnect(provider.id); }}
-                  disabled={isDisconnecting}
-                  className="p-2 rounded-lg transition-all duration-200 hover:bg-red-100 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-bg-muted))',
-                    color: 'rgb(var(--color-text-muted))' 
-                  }}
-                  title={isEn ? 'Disconnect' : 'Déconnecter'}
-                >
-                  {isDisconnecting ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -2926,39 +3041,44 @@ export default function Connections() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-6">
+      {/* Header - Modern clean style */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
         <div>
-          <h2 
-            className="text-xl sm:text-2xl font-semibold"
+          <h1 
+            className="text-2xl font-bold tracking-tight"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {isEn ? 'Connections' : 'Connexions'}
-          </h2>
+          </h1>
           <p 
-            className="text-sm mt-0.5"
+            className="text-sm mt-1"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
             {isEn 
-              ? 'Connect your accounting software to import data'
+              ? 'Connect your accounting software to import your data'
               : 'Connectez vos logiciels comptables pour importer vos données'}
           </p>
         </div>
-        <div 
-          className="flex items-center gap-2 px-3 py-2 rounded-lg self-start"
-          style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-        >
-          <Zap className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
-          <span 
-            className="text-sm font-medium"
-            style={{ color: 'rgb(var(--color-text-secondary))' }}
+        {connectedCount > 0 && (
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full self-start"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-success) / 0.1)',
+              border: '1px solid rgb(var(--color-success) / 0.2)',
+            }}
           >
-            {connectedCount} {isEn 
-              ? `active connection${connectedCount !== 1 ? 's' : ''}` 
-              : `connexion${connectedCount !== 1 ? 's' : ''} active${connectedCount !== 1 ? 's' : ''}`}
-          </span>
-        </div>
+            <Zap className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
+            <span 
+              className="text-sm font-semibold"
+              style={{ color: 'rgb(var(--color-success))' }}
+            >
+              {connectedCount} {isEn 
+                ? `active connection${connectedCount !== 1 ? 's' : ''}` 
+                : `connexion${connectedCount !== 1 ? 's' : ''} active${connectedCount !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Sync Error Banner */}
@@ -3086,29 +3206,28 @@ export default function Connections() {
         />
       )}
       
-      {/* Section title for integrations */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <h3 
-            className="text-lg font-semibold"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
-            {isEn ? 'Available Integrations' : 'Intégrations disponibles'}
-          </h3>
-          <span 
-            className="px-2.5 py-1 rounded-full text-xs font-medium"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-100))',
-              color: 'rgb(var(--color-primary-700))'
-            }}
-          >
-            {providerList.length} {isEn ? 'options' : 'options'}
-          </span>
-        </div>
+      {/* Section title for integrations - Clean modern style */}
+      <div className="flex items-center gap-3 mb-4">
+        <h2 
+          className="text-lg font-semibold"
+          style={{ color: 'rgb(var(--color-text))' }}
+        >
+          {isEn ? 'Available Integrations' : 'Intégrations disponibles'}
+        </h2>
+        <span 
+          className="px-2 py-0.5 rounded text-xs font-medium tabular-nums"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-bg-muted))',
+            color: 'rgb(var(--color-text-muted))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          {providerList.length} {isEn ? 'options' : 'options'}
+        </span>
       </div>
       
-      {/* Provider Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+      {/* Provider Grid - Airbyte-style card layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {providerList.map((provider) => (
           <ProviderCard
             key={provider.id}

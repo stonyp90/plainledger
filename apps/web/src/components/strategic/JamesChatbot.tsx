@@ -66,7 +66,7 @@ import { FinancialContext } from '../../lib/jamesPrompts';
 import { SUGGESTED_PROMPTS } from '../../lib/jamesPrompts';
 import { Scenario, RunwayAnalysis, Initiative } from '../../lib/strategicPlanning';
 import { OKR } from '../../lib/okrTypes';
-import { jamesAnalytics } from '../../lib/jamesAnalytics';
+import { aiAnalytics } from '../../lib/aiAnalytics';
 
 interface JamesChatbotProps {
   isOpen: boolean;
@@ -391,7 +391,7 @@ export default function JamesChatbot({
 
   const handleFeedback = useCallback((messageId: string, positive: boolean) => {
     setFeedbackGiven(prev => new Set([...prev, messageId]));
-    jamesAnalytics.trackFeedback(messageId, positive);
+    aiAnalytics.trackFeedback(messageId, positive);
   }, []);
 
   const handleSend = useCallback(
@@ -473,7 +473,7 @@ export default function JamesChatbot({
           onOKRGenerated(response.metadata.okrs[0]);
         }
 
-        jamesAnalytics.trackMessageSent(userMessage.length, type);
+        aiAnalytics.trackMessageSent(userMessage.length, type);
       } catch (error) {
         console.error('Error sending message:', error);
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -487,7 +487,7 @@ export default function JamesChatbot({
           userFriendlyMessage = isEn ? "Too many requests. Please wait." : "Trop de requêtes. Attendez.";
         }
 
-        jamesAnalytics.trackError(error instanceof Error ? error.name : 'UnknownError', errorMessage);
+        aiAnalytics.trackError(error instanceof Error ? error.name : 'UnknownError', errorMessage);
 
         const errorMsg: ChatMessage = {
           id: `error-${Date.now()}`,

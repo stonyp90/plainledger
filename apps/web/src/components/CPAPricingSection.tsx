@@ -6,7 +6,7 @@
 import { useState, useMemo } from 'react';
 import { Check, Award, Crown, Users, TrendingDown } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import { CPA_PARTNER_TIERS } from '../lib/pricing';
+import { CPA_PARTNER_TIERS, type CPAPartnerPricing } from '../lib/pricing';
 import { analytics } from '../lib/analytics';
 
 interface CPAPricingSectionProps {

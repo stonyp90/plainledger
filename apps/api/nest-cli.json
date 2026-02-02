@@ -3,6 +3,22 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "webpack": false,
+    "tsConfigPath": "tsconfig.json",
+    "assets": [
+      {
+        "include": "templates/**/*",
+        "watchAssets": true
+      },
+      {
+        "include": "**/*.graphql",
+        "watchAssets": true
+      }
+    ],
+    "watchAssets": true
+  },
+  "generateOptions": {
+    "spec": true
   }
 }

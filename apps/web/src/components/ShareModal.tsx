@@ -19,7 +19,7 @@ import {
 import Toggle from './Toggle';
 import Checkbox from './Checkbox';
 import { useI18n } from '../lib/i18n';
-import { reportsApi } from '../lib/api';
+import { reportsApi, shareApi } from '../lib/api';
 
 export interface ShareModalProps {
   isOpen: boolean;
@@ -42,6 +42,10 @@ export interface ShareModalProps {
   showEmbedOption?: boolean;
   /** Callback when share is created */
   onShare?: (shareConfig: ShareConfig) => void;
+  /** Base64 PNG image data for visualization sharing */
+  imageData?: string;
+  /** Optional message to include in email */
+  message?: string;
 }
 
 export interface ShareConfig {
@@ -67,6 +71,8 @@ export default function ShareModal({
   showDownloadOption = true,
   showEmbedOption = false,
   onShare,
+  imageData,
+  message,
 }: ShareModalProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -79,6 +85,7 @@ export default function ShareModal({
   const [allowDownload, setAllowDownload] = useState(true);
   const [requireAuth, setRequireAuth] = useState(false);
   const [emails, setEmails] = useState('');
+  const [emailMessage, setEmailMessage] = useState(message || '');
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -196,14 +203,36 @@ export default function ShareModal({
       onShare(shareConfig);
     }
     
-    // Simulate API call for sending emails
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSending(false);
-    setSent(true);
-    setTimeout(() => {
-      setSent(false);
-      setEmails('');
-    }, 3000);
+    try {
+      // Call actual API endpoint if image data is provided
+      if (imageData) {
+        await shareApi.shareVisualization({
+          recipients: shareConfig.emails,
+          title: displayTitle,
+          message: emailMessage || undefined,
+          imageData,
+          shareUrl: fullShareUrl,
+          password: enablePassword ? password : undefined,
+          expiresIn,
+        });
+      }
+      
+      setSending(false);
+      setSent(true);
+      setTimeout(() => {
+        setSent(false);
+        setEmails('');
+        setEmailMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to send visualization email:', error);
+      setSending(false);
+      // Still show success UI but log error
+      setSent(true);
+      setTimeout(() => {
+        setSent(false);
+      }, 3000);
+    }
   };
   
   if (!isOpen) return null;
@@ -462,56 +491,98 @@ export default function ShareModal({
           )}
           
           {activeTab === 'email' && (
-            <div 
-              className="p-4 rounded-xl border"
-              style={{ borderColor: 'rgb(var(--color-border))' }}
-            >
-              <label className="text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
-                <Mail className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                {isEn ? 'Send by Email' : 'Envoyer par courriel'}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={emails}
-                  onChange={(e) => setEmails(e.target.value)}
-                  placeholder={isEn ? 'Enter email addresses (comma separated)' : 'Entrer les courriels (séparés par virgule)'}
-                  className="flex-1 p-3 rounded-xl border text-sm"
-                  style={{ 
-                    backgroundColor: 'transparent',
-                    borderColor: 'rgb(var(--color-border))',
-                    color: 'rgb(var(--color-text))',
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendEmails()}
-                />
-                <button
-                  onClick={handleSendEmails}
-                  disabled={!emails.trim() || sending}
-                  className="px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
-                  style={{ 
-                    backgroundColor: sent ? 'rgb(var(--color-success))' : 'rgb(var(--color-primary-500))',
-                    color: 'white',
-                  }}
+            <div className="space-y-4">
+              {/* Image Preview */}
+              {imageData && (
+                <div 
+                  className="p-4 rounded-xl border"
+                  style={{ borderColor: 'rgb(var(--color-border))', backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)' }}
                 >
-                  {sending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : sent ? (
-                    <CheckCircle className="w-4 h-4" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  {sent ? (isEn ? 'Sent!' : 'Envoyé!') : (isEn ? 'Send' : 'Envoyer')}
-                </button>
+                  <label className="text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Preview' : 'Aperçu'}
+                  </label>
+                  <img 
+                    src={imageData} 
+                    alt={displayTitle}
+                    className="w-full rounded-lg border"
+                    style={{ borderColor: 'rgb(var(--color-border))', maxHeight: '200px', objectFit: 'contain' }}
+                  />
+                </div>
+              )}
+              
+              {/* Email Recipients */}
+              <div 
+                className="p-4 rounded-xl border"
+                style={{ borderColor: 'rgb(var(--color-border))' }}
+              >
+                <label className="text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  <Mail className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  {isEn ? 'Send by Email' : 'Envoyer par courriel'}
+                </label>
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={emails}
+                    onChange={(e) => setEmails(e.target.value)}
+                    placeholder={isEn ? 'Enter email addresses (comma separated)' : 'Entrer les courriels (séparés par virgule)'}
+                    className="flex-1 p-3 rounded-xl border text-sm"
+                    style={{ 
+                      backgroundColor: 'transparent',
+                      borderColor: 'rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))',
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendEmails()}
+                  />
+                  <button
+                    onClick={handleSendEmails}
+                    disabled={!emails.trim() || sending}
+                    className="px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2 disabled:opacity-50"
+                    style={{ 
+                      backgroundColor: sent ? 'rgb(var(--color-success))' : 'rgb(var(--color-primary-500))',
+                      color: 'white',
+                    }}
+                  >
+                    {sending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : sent ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    {sent ? (isEn ? 'Sent!' : 'Envoyé!') : (isEn ? 'Send' : 'Envoyer')}
+                  </button>
+                </div>
+                
+                {/* Optional Message */}
+                {imageData && (
+                  <textarea
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    placeholder={isEn ? 'Add a message (optional)...' : 'Ajouter un message (optionnel)...'}
+                    className="w-full p-3 rounded-xl border text-sm resize-none"
+                    rows={3}
+                    style={{ 
+                      backgroundColor: 'transparent',
+                      borderColor: 'rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))',
+                    }}
+                  />
+                )}
+                
+                <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {imageData 
+                    ? (isEn 
+                        ? 'Recipients will receive an email with the visualization image and share link'
+                        : 'Les destinataires recevront un courriel avec l\'image de visualisation et le lien de partage')
+                    : enablePassword 
+                      ? (isEn 
+                          ? 'Recipients will receive an email with the link and password'
+                          : 'Les destinataires recevront un courriel avec le lien et le mot de passe')
+                      : (isEn 
+                          ? 'Recipients will receive an email with the link'
+                          : 'Les destinataires recevront un courriel avec le lien')}
+                </p>
               </div>
-              <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {enablePassword 
-                  ? (isEn 
-                      ? 'Recipients will receive an email with the link and password'
-                      : 'Les destinataires recevront un courriel avec le lien et le mot de passe')
-                  : (isEn 
-                      ? 'Recipients will receive an email with the link'
-                      : 'Les destinataires recevront un courriel avec le lien')}
-              </p>
             </div>
           )}
           

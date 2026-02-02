@@ -148,7 +148,8 @@ export type Permission =
   | 'manage:members'
   | 'manage:billing'
   | 'view:audit-logs'
-  | 'use:api';
+  | 'use:api'
+  | 'customize:dashboard';
 
 // Role-based permissions
 const ROLE_PERMISSIONS: Record<TenantMember['role'], Permission[]> = {
@@ -157,14 +158,14 @@ const ROLE_PERMISSIONS: Record<TenantMember['role'], Permission[]> = {
     'view:connections', 'manage:connections',
     'view:settings', 'manage:settings',
     'view:members', 'manage:members', 'manage:billing',
-    'view:audit-logs', 'use:api',
+    'view:audit-logs', 'use:api', 'customize:dashboard',
   ],
   admin: [
     'view:dashboard', 'view:reports', 'create:reports', 'delete:reports',
     'view:connections', 'manage:connections',
     'view:settings', 'manage:settings',
     'view:members', 'manage:members',
-    'view:audit-logs', 'use:api',
+    'view:audit-logs', 'use:api', 'customize:dashboard',
   ],
   member: [
     'view:dashboard', 'view:reports', 'create:reports',
@@ -172,6 +173,7 @@ const ROLE_PERMISSIONS: Record<TenantMember['role'], Permission[]> = {
     'view:settings',
     'view:members',
     'use:api',
+    'customize:dashboard',
   ],
   viewer: [
     'view:dashboard', 'view:reports',

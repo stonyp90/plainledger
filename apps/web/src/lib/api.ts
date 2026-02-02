@@ -469,4 +469,75 @@ export const taxCreditsApi = {
     api.get<unknown[]>('/tax-credits', { params }),
 };
 
+// Admin - Jobs Management (Super Admin only)
+export interface JobConfiguration {
+  id: string;
+  nameEn: string;
+  nameFr: string;
+  descriptionEn?: string;
+  descriptionFr?: string;
+  category: 'sync' | 'cleanup' | 'reporting' | 'ai' | 'notifications';
+  isEnabled: boolean;
+  cronExpression: string;
+  timezone: string;
+  timeoutSeconds: number;
+  maxRetries: number;
+  retryDelaySeconds: number;
+  alertOnFailure: boolean;
+  alertOnSuccess: boolean;
+  alertOnChangesDetected: boolean;
+  alertEmails: string[];
+  alertSlackWebhook?: string;
+  lastRunAt?: string;
+  lastRunStatus?: 'success' | 'failed' | 'partial' | 'skipped';
+  lastRunDurationMs?: number;
+  nextRunAt?: string;
+}
+
+export interface JobExecution {
+  id: string;
+  jobId: string;
+  runId: string;
+  triggerType: 'scheduled' | 'manual' | 'retry';
+  triggeredBy?: string;
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
+  startedAt: string;
+  completedAt?: string;
+  durationMs?: number;
+  errorMessage?: string;
+}
+
+export const adminJobsApi = {
+  getAll: () => api.get<JobConfiguration[]>('/api/admin/jobs'),
+  
+  get: (jobId: string) => api.get<JobConfiguration>(`/api/admin/jobs/${jobId}`),
+  
+  update: (jobId: string, updates: Partial<JobConfiguration>) =>
+    api.patch<JobConfiguration>(`/api/admin/jobs/${jobId}`, updates),
+  
+  getExecutions: (jobId: string, limit?: number) =>
+    api.get<JobExecution[]>(`/api/admin/jobs/${jobId}/executions`, {
+      params: { limit },
+    }),
+  
+  trigger: (jobId: string) =>
+    api.post<{ message: string; runId: string }>(`/api/admin/jobs/${jobId}/run`),
+  
+  toggle: (jobId: string) =>
+    api.post<JobConfiguration>(`/api/admin/jobs/${jobId}/toggle`),
+};
+
+// Share Visualization
+export const shareApi = {
+  shareVisualization: (data: {
+    recipients: string[];
+    title: string;
+    message?: string;
+    imageData: string; // Base64 PNG
+    shareUrl: string;
+    password?: string;
+    expiresIn: string;
+  }) => api.post<{ success: boolean; messageId?: string }>('/share/visualization', data),
+};
+
 export default api;

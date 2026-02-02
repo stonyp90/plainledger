@@ -74,6 +74,7 @@ import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import BoardMeetingEmptyState from '../components/BoardMeetingEmptyState';
 import {
   boardMeetingService,
   generateExecutiveSummarySlides,
@@ -281,15 +282,18 @@ function ChartSlide({ slide, isEn }: { slide: MeetingSlide; isEn: boolean }) {
               />
               
               {/* Points */}
-              {data.map((d: any, i: number) => (
-                <circle
-                  key={i}
-                  cx={40 + (i * 350) / Math.max(data.length - 1, 1)}
-                  cy={180 - ((d.value / maxValue) * 140)}
-                  r="4"
-                  fill="rgb(var(--color-primary-500))"
-                />
-              ))}
+              {data.map((d: any, i: number) => {
+                const valueRatio = maxValue !== 0 ? (d.value ?? 0) / maxValue : 0;
+                return (
+                  <circle
+                    key={i}
+                    cx={40 + (i * 350) / Math.max(data.length - 1, 1)}
+                    cy={180 - (valueRatio * 140)}
+                    r="4"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                );
+              })}
             </svg>
           </div>
           
@@ -1920,19 +1924,56 @@ export default function BoardMeeting() {
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* Header */}
       <div 
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b"
+        className="flex flex-col gap-3 p-3 sm:p-4 border-b"
         style={{ borderColor: 'rgb(var(--color-border))' }}
       >
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Board Meeting' : 'Réunion du conseil'}
-          </h1>
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Quarterly Financial Review' : 'Revue financière trimestrielle'}
-          </p>
+        {/* Top row - Title and primary actions */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Board Meeting' : 'Réunion du conseil'}
+            </h1>
+            <p className="text-xs sm:text-sm truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Quarterly Financial Review' : 'Revue financière trimestrielle'}
+            </p>
+          </div>
+          
+          {/* Primary CTA - Always visible */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {meetingStarted && (
+              <div 
+                className="px-2 sm:px-3 py-1.5 rounded-lg flex items-center gap-1.5 sm:gap-2"
+                style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+              >
+                <Activity className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-success))' }} />
+                <span className="font-mono text-xs sm:text-sm" style={{ color: 'rgb(var(--color-success))' }}>
+                  {formatTime(elapsedTime)}
+                </span>
+              </div>
+            )}
+            
+            {!meetingStarted ? (
+              <button
+                onClick={() => setMeetingStarted(true)}
+                className="btn-primary flex items-center gap-1.5 sm:gap-2 text-sm px-3 sm:px-4 py-2"
+              >
+                <PlayCircle className="w-4 h-4" />
+                <span className="hidden xs:inline">{isEn ? 'Start' : 'Démarrer'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setMeetingStarted(false)}
+                className="btn-secondary flex items-center gap-1.5 sm:gap-2 text-sm px-3 sm:px-4 py-2"
+              >
+                <StopCircle className="w-4 h-4" />
+                <span className="hidden xs:inline">{isEn ? 'End' : 'Terminer'}</span>
+              </button>
+            )}
+          </div>
         </div>
         
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Bottom row - View toggle and secondary actions */}
+        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 -mb-1">
           {/* View Mode Toggle */}
           <div 
             className="flex items-center rounded-lg p-1"
@@ -1989,95 +2030,67 @@ export default function BoardMeeting() {
             </button>
           </div>
           
-          {/* Add Section Button (only in panels view) */}
-          {viewMode === 'panels' && (
-            <button
-              onClick={() => setShowPanelPicker(true)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{isEn ? 'Add Section' : 'Ajouter section'}</span>
-            </button>
-          )}
-          
-          {/* Meeting timer */}
-          {meetingStarted && (
-            <div 
-              className="px-3 py-1.5 rounded-lg flex items-center gap-2"
-              style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
-            >
-              <Activity className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-              <span className="font-mono text-sm" style={{ color: 'rgb(var(--color-success))' }}>
-                {formatTime(elapsedTime)}
-              </span>
-            </div>
-          )}
-          
-          {!meetingStarted ? (
-            <button
-              onClick={() => setMeetingStarted(true)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <PlayCircle className="w-4 h-4" />
-              {isEn ? 'Start Meeting' : 'Démarrer'}
-            </button>
-          ) : (
-            <button
-              onClick={() => setMeetingStarted(false)}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <StopCircle className="w-4 h-4" />
-              {isEn ? 'End Meeting' : 'Terminer'}
-            </button>
-          )}
-          
-          {viewMode === 'slides' && (
-            <button
-              onClick={() => setIsFullscreen(true)}
-              className="btn-secondary flex items-center gap-2"
-              title={isEn ? 'Enter presentation mode' : 'Mode présentation'}
-            >
-              <Presentation className="w-4 h-4" />
-              <span className="hidden sm:inline">{isEn ? 'Present' : 'Présenter'}</span>
-            </button>
-          )}
-          
-          {/* Download PDF Button */}
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isDownloading}
-            className="btn-secondary flex items-center gap-2"
-            title={isEn ? 'Download PDF' : 'Télécharger PDF'}
-          >
-            {isDownloading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <FileDown className="w-4 h-4" />
+          {/* Secondary Actions - Right side */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Add Section Button (only in panels view) */}
+            {viewMode === 'panels' && (
+              <button
+                onClick={() => setShowPanelPicker(true)}
+                className="btn-secondary flex items-center gap-1.5 text-sm px-2.5 sm:px-3 py-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">{isEn ? 'Add' : 'Ajouter'}</span>
+              </button>
             )}
-            <span className="hidden sm:inline">{isEn ? 'PDF' : 'PDF'}</span>
-          </button>
-          
-          {viewMode === 'slides' && (
-            <>
+            
+            {viewMode === 'slides' && (
               <button
-                onClick={() => setShowAgenda(!showAgenda)}
-                className={`p-2 rounded-lg border transition-colors ${showAgenda ? 'bg-primary-500 text-white border-primary-500' : ''}`}
-                style={{ borderColor: showAgenda ? undefined : 'rgb(var(--color-border))' }}
-                title={isEn ? 'Toggle agenda' : 'Afficher l\'agenda'}
+                onClick={() => setIsFullscreen(true)}
+                className="btn-secondary flex items-center gap-1.5 text-sm px-2.5 sm:px-3 py-1.5"
+                title={isEn ? 'Enter presentation mode' : 'Mode présentation'}
               >
-                <List className="w-4 h-4" />
+                <Presentation className="w-4 h-4" />
+                <span className="hidden sm:inline">{isEn ? 'Present' : 'Présenter'}</span>
               </button>
-              
-              <button
-                onClick={() => setShowParticipants(!showParticipants)}
-                className={`p-2 rounded-lg border transition-colors ${showParticipants ? 'bg-primary-500 text-white border-primary-500' : ''}`}
-                style={{ borderColor: showParticipants ? undefined : 'rgb(var(--color-border))' }}
-                title={isEn ? 'Toggle participants' : 'Afficher les participants'}
-              >
-                <Users className="w-4 h-4" />
-              </button>
-            </>
-          )}
+            )}
+            
+            {/* Download PDF Button */}
+            <button
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="btn-secondary flex items-center gap-1.5 text-sm px-2.5 sm:px-3 py-1.5"
+              title={isEn ? 'Download PDF' : 'Télécharger PDF'}
+            >
+              {isDownloading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4" />
+              )}
+              <span className="hidden md:inline">PDF</span>
+            </button>
+            
+            {viewMode === 'slides' && (
+              <>
+                <button
+                  onClick={() => setShowAgenda(!showAgenda)}
+                  className={`p-2 rounded-lg border transition-colors hidden sm:flex ${showAgenda ? 'bg-primary-500 text-white border-primary-500' : ''}`}
+                  style={{ borderColor: showAgenda ? undefined : 'rgb(var(--color-border))' }}
+                  title={isEn ? 'Toggle agenda' : 'Afficher l\'agenda'}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                
+                <button
+                  onClick={() => setShowParticipants(!showParticipants)}
+                  className={`p-2 rounded-lg border transition-colors hidden sm:flex ${showParticipants ? 'bg-primary-500 text-white border-primary-500' : ''}`}
+                  style={{ borderColor: showParticipants ? undefined : 'rgb(var(--color-border))' }}
+                  title={isEn ? 'Toggle participants' : 'Afficher les participants'}
+                >
+                  <Users className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       
@@ -2091,30 +2104,40 @@ export default function BoardMeeting() {
           existingPanels={existingPanelTypes}
         />
         
-        {/* Data Readiness Checklist - Show when user has access */}
-        {hasAccess && financialData && (
-          <div className="px-4 pb-4">
+        {/* Unified Empty State - Show when no data and in panels/sections view */}
+        {hasAccess && !hasRealData && viewMode === 'panels' && boardPanels.length === 0 && (
+          <BoardMeetingEmptyState
+            notes={notes}
+            onAddNote={(content: string) => {
+              if (!content.trim()) return;
+              const note: Note = {
+                id: `note-${Date.now()}`,
+                content,
+                author: 'You',
+                timestamp: new Date().toISOString(),
+                isPrivate: false,
+              };
+              setNotes(prev => [...prev, note]);
+            }}
+            onConnect={() => window.location.href = '/app/connections'}
+            onStartMeeting={() => setMeetingStarted(true)}
+            onAddSection={() => setShowPanelPicker(true)}
+          />
+        )}
+
+        {/* Data Readiness Checklist - Show when user has access AND real data (for users who have connected but need more setup) */}
+        {hasAccess && hasRealData && (boardPanels.length > 0 || slides.length > 0) && financialData && (
+          <div className="px-4 pb-4 hidden lg:block">
             <DataReadinessChecklist 
               context="board" 
-              compact={boardPanels.length > 0 || slides.length > 0}
+              compact={true}
             />
           </div>
         )}
 
-        {/* Show empty state if no real data */}
-        {hasAccess && !hasRealData && (
-          <div className="px-4 pb-4">
-            <EmptyDataState 
-              context="reports"
-              hasConnection={false}
-              onConnect={() => window.location.href = '/app/settings?tab=connections'}
-            />
-          </div>
-        )}
-
-        {/* Accountant Guidance - Show when financial data is incomplete */}
-        {hasAccess && shouldShowData && financialData && (!hasSummaryMetrics || !hasTrends) && (
-          <div className="px-4 pb-4">
+        {/* Accountant Guidance - Show when financial data is incomplete (only for users with real data) */}
+        {hasAccess && hasRealData && shouldShowData && financialData && (!hasSummaryMetrics || !hasTrends) && (
+          <div className="px-4 pb-4 hidden lg:block">
             <AccountantGuidanceCard 
               type={!hasSummaryMetrics ? 'reconcile-accounts' : 'historical-data'}
               compact={true}
@@ -2122,8 +2145,8 @@ export default function BoardMeeting() {
           </div>
         )}
 
-        {/* Panels View */}
-        {viewMode === 'panels' && (
+        {/* Panels View - Show when there ARE panels or when user has real data */}
+        {viewMode === 'panels' && (hasRealData || boardPanels.length > 0) && (
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {boardPanels.length === 0 ? (
               <div 
@@ -2381,10 +2404,10 @@ export default function BoardMeeting() {
         </div>
         )}
         
-        {/* Right sidebar - Notes & Participants */}
+        {/* Right sidebar - Notes & Participants (hidden on mobile) */}
         {viewMode === 'slides' && (showNotes || showParticipants) && (
           <div 
-            className={`border-l flex flex-col transition-all duration-300 ${rightSidebarCollapsed ? 'w-12' : 'w-80'}`}
+            className={`hidden lg:flex border-l flex-col transition-all duration-300 ${rightSidebarCollapsed ? 'w-12' : 'w-80'}`}
             style={{ borderColor: 'rgb(var(--color-border))' }}
           >
             {/* Collapse button */}

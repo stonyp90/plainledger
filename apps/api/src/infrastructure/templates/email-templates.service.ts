@@ -907,6 +907,95 @@ ${data.errorDetails}
     return this.wrapInLayout(content, "Data Quality Alert");
   }
 
+  /**
+   * Generate share visualization email HTML
+   */
+  shareVisualization(data: {
+    firstName: string;
+    title: string;
+    message?: string;
+    imageUrl: string;
+    shareUrl: string;
+    password?: string;
+    expiresIn: string;
+    baseUrl: string;
+  }): string {
+    const isEn = true; // Default to English, can be made dynamic based on user preference
+    
+    const content = `
+      <h1 class="email-title">
+        ${isEn ? "Visualization Shared" : "Visualisation partagée"}
+      </h1>
+
+      <p class="email-text">
+        ${isEn ? `Hello ${data.firstName || "there"},` : `Bonjour ${data.firstName || "vous"},`}
+      </p>
+
+      <p class="email-text">
+        ${isEn 
+          ? `A visualization has been shared with you: <strong>${data.title}</strong>`
+          : `Une visualisation vous a été partagée : <strong>${data.title}</strong>`}
+      </p>
+
+      ${data.message ? `
+        <div class="info-box" style="margin: 24px 0;">
+          <p style="margin: 0; font-size: 14px; color: #64748b; font-style: italic;">
+            "${data.message}"
+          </p>
+        </div>
+      ` : ''}
+
+      <!-- Chart Preview -->
+      <div style="text-align: center; margin: 32px 0;">
+        <img 
+          src="${data.imageUrl}" 
+          alt="${data.title}"
+          style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0;"
+        />
+      </div>
+
+      <!-- Share Link -->
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${data.shareUrl}" class="email-button">
+          ${isEn ? "View Full Visualization" : "Voir la visualisation complète"}
+        </a>
+      </div>
+
+      ${data.password ? `
+        <div class="info-box warning" style="margin: 24px 0;">
+          <strong>${isEn ? "Password" : "Mot de passe"}:</strong>
+          <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b; font-family: monospace; letter-spacing: 0.1em;">
+            ${data.password}
+          </p>
+        </div>
+      ` : ''}
+
+      <div class="info-box" style="margin: 24px 0;">
+        <strong>${isEn ? "Share Details" : "Détails du partage"}:</strong>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
+          <tr>
+            <td style="padding: 4px 0; color: #64748b; width: 120px;">${isEn ? "Expires" : "Expire"}:</td>
+            <td style="padding: 4px 0; color: #1e293b; font-weight: 500;">${data.expiresIn}</td>
+          </tr>
+        </table>
+      </div>
+
+      <hr class="email-divider">
+
+      <p class="email-text" style="font-size: 14px; color: #64748b;">
+        ${isEn 
+          ? "This visualization was shared from PlainLedger. You can access it using the link above."
+          : "Cette visualisation a été partagée depuis PlainLedger. Vous pouvez y accéder en utilisant le lien ci-dessus."}
+      </p>
+
+      <div class="email-signature">
+        <p>${isEn ? "Best regards" : "Cordialement"},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+      </div>
+    `;
+
+    return this.wrapInLayout(content, isEn ? "Visualization Shared" : "Visualisation partagée");
+  }
+
   // ===========================================================================
   // Base Layout
   // ===========================================================================

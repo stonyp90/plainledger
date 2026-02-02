@@ -147,19 +147,24 @@ export function useFinancialData(options: {
     const plan = currentTenant?.plan || 'free';
     const isFreeUser = plan === 'free' || plan === 'starter';
     
-    // PAID USERS (professional/enterprise) NEVER get mock data
-    if (!isFreeUser) {
-      console.log('[useFinancialData] Paid user detected - NOT using mock data, will show empty states', {
-        plan,
-        hasConnection: false,
-      });
-      return false;
-    }
-    
-    // In mock auth mode (local dev), check if we want to test with real data
-    // Allow real data fetching if VITE_TEST_REAL_DATA is set to 'true'
+    // In mock auth mode (local dev), allow paid users to fetch real data
+    // Free users get mock data, paid users try real data first
     if (isMockAuthEnabled()) {
       const testRealData = import.meta.env.VITE_TEST_REAL_DATA === 'true';
+      
+      // Paid users in mock auth mode: try real data first, fallback to mock if GraphQL fails
+      if (!isFreeUser) {
+        if (!hasLoggedMockAuth.current) {
+          console.log('[useFinancialData] Mock auth enabled - paid user, will try GraphQL first, fallback to mock if fails', {
+            hasConnection: hasRealConnection,
+            plan: currentTenant?.plan,
+            isDemoMode,
+          });
+          hasLoggedMockAuth.current = true;
+        }
+        // Don't skip queries - allow paid users to fetch real data
+        return false;
+      }
       
       if (testRealData) {
         // In test mode, allow GraphQL queries to run even in mock auth mode
@@ -176,9 +181,10 @@ export function useFinancialData(options: {
         return false;
       }
       
+      // Free users in mock auth mode: use mock data
       // Only log once when mock auth is detected, not on every render
       if (!hasLoggedMockAuth.current) {
-        console.log('[useFinancialData] Using mock/sandbox data - mock auth mode enabled (local dev)', {
+        console.log('[useFinancialData] Using mock/sandbox data - mock auth mode enabled (local dev), free user', {
           hasConnection: false,
           plan: currentTenant?.plan,
           isDemoMode,
@@ -186,6 +192,15 @@ export function useFinancialData(options: {
         hasLoggedMockAuth.current = true;
       }
       return true;
+    }
+    
+    // PAID USERS (professional/enterprise) NEVER get mock data (unless free user in mock auth mode above)
+    if (!isFreeUser) {
+      console.log('[useFinancialData] Paid user detected - NOT using mock data, will show empty states', {
+        plan,
+        hasConnection: false,
+      });
+      return false;
     }
     
     // Only use mock data if no connection AND free tier (free or starter)
@@ -511,8 +526,25 @@ export function useFinancialData(options: {
         return null;
       }
       
-      // If queries failed, let error handling logic handle it (don't return empty structure)
+      // If queries failed (API server not running), fall back to mock data in local dev
       if (summaryError || trendsError || accountsError) {
+        // In local dev with mock auth, use mock data as fallback
+        if (isMockAuthEnabled()) {
+          console.log('[useFinancialData] GraphQL queries failed, falling back to mock data for local dev', {
+            organizationId: currentTenant.id,
+            summaryError: summaryError?.message,
+            trendsError: trendsError?.message,
+            accountsError: accountsError?.message,
+          });
+          return generateMockFinancialData(
+            currentTenant.id,
+            currentTenant.name,
+            currentTenant.currency || 'CAD',
+            new Date().toISOString().split('T')[0],
+            currentTenant.industry || 'real_estate'
+          );
+        }
+        // In production, return null to show error
         return null;
       }
       
@@ -550,7 +582,21 @@ export function useFinancialData(options: {
       };
     }
 
-    // No connection and not using mock data - return null
+    // No connection and not using mock data - but if in local dev, use mock data anyway
+    if (isMockAuthEnabled()) {
+      console.log('[useFinancialData] No connection detected, using mock data for local dev', {
+        organizationId: currentTenant.id,
+        plan: currentTenant?.plan,
+      });
+      return generateMockFinancialData(
+        currentTenant.id,
+        currentTenant.name,
+        currentTenant.currency || 'CAD',
+        new Date().toISOString().split('T')[0],
+        currentTenant.industry || 'real_estate'
+      );
+    }
+    
     return null;
   }, [currentTenant, hasGraphQLData, hasRealConnection, shouldUseMockData, summaryData, trendsData, accountsData, trialBalanceData, waterfallData, arAgingData, apAgingData, taxDeadlinesData, budgetData]);
 
@@ -567,10 +613,15 @@ export function useFinancialData(options: {
     taxDeadlinesLoading || budgetLoading;
 
   // Only show error if all queries fail AND we have no data (even fallback)
-  // Since we always have mock data fallback, we should rarely show errors
+  // Since we always have mock data fallback in local dev, we should rarely show errors
   const error = useMemo(() => {
     // If we have transformed data (either from GraphQL or mock), no error
     if (transformedData) return null;
+    
+    // In local dev with mock auth, never show errors (always use mock data)
+    if (isMockAuthEnabled()) {
+      return null;
+    }
     
     // Only show error if all queries failed and we somehow have no data
     if (summaryError && trendsError && accountsError) {

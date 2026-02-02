@@ -34,7 +34,9 @@ import { OAuthCallbackController } from "@infrastructure/http/controllers/oauth-
 import { ContactController } from "@infrastructure/http/controllers/contact.controller";
 import { OnboardingController } from "@infrastructure/http/controllers/onboarding.controller";
 import { AIController } from "@infrastructure/http/controllers/ai.controller";
+import { AIFeedbackController } from "@infrastructure/http/controllers/ai-feedback.controller";
 import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
+import { AIAnalyticsController } from "@infrastructure/http/controllers/ai-analytics.controller";
 import { BIDataController } from "@infrastructure/http/controllers/bi-data.controller";
 import { TeamController } from "@infrastructure/http/controllers/team.controller";
 import { AuthController } from "@infrastructure/http/controllers/auth.controller";
@@ -43,6 +45,7 @@ import { IdentityAdminController } from "@infrastructure/http/controllers/identi
 import { UploadController } from "@infrastructure/http/controllers/upload.controller";
 import { SettingsController } from "@infrastructure/http/controllers/settings.controller";
 import { DocumentShareController } from "@infrastructure/http/controllers/document-share.controller";
+import { ShareController } from "@infrastructure/http/controllers/share.controller";
 import { EmailWebhookController } from "@infrastructure/http/controllers/email-webhook.controller";
 import { UnsubscribeController } from "@infrastructure/http/controllers/unsubscribe.controller";
 import { CacheController } from "@infrastructure/http/controllers/cache.controller";
@@ -58,6 +61,7 @@ import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.servic
 import { FileStorageService } from "@infrastructure/storage/file-storage.service";
 import { DocumentShareService } from "@infrastructure/storage/document-share.service";
 import { AIService } from "@infrastructure/ai/ai.service";
+import { AICacheService } from "@infrastructure/ai/ai-cache.service";
 import { PowerBIAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi.adapter";
 import { PowerBIThemeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-theme.adapter";
 import { PowerBIDatalakeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-datalake.adapter";
@@ -116,6 +120,9 @@ import { EmailTemplatesService } from "./infrastructure/templates/email-template
 import { JourneyTrackingService } from "@application/services/journey-tracking.service";
 import { CustomerJourneyJob } from "@infrastructure/jobs/customer-journey.job";
 import { DataRetentionJob } from "@infrastructure/jobs/data-retention.job";
+import { TaxCreditSyncJob } from "@infrastructure/jobs/tax-credit-sync.job";
+import { JobConfigurationService } from "@application/services/job-configuration.service";
+import { JobsController } from "@infrastructure/controllers/jobs.controller";
 
 // MongoDB (Analytics & Audit)
 import {
@@ -276,7 +283,9 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     ContactController,
     OnboardingController,
     AIController,
+    AIFeedbackController,
     AnalyticsController,
+    AIAnalyticsController,
     BIDataController,
     TeamController,
     AuthController,
@@ -285,6 +294,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     UploadController,
     SettingsController,
     DocumentShareController,
+    ShareController,
     EmailWebhookController,
     UnsubscribeController,
     CacheController,
@@ -292,6 +302,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     ETLProgressController,
     DataSourceSyncController,
     ETLTriggerController,
+    JobsController,
   ],
   providers: [
     // Guards - conditionally register Keycloak guards based on SKIP_AUTH
@@ -331,6 +342,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
 
     // Services
     AIService,
+    AICacheService,
     PowerBIAdapter,
     PowerBIThemeAdapter,
     PowerBIDatalakeAdapter,
@@ -351,6 +363,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     JourneyTrackingService,
     CustomerJourneyJob,
     DataRetentionJob,
+    TaxCreditSyncJob,
+    JobConfigurationService,
     {
       provide: "IPowerBIAdapter",
       useClass: PowerBIAdapter,

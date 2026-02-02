@@ -27,3 +27,6 @@ export * from "./market-analysis.types";
 export * from "./etl.types";
 export * from "./account-balance.types";
 export * from "./transaction.types";
+
+// Visualization types
+export * from "./visualization.types";
