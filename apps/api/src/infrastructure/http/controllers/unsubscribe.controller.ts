@@ -25,7 +25,7 @@ import { ConfigService } from "@nestjs/config";
 import * as crypto from "crypto";
 import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
 import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
-import { EmailCategory } from "@infrastructure/notifications/ses-email.service";
+import { EmailCategory } from "@infrastructure/adapters/email/ses/ses.adapter";
 
 // ============================================================================
 // Controller

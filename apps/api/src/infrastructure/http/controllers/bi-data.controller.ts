@@ -1,7 +1,7 @@
 /**
- * Power BI Data Controller
+ * BI (Business Intelligence) Data Controller
  *
- * Secure API endpoints for Power BI to fetch data from the Gold layer.
+ * Secure API endpoints for BI tools (Power BI, Tableau, etc.) to fetch data from the Gold layer.
  * Implements:
  * - Row-Level Security (RLS) enforcement
  * - Rate limiting
@@ -38,7 +38,7 @@ import {
 } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { Public } from "nest-keycloak-connect";
-import { SecureDataAccess } from "@infrastructure/services/powerbi-datalake.service";
+import { SecureDataAccess } from "@infrastructure/adapters/bi/powerbi/powerbi-datalake.adapter";
 import { IPowerBIDatalakeService } from "@application/ports/outbound/IPowerBIDatalakeService";
 import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 import { Inject } from "@nestjs/common";
@@ -72,8 +72,8 @@ interface AccessTokenResponse {
 @ApiTags("Power BI Data")
 @ApiBearerAuth()
 @Controller("api/v1/analytics/data")
-export class PowerBIDataController {
-  private readonly logger = new Logger(PowerBIDataController.name);
+export class BIDataController {
+  private readonly logger = new Logger(BIDataController.name);
   private readonly allowedIPs: string[];
 
   constructor(

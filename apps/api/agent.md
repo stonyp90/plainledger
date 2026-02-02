@@ -71,6 +71,168 @@ apps/api/src/
 - Application layer depends only on domain
 - Infrastructure layer implements application ports
 
+## File Naming & Folder Organization
+
+### Naming Conventions
+
+**CRITICAL:** All names must be **provider-agnostic** and **technology-agnostic**.
+
+| Layer | Convention | Good Example | Bad Example |
+|-------|------------|--------------|-------------|
+| **Ports** | `I{Domain}Service.ts` | `IAccountingProvider.ts` | `IQuickBooksService.ts` |
+| **Adapters** | `{provider}.adapter.ts` | `quickbooks.adapter.ts` | `qb-service.ts` |
+| **Controllers** | `{resource}.controller.ts` | `datasource-sync.controller.ts` | `quickbooks-sync.controller.ts` |
+| **Use Cases** | `{action}-{resource}.use-case.ts` | `sync-datasource.use-case.ts` | `sync-qb.use-case.ts` |
+| **Services** | `{domain}.service.ts` | `benchmark.service.ts` | `statscan-benchmark.service.ts` |
+
+### Controller Naming (Provider-Agnostic)
+
+Controllers should use generic, capability-based names:
+
+```
+✅ GOOD (Provider-Agnostic)           ❌ BAD (Provider-Specific)
+─────────────────────────────────────────────────────────────────
+datasource-sync.controller.ts        quickbooks-sync.controller.ts
+identity-admin.controller.ts         keycloak-admin.controller.ts
+bi-data.controller.ts                powerbi-data.controller.ts
+email.controller.ts                  ses-email.controller.ts
+storage.controller.ts                s3-storage.controller.ts
+```
+
+### Infrastructure Folder Structure
+
+```
+infrastructure/
+├── adapters/                    # External provider implementations
+│   ├── accounting/              # Accounting providers
+│   │   ├── quickbooks/          # QuickBooks adapter
+│   │   │   ├── quickbooks.adapter.ts
+│   │   │   ├── quickbooks.service.ts
+│   │   │   └── __tests__/
+│   │   ├── xero/                # Xero adapter (future)
+│   │   └── sage/                # Sage adapter (future)
+│   │
+│   ├── bi/                      # Business Intelligence
+│   │   └── powerbi/
+│   │       ├── powerbi.adapter.ts
+│   │       ├── powerbi-datalake.adapter.ts
+│   │       └── powerbi-theme.adapter.ts
+│   │
+│   ├── crm/                     # CRM providers
+│   │   └── hubspot/
+│   │       └── hubspot.adapter.ts
+│   │
+│   ├── email/                   # Email providers
+│   │   └── ses/
+│   │       └── ses.adapter.ts
+│   │
+│   ├── notifications/           # Push notification providers
+│   │   └── novu/
+│   │       └── novu.adapter.ts
+│   │
+│   └── storage/                 # Storage providers
+│       └── s3/
+│           └── s3-cleanup.adapter.ts
+│
+├── http/                        # HTTP layer (tech-agnostic names)
+│   ├── controllers/
+│   │   ├── datasource-sync.controller.ts  # NOT quickbooks-sync
+│   │   ├── identity-admin.controller.ts   # NOT keycloak-admin
+│   │   └── bi-data.controller.ts          # NOT powerbi-data
+│   ├── guards/
+│   ├── decorators/
+│   └── filters/
+│
+├── graphql/                     # GraphQL layer
+│   ├── resolvers/
+│   └── guards/
+│
+├── persistence/                 # Database implementations
+│   ├── postgres/
+│   ├── mongodb/
+│   └── datalake/
+│
+├── intelligence/                # AI/ML adapters
+│   └── adapters/
+│       ├── bedrock.adapter.ts
+│       ├── sagemaker.adapter.ts
+│       └── api.adapter.ts
+│
+├── services/                    # Infrastructure services (non-adapter)
+│   ├── benchmark-health.service.ts
+│   ├── benchmark-refresh.service.ts
+│   └── datalake-data.service.ts
+│
+├── jobs/                        # Scheduled jobs
+│   ├── customer-journey.job.ts
+│   └── data-retention.job.ts
+│
+└── cache/                       # Caching
+    └── cache.service.ts
+```
+
+### When to Create a Folder
+
+**Create a folder when:**
+- 2+ related files exist (provider implementations)
+- Provider has multiple components (adapter + service + utils)
+- Tests are needed (`__tests__/` subdirectory)
+
+**Keep flat when:**
+- Single implementation with no tests
+- Simple utility files
+
+```
+✅ Multiple files → Create folder
+adapters/accounting/quickbooks/
+├── quickbooks.adapter.ts
+├── quickbooks.service.ts
+├── quickbooks-environment.util.ts
+└── __tests__/
+    └── quickbooks.adapter.spec.ts
+
+✅ Single file → Keep flat (but use folder if tests needed)
+adapters/email/ses/
+└── ses.adapter.ts
+```
+
+### Adapter vs Service Naming
+
+**Adapters** - Implement external provider integrations:
+- File: `{provider}.adapter.ts`
+- Class: `{Provider}Adapter`
+- Example: `SESAdapter`, `HubSpotAdapter`, `PowerBIAdapter`
+
+**Services** - Internal application services:
+- File: `{domain}.service.ts`
+- Class: `{Domain}Service`
+- Example: `BenchmarkHealthService`, `CacheService`
+
+```typescript
+// Adapter (external integration)
+@Injectable()
+export class SESAdapter implements IEmailProvider {
+  readonly providerName = 'AWS SES';
+  // ...
+}
+
+// Service (internal)
+@Injectable()
+export class BenchmarkHealthService {
+  // ...
+}
+```
+
+### Renaming Checklist
+
+When renaming files:
+1. ✅ Update class name inside file
+2. ✅ Update Logger name: `new Logger(NewClassName.name)`
+3. ✅ Update all imports across codebase
+4. ✅ Update app.module.ts registrations
+5. ✅ Update test file imports
+6. ✅ Update interface provider tokens if needed
+
 ### Dependency Injection Pattern
 
 ```typescript

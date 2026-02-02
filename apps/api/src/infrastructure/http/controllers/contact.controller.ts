@@ -12,7 +12,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { Public } from "nest-keycloak-connect";
-import { SESEmailService } from "../../notifications/ses-email.service";
+import { SESAdapter } from "../../adapters/email/ses/ses.adapter";
 import {
   IsEmail,
   IsString,
@@ -50,7 +50,7 @@ export class ContactFormDto {
 export class ContactController {
   private readonly logger = new Logger(ContactController.name);
 
-  constructor(private readonly sesEmailService: SESEmailService) {}
+  constructor(private readonly sesEmailService: SESAdapter) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)

@@ -21,8 +21,8 @@ import {
 } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { Public } from "nest-keycloak-connect";
-import { QuickBooksService } from "@infrastructure/integrations/quickbooks/quickbooks.service";
-import { shouldUseSandbox } from "@infrastructure/integrations/quickbooks/quickbooks-environment.util";
+import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
+import { shouldUseSandbox } from "@infrastructure/adapters/accounting/quickbooks/quickbooks-environment.util";
 
 // DTO for creating a data source connection
 class CreateDataSourceDto {

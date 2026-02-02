@@ -7,7 +7,7 @@ import {
 import { RLSIdentity } from "@domain/value-objects/RLSIdentity";
 import { IAnalyticsReportRepository } from "@application/ports/outbound/IAnalyticsReportRepository";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
-import { IPowerBIService } from "@infrastructure/services/powerbi.service";
+import { IPowerBIAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi.adapter";
 
 export interface GetEmbedConfigRequest {
   reportId: string;
@@ -38,8 +38,8 @@ export class GetEmbedConfigUseCase {
     private readonly reportRepository: IAnalyticsReportRepository,
     @Inject("IOrganizationFeaturesRepository")
     private readonly featuresRepository: IOrganizationFeaturesRepository,
-    @Inject("IPowerBIService")
-    private readonly powerBIService: IPowerBIService,
+    @Inject("IPowerBIAdapter")
+    private readonly powerBIService: IPowerBIAdapter,
   ) {}
 
   async execute(

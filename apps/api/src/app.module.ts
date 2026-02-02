@@ -35,11 +35,11 @@ import { ContactController } from "@infrastructure/http/controllers/contact.cont
 import { OnboardingController } from "@infrastructure/http/controllers/onboarding.controller";
 import { AIController } from "@infrastructure/http/controllers/ai.controller";
 import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
-import { PowerBIDataController } from "@infrastructure/http/controllers/powerbi-data.controller";
+import { BIDataController } from "@infrastructure/http/controllers/bi-data.controller";
 import { TeamController } from "@infrastructure/http/controllers/team.controller";
 import { AuthController } from "@infrastructure/http/controllers/auth.controller";
 import { SyncAdminController } from "@infrastructure/http/controllers/sync-admin.controller";
-import { KeycloakAdminController } from "@infrastructure/http/controllers/keycloak-admin.controller";
+import { IdentityAdminController } from "@infrastructure/http/controllers/identity-admin.controller";
 import { UploadController } from "@infrastructure/http/controllers/upload.controller";
 import { SettingsController } from "@infrastructure/http/controllers/settings.controller";
 import { DocumentShareController } from "@infrastructure/http/controllers/document-share.controller";
@@ -48,7 +48,8 @@ import { UnsubscribeController } from "@infrastructure/http/controllers/unsubscr
 import { CacheController } from "@infrastructure/http/controllers/cache.controller";
 import { SimilarityController } from "@infrastructure/http/controllers/similarity.controller";
 import { ETLProgressController } from "@infrastructure/http/controllers/etl-progress.controller";
-import { QuickBooksSyncController } from "@infrastructure/http/controllers/quickbooks-sync.controller";
+import { DataSourceSyncController } from "@infrastructure/http/controllers/datasource-sync.controller";
+import { ETLTriggerController } from "@infrastructure/http/controllers/etl-trigger.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
@@ -57,16 +58,16 @@ import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.servic
 import { FileStorageService } from "@infrastructure/storage/file-storage.service";
 import { DocumentShareService } from "@infrastructure/storage/document-share.service";
 import { AIService } from "@infrastructure/ai/ai.service";
-import { PowerBIService } from "@infrastructure/services/powerbi.service";
-import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
-import { PowerBIDatalakeService } from "@infrastructure/services/powerbi-datalake.service";
+import { PowerBIAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi.adapter";
+import { PowerBIThemeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-theme.adapter";
+import { PowerBIDatalakeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-datalake.adapter";
 import { DatalakeDataService } from "@infrastructure/services/datalake-data.service";
 import { SettingsService } from "@infrastructure/services/settings.service";
 import { CacheService } from "@infrastructure/cache/cache.service";
 import { EmbeddingService } from "@infrastructure/ai/embedding.service";
 import { SimilaritySearchService } from "@application/services/similarity-search.service";
 import { ProviderFactory } from "@application/services/provider-factory.service";
-import { QuickBooksProvider } from "@infrastructure/integrations/quickbooks/quickbooks.provider";
+import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 import { PubSub } from "graphql-subscriptions";
 import { ETLSubscriptionResolver } from "@infrastructure/graphql/resolvers/etl.subscription";
@@ -103,8 +104,8 @@ import { PostgresOrganizationSettingsRepository } from "@infrastructure/persiste
 import { PostgresUserSettingsRepository } from "@infrastructure/persistence/postgres/postgres-user-settings.repository";
 import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
 
-// Notifications
-import { SESEmailService } from "./infrastructure/notifications/ses-email.service";
+// Notifications (Email via SES Adapter)
+import { SESAdapter } from "./infrastructure/adapters/email/ses/ses.adapter";
 
 // Email Templates
 import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
@@ -121,8 +122,8 @@ import {
   AuditRepository,
 } from "@infrastructure/persistence/mongodb";
 
-// CRM (HubSpot)
-import { HubSpotService } from "@infrastructure/crm/hubspot.service";
+// CRM (HubSpot Adapter)
+import { HubSpotAdapter } from "@infrastructure/adapters/crm/hubspot/hubspot.adapter";
 
 // Intelligence Platform
 import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.module";
@@ -231,7 +232,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       inject: [ConfigService],
     }),
 
-    // Notifications (SES handled via SESEmailModule in SESEmailService)
+    // Notifications (SES handled via SESEmailModule in SESAdapter)
 
     // MongoDB (Analytics & Audit - optional, graceful degradation)
     MongoDBModule,
@@ -269,11 +270,11 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     OnboardingController,
     AIController,
     AnalyticsController,
-    PowerBIDataController,
+    BIDataController,
     TeamController,
     AuthController,
     SyncAdminController,
-    KeycloakAdminController,
+    IdentityAdminController,
     UploadController,
     SettingsController,
     DocumentShareController,
@@ -282,7 +283,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     CacheController,
     SimilarityController,
     ETLProgressController,
-    QuickBooksSyncController,
+    DataSourceSyncController,
     ETLTriggerController,
   ],
   providers: [
@@ -323,9 +324,9 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
 
     // Services
     AIService,
-    PowerBIService,
-    PowerBIThemeService,
-    PowerBIDatalakeService,
+    PowerBIAdapter,
+    PowerBIThemeAdapter,
+    PowerBIDatalakeAdapter,
     DatalakeDataService,
     KeycloakAdminService,
     CacheService,
@@ -336,15 +337,15 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     ETLPublisherService,
     AccountBalancePublisherService,
     SettingsService,
-    SESEmailService,
+    SESAdapter,
     EmailTemplatesService,
     FileStorageService,
     DocumentShareService,
     JourneyTrackingService,
     CustomerJourneyJob,
     {
-      provide: "IPowerBIService",
-      useClass: PowerBIService,
+      provide: "IPowerBIAdapter",
+      useClass: PowerBIAdapter,
     },
     // Register interfaces for dependency injection
     {
@@ -356,14 +357,14 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       useClass: DatalakeDataService,
     },
     {
-      provide: "IPowerBIDatalakeService",
-      useClass: PowerBIDatalakeService,
+      provide: "IPowerBIDatalakeAdapter",
+      useClass: PowerBIDatalakeAdapter,
     },
     {
       provide: "IKeycloakAdminService",
       useClass: KeycloakAdminService,
     },
-    // INotificationService removed - use SESEmailService directly
+    // INotificationService removed - use SESAdapter directly
 
     // GraphQL Resolvers
     FinancialResolver,
@@ -413,7 +414,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     AuditRepository,
 
     // CRM (HubSpot)
-    HubSpotService,
+    HubSpotAdapter,
 
     // Centralized Application Configuration
     {

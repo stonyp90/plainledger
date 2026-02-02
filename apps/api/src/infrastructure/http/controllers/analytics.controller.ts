@@ -24,8 +24,8 @@ import { Roles } from "nest-keycloak-connect";
 import { GetEmbedConfigUseCase } from "@application/use-cases/get-embed-config.use-case";
 import { ListAnalyticsReportsUseCase } from "@application/use-cases/list-analytics-reports.use-case";
 import { UpdateOrgFeaturesUseCase } from "@application/use-cases/update-org-features.use-case";
-import { PowerBIThemeService } from "@infrastructure/services/powerbi-theme.service";
-import { PowerBIService } from "@infrastructure/services/powerbi.service";
+import { PowerBIThemeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-theme.adapter";
+import { PowerBIAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi.adapter";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
 
@@ -56,8 +56,8 @@ export class AnalyticsController {
     private readonly getEmbedConfigUseCase: GetEmbedConfigUseCase,
     private readonly listAnalyticsReportsUseCase: ListAnalyticsReportsUseCase,
     private readonly updateOrgFeaturesUseCase: UpdateOrgFeaturesUseCase,
-    private readonly powerBIThemeService: PowerBIThemeService,
-    private readonly powerBIService: PowerBIService,
+    private readonly powerBIThemeService: PowerBIThemeAdapter,
+    private readonly powerBIService: PowerBIAdapter,
     @Inject("IOrganizationFeaturesRepository")
     private readonly featuresRepository: IOrganizationFeaturesRepository,
   ) {}

@@ -18,7 +18,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository, InjectDataSource } from "@nestjs/typeorm";
 import { Repository, LessThan, Not, IsNull, DataSource } from "typeorm";
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
-import { S3OrganizationCleanupService } from "@infrastructure/services/s3-organization-cleanup.service";
+import { S3CleanupAdapter } from "@infrastructure/adapters/storage/s3/s3-cleanup.adapter";
 import { ConfigService } from "@nestjs/config";
 
 export interface RetentionJobResult {
@@ -52,7 +52,7 @@ export class DataRetentionJob {
     private readonly organizationRepository: Repository<OrganizationEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly s3CleanupService: S3OrganizationCleanupService,
+    private readonly s3CleanupService: S3CleanupAdapter,
     private readonly configService: ConfigService,
   ) {
     // Configure retention periods from environment

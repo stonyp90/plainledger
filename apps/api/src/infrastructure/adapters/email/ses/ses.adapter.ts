@@ -57,8 +57,8 @@ export interface SESEmailResult {
 // ============================================================================
 
 @Injectable()
-export class SESEmailService implements OnModuleInit {
-  private readonly logger = new Logger(SESEmailService.name);
+export class SESAdapter implements OnModuleInit {
+  private readonly logger = new Logger(SESAdapter.name);
   private sesClient: SESClient;
   private fromAddress: string;
   private fromName: string;
@@ -657,7 +657,7 @@ import { ConfigModule } from "@nestjs/config";
 
 @Module({
   imports: [ConfigModule],
-  providers: [SESEmailService, EmailTemplatesService],
-  exports: [SESEmailService],
+  providers: [SESAdapter, EmailTemplatesService],
+  exports: [SESAdapter],
 })
 export class SESEmailModule {}

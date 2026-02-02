@@ -66,8 +66,8 @@ export interface HubSpotDeal {
 // ============================================================================
 
 @Injectable()
-export class HubSpotService implements OnModuleInit {
-  private readonly logger = new Logger(HubSpotService.name);
+export class HubSpotAdapter implements OnModuleInit {
+  private readonly logger = new Logger(HubSpotAdapter.name);
   private client: Client | null = null;
   private enabled = false;
 

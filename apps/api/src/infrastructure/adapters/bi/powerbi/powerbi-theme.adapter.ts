@@ -20,7 +20,7 @@ export interface PowerBITheme {
 }
 
 @Injectable()
-export class PowerBIThemeService {
+export class PowerBIThemeAdapter {
   /**
    * Generate Power BI theme JSON from tenant branding colors
    */

@@ -5,7 +5,7 @@ import { EmbedConfig } from "@domain/value-objects/EmbedConfig";
 import { RLSIdentity } from "@domain/value-objects/RLSIdentity";
 import axios, { AxiosInstance } from "axios";
 
-export interface IPowerBIService {
+export interface IPowerBIAdapter {
   generateEmbedToken(
     workspaceId: string,
     reportId: string,
@@ -19,8 +19,8 @@ export interface IPowerBIService {
 }
 
 @Injectable()
-export class PowerBIService implements IPowerBIService {
-  private readonly logger = new Logger(PowerBIService.name);
+export class PowerBIAdapter implements IPowerBIAdapter {
+  private readonly logger = new Logger(PowerBIAdapter.name);
   private readonly tenantId: string;
   private readonly clientId: string;
   private readonly clientSecret: string;

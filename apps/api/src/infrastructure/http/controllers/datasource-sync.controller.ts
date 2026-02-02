@@ -13,13 +13,13 @@ import { Public } from "nest-keycloak-connect";
 import { ConfigService } from "@nestjs/config";
 
 /**
- * QuickBooks Sync Controller
- * Internal endpoint for syncing QuickBooks sandbox data to S3 Gold layer
+ * DataSource Sync Controller
+ * Internal endpoint for syncing datasource (QuickBooks, Xero, etc.) data to S3 Gold layer
  */
 @Controller("internal/etl")
 @ApiTags("internal")
-export class QuickBooksSyncController {
-  private readonly logger = new Logger(QuickBooksSyncController.name);
+export class DataSourceSyncController {
+  private readonly logger = new Logger(DataSourceSyncController.name);
   private readonly internalToken: string;
 
   constructor(private readonly configService: ConfigService) {

@@ -28,7 +28,7 @@ import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdmi
 import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { ConfigService } from "@nestjs/config";
-import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
+import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
 import * as crypto from "crypto";
 
 // =====================================================
@@ -152,7 +152,7 @@ export class AuthController {
   constructor(
     @Inject("IKeycloakAdminService")
     private readonly keycloakAdminService: IKeycloakAdminService,
-    private readonly sesEmailService: SESEmailService,
+    private readonly sesEmailService: SESAdapter,
     private readonly userProfileRepository: PostgresUserProfileRepository,
     private readonly configService: ConfigService,
   ) {}

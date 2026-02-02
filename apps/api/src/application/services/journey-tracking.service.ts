@@ -19,8 +19,8 @@ import {
   UserProfileEntity,
   JourneyStage,
 } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
-import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
-import { HubSpotService } from "@infrastructure/crm/hubspot.service";
+import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
+import { HubSpotAdapter } from "@infrastructure/adapters/crm/hubspot/hubspot.adapter";
 
 // ============================================================================
 // Types
@@ -67,8 +67,8 @@ export class JourneyTrackingService {
   constructor(
     @InjectRepository(UserProfileEntity)
     private userProfileRepository: Repository<UserProfileEntity>,
-    private sesEmailService: SESEmailService,
-    private hubspotService: HubSpotService,
+    private sesEmailService: SESAdapter,
+    private hubspotService: HubSpotAdapter,
   ) {}
 
   // ---------------------------------------------------------------------------

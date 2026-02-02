@@ -262,10 +262,12 @@ application/ports/outbound/
 ├── IStorageProvider.ts       # S3, MinIO, Azure implement this
 └── IAIProvider.ts            # OpenAI, Anthropic, Bedrock implement this
 
-infrastructure/integrations/
-├── quickbooks/               # QuickBooks implementation
-├── xero/                     # Xero implementation
-└── openai/                   # OpenAI implementation
+infrastructure/adapters/
+├── accounting/quickbooks/    # QuickBooks implementation
+├── accounting/xero/          # Xero implementation
+├── ai/bedrock/               # Bedrock implementation
+├── email/ses/                # SES implementation
+└── crm/hubspot/              # HubSpot implementation
 ```
 
 **Rules:**
@@ -273,6 +275,23 @@ infrastructure/integrations/
 2. **All providers return normalized types** - Our schema, not vendor schema
 3. **Use factory pattern** - Select provider at runtime via config
 4. **Easy testing** - Mock providers implement same interface
+
+### API Naming Conventions (CRITICAL)
+
+**Controllers - Use provider-agnostic names:**
+| Good (Agnostic) | Bad (Provider-Specific) |
+|-----------------|-------------------------|
+| `datasource-sync.controller.ts` | `quickbooks-sync.controller.ts` |
+| `identity-admin.controller.ts` | `keycloak-admin.controller.ts` |
+| `bi-data.controller.ts` | `powerbi-data.controller.ts` |
+
+**Adapters - Provider goes in folder, not filename:**
+- ✅ `infrastructure/adapters/email/ses/ses.adapter.ts`
+- ❌ `infrastructure/services/ses-email.service.ts`
+
+**Class naming:**
+- Adapters: `{Provider}Adapter` (e.g., `SESAdapter`, `HubSpotAdapter`)
+- Services: `{Domain}Service` (e.g., `BenchmarkService`, `CacheService`)
 
 **See:** `apps/api/agent.md` for detailed provider patterns
 

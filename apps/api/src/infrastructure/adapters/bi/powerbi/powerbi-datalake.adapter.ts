@@ -58,8 +58,8 @@ export interface SecureDataAccess {
 }
 
 @Injectable()
-export class PowerBIDatalakeService implements IPowerBIDatalakeService {
-  private readonly logger = new Logger(PowerBIDatalakeService.name);
+export class PowerBIDatalakeAdapter implements IPowerBIDatalakeService {
+  private readonly logger = new Logger(PowerBIDatalakeAdapter.name);
   private readonly s3Client: S3Client;
   private readonly goldBucket: string;
   private readonly athenaDatabase: string;

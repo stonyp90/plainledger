@@ -14,7 +14,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { JourneyTrackingService } from "@application/services/journey-tracking.service";
-import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
+import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
 import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
 
 @Injectable()
@@ -24,7 +24,7 @@ export class CustomerJourneyJob {
 
   constructor(
     private journeyService: JourneyTrackingService,
-    private sesEmailService: SESEmailService,
+    private sesEmailService: SESAdapter,
     @InjectRepository(EmailEventEntity)
     private emailEventRepository: Repository<EmailEventEntity>,
   ) {}

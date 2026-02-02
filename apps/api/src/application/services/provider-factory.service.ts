@@ -3,7 +3,7 @@ import {
   IAccountingProvider,
   ProviderType,
 } from "@application/ports/outbound/IAccountingProvider";
-import { QuickBooksProvider } from "@infrastructure/integrations/quickbooks/quickbooks.provider";
+import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
 
 /**
  * Provider Factory Service

@@ -12,7 +12,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { AuthenticatedUser } from "nest-keycloak-connect";
-import { SESEmailService } from "../../notifications/ses-email.service";
+import { SESAdapter } from "../../adapters/email/ses/ses.adapter";
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import {
@@ -80,7 +80,7 @@ export class OnboardingController {
   private readonly logger = new Logger(OnboardingController.name);
 
   constructor(
-    private readonly sesEmailService: SESEmailService,
+    private readonly sesEmailService: SESAdapter,
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly userProfileRepository: PostgresUserProfileRepository,
   ) {}

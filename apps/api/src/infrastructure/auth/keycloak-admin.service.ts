@@ -267,7 +267,7 @@ export class KeycloakAdminService
 
       // NOTE: Email sending is now handled by the caller using SES for branded emails.
       // The sendVerificationEmail flag is kept for backward compatibility but emails
-      // should be sent via SESEmailService for consistent branding.
+      // should be sent via SESAdapter for consistent branding.
       // Legacy Keycloak email sending is deprecated - use SES instead.
 
       return {

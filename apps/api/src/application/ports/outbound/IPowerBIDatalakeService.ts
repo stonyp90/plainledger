@@ -6,7 +6,7 @@
 import {
   DatasetSchema,
   SecureDataAccess,
-} from "@infrastructure/services/powerbi-datalake.service";
+} from "@infrastructure/adapters/bi/powerbi/powerbi-datalake.adapter";
 
 export interface IPowerBIDatalakeService {
   /**

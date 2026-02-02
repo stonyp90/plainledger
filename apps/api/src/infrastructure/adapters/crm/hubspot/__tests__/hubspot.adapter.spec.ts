@@ -5,7 +5,7 @@
 
 import { Test, TestingModule } from "@nestjs/testing";
 import { ConfigService } from "@nestjs/config";
-import { HubSpotService } from "../hubspot.service";
+import { HubSpotAdapter } from "../hubspot.adapter";
 
 // ============================================================================
 // Mocks
@@ -48,18 +48,18 @@ jest.mock("@hubspot/api-client", () => ({
 }));
 
 // ============================================================================
-// HubSpotService Tests
+// HubSpotAdapter Tests
 // ============================================================================
 
-describe("HubSpotService", () => {
-  let service: HubSpotService;
+describe("HubSpotAdapter", () => {
+  let service: HubSpotAdapter;
   let configService: ConfigService;
 
   describe("with access token configured", () => {
     beforeEach(async () => {
       const module: TestingModule = await Test.createTestingModule({
         providers: [
-          HubSpotService,
+          HubSpotAdapter,
           {
             provide: ConfigService,
             useValue: {
@@ -72,7 +72,7 @@ describe("HubSpotService", () => {
         ],
       }).compile();
 
-      service = module.get<HubSpotService>(HubSpotService);
+      service = module.get<HubSpotAdapter>(HubSpotAdapter);
       configService = module.get<ConfigService>(ConfigService);
 
       // Initialize the service
@@ -446,7 +446,7 @@ describe("HubSpotService", () => {
     beforeEach(async () => {
       const module: TestingModule = await Test.createTestingModule({
         providers: [
-          HubSpotService,
+          HubSpotAdapter,
           {
             provide: ConfigService,
             useValue: {
@@ -456,7 +456,7 @@ describe("HubSpotService", () => {
         ],
       }).compile();
 
-      service = module.get<HubSpotService>(HubSpotService);
+      service = module.get<HubSpotAdapter>(HubSpotAdapter);
       await service.onModuleInit();
     });
 

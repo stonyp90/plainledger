@@ -9,7 +9,7 @@ import { Response } from "express";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import { Public } from "nest-keycloak-connect";
-import { QuickBooksService } from "@infrastructure/integrations/quickbooks/quickbooks.service";
+import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
 
 // In-memory storage (shared with datasource controller)
 // In production, use database

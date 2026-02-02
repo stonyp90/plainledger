@@ -32,7 +32,7 @@ import { Type } from "class-transformer";
 import * as crypto from "crypto";
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
 import { KeycloakUser } from "@infrastructure/auth/keycloak-admin.service";
-import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
+import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
 
 // =====================================================
 // DTOs
@@ -116,7 +116,7 @@ export class TeamController {
   constructor(
     @Inject("IKeycloakAdminService")
     private readonly keycloakAdminService: IKeycloakAdminService,
-    private readonly sesEmailService: SESEmailService,
+    private readonly sesEmailService: SESAdapter,
     private readonly configService: ConfigService,
   ) {}
 

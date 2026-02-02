@@ -1,5 +1,5 @@
 /**
- * S3OrganizationCleanupService
+ * S3CleanupAdapter
  *
  * Handles secure deletion of all S3 data for an organization.
  * Used when an organization is deleted or for GDPR data erasure requests.
@@ -63,8 +63,8 @@ export interface CleanupProgress {
 }
 
 @Injectable()
-export class S3OrganizationCleanupService {
-  private readonly logger = new Logger(S3OrganizationCleanupService.name);
+export class S3CleanupAdapter {
+  private readonly logger = new Logger(S3CleanupAdapter.name);
   private readonly s3Client: S3Client;
   private readonly glueClient: GlueClient;
 
