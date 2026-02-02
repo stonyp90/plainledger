@@ -4,7 +4,9 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from "@nestjs/swagger";
+import { Roles } from "nest-keycloak-connect";
 import { SimilaritySearchService } from "@application/services/similarity-search.service";
 import { EmbeddingService } from "@infrastructure/ai/embedding.service";
 

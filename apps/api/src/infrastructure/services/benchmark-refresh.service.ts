@@ -22,6 +22,7 @@ import {
   IndustryBenchmark,
   RevenueRange,
 } from "@domain/market-analysis/benchmark.types";
+import { getNAICSMapping } from "@domain/market-analysis/naics-mapping";
 
 @Injectable()
 export class BenchmarkRefreshService implements OnModuleInit {

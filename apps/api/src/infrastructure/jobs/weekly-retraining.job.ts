@@ -6,7 +6,7 @@
  */
 
 import { Injectable, Logger, Inject } from "@nestjs/common";
-import { Cron } from "@nestjs/schedule";
+import { Cron, CronExpression } from "@nestjs/schedule";
 import {
   IDecisionRepository,
   DECISION_REPOSITORY_TOKEN,

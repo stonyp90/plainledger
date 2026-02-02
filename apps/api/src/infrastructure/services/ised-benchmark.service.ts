@@ -17,6 +17,7 @@ import * as Papa from "papaparse";
 import {
   IndustryBenchmark,
   RevenueRange,
+  QuartileData,
 } from "@domain/market-analysis/benchmark.types";
 import {
   getIndustryFromNAICS,
