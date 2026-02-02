@@ -10,7 +10,7 @@
  */
 
 import { useState, useRef, useCallback, ReactNode } from 'react';
-import { GripVertical, X, Lock, Unlock, Maximize2, Minimize2, RotateCcw, GripHorizontal } from 'lucide-react';
+import { X, Lock, Unlock, Maximize2, Minimize2, RotateCcw, GripHorizontal, Move } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useSingleChartSize } from '../hooks/useChartSize';
 
@@ -144,21 +144,27 @@ export default function DashboardWidgetWrapper({
         minHeight: enableResize ? `${minHeight}px` : undefined,
       }}
     >
-      {/* Drag Handle - visible on hover */}
-      {canCustomize && isHovered && !isResizing && (
+      {/* Move Handle - top left inside chart, visible on hover */}
+      {canCustomize && isHovered && !isResizing && id !== 'add-widget' && (
         <div
-          className="absolute -left-2 top-2 z-10 cursor-grab active:cursor-grabbing p-1.5 rounded-lg transition-all"
+          className="absolute left-2 top-2 z-20 cursor-grab active:cursor-grabbing flex items-center gap-1 px-2 py-1 rounded-md transition-all hover:scale-105"
           style={{
             backgroundColor: 'rgb(var(--color-surface))',
             border: '1px solid rgb(var(--color-border))',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
           }}
           title={isEn ? 'Drag to reorder' : 'Glisser pour réorganiser'}
         >
-          <GripVertical
-            className="w-4 h-4"
+          <Move
+            className="w-3.5 h-3.5"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           />
+          <span 
+            className="text-xs font-medium"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            {isEn ? 'Move' : 'Déplacer'}
+          </span>
         </div>
       )}
 

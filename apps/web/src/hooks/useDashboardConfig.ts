@@ -100,6 +100,24 @@ export function useDashboardConfig() {
     setConfig(updated);
   }, [tenantId]);
 
+  // Lock/unlock dashboard customization
+  const setDashboardLock = useCallback((locked: boolean) => {
+    dashboardConfigService.setDashboardLock(tenantId, locked);
+    const updated = dashboardConfigService.getConfig(tenantId);
+    setConfig(updated);
+  }, [tenantId]);
+
+  // Toggle dashboard lock
+  const toggleDashboardLock = useCallback((): boolean => {
+    const locked = dashboardConfigService.toggleDashboardLock(tenantId);
+    const updated = dashboardConfigService.getConfig(tenantId);
+    setConfig(updated);
+    return locked;
+  }, [tenantId]);
+
+  // Check if dashboard is locked
+  const isDashboardLocked = config.locked ?? false;
+
   // Reset to defaults
   const resetToDefaults = useCallback(() => {
     setIsLoading(true);
@@ -127,12 +145,15 @@ export function useDashboardConfig() {
     widgets,
     config,
     isLoading,
+    isDashboardLocked,
     addWidget,
     removeWidget,
     reorderWidgets,
     updateWidgetSize,
     toggleSizeLock,
     resetWidgetSize,
+    setDashboardLock,
+    toggleDashboardLock,
     resetToDefaults,
     getWidget,
     isWidgetVisible,

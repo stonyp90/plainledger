@@ -10,6 +10,7 @@ import {
   Sparkles,
   BarChart2,
   Lock,
+  Unlock,
   Calendar,
   Building2,
   Home,
@@ -93,15 +94,20 @@ export default function Dashboard() {
   const hasDecisionCapture = hasAIAccess && (currentTenant?.settings?.features?.decisionCapture ?? false);
   
   // Dashboard customization
-  const canCustomize = hasPermission('customize:dashboard');
+  const hasCustomizePermission = hasPermission('customize:dashboard');
   const {
     widgets: widgetConfigs,
+    isDashboardLocked,
     addWidget,
     removeWidget,
     reorderWidgets,
+    toggleDashboardLock,
     resetToDefaults,
     isWidgetVisible,
   } = useDashboardConfig();
+  
+  // Can customize only if user has permission AND dashboard is not locked
+  const canCustomize = hasCustomizePermission && !isDashboardLocked;
   
   // Chart Gallery modal state
   const [showChartGallery, setShowChartGallery] = useState(false);
@@ -817,9 +823,9 @@ export default function Dashboard() {
   // Show cutting-edge skeleton loading state
   if (isLoading && !financialData) {
     return (
-      <div className="space-y-4 sm:space-y-6 animate-pulse">
+      <div className="space-y-2 sm:space-y-4 lg:space-y-6 animate-pulse">
         {/* Header skeleton */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
           <div>
             <div className="h-6 sm:h-8 w-36 sm:w-48 rounded-lg bg-gradient-to-r from-[rgb(var(--color-bg-muted))] via-[rgb(var(--color-border))] to-[rgb(var(--color-bg-muted))] animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
             <div className="h-3 sm:h-4 w-24 sm:w-32 mt-2 rounded bg-[rgb(var(--color-bg-muted))]" />
@@ -867,7 +873,7 @@ export default function Dashboard() {
         </div>
         
         {/* Charts skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
           {[...Array(2)].map((_, i) => (
             <div 
               key={i}
@@ -917,7 +923,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+    <div className="space-y-2 sm:space-y-4 lg:space-y-6" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
       {/* Demo Signup Welcome Banner - Shows for new signups */}
       <DemoSignupWelcome />
       
@@ -965,6 +971,45 @@ export default function Dashboard() {
                   onSelectPeriod={(id) => setSelectedPeriod(id as 'mtd' | 'qtd' | 'ytd')}
                   isEn={isEn}
                 />
+                
+                {/* Lock/Unlock Dashboard - Only show if user has permission */}
+                {hasCustomizePermission && (
+                  <button
+                    onClick={() => {
+                      const newLocked = toggleDashboardLock();
+                      toast.show(
+                        newLocked 
+                          ? (isEn ? 'Dashboard locked' : 'Tableau de bord verrouillé')
+                          : (isEn ? 'Dashboard unlocked' : 'Tableau de bord déverrouillé'),
+                        'success'
+                      );
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border"
+                    style={{
+                      backgroundColor: isDashboardLocked 
+                        ? 'rgb(var(--color-warning) / 0.1)' 
+                        : 'rgb(var(--color-surface))',
+                      borderColor: isDashboardLocked 
+                        ? 'rgb(var(--color-warning) / 0.3)' 
+                        : 'rgb(var(--color-border))',
+                      color: isDashboardLocked 
+                        ? 'rgb(var(--color-warning))' 
+                        : 'rgb(var(--color-text-muted))',
+                    }}
+                    title={isDashboardLocked 
+                      ? (isEn ? 'Unlock to enable customization' : 'Déverrouiller pour personnaliser')
+                      : (isEn ? 'Lock to prevent changes' : 'Verrouiller pour empêcher les modifications')
+                    }
+                  >
+                    {isDashboardLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                    <span className="hidden sm:inline">
+                      {isDashboardLocked 
+                        ? (isEn ? 'Locked' : 'Verrouillé') 
+                        : (isEn ? 'Lock' : 'Verrouiller')
+                      }
+                    </span>
+                  </button>
+                )}
                 
                 {/* Reset to Defaults - Only show if user can customize */}
                 {canCustomize && (
@@ -1300,7 +1345,7 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
           )}
 
           {/* Accounting-Specific Widgets */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
             {/* AR Aging */}
             {financialData?.summary?.receivables && (
               <AgingWidget
@@ -1331,7 +1376,7 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
           </div>
 
           {/* Budget vs Actual + Deadlines */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
             {/* Budget Comparison */}
             {financialData?.summary?.budgetComparisons && (
               <BudgetWidget

@@ -86,7 +86,8 @@ export default function GraphConfigPanel({
       style={{ 
         backgroundColor: 'rgba(0, 0, 0, 0.85)', 
         backdropFilter: 'blur(8px)', 
-        zIndex: 9999 
+        zIndex: 99999,
+        isolation: 'isolate',
       }}
       onClick={(e) => {
         // Close modal when clicking on the overlay (not the modal content)
@@ -96,7 +97,13 @@ export default function GraphConfigPanel({
       }}
     >
       <div 
-        className="bg-surface rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          isolation: 'isolate',
+          position: 'relative',
+          zIndex: 1,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

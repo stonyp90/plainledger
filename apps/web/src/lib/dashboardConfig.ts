@@ -45,6 +45,9 @@ export interface DashboardWidgetConfig {
 export interface DashboardConfig {
   widgets: DashboardWidgetConfig[];
   version: number; // For future migrations
+  
+  /** Lock dashboard - prevents resizing, moving, and removing widgets */
+  locked?: boolean;
 }
 
 // =====================================================
@@ -320,6 +323,33 @@ class DashboardConfigService {
       delete widget.gridSpan;
       this.saveConfig(tenantId, config);
     }
+  }
+
+  /**
+   * Lock/unlock dashboard customization
+   */
+  setDashboardLock(tenantId: string, locked: boolean): void {
+    const config = this.getConfig(tenantId);
+    config.locked = locked;
+    this.saveConfig(tenantId, config);
+  }
+
+  /**
+   * Toggle dashboard lock
+   */
+  toggleDashboardLock(tenantId: string): boolean {
+    const config = this.getConfig(tenantId);
+    config.locked = !config.locked;
+    this.saveConfig(tenantId, config);
+    return config.locked ?? false;
+  }
+
+  /**
+   * Check if dashboard is locked
+   */
+  isDashboardLocked(tenantId: string): boolean {
+    const config = this.getConfig(tenantId);
+    return config.locked ?? false;
   }
 }
 
