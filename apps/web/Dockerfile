@@ -10,7 +10,8 @@ WORKDIR /app
 
 # Install dependencies including optional ones for native modules (rollup, etc.)
 COPY apps/web/package*.json ./
-RUN npm ci --include=optional
+RUN npm ci --include=optional && \
+    npm install @rollup/rollup-linux-x64-gnu --save-optional || true
 
 # Copy source and build
 COPY apps/web/ ./
