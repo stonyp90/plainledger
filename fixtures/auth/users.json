@@ -1,0 +1,32 @@
+{
+  "users": [
+    {
+      "id": "test-admin-001",
+      "email": "admin@plainledger.ca",
+      "name": "Test Admin",
+      "role": "admin",
+      "organization_id": "test-org-001"
+    },
+    {
+      "id": "test-user-001",
+      "email": "user@plainledger.ca",
+      "name": "Test User",
+      "role": "user",
+      "organization_id": "test-org-001"
+    },
+    {
+      "id": "test-viewer-001",
+      "email": "viewer@plainledger.ca",
+      "name": "Test Viewer",
+      "role": "viewer",
+      "organization_id": "test-org-001"
+    },
+    {
+      "id": "demo-user-001",
+      "email": "demo@plainledger.ca",
+      "name": "Demo User",
+      "role": "user",
+      "organization_id": "demo-org"
+    }
+  ]
+}

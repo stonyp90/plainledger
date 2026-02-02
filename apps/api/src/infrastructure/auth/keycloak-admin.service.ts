@@ -210,13 +210,9 @@ export class KeycloakAdminService
       userRep.requiredActions = ["UPDATE_PASSWORD"];
     }
 
-    // If email not verified, add verification required action
-    if (!input.emailVerified && input.sendVerificationEmail !== false) {
-      userRep.requiredActions = userRep.requiredActions || [];
-      if (!userRep.requiredActions.includes("VERIFY_EMAIL")) {
-        userRep.requiredActions.push("VERIFY_EMAIL");
-      }
-    }
+    // NOTE: We do NOT add VERIFY_EMAIL required action here.
+    // Email verification is handled by our custom flow via SES with branded templates.
+    // Adding VERIFY_EMAIL would trigger Keycloak's unbranded email on login.
 
     try {
       // Create user WITHOUT password first (passwords must be set separately in Keycloak)
@@ -269,15 +265,10 @@ export class KeycloakAdminService
         await this.assignRoles(userId, input.roles);
       }
 
-      // Send verification email if requested
-      if (input.sendVerificationEmail && !input.emailVerified) {
-        await this.sendVerificationEmail(userId);
-      }
-
-      // Send password reset email if no password was provided
-      if (!input.password) {
-        await this.sendPasswordResetEmail(userId);
-      }
+      // NOTE: Email sending is now handled by the caller using SES for branded emails.
+      // The sendVerificationEmail flag is kept for backward compatibility but emails
+      // should be sent via SESEmailService for consistent branding.
+      // Legacy Keycloak email sending is deprecated - use SES instead.
 
       return {
         id: userId,
@@ -586,8 +577,12 @@ export class KeycloakAdminService
 
   /**
    * Invite team member - creates user with organization attributes
+   * NOTE: This method does NOT send emails - the caller should send branded emails via SES
+   * @returns The user (existing or newly created) and whether they already existed
    */
-  async inviteTeamMember(input: InviteTeamMemberInput): Promise<KeycloakUser> {
+  async inviteTeamMember(
+    input: InviteTeamMemberInput,
+  ): Promise<KeycloakUser & { isExisting: boolean }> {
     this.logger.log(
       `Inviting team member: ${input.email} to organization: ${input.organizationName}`,
     );
@@ -608,19 +603,20 @@ export class KeycloakAdminService
         },
       });
 
-      // Send email notification about invitation
-      await this.sendPasswordResetEmail(existingUser.id);
+      // NOTE: Email sending is now handled by caller via SES for branding consistency
+      // Do NOT call sendPasswordResetEmail here - let controller send branded email
 
-      return existingUser;
+      return { ...existingUser, isExisting: true };
     }
 
     // Create new user with organization attributes
-    return this.createUser({
+    // NOTE: sendVerificationEmail is false - caller will send via SES
+    const newUser = await this.createUser({
       email: input.email,
       firstName: input.firstName || "",
       lastName: input.lastName || "",
       emailVerified: false,
-      sendVerificationEmail: true,
+      sendVerificationEmail: false, // Caller sends branded email via SES
       attributes: {
         organization: [input.organizationId],
         organizationName: [input.organizationName],
@@ -630,6 +626,8 @@ export class KeycloakAdminService
       },
       roles: input.role ? [input.role] : ["viewer"], // Default to viewer role
     });
+
+    return { ...newUser, isExisting: false };
   }
 
   /**

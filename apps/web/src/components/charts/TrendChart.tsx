@@ -10,6 +10,9 @@ import {
 import { ChartTooltip, DataPointTooltip } from './ChartTooltip';
 import { ChartEmptyState } from '../EmptyDataState';
 import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
+import { useGraphConfig } from '../../hooks/useGraphConfig';
+import { formatCurrencyValue, formatPercentageValue } from '../../lib/graphConfig';
+import GraphConfigPanel from './GraphConfigPanel';
 
 interface TrendChartProps {
   data: FinancialDataPoint[];
@@ -29,6 +32,8 @@ interface TrendChartProps {
   isEn?: boolean;
   /** Compact mode for smaller containers */
   compact?: boolean;
+  /** Chart ID for configuration persistence */
+  chartId?: string;
   
   // Decision capture integration
   /** Enable decision capture button on chart */
@@ -58,22 +63,45 @@ export default function TrendChart({
   subtitleEn,
   baseline,
   budget,
-  thresholds = DEFAULT_THRESHOLDS,
-  showThresholdBands = true,
-  showMovingAverage = true,
-  movingAveragePeriod = 3,
+  thresholds: propThresholds,
+  showThresholdBands: propShowThresholdBands,
+  showMovingAverage: propShowMovingAverage,
+  movingAveragePeriod: propMovingAveragePeriod,
   height: propHeight,
   color = 'rgb(var(--color-text))',
   isEn = false,
   compact = false,
+  chartId,
   enableDecisions = false,
   onRecordDecision,
   recentDecisions,
   metricType = 'revenue',
   benchmarkValue,
 }: TrendChartProps) {
-  // Responsive height: use prop if provided, otherwise responsive defaults
-  const height = propHeight ?? (compact ? 160 : 200);
+  // Get graph configuration
+  const graphConfig = useGraphConfig(chartId, {
+    visual: {
+      height: propHeight ?? (compact ? 160 : 200),
+      showThresholdBands: propShowThresholdBands ?? true,
+      showMovingAverage: propShowMovingAverage ?? true,
+      movingAveragePeriod: propMovingAveragePeriod ?? 3,
+      showBaseline: baseline !== undefined,
+      showBudget: budget !== undefined && budget.length > 0,
+    },
+    cpa: {
+      thresholds: propThresholds || DEFAULT_THRESHOLDS,
+    },
+  });
+  
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [chartConfig, setChartConfig] = useState({});
+  
+  // Use config values with prop overrides
+  const height = propHeight ?? graphConfig.visual.height;
+  const thresholds = propThresholds || graphConfig.cpa.thresholds;
+  const showThresholdBands = propShowThresholdBands ?? graphConfig.visual.showThresholdBands;
+  const showMovingAverage = propShowMovingAverage ?? graphConfig.visual.showMovingAverage;
+  const movingAveragePeriod = propMovingAveragePeriod ?? graphConfig.visual.movingAveragePeriod;
   
   // Convert CSS variable color to actual hex color for SVG gradients
   // SVG gradients don't support CSS variables, so we need actual color values
@@ -422,6 +450,17 @@ export default function TrendChart({
         
         {/* Controls */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowConfigPanel(true)}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface-hover))',
+              color: 'rgb(var(--color-text))'
+            }}
+            title={isEn ? 'Configure chart' : 'Configurer le graphique'}
+          >
+            <Settings2 className="w-3 h-3" />
+          </button>
           {enableDecisions && onRecordDecision && (
             <button
               onClick={() => {
@@ -429,7 +468,7 @@ export default function TrendChart({
                 onRecordDecision({
                   metricType,
                   metricLabel: isEn && titleEn ? titleEn : title,
-                  chartId: `trend-${title.toLowerCase().replace(/\s/g, '-')}`,
+                  chartId: chartId || `trend-${title.toLowerCase().replace(/\s/g, '-')}`,
                   currentValue: lastPoint?.value ?? 0,
                   benchmarkValue,
                   period: lastPoint?.period,
@@ -767,15 +806,15 @@ export default function TrendChart({
               additionalInfo={[
                 { 
                   label: isEn ? 'Moving Avg' : 'Moy. mobile', 
-                  value: formatCurrency(movingAverage[hoveredPointIndex]) 
+                  value: formatCurrencyValue(movingAverage[hoveredPointIndex], graphConfig.display)
                 },
                 ...(processedData[hoveredPointIndex].deviation > 0 ? [{
                   label: isEn ? 'Deviation' : 'Écart',
-                  value: `${processedData[hoveredPointIndex].deviation.toFixed(1)}%`
+                  value: formatPercentageValue(processedData[hoveredPointIndex].deviation, graphConfig.display)
                 }] : []),
                 ...(budget && budget[hoveredPointIndex] ? [{
                   label: 'Budget',
-                  value: formatCurrency(budget[hoveredPointIndex])
+                  value: formatCurrencyValue(budget[hoveredPointIndex], graphConfig.display)
                 }] : []),
               ]}
             />
@@ -787,13 +826,13 @@ export default function TrendChart({
           className="absolute left-0 top-0 text-[10px] font-mono"
           style={{ color: 'rgb(var(--color-text-muted))' }}
         >
-          {formatCurrency(maxValue)}
+          {formatCurrencyValue(maxValue, graphConfig.display)}
         </div>
         <div 
           className="absolute left-0 bottom-0 text-[10px] font-mono"
           style={{ color: 'rgb(var(--color-text-muted))' }}
         >
-          {formatCurrency(minValue)}
+          {formatCurrencyValue(minValue, graphConfig.display)}
         </div>
       </div>
 
@@ -827,7 +866,7 @@ export default function TrendChart({
           <div>
             <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Avg: ' : 'Moy: '}</span>
             <span className="font-mono tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
-              {formatCurrency(avgValue)}
+              {formatCurrencyValue(avgValue, graphConfig.display)}
             </span>
           </div>
           <div>
@@ -923,6 +962,16 @@ export default function TrendChart({
             </div>
           ))}
         </div>
+      )}
+      
+      {/* Configuration Panel */}
+      {showConfigPanel && (
+        <GraphConfigPanel
+          chartId={chartId || `trend-${title.toLowerCase().replace(/\s/g, '-')}`}
+          currentConfig={chartConfig}
+          onConfigChange={setChartConfig}
+          onClose={() => setShowConfigPanel(false)}
+        />
       )}
     </div>
   );

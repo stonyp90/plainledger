@@ -5,7 +5,7 @@
  * Runs at 9 AM EST to:
  * 1. Check all users' journey stages
  * 2. Determine which emails should be sent
- * 3. Trigger appropriate Novu workflows
+ * 3. Send branded emails via AWS SES
  * 4. Log email events for tracking
  */
 
@@ -14,7 +14,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { JourneyTrackingService } from "@application/services/journey-tracking.service";
-import { NovuService } from "@infrastructure/notifications/novu.service";
+import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
 import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
 
 @Injectable()
@@ -24,7 +24,7 @@ export class CustomerJourneyJob {
 
   constructor(
     private journeyService: JourneyTrackingService,
-    private novuService: NovuService,
+    private sesEmailService: SESEmailService,
     @InjectRepository(EmailEventEntity)
     private emailEventRepository: Repository<EmailEventEntity>,
   ) {}
@@ -62,33 +62,41 @@ export class CustomerJourneyJob {
         processed++;
 
         try {
-          // Send the journey email via Novu
-          const result = await this.novuService.sendJourneyEmail(
+          // Send the journey email via SES
+          const result = await this.sesEmailService.sendJourneyEmailByWorkflow(
             candidate.workflowId,
             candidate.userId,
+            candidate.email,
+            candidate.firstName,
             {
-              firstName: candidate.firstName,
-              email: candidate.email,
-              journeyData: {
-                daysSinceSignup: candidate.daysSinceSignup,
-                journeyStage: candidate.journeyStage,
-              },
+              daysSinceSignup: candidate.daysSinceSignup,
+              journeyStage: candidate.journeyStage,
+              providerName: undefined, // Not available in journey data
+              trialEndsAt: candidate.journeyData?.trialEndsAt,
+              lastActiveAt: candidate.journeyData?.lastActiveAt,
             },
           );
 
-          // Mark email as sent in journey tracking
-          await this.journeyService.markJourneyEmailSent(
-            candidate.userId,
-            candidate.workflowId,
-          );
+          if (result.success) {
+            // Mark email as sent in journey tracking
+            await this.journeyService.markJourneyEmailSent(
+              candidate.userId,
+              candidate.workflowId,
+            );
 
-          // Log the email event
-          await this.logEmailSent(candidate, result.transactionId);
+            // Log the email event
+            await this.logEmailSent(candidate, result.messageId || "unknown");
 
-          sent++;
-          this.logger.debug(
-            `Sent ${candidate.workflowId} to ${candidate.email} (${candidate.reason})`,
-          );
+            sent++;
+            this.logger.debug(
+              `Sent ${candidate.workflowId} to ${candidate.email} (${candidate.reason})`,
+            );
+          } else {
+            errors++;
+            this.logger.error(
+              `Failed to send ${candidate.workflowId} to ${candidate.email}: ${result.error}`,
+            );
+          }
         } catch (error) {
           errors++;
           this.logger.error(
@@ -127,6 +135,7 @@ export class CustomerJourneyJob {
 
   /**
    * Weekly engagement email (Sunday at 10 AM EST)
+   * TODO: Implement weekly digest emails via SES if needed
    */
   @Cron("0 15 * * 0", {
     name: "weekly-digest",
@@ -134,10 +143,8 @@ export class CustomerJourneyJob {
   })
   async processWeeklyDigest(): Promise<void> {
     this.logger.log(
-      "Weekly digest emails are handled by Novu scheduled workflows",
+      "Weekly digest emails - not yet implemented. Can be added to journey tracking service.",
     );
-    // Weekly digests are best handled by Novu's built-in scheduling
-    // to allow users to choose their preferred day/time
   }
 
   // ---------------------------------------------------------------------------
@@ -150,11 +157,11 @@ export class CustomerJourneyJob {
       email: string;
       workflowId: string;
     },
-    transactionId: string,
+    messageId: string,
   ): Promise<void> {
     try {
       await this.emailEventRepository.save({
-        transactionId,
+        transactionId: messageId, // Using messageId as transactionId for SES
         userId: candidate.userId,
         recipient: candidate.email,
         workflowId: candidate.workflowId,

@@ -1,0 +1,66 @@
+{
+  "extraction_timestamp": "2025-12-01T10:00:00Z",
+  "source_system": "QUICKBOOKS",
+  "entity_type": "invoice",
+  "organization_id": "test-org-123",
+  "record_count": 3,
+  "records": [
+    {
+      "Id": "101",
+      "TxnDate": "2025-11-15",
+      "DocNumber": "INV-001",
+      "TotalAmt": 5000.00,
+      "CustomerRef": {"value": "1", "name": "Acme Corp"},
+      "Line": [
+        {
+          "Id": "1",
+          "Amount": 5000.00,
+          "Description": "Consulting services",
+          "SalesItemLineDetail": {
+            "ItemRef": {"value": "1"},
+            "Qty": 1,
+            "UnitPrice": 5000.00
+          }
+        }
+      ]
+    },
+    {
+      "Id": "102",
+      "TxnDate": "2025-11-20",
+      "DocNumber": "INV-002",
+      "TotalAmt": 3500.00,
+      "CustomerRef": {"value": "2", "name": "Beta Inc"},
+      "Line": [
+        {
+          "Id": "1",
+          "Amount": 3500.00,
+          "Description": "Software development",
+          "SalesItemLineDetail": {
+            "ItemRef": {"value": "2"},
+            "Qty": 1,
+            "UnitPrice": 3500.00
+          }
+        }
+      ]
+    },
+    {
+      "Id": "103",
+      "TxnDate": "2025-11-25",
+      "DocNumber": "INV-003",
+      "TotalAmt": 2000.00,
+      "CustomerRef": {"value": "1", "name": "Acme Corp"},
+      "Line": [
+        {
+          "Id": "1",
+          "Amount": 2000.00,
+          "Description": "Support services",
+          "SalesItemLineDetail": {
+            "ItemRef": {"value": "3"},
+            "Qty": 1,
+            "UnitPrice": 2000.00
+          }
+        }
+      ]
+    }
+  ]
+}

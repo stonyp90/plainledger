@@ -53,6 +53,29 @@ export class AccountEntity {
   @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
   updatedAt: Date;
 
+  // pgvector embedding columns
+  @Column({
+    name: "embedding",
+    type: "vector",
+    length: 1536,
+    nullable: true,
+  })
+  embedding?: string; // Stored as string, converted to/from number[]
+
+  @Column({
+    name: "embedding_model",
+    length: 50,
+    nullable: true,
+  })
+  embeddingModel?: string;
+
+  @Column({
+    name: "embedding_updated_at",
+    type: "timestamptz",
+    nullable: true,
+  })
+  embeddingUpdatedAt?: Date;
+
   @ManyToOne(() => OrganizationEntity, (org) => org.accounts)
   @JoinColumn({ name: "organization_id" })
   organization: OrganizationEntity;

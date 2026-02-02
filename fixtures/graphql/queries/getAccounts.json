@@ -1,0 +1,29 @@
+{
+  "query": "query GetAccounts($organizationId: ID!, $accountType: AccountType) { accounts(organizationId: $organizationId, accountType: $accountType) { id name accountType accountSubtype currentBalance isActive } }",
+  "variables": {
+    "organizationId": "test-org-123",
+    "accountType": null
+  },
+  "expected_response": {
+    "data": {
+      "accounts": [
+        {
+          "id": "1",
+          "name": "Bank Account",
+          "accountType": "ASSET",
+          "accountSubtype": "Checking",
+          "currentBalance": 50000.00,
+          "isActive": true
+        },
+        {
+          "id": "2",
+          "name": "Accounts Receivable",
+          "accountType": "ASSET",
+          "accountSubtype": "",
+          "currentBalance": 25000.00,
+          "isActive": true
+        }
+      ]
+    }
+  }
+}

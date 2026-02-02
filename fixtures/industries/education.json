@@ -1,0 +1,101 @@
+{
+  "id": "education",
+  "name": "Education",
+  "name_fr": "Éducation",
+  
+  "accounts": [
+    {"name": "Tuition Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "tuition"},
+    {"name": "Course Fees", "type": "Income", "subtype": "ServiceFeeIncome", "category": "course_fees"},
+    {"name": "Materials & Books", "type": "Income", "subtype": "SalesOfProductIncome", "category": "materials_sales"},
+    {"name": "Grants & Funding", "type": "Other Income", "subtype": "OtherInvestmentIncome", "category": "grants"},
+    {"name": "Instructor Salaries", "type": "Expense", "subtype": "PayrollExpenses", "category": "instructor_salaries"},
+    {"name": "Administrative Staff", "type": "Expense", "subtype": "PayrollExpenses", "category": "admin_salaries"},
+    {"name": "Learning Materials", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "materials_cost"},
+    {"name": "Facility Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Technology & Software", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "technology"},
+    {"name": "Marketing & Recruitment", "type": "Expense", "subtype": "AdvertisingPromotional", "category": "marketing"},
+    {"name": "Student Support Services", "type": "Expense", "subtype": "OtherMiscellaneousServiceCost", "category": "student_services"},
+    {"name": "Classroom Equipment", "type": "Fixed Asset", "subtype": "FurnitureAndFixtures", "category": "equipment"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"},
+    {"name": "Deferred Tuition", "type": "Liability", "subtype": "DeferredRevenue", "category": "deferred"}
+  ],
+  
+  "customers": [
+    {"name": "Corporate Training Client", "email": "training@corp.com", "phone": "514-555-9001"},
+    {"name": "Government Training Program", "email": "programs@gov.ca", "phone": "514-555-9002"},
+    {"name": "Individual Student", "email": "student@email.com", "phone": "514-555-9003"},
+    {"name": "Scholarship Foundation", "email": "grants@foundation.org", "phone": "514-555-9004"}
+  ],
+  
+  "vendors": [
+    {"name": "Textbook Publisher", "email": "orders@publisher.com", "category": "materials"},
+    {"name": "LMS Platform", "email": "billing@lmsplatform.com", "category": "technology"},
+    {"name": "Facility Management", "email": "service@facility.com", "category": "facility"},
+    {"name": "Marketing Agency", "email": "accounts@marketing.com", "category": "marketing"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "student_retention",
+      "name": "Student Retention %",
+      "name_fr": "Rétention étudiants %",
+      "formula": "(continuing_students / total_students) * 100",
+      "benchmark_min": 85,
+      "benchmark_max": 95,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "revenue_per_student",
+      "name": "Revenue per Student",
+      "name_fr": "Revenu par étudiant",
+      "formula": "total_revenue / student_count",
+      "benchmark_min": 3000,
+      "benchmark_max": 15000,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "class_utilization",
+      "name": "Class Utilization %",
+      "name_fr": "Utilisation des classes %",
+      "formula": "(students_enrolled / class_capacity) * 100",
+      "benchmark_min": 80,
+      "benchmark_max": 95,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "instructor_cost_ratio",
+      "name": "Instructor Cost Ratio",
+      "name_fr": "Ratio coût instructeurs",
+      "formula": "(instructor_salaries / total_revenue) * 100",
+      "benchmark_min": 30,
+      "benchmark_max": 50,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "net_margin",
+      "name": "Net Margin %",
+      "name_fr": "Marge nette %",
+      "formula": "(net_income / total_revenue) * 100",
+      "benchmark_min": 8,
+      "benchmark_max": 15,
+      "format": "percent",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [150000, 400000],
+    "expense_ratio": 0.58,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 1650000,
+    "total_expenses": 957000,
+    "net_income": 693000
+  }
+}

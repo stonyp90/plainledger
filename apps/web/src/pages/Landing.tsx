@@ -2573,21 +2573,21 @@ export default function Landing() {
               }}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              {isEn ? 'Getting Smarter Every Day' : 'Plus intelligent chaque jour'}
+              {isEn ? 'CPA-Designed • Recalibrated Weekly' : 'Conçu par des CPA • Recalibré chaque semaine'}
             </div>
             <h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
-              {isEn ? 'The More You Use It, The Smarter It Gets' : 'Plus vous l\'utilisez, plus il devient intelligent'}
+              {isEn ? 'Intelligence That Compounds With Your Industry' : 'Une intelligence qui s\'affine avec votre industrie'}
             </h2>
             <p 
               className="text-sm sm:text-base max-w-2xl mx-auto"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'Our AI learns from every decision across 75,000+ businesses. The result? Recommendations that compound in accuracy over time.'
-                : 'Notre IA apprend de chaque décision parmi 75 000+ entreprises. Le résultat? Des recommandations dont la précision s\'améliore avec le temps.'}
+                ? 'Recommendations designed by CPAs and refined by 847,000+ Canadian business decisions. Our AI recalibrates weekly for your industry and company size.'
+                : 'Des recommandations conçues par des CPA et affinées par 847 000+ décisions d\'entreprises canadiennes. Notre IA se recalibre chaque semaine pour votre industrie et votre taille d\'entreprise.'}
             </p>
           </motion.div>
 
@@ -2945,7 +2945,7 @@ export default function Landing() {
             </div>
             
             {/* Steps Grid - Enhanced & Animated */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 items-stretch">
               {[
                 { 
                   num: 1, 
@@ -2990,7 +2990,7 @@ export default function Landing() {
               ].map((step, idx) => (
                 <motion.div 
                   key={step.num}
-                  className="group relative"
+                  className="group relative h-full"
                   initial={{ opacity: 0, y: 60, scale: 0.85 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true, margin: "-50px" }}
@@ -3109,13 +3109,12 @@ export default function Landing() {
                       {step.title}
                     </h4>
                     
-                    {/* Description - Fixed height for alignment */}
+                    {/* Description - Min height for alignment, allows full text */}
                     <p 
                       className="text-xs sm:text-sm mb-3 leading-relaxed"
                       style={{ 
                         color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
-                        height: '3rem',
-                        overflow: 'hidden'
+                        minHeight: '3.5rem'
                       }}
                     >
                       {step.desc}

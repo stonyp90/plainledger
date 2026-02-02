@@ -19,6 +19,7 @@ import {
   ForbiddenException,
   Inject,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { AuthenticatedUser, Roles } from "nest-keycloak-connect";
 import {
   IsEmail,
@@ -28,8 +29,10 @@ import {
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
+import * as crypto from "crypto";
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
 import { KeycloakUser } from "@infrastructure/auth/keycloak-admin.service";
+import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
 
 // =====================================================
 // DTOs
@@ -113,11 +116,49 @@ export class TeamController {
   constructor(
     @Inject("IKeycloakAdminService")
     private readonly keycloakAdminService: IKeycloakAdminService,
+    private readonly sesEmailService: SESEmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
+   * Generate a signed verification token for email verification
+   */
+  private generateVerificationToken(userId: string, email: string): string {
+    const secret = this.configService.get<string>(
+      "VERIFICATION_SECRET",
+      "plainledger-verification-secret",
+    );
+    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    const payload = `verify:${userId}:${email}:${expiry}`;
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url")
+      .substring(0, 16);
+    return Buffer.from(`${payload}:${signature}`).toString("base64url");
+  }
+
+  /**
+   * Generate a signed password reset token
+   */
+  private generatePasswordResetToken(userId: string, email: string): string {
+    const secret = this.configService.get<string>(
+      "RESET_PASSWORD_SECRET",
+      "plainledger-reset-secret",
+    );
+    const expiry = Date.now() + 60 * 60 * 1000; // 1 hour
+    const payload = `reset:${userId}:${email}:${expiry}`;
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url")
+      .substring(0, 16);
+    return Buffer.from(`${payload}:${signature}`).toString("base64url");
+  }
+
+  /**
    * Invite a team member to the organization
-   * Creates user in Keycloak if they don't exist, sends invitation email
+   * Creates user in Keycloak if they don't exist, sends branded invitation email via SES
    */
   @Post("invite")
   @HttpCode(HttpStatus.OK)
@@ -134,6 +175,12 @@ export class TeamController {
       );
     }
 
+    if (!this.sesEmailService.isAvailable()) {
+      throw new BadRequestException(
+        "Email service is not configured. Contact administrator.",
+      );
+    }
+
     try {
       // Get organization info from current user's attributes
       const currentUser = await this.keycloakAdminService.findUserById(
@@ -145,6 +192,7 @@ export class TeamController {
         currentUser?.attributes?.organizationName?.[0] || "PlainLedger";
       const industry = currentUser?.attributes?.industry?.[0];
 
+      // Create/update user in Keycloak (no emails sent by Keycloak)
       const invitedUser = await this.keycloakAdminService.inviteTeamMember({
         email: dto.email,
         firstName: dto.firstName,
@@ -156,6 +204,51 @@ export class TeamController {
         invitedBy: user.email || user.sub,
       });
 
+      // Send branded invitation emails via SES
+      const frontendUrl = this.configService.get<string>(
+        "FRONTEND_URL",
+        "https://plainledger.ca",
+      );
+
+      let verificationEmailSent = false;
+      let passwordResetEmailSent = false;
+
+      // For new users, send verification email
+      if (!invitedUser.isExisting && !invitedUser.emailVerified) {
+        const verificationToken = this.generateVerificationToken(
+          invitedUser.id,
+          dto.email,
+        );
+        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+        verificationEmailSent =
+          await this.sesEmailService.sendVerificationEmail(
+            dto.email,
+            dto.firstName || "there",
+            verifyUrl,
+            invitedUser.id,
+          );
+      }
+
+      // Send password reset email so they can set their password
+      const resetToken = this.generatePasswordResetToken(
+        invitedUser.id,
+        dto.email,
+      );
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+      passwordResetEmailSent =
+        await this.sesEmailService.sendPasswordResetEmail(
+          dto.email,
+          dto.firstName || "there",
+          resetUrl,
+          invitedUser.id,
+        );
+
+      this.logger.log(
+        `Invitation emails sent to ${dto.email}: verification=${verificationEmailSent}, passwordReset=${passwordResetEmailSent}`,
+      );
+
       return {
         success: true,
         message: `Invitation sent to ${dto.email}`,
@@ -165,6 +258,11 @@ export class TeamController {
           firstName: invitedUser.firstName,
           lastName: invitedUser.lastName,
           emailVerified: invitedUser.emailVerified,
+          isExisting: invitedUser.isExisting,
+        },
+        emailsSent: {
+          verification: verificationEmailSent,
+          passwordReset: passwordResetEmailSent,
         },
       };
     } catch (error) {
@@ -180,6 +278,7 @@ export class TeamController {
 
   /**
    * Bulk invite multiple team members
+   * Sends branded invitation emails via SES
    */
   @Post("invite/bulk")
   @HttpCode(HttpStatus.OK)
@@ -198,11 +297,18 @@ export class TeamController {
       );
     }
 
+    if (!this.sesEmailService.isAvailable()) {
+      throw new BadRequestException(
+        "Email service is not configured. Contact administrator.",
+      );
+    }
+
     const results: Array<{
       email: string;
       success: boolean;
       message: string;
       userId?: string;
+      emailsSent?: { verification: boolean; passwordReset: boolean };
     }> = [];
 
     // Get organization info once
@@ -213,8 +319,14 @@ export class TeamController {
       currentUser?.attributes?.organizationName?.[0] || "PlainLedger";
     const industry = currentUser?.attributes?.industry?.[0];
 
+    const frontendUrl = this.configService.get<string>(
+      "FRONTEND_URL",
+      "https://plainledger.ca",
+    );
+
     for (const invite of dto.invites) {
       try {
+        // Create/update user in Keycloak (no emails sent by Keycloak)
         const invitedUser = await this.keycloakAdminService.inviteTeamMember({
           email: invite.email,
           firstName: invite.firstName,
@@ -226,11 +338,51 @@ export class TeamController {
           invitedBy: user.email || user.sub,
         });
 
+        // Send branded emails via SES
+        let verificationEmailSent = false;
+        let passwordResetEmailSent = false;
+
+        // For new users, send verification email
+        if (!invitedUser.isExisting && !invitedUser.emailVerified) {
+          const verificationToken = this.generateVerificationToken(
+            invitedUser.id,
+            invite.email,
+          );
+          const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+          verificationEmailSent =
+            await this.sesEmailService.sendVerificationEmail(
+              invite.email,
+              invite.firstName || "there",
+              verifyUrl,
+              invitedUser.id,
+            );
+        }
+
+        // Send password reset email
+        const resetToken = this.generatePasswordResetToken(
+          invitedUser.id,
+          invite.email,
+        );
+        const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+        passwordResetEmailSent =
+          await this.sesEmailService.sendPasswordResetEmail(
+            invite.email,
+            invite.firstName || "there",
+            resetUrl,
+            invitedUser.id,
+          );
+
         results.push({
           email: invite.email,
           success: true,
           message: "Invitation sent",
           userId: invitedUser.id,
+          emailsSent: {
+            verification: verificationEmailSent,
+            passwordReset: passwordResetEmailSent,
+          },
         });
       } catch (error) {
         results.push({
@@ -373,6 +525,7 @@ export class TeamController {
   /**
    * Admin endpoint: Create a user directly via API
    * Useful for admin tools, bulk imports, or testing
+   * Sends branded verification email via SES (not Keycloak)
    */
   @Post("users/create")
   @HttpCode(HttpStatus.CREATED)
@@ -380,7 +533,7 @@ export class TeamController {
   async createUser(
     @Body() dto: CreateUserDto,
     @AuthenticatedUser() user: AuthUser,
-  ): Promise<{ success: boolean; user: KeycloakUser }> {
+  ): Promise<{ success: boolean; user: KeycloakUser; emailSent: boolean }> {
     this.logger.log(`Admin ${user.email} creating user ${dto.email}`);
 
     if (!this.keycloakAdminService.isAvailable()) {
@@ -390,14 +543,15 @@ export class TeamController {
     }
 
     try {
+      // Create user WITHOUT sending Keycloak emails - we use SES for branding
       const createdUser = await this.keycloakAdminService.createUser({
         email: dto.email,
         firstName: dto.firstName,
         lastName: dto.lastName,
         password: dto.password,
-        temporaryPassword: !!dto.password, // If password provided, make it temporary
+        temporaryPassword: !!dto.password,
         emailVerified: false,
-        sendVerificationEmail: true,
+        sendVerificationEmail: false, // We send via SES for consistent branding
         attributes: {
           ...(dto.organizationId ? { organization: [dto.organizationId] } : {}),
           ...(dto.organizationName
@@ -408,9 +562,37 @@ export class TeamController {
         roles: dto.role ? [dto.role] : ["viewer"],
       });
 
+      // Send branded verification email via SES
+      let emailSent = false;
+      if (this.sesEmailService.isAvailable()) {
+        const verificationToken = this.generateVerificationToken(
+          createdUser.id,
+          dto.email,
+        );
+        const frontendUrl = this.configService.get<string>(
+          "FRONTEND_URL",
+          "https://plainledger.ca",
+        );
+        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+        emailSent = await this.sesEmailService.sendVerificationEmail(
+          dto.email,
+          dto.firstName || "there",
+          verifyUrl,
+          createdUser.id,
+        );
+
+        if (emailSent) {
+          this.logger.log(`Verification email sent to ${dto.email} via SES`);
+        } else {
+          this.logger.warn(`Failed to send verification email to ${dto.email}`);
+        }
+      }
+
       return {
         success: true,
         user: createdUser,
+        emailSent,
       };
     } catch (error) {
       this.logger.error(`Failed to create user: ${error.message}`, error.stack);
@@ -458,6 +640,7 @@ export class TeamController {
 
   /**
    * Resend invitation/verification email
+   * Sends branded emails via SES (not Keycloak)
    */
   @Post("members/:userId/resend-invite")
   @HttpCode(HttpStatus.OK)
@@ -474,6 +657,12 @@ export class TeamController {
       );
     }
 
+    if (!this.sesEmailService.isAvailable()) {
+      throw new BadRequestException(
+        "Email service is not configured. Contact administrator.",
+      );
+    }
+
     try {
       const targetUser = await this.keycloakAdminService.findUserById(userId);
 
@@ -481,15 +670,50 @@ export class TeamController {
         throw new NotFoundException("User not found");
       }
 
-      // Send both verification and password reset if needed
+      const frontendUrl = this.configService.get<string>(
+        "FRONTEND_URL",
+        "https://plainledger.ca",
+      );
+
+      // Send verification email if not verified
       if (!targetUser.emailVerified) {
-        await this.keycloakAdminService.sendVerificationEmail(userId);
+        const verificationToken = this.generateVerificationToken(
+          userId,
+          targetUser.email,
+        );
+        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+        await this.sesEmailService.sendVerificationEmail(
+          targetUser.email,
+          targetUser.firstName || "there",
+          verifyUrl,
+          userId,
+        );
+        this.logger.log(`Verification email resent to ${targetUser.email}`);
       }
-      await this.keycloakAdminService.sendPasswordResetEmail(userId);
+
+      // Send password reset email
+      const resetToken = this.generatePasswordResetToken(
+        userId,
+        targetUser.email,
+      );
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+      await this.sesEmailService.sendPasswordResetEmail(
+        targetUser.email,
+        targetUser.firstName || "there",
+        resetUrl,
+        userId,
+      );
+      this.logger.log(`Password reset email sent to ${targetUser.email}`);
 
       return {
         success: true,
         message: `Invitation resent to ${targetUser.email}`,
+        emailsResent: {
+          verification: !targetUser.emailVerified,
+          passwordReset: true,
+        },
       };
     } catch (error) {
       if (error instanceof NotFoundException) {

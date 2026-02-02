@@ -3,12 +3,16 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import {
   KeycloakConnectModule,
   ResourceGuard,
   RoleGuard,
   AuthGuard,
 } from "nest-keycloak-connect";
+
+// Configuration
+import { AppConfig } from "@infrastructure/config/app.config";
 
 // Domain
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
@@ -41,6 +45,10 @@ import { SettingsController } from "@infrastructure/http/controllers/settings.co
 import { DocumentShareController } from "@infrastructure/http/controllers/document-share.controller";
 import { EmailWebhookController } from "@infrastructure/http/controllers/email-webhook.controller";
 import { UnsubscribeController } from "@infrastructure/http/controllers/unsubscribe.controller";
+import { CacheController } from "@infrastructure/http/controllers/cache.controller";
+import { SimilarityController } from "@infrastructure/http/controllers/similarity.controller";
+import { ETLProgressController } from "@infrastructure/http/controllers/etl-progress.controller";
+import { QuickBooksSyncController } from "@infrastructure/http/controllers/quickbooks-sync.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
@@ -55,7 +63,17 @@ import { PowerBIDatalakeService } from "@infrastructure/services/powerbi-datalak
 import { DatalakeDataService } from "@infrastructure/services/datalake-data.service";
 import { SettingsService } from "@infrastructure/services/settings.service";
 import { CacheService } from "@infrastructure/cache/cache.service";
+import { EmbeddingService } from "@infrastructure/ai/embedding.service";
+import { SimilaritySearchService } from "@application/services/similarity-search.service";
+import { ProviderFactory } from "@application/services/provider-factory.service";
+import { QuickBooksProvider } from "@infrastructure/integrations/quickbooks/quickbooks.provider";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
+import { PubSub } from "graphql-subscriptions";
+import { ETLSubscriptionResolver } from "@infrastructure/graphql/resolvers/etl.subscription";
+import { AccountBalanceSubscriptionResolver } from "@infrastructure/graphql/resolvers/account-balance.subscription";
+import { TransactionSubscriptionResolver } from "@infrastructure/graphql/resolvers/transaction.subscription";
+import { ETLPublisherService } from "@infrastructure/services/etl-publisher.service";
+import { AccountBalancePublisherService } from "@infrastructure/services/account-balance-publisher.service";
 
 // Infrastructure - GraphQL
 import { GraphQLModule } from "@infrastructure/graphql/graphql.module";
@@ -86,10 +104,6 @@ import { PostgresUserSettingsRepository } from "@infrastructure/persistence/post
 import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
 
 // Notifications
-import {
-  NovuModule,
-  NovuService,
-} from "./infrastructure/notifications/novu.service";
 import { SESEmailService } from "./infrastructure/notifications/ses-email.service";
 
 // Email Templates
@@ -126,11 +140,11 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: "postgres",
-        host: configService.get<string>("DB_HOST") || "localhost",
-        port: parseInt(configService.get<string>("DB_PORT") || "5432", 10),
-        username: configService.get<string>("DB_USERNAME") || "postgres",
-        password: configService.get<string>("DB_PASSWORD") || "postgres",
-        database: configService.get<string>("DB_NAME") || "plainledger",
+        host: configService.get<string>("DATABASE_HOST") || "localhost",
+        port: parseInt(configService.get<string>("DATABASE_PORT") || "5432", 10),
+        username: configService.get<string>("DATABASE_USER") || "plainledger",
+        password: configService.get<string>("DATABASE_PASSWORD") || "plainledger",
+        database: configService.get<string>("DATABASE_NAME") || "plainledger",
         entities: [
           OrganizationEntity,
           AccountEntity,
@@ -217,8 +231,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       inject: [ConfigService],
     }),
 
-    // Notifications
-    NovuModule,
+    // Notifications (SES handled via SESEmailModule in SESEmailService)
 
     // MongoDB (Analytics & Audit - optional, graceful degradation)
     MongoDBModule,
@@ -231,6 +244,20 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
 
     // Scheduled Jobs
     ScheduleModule.forRoot(),
+
+    // Rate Limiting
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: 60, // Time window in seconds
+            limit: configService.get<number>("RATE_LIMIT_REQUESTS", 100), // Max requests per window
+          },
+        ],
+      }),
+      inject: [ConfigService],
+    }),
   ],
   controllers: [
     HealthController,
@@ -252,20 +279,36 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     DocumentShareController,
     EmailWebhookController,
     UnsubscribeController,
+    CacheController,
+    SimilarityController,
+    ETLProgressController,
+    QuickBooksSyncController,
+    ETLTriggerController,
   ],
   providers: [
-    // Guards
+    // Guards - conditionally register Keycloak guards based on SKIP_AUTH
+    // In development with SKIP_AUTH=true, we skip these guards to allow unauthenticated access
+    ...(process.env.SKIP_AUTH === "true" &&
+    process.env.NODE_ENV !== "production"
+      ? []
+      : [
+          {
+            provide: APP_GUARD,
+            useClass: AuthGuard,
+          },
+          {
+            provide: APP_GUARD,
+            useClass: ResourceGuard,
+          },
+          {
+            provide: APP_GUARD,
+            useClass: RoleGuard,
+          },
+        ]),
+    // Rate Limiting Guard (applies to all routes)
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: ResourceGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RoleGuard,
+      useClass: ThrottlerGuard,
     },
     CPAAdminGuard,
 
@@ -285,8 +328,13 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     PowerBIDatalakeService,
     DatalakeDataService,
     KeycloakAdminService,
-    NovuService,
     CacheService,
+    EmbeddingService,
+    SimilaritySearchService,
+    ProviderFactory,
+    QuickBooksProvider,
+    ETLPublisherService,
+    AccountBalancePublisherService,
     SettingsService,
     SESEmailService,
     EmailTemplatesService,
@@ -315,16 +363,22 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       provide: "IKeycloakAdminService",
       useClass: KeycloakAdminService,
     },
-    {
-      provide: "INotificationService",
-      useClass: NovuService,
-    },
+    // INotificationService removed - use SESEmailService directly
 
     // GraphQL Resolvers
     FinancialResolver,
     OrganizationResolver,
     DataSourceResolver,
+    ETLSubscriptionResolver,
+    AccountBalanceSubscriptionResolver,
+    TransactionSubscriptionResolver,
     GqlAuthGuard,
+
+    // GraphQL PubSub for subscriptions
+    {
+      provide: "PUB_SUB",
+      useValue: new PubSub(),
+    },
 
     // Repositories (Adapters)
     {
@@ -360,6 +414,14 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
 
     // CRM (HubSpot)
     HubSpotService,
+
+    // Centralized Application Configuration
+    {
+      provide: AppConfig,
+      useFactory: (configService: ConfigService) => new AppConfig(configService),
+      inject: [ConfigService],
+    },
   ],
+  exports: [AppConfig],
 })
 export class AppModule {}

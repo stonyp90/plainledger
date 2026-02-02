@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Industry Fixture Schema",
+  "description": "Schema for industry configuration files used in testing",
+  "type": "object",
+  "required": ["id", "name", "name_fr", "accounts", "kpis"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique industry identifier (snake_case)",
+      "pattern": "^[a-z_]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "English display name"
+    },
+    "name_fr": {
+      "type": "string",
+      "description": "French display name"
+    },
+    "accounts": {
+      "type": "array",
+      "description": "Industry-specific chart of accounts",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "subtype", "category"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Account name (must match keywords in industry-account-mapping.ts)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["Income", "Expense", "Cost of Goods Sold", "Asset", "Liability", "Equity", "Bank", "Fixed Asset", "Other Income", "Other Expense"]
+          },
+          "subtype": {
+            "type": "string",
+            "description": "QuickBooks AccountSubType"
+          },
+          "category": {
+            "type": "string",
+            "description": "Internal category for KPI calculations"
+          }
+        }
+      }
+    },
+    "customers": {
+      "type": "array",
+      "description": "Sample customers for testing",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" }
+        }
+      }
+    },
+    "vendors": {
+      "type": "array",
+      "description": "Sample vendors for testing",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "category": { "type": "string" }
+        }
+      }
+    },
+    "kpis": {
+      "type": "array",
+      "description": "Industry-specific KPIs with benchmark ranges",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "name_fr", "formula", "benchmark_min", "benchmark_max", "format"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "name_fr": { "type": "string" },
+          "formula": { "type": "string", "description": "Calculation formula using category names" },
+          "benchmark_min": { "type": "number" },
+          "benchmark_max": { "type": "number" },
+          "format": { "type": "string", "enum": ["percent", "currency", "number", "days", "ratio"] },
+          "inverse": { "type": "boolean", "description": "True if lower is better" }
+        }
+      }
+    },
+    "transactions": {
+      "type": "object",
+      "description": "Transaction generation parameters",
+      "properties": {
+        "revenue_range": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[min, max] monthly revenue"
+        },
+        "expense_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Typical expense to revenue ratio"
+        },
+        "months_of_data": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Months of historical data to generate"
+        }
+      }
+    },
+    "expected_gold": {
+      "type": "object",
+      "description": "Expected Gold layer totals for validation",
+      "properties": {
+        "total_revenue": { "type": "number" },
+        "total_expenses": { "type": "number" },
+        "net_income": { "type": "number" }
+      }
+    }
+  }
+}

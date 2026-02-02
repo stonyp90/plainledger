@@ -817,15 +817,19 @@ export function DataVisualizationCard({
 function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   
-  const values = data.length > 0 ? data.map(d => d.value ?? 0) : [0];
+  // Defensive: ensure data is valid array
+  const safeData = Array.isArray(data) && data.length > 0 ? data : [{ value: 0, label: '-' }];
+  const values = safeData.map(d => d?.value ?? 0);
   const maxValue = Math.max(...values);
   const minValue = Math.min(...values);
   const range = maxValue - minValue || 1;
   
-  const metricInfo = METRIC_INFO[config.metrics[0]];
+  // Defensive: ensure metrics array exists and has at least one item
+  const firstMetric = config?.metrics?.[0] || 'revenue';
+  const metricInfo = METRIC_INFO[firstMetric] || METRIC_INFO.revenue;
   
   const formatValue = (value: number) => {
-    if (metricInfo.unit === 'currency') {
+    if (metricInfo?.unit === 'currency') {
       return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
         style: 'currency',
         currency: 'CAD',
@@ -839,14 +843,15 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
   };
   
   // Calculate trend
-  const firstValue = data[0]?.value || 0;
-  const lastValue = data[data.length - 1]?.value || 0;
+  const firstValue = safeData[0]?.value || 0;
+  const lastValue = safeData[safeData.length - 1]?.value || 0;
   const trend = lastValue - firstValue;
   const trendPercent = firstValue !== 0 ? ((trend / firstValue) * 100) : 0;
   
   const getPointPosition = (index: number) => {
-    const x = (index / (data.length - 1)) * 400;
-    const y = 200 - ((data[index].value - minValue) / range) * 180;
+    if (safeData.length <= 1) return { x: 200, y: 100 };
+    const x = (index / (safeData.length - 1)) * 400;
+    const y = 200 - ((safeData[index]?.value ?? 0 - minValue) / range) * 180;
     return { x, y };
   };
   
@@ -859,7 +864,7 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
             className="text-2xl font-bold"
             style={{ color: 'rgb(var(--color-text))' }}
           >
-            {formatValue(hoveredIndex !== null ? data[hoveredIndex].value : lastValue)}
+            {formatValue(hoveredIndex !== null ? safeData[hoveredIndex]?.value ?? 0 : lastValue)}
           </p>
           <div className="flex items-center gap-1 mt-1">
             {trend >= 0 ? (
@@ -874,7 +879,7 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
               {trend >= 0 ? '+' : ''}{trendPercent.toFixed(1)}%
             </span>
             <span className="text-xs text-muted ml-1">
-              {hoveredIndex !== null ? data[hoveredIndex].label : (isEn ? 'vs prior period' : 'vs période précédente')}
+              {hoveredIndex !== null ? safeData[hoveredIndex]?.label : (isEn ? 'vs prior period' : 'vs période précédente')}
             </span>
           </div>
         </div>
@@ -911,37 +916,37 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
             />
           )}
           
-          {config.chartType === 'area' && (
+          {config.chartType === 'area' && safeData.length > 1 && (
             <path
-              d={`M ${data.map((d, i) => 
-                `${(i / (data.length - 1)) * 400} ${200 - ((d.value - minValue) / range) * 180}`
+              d={`M ${safeData.map((d, i) => 
+                `${(i / (safeData.length - 1)) * 400} ${200 - (((d?.value ?? 0) - minValue) / range) * 180}`
               ).join(' L ')} L 400 200 L 0 200 Z`}
-              fill={metricInfo.color}
+              fill={metricInfo?.color || '#10B981'}
               fillOpacity="0.2"
               className="transition-all duration-200"
             />
           )}
           
-          {config.chartType === 'line' || config.chartType === 'area' ? (
+          {(config.chartType === 'line' || config.chartType === 'area') && safeData.length > 1 ? (
             <path
-              d={`M ${data.map((d, i) => 
-                `${(i / (data.length - 1)) * 400} ${200 - ((d.value - minValue) / range) * 180}`
+              d={`M ${safeData.map((d, i) => 
+                `${(i / (safeData.length - 1)) * 400} ${200 - (((d?.value ?? 0) - minValue) / range) * 180}`
               ).join(' L ')}`}
               fill="none"
-              stroke={metricInfo.color}
+              stroke={metricInfo?.color || '#10B981'}
               strokeWidth="2"
               strokeLinecap="round"
               className="transition-all duration-200"
             />
           ) : (
-            data.map((d, i) => (
+            safeData.map((d, i) => (
               <rect
                 key={i}
-                x={(i / data.length) * 400 + 5}
-                y={200 - ((d.value - minValue) / range) * 180}
-                width={(400 / data.length) - 10}
-                height={((d.value - minValue) / range) * 180}
-                fill={metricInfo.color}
+                x={(i / safeData.length) * 400 + 5}
+                y={200 - (((d?.value ?? 0) - minValue) / range) * 180}
+                width={(400 / safeData.length) - 10}
+                height={(((d?.value ?? 0) - minValue) / range) * 180}
+                fill={metricInfo?.color || '#10B981'}
                 rx="2"
                 opacity={hoveredIndex === null || hoveredIndex === i ? 1 : 0.5}
                 className="transition-all duration-200 cursor-pointer hover:opacity-80"
@@ -952,12 +957,12 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
           )}
           
           {/* Data points with hover */}
-          {(config.chartType === 'line' || config.chartType === 'area') && data.map((d, i) => (
+          {(config.chartType === 'line' || config.chartType === 'area') && safeData.length > 1 && safeData.map((d, i) => (
             <g key={i}>
               {/* Larger invisible hit area */}
               <circle
-                cx={(i / (data.length - 1)) * 400}
-                cy={200 - ((d.value - minValue) / range) * 180}
+                cx={(i / (safeData.length - 1)) * 400}
+                cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
                 r="16"
                 fill="transparent"
                 className="cursor-pointer"
@@ -966,21 +971,21 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
               />
               {/* Visible point */}
               <circle
-                cx={(i / (data.length - 1)) * 400}
-                cy={200 - ((d.value - minValue) / range) * 180}
+                cx={(i / (safeData.length - 1)) * 400}
+                cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
                 r={hoveredIndex === i ? 6 : 4}
-                fill={hoveredIndex === i ? metricInfo.color : 'white'}
-                stroke={metricInfo.color}
+                fill={hoveredIndex === i ? (metricInfo?.color || '#10B981') : 'white'}
+                stroke={metricInfo?.color || '#10B981'}
                 strokeWidth="2"
                 className="transition-all duration-200 pointer-events-none"
               />
               {/* Pulse animation on hover */}
               {hoveredIndex === i && (
                 <circle
-                  cx={(i / (data.length - 1)) * 400}
-                  cy={200 - ((d.value - minValue) / range) * 180}
+                  cx={(i / (safeData.length - 1)) * 400}
+                  cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
                   r="12"
-                  fill={metricInfo.color}
+                  fill={metricInfo?.color || '#10B981'}
                   opacity="0.2"
                   className="animate-pulse"
                 />
@@ -990,19 +995,19 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
         </svg>
         
         {/* Floating Tooltip */}
-        {hoveredIndex !== null && (
+        {hoveredIndex !== null && safeData[hoveredIndex] && (
           <div 
             className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg shadow-lg text-sm transform -translate-x-1/2"
             style={{
-              left: `${(hoveredIndex / (data.length - 1)) * 100}%`,
+              left: `${safeData.length > 1 ? (hoveredIndex / (safeData.length - 1)) * 100 : 50}%`,
               top: '10px',
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
               color: 'rgb(var(--color-text))',
             }}
           >
-            <p className="font-semibold">{formatValue(data[hoveredIndex].value)}</p>
-            <p className="text-xs opacity-70">{data[hoveredIndex].label}</p>
+            <p className="font-semibold">{formatValue(safeData[hoveredIndex]?.value ?? 0)}</p>
+            <p className="text-xs opacity-70">{safeData[hoveredIndex]?.label || '-'}</p>
           </div>
         )}
         

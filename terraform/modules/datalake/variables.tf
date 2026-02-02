@@ -20,7 +20,19 @@ variable "aws_region" {
 }
 
 variable "alert_email" {
-  description = "Email address for ETL alerts (optional)"
+  description = "Primary email address for ETL alerts"
   type        = string
   default     = ""
+}
+
+variable "additional_alert_emails" {
+  description = "Additional email addresses for ETL alerts"
+  type        = list(string)
+  default     = []
+}
+
+variable "from_email" {
+  description = "From email address for ETL alerts (must be verified in SES)"
+  type        = string
+  default     = "noreply@plainledger.ca"
 }

@@ -14,8 +14,20 @@ coverage/
 *.lcov
 .nyc_output/
 playwright-report/
-playwright/.auth/
+e2e/.auth/
 test-results/
+openapi-spec.json
+test/contract/api-contract.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.eggs/
+venv/
+.venv/
 
 # Environment files
 .env
@@ -26,9 +38,11 @@ test-results/
 # IDE
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 *~
+# Note: .cursorrules should be committed (it's project configuration)
 
 # OS
 .DS_Store

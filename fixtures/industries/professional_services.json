@@ -1,0 +1,118 @@
+{
+  "id": "professional_services",
+  "name": "Professional Services",
+  "name_fr": "Services professionnels",
+  
+  "accounts": [
+    {"name": "Consulting Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "billable_revenue"},
+    {"name": "Advisory Fees", "type": "Income", "subtype": "ServiceFeeIncome", "category": "billable_revenue"},
+    {"name": "Retainer Income", "type": "Income", "subtype": "ServiceFeeIncome", "category": "retainer_revenue"},
+    {"name": "Reimbursable Expenses", "type": "Income", "subtype": "ServiceFeeIncome", "category": "reimbursables"},
+    {"name": "Professional Salaries", "type": "Expense", "subtype": "PayrollExpenses", "category": "professional_salaries"},
+    {"name": "Support Staff Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "support_salaries"},
+    {"name": "Professional Development", "type": "Expense", "subtype": "Entertainment", "category": "training"},
+    {"name": "Office Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Software Subscriptions", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "technology"},
+    {"name": "Professional Liability Insurance", "type": "Expense", "subtype": "Insurance", "category": "insurance"},
+    {"name": "Travel & Entertainment", "type": "Expense", "subtype": "TravelMeals", "category": "travel"},
+    {"name": "Accounts Receivable", "type": "Asset", "subtype": "AccountsReceivable", "category": "ar"},
+    {"name": "Work in Progress", "type": "Asset", "subtype": "OtherCurrentAssets", "category": "wip"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Enterprise Client A", "email": "finance@enterprisea.com", "phone": "514-555-3001"},
+    {"name": "Mid-Market Client B", "email": "cfo@clientb.com", "phone": "514-555-3002"},
+    {"name": "Startup Client C", "email": "founder@startup.com", "phone": "514-555-3003"},
+    {"name": "Government Agency", "email": "procurement@gov.ca", "phone": "514-555-3004"},
+    {"name": "Non-Profit Organization", "email": "director@nonprofit.org", "phone": "514-555-3005"}
+  ],
+  
+  "vendors": [
+    {"name": "Office Space Landlord", "email": "leasing@officespace.com", "category": "rent"},
+    {"name": "Cloud Software Provider", "email": "billing@cloudsoftware.com", "category": "technology"},
+    {"name": "Professional Association", "email": "membership@proassoc.com", "category": "dues"},
+    {"name": "Training Institute", "email": "courses@training.com", "category": "training"},
+    {"name": "Insurance Broker", "email": "renewals@insbroker.com", "category": "insurance"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "utilization_rate",
+      "name": "Utilization Rate",
+      "name_fr": "Taux d'utilisation",
+      "formula": "(billable_hours / available_hours) * 100",
+      "benchmark_min": 70,
+      "benchmark_max": 85,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "realization_rate",
+      "name": "Realization Rate",
+      "name_fr": "Taux de réalisation",
+      "formula": "(billed_revenue / billable_value) * 100",
+      "benchmark_min": 85,
+      "benchmark_max": 95,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "ar_days",
+      "name": "AR Days",
+      "name_fr": "Jours comptes clients",
+      "formula": "(ar / billable_revenue) * 365",
+      "benchmark_min": 30,
+      "benchmark_max": 60,
+      "format": "days",
+      "inverse": true
+    },
+    {
+      "id": "revenue_per_employee",
+      "name": "Revenue per Employee",
+      "name_fr": "Revenu par employé",
+      "formula": "total_revenue / employee_count",
+      "benchmark_min": 150000,
+      "benchmark_max": 300000,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "profit_margin",
+      "name": "Net Profit Margin",
+      "name_fr": "Marge bénéficiaire nette",
+      "formula": "(net_income / total_revenue) * 100",
+      "benchmark_min": 15,
+      "benchmark_max": 25,
+      "format": "percent",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [150000, 400000],
+    "expense_ratio": 0.50,
+    "months_of_data": 6,
+    "revenue_distribution": {
+      "billable_revenue": 0.85,
+      "retainer_revenue": 0.12,
+      "reimbursables": 0.03
+    },
+    "expense_distribution": {
+      "professional_salaries": 0.50,
+      "support_salaries": 0.15,
+      "occupancy": 0.12,
+      "technology": 0.08,
+      "training": 0.05,
+      "travel": 0.05,
+      "insurance": 0.03,
+      "other": 0.02
+    }
+  },
+  
+  "expected_gold": {
+    "total_revenue": 1650000,
+    "total_expenses": 825000,
+    "net_income": 825000
+  }
+}

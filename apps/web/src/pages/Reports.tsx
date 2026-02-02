@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FileText, 
@@ -14,21 +14,27 @@ import {
   Loader2,
   Search,
   CheckCircle,
+  LinkIcon,
+  AlertCircle,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useToast } from '../contexts/ToastContext';
+import { useHasRealData } from '../hooks/useHasRealData';
+import { useTenant } from '../contexts/TenantContext';
 
 // Report Preview Modal with actual data
 function ReportPreviewModal({ 
   report, 
   isEn, 
   onClose, 
-  onDownload 
+  onDownload,
+  isSampleData = false,
 }: { 
   report: any; 
   isEn: boolean; 
   onClose: () => void;
   onDownload: () => void;
+  isSampleData?: boolean;
 }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
@@ -375,11 +381,26 @@ function ReportPreviewModal({
               <FileText className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             <div>
-              <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? report.nameEn : report.nameFr}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? report.nameEn : report.nameFr}
+                </h3>
+                {isSampleData && (
+                  <span 
+                    className="px-2 py-0.5 text-xs font-medium rounded"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-warning) / 0.15)',
+                      color: 'rgb(var(--color-warning))'
+                    }}
+                  >
+                    {isEn ? 'Sample' : 'Exemple'}
+                  </span>
+                )}
+              </div>
               <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Report Preview' : 'Aperçu du rapport'}
+                {isSampleData 
+                  ? (isEn ? 'Preview with sample data' : 'Aperçu avec données exemple')
+                  : (isEn ? 'Report Preview' : 'Aperçu du rapport')}
               </p>
             </div>
           </div>
@@ -616,9 +637,25 @@ export default function Reports() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const toast = useToast();
+  const { currentTenant } = useTenant();
   const [previewReport, setPreviewReport] = useState<any | null>(null);
   const [showAllReports, setShowAllReports] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Check data availability and user subscription status
+  const { 
+    hasRealData, 
+    hasQuickBooksConnection, 
+    shouldShowSandboxData, 
+    isFreeUser 
+  } = useHasRealData();
+
+  // Determine if user can see sample reports
+  // - Free users without connection: show sample reports (sandbox mode)
+  // - Paid users without connection: show empty state (encourage connection)
+  // - Users with connection: would show their actual reports
+  const canShowSampleReports = shouldShowSandboxData || isFreeUser;
+  const hasNoDataAndIsPaidUser = !hasRealData && !hasQuickBooksConnection && !isFreeUser;
 
   const reportTypes = [
     {
@@ -659,8 +696,8 @@ export default function Reports() {
     },
   ];
 
-  // All available reports (expanded list for "View All")
-  const allReports = [
+  // Sample reports data (only shown for free users in sandbox mode)
+  const sampleReportsData = useMemo(() => [
     {
       id: '1',
       nameEn: 'Balance Sheet - Dec 31, 2025',
@@ -668,6 +705,7 @@ export default function Reports() {
       type: 'balance-sheet',
       generatedAt: '2025-01-15T10:30:00',
       format: 'PDF',
+      isSample: true,
     },
     {
       id: '2',
@@ -676,6 +714,7 @@ export default function Reports() {
       type: 'income-statement',
       generatedAt: '2025-01-10T14:20:00',
       format: 'Excel',
+      isSample: true,
     },
     {
       id: '3',
@@ -684,6 +723,7 @@ export default function Reports() {
       type: 'balance-sheet',
       generatedAt: '2024-12-05T09:15:00',
       format: 'PDF',
+      isSample: true,
     },
     {
       id: '4',
@@ -692,6 +732,7 @@ export default function Reports() {
       type: 'cash-flow',
       generatedAt: '2025-01-08T11:45:00',
       format: 'PDF',
+      isSample: true,
     },
     {
       id: '5',
@@ -700,6 +741,7 @@ export default function Reports() {
       type: 'trial-balance',
       generatedAt: '2025-01-05T16:20:00',
       format: 'Excel',
+      isSample: true,
     },
     {
       id: '6',
@@ -708,6 +750,7 @@ export default function Reports() {
       type: 'income-statement',
       generatedAt: '2024-10-12T09:30:00',
       format: 'PDF',
+      isSample: true,
     },
     {
       id: '7',
@@ -716,6 +759,7 @@ export default function Reports() {
       type: 'balance-sheet',
       generatedAt: '2024-10-08T14:15:00',
       format: 'PDF',
+      isSample: true,
     },
     {
       id: '8',
@@ -724,11 +768,36 @@ export default function Reports() {
       type: 'cash-flow',
       generatedAt: '2024-10-05T10:00:00',
       format: 'Excel',
+      isSample: true,
     },
-  ];
+  ], []);
+
+  // Determine which reports to show based on user status
+  // - Users with real data: would show their actual generated reports (TODO: integrate with reports API)
+  // - Free users without connection: show sample reports  
+  // - Paid users without connection: show empty list (they need to connect)
+  const allReports = useMemo(() => {
+    // If user has real data connection, we'd fetch from API (not implemented yet)
+    // For now, return empty array - they can generate reports from report pages
+    if (hasQuickBooksConnection || hasRealData) {
+      // TODO: Fetch actual generated reports from API
+      return [];
+    }
+    
+    // Only free users get sample reports
+    if (canShowSampleReports) {
+      return sampleReportsData;
+    }
+    
+    // Paid users without connection get empty list
+    return [];
+  }, [hasQuickBooksConnection, hasRealData, canShowSampleReports, sampleReportsData]);
 
   // Show only recent 3 in main view
   const recentReports = allReports.slice(0, 3);
+  
+  // Check if we're showing sample data
+  const isShowingSampleData = recentReports.length > 0 && recentReports[0]?.isSample;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', {
@@ -839,29 +908,48 @@ export default function Reports() {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 
-              className="font-semibold"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isEn ? 'Recent Reports' : 'Rapports récents'}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 
+                className="font-semibold"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
+                {isEn ? 'Recent Reports' : 'Rapports récents'}
+              </h3>
+              {isShowingSampleData && (
+                <span 
+                  className="px-2 py-0.5 text-xs font-medium rounded"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-warning) / 0.15)',
+                    color: 'rgb(var(--color-warning))'
+                  }}
+                >
+                  {isEn ? 'Sample Data' : 'Données exemple'}
+                </span>
+              )}
+            </div>
             <p 
               className="text-xs mt-0.5"
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
-              {isEn 
-                ? 'Quickly access your latest generated reports'
-                : 'Accédez rapidement à vos derniers rapports générés'}
+              {isShowingSampleData
+                ? (isEn 
+                    ? 'Preview with sample data - connect your accounting software for real reports'
+                    : 'Aperçu avec données exemple - connectez votre logiciel comptable pour des rapports réels')
+                : (isEn 
+                    ? 'Quickly access your latest generated reports'
+                    : 'Accédez rapidement à vos derniers rapports générés')}
             </p>
           </div>
-          <button 
-            onClick={() => setShowAllReports(true)}
-            className="text-sm font-medium flex items-center gap-1 hover:underline"
-            style={{ color: 'rgb(var(--color-primary-500))' }}
-          >
-            {isEn ? 'View all' : 'Voir tous'}
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          {recentReports.length > 0 && (
+            <button 
+              onClick={() => setShowAllReports(true)}
+              className="text-sm font-medium flex items-center gap-1 hover:underline"
+              style={{ color: 'rgb(var(--color-primary-500))' }}
+            >
+              {isEn ? 'View all' : 'Voir tous'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {recentReports.length > 0 ? (
@@ -936,6 +1024,47 @@ export default function Reports() {
               </div>
             ))}
           </div>
+        ) : hasNoDataAndIsPaidUser ? (
+          /* Empty state for paid users without connection */
+          <div 
+            className="text-center py-8 px-4 rounded-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              border: '1px solid rgb(var(--color-border))'
+            }}
+          >
+            <div 
+              className="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <LinkIcon className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            </div>
+            <h4 
+              className="font-semibold mb-2"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Connect Your Accounting Software' : 'Connectez votre logiciel comptable'}
+            </h4>
+            <p 
+              className="text-sm mb-4 max-w-md mx-auto"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn 
+                ? 'Connect QuickBooks, Xero, or Sage to generate real financial reports with your actual data.'
+                : 'Connectez QuickBooks, Xero ou Sage pour générer des rapports financiers réels avec vos données.'}
+            </p>
+            <Link 
+              to="/app/settings?tab=connections"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
+              style={{
+                backgroundColor: 'rgb(var(--color-primary-500))',
+                color: 'white',
+              }}
+            >
+              <LinkIcon className="w-4 h-4" />
+              {isEn ? 'Connect Now' : 'Connecter maintenant'}
+            </Link>
+          </div>
         ) : (
           <div className="text-center py-8">
             <FileText 
@@ -1006,6 +1135,7 @@ export default function Reports() {
           isEn={isEn}
           onClose={() => setPreviewReport(null)}
           onDownload={() => handleDownload(previewReport)}
+          isSampleData={previewReport.isSample === true}
         />
       )}
 

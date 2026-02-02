@@ -39,6 +39,20 @@ provider "aws" {
   }
 }
 
+# US East 1 provider for SES (SES is region-specific, plainledger.ca verified in us-east-1)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project     = var.project
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
 data "aws_caller_identity" "current" {}
 
 # ------------------------------------------------------------------------------
@@ -144,6 +158,11 @@ module "datalake" {
   project     = var.project
   environment = var.environment
   aws_region  = var.aws_region
+  
+  # ETL Pipeline Alert Configuration
+  alert_email             = var.alert_email
+  additional_alert_emails = ["bartosz@plainledger.ca"]
+  from_email              = "noreply@${var.domain_name}"
 }
 
 # ------------------------------------------------------------------------------
@@ -197,11 +216,41 @@ resource "aws_secretsmanager_secret_version" "quickbooks" {
 }
 
 # ------------------------------------------------------------------------------
-# Keycloak SMTP Secret
+# AWS SES Configuration (Email Sending)
+# Note: SES resources are in us-east-1, domain verification done via console
+# ------------------------------------------------------------------------------
+
+# SES Configuration Set for email tracking and deliverability
+resource "aws_ses_configuration_set" "tracking" {
+  provider = aws.us_east_1
+  name     = "${var.project}-tracking"
+}
+
+# SNS Topic for email events (bounces, complaints)
+resource "aws_sns_topic" "ses_events" {
+  provider = aws.us_east_1
+  name     = "${var.project}-ses-events"
+}
+
+# SES Event Destination for tracking
+resource "aws_ses_event_destination" "sns" {
+  provider               = aws.us_east_1
+  name                   = "sns-events"
+  configuration_set_name = aws_ses_configuration_set.tracking.name
+  enabled                = true
+  matching_types         = ["bounce", "complaint", "delivery", "reject"]
+
+  sns_destination {
+    topic_arn = aws_sns_topic.ses_events.arn
+  }
+}
+
+# ------------------------------------------------------------------------------
+# Keycloak SMTP Secret (uses SES SMTP credentials)
 # ------------------------------------------------------------------------------
 resource "aws_secretsmanager_secret" "keycloak_smtp" {
   name        = "${var.project}/${var.environment}/keycloak/smtp"
-  description = "SMTP credentials for Keycloak email sending"
+  description = "SMTP credentials for Keycloak email sending via AWS SES"
   kms_key_id  = module.database.kms_key_arn
 }
 
@@ -210,10 +259,10 @@ resource "aws_secretsmanager_secret_version" "keycloak_smtp" {
   secret_string = jsonencode({
     host     = "email-smtp.us-east-1.amazonaws.com"
     port     = "587"
-    user     = "REPLACE_WITH_SES_SMTP_USERNAME"
-    password = "REPLACE_WITH_SES_SMTP_PASSWORD"
-    from     = "noreply@plainledger.ca"
-    reply_to = "support@plainledger.ca"
+    user     = var.ses_smtp_user
+    password = var.ses_smtp_password
+    from     = "noreply@${var.domain_name}"
+    reply_to = "support@${var.domain_name}"
   })
 }
 

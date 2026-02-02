@@ -1,0 +1,24 @@
+{
+  "mutation": "mutation CreateOrganization($input: CreateOrganizationInput!) { createOrganization(input: $input) { id name slug industry plan status createdAt } }",
+  "variables": {
+    "input": {
+      "name": "Test Company Inc.",
+      "slug": "test-company",
+      "industry": "technology",
+      "plan": "professional"
+    }
+  },
+  "expected_response": {
+    "data": {
+      "createOrganization": {
+        "id": "new-org-123",
+        "name": "Test Company Inc.",
+        "slug": "test-company",
+        "industry": "technology",
+        "plan": "professional",
+        "status": "active",
+        "createdAt": "2025-12-01T12:00:00Z"
+      }
+    }
+  }
+}

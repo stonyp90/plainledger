@@ -31,6 +31,13 @@ awslocal s3api put-bucket-versioning \
     --bucket plainledger-gold \
     --versioning-configuration Status=Enabled || true
 
+# Create Quarantine bucket (for invalid/failed records)
+echo "Creating Quarantine bucket..."
+awslocal s3 mb s3://plainledger-quarantine || true
+awslocal s3api put-bucket-versioning \
+    --bucket plainledger-quarantine \
+    --versioning-configuration Status=Enabled || true
+
 # Create Athena results bucket (for future use)
 echo "Creating Athena results bucket..."
 awslocal s3 mb s3://plainledger-athena-results || true
@@ -70,6 +77,10 @@ echo "" | awslocal s3 cp - s3://plainledger-gold/dim_organization/ || true
 echo "" | awslocal s3 cp - s3://plainledger-gold/fact_transaction/ || true
 echo "" | awslocal s3 cp - s3://plainledger-gold/fact_account_balance/ || true
 
+echo "" | awslocal s3 cp - s3://plainledger-quarantine/accounts/ || true
+echo "" | awslocal s3 cp - s3://plainledger-quarantine/contacts/ || true
+echo "" | awslocal s3 cp - s3://plainledger-quarantine/transactions/ || true
+
 echo "=========================================="
 echo "Datalake initialization complete!"
 echo ""
@@ -77,6 +88,7 @@ echo "Buckets created:"
 echo "  - plainledger-bronze (raw data)"
 echo "  - plainledger-silver (cleansed data)"
 echo "  - plainledger-gold (analytics-ready)"
+echo "  - plainledger-quarantine (invalid records)"
 echo "  - plainledger-athena-results"
 echo "  - plainledger-uploads (logos, avatars)"
 echo "=========================================="

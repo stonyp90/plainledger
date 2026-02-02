@@ -109,17 +109,22 @@ export default function BalanceSheet() {
     return ((current - prior) / Math.abs(prior)) * 100;
   };
 
-  const sumSection = (items: Array<{ current: number; prior: number }>) => ({
-    current: items.reduce((sum, item) => sum + item.current, 0),
-    prior: items.reduce((sum, item) => sum + item.prior, 0),
-  });
+  const sumSection = (items: Array<{ current: number; prior: number }> | undefined | null) => {
+    if (!items || !Array.isArray(items)) {
+      return { current: 0, prior: 0 };
+    }
+    return {
+      current: items.reduce((sum, item) => sum + (item?.current || 0), 0),
+      prior: items.reduce((sum, item) => sum + (item?.prior || 0), 0),
+    };
+  };
 
   // Calculate totals from dynamic data
   const totals = useMemo(() => {
     if (!balanceSheetData) return null;
 
-    const currentAssetsTotal = sumSection(balanceSheetData.assets.currentAssets);
-    const fixedAssetsTotal = sumSection(balanceSheetData.assets.fixedAssets);
+    const currentAssetsTotal = sumSection(balanceSheetData.assets?.currentAssets ?? balanceSheetData.assets?.current ?? []);
+    const fixedAssetsTotal = sumSection(balanceSheetData.assets?.fixedAssets ?? balanceSheetData.assets?.fixed ?? []);
     const totalAssets = {
       current: currentAssetsTotal.current + fixedAssetsTotal.current,
       prior: currentAssetsTotal.prior + fixedAssetsTotal.prior,

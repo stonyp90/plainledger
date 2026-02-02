@@ -1,0 +1,16 @@
+{
+  "name": "empty_data",
+  "description": "Organization with no accounting data - tests empty state handling",
+  "data": {
+    "accounts": [],
+    "transactions": [],
+    "contacts": [],
+    "invoices": [],
+    "bills": []
+  },
+  "expected_behavior": {
+    "dashboard": "Shows empty state with CTA to connect",
+    "reports": "Shows empty state with explanation",
+    "kpis": "Shows N/A or placeholder values"
+  }
+}

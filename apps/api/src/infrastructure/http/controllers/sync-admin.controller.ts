@@ -118,7 +118,7 @@ const mockConnections: ConnectionSyncStatusDto[] = [
     accountsCount: 24,
     contactsCount: 15,
     transactionsCount: 156,
-    configuredBy: "admin@plainledger.ca",
+    configuredBy: process.env.ADMIN_EMAIL || "admin@plainledger.ca",
     configuredAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {

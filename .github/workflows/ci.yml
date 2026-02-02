@@ -27,6 +27,11 @@ on:
         required: false
         default: 'false'
         type: boolean
+      run_e2e_tests:
+        description: 'Run E2E Tests (Playwright + Testcontainers)'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   id-token: write
@@ -104,6 +109,9 @@ jobs:
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
       - run: npm run lint || true
         working-directory: apps/api
+      - name: Check class sizes
+        run: npm run check:class-sizes || echo "⚠️ Some classes exceed 1000 lines - will refactor incrementally"
+        continue-on-error: true
 
   lint-web:
     name: Lint Web
@@ -144,6 +152,11 @@ jobs:
       - name: Run all tests (REST + GraphQL)
         run: npm test || echo "No tests configured"
         working-directory: apps/api
+      - name: Check test coverage
+        run: |
+          npm run test:cov -- --coverageThreshold='{"global":{"branches":50,"functions":50,"lines":50,"statements":50}}' || echo "⚠️ Coverage below threshold - will improve incrementally"
+        working-directory: apps/api
+        continue-on-error: true
       - name: GraphQL Test Summary
         if: always()
         run: |
@@ -172,6 +185,11 @@ jobs:
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
       - run: npm run test:run || echo "No tests configured"
         working-directory: apps/web
+      - name: Check test coverage
+        run: |
+          npm run test:coverage -- --coverage.threshold.branches=50 --coverage.threshold.functions=50 --coverage.threshold.lines=50 --coverage.threshold.statements=50 || echo "⚠️ Coverage below threshold - will improve incrementally"
+        working-directory: apps/web
+        continue-on-error: true
 
   # ==========================================================================
   # Stage 3b: Datalake Integration Tests (Manual Trigger Only)

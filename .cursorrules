@@ -1,0 +1,348 @@
+# Cursor Rules for PlainLedger
+
+## 🚫 CRITICAL: NEVER Create Root-Level .md Files
+
+**ABSOLUTELY FORBIDDEN - Creating .md files in the project root:**
+- `*_SUMMARY.md` - NEVER
+- `*_RESULTS.md` - NEVER
+- `*_CHECKLIST.md` - NEVER
+- `*_EVALUATION.md` - NEVER
+- `*_GUIDE.md` - NEVER (unless in docs/)
+- `*_COMPLETE.md` - NEVER
+- Any new .md file in `/` root directory
+
+**Only these .md files are allowed in root:**
+- `README.md` - Project overview (existing)
+- `LOCAL_SETUP.md` - Setup instructions (existing)
+- `agent.md` - Agent guide (existing)
+
+**If you need to create documentation:**
+1. **Ask the user first** - "Should I document this?"
+2. **If yes, put in `docs/`** - All documentation goes in `docs/` directory
+3. **Or update existing** - Update `agent.md` or relevant `README.md`
+
+## 📁 Documentation Location Rules
+
+| Content Type | Location | Example |
+|--------------|----------|---------|
+| Project overview | `README.md` (root) | - |
+| Local setup | `LOCAL_SETUP.md` (root) | - |
+| Agent patterns | `*/agent.md` | `apps/api/agent.md` |
+| Feature docs | `docs/*.md` | `docs/GRAPH_CONFIGURATION.md` |
+| Module READMEs | `*/README.md` | `terraform/README.md` |
+| Test docs | `e2e/README.md` | - |
+
+**WRONG:** Creating `IMPLEMENTATION_SUMMARY.md` in root
+**RIGHT:** Update `docs/` or `agent.md` files
+
+## 🤖 Before Any Action
+
+**ALWAYS check:**
+1. Am I about to create a .md file? → **STOP, ask user first**
+2. Is it in the root directory? → **STOP, use docs/ instead**
+3. Can I update an existing file? → **YES, do that instead**
+
+## 📚 Reference Existing Documentation
+
+**Domain-Specific Documentation:**
+- **Infrastructure:** `terraform/agent.md` + `terraform/README.md`
+- **ETL/Pipelines:** `pipelines/README.md`
+- **Authentication:** `keycloak/realms/plainledger-realm.json`
+- **Local Setup:** `LOCAL_SETUP.md`
+- **Feature Docs:** `docs/*.md`
+- **Main Project:** `README.md`
+
+**Agent Files (for patterns):**
+- `agent.md` - Main agent guide
+- `apps/api/agent.md` - API patterns
+- `apps/web/agent.md` - Web patterns
+- `terraform/agent.md` - Infrastructure patterns
+- `e2e/agent.md` - Testing patterns
+
+## 🎯 Token Optimization Strategy
+
+**To minimize token consumption:**
+
+1. **Read only what's needed:**
+   - Working in `apps/api/` → Read `apps/api/agent.md` only
+   - Working in `terraform/` → Read `terraform/agent.md` + `terraform/README.md` only
+   - Working on ETL → Read `pipelines/README.md` only
+
+2. **Use semantic search efficiently:**
+   - Search for specific patterns, not entire files
+   - Reference line numbers when possible
+   - Use codebase_search for targeted queries
+
+3. **Reference, don't copy:**
+   - Reference existing patterns instead of copying entire sections
+   - Link to files instead of including full content
+   - Use file paths: `See terraform/modules/ecs/main.tf`
+
+## 🔍 Quick Reference Map
+
+**For Infrastructure:**
+- Patterns: `terraform/agent.md`
+- Details: `terraform/README.md`
+- Code: `terraform/modules/*/main.tf`
+
+**For ETL/Pipelines:**
+- Patterns: `pipelines/README.md`
+- Code: `pipelines/extractors/`, `pipelines/transformers/`, `pipelines/loaders/`
+
+**For Authentication:**
+- Config: `keycloak/realms/plainledger-realm.json`
+- Themes: `keycloak/themes/plainledger/`
+- Code: `apps/api/src/infrastructure/auth/`
+
+**For API:**
+- Patterns: `apps/api/agent.md`
+- Code: `apps/api/src/`
+
+**For Web:**
+- Patterns: `apps/web/agent.md`
+- Code: `apps/web/src/`
+
+**For Testing:**
+- Patterns: `e2e/agent.md`
+- Tests: `e2e/*.spec.ts`
+
+## ✅ When to Update vs Create
+
+**Update existing files:**
+- Learning new patterns → Update relevant `agent.md`
+- Improving workflows → Update relevant `README.md`
+- Fixing issues → Update relevant documentation
+
+**Create new files ONLY when:**
+- User explicitly requests it
+- It's code (not documentation)
+- It's a new feature/module
+
+## 🚀 Improvement Suggestions
+
+**Before suggesting improvements:**
+1. **Ask the user:** "I believe I can improve [velocity/accuracy/workflow/pipelines]. Should I proceed?"
+2. **If approved:** Update existing `agent.md` files, not create new docs
+3. **Reference existing:** Point to existing documentation instead of recreating
+
+## 🐳 Local Development Requirements (MANDATORY)
+
+**Every new feature or technology MUST be runnable locally. No exceptions.**
+
+### When Adding New Features/Technologies
+
+**ALWAYS update these files:**
+
+| File | What to Add |
+|------|-------------|
+| `docker-compose.yml` | Service definition, health checks, volumes, networks |
+| `LOCAL_SETUP.md` | Setup instructions, prerequisites, troubleshooting |
+| `apps/api/env.example` | Required environment variables with descriptions |
+
+### Checklist Before Completing Feature
+
+```markdown
+- [ ] Service runs locally via `docker-compose up`
+- [ ] Service has health check endpoint
+- [ ] LOCAL_SETUP.md updated with:
+  - [ ] Prerequisites (if any)
+  - [ ] How to start the service
+  - [ ] How to verify it's working
+  - [ ] Common troubleshooting steps
+- [ ] docker-compose.yml updated with:
+  - [ ] Service definition
+  - [ ] Health check
+  - [ ] Proper networking
+  - [ ] Volume mounts (if needed)
+  - [ ] Depends_on (if needed)
+- [ ] env.example updated with new variables
+- [ ] Works offline (or graceful degradation)
+```
+
+### Service Definition Template
+
+```yaml
+# docker-compose.yml
+new-service:
+  image: service-image:version
+  container_name: plainledger-new-service
+  environment:
+    - SERVICE_VAR=${SERVICE_VAR:-default}
+  ports:
+    - "PORT:PORT"
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:PORT/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+  networks:
+    - plainledger-network
+  depends_on:
+    postgres:
+      condition: service_healthy
+```
+
+### LOCAL_SETUP.md Section Template
+
+```markdown
+### New Service Name
+
+**Prerequisites:**
+- Prerequisite 1
+- Prerequisite 2
+
+**Starting:**
+```bash
+docker-compose up new-service
+```
+
+**Verification:**
+```bash
+curl http://localhost:PORT/health
+```
+
+**Troubleshooting:**
+- Issue 1 → Solution 1
+- Issue 2 → Solution 2
+```
+
+### External Services Must Have Local Alternatives
+
+| Production Service | Local Alternative |
+|-------------------|-------------------|
+| AWS S3 | LocalStack (`localhost:4566`) |
+| AWS SES | Mailhog/MailDev |
+| PostgreSQL RDS | Local PostgreSQL |
+| Redis ElastiCache | Local Redis |
+| MongoDB Atlas | Local MongoDB |
+| Keycloak Cloud | Local Keycloak |
+
+**Rule:** If it runs in production, it MUST have a local equivalent in docker-compose.
+
+### Prohibited Patterns
+
+❌ **NEVER** require cloud services for local development
+❌ **NEVER** hardcode cloud URLs without local fallbacks
+❌ **NEVER** skip updating LOCAL_SETUP.md
+❌ **NEVER** add services without health checks
+❌ **NEVER** assume external network access
+
+✅ **ALWAYS** provide LocalStack/mock alternatives
+✅ **ALWAYS** use environment variables for URLs
+✅ **ALWAYS** document local setup steps
+✅ **ALWAYS** test `docker-compose up` works from scratch
+
+---
+
+## 🏗️ Architecture & Code Quality Rules
+
+### Class Size Limit
+- **Maximum 1000 lines per class**
+- If exceeded: Extract services, use composition, apply DDD
+- Check before committing: `find apps/api/src -name "*.ts" -exec wc -l {} + | sort -rn | head -10`
+
+### Domain-Driven Design
+- **Rich domain models** - Entities with behavior, not anemic
+- **Value objects** - Immutable, validated domain primitives
+- **Aggregates** - Consistency boundaries
+- **Domain services** - Cross-entity business logic
+
+### Modularity & Decoupling
+- **Extract when complex** - Split large classes by responsibility
+- **Use interfaces** - Depend on abstractions
+- **Event-driven** - Use events for loose coupling
+- **Single Responsibility** - One reason to change
+
+### Provider-Agnostic Architecture (CRITICAL)
+**All external integrations MUST use interfaces:**
+
+```
+application/ports/outbound/
+├── IAccountingProvider.ts    # QuickBooks, Xero, Sage implement this
+├── IStorageProvider.ts       # S3, MinIO, Azure implement this
+└── IAIProvider.ts            # OpenAI, Anthropic, Bedrock implement this
+
+infrastructure/integrations/
+├── quickbooks/               # QuickBooks implementation
+├── xero/                     # Xero implementation
+└── openai/                   # OpenAI implementation
+```
+
+**Rules:**
+1. **Business logic depends ONLY on interfaces** - Never concrete providers
+2. **All providers return normalized types** - Our schema, not vendor schema
+3. **Use factory pattern** - Select provider at runtime via config
+4. **Easy testing** - Mock providers implement same interface
+
+**See:** `apps/api/agent.md` for detailed provider patterns
+
+### API Contract Testing
+- **All endpoints** must have Swagger decorators (`@ApiOperation`, `@ApiResponse`, `@ApiTags`)
+- **Contract tests** required for all endpoints (`npm run test:contract`)
+- **OpenAPI spec** generated automatically from decorators
+- **Breaking changes** detected by contract tests
+- **DTOs** must have `@ApiProperty` decorators
+
+### Testing Requirements
+- **Domain layer:** 100% coverage (entities, value objects, domain services)
+- **Application layer:** 80% coverage (use cases, services)
+- **Infrastructure layer:** 70% coverage (controllers, repositories)
+- **Contract tests** for all API endpoints
+- **E2E tests** for critical user flows (Playwright)
+- **Important features** must be tested: Auth, Data Sync, Financial Calculations, Multi-tenancy
+
+### Testing Requirements
+- **Domain layer:** 100% coverage
+- **Application layer:** 80% coverage
+- **Infrastructure layer:** 70% coverage
+- **Contract tests** for all API endpoints
+- **E2E tests** for critical user flows
+
+## 🎨 React Component Rules
+
+### Component Organization
+```
+src/components/
+├── feature-name/           # Feature groups (3+ components)
+│   ├── index.ts           # Re-exports all
+│   ├── MainComponent.tsx  # Entry point
+│   └── SubComponent.tsx   # Supporting components
+├── charts/                # Chart components
+├── strategic/             # Strategic planning
+└── Layout.tsx             # Standalone components
+```
+
+**Rules:**
+- **Feature groups (3+ components)** → Create subdirectory with `index.ts`
+- **Types for features** → Put in `lib/featureTypes.ts`
+- **Custom hooks** → Put in `hooks/useFeatureName.ts`
+- **Always export from index.ts** for clean imports
+
+### Component Template
+```tsx
+/**
+ * ComponentName - Brief description
+ * Features: list key features
+ * Bilingual support (EN/FR)
+ */
+import { useI18n } from '@/lib/i18n';
+
+export function ComponentName({ props }: Props) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
+  
+  return (/* JSX */);
+}
+```
+
+**See:** `apps/web/agent.md` for detailed React patterns
+
+---
+
+**Remember:** 
+- **NO new .md files in root** - Use `docs/` or update existing files
+- **Update agent.md files** instead of creating docs
+- **Ask before creating documentation**
+- **Use interfaces** for all external integrations
+- **Follow component organization** patterns
+- **Optimize token usage** by reading only what's needed

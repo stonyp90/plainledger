@@ -1,12 +1,16 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, BadRequestException } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import * as compression from "compression";
 import { AppModule } from "./app.module";
 import { DomainExceptionFilter } from "@infrastructure/http/filters/domain-exception.filter";
 import { FileStorageService } from "@infrastructure/storage/file-storage.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable response compression (gzip)
+  app.use(compression());
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -68,20 +72,28 @@ async function bootstrap() {
     ],
   });
 
-  // Swagger API Documentation
-  const config = new DocumentBuilder()
-    .setTitle("PlainLedger API")
-    .setDescription("Financial Reporting Platform API - Clean Architecture")
-    .setVersion("1.0")
-    .addBearerAuth()
-    .addTag("organizations", "Organization management")
-    .addTag("accounts", "Chart of accounts")
-    .addTag("reports", "Financial reports")
-    .addTag("integrations", "Data source integrations")
-    .build();
-
+  // Swagger API Documentation (dynamically generated from decorators)
+  const { createSwaggerConfig } = await import(
+    "./infrastructure/http/swagger.config"
+  );
+  const config = createSwaggerConfig();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document);
+  SwaggerModule.setup("api/docs", app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: "alpha",
+      operationsSorter: "alpha",
+    },
+  });
+
+  // Export OpenAPI spec for contract testing (in non-production)
+  if (process.env.NODE_ENV !== "production") {
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const specPath = path.join(process.cwd(), "openapi-spec.json");
+    await fs.writeFile(specPath, JSON.stringify(document, null, 2));
+    console.log(`[Swagger] OpenAPI spec exported to: ${specPath}`);
+  }
 
   // Initialize file storage (create uploads bucket if needed)
   try {

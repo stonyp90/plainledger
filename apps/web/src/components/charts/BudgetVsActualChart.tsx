@@ -13,8 +13,12 @@ import {
   ChevronDown,
   ChevronUp,
   Target,
+  Settings2,
 } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
+import { useGraphConfig } from '../../hooks/useGraphConfig';
+import { formatCurrencyValue, formatPercentageValue } from '../../lib/graphConfig';
+import GraphConfigPanel from './GraphConfigPanel';
 
 interface BudgetItem {
   category: string;
@@ -33,21 +37,41 @@ interface BudgetVsActualChartProps {
   varianceThreshold?: number; // % threshold for highlighting
   formatValue?: (value: number) => string;
   isEn?: boolean;
+  /** Chart ID for configuration persistence */
+  chartId?: string;
 }
 
 export default function BudgetVsActualChart({
   data,
   title,
   titleEn,
-  showPriorYear = true,
-  varianceThreshold = 10,
-  formatValue = (v) => `$${Math.abs(v).toLocaleString()}`,
+  showPriorYear: propShowPriorYear,
+  varianceThreshold: propVarianceThreshold,
+  formatValue: propFormatValue,
   isEn = false,
+  chartId,
 }: BudgetVsActualChartProps) {
   // Early return - hide chart completely if no data
   if (!data || data.length === 0) {
     return null;
   }
+
+  // Get graph configuration
+  const graphConfig = useGraphConfig(chartId, {
+    budgetVsActual: {
+      varianceThreshold: propVarianceThreshold ?? 10,
+      showPriorYear: propShowPriorYear ?? true,
+    },
+  });
+  
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [chartConfig, setChartConfig] = useState({});
+  
+  const showPriorYear = propShowPriorYear ?? graphConfig.budgetVsActual?.showPriorYear ?? true;
+  const varianceThreshold = propVarianceThreshold ?? graphConfig.budgetVsActual?.varianceThreshold ?? 10;
+  
+  // Use config-based formatting if no custom formatter provided
+  const formatValue = propFormatValue || ((v) => formatCurrencyValue(v, graphConfig.display));
 
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'category' | 'variance'>('variance');
@@ -145,7 +169,7 @@ export default function BudgetVsActualChart({
 
   return (
     <div 
-      className="rounded-xl transition-all duration-200 hover:shadow-md"
+      className="rounded-xl transition-all duration-200 hover:shadow-md group"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'
@@ -196,19 +220,32 @@ export default function BudgetVsActualChart({
           </div>
           
           {/* Sort toggle */}
-          <button
-            onClick={() => setSortBy(s => s === 'variance' ? 'category' : 'variance')}
-            className="text-xs px-2 py-1 rounded transition-colors"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-bg-muted))',
-              color: 'rgb(var(--color-text-muted))'
-            }}
-          >
-            {isEn ? 'Sort: ' : 'Tri: '}
-            {sortBy === 'variance' 
-              ? (isEn ? 'By variance' : 'Par écart') 
-              : (isEn ? 'By category' : 'Par catégorie')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSortBy(s => s === 'variance' ? 'category' : 'variance')}
+              className="text-xs px-2 py-1 rounded transition-colors"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-bg-muted))',
+                color: 'rgb(var(--color-text-muted))'
+              }}
+            >
+              {isEn ? 'Sort: ' : 'Tri: '}
+              {sortBy === 'variance' 
+                ? (isEn ? 'By variance' : 'Par écart') 
+                : (isEn ? 'By category' : 'Par catégorie')}
+            </button>
+            <button
+              onClick={() => setShowConfigPanel(true)}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface-hover))',
+                color: 'rgb(var(--color-text))'
+              }}
+              title={isEn ? 'Configure chart' : 'Configurer le graphique'}
+            >
+              <Settings2 className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -319,7 +356,7 @@ export default function BudgetVsActualChart({
                     : 'rgb(var(--color-error))'
                 }}
               >
-                {item.variancePct >= 0 ? '+' : ''}{item.variancePct.toFixed(1)}%
+                {item.variancePct >= 0 ? '+' : ''}{formatPercentageValue(item.variancePct, graphConfig.display)}
               </div>
             </div>
 
@@ -400,8 +437,8 @@ export default function BudgetVsActualChart({
                     }}
                   >
                     {item.isFavorable ? '✓' : '⚠'} {isEn 
-                      ? `Variance of ${Math.abs(item.variancePct).toFixed(1)}% exceeds ${varianceThreshold}% threshold`
-                      : `Écart de ${Math.abs(item.variancePct).toFixed(1)}% dépasse le seuil de ${varianceThreshold}%`
+                      ? `Variance of ${formatPercentageValue(Math.abs(item.variancePct), graphConfig.display)} exceeds ${varianceThreshold}% threshold`
+                      : `Écart de ${formatPercentageValue(Math.abs(item.variancePct), graphConfig.display)} dépasse le seuil de ${varianceThreshold}%`
                     }
                   </div>
                 )}
@@ -473,14 +510,14 @@ export default function BudgetVsActualChart({
                       <span className="text-gray-400 text-sm">{isEn ? 'Variance' : 'Écart'}</span>
                       <span className={`font-medium flex items-center gap-1 ${item.isFavorable ? 'text-green-400' : 'text-red-400'}`}>
                         {item.variance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {item.variancePct >= 0 ? '+' : ''}{item.variancePct.toFixed(1)}%
+                        {item.variancePct >= 0 ? '+' : ''}{formatPercentageValue(item.variancePct, graphConfig.display)}
                       </span>
                     </div>
                     {item.yoyChange !== null && (
                       <div className="flex justify-between">
                         <span className="text-gray-400 text-sm">{isEn ? 'YoY Change' : 'Var. annuelle'}</span>
                         <span className={`font-medium ${item.yoyChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {item.yoyChange >= 0 ? '+' : ''}{item.yoyChange.toFixed(1)}%
+                          {item.yoyChange >= 0 ? '+' : ''}{formatPercentageValue(item.yoyChange, graphConfig.display)}
                         </span>
                       </div>
                     )}
@@ -492,10 +529,20 @@ export default function BudgetVsActualChart({
                   </div>
                 </div>
               </ChartTooltip>
-            )}
-          </div>
-        );
-        })}
+      )}
+      
+      {/* Configuration Panel */}
+      {showConfigPanel && (
+        <GraphConfigPanel
+          chartId={chartId || `budget-vs-actual-${title.toLowerCase().replace(/\s/g, '-')}`}
+          currentConfig={chartConfig}
+          onConfigChange={setChartConfig}
+          onClose={() => setShowConfigPanel(false)}
+        />
+      )}
+    </div>
+  );
+})}
       </div>
 
       {/* Totals Row */}

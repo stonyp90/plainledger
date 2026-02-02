@@ -1,0 +1,102 @@
+{
+  "id": "transport",
+  "name": "Transportation",
+  "name_fr": "Transport",
+  
+  "accounts": [
+    {"name": "Freight Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "freight_revenue"},
+    {"name": "Delivery Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "delivery_revenue"},
+    {"name": "Fuel Surcharges", "type": "Income", "subtype": "ServiceFeeIncome", "category": "fuel_surcharges"},
+    {"name": "Warehousing Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "warehousing"},
+    {"name": "Fuel Expense", "type": "Expense", "subtype": "Auto", "category": "fuel"},
+    {"name": "Driver Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "driver_wages"},
+    {"name": "Vehicle Maintenance", "type": "Expense", "subtype": "RepairMaintenance", "category": "maintenance"},
+    {"name": "Vehicle Insurance", "type": "Expense", "subtype": "Insurance", "category": "insurance"},
+    {"name": "Permits & Licenses", "type": "Expense", "subtype": "LegalProfessionalFees", "category": "permits"},
+    {"name": "Dispatch & Admin", "type": "Expense", "subtype": "PayrollExpenses", "category": "admin"},
+    {"name": "Tolls & Fees", "type": "Expense", "subtype": "TravelMeals", "category": "tolls"},
+    {"name": "Fleet Vehicles", "type": "Fixed Asset", "subtype": "Vehicles", "category": "vehicles"},
+    {"name": "Trailers", "type": "Fixed Asset", "subtype": "Vehicles", "category": "trailers"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Manufacturing Client", "email": "logistics@manufacturer.com", "phone": "514-555-0201"},
+    {"name": "Retail Chain", "email": "distribution@retailchain.com", "phone": "514-555-0202"},
+    {"name": "E-commerce Fulfillment", "email": "shipping@ecommerce.com", "phone": "514-555-0203"},
+    {"name": "Food Distributor", "email": "transport@fooddist.com", "phone": "514-555-0204"}
+  ],
+  
+  "vendors": [
+    {"name": "Fuel Station Network", "email": "fleet@fuelnetwork.com", "category": "fuel"},
+    {"name": "Truck Service Center", "email": "service@truckservice.com", "category": "maintenance"},
+    {"name": "Tire Supplier", "email": "orders@tiresupplier.com", "category": "maintenance"},
+    {"name": "Fleet Insurance Provider", "email": "fleet@insurance.com", "category": "insurance"},
+    {"name": "GPS Tracking Service", "email": "billing@gpstrack.com", "category": "technology"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "revenue_per_mile",
+      "name": "Revenue per Mile",
+      "name_fr": "Revenu par mille",
+      "formula": "total_revenue / total_miles",
+      "benchmark_min": 2.50,
+      "benchmark_max": 4.00,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "fuel_efficiency",
+      "name": "Fuel Efficiency (MPG)",
+      "name_fr": "Efficacité carburant (MPG)",
+      "formula": "total_miles / gallons_consumed",
+      "benchmark_min": 6.5,
+      "benchmark_max": 8.5,
+      "format": "number",
+      "inverse": false
+    },
+    {
+      "id": "utilization_rate",
+      "name": "Fleet Utilization %",
+      "name_fr": "Utilisation flotte %",
+      "formula": "(loaded_miles / total_miles) * 100",
+      "benchmark_min": 75,
+      "benchmark_max": 90,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "on_time_delivery",
+      "name": "On-Time Delivery %",
+      "name_fr": "Livraison à temps %",
+      "formula": "(on_time_deliveries / total_deliveries) * 100",
+      "benchmark_min": 95,
+      "benchmark_max": 99,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "cost_per_mile",
+      "name": "Cost per Mile",
+      "name_fr": "Coût par mille",
+      "formula": "total_costs / total_miles",
+      "benchmark_min": 1.50,
+      "benchmark_max": 2.50,
+      "format": "currency",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [250000, 700000],
+    "expense_ratio": 0.78,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 2850000,
+    "total_expenses": 2223000,
+    "net_income": 627000
+  }
+}

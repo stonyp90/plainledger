@@ -1,0 +1,120 @@
+{
+  "id": "technology",
+  "name": "Technology",
+  "name_fr": "Technologie",
+  
+  "accounts": [
+    {"name": "SaaS Subscription Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "recurring_revenue"},
+    {"name": "Software License Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "license_revenue"},
+    {"name": "Implementation Services", "type": "Income", "subtype": "ServiceFeeIncome", "category": "services_revenue"},
+    {"name": "Support & Maintenance", "type": "Income", "subtype": "ServiceFeeIncome", "category": "support_revenue"},
+    {"name": "Cloud Hosting Costs", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "hosting_infrastructure"},
+    {"name": "Developer Salaries", "type": "Expense", "subtype": "PayrollExpenses", "category": "engineering"},
+    {"name": "Product Management", "type": "Expense", "subtype": "PayrollExpenses", "category": "product"},
+    {"name": "Sales & Marketing", "type": "Expense", "subtype": "AdvertisingPromotional", "category": "sales_marketing"},
+    {"name": "Customer Success", "type": "Expense", "subtype": "PayrollExpenses", "category": "customer_success"},
+    {"name": "R&D Expenses", "type": "Expense", "subtype": "OtherMiscellaneousServiceCost", "category": "rd"},
+    {"name": "Office Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Software Tools", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "tools"},
+    {"name": "Computer Equipment", "type": "Fixed Asset", "subtype": "ComputerSoftware", "category": "equipment"},
+    {"name": "Deferred Revenue", "type": "Liability", "subtype": "DeferredRevenue", "category": "deferred"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Enterprise Customer A", "email": "it@enterprisea.com", "phone": "514-555-5001"},
+    {"name": "Enterprise Customer B", "email": "procurement@enterpriseb.com", "phone": "514-555-5002"},
+    {"name": "Mid-Market Customer C", "email": "cto@midmarket.com", "phone": "514-555-5003"},
+    {"name": "Startup Customer D", "email": "founder@startupd.com", "phone": "514-555-5004"},
+    {"name": "SMB Customer E", "email": "owner@smbe.com", "phone": "514-555-5005"}
+  ],
+  
+  "vendors": [
+    {"name": "AWS Cloud Services", "email": "billing@aws.amazon.com", "category": "cloud"},
+    {"name": "Google Cloud Platform", "email": "billing@google.com", "category": "cloud"},
+    {"name": "GitHub Enterprise", "email": "billing@github.com", "category": "tools"},
+    {"name": "Salesforce CRM", "email": "billing@salesforce.com", "category": "tools"},
+    {"name": "HR Software Provider", "email": "billing@hrsoft.com", "category": "tools"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "gross_margin_pct",
+      "name": "Gross Margin %",
+      "name_fr": "Marge brute %",
+      "formula": "((recurring_revenue - hosting_infrastructure) / recurring_revenue) * 100",
+      "benchmark_min": 60,
+      "benchmark_max": 80,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "cac_payback",
+      "name": "CAC Payback (months)",
+      "name_fr": "Récupération CAC (mois)",
+      "formula": "sales_marketing / (recurring_revenue / 12)",
+      "benchmark_min": 6,
+      "benchmark_max": 18,
+      "format": "number",
+      "inverse": true
+    },
+    {
+      "id": "ltv_cac_ratio",
+      "name": "LTV:CAC Ratio",
+      "name_fr": "Ratio LTV:CAC",
+      "formula": "customer_ltv / cac",
+      "benchmark_min": 3,
+      "benchmark_max": 5,
+      "format": "ratio",
+      "inverse": false
+    },
+    {
+      "id": "arr_growth",
+      "name": "ARR Growth %",
+      "name_fr": "Croissance ARR %",
+      "formula": "((current_arr - prior_arr) / prior_arr) * 100",
+      "benchmark_min": 20,
+      "benchmark_max": 100,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "net_revenue_retention",
+      "name": "Net Revenue Retention %",
+      "name_fr": "Rétention nette %",
+      "formula": "((starting_arr + expansion - contraction - churn) / starting_arr) * 100",
+      "benchmark_min": 100,
+      "benchmark_max": 130,
+      "format": "percent",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [200000, 600000],
+    "expense_ratio": 0.35,
+    "months_of_data": 6,
+    "revenue_distribution": {
+      "recurring_revenue": 0.75,
+      "license_revenue": 0.10,
+      "services_revenue": 0.10,
+      "support_revenue": 0.05
+    },
+    "expense_distribution": {
+      "engineering": 0.35,
+      "sales_marketing": 0.25,
+      "hosting_infrastructure": 0.15,
+      "customer_success": 0.10,
+      "product": 0.05,
+      "occupancy": 0.05,
+      "tools": 0.03,
+      "rd": 0.02
+    }
+  },
+  
+  "expected_gold": {
+    "total_revenue": 2400000,
+    "total_expenses": 840000,
+    "net_income": 1560000
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "QueryResponse": {
+    "Customer": [
+      {
+        "Id": "1",
+        "DisplayName": "Acme Corporation",
+        "CompanyName": "Acme Corporation",
+        "PrimaryEmailAddr": {"Address": "contact@acme.com"},
+        "PrimaryPhone": {"FreeFormNumber": "514-555-0100"},
+        "BillAddr": {
+          "Line1": "123 Main St",
+          "City": "Montreal",
+          "CountrySubDivisionCode": "QC",
+          "PostalCode": "H1A 1A1",
+          "Country": "Canada"
+        },
+        "Active": true,
+        "Balance": 15000.00,
+        "CurrencyRef": {"value": "CAD"},
+        "MetaData": {
+          "CreateTime": "2025-01-15T00:00:00Z",
+          "LastUpdatedTime": "2025-11-01T00:00:00Z"
+        }
+      },
+      {
+        "Id": "2",
+        "DisplayName": "Beta Industries",
+        "CompanyName": "Beta Industries Ltd",
+        "PrimaryEmailAddr": {"Address": "ap@beta.com"},
+        "PrimaryPhone": {"FreeFormNumber": "514-555-0200"},
+        "BillAddr": {
+          "Line1": "456 Commerce Blvd",
+          "City": "Toronto",
+          "CountrySubDivisionCode": "ON",
+          "PostalCode": "M5V 2H1",
+          "Country": "Canada"
+        },
+        "Active": true,
+        "Balance": 8500.00,
+        "CurrencyRef": {"value": "CAD"},
+        "MetaData": {
+          "CreateTime": "2025-02-01T00:00:00Z",
+          "LastUpdatedTime": "2025-10-15T00:00:00Z"
+        }
+      },
+      {
+        "Id": "3",
+        "DisplayName": "Gamma Services",
+        "CompanyName": "Gamma Professional Services Inc",
+        "PrimaryEmailAddr": {"Address": "billing@gamma.ca"},
+        "Active": true,
+        "Balance": 22000.00,
+        "CurrencyRef": {"value": "CAD"},
+        "MetaData": {
+          "CreateTime": "2025-03-01T00:00:00Z",
+          "LastUpdatedTime": "2025-12-01T00:00:00Z"
+        }
+      }
+    ],
+    "startPosition": 1,
+    "maxResults": 3,
+    "totalCount": 3
+  },
+  "time": "2025-12-01T12:00:00Z"
+}

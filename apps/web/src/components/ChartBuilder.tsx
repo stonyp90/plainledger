@@ -796,6 +796,10 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
 
         {/* Lines/Areas for each field */}
         {enabledFields.map((field) => {
+          // FIX: Ensure color is always defined before use
+          const info = METRIC_INFO[field.id];
+          const color = field.color || info?.color || '#10B981'; // fallback to primary green
+          
           const points = mockData.map((d, i) => ({
             x: padding.left + (i / (mockData.length - 1)) * chartWidth,
             y: padding.top + chartHeight - ((d[field.id] - minValue) / range) * chartHeight,

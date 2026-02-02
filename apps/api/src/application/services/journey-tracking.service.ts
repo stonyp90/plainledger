@@ -19,7 +19,7 @@ import {
   UserProfileEntity,
   JourneyStage,
 } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
-import { NovuService } from "@infrastructure/notifications/novu.service";
+import { SESEmailService } from "@infrastructure/notifications/ses-email.service";
 import { HubSpotService } from "@infrastructure/crm/hubspot.service";
 
 // ============================================================================
@@ -67,7 +67,7 @@ export class JourneyTrackingService {
   constructor(
     @InjectRepository(UserProfileEntity)
     private userProfileRepository: Repository<UserProfileEntity>,
-    private novuService: NovuService,
+    private sesEmailService: SESEmailService,
     private hubspotService: HubSpotService,
   ) {}
 
@@ -209,12 +209,19 @@ export class JourneyTrackingService {
       },
     );
 
-    // Send first connection notification via Novu
+    // Send first connection notification via SES
     try {
-      await this.novuService.sendFirstConnection(userId, {
-        firstName: user.firstName,
-        providerName,
-      });
+      if (this.sesEmailService.isAvailable() && user.email) {
+        await this.sesEmailService.sendJourneyEmailByWorkflow(
+          "journey-first-dashboard",
+          userId,
+          user.email,
+          user.firstName,
+          {
+            providerName,
+          },
+        );
+      }
     } catch (error) {
       this.logger.error(
         `Failed to send first connection notification: ${error.message}`,

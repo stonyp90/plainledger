@@ -1,0 +1,41 @@
+# ============================================
+# PlainLedger ETL Pipeline Dependencies
+# ============================================
+
+# AWS SDK
+boto3>=1.34.0
+botocore>=1.34.0
+
+# Data processing
+pandas>=2.1.0
+pyarrow>=14.0.0
+polars>=0.20.0  # Fast DataFrame alternative
+
+# Database
+psycopg2-binary>=2.9.9
+sqlalchemy>=2.0.0
+redis>=5.0.0
+
+# PySpark (for Glue compatibility)
+pyspark>=3.5.0
+
+# OpenAI (for embeddings)
+openai>=1.0.0
+
+# Validation
+pydantic>=2.5.0
+jsonschema>=4.20.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+moto>=5.0.0  # AWS mocking
+
+# Utilities
+python-dotenv>=1.0.0
+tenacity>=8.2.0  # Retry logic
+structlog>=23.2.0  # Structured logging
+
+# Type hints
+typing-extensions>=4.9.0

@@ -16,8 +16,8 @@ const S3_ENDPOINT = process.env.S3_ENDPOINT || "http://localhost:4566";
 const S3_REGION = process.env.S3_REGION || "us-east-1";
 const GOLD_BUCKET = process.env.S3_BUCKET_GOLD || "plainledger-gold";
 
-// Demo organization ID
-const DEMO_ORG_ID = "demo-org";
+// Demo organization ID - configurable via environment variable
+const DEMO_ORG_ID = process.env.DEMO_ORG_ID || "demo-org";
 
 // S3 Client
 const s3Client = new S3Client({

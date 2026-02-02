@@ -9,3 +9,6 @@ export { OrganizationResolver } from "./organization.resolver";
 export { DataSourceResolver } from "./datasource.resolver";
 export { TaxCreditResolver } from "./tax-credit.resolver";
 export { MarketAnalysisResolver } from "./market-analysis.resolver";
+export { ETLSubscriptionResolver } from "./etl.subscription";
+export { AccountBalanceSubscriptionResolver } from "./account-balance.subscription";
+export { TransactionSubscriptionResolver } from "./transaction.subscription";

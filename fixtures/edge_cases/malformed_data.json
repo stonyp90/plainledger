@@ -1,0 +1,40 @@
+{
+  "name": "malformed_data",
+  "description": "Data with invalid formats - tests validation and error handling",
+  "data": {
+    "accounts": [
+      {
+        "Id": "1",
+        "Name": "",
+        "AccountType": "InvalidType",
+        "Active": "not_a_boolean"
+      },
+      {
+        "Id": null,
+        "Name": "Valid Name",
+        "AccountType": "Expense"
+      },
+      {
+        "Name": "Missing ID Account",
+        "AccountType": "Income"
+      }
+    ],
+    "transactions": [
+      {
+        "Id": "1",
+        "TxnDate": "invalid-date",
+        "TotalAmt": "not_a_number"
+      },
+      {
+        "Id": "2",
+        "TxnDate": "2025-01-01",
+        "TotalAmt": -999999999999
+      }
+    ]
+  },
+  "expected_behavior": {
+    "validation": "Should quarantine invalid records",
+    "transformation": "Should skip malformed records",
+    "api": "Should return validation errors"
+  }
+}

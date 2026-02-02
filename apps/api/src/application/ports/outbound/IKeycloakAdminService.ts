@@ -28,8 +28,11 @@ export interface IKeycloakAdminService {
 
   /**
    * Invite a team member
+   * Returns the user with an isExisting flag indicating if user already existed
    */
-  inviteTeamMember(input: InviteTeamMemberInput): Promise<KeycloakUser>;
+  inviteTeamMember(
+    input: InviteTeamMemberInput,
+  ): Promise<KeycloakUser & { isExisting: boolean }>;
 
   /**
    * Get user by email

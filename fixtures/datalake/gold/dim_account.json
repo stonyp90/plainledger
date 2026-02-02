@@ -1,0 +1,44 @@
+[
+  {
+    "account_key": "acc_1",
+    "account_id": "1",
+    "source_account_id": "1",
+    "organization_key": "test-org-123",
+    "account_code": "1000",
+    "account_name": "Bank Account",
+    "account_type": "ASSET",
+    "account_subtype": "Checking",
+    "normal_balance": "DEBIT",
+    "currency_code": "CAD",
+    "is_active": true,
+    "current_balance": 50000.00
+  },
+  {
+    "account_key": "acc_2",
+    "account_id": "2",
+    "source_account_id": "2",
+    "organization_key": "test-org-123",
+    "account_code": "1100",
+    "account_name": "Accounts Receivable",
+    "account_type": "ASSET",
+    "account_subtype": "",
+    "normal_balance": "DEBIT",
+    "currency_code": "CAD",
+    "is_active": true,
+    "current_balance": 25000.00
+  },
+  {
+    "account_key": "acc_3",
+    "account_id": "3",
+    "source_account_id": "3",
+    "organization_key": "test-org-123",
+    "account_code": "4000",
+    "account_name": "Sales Revenue",
+    "account_type": "REVENUE",
+    "account_subtype": "SalesOfProductIncome",
+    "normal_balance": "CREDIT",
+    "currency_code": "CAD",
+    "is_active": true,
+    "current_balance": 150000.00
+  }
+]

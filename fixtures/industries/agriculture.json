@@ -1,0 +1,103 @@
+{
+  "id": "agriculture",
+  "name": "Agriculture",
+  "name_fr": "Agriculture",
+  
+  "accounts": [
+    {"name": "Crop Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "crop_sales"},
+    {"name": "Livestock Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "livestock_sales"},
+    {"name": "Farm Subsidies", "type": "Other Income", "subtype": "OtherInvestmentIncome", "category": "subsidies"},
+    {"name": "Custom Farm Services", "type": "Income", "subtype": "ServiceFeeIncome", "category": "services"},
+    {"name": "Seeds & Planting", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "seeds"},
+    {"name": "Fertilizer & Chemicals", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "fertilizer"},
+    {"name": "Feed & Livestock Supplies", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "feed"},
+    {"name": "Farm Labor", "type": "Expense", "subtype": "PayrollExpenses", "category": "labor"},
+    {"name": "Fuel - Farm Equipment", "type": "Expense", "subtype": "Auto", "category": "fuel"},
+    {"name": "Equipment Maintenance", "type": "Expense", "subtype": "RepairMaintenance", "category": "maintenance"},
+    {"name": "Crop Insurance", "type": "Expense", "subtype": "Insurance", "category": "insurance"},
+    {"name": "Farm Equipment", "type": "Fixed Asset", "subtype": "MachineryAndEquipment", "category": "equipment"},
+    {"name": "Land", "type": "Fixed Asset", "subtype": "Land", "category": "land"},
+    {"name": "Livestock Inventory", "type": "Asset", "subtype": "Inventory", "category": "livestock_inventory"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Grain Elevator Co-op", "email": "receiving@grainelevator.com", "phone": "514-555-0101"},
+    {"name": "Livestock Auction", "email": "sales@livestockauction.com", "phone": "514-555-0102"},
+    {"name": "Farmers Market", "email": "vendors@farmersmarket.com", "phone": "514-555-0103"},
+    {"name": "Food Processor", "email": "procurement@foodprocessor.com", "phone": "514-555-0104"}
+  ],
+  
+  "vendors": [
+    {"name": "Seed Supplier", "email": "orders@seedsupplier.com", "category": "seeds"},
+    {"name": "Fertilizer Distributor", "email": "orders@fertilizer.com", "category": "fertilizer"},
+    {"name": "Farm Equipment Dealer", "email": "sales@farmequip.com", "category": "equipment"},
+    {"name": "Fuel Cooperative", "email": "orders@fuelcoop.com", "category": "fuel"},
+    {"name": "Veterinary Services", "email": "appointments@vet.com", "category": "livestock"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "yield_per_hectare",
+      "name": "Yield per Hectare",
+      "name_fr": "Rendement par hectare",
+      "formula": "total_production / hectares_farmed",
+      "benchmark_min": 5000,
+      "benchmark_max": 12000,
+      "format": "number",
+      "inverse": false
+    },
+    {
+      "id": "cost_per_unit",
+      "name": "Cost per Unit",
+      "name_fr": "Coût par unité",
+      "formula": "total_costs / total_production",
+      "benchmark_min": 0.10,
+      "benchmark_max": 0.50,
+      "format": "currency",
+      "inverse": true
+    },
+    {
+      "id": "profit_margin",
+      "name": "Profit Margin %",
+      "name_fr": "Marge bénéficiaire %",
+      "formula": "(net_income / total_revenue) * 100",
+      "benchmark_min": 15,
+      "benchmark_max": 25,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "input_cost_ratio",
+      "name": "Input Cost Ratio",
+      "name_fr": "Ratio coûts intrants",
+      "formula": "((seeds + fertilizer + feed) / total_revenue) * 100",
+      "benchmark_min": 30,
+      "benchmark_max": 45,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "subsidy_dependency",
+      "name": "Subsidy Dependency %",
+      "name_fr": "Dépendance subventions %",
+      "formula": "(subsidies / total_revenue) * 100",
+      "benchmark_min": 5,
+      "benchmark_max": 20,
+      "format": "percent",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [200000, 600000],
+    "expense_ratio": 0.68,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 2400000,
+    "total_expenses": 1632000,
+    "net_income": 768000
+  }
+}

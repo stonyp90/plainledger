@@ -1,0 +1,21 @@
+{
+  "query": "query GetFinancialSummary($organizationId: ID!, $startDate: String!, $endDate: String!) { financialSummary(organizationId: $organizationId, startDate: $startDate, endDate: $endDate) { revenue expenses netIncome grossMargin cashBalance accountsReceivable accountsPayable } }",
+  "variables": {
+    "organizationId": "test-org-123",
+    "startDate": "2025-01-01",
+    "endDate": "2025-12-31"
+  },
+  "expected_response": {
+    "data": {
+      "financialSummary": {
+        "revenue": 145500.00,
+        "expenses": 97000.00,
+        "netIncome": 48500.00,
+        "grossMargin": 33.33,
+        "cashBalance": 50000.00,
+        "accountsReceivable": 25000.00,
+        "accountsPayable": 15000.00
+      }
+    }
+  }
+}

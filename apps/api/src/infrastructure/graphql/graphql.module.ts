@@ -40,16 +40,55 @@ import { join } from "path";
             configService.get<boolean>("GRAPHQL_INTROSPECTION"),
 
           // Context setup - pass request for auth
-          context: ({ req, res }: { req: Request; res: Response }) => ({
+          context: ({
             req,
             res,
-          }),
+            connection,
+          }: {
+            req?: Request;
+            res?: Response;
+            connection?: any;
+          }) => {
+            // Support both HTTP (queries/mutations) and WebSocket (subscriptions)
+            if (connection) {
+              // WebSocket connection for subscriptions
+              return {
+                req: connection.context?.req,
+                res: connection.context?.res,
+                connection,
+              };
+            }
+            // HTTP request for queries/mutations
+            return {
+              req,
+              res,
+            };
+          },
 
           // CORS handled by NestJS main config
           cors: false,
 
           // Path configuration
           path: "/graphql",
+
+          // Subscriptions configuration (WebSocket)
+          subscriptions: {
+            "graphql-ws": {
+              path: "/graphql",
+              onConnect: (context: any) => {
+                // Extract auth token from connection params
+                const token = context.connectionParams?.authorization?.replace(
+                  "Bearer ",
+                  "",
+                );
+                return { token };
+              },
+              onDisconnect: () => {
+                // Cleanup on disconnect
+              },
+            },
+            "subscriptions-transport-ws": false, // Legacy protocol, disabled
+          },
 
           // Performance & Security
           cache: "bounded",

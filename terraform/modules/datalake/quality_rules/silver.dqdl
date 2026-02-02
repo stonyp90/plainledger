@@ -1,34 +1,93 @@
 Rules = [
-    # Account validation
+    # ============================================================================
+    # Account Entity Validation
+    # ============================================================================
     Completeness "account_id" = 1.0,
-    Completeness "account_name" >= 0.99,
+    Completeness "account_name" = 1.0,  # Changed from >= 0.99 to = 1.0 (required after sanitization)
     Completeness "account_type" = 1.0,
+    Completeness "organization_id" = 1.0,
+    
+    # Account type must be valid enum
     ColumnValues "account_type" in ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"],
     
-    # Transaction validation
+    # Account name must not be empty after sanitization (trimmed length > 0)
+    CustomSql "SELECT COUNT(*) FROM primary WHERE LENGTH(TRIM(account_name)) = 0" = 0,
+    
+    # Account code format validation (alphanumeric, max 20 chars)
+    CustomSql "SELECT COUNT(*) FROM primary WHERE account_code IS NOT NULL AND (LENGTH(account_code) > 20 OR account_code !~ '^[A-Z0-9-]+$')" = 0,
+    
+    # ============================================================================
+    # Transaction Entity Validation
+    # ============================================================================
+    Completeness "transaction_id" = 1.0,
     Completeness "transaction_date" = 1.0,
     Completeness "amount" = 1.0,
+    Completeness "account_id" = 1.0,
+    Completeness "organization_id" = 1.0,
     
     # Date sanity - no future dates, no dates before 1990
     ColumnValues "transaction_date" between "1990-01-01" and now(),
     
-    # Amount validation - reasonable range
+    # Amount validation - reasonable range (-999M to 999M)
     ColumnValues "amount" between -999999999.99 and 999999999.99,
     
-    # Referential integrity - account_id must exist in accounts table
+    # Description must not be empty after sanitization
+    CustomSql "SELECT COUNT(*) FROM primary WHERE description IS NOT NULL AND LENGTH(TRIM(description)) = 0" = 0,
+    
+    # ============================================================================
+    # Contact Entity Validation
+    # ============================================================================
+    Completeness "contact_id" = 1.0,
+    Completeness "display_name" = 1.0,
+    Completeness "organization_id" = 1.0,
+    
+    # Display name must not be empty after sanitization
+    CustomSql "SELECT COUNT(*) FROM primary WHERE display_name IS NOT NULL AND LENGTH(TRIM(display_name)) = 0" = 0,
+    
+    # Email format validation (if provided)
+    CustomSql "SELECT COUNT(*) FROM primary WHERE email IS NOT NULL AND email !~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$'" = 0,
+    
+    # ============================================================================
+    # Data Quality Rules (Post-Sanitization)
+    # ============================================================================
+    
+    # No control characters in text fields (should be removed by sanitizer)
+    CustomSql "SELECT COUNT(*) FROM primary WHERE account_name ~ '[\\x00-\\x1F\\x7F]' OR description ~ '[\\x00-\\x1F\\x7F]'" = 0,
+    
+    # Unicode normalization check (should be NFC normalized)
+    # Note: This is a simplified check - full normalization validation may require custom logic
+    
+    # ============================================================================
+    # Referential Integrity
+    # ============================================================================
+    
+    # Account ID must exist in accounts table (for transactions)
     ReferentialIntegrity "account_id" "accounts.account_id" = 1.0,
     
-    # Organization validation
+    # Organization ID must exist in organizations table
     ReferentialIntegrity "organization_id" "organizations.organization_id" = 1.0,
     
-    # Currency code validation
-    ColumnValues "currency_code" in ["CAD", "USD", "EUR", "GBP"],
+    # ============================================================================
+    # Business Rules
+    # ============================================================================
     
-    # Debit/Credit balance check per journal entry
+    # Currency code validation (ISO 4217 codes)
+    ColumnValues "currency_code" in ["CAD", "USD", "EUR", "GBP", "AUD", "JPY", "CHF", "CNY"],
+    
+    # Debit/Credit balance check per journal entry (if applicable)
     CustomSql "SELECT COUNT(*) FROM (
         SELECT journal_entry_id, ABS(SUM(debit_amount) - SUM(credit_amount)) as diff
         FROM primary
+        WHERE journal_entry_id IS NOT NULL
         GROUP BY journal_entry_id
         HAVING diff > 0.01
-    )" = 0
+    )" = 0,
+    
+    # ============================================================================
+    # Deduplication Validation
+    # ============================================================================
+    
+    # Ensure no duplicate records (same organization_id, source_id, entity_type)
+    # Latest record should be kept by deduplicator
+    Uniqueness "organization_id, source_id, entity_type, updated_at" >= 0.99
 ]

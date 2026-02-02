@@ -1,0 +1,24 @@
+{
+  "name": "rate_limit",
+  "description": "API rate limit exceeded response",
+  "provider": "quickbooks",
+  "http_status": 429,
+  "response": {
+    "Fault": {
+      "type": "THROTTLED",
+      "Error": [
+        {
+          "Message": "Rate limit exceeded",
+          "Detail": "You have exceeded the rate limit. Please wait before making another request.",
+          "code": "429"
+        }
+      ]
+    }
+  },
+  "retry_after_seconds": 60,
+  "expected_behavior": {
+    "extractor": "Should implement exponential backoff",
+    "api": "Should return 429 with retry-after header",
+    "ui": "Should show rate limit message"
+  }
+}

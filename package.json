@@ -16,13 +16,38 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:e2e:unauthenticated": "playwright test --project=unauthenticated",
-    "test:e2e:chromium": "playwright test --project=chromium"
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:containers": "USE_TESTCONTAINERS=true playwright test",
+    "test:e2e:api": "playwright test api-contract.spec.ts",
+    "test:e2e:integration": "playwright test integration-with-fixtures.spec.ts",
+    "check:class-sizes": "./scripts/check-class-sizes.sh",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
-    "concurrently": "^8.2.2"
+    "@testcontainers/postgresql": "^11.11.0",
+    "@testcontainers/redis": "^11.11.0",
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "pg": "^8.11.3",
+    "@types/pg": "^8.16.0",
+    "testcontainers": "^11.11.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.980.0"
+  },
+  "lint-staged": {
+    "apps/api/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "apps/web/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

@@ -1,0 +1,102 @@
+{
+  "id": "healthcare",
+  "name": "Healthcare",
+  "name_fr": "Santé",
+  
+  "accounts": [
+    {"name": "Patient Services Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "patient_revenue"},
+    {"name": "Insurance Reimbursements", "type": "Income", "subtype": "ServiceFeeIncome", "category": "insurance_revenue"},
+    {"name": "Lab Services Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "lab_revenue"},
+    {"name": "Product Sales - Medical", "type": "Income", "subtype": "SalesOfProductIncome", "category": "product_sales"},
+    {"name": "Medical Supplies", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "supplies"},
+    {"name": "Clinical Staff Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "clinical_labor"},
+    {"name": "Administrative Staff", "type": "Expense", "subtype": "PayrollExpenses", "category": "admin_labor"},
+    {"name": "Medical Equipment Lease", "type": "Expense", "subtype": "EquipmentRental", "category": "equipment_lease"},
+    {"name": "Facility Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Malpractice Insurance", "type": "Expense", "subtype": "Insurance", "category": "insurance"},
+    {"name": "Lab Equipment", "type": "Expense", "subtype": "OtherMiscellaneousServiceCost", "category": "lab_expense"},
+    {"name": "Medical Equipment", "type": "Fixed Asset", "subtype": "MachineryAndEquipment", "category": "equipment"},
+    {"name": "Patient Accounts Receivable", "type": "Asset", "subtype": "AccountsReceivable", "category": "ar"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Insurance Provider A", "email": "claims@insurancea.com", "phone": "514-555-8001"},
+    {"name": "Insurance Provider B", "email": "claims@insuranceb.com", "phone": "514-555-8002"},
+    {"name": "Patient - Self Pay", "email": "patient@email.com", "phone": "514-555-8003"},
+    {"name": "Corporate Health Program", "email": "wellness@corp.com", "phone": "514-555-8004"}
+  ],
+  
+  "vendors": [
+    {"name": "Medical Supply Distributor", "email": "orders@medsupply.com", "category": "supplies"},
+    {"name": "Lab Equipment Leasing", "email": "leasing@labequip.com", "category": "equipment"},
+    {"name": "Pharmaceutical Distributor", "email": "orders@pharma.com", "category": "pharmaceuticals"},
+    {"name": "Medical Waste Disposal", "email": "service@medwaste.com", "category": "waste"},
+    {"name": "EMR Software Provider", "email": "billing@emr.com", "category": "technology"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "revenue_per_patient",
+      "name": "Revenue per Patient",
+      "name_fr": "Revenu par patient",
+      "formula": "total_revenue / patient_count",
+      "benchmark_min": 150,
+      "benchmark_max": 400,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "patient_retention",
+      "name": "Patient Retention %",
+      "name_fr": "Rétention patients %",
+      "formula": "(returning_patients / total_patients) * 100",
+      "benchmark_min": 70,
+      "benchmark_max": 90,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "collection_rate",
+      "name": "Collection Rate %",
+      "name_fr": "Taux de recouvrement %",
+      "formula": "(collected_revenue / billed_revenue) * 100",
+      "benchmark_min": 85,
+      "benchmark_max": 98,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "ar_days",
+      "name": "AR Days",
+      "name_fr": "Jours comptes clients",
+      "formula": "(ar / total_revenue) * 365",
+      "benchmark_min": 30,
+      "benchmark_max": 50,
+      "format": "days",
+      "inverse": true
+    },
+    {
+      "id": "net_margin",
+      "name": "Net Margin %",
+      "name_fr": "Marge nette %",
+      "formula": "(net_income / total_revenue) * 100",
+      "benchmark_min": 12,
+      "benchmark_max": 20,
+      "format": "percent",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [300000, 800000],
+    "expense_ratio": 0.60,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 3300000,
+    "total_expenses": 1980000,
+    "net_income": 1320000
+  }
+}

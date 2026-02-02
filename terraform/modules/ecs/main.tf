@@ -222,6 +222,22 @@ resource "aws_iam_role_policy" "ecs_task" {
           "logs:PutLogEvents"
         ]
         Resource = "*"
+      },
+      # SES permissions for email sending via API
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail",
+          "ses:GetSendQuota",
+          "ses:GetSendStatistics"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "ses:FromAddress" = "noreply@${var.domain_name}"
+          }
+        }
       }
     ]
   })
@@ -641,7 +657,13 @@ resource "aws_ecs_task_definition" "api" {
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
         { name = "KEYCLOAK_ADMIN_CLIENT_ID", value = "plainledger-api" },
         { name = "CORS_ORIGIN", value = "https://${var.domain_name},https://www.${var.domain_name}" },
-        { name = "APP_URL", value = "https://${var.domain_name}" }
+        { name = "APP_URL", value = "https://${var.domain_name}" },
+        # SES Email Configuration (region: us-east-1 where domain is verified)
+        { name = "SES_REGION", value = "us-east-1" },
+        { name = "SES_FROM_ADDRESS", value = "noreply@${var.domain_name}" },
+        { name = "SES_FROM_NAME", value = "PlainLedger" },
+        { name = "SES_REPLY_TO_ADDRESS", value = "support@${var.domain_name}" },
+        { name = "SES_CONFIGURATION_SET", value = "${var.project}-tracking" }
       ]
 
       secrets = concat([

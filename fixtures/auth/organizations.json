@@ -1,0 +1,48 @@
+{
+  "organizations": [
+    {
+      "id": "test-org-free",
+      "name": "Free Tier Company",
+      "industry": "professional_services",
+      "plan": "free",
+      "settings": {
+        "currency": "CAD",
+        "fiscal_year_end": 12,
+        "demo_mode": true
+      }
+    },
+    {
+      "id": "test-org-001",
+      "name": "Test Professional Corp",
+      "industry": "real_estate",
+      "plan": "professional",
+      "settings": {
+        "currency": "CAD",
+        "fiscal_year_end": 12,
+        "demo_mode": false
+      }
+    },
+    {
+      "id": "test-org-enterprise",
+      "name": "Enterprise Holdings Inc",
+      "industry": "manufacturing",
+      "plan": "enterprise",
+      "settings": {
+        "currency": "CAD",
+        "fiscal_year_end": 3,
+        "demo_mode": false
+      }
+    },
+    {
+      "id": "demo-org",
+      "name": "Demo Real Estate Corp",
+      "industry": "real_estate",
+      "plan": "professional",
+      "settings": {
+        "currency": "CAD",
+        "fiscal_year_end": 12,
+        "demo_mode": false
+      }
+    }
+  ]
+}

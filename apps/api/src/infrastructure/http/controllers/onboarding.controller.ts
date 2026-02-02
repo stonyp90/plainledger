@@ -12,7 +12,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { AuthenticatedUser } from "nest-keycloak-connect";
-import { NovuService } from "../../notifications/novu.service";
+import { SESEmailService } from "../../notifications/ses-email.service";
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import {
@@ -80,7 +80,7 @@ export class OnboardingController {
   private readonly logger = new Logger(OnboardingController.name);
 
   constructor(
-    private readonly novuService: NovuService,
+    private readonly sesEmailService: SESEmailService,
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly userProfileRepository: PostgresUserProfileRepository,
   ) {}
@@ -153,10 +153,10 @@ export class OnboardingController {
         );
       }
 
-      // Send notification for onboarding completion
+      // Send notification for onboarding completion (internal)
       try {
-        if (userEmail) {
-          await this.novuService.sendOnboardingCompleteNotification({
+        if (userEmail && this.sesEmailService.isAvailable()) {
+          await this.sesEmailService.sendOnboardingCompleteNotification({
             email: userEmail,
             companyName: dto.companyName,
             companySize: dto.companySize,
@@ -164,11 +164,9 @@ export class OnboardingController {
             fiscalYearEnd: dto.fiscalYearEnd,
             currency: dto.currency,
             primarySource: dto.primarySource,
-            skipSource: dto.skipSource,
-            teamEmails: dto.teamEmails,
-            skipTeam: dto.skipTeam,
+            teamEmails: dto.teamEmails?.join(", "),
           });
-        } else {
+        } else if (!userEmail) {
           this.logger.warn("No email available for onboarding notification");
         }
       } catch (notifError) {

@@ -5,12 +5,22 @@
  * Default demo users use sandbox, all other users use production.
  */
 
-// Default demo users that should use sandbox
-const SANDBOX_USERS = [
-  "admin@plainledger.ca",
-  "accountant@plainledger.ca",
-  "demo@plainledger.ca",
-];
+/**
+ * Get list of demo users that should use sandbox
+ * Can be configured via SANDBOX_USERS environment variable (comma-separated)
+ */
+function getSandboxUsers(): string[] {
+  const envUsers = process.env.SANDBOX_USERS;
+  if (envUsers) {
+    return envUsers.split(",").map((email) => email.trim().toLowerCase());
+  }
+  // Default demo users
+  return [
+    process.env.ADMIN_EMAIL || "admin@plainledger.ca",
+    process.env.ACCOUNTANT_EMAIL || "accountant@plainledger.ca",
+    process.env.DEMO_EMAIL || "demo@plainledger.ca",
+  ].map((email) => email.toLowerCase());
+}
 
 /**
  * Determine if a user should use sandbox based on their email
@@ -22,8 +32,8 @@ export function shouldUseSandbox(userEmail?: string): boolean {
     // If no user email, default to sandbox for safety
     return true;
   }
-  // Check if user is one of the default demo users
-  return SANDBOX_USERS.includes(userEmail.toLowerCase());
+  // Check if user is one of the configured demo users
+  return getSandboxUsers().includes(userEmail.toLowerCase());
 }
 
 /**

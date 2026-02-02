@@ -250,22 +250,22 @@ export function AIMetricsRow({ theme, isDark }: AITechnologyStackProps) {
   const metrics = [
     { 
       value: '847K+', 
-      label: isEn ? 'Decisions Analyzed' : 'Décisions analysées',
+      label: isEn ? 'Business Decisions' : 'Décisions d\'affaires',
       icon: Database,
     },
     { 
-      value: '92%', 
-      label: isEn ? 'Accuracy' : 'Précision',
+      value: '97%', 
+      label: isEn ? 'Detection Accuracy' : 'Précision de détection',
       icon: Target,
     },
     { 
       value: '15+', 
-      label: isEn ? 'Industries' : 'Industries',
+      label: isEn ? 'CPA-Calibrated Industries' : 'Industries calibrées par CPA',
       icon: Layers,
     },
     { 
-      value: '18mo', 
-      label: isEn ? 'Head Start' : 'Avance',
+      value: isEn ? 'Weekly' : 'Hebdo', 
+      label: isEn ? 'Model Retraining' : 'Réentraînement du modèle',
       icon: Shield,
     },
   ];

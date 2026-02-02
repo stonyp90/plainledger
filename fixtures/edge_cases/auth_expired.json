@@ -1,0 +1,15 @@
+{
+  "name": "auth_expired",
+  "description": "OAuth token expired response",
+  "provider": "quickbooks",
+  "http_status": 401,
+  "response": {
+    "error": "invalid_grant",
+    "error_description": "Token has expired or been revoked"
+  },
+  "expected_behavior": {
+    "extractor": "Should attempt token refresh",
+    "api": "Should trigger re-authentication flow",
+    "ui": "Should prompt user to reconnect"
+  }
+}

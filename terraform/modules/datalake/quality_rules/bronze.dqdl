@@ -1,20 +1,37 @@
 Rules = [
-    # Schema validation
-    ColumnCount = 15,
+    # Schema validation - ensure required columns exist
     ColumnExists "organization_id",
+    ColumnExists "source_system",
     ColumnExists "source_id",
-    ColumnExists "raw_data",
     ColumnExists "ingested_at",
+    ColumnExists "entity_type",
     
-    # Completeness checks
+    # Completeness checks - critical fields must be present
     Completeness "organization_id" = 1.0,
     Completeness "source_id" = 1.0,
-    Completeness "raw_data" >= 0.99,
+    Completeness "source_system" = 1.0,
+    Completeness "ingested_at" = 1.0,
+    Completeness "entity_type" = 1.0,
     
     # Freshness check - data should be ingested within 24 hours
     Freshness "ingested_at" <= 24 hours,
     
     # Data type validation
     ColumnType "organization_id" = "string",
-    ColumnType "ingested_at" = "timestamp"
+    ColumnType "source_id" = "string",
+    ColumnType "ingested_at" = "timestamp",
+    ColumnType "source_system" = "string",
+    ColumnType "entity_type" = "string",
+    
+    # Source system validation - must be one of supported providers
+    ColumnValues "source_system" in ["QUICKBOOKS", "XERO", "SAGE", "FRESHBOOKS", "MANUAL"],
+    
+    # Entity type validation - must be one of supported entities
+    ColumnValues "entity_type" in ["account", "contact", "transaction", "invoice", "bill", "payment"],
+    
+    # Organization ID format validation (UUID format)
+    CustomSql "SELECT COUNT(*) FROM primary WHERE organization_id NOT SIMILAR TO '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'" = 0,
+    
+    # No duplicate source_id per organization and entity_type
+    Uniqueness "organization_id, source_id, entity_type" = 1.0
 ]

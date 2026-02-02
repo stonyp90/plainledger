@@ -1,0 +1,94 @@
+{
+  "industries": [
+    {
+      "id": "real_estate",
+      "name": "Real Estate",
+      "name_fr": "Immobilier",
+      "file": "real_estate.json"
+    },
+    {
+      "id": "restaurant",
+      "name": "Restaurant",
+      "name_fr": "Restaurant",
+      "file": "restaurant.json"
+    },
+    {
+      "id": "retail",
+      "name": "Retail",
+      "name_fr": "Commerce de détail",
+      "file": "retail.json"
+    },
+    {
+      "id": "hospitality",
+      "name": "Hospitality",
+      "name_fr": "Hôtellerie",
+      "file": "hospitality.json"
+    },
+    {
+      "id": "construction",
+      "name": "Construction",
+      "name_fr": "Construction",
+      "file": "construction.json"
+    },
+    {
+      "id": "professional_services",
+      "name": "Professional Services",
+      "name_fr": "Services professionnels",
+      "file": "professional_services.json"
+    },
+    {
+      "id": "manufacturing",
+      "name": "Manufacturing",
+      "name_fr": "Fabrication",
+      "file": "manufacturing.json"
+    },
+    {
+      "id": "agriculture",
+      "name": "Agriculture",
+      "name_fr": "Agriculture",
+      "file": "agriculture.json"
+    },
+    {
+      "id": "transport",
+      "name": "Transportation",
+      "name_fr": "Transport",
+      "file": "transport.json"
+    },
+    {
+      "id": "healthcare",
+      "name": "Healthcare",
+      "name_fr": "Santé",
+      "file": "healthcare.json"
+    },
+    {
+      "id": "education",
+      "name": "Education",
+      "name_fr": "Éducation",
+      "file": "education.json"
+    },
+    {
+      "id": "wholesale",
+      "name": "Wholesale",
+      "name_fr": "Commerce de gros",
+      "file": "wholesale.json"
+    },
+    {
+      "id": "automotive",
+      "name": "Automotive",
+      "name_fr": "Automobile",
+      "file": "automotive.json"
+    },
+    {
+      "id": "beauty_wellness",
+      "name": "Beauty & Wellness",
+      "name_fr": "Beauté et bien-être",
+      "file": "beauty_wellness.json"
+    },
+    {
+      "id": "technology",
+      "name": "Technology",
+      "name_fr": "Technologie",
+      "file": "technology.json"
+    }
+  ]
+}

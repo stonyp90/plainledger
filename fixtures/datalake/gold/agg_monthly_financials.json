@@ -1,0 +1,29 @@
+[
+  {
+    "period": "2025-09",
+    "organization_key": "test-org-123",
+    "revenue": 45000.00,
+    "expenses": 32000.00,
+    "net_income": 13000.00,
+    "transaction_count": 45,
+    "gross_margin": 28.89
+  },
+  {
+    "period": "2025-10",
+    "organization_key": "test-org-123",
+    "revenue": 52000.00,
+    "expenses": 35000.00,
+    "net_income": 17000.00,
+    "transaction_count": 52,
+    "gross_margin": 32.69
+  },
+  {
+    "period": "2025-11",
+    "organization_key": "test-org-123",
+    "revenue": 48500.00,
+    "expenses": 30000.00,
+    "net_income": 18500.00,
+    "transaction_count": 48,
+    "gross_margin": 38.14
+  }
+]

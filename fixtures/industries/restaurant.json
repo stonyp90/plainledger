@@ -1,0 +1,117 @@
+{
+  "id": "restaurant",
+  "name": "Restaurant",
+  "name_fr": "Restaurant",
+  
+  "accounts": [
+    {"name": "Food Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "food_sales"},
+    {"name": "Beverage Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "beverage_sales"},
+    {"name": "Catering Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "catering_revenue"},
+    {"name": "Delivery Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "delivery_revenue"},
+    {"name": "Food Cost - Inventory", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "food_cost"},
+    {"name": "Beverage Cost", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "beverage_cost"},
+    {"name": "Kitchen Labor", "type": "Expense", "subtype": "PayrollExpenses", "category": "labor_cost"},
+    {"name": "Front of House Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "labor_cost"},
+    {"name": "Restaurant Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Utilities - Restaurant", "type": "Expense", "subtype": "Utilities", "category": "occupancy"},
+    {"name": "Kitchen Equipment", "type": "Fixed Asset", "subtype": "FurnitureAndFixtures", "category": "equipment"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"},
+    {"name": "Accounts Receivable", "type": "Asset", "subtype": "AccountsReceivable", "category": "ar"},
+    {"name": "Accounts Payable", "type": "Liability", "subtype": "AccountsPayable", "category": "ap"}
+  ],
+  
+  "customers": [
+    {"name": "Corporate Events Inc", "email": "events@corporate.com", "phone": "514-555-0100"},
+    {"name": "Wedding Planner Plus", "email": "bookings@weddingplus.com", "phone": "514-555-0101"},
+    {"name": "Office Catering Co", "email": "orders@officecatering.com", "phone": "514-555-0102"},
+    {"name": "Local Business Network", "email": "lunch@lbn.ca", "phone": "514-555-0103"},
+    {"name": "Private Party Client", "email": "party@email.com", "phone": "514-555-0104"}
+  ],
+  
+  "vendors": [
+    {"name": "Fresh Produce Wholesale", "email": "orders@freshproduce.com", "category": "food_supplier"},
+    {"name": "Premium Meats Ltd", "email": "sales@premiummeats.com", "category": "food_supplier"},
+    {"name": "Dairy Direct", "email": "orders@dairydirect.com", "category": "food_supplier"},
+    {"name": "Wine & Spirits Distributor", "email": "orders@winespirits.com", "category": "beverage_supplier"},
+    {"name": "Restaurant Equipment Rental", "email": "rentals@resteq.com", "category": "equipment"},
+    {"name": "Cleaning Services Pro", "email": "service@cleanpro.com", "category": "services"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "food_cost_pct",
+      "name": "Food Cost %",
+      "name_fr": "Coût nourriture %",
+      "formula": "(food_cost / food_sales) * 100",
+      "benchmark_min": 28,
+      "benchmark_max": 35,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "beverage_cost_pct",
+      "name": "Beverage Cost %",
+      "name_fr": "Coût boissons %",
+      "formula": "(beverage_cost / beverage_sales) * 100",
+      "benchmark_min": 18,
+      "benchmark_max": 24,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "labor_cost_pct",
+      "name": "Labor Cost %",
+      "name_fr": "Coût main-d'œuvre %",
+      "formula": "(labor_cost / total_revenue) * 100",
+      "benchmark_min": 25,
+      "benchmark_max": 35,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "prime_cost_pct",
+      "name": "Prime Cost %",
+      "name_fr": "Coût primaire %",
+      "formula": "((food_cost + beverage_cost + labor_cost) / total_revenue) * 100",
+      "benchmark_min": 55,
+      "benchmark_max": 65,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "occupancy_cost_pct",
+      "name": "Occupancy Cost %",
+      "name_fr": "Coût occupation %",
+      "formula": "(occupancy / total_revenue) * 100",
+      "benchmark_min": 6,
+      "benchmark_max": 10,
+      "format": "percent",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [80000, 200000],
+    "expense_ratio": 0.65,
+    "months_of_data": 6,
+    "revenue_distribution": {
+      "food_sales": 0.70,
+      "beverage_sales": 0.20,
+      "catering_revenue": 0.08,
+      "delivery_revenue": 0.02
+    },
+    "expense_distribution": {
+      "food_cost": 0.30,
+      "beverage_cost": 0.05,
+      "labor_cost": 0.35,
+      "occupancy": 0.10,
+      "other": 0.20
+    }
+  },
+  
+  "expected_gold": {
+    "total_revenue": 840000,
+    "total_expenses": 546000,
+    "net_income": 294000
+  }
+}

@@ -12,10 +12,11 @@
  * - Circuit breaker pattern
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Inject, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { AIGuardrailsService } from "./ai-guardrails.service";
 import { IAIService } from "@application/ports/outbound/IAIService";
+import { AppConfig } from "@infrastructure/config/app.config";
 
 export type AIProvider =
   | "openai"
@@ -91,16 +92,16 @@ export class AIService implements IAIService {
     new Map();
   private readonly guardrails: AIGuardrailsService = new AIGuardrailsService();
 
-  // Rate limits: requests per minute per tenant
-  private readonly RATE_LIMIT_REQUESTS = 30;
-  private readonly RATE_LIMIT_WINDOW_MS = 60 * 1000;
+  // Rate limits: requests per minute per tenant (configurable via AppConfig)
+  private readonly RATE_LIMIT_REQUESTS: number;
+  private readonly RATE_LIMIT_WINDOW_MS: number;
 
-  // Circuit breaker thresholds
-  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5;
-  private readonly CIRCUIT_BREAKER_RESET_TIMEOUT = 60 * 1000; // 1 minute
+  // Circuit breaker thresholds (configurable via AppConfig)
+  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD: number;
+  private readonly CIRCUIT_BREAKER_RESET_TIMEOUT: number;
 
-  // Cache TTL: 5 minutes
-  private readonly CACHE_TTL_MS = 5 * 60 * 1000;
+  // Cache TTL (configurable via AppConfig)
+  private readonly CACHE_TTL_MS: number;
 
   // Default models per provider (full tier)
   private readonly DEFAULT_MODELS: Record<AIProvider, string> = {
@@ -124,7 +125,10 @@ export class AIService implements IAIService {
     ollama: "llama2",
   };
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() @Inject(AppConfig) private readonly appConfig?: AppConfig,
+  ) {
     this.maxRetries = parseInt(
       this.configService.get<string>("AI_MAX_RETRIES") || "3",
       10,
@@ -137,6 +141,13 @@ export class AIService implements IAIService {
       this.configService.get<string>("AI_MAX_TOKENS") || "4000",
       10,
     );
+
+    // Initialize configurable values from AppConfig or defaults
+    this.RATE_LIMIT_REQUESTS = this.appConfig?.aiRateLimitRequests ?? 30;
+    this.RATE_LIMIT_WINDOW_MS = this.appConfig?.aiRateLimitWindowMs ?? 60000;
+    this.CIRCUIT_BREAKER_FAILURE_THRESHOLD = this.appConfig?.aiCircuitBreakerFailureThreshold ?? 5;
+    this.CIRCUIT_BREAKER_RESET_TIMEOUT = this.appConfig?.aiCircuitBreakerResetTimeout ?? 60000;
+    this.CACHE_TTL_MS = this.appConfig?.aiCacheTtlMs ?? 300000;
 
     // Initialize all providers
     this.initializeProviders();

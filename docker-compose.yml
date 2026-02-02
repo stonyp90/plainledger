@@ -81,10 +81,10 @@ services:
       - plainledger-network
 
   # ============================================
-  # PostgreSQL for Application
+  # PostgreSQL for Application (with pgvector)
   # ============================================
   app-db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: plainledger-app-db
     environment:
       POSTGRES_DB: plainledger
@@ -96,6 +96,7 @@ services:
       - app-db-data:/var/lib/postgresql/data
       - ./local-dev/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./local-dev/init-datalake.sql:/docker-entrypoint-initdb.d/02-datalake.sql
+      - ./local-dev/init-pgvector.sql:/docker-entrypoint-initdb.d/03-pgvector.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U plainledger"]
       interval: 5s
@@ -208,6 +209,9 @@ services:
     container_name: plainledger-api
     environment:
       NODE_ENV: development
+      # LOCAL DEV ONLY: Skip Keycloak auth for easier local testing
+      # This is IGNORED in production (app.module.ts checks NODE_ENV !== "production")
+      SKIP_AUTH: "true"
       PORT: 3000
       # Database
       DB_HOST: app-db
@@ -295,6 +299,82 @@ services:
         condition: service_healthy
     networks:
       - plainledger-network
+
+  # ============================================
+  # ETL Pipeline Runner (for E2E testing)
+  # ============================================
+  etl-runner:
+    build:
+      context: .
+      dockerfile: pipelines/Dockerfile
+    container_name: plainledger-etl-runner
+    environment:
+      # AWS/S3 Configuration
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_BUCKET_BRONZE: plainledger-bronze
+      S3_BUCKET_SILVER: plainledger-silver
+      S3_BUCKET_GOLD: plainledger-gold
+      S3_BUCKET_QUARANTINE: plainledger-quarantine
+      # Database
+      DB_HOST: app-db
+      DB_PORT: 5432
+      DB_NAME: plainledger
+      DB_USER: plainledger
+      DB_PASSWORD: plainledger_secret
+      # Redis (for cache invalidation)
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # OpenAI (for pgvector embeddings - optional in dev)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Pipeline config
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./pipelines:/app/pipelines
+      - ./scripts:/app/scripts
+    depends_on:
+      app-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - plainledger-network
+    # Keep container running for manual testing
+    command: ["tail", "-f", "/dev/null"]
+    profiles:
+      - etl
+
+  # ============================================
+  # ETL Test Data Seeder
+  # ============================================
+  etl-seeder:
+    build:
+      context: .
+      dockerfile: pipelines/Dockerfile
+    container_name: plainledger-etl-seeder
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_BUCKET_BRONZE: plainledger-bronze
+      S3_BUCKET_GOLD: plainledger-gold
+    volumes:
+      - ./pipelines:/app/pipelines
+      - ./scripts:/app/scripts
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - plainledger-network
+    command: ["python", "-m", "pipelines.tests.seed_test_data"]
+    profiles:
+      - seed
 
 # ============================================
 # Volumes

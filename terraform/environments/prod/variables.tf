@@ -134,6 +134,21 @@ variable "keycloak_client_secret" {
   default     = ""  # Can be empty initially, update via AWS console
 }
 
+# SES SMTP (for Keycloak and API email sending)
+variable "ses_smtp_user" {
+  description = "AWS SES SMTP username (IAM Access Key ID)"
+  type        = string
+  sensitive   = true
+  default     = ""  # Set via terraform.tfvars or environment
+}
+
+variable "ses_smtp_password" {
+  description = "AWS SES SMTP password (IAM Secret converted for SES)"
+  type        = string
+  sensitive   = true
+  default     = ""  # Set via terraform.tfvars or environment
+}
+
 # MongoDB Atlas (Analytics & Audit)
 variable "mongodb_uri" {
   description = "MongoDB Atlas connection URI"
@@ -168,6 +183,19 @@ variable "posthog_host" {
   description = "PostHog API host"
   type        = string
   default     = "https://us.i.posthog.com"
+}
+
+# ETL Pipeline Alerts
+variable "etl_alert_emails" {
+  description = "List of email addresses for ETL pipeline failure notifications"
+  type        = list(string)
+  default     = ["tony@plainledger.ca", "bartosz@plainledger.ca"]
+}
+
+variable "alert_email" {
+  description = "Primary email for ETL alerts (Lambda will use this)"
+  type        = string
+  default     = "tony@plainledger.ca"
 }
 
 # Terraform Backend

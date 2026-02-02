@@ -1,0 +1,49 @@
+{
+  "extraction_timestamp": "2025-12-01T10:00:00Z",
+  "source_system": "QUICKBOOKS",
+  "entity_type": "account",
+  "organization_id": "test-org-123",
+  "record_count": 5,
+  "records": [
+    {
+      "Id": "1",
+      "Name": "Bank Account",
+      "AccountType": "Bank",
+      "AccountSubType": "Checking",
+      "CurrentBalance": 50000.00,
+      "Active": true
+    },
+    {
+      "Id": "2",
+      "Name": "Accounts Receivable",
+      "AccountType": "Accounts Receivable",
+      "AccountSubType": "",
+      "CurrentBalance": 25000.00,
+      "Active": true
+    },
+    {
+      "Id": "3",
+      "Name": "Sales Revenue",
+      "AccountType": "Income",
+      "AccountSubType": "SalesOfProductIncome",
+      "CurrentBalance": 150000.00,
+      "Active": true
+    },
+    {
+      "Id": "4",
+      "Name": "Cost of Goods Sold",
+      "AccountType": "Cost of Goods Sold",
+      "AccountSubType": "",
+      "CurrentBalance": 75000.00,
+      "Active": true
+    },
+    {
+      "Id": "5",
+      "Name": "Office Expenses",
+      "AccountType": "Expense",
+      "AccountSubType": "OfficeGeneralAdministrativeExpenses",
+      "CurrentBalance": 10000.00,
+      "Active": true
+    }
+  ]
+}

@@ -48,8 +48,8 @@ export function createDatalakeConfigFromEnv(): DatalakeConfig {
       "S3_BUCKET_BRONZE",
       "S3_BUCKET_SILVER",
       "S3_BUCKET_GOLD",
-      "DB_HOST",
-      "DB_PASSWORD",
+      "DATABASE_HOST",
+      "DATABASE_PASSWORD",
     ];
     const missing = requiredVars.filter((v) => !process.env[v]);
     if (missing.length > 0) {
@@ -71,7 +71,7 @@ export function createDatalakeConfigFromEnv(): DatalakeConfig {
     bucketName: process.env.S3_BUCKET_NAME || "plainledger-datalake",
     dbConnectionString:
       process.env.DATABASE_URL ||
-      `postgresql://${process.env.DB_USERNAME || "plainledger"}:${process.env.DB_PASSWORD || ""}@${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "plainledger"}`,
+      `postgresql://${process.env.DATABASE_USER || "plainledger"}:${process.env.DATABASE_PASSWORD || ""}@${process.env.DATABASE_HOST || "localhost"}:${process.env.DATABASE_PORT || "5432"}/${process.env.DATABASE_NAME || "plainledger"}`,
     bronzeBucket: process.env.S3_BUCKET_BRONZE || "plainledger-bronze",
     silverBucket: process.env.S3_BUCKET_SILVER || "plainledger-silver",
     goldBucket: process.env.S3_BUCKET_GOLD || "plainledger-gold",

@@ -11,7 +11,7 @@ import {
  * Tracks the lifecycle of every email sent through the system
  */
 export type EmailEventType =
-  | "sent" // Email handed off to SES/Novu
+  | "sent" // Email handed off to AWS SES
   | "delivered" // Confirmed delivery to inbox
   | "opened" // User opened the email
   | "clicked" // User clicked a link
@@ -24,7 +24,7 @@ export type EmailEventType =
  * Tracks all email interactions for deliverability monitoring and analytics
  *
  * This table is populated by:
- * 1. SES/Novu webhook callbacks (bounce, complaint, delivery, open, click)
+ * 1. SES webhook callbacks (bounce, complaint, delivery, open, click)
  * 2. Direct logging when emails are sent
  * 3. Unsubscribe endpoint
  */
@@ -38,13 +38,13 @@ export class EmailEventEntity {
   id: string;
 
   /**
-   * SES/Novu Message ID - used to correlate events
+   * SES Message ID - used to correlate events
    */
   @Column({ name: "message_id", length: 255, nullable: true })
   messageId?: string;
 
   /**
-   * Novu Transaction ID - for Novu-triggered emails
+   * Transaction ID - SES message ID (stored here for backward compatibility)
    */
   @Column({ name: "transaction_id", length: 100, nullable: true })
   transactionId?: string;
@@ -63,7 +63,7 @@ export class EmailEventEntity {
   recipient: string;
 
   /**
-   * Novu workflow ID that triggered this email (e.g., 'welcome', 'journey_day_1')
+   * Workflow ID that triggered this email (e.g., 'welcome', 'journey-day-1')
    */
   @Column({ name: "workflow_id", length: 100, nullable: true })
   workflowId?: string;
@@ -93,7 +93,7 @@ export class EmailEventEntity {
   linkClicked?: string;
 
   /**
-   * Additional metadata from SES/Novu webhooks
+   * Additional metadata from SES webhooks
    */
   @Column({ type: "jsonb", nullable: true })
   metadata?: {

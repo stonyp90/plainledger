@@ -459,6 +459,193 @@ export class SESEmailService implements OnModuleInit {
       includeUnsubscribe: true,
     });
   }
+
+  /**
+   * Send journey email by workflow ID with template selection
+   */
+  async sendJourneyEmailByWorkflow(
+    workflowId: string,
+    userId: string,
+    to: string,
+    firstName: string,
+    data: Record<string, unknown>,
+  ): Promise<SESEmailResult> {
+    const baseUrl = this.configService.get<string>(
+      "APP_URL",
+      "https://app.plainledger.ca",
+    );
+    const calendlyUrl = "https://calendly.com/anthonypaquet1508";
+
+    let html: string;
+    let subject: string;
+    let text: string | undefined;
+
+    switch (workflowId) {
+      case "journey-day-1":
+        html = this.emailTemplates.journeyDay1({
+          firstName,
+          connectionUrl: `${baseUrl}/app/connections`,
+          calendlyUrl,
+        });
+        subject = "Connect your accounting software to PlainLedger";
+        text = `Hello ${firstName},\n\nWelcome to PlainLedger! Connect your accounting software to start seeing your real financial data.\n\nConnect now: ${baseUrl}/app/connections\n\nNeed help? Schedule a call: ${calendlyUrl}`;
+        break;
+
+      case "journey-day-3":
+        html = this.emailTemplates.journeyDay3({
+          firstName,
+          calendlyUrl,
+          helpUrl: `${baseUrl}/help`,
+        });
+        subject = "Need help getting started? Let's chat!";
+        text = `Hello ${firstName},\n\nWe noticed you haven't connected your accounting software yet. We're here to help!\n\nSchedule a free 15-minute call: ${calendlyUrl}\n\nOr check out our help center: ${baseUrl}/help`;
+        break;
+
+      case "journey-day-7":
+        html = this.emailTemplates.journeyDay7({
+          firstName,
+          calendlyUrl,
+          connectionUrl: `${baseUrl}/app/connections`,
+          featuresUrl: `${baseUrl}/features`,
+        });
+        subject = "We're here to help you succeed";
+        text = `Hello ${firstName},\n\nIt's been a week since you signed up. We want to make sure you're getting the most out of PlainLedger.\n\nBook a demo: ${calendlyUrl}\n\nConnect your software: ${baseUrl}/app/connections`;
+        break;
+
+      case "journey-first-dashboard":
+        html = this.emailTemplates.journeyFirstDashboard({
+          firstName,
+          providerName: (data.providerName as string) || "accounting software",
+          dashboardUrl: `${baseUrl}/app/dashboard`,
+          reportsUrl: `${baseUrl}/app/reports`,
+        });
+        subject = "Your financial dashboard is ready!";
+        text = `Hello ${firstName},\n\nGreat news! We've successfully connected your account and your dashboard is ready.\n\nView dashboard: ${baseUrl}/app/dashboard`;
+        break;
+
+      case "journey-trial-reminder-3":
+        html = this.emailTemplates.journeyTrialReminder({
+          firstName,
+          daysLeft: 3,
+          trialEndsAt: (data.trialEndsAt as string) || new Date().toISOString(),
+          upgradeUrl: `${baseUrl}/app/settings?tab=subscription`,
+          pricingUrl: `${baseUrl}/pricing`,
+        });
+        subject = "Your PlainLedger trial ends in 3 days";
+        text = `Hello ${firstName},\n\nYour trial ends in 3 days. Subscribe now to keep access to your financial insights.\n\nUpgrade: ${baseUrl}/app/settings?tab=subscription`;
+        break;
+
+      case "journey-trial-reminder-1":
+        html = this.emailTemplates.journeyTrialReminder({
+          firstName,
+          daysLeft: 1,
+          trialEndsAt: (data.trialEndsAt as string) || new Date().toISOString(),
+          upgradeUrl: `${baseUrl}/app/settings?tab=subscription`,
+          pricingUrl: `${baseUrl}/pricing`,
+        });
+        subject = "Last day of your PlainLedger trial!";
+        text = `Hello ${firstName},\n\nYour trial ends tomorrow! Subscribe now to keep everything you've set up.\n\nUpgrade: ${baseUrl}/app/settings?tab=subscription`;
+        break;
+
+      case "journey-winback":
+      case "winback-offer":
+        html = this.emailTemplates.journeyWinback({
+          firstName,
+          lastActiveAt:
+            (data.lastActiveAt as string) || new Date().toISOString(),
+          dashboardUrl: `${baseUrl}/app/dashboard`,
+          calendlyUrl,
+        });
+        subject = "We miss you at PlainLedger!";
+        text = `Hello ${firstName},\n\nWe noticed you haven't been active lately. We'd love to help you get back on track.\n\nVisit dashboard: ${baseUrl}/app/dashboard`;
+        break;
+
+      default:
+        this.logger.warn(`Unknown journey workflow ID: ${workflowId}`);
+        return {
+          success: false,
+          error: `Unknown workflow ID: ${workflowId}`,
+        };
+    }
+
+    return this.sendEmail({
+      to,
+      subject,
+      html,
+      text,
+      userId,
+      category: "journey",
+      workflowId,
+      includeUnsubscribe: true,
+    });
+  }
+
+  /**
+   * Send contact form notification to internal team
+   */
+  async sendContactFormNotification(data: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    source?: string;
+  }): Promise<SESEmailResult> {
+    const html = this.emailTemplates.contactFormNotification({
+      ...data,
+      timestamp: new Date().toISOString(),
+    });
+
+    return this.sendEmail({
+      to: "info@plainledger.ca",
+      subject: `Contact Form: ${data.subject}`,
+      html,
+      category: "transactional",
+    });
+  }
+
+  /**
+   * Send contact form auto-reply to sender
+   */
+  async sendContactFormAutoReply(data: {
+    name: string;
+    email: string;
+    subject: string;
+  }): Promise<SESEmailResult> {
+    const html = this.emailTemplates.contactFormAutoReply({
+      name: data.name,
+      subject: data.subject,
+    });
+
+    return this.sendEmail({
+      to: data.email,
+      subject: `Re: ${data.subject}`,
+      html,
+      category: "transactional",
+    });
+  }
+
+  /**
+   * Send onboarding completion notification (internal)
+   */
+  async sendOnboardingCompleteNotification(data: {
+    email: string;
+    companyName: string;
+    companySize?: string;
+    industry?: string;
+    fiscalYearEnd?: number;
+    currency?: string;
+    primarySource?: string;
+    teamEmails?: string;
+  }): Promise<SESEmailResult> {
+    const html = this.emailTemplates.onboardingCompleteNotification(data);
+
+    return this.sendEmail({
+      to: "info@plainledger.ca",
+      subject: `New Onboarding: ${data.companyName}`,
+      html,
+      category: "transactional",
+    });
+  }
 }
 
 // ============================================================================

@@ -181,4 +181,92 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   getUserSettingsKey(userId: string): string {
     return `user:settings:${userId}`;
   }
+
+  /**
+   * Get cache key for datalake entity
+   * Format: datalake:{orgId}:{entity}:{filterHash}
+   */
+  getDatalakeKey(
+    orgId: string,
+    entity: string,
+    filters?: Record<string, any>,
+  ): string {
+    const baseKey = `datalake:${orgId}:${entity}`;
+    if (!filters || Object.keys(filters).length === 0) {
+      return baseKey;
+    }
+    // Create deterministic hash from filters
+    const filterStr = JSON.stringify(
+      Object.keys(filters)
+        .sort()
+        .reduce(
+          (acc, key) => {
+            acc[key] = filters[key];
+            return acc;
+          },
+          {} as Record<string, any>,
+        ),
+    );
+    const filterHash = Buffer.from(filterStr).toString("base64").slice(0, 16);
+    return `${baseKey}:${filterHash}`;
+  }
+
+  /**
+   * Invalidate all datalake cache for an organization
+   * Optionally invalidate specific entity type
+   */
+  async invalidateDatalake(orgId: string, entity?: string): Promise<number> {
+    const pattern = entity
+      ? `datalake:${orgId}:${entity}*`
+      : `datalake:${orgId}:*`;
+    return this.deletePattern(pattern);
+  }
+
+  /**
+   * Request deduplication: ensures only one request per key is in flight
+   * Prevents duplicate concurrent S3 API calls
+   */
+  private pendingRequests = new Map<string, Promise<any>>();
+
+  /**
+   * Get from cache or fetch, with request deduplication
+   * If multiple requests come for the same key simultaneously,
+   * they share the same fetch promise
+   */
+  async getOrFetch<T>(
+    key: string,
+    fetcher: () => Promise<T>,
+    ttlSeconds?: number,
+  ): Promise<T> {
+    // Check cache first
+    const cached = await this.get<T>(key);
+    if (cached !== null) {
+      return cached;
+    }
+
+    // Check if request is already in flight
+    const pending = this.pendingRequests.get(key);
+    if (pending) {
+      this.logger.debug(
+        `Request deduplication: reusing pending fetch for ${key}`,
+      );
+      return pending as Promise<T>;
+    }
+
+    // Create new fetch promise
+    const fetchPromise = (async () => {
+      try {
+        const value = await fetcher();
+        // Cache the result
+        await this.set(key, value, ttlSeconds);
+        return value;
+      } finally {
+        // Remove from pending requests
+        this.pendingRequests.delete(key);
+      }
+    })();
+
+    this.pendingRequests.set(key, fetchPromise);
+    return fetchPromise;
+  }
 }

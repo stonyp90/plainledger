@@ -1,0 +1,115 @@
+{
+  "id": "real_estate",
+  "name": "Real Estate",
+  "name_fr": "Immobilier",
+  
+  "accounts": [
+    {"name": "Rental Income - Residential", "type": "Income", "subtype": "ServiceFeeIncome", "category": "rental_income"},
+    {"name": "Rental Income - Commercial", "type": "Income", "subtype": "ServiceFeeIncome", "category": "rental_income"},
+    {"name": "Property Management Fees", "type": "Income", "subtype": "ServiceFeeIncome", "category": "management_fees"},
+    {"name": "Late Fees & Penalties", "type": "Other Income", "subtype": "OtherMiscellaneousIncome", "category": "other_income"},
+    {"name": "Property Maintenance", "type": "Expense", "subtype": "RepairMaintenance", "category": "operating_expenses"},
+    {"name": "Property Insurance", "type": "Expense", "subtype": "Insurance", "category": "operating_expenses"},
+    {"name": "Property Taxes", "type": "Expense", "subtype": "TaxesPaid", "category": "operating_expenses"},
+    {"name": "Utilities - Common Areas", "type": "Expense", "subtype": "Utilities", "category": "operating_expenses"},
+    {"name": "Property Management Labor", "type": "Expense", "subtype": "PayrollExpenses", "category": "labor_cost"},
+    {"name": "Mortgage Interest", "type": "Expense", "subtype": "InterestPaid", "category": "financing_cost"},
+    {"name": "Building - Properties", "type": "Fixed Asset", "subtype": "Buildings", "category": "property_value"},
+    {"name": "Land", "type": "Fixed Asset", "subtype": "Land", "category": "property_value"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"},
+    {"name": "Security Deposits Held", "type": "Liability", "subtype": "OtherCurrentLiabilities", "category": "deposits"},
+    {"name": "Mortgage Payable", "type": "Liability", "subtype": "NotesPayable", "category": "debt"}
+  ],
+  
+  "customers": [
+    {"name": "Residential Tenant - Unit 101", "email": "tenant101@email.com", "phone": "514-555-1001"},
+    {"name": "Residential Tenant - Unit 102", "email": "tenant102@email.com", "phone": "514-555-1002"},
+    {"name": "Commercial Tenant - Suite A", "email": "business@suiteA.com", "phone": "514-555-1003"},
+    {"name": "Commercial Tenant - Suite B", "email": "retail@suiteB.com", "phone": "514-555-1004"},
+    {"name": "Parking Lease - Corp", "email": "parking@corp.com", "phone": "514-555-1005"}
+  ],
+  
+  "vendors": [
+    {"name": "Property Maintenance Co", "email": "service@propmaint.com", "category": "maintenance"},
+    {"name": "Plumbing Pros", "email": "emergency@plumbingpros.com", "category": "maintenance"},
+    {"name": "HVAC Solutions", "email": "service@hvacsol.com", "category": "maintenance"},
+    {"name": "Landscaping Services", "email": "contracts@landscape.com", "category": "maintenance"},
+    {"name": "Insurance Broker Ltd", "email": "renewals@insbroker.com", "category": "insurance"},
+    {"name": "Property Tax Authority", "email": "taxes@city.gov", "category": "taxes"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "noi",
+      "name": "Net Operating Income",
+      "name_fr": "Revenu net d'exploitation",
+      "formula": "rental_income - operating_expenses",
+      "benchmark_min": 50000,
+      "benchmark_max": 200000,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "cap_rate",
+      "name": "Cap Rate",
+      "name_fr": "Taux de capitalisation",
+      "formula": "((rental_income - operating_expenses) / property_value) * 100",
+      "benchmark_min": 4,
+      "benchmark_max": 10,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "expense_ratio",
+      "name": "Operating Expense Ratio",
+      "name_fr": "Ratio des dépenses",
+      "formula": "(operating_expenses / rental_income) * 100",
+      "benchmark_min": 30,
+      "benchmark_max": 50,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "cash_on_cash",
+      "name": "Cash-on-Cash Return",
+      "name_fr": "Rendement cash-on-cash",
+      "formula": "((rental_income - operating_expenses - financing_cost) / equity) * 100",
+      "benchmark_min": 8,
+      "benchmark_max": 12,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "debt_service_coverage",
+      "name": "Debt Service Coverage Ratio",
+      "name_fr": "Ratio de couverture de la dette",
+      "formula": "(rental_income - operating_expenses) / financing_cost",
+      "benchmark_min": 1.2,
+      "benchmark_max": 1.5,
+      "format": "ratio",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [150000, 350000],
+    "expense_ratio": 0.45,
+    "months_of_data": 6,
+    "revenue_distribution": {
+      "rental_income": 0.92,
+      "management_fees": 0.05,
+      "other_income": 0.03
+    },
+    "expense_distribution": {
+      "operating_expenses": 0.60,
+      "labor_cost": 0.15,
+      "financing_cost": 0.25
+    }
+  },
+  
+  "expected_gold": {
+    "total_revenue": 1500000,
+    "total_expenses": 675000,
+    "net_income": 825000
+  }
+}

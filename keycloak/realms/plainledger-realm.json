@@ -19,7 +19,7 @@
   "minimumQuickLoginWaitSeconds": 60,
   "maxFailureWaitSeconds": 900,
   "maxDeltaTimeSeconds": 43200,
-  "verifyEmail": true,
+  "verifyEmail": false,
   "loginTheme": "keycloak",
   "accountTheme": "keycloak.v2",
   "emailTheme": "plainledger",

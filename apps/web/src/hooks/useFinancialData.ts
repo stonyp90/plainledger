@@ -126,6 +126,13 @@ export function useFinancialData(options: {
   // 2. Mock data is ONLY for free/starter tier users when no connection exists
   // 3. Paid users (professional/enterprise) NEVER see mock data - they see empty states
   const shouldUseMockData = useMemo(() => {
+    // Wait for dataSources query to complete before deciding
+    // This prevents race condition where we skip queries before connection status is known
+    if (dataSourcesLoading) {
+      // While loading, assume we'll use real data to avoid skipping queries prematurely
+      return false;
+    }
+    
     // If we have a real connection, NEVER use mock data - always show real data
     if (hasRealConnection) {
       console.log('[useFinancialData] Using REAL data - connection detected, ignoring free tier/demo mode', {
@@ -197,7 +204,7 @@ export function useFinancialData(options: {
     }
     
     return useMock;
-  }, [hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
+  }, [dataSourcesLoading, hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
 
   // Fetch dashboard summary from GraphQL (no filter - use defaults)
   // Skip if using mock data

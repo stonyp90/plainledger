@@ -1,0 +1,103 @@
+{
+  "id": "automotive",
+  "name": "Automotive",
+  "name_fr": "Automobile",
+  
+  "accounts": [
+    {"name": "Vehicle Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "vehicle_sales"},
+    {"name": "Service & Repair Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "service_revenue"},
+    {"name": "Parts Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "parts_sales"},
+    {"name": "Extended Warranty Sales", "type": "Income", "subtype": "ServiceFeeIncome", "category": "warranty_sales"},
+    {"name": "Vehicle Inventory Cost", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "vehicle_cost"},
+    {"name": "Parts Cost", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "parts_cost"},
+    {"name": "Technician Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "technician_wages"},
+    {"name": "Sales Staff Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "sales_wages"},
+    {"name": "Facility Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Advertising", "type": "Expense", "subtype": "AdvertisingPromotional", "category": "marketing"},
+    {"name": "Floor Plan Interest", "type": "Expense", "subtype": "InterestPaid", "category": "floor_plan"},
+    {"name": "Shop Equipment", "type": "Fixed Asset", "subtype": "MachineryAndEquipment", "category": "equipment"},
+    {"name": "Vehicle Inventory", "type": "Asset", "subtype": "Inventory", "category": "vehicle_inventory"},
+    {"name": "Parts Inventory", "type": "Asset", "subtype": "Inventory", "category": "parts_inventory"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Individual Buyer", "email": "buyer@email.com", "phone": "514-555-0401"},
+    {"name": "Fleet Customer", "email": "fleet@company.com", "phone": "514-555-0402"},
+    {"name": "Service Customer - Regular", "email": "service@email.com", "phone": "514-555-0403"},
+    {"name": "Body Shop Referral", "email": "bodyshop@repair.com", "phone": "514-555-0404"}
+  ],
+  
+  "vendors": [
+    {"name": "Vehicle Manufacturer", "email": "dealer@manufacturer.com", "category": "vehicles"},
+    {"name": "OEM Parts Distributor", "email": "orders@oemparts.com", "category": "parts"},
+    {"name": "Aftermarket Parts Supplier", "email": "orders@aftermarket.com", "category": "parts"},
+    {"name": "Floor Plan Lender", "email": "accounts@floorplan.com", "category": "financing"},
+    {"name": "Shop Equipment Supplier", "email": "sales@shopequip.com", "category": "equipment"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "service_revenue_pct",
+      "name": "Service Revenue %",
+      "name_fr": "Revenu service %",
+      "formula": "(service_revenue / total_revenue) * 100",
+      "benchmark_min": 40,
+      "benchmark_max": 60,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "gross_margin_pct",
+      "name": "Gross Margin %",
+      "name_fr": "Marge brute %",
+      "formula": "((total_revenue - vehicle_cost - parts_cost) / total_revenue) * 100",
+      "benchmark_min": 18,
+      "benchmark_max": 28,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "parts_margin",
+      "name": "Parts Margin %",
+      "name_fr": "Marge pièces %",
+      "formula": "((parts_sales - parts_cost) / parts_sales) * 100",
+      "benchmark_min": 35,
+      "benchmark_max": 50,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "customer_retention",
+      "name": "Customer Retention %",
+      "name_fr": "Rétention clients %",
+      "formula": "(returning_customers / total_customers) * 100",
+      "benchmark_min": 60,
+      "benchmark_max": 80,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "inventory_days",
+      "name": "Inventory Days",
+      "name_fr": "Jours d'inventaire",
+      "formula": "(vehicle_inventory / vehicle_cost) * 365",
+      "benchmark_min": 30,
+      "benchmark_max": 60,
+      "format": "days",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [400000, 1000000],
+    "expense_ratio": 0.75,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 4200000,
+    "total_expenses": 3150000,
+    "net_income": 1050000
+  }
+}

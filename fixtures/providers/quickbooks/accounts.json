@@ -1,0 +1,80 @@
+{
+  "QueryResponse": {
+    "Account": [
+      {
+        "Id": "1",
+        "Name": "Business Checking",
+        "AccountType": "Bank",
+        "AccountSubType": "Checking",
+        "AcctNum": "1000",
+        "Active": true,
+        "CurrentBalance": 125000.00,
+        "CurrencyRef": {"value": "CAD", "name": "Canadian Dollar"},
+        "MetaData": {
+          "CreateTime": "2025-01-01T00:00:00Z",
+          "LastUpdatedTime": "2025-12-01T00:00:00Z"
+        }
+      },
+      {
+        "Id": "2",
+        "Name": "Accounts Receivable",
+        "AccountType": "Accounts Receivable",
+        "AccountSubType": "AccountsReceivable",
+        "AcctNum": "1100",
+        "Active": true,
+        "CurrentBalance": 45000.00,
+        "CurrencyRef": {"value": "CAD", "name": "Canadian Dollar"},
+        "MetaData": {
+          "CreateTime": "2025-01-01T00:00:00Z",
+          "LastUpdatedTime": "2025-12-01T00:00:00Z"
+        }
+      },
+      {
+        "Id": "3",
+        "Name": "Sales Revenue",
+        "AccountType": "Income",
+        "AccountSubType": "ServiceFeeIncome",
+        "AcctNum": "4000",
+        "Active": true,
+        "CurrentBalance": 250000.00,
+        "CurrencyRef": {"value": "CAD", "name": "Canadian Dollar"},
+        "MetaData": {
+          "CreateTime": "2025-01-01T00:00:00Z",
+          "LastUpdatedTime": "2025-12-01T00:00:00Z"
+        }
+      },
+      {
+        "Id": "4",
+        "Name": "Operating Expenses",
+        "AccountType": "Expense",
+        "AccountSubType": "OfficeGeneralAdministrativeExpenses",
+        "AcctNum": "6000",
+        "Active": true,
+        "CurrentBalance": 75000.00,
+        "CurrencyRef": {"value": "CAD", "name": "Canadian Dollar"},
+        "MetaData": {
+          "CreateTime": "2025-01-01T00:00:00Z",
+          "LastUpdatedTime": "2025-12-01T00:00:00Z"
+        }
+      },
+      {
+        "Id": "5",
+        "Name": "Accounts Payable",
+        "AccountType": "Accounts Payable",
+        "AccountSubType": "AccountsPayable",
+        "AcctNum": "2000",
+        "Active": true,
+        "CurrentBalance": 35000.00,
+        "CurrencyRef": {"value": "CAD", "name": "Canadian Dollar"},
+        "MetaData": {
+          "CreateTime": "2025-01-01T00:00:00Z",
+          "LastUpdatedTime": "2025-12-01T00:00:00Z"
+        }
+      }
+    ],
+    "startPosition": 1,
+    "maxResults": 5,
+    "totalCount": 5
+  },
+  "time": "2025-12-01T12:00:00Z"
+}

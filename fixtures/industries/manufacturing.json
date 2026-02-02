@@ -1,0 +1,103 @@
+{
+  "id": "manufacturing",
+  "name": "Manufacturing",
+  "name_fr": "Fabrication",
+  
+  "accounts": [
+    {"name": "Product Sales - Manufactured", "type": "Income", "subtype": "SalesOfProductIncome", "category": "product_sales"},
+    {"name": "Wholesale Revenue", "type": "Income", "subtype": "SalesOfProductIncome", "category": "wholesale_revenue"},
+    {"name": "Custom Orders", "type": "Income", "subtype": "SalesOfProductIncome", "category": "custom_revenue"},
+    {"name": "Raw Materials", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "raw_materials"},
+    {"name": "Direct Labor", "type": "Cost of Goods Sold", "subtype": "CostOfLaborCos", "category": "direct_labor"},
+    {"name": "Manufacturing Overhead", "type": "Expense", "subtype": "OtherMiscellaneousServiceCost", "category": "manufacturing_overhead"},
+    {"name": "Factory Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Equipment Maintenance", "type": "Expense", "subtype": "RepairMaintenance", "category": "maintenance"},
+    {"name": "Quality Control", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "quality"},
+    {"name": "Shipping & Freight", "type": "Expense", "subtype": "ShippingFreightDelivery", "category": "shipping"},
+    {"name": "Raw Materials Inventory", "type": "Asset", "subtype": "Inventory", "category": "inventory_raw"},
+    {"name": "Work in Process Inventory", "type": "Asset", "subtype": "Inventory", "category": "inventory_wip"},
+    {"name": "Finished Goods Inventory", "type": "Asset", "subtype": "Inventory", "category": "inventory_finished"},
+    {"name": "Manufacturing Equipment", "type": "Fixed Asset", "subtype": "MachineryAndEquipment", "category": "equipment"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Retail Distributor A", "email": "purchasing@retaila.com", "phone": "514-555-7001"},
+    {"name": "Wholesale Buyer B", "email": "orders@wholesaleb.com", "phone": "514-555-7002"},
+    {"name": "OEM Customer C", "email": "supply@oemc.com", "phone": "514-555-7003"},
+    {"name": "Export Client D", "email": "import@clientd.com", "phone": "514-555-7004"}
+  ],
+  
+  "vendors": [
+    {"name": "Steel Supplier", "email": "orders@steel.com", "category": "raw_materials"},
+    {"name": "Chemical Supplier", "email": "orders@chemical.com", "category": "raw_materials"},
+    {"name": "Packaging Supplier", "email": "orders@packaging.com", "category": "supplies"},
+    {"name": "Logistics Provider", "email": "shipping@logistics.com", "category": "shipping"},
+    {"name": "Equipment Maintenance Co", "email": "service@equipmaint.com", "category": "maintenance"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "gross_margin_pct",
+      "name": "Gross Margin %",
+      "name_fr": "Marge brute %",
+      "formula": "((product_sales - raw_materials - direct_labor) / product_sales) * 100",
+      "benchmark_min": 20,
+      "benchmark_max": 35,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "inventory_turnover",
+      "name": "Inventory Turnover",
+      "name_fr": "Rotation des stocks",
+      "formula": "(raw_materials + direct_labor) / total_inventory",
+      "benchmark_min": 6,
+      "benchmark_max": 12,
+      "format": "number",
+      "inverse": false
+    },
+    {
+      "id": "oee",
+      "name": "OEE",
+      "name_fr": "TRS",
+      "formula": "availability * performance * quality",
+      "benchmark_min": 65,
+      "benchmark_max": 85,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "cost_per_unit",
+      "name": "Cost per Unit",
+      "name_fr": "Coût par unité",
+      "formula": "(raw_materials + direct_labor + manufacturing_overhead) / units_produced",
+      "benchmark_min": 10,
+      "benchmark_max": 100,
+      "format": "currency",
+      "inverse": true
+    },
+    {
+      "id": "on_time_delivery",
+      "name": "On-Time Delivery %",
+      "name_fr": "Livraison à temps %",
+      "formula": "(on_time_orders / total_orders) * 100",
+      "benchmark_min": 95,
+      "benchmark_max": 99,
+      "format": "percent",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [400000, 1000000],
+    "expense_ratio": 0.72,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 4200000,
+    "total_expenses": 3024000,
+    "net_income": 1176000
+  }
+}

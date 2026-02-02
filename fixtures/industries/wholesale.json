@@ -1,0 +1,100 @@
+{
+  "id": "wholesale",
+  "name": "Wholesale",
+  "name_fr": "Commerce de gros",
+  
+  "accounts": [
+    {"name": "Wholesale Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "wholesale_sales"},
+    {"name": "Distribution Revenue", "type": "Income", "subtype": "SalesOfProductIncome", "category": "distribution_revenue"},
+    {"name": "Drop Ship Revenue", "type": "Income", "subtype": "SalesOfProductIncome", "category": "dropship"},
+    {"name": "Cost of Goods - Wholesale", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "cogs"},
+    {"name": "Warehouse Labor", "type": "Expense", "subtype": "PayrollExpenses", "category": "warehouse_labor"},
+    {"name": "Warehouse Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Shipping & Freight Out", "type": "Expense", "subtype": "ShippingFreightDelivery", "category": "shipping"},
+    {"name": "Order Processing", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "processing"},
+    {"name": "Sales Commissions", "type": "Expense", "subtype": "PayrollExpenses", "category": "commissions"},
+    {"name": "Warehouse Equipment", "type": "Fixed Asset", "subtype": "MachineryAndEquipment", "category": "equipment"},
+    {"name": "Inventory", "type": "Asset", "subtype": "Inventory", "category": "inventory"},
+    {"name": "Accounts Receivable", "type": "Asset", "subtype": "AccountsReceivable", "category": "ar"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Retail Chain A", "email": "buying@retaila.com", "phone": "514-555-0301"},
+    {"name": "Independent Retailer B", "email": "orders@retailerb.com", "phone": "514-555-0302"},
+    {"name": "E-commerce Reseller", "email": "wholesale@reseller.com", "phone": "514-555-0303"},
+    {"name": "Export Distributor", "email": "import@exporter.com", "phone": "514-555-0304"}
+  ],
+  
+  "vendors": [
+    {"name": "Manufacturer A", "email": "sales@manufacturera.com", "category": "supplier"},
+    {"name": "Import Supplier B", "email": "export@supplierb.com", "category": "supplier"},
+    {"name": "Freight Carrier", "email": "dispatch@freight.com", "category": "shipping"},
+    {"name": "Warehouse Management System", "email": "billing@wms.com", "category": "technology"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "gross_margin_pct",
+      "name": "Gross Margin %",
+      "name_fr": "Marge brute %",
+      "formula": "((wholesale_sales - cogs) / wholesale_sales) * 100",
+      "benchmark_min": 15,
+      "benchmark_max": 25,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "inventory_turnover",
+      "name": "Inventory Turnover",
+      "name_fr": "Rotation des stocks",
+      "formula": "cogs / inventory",
+      "benchmark_min": 6,
+      "benchmark_max": 12,
+      "format": "number",
+      "inverse": false
+    },
+    {
+      "id": "order_fill_rate",
+      "name": "Order Fill Rate %",
+      "name_fr": "Taux de remplissage %",
+      "formula": "(filled_orders / total_orders) * 100",
+      "benchmark_min": 95,
+      "benchmark_max": 99,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "dso",
+      "name": "Days Sales Outstanding",
+      "name_fr": "Jours de ventes en suspens",
+      "formula": "(ar / wholesale_sales) * 365",
+      "benchmark_min": 30,
+      "benchmark_max": 45,
+      "format": "days",
+      "inverse": true
+    },
+    {
+      "id": "shipping_cost_pct",
+      "name": "Shipping Cost %",
+      "name_fr": "Coût expédition %",
+      "formula": "(shipping / wholesale_sales) * 100",
+      "benchmark_min": 3,
+      "benchmark_max": 8,
+      "format": "percent",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [500000, 1200000],
+    "expense_ratio": 0.82,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 5100000,
+    "total_expenses": 4182000,
+    "net_income": 918000
+  }
+}

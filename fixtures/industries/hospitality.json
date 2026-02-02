@@ -1,0 +1,103 @@
+{
+  "id": "hospitality",
+  "name": "Hospitality",
+  "name_fr": "Hôtellerie",
+  
+  "accounts": [
+    {"name": "Room Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "room_revenue"},
+    {"name": "Food & Beverage Revenue", "type": "Income", "subtype": "SalesOfProductIncome", "category": "fnb_revenue"},
+    {"name": "Spa & Amenities Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "amenities_revenue"},
+    {"name": "Event & Conference Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "events_revenue"},
+    {"name": "Housekeeping Expense", "type": "Expense", "subtype": "PayrollExpenses", "category": "rooms_expense"},
+    {"name": "Front Desk Labor", "type": "Expense", "subtype": "PayrollExpenses", "category": "rooms_expense"},
+    {"name": "F&B Cost of Sales", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "fnb_cost"},
+    {"name": "Utilities - Hotel", "type": "Expense", "subtype": "Utilities", "category": "utilities"},
+    {"name": "Guest Supplies", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "guest_supplies"},
+    {"name": "Property Maintenance", "type": "Expense", "subtype": "RepairMaintenance", "category": "maintenance"},
+    {"name": "Marketing & OTA Fees", "type": "Expense", "subtype": "AdvertisingPromotional", "category": "marketing"},
+    {"name": "Hotel Property", "type": "Fixed Asset", "subtype": "Buildings", "category": "property"},
+    {"name": "FF&E", "type": "Fixed Asset", "subtype": "FurnitureAndFixtures", "category": "ffe"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Business Traveler Corp", "email": "travel@btcorp.com", "phone": "514-555-6001"},
+    {"name": "Tour Operator Inc", "email": "bookings@tourops.com", "phone": "514-555-6002"},
+    {"name": "Conference Organizer", "email": "events@conforg.com", "phone": "514-555-6003"},
+    {"name": "Wedding Party", "email": "bride@email.com", "phone": "514-555-6004"},
+    {"name": "Leisure Guest", "email": "guest@email.com", "phone": "514-555-6005"}
+  ],
+  
+  "vendors": [
+    {"name": "Linen & Laundry Service", "email": "service@linens.com", "category": "housekeeping"},
+    {"name": "Food Distributor", "email": "orders@fooddist.com", "category": "fnb"},
+    {"name": "OTA Platform (Booking.com)", "email": "partner@booking.com", "category": "marketing"},
+    {"name": "Property Management System", "email": "support@pms.com", "category": "technology"},
+    {"name": "Maintenance Contractor", "email": "service@maint.com", "category": "maintenance"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "revpar",
+      "name": "RevPAR",
+      "name_fr": "RevPAR",
+      "formula": "room_revenue / available_room_nights",
+      "benchmark_min": 80,
+      "benchmark_max": 200,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "adr",
+      "name": "Average Daily Rate",
+      "name_fr": "Tarif journalier moyen",
+      "formula": "room_revenue / rooms_sold",
+      "benchmark_min": 100,
+      "benchmark_max": 300,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "occupancy_rate",
+      "name": "Occupancy Rate",
+      "name_fr": "Taux d'occupation",
+      "formula": "(rooms_sold / available_room_nights) * 100",
+      "benchmark_min": 58,
+      "benchmark_max": 80,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "gop_margin",
+      "name": "GOP Margin",
+      "name_fr": "Marge GOP",
+      "formula": "(total_revenue - operating_expenses) / total_revenue * 100",
+      "benchmark_min": 35,
+      "benchmark_max": 45,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "cost_per_occupied_room",
+      "name": "Cost per Occupied Room",
+      "name_fr": "Coût par chambre occupée",
+      "formula": "rooms_expense / rooms_sold",
+      "benchmark_min": 25,
+      "benchmark_max": 50,
+      "format": "currency",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [200000, 500000],
+    "expense_ratio": 0.55,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 2100000,
+    "total_expenses": 1155000,
+    "net_income": 945000
+  }
+}

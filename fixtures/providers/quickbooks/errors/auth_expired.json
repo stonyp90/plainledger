@@ -1,0 +1,10 @@
+{
+  "http_status": 401,
+  "headers": {
+    "WWW-Authenticate": "Bearer realm=\"Intuit\", error=\"invalid_token\", error_description=\"The access token expired\""
+  },
+  "body": {
+    "error": "invalid_grant",
+    "error_description": "Token has been revoked or has expired. Please obtain a new token."
+  }
+}

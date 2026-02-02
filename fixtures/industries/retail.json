@@ -1,0 +1,114 @@
+{
+  "id": "retail",
+  "name": "Retail",
+  "name_fr": "Commerce de détail",
+  
+  "accounts": [
+    {"name": "Product Sales - In Store", "type": "Income", "subtype": "SalesOfProductIncome", "category": "sales"},
+    {"name": "Online Sales", "type": "Income", "subtype": "SalesOfProductIncome", "category": "sales"},
+    {"name": "Sales Returns & Allowances", "type": "Income", "subtype": "DiscountsRefundsGiven", "category": "returns"},
+    {"name": "Cost of Goods Sold - Merchandise", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "cogs"},
+    {"name": "Inventory Shrinkage", "type": "Expense", "subtype": "OtherMiscellaneousServiceCost", "category": "shrinkage"},
+    {"name": "Store Labor", "type": "Expense", "subtype": "PayrollExpenses", "category": "labor_cost"},
+    {"name": "Store Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Marketing & Advertising", "type": "Expense", "subtype": "AdvertisingPromotional", "category": "marketing"},
+    {"name": "Credit Card Fees", "type": "Expense", "subtype": "BankCharges", "category": "fees"},
+    {"name": "Inventory", "type": "Asset", "subtype": "Inventory", "category": "inventory"},
+    {"name": "Store Fixtures", "type": "Fixed Asset", "subtype": "FurnitureAndFixtures", "category": "fixtures"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"},
+    {"name": "Accounts Payable", "type": "Liability", "subtype": "AccountsPayable", "category": "ap"}
+  ],
+  
+  "customers": [
+    {"name": "Walk-in Customer", "email": "customer@email.com", "phone": "514-555-2001"},
+    {"name": "Loyalty Member - Gold", "email": "gold@loyalty.com", "phone": "514-555-2002"},
+    {"name": "Corporate Account", "email": "purchasing@corp.com", "phone": "514-555-2003"},
+    {"name": "Online Customer", "email": "online@email.com", "phone": "514-555-2004"}
+  ],
+  
+  "vendors": [
+    {"name": "Wholesale Supplier A", "email": "orders@wholesalea.com", "category": "merchandise"},
+    {"name": "Wholesale Supplier B", "email": "orders@wholesaleb.com", "category": "merchandise"},
+    {"name": "Packaging Supplier", "email": "sales@packaging.com", "category": "supplies"},
+    {"name": "POS System Provider", "email": "support@possystem.com", "category": "technology"},
+    {"name": "Mall Management", "email": "leasing@mall.com", "category": "rent"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "gross_margin_pct",
+      "name": "Gross Margin %",
+      "name_fr": "Marge brute %",
+      "formula": "((sales - cogs) / sales) * 100",
+      "benchmark_min": 30,
+      "benchmark_max": 50,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "inventory_turnover",
+      "name": "Inventory Turnover",
+      "name_fr": "Rotation des stocks",
+      "formula": "cogs / inventory",
+      "benchmark_min": 4,
+      "benchmark_max": 12,
+      "format": "number",
+      "inverse": false
+    },
+    {
+      "id": "shrinkage_pct",
+      "name": "Shrinkage %",
+      "name_fr": "Démarque %",
+      "formula": "(shrinkage / sales) * 100",
+      "benchmark_min": 0,
+      "benchmark_max": 2,
+      "format": "percent",
+      "inverse": true
+    },
+    {
+      "id": "sales_per_sqft",
+      "name": "Sales per Sq Ft",
+      "name_fr": "Ventes par pi²",
+      "formula": "sales / square_footage",
+      "benchmark_min": 200,
+      "benchmark_max": 600,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "labor_cost_pct",
+      "name": "Labor Cost %",
+      "name_fr": "Coût main-d'œuvre %",
+      "formula": "(labor_cost / sales) * 100",
+      "benchmark_min": 10,
+      "benchmark_max": 18,
+      "format": "percent",
+      "inverse": true
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [100000, 300000],
+    "expense_ratio": 0.70,
+    "months_of_data": 6,
+    "revenue_distribution": {
+      "sales": 1.02,
+      "returns": -0.02
+    },
+    "expense_distribution": {
+      "cogs": 0.55,
+      "labor_cost": 0.15,
+      "occupancy": 0.12,
+      "marketing": 0.08,
+      "shrinkage": 0.02,
+      "fees": 0.03,
+      "other": 0.05
+    }
+  },
+  
+  "expected_gold": {
+    "total_revenue": 1200000,
+    "total_expenses": 840000,
+    "net_income": 360000
+  }
+}

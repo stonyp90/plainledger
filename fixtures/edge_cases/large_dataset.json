@@ -1,0 +1,39 @@
+{
+  "name": "large_dataset",
+  "description": "Large dataset for performance testing - 10,000 accounts, 100,000 transactions",
+  "data": {
+    "account_count": 10000,
+    "transaction_count": 100000,
+    "contact_count": 5000,
+    "months_of_data": 36,
+    "generator_config": {
+      "seed": 12345,
+      "accounts_per_type": {
+        "Income": 500,
+        "Expense": 2000,
+        "Asset": 3000,
+        "Liability": 2000,
+        "Equity": 500,
+        "Bank": 100,
+        "COGS": 1900
+      },
+      "transactions_per_month": 2778,
+      "average_transaction_amount": 5000,
+      "amount_variance": 0.8
+    }
+  },
+  "expected_behavior": {
+    "bronze_ingestion": "Should complete within 5 minutes",
+    "silver_transformation": "Should complete within 10 minutes",
+    "gold_aggregation": "Should complete within 5 minutes",
+    "dashboard_load": "Should load within 3 seconds",
+    "report_generation": "Should generate within 10 seconds"
+  },
+  "performance_benchmarks": {
+    "bronze_throughput_records_per_second": 1000,
+    "silver_throughput_records_per_second": 500,
+    "gold_throughput_records_per_second": 2000,
+    "api_response_time_p95_ms": 500,
+    "memory_usage_max_mb": 512
+  }
+}

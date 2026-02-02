@@ -63,14 +63,23 @@ const getDefaultItems = (
   hasRealData: boolean,
   hasQuickBooksConnection: boolean
 ): DataCheckItem[] => {
-  // Only count data as "complete" if it's REAL data from a connected accounting system
+  // Count data as "complete" if:
+  // 1. It's REAL data from GraphQL (hasRealData), OR
+  // 2. We have a QuickBooks connection (which means data should be real even in local dev)
   // Sample/sandbox data should NOT count as complete for the checklist
-  const hasAccounts = hasRealData && (financialData?.accounts?.length > 0);
-  const hasTransactions = hasRealData && (financialData?.trends?.revenue?.data?.length > 0);
-  const hasCashData = hasRealData && (financialData?.summary?.cash?.current > 0);
-  const hasARData = hasRealData && (financialData?.summary?.receivables?.hasData);
-  const hasAPData = hasRealData && (financialData?.summary?.payables?.hasData);
-  const hasBudget = hasRealData && (financialData?.summary?.hasBudget);
+  const dataIsReal = hasRealData || hasQuickBooksConnection;
+  
+  // For accounts, check if we have data OR if we have a connection (connection implies accounts exist)
+  // This handles the case where GraphQL data might be loading but connection is confirmed
+  const hasAccounts = dataIsReal && (
+    (financialData?.accounts?.length > 0) || 
+    hasQuickBooksConnection // Connection implies chart of accounts exists
+  );
+  const hasTransactions = dataIsReal && (financialData?.trends?.revenue?.data?.length > 0);
+  const hasCashData = dataIsReal && (financialData?.summary?.cash?.current > 0);
+  const hasARData = dataIsReal && (financialData?.summary?.receivables?.hasData);
+  const hasAPData = dataIsReal && (financialData?.summary?.payables?.hasData);
+  const hasBudget = dataIsReal && (financialData?.summary?.hasBudget);
 
   const baseItems: DataCheckItem[] = [
     {

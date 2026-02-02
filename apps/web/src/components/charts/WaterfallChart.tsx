@@ -5,9 +5,12 @@
  */
 
 import { useMemo, useState, useRef, useCallback } from 'react';
-import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown, Target, Settings2 } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
 import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
+import { useGraphConfig } from '../../hooks/useGraphConfig';
+import { formatCurrencyValue } from '../../lib/graphConfig';
+import GraphConfigPanel from './GraphConfigPanel';
 
 interface WaterfallItem {
   label: string;
@@ -27,6 +30,8 @@ interface WaterfallChartProps {
   showVarianceThreshold?: number; // Highlight items exceeding this % of total
   height?: number;
   isEn?: boolean;
+  /** Chart ID for configuration persistence */
+  chartId?: string;
   
   // Decision capture integration
   /** Enable decision capture button on chart */
@@ -52,10 +57,11 @@ export default function WaterfallChart({
   titleEn,
   subtitle,
   subtitleEn,
-  formatValue = (v) => `${v >= 0 ? '' : '-'}$${Math.abs(v).toLocaleString()}`,
-  showVarianceThreshold = 20,
-  height = 280,
+  formatValue: propFormatValue,
+  showVarianceThreshold: propShowVarianceThreshold,
+  height: propHeight,
   isEn = false,
+  chartId,
   enableDecisions = false,
   onRecordDecision,
   metricType = 'cash_flow',
@@ -65,6 +71,25 @@ export default function WaterfallChart({
   if (!data || data.length === 0) {
     return null;
   }
+
+  // Get graph configuration
+  const graphConfig = useGraphConfig(chartId, {
+    visual: {
+      height: propHeight ?? 280,
+    },
+    waterfall: {
+      varianceThreshold: propShowVarianceThreshold ?? 20,
+    },
+  });
+  
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [chartConfig, setChartConfig] = useState({});
+  
+  const height = propHeight ?? graphConfig.visual.height;
+  const showVarianceThreshold = propShowVarianceThreshold ?? graphConfig.waterfall?.varianceThreshold ?? 20;
+  
+  // Use config-based formatting if no custom formatter provided
+  const formatValue = propFormatValue || ((v) => formatCurrencyValue(v, graphConfig.display));
 
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -166,7 +191,7 @@ export default function WaterfallChart({
 
   return (
     <div 
-      className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md"
+      className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md group"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'
@@ -198,6 +223,17 @@ export default function WaterfallChart({
         </div>
         
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowConfigPanel(true)}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface-hover))',
+              color: 'rgb(var(--color-text))'
+            }}
+            title={isEn ? 'Configure chart' : 'Configurer le graphique'}
+          >
+            <Settings2 className="w-3 h-3" />
+          </button>
           {/* Decision button */}
           {enableDecisions && onRecordDecision && (
             <button
@@ -206,7 +242,7 @@ export default function WaterfallChart({
                 onRecordDecision({
                   metricType,
                   metricLabel: isEn && titleEn ? titleEn : title,
-                  chartId: `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`,
+                  chartId: chartId || `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`,
                   currentValue: endItem?.value ?? totalChange,
                   benchmarkValue,
                 });
@@ -583,6 +619,16 @@ export default function WaterfallChart({
           </span>
         )}
       </div>
+      
+      {/* Configuration Panel */}
+      {showConfigPanel && (
+        <GraphConfigPanel
+          chartId={chartId || `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`}
+          currentConfig={chartConfig}
+          onConfigChange={setChartConfig}
+          onClose={() => setShowConfigPanel(false)}
+        />
+      )}
     </div>
   );
 }

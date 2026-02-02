@@ -18,6 +18,8 @@ import {
   matchAccountToCategory,
 } from "@domain/datalake/industry-account-mapping";
 import { FactInvoice, FactBill } from "@domain/datalake/gold-metrics";
+import { CacheService } from "@infrastructure/cache/cache.service";
+import { AppConfig, createAppConfig } from "@infrastructure/config/app.config";
 
 // Gold Layer Types (matching the schema)
 export interface DimAccount {
@@ -221,11 +223,18 @@ export class DatalakeDataService implements IDatalakeDataService {
   private readonly logger = new Logger(DatalakeDataService.name);
   private s3Client: S3Client;
   private goldBucket: string;
+  private readonly appConfig: AppConfig;
+  private readonly cacheTtl: number;
 
-  constructor(private readonly configService: ConfigService) {
-    const s3Endpoint = this.configService.get<string>("S3_ENDPOINT");
-    const s3Region =
-      this.configService.get<string>("S3_REGION") || "ca-central-1";
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly cacheService: CacheService,
+  ) {
+    this.appConfig = createAppConfig(configService);
+    this.cacheTtl = this.appConfig.cacheTtlGoldSeconds;
+
+    const s3Endpoint = this.appConfig.s3Endpoint;
+    const s3Region = this.appConfig.s3Region;
     const sessionToken = this.configService.get<string>("AWS_SESSION_TOKEN");
 
     // Build credentials object
@@ -253,9 +262,7 @@ export class DatalakeDataService implements IDatalakeDataService {
       forcePathStyle: !!s3Endpoint, // Required for LocalStack/MinIO
     });
 
-    this.goldBucket =
-      this.configService.get<string>("S3_BUCKET_GOLD") ||
-      "plainledger-prod-gold-436136277668";
+    this.goldBucket = this.appConfig.s3GoldBucket;
 
     this.logger.log(
       `DatalakeDataService initialized - Bucket: ${this.goldBucket}, Region: ${s3Region}, Endpoint: ${s3Endpoint || "AWS default"}`,
@@ -382,141 +389,180 @@ export class DatalakeDataService implements IDatalakeDataService {
   }
 
   /**
-   * Fetch accounts from Gold layer
+   * Fetch accounts from Gold layer (with caching)
    */
   private async fetchAccounts(organizationId: string): Promise<DimAccount[]> {
-    try {
-      const prefix = `dim_account/${organizationId}/`;
-      this.logger.log(`[S3 Gold] Listing accounts files at prefix: ${prefix}`);
-      const files = await this.listFiles(prefix);
+    const cacheKey = this.cacheService.getDatalakeKey(
+      organizationId,
+      "accounts",
+    );
 
-      if (files.length === 0) {
-        this.logger.log(
-          `[S3 Gold] No accounts found for org: ${organizationId} at ${prefix}, trying e2e test data`,
-        );
-        // Try the e2e test data
-        const e2eFiles = await this.listFiles(`dim_account/e2e-org-123/`);
-        if (e2eFiles.length > 0) {
+    return this.cacheService.getOrFetch(
+      cacheKey,
+      async () => {
+        try {
+          const prefix = `dim_account/${organizationId}/`;
           this.logger.log(
-            `[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`,
+            `[S3 Gold] Listing accounts files at prefix: ${prefix}`,
           );
-          return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
-        }
-        this.logger.log(
-          `[S3 Gold] No accounts data found in S3 for org: ${organizationId}`,
-        );
-        return [];
-      }
+          const files = await this.listFiles(prefix);
 
-      if (files.length > 0) {
-        const latestFile = files[files.length - 1];
-        this.logger.log(
-          `[S3 Gold] Found ${files.length} account file(s), using latest: ${latestFile} for org: ${organizationId}`,
-        );
-        const accounts = await this.fetchJsonFile<DimAccount[]>(latestFile);
-        this.logger.log(`[S3 Gold] Loaded ${accounts.length} accounts from S3`);
-        return accounts;
-      }
-      return [];
-    } catch (error) {
-      this.logger.error(`[S3 Gold] Failed to fetch accounts: ${error}`);
-      return [];
-    }
+          if (files.length === 0) {
+            this.logger.log(
+              `[S3 Gold] No accounts found for org: ${organizationId} at ${prefix}, trying e2e test data`,
+            );
+            // Try the e2e test data
+            const e2eFiles = await this.listFiles(`dim_account/${this.appConfig.e2eOrgId}/`);
+            if (e2eFiles.length > 0) {
+              this.logger.log(
+                `[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`,
+              );
+              return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
+            }
+            this.logger.log(
+              `[S3 Gold] No accounts data found in S3 for org: ${organizationId}`,
+            );
+            return [];
+          }
+
+          if (files.length > 0) {
+            const latestFile = files[files.length - 1];
+            this.logger.log(
+              `[S3 Gold] Found ${files.length} account file(s), using latest: ${latestFile} for org: ${organizationId}`,
+            );
+            const accounts = await this.fetchJsonFile<DimAccount[]>(latestFile);
+            this.logger.log(
+              `[S3 Gold] Loaded ${accounts.length} accounts from S3`,
+            );
+            return accounts;
+          }
+          return [];
+        } catch (error) {
+          this.logger.error(`[S3 Gold] Failed to fetch accounts: ${error}`);
+          return [];
+        }
+      },
+      this.cacheTtl,
+    );
   }
 
   /**
-   * Fetch contacts from Gold layer
+   * Fetch contacts from Gold layer (with caching)
    */
   private async fetchContacts(organizationId: string): Promise<DimContact[]> {
-    try {
-      const files = await this.listFiles(`dim_contact/${organizationId}/`);
-      if (files.length === 0) {
-        const e2eFiles = await this.listFiles(`dim_contact/e2e-org-123/`);
-        if (e2eFiles.length > 0) {
-          return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
+    const cacheKey = this.cacheService.getDatalakeKey(
+      organizationId,
+      "contacts",
+    );
+
+    return this.cacheService.getOrFetch(
+      cacheKey,
+      async () => {
+        try {
+          const files = await this.listFiles(`dim_contact/${organizationId}/`);
+          if (files.length === 0) {
+            const e2eFiles = await this.listFiles(`dim_contact/${this.appConfig.e2eOrgId}/`);
+            if (e2eFiles.length > 0) {
+              return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
+            }
+          }
+          if (files.length > 0) {
+            return this.fetchJsonFile(files[files.length - 1]);
+          }
+          return [];
+        } catch (error) {
+          this.logger.warn(`Failed to fetch contacts: ${error}`);
+          return [];
         }
-      }
-      if (files.length > 0) {
-        return this.fetchJsonFile(files[files.length - 1]);
-      }
-      return [];
-    } catch (error) {
-      this.logger.warn(`Failed to fetch contacts: ${error}`);
-      return [];
-    }
+      },
+      this.cacheTtl,
+    );
   }
 
   /**
-   * Fetch transactions from Gold layer
+   * Fetch transactions from Gold layer (with caching)
    */
   private async fetchTransactions(
     organizationId: string,
   ): Promise<FactTransaction[]> {
-    try {
-      this.logger.log(
-        `[S3 Gold] Fetching transactions for org: ${organizationId}`,
-      );
+    const cacheKey = this.cacheService.getDatalakeKey(
+      organizationId,
+      "transactions",
+    );
 
-      // Check direct organization path first (QuickBooks format)
-      let files = await this.listFiles(`fact_transaction/${organizationId}/`);
-      this.logger.log(
-        `[S3 Gold] Found ${files.length} transaction file(s) at fact_transaction/${organizationId}/`,
-      );
+    return this.cacheService.getOrFetch(
+      cacheKey,
+      async () => {
+        try {
+          this.logger.log(
+            `[S3 Gold] Fetching transactions for org: ${organizationId}`,
+          );
 
-      // Try partition structure if direct path is empty
-      if (files.length === 0) {
-        files = await this.listFiles(
-          `fact_transaction/organization_id=${organizationId}/`,
-        );
-        this.logger.log(
-          `[S3 Gold] Found ${files.length} transaction file(s) at partition path`,
-        );
-      }
+          // Check direct organization path first (QuickBooks format)
+          let files = await this.listFiles(
+            `fact_transaction/${organizationId}/`,
+          );
+          this.logger.log(
+            `[S3 Gold] Found ${files.length} transaction file(s) at fact_transaction/${organizationId}/`,
+          );
 
-      // Fallback to e2e test data
-      if (files.length === 0) {
-        files = await this.listFiles(`fact_transaction/e2e-org-123/`);
-        this.logger.log(
-          `[S3 Gold] Using e2e test data: ${files.length} file(s)`,
-        );
-      }
+          // Try partition structure if direct path is empty
+          if (files.length === 0) {
+            files = await this.listFiles(
+              `fact_transaction/organization_id=${organizationId}/`,
+            );
+            this.logger.log(
+              `[S3 Gold] Found ${files.length} transaction file(s) at partition path`,
+            );
+          }
 
-      // Also check partition structure with org-123
-      if (files.length === 0) {
-        files = await this.listFiles(
-          `fact_transaction/organization_id=org-123/`,
-        );
-        this.logger.log(
-          `[S3 Gold] Using org-123 partition: ${files.length} file(s)`,
-        );
-      }
+          // Fallback to e2e test data
+          if (files.length === 0) {
+            files = await this.listFiles(`fact_transaction/${this.appConfig.e2eOrgId}/`);
+            this.logger.log(
+              `[S3 Gold] Using e2e test data: ${files.length} file(s)`,
+            );
+          }
 
-      if (files.length === 0) {
-        this.logger.log(
-          `[S3 Gold] No transaction data found in S3 for org: ${organizationId}`,
-        );
-        return [];
-      }
+          // Also check partition structure with fallback org
+          if (files.length === 0) {
+            files = await this.listFiles(
+              `fact_transaction/organization_id=${this.appConfig.fallbackOrgId}/`,
+            );
+            this.logger.log(
+              `[S3 Gold] Using ${this.appConfig.fallbackOrgId} partition: ${files.length} file(s)`,
+            );
+          }
 
-      const allTransactions: FactTransaction[] = [];
-      const filesToLoad = files.slice(-5); // Last 5 files
-      this.logger.log(
-        `[S3 Gold] Loading transactions from ${filesToLoad.length} file(s): ${filesToLoad.map((f) => f.split("/").pop()).join(", ")}`,
-      );
+          if (files.length === 0) {
+            this.logger.log(
+              `[S3 Gold] No transaction data found in S3 for org: ${organizationId}`,
+            );
+            return [];
+          }
 
-      for (const file of filesToLoad) {
-        const data = await this.fetchJsonFile<FactTransaction[]>(file);
-        allTransactions.push(...data);
-      }
+          const allTransactions: FactTransaction[] = [];
+          const filesToLoad = files.slice(-this.appConfig.maxTransactionFiles);
+          this.logger.log(
+            `[S3 Gold] Loading transactions from ${filesToLoad.length} file(s): ${filesToLoad.map((f) => f.split("/").pop()).join(", ")}`,
+          );
 
-      this.logger.log(
-        `[S3 Gold] Successfully loaded ${allTransactions.length} transactions from S3 Gold bucket for org: ${organizationId}`,
-      );
-      return allTransactions;
-    } catch (error) {
-      this.logger.error(`[S3 Gold] Failed to fetch transactions: ${error}`);
-      return [];
-    }
+          for (const file of filesToLoad) {
+            const data = await this.fetchJsonFile<FactTransaction[]>(file);
+            allTransactions.push(...data);
+          }
+
+          this.logger.log(
+            `[S3 Gold] Successfully loaded ${allTransactions.length} transactions from S3 Gold bucket for org: ${organizationId}`,
+          );
+          return allTransactions;
+        } catch (error) {
+          this.logger.error(`[S3 Gold] Failed to fetch transactions: ${error}`);
+          return [];
+        }
+      },
+      this.cacheTtl,
+    );
   }
 
   /**
@@ -785,11 +831,11 @@ export class DatalakeDataService implements IDatalakeDataService {
       }
       if (beverageSales > 0) {
         kpis.beverage_cost_pct =
-          Math.round((beverageCost / beverageSales) * 10000) / 100;
+          Math.round((beverageCost / beverageSales) * this.appConfig.percentageRoundingPrecision) / this.appConfig.financialRoundingPrecision;
       }
       if (totalRevenue > 0) {
         kpis.labor_cost_pct =
-          Math.round((laborCost / totalRevenue) * 10000) / 100;
+          Math.round((laborCost / totalRevenue) * this.appConfig.percentageRoundingPrecision) / this.appConfig.financialRoundingPrecision;
         kpis.prime_cost_pct =
           Math.round(
             ((foodCost + beverageCost + laborCost) / totalRevenue) * 10000,
@@ -818,14 +864,14 @@ export class DatalakeDataService implements IDatalakeDataService {
       const propertyValue = categoryTotals.get("property_value") || 0;
 
       const noi = rentalIncome - operatingExpenses;
-      kpis.re_noi = Math.round(noi * 100) / 100;
+      kpis.re_noi = Math.round(noi * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision;
 
       if (propertyValue > 0) {
         kpis.re_cap_rate = Math.round((noi / propertyValue) * 10000) / 100;
       }
       if (rentalIncome > 0) {
         kpis.re_expense_ratio =
-          Math.round((operatingExpenses / rentalIncome) * 10000) / 100;
+          Math.round((operatingExpenses / rentalIncome) * this.appConfig.percentageRoundingPrecision) / this.appConfig.financialRoundingPrecision;
       }
     }
 
@@ -841,7 +887,7 @@ export class DatalakeDataService implements IDatalakeDataService {
             ((projectRevenue - directCosts) / projectRevenue) * 10000,
           ) / 100;
       }
-      kpis.wip_balance = Math.round(wip * 100) / 100;
+      kpis.wip_balance = Math.round(wip * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision;
     }
 
     return kpis;
@@ -1056,7 +1102,7 @@ export class DatalakeDataService implements IDatalakeDataService {
       {
         label: "Ouverture",
         labelEn: "Opening Cash",
-        value: Math.round(openingCash * 100) / 100,
+        value: Math.round(openingCash * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "start",
         category: "opening",
       },
@@ -1064,35 +1110,35 @@ export class DatalakeDataService implements IDatalakeDataService {
       {
         label: "Ventes",
         labelEn: "Sales/Collections",
-        value: Math.round(operatingInflows * 100) / 100,
+        value: Math.round(operatingInflows * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "increase",
         category: "operating",
       },
       {
         label: "Salaires",
         labelEn: "Salaries",
-        value: -Math.round(operatingOutflows * 0.4 * 100) / 100, // Estimate salaries as 40% of operating
+        value: -Math.round(operatingOutflows * this.appConfig.cashFlowSalaryPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "operating",
       },
       {
         label: "Fournisseurs",
         labelEn: "Suppliers",
-        value: -Math.round(operatingOutflows * 0.35 * 100) / 100, // Estimate suppliers as 35% of operating
+        value: -Math.round(operatingOutflows * this.appConfig.cashFlowSupplierPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "operating",
       },
       {
         label: "Loyer",
         labelEn: "Rent/Lease",
-        value: -Math.round(operatingOutflows * 0.15 * 100) / 100, // Estimate rent as 15% of operating
+        value: -Math.round(operatingOutflows * this.appConfig.cashFlowRentPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "operating",
       },
       {
         label: "Op. Total",
         labelEn: "Operating Total",
-        value: Math.round(operatingNet * 100) / 100,
+        value: Math.round(operatingNet * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "subtotal",
         category: "operating",
       },
@@ -1117,14 +1163,14 @@ export class DatalakeDataService implements IDatalakeDataService {
       {
         label: "Dividendes",
         labelEn: "Dividends",
-        value: -Math.round(financingOutflows * 0.3 * 100) / 100,
+        value: -Math.round(financingOutflows * this.appConfig.cashFlowDividendPercentage * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "decrease",
         category: "financing",
       },
       {
         label: "Clôture",
         labelEn: "Closing Cash",
-        value: Math.round(closingCash * 100) / 100,
+        value: Math.round(closingCash * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         type: "end",
         category: "closing",
       },
@@ -1246,8 +1292,8 @@ export class DatalakeDataService implements IDatalakeDataService {
 
       return {
         buckets,
-        total: Math.round(total * 100) / 100,
-        totalOverdue: Math.round(totalOverdue * 100) / 100,
+        total: Math.round(total * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        totalOverdue: Math.round(totalOverdue * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         averageDays,
         hasData: true,
       };
@@ -1424,8 +1470,8 @@ export class DatalakeDataService implements IDatalakeDataService {
 
       return {
         buckets,
-        total: Math.round(total * 100) / 100,
-        totalOverdue: Math.round(totalOverdue * 100) / 100,
+        total: Math.round(total * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
+        totalOverdue: Math.round(totalOverdue * this.appConfig.financialRoundingPrecision) / this.appConfig.financialRoundingPrecision,
         averageDays,
         hasData: true,
       };
@@ -1601,7 +1647,7 @@ export class DatalakeDataService implements IDatalakeDataService {
       }, transactions[0]);
       lastSyncAt = new Date().toISOString(); // Assume current sync for now
       const hoursSinceLastSync = 0; // Data is fresh on fetch
-      hasRecentData = hoursSinceLastSync < 24;
+      hasRecentData = hoursSinceLastSync < this.appConfig.dataRecencyHours;
     }
 
     // Check for missing periods

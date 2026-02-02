@@ -1,0 +1,104 @@
+{
+  "id": "beauty_wellness",
+  "name": "Beauty & Wellness",
+  "name_fr": "Beauté et bien-être",
+  
+  "accounts": [
+    {"name": "Service Revenue - Salon", "type": "Income", "subtype": "ServiceFeeIncome", "category": "service_revenue"},
+    {"name": "Product Sales - Beauty", "type": "Income", "subtype": "SalesOfProductIncome", "category": "product_sales"},
+    {"name": "Membership Revenue", "type": "Income", "subtype": "ServiceFeeIncome", "category": "membership_revenue"},
+    {"name": "Gift Card Sales", "type": "Income", "subtype": "ServiceFeeIncome", "category": "gift_cards"},
+    {"name": "Beauty Products Cost", "type": "Cost of Goods Sold", "subtype": "SuppliesMaterialsCogs", "category": "product_cost"},
+    {"name": "Stylist Wages", "type": "Expense", "subtype": "PayrollExpenses", "category": "stylist_wages"},
+    {"name": "Reception Staff", "type": "Expense", "subtype": "PayrollExpenses", "category": "admin_wages"},
+    {"name": "Salon Rent", "type": "Expense", "subtype": "RentOrLeaseOfBuildings", "category": "occupancy"},
+    {"name": "Salon Supplies", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "supplies"},
+    {"name": "Marketing & Social Media", "type": "Expense", "subtype": "AdvertisingPromotional", "category": "marketing"},
+    {"name": "Booking Software", "type": "Expense", "subtype": "OfficeGeneralAdministrativeExpenses", "category": "technology"},
+    {"name": "Salon Equipment", "type": "Fixed Asset", "subtype": "FurnitureAndFixtures", "category": "equipment"},
+    {"name": "Product Inventory", "type": "Asset", "subtype": "Inventory", "category": "inventory"},
+    {"name": "Gift Card Liability", "type": "Liability", "subtype": "DeferredRevenue", "category": "deferred"},
+    {"name": "Business Checking", "type": "Bank", "subtype": "Checking", "category": "cash"}
+  ],
+  
+  "customers": [
+    {"name": "Regular Client - Hair", "email": "client1@email.com", "phone": "514-555-0501"},
+    {"name": "Regular Client - Spa", "email": "client2@email.com", "phone": "514-555-0502"},
+    {"name": "Bridal Party", "email": "bride@email.com", "phone": "514-555-0503"},
+    {"name": "Corporate Wellness", "email": "hr@company.com", "phone": "514-555-0504"},
+    {"name": "Membership Client", "email": "member@email.com", "phone": "514-555-0505"}
+  ],
+  
+  "vendors": [
+    {"name": "Professional Hair Products", "email": "orders@hairproducts.com", "category": "products"},
+    {"name": "Skincare Supplier", "email": "wholesale@skincare.com", "category": "products"},
+    {"name": "Salon Furniture Supplier", "email": "sales@salonfurniture.com", "category": "equipment"},
+    {"name": "Booking Platform", "email": "billing@bookingplatform.com", "category": "technology"},
+    {"name": "Laundry Service", "email": "pickup@laundry.com", "category": "services"}
+  ],
+  
+  "kpis": [
+    {
+      "id": "revenue_per_client",
+      "name": "Revenue per Client",
+      "name_fr": "Revenu par client",
+      "formula": "total_revenue / client_count",
+      "benchmark_min": 80,
+      "benchmark_max": 200,
+      "format": "currency",
+      "inverse": false
+    },
+    {
+      "id": "client_retention",
+      "name": "Client Retention %",
+      "name_fr": "Rétention clients %",
+      "formula": "(returning_clients / total_clients) * 100",
+      "benchmark_min": 65,
+      "benchmark_max": 85,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "service_utilization",
+      "name": "Service Utilization %",
+      "name_fr": "Utilisation services %",
+      "formula": "(booked_hours / available_hours) * 100",
+      "benchmark_min": 75,
+      "benchmark_max": 90,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "product_sales_ratio",
+      "name": "Product Sales Ratio",
+      "name_fr": "Ratio ventes produits",
+      "formula": "(product_sales / service_revenue) * 100",
+      "benchmark_min": 15,
+      "benchmark_max": 30,
+      "format": "percent",
+      "inverse": false
+    },
+    {
+      "id": "net_margin",
+      "name": "Net Margin %",
+      "name_fr": "Marge nette %",
+      "formula": "(net_income / total_revenue) * 100",
+      "benchmark_min": 15,
+      "benchmark_max": 25,
+      "format": "percent",
+      "inverse": false
+    }
+  ],
+  
+  "transactions": {
+    "revenue_range": [80000, 200000],
+    "expense_ratio": 0.55,
+    "months_of_data": 6
+  },
+  
+  "expected_gold": {
+    "total_revenue": 840000,
+    "total_expenses": 462000,
+    "net_income": 378000
+  }
+}

@@ -69,9 +69,32 @@ export class DataSourceResolver {
     const { organizationId } = context.req.user;
     this.logger.log(`Fetching data sources for org: ${organizationId}`);
 
+    // LOCAL DEV ONLY: Return mock QuickBooks connection when SKIP_AUTH is enabled
+    // This allows testing the full UI without a real QuickBooks OAuth connection
+    // In production (NODE_ENV=production), this always returns empty array
+    const skipAuth = process.env.SKIP_AUTH === "true";
+    const isProduction = process.env.NODE_ENV === "production";
+
+    if (skipAuth && !isProduction) {
+      this.logger.log(
+        "SKIP_AUTH enabled - returning mock QuickBooks connection for local dev",
+      );
+      return [
+        {
+          id: "mock-qb-connection-" + organizationId,
+          provider: "quickbooks",
+          name: "QuickBooks Online",
+          companyName: "Demo Company (Local Dev)",
+          status: DataSourceStatus.CONNECTED,
+          lastSyncAt: new Date(),
+          nextSyncAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+          updatedAt: new Date(),
+        },
+      ];
+    }
+
     // TODO: Query datasource_connections table from database
-    // For now, return empty array to allow frontend to properly detect "no connection" state
-    // This ensures we're testing real connection detection, not mock data
     // When a real connection exists in the database, it will be returned here
     return [];
   }
