@@ -7,7 +7,11 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { S3Client, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  GetObjectCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 import {
   getIndustryMapping,
@@ -628,7 +632,9 @@ export class DatalakeDataService implements IDatalakeDataService {
       );
 
       return (
-        response.Contents?.filter((obj: { Key?: string }) => obj.Key && !obj.Key.endsWith("/"))
+        response.Contents?.filter(
+          (obj: { Key?: string }) => obj.Key && !obj.Key.endsWith("/"),
+        )
           .map((obj: { Key: string }) => obj.Key)
           .sort() || []
       );

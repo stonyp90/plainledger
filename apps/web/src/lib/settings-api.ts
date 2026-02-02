@@ -5,7 +5,7 @@
 
 import config from './config';
 
-const API_BASE = `${config.api.baseUrl}/api/v1`;
+const API_BASE = `/api/v1`;
 
 /**
  * Get authentication headers

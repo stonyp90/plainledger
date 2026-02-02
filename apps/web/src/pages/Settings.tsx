@@ -941,7 +941,7 @@ export default function Settings() {
 function APIDocumentationSection() {
   const { language } = useI18n();
   const isEn = language === 'en';
-  const swaggerUrl = `${config.api.baseUrl}/api/docs`;
+  const swaggerUrl = `/api/docs`;
 
   return (
     <div className="space-y-6">

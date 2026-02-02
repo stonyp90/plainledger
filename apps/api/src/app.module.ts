@@ -81,6 +81,8 @@ import { GraphQLModule } from "@infrastructure/graphql/graphql.module";
 import { FinancialResolver } from "@infrastructure/graphql/resolvers/financial.resolver";
 import { OrganizationResolver } from "@infrastructure/graphql/resolvers/organization.resolver";
 import { DataSourceResolver } from "@infrastructure/graphql/resolvers/datasource.resolver";
+import { MarketAnalysisResolver } from "@infrastructure/graphql/resolvers/market-analysis.resolver";
+import { TaxCreditResolver } from "@infrastructure/graphql/resolvers/tax-credit.resolver";
 import { GqlAuthGuard } from "@infrastructure/graphql/guards/gql-auth.guard";
 
 // Application - Use Cases
@@ -376,6 +378,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     FinancialResolver,
     OrganizationResolver,
     DataSourceResolver,
+    MarketAnalysisResolver,
+    TaxCreditResolver,
     ETLSubscriptionResolver,
     AccountBalanceSubscriptionResolver,
     TransactionSubscriptionResolver,
