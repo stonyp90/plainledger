@@ -923,7 +923,6 @@ export default function ModelSpreadsheet({
                     style={{
                       padding: '10px 12px',
                       borderBottom: `1px solid ${colors.border.default}`,
-                      borderRight: `1px solid ${colors.border.default}`,
                       color: colors.text.muted,
                       backgroundColor: isSelected ? '#EFF6FF' : colors.bg.header,
                       fontSize: '13px',

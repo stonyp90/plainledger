@@ -24,6 +24,6 @@
       "@__fixtures__/*": ["__fixtures__/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist"]
 }

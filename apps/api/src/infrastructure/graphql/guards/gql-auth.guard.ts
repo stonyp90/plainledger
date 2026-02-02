@@ -97,10 +97,12 @@ export class GqlAuthGuard implements CanActivate {
     if (!nodeEnv) nodeEnv = "development";
     const isProduction = nodeEnv === "production";
 
+    // SECURITY: Never skip auth in production, even if SKIP_AUTH is set
     if (isProduction && skipAuth) {
       this.logger.error(
         "SECURITY: SKIP_AUTH is enabled in production - this is ignored for security",
       );
+      skipAuth = false; // Force auth check in production
     }
 
     if (skipAuth && !isProduction) {
@@ -251,7 +253,8 @@ export class GqlAuthGuard implements CanActivate {
       }
     }
 
-    const demoOrgId = this.configService?.get<string>("DEMO_ORG_ID") || "demo-org";
+    const demoOrgId =
+      this.configService?.get<string>("DEMO_ORG_ID") || "demo-org";
     const demoEmail =
       this.configService?.get<string>("DEMO_EMAIL") || "demo@plainledger.ca";
 

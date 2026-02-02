@@ -1,18 +1,18 @@
 /**
  * API Contract Tests
- * 
+ *
  * Validates that API endpoints match their OpenAPI/Swagger contracts.
  * Prevents breaking changes to API contracts.
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from '../../src/app.module';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { Test, TestingModule } from "@nestjs/testing";
+import { INestApplication } from "@nestjs/common";
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { AppModule } from "../../src/app.module";
+import * as fs from "fs/promises";
+import * as path from "path";
 
-describe('API Contract Tests', () => {
+describe("API Contract Tests", () => {
   let app: INestApplication;
   let currentSpec: any;
   let storedContract: any;
@@ -27,9 +27,9 @@ describe('API Contract Tests', () => {
 
     // Generate current OpenAPI spec
     const config = new DocumentBuilder()
-      .setTitle('PlainLedger API')
-      .setDescription('Financial Reporting Platform API')
-      .setVersion('1.0')
+      .setTitle("PlainLedger API")
+      .setDescription("Financial Reporting Platform API")
+      .setVersion("1.0")
       .addBearerAuth()
       .build();
 
@@ -38,12 +38,12 @@ describe('API Contract Tests', () => {
     // Load stored contract (if exists)
     const contractPath = path.join(
       process.cwd(),
-      'test',
-      'contract',
-      'api-contract.json',
+      "test",
+      "contract",
+      "api-contract.json",
     );
     try {
-      const contractContent = await fs.readFile(contractPath, 'utf-8');
+      const contractContent = await fs.readFile(contractPath, "utf-8");
       storedContract = JSON.parse(contractContent);
     } catch (error) {
       // Contract doesn't exist yet - will be created on first run
@@ -55,25 +55,25 @@ describe('API Contract Tests', () => {
     await app.close();
   });
 
-  it('should generate valid OpenAPI spec', () => {
+  it("should generate valid OpenAPI spec", () => {
     expect(currentSpec).toBeDefined();
     expect(currentSpec.openapi).toBeDefined();
     expect(currentSpec.paths).toBeDefined();
   });
 
-  it('should have all critical endpoints documented', () => {
+  it("should have all critical endpoints documented", () => {
     const criticalPaths = [
-      '/api/organizations',
-      '/api/accounts',
-      '/api/reports',
-      '/api/integrations',
-      '/api/datasources',
-      '/api/analytics',
-      '/health',
+      "/api/organizations",
+      "/api/accounts",
+      "/api/reports",
+      "/api/integrations",
+      "/api/datasources",
+      "/api/analytics",
+      "/health",
     ];
 
     criticalPaths.forEach((path) => {
-      const pathKey = path.replace('/api', '');
+      const pathKey = path.replace("/api", "");
       const found = currentSpec.paths[pathKey] || currentSpec.paths[path];
       expect(found).toBeDefined(
         `Critical endpoint ${path} is not documented in OpenAPI spec`,
@@ -81,7 +81,7 @@ describe('API Contract Tests', () => {
     });
   });
 
-  it('should have Swagger decorators on all endpoints', () => {
+  it("should have Swagger decorators on all endpoints", () => {
     Object.keys(currentSpec.paths).forEach((path) => {
       Object.keys(currentSpec.paths[path]).forEach((method) => {
         const endpoint = currentSpec.paths[path][method];
@@ -95,10 +95,12 @@ describe('API Contract Tests', () => {
     });
   });
 
-  it('should match stored contract (if exists)', () => {
+  it("should match stored contract (if exists)", () => {
     if (!storedContract) {
       // First run - save current spec as contract
-      console.log('⚠️  No stored contract found. Saving current spec as contract.');
+      console.log(
+        "⚠️  No stored contract found. Saving current spec as contract.",
+      );
       return;
     }
 
@@ -117,9 +119,7 @@ describe('API Contract Tests', () => {
     currentPaths.forEach((currentPath) => {
       if (storedContract.paths[currentPath]) {
         const currentMethods = Object.keys(currentSpec.paths[currentPath]);
-        const contractMethods = Object.keys(
-          storedContract.paths[currentPath],
-        );
+        const contractMethods = Object.keys(storedContract.paths[currentPath]);
 
         contractMethods.forEach((method) => {
           if (!currentMethods.includes(method)) {
@@ -145,18 +145,15 @@ describe('API Contract Tests', () => {
     });
   });
 
-  it('should save current spec as contract', async () => {
+  it("should save current spec as contract", async () => {
     const contractPath = path.join(
       process.cwd(),
-      'test',
-      'contract',
-      'api-contract.json',
+      "test",
+      "contract",
+      "api-contract.json",
     );
     await fs.mkdir(path.dirname(contractPath), { recursive: true });
-    await fs.writeFile(
-      contractPath,
-      JSON.stringify(currentSpec, null, 2),
-    );
+    await fs.writeFile(contractPath, JSON.stringify(currentSpec, null, 2));
     console.log(`✅ Contract saved to: ${contractPath}`);
   });
 });

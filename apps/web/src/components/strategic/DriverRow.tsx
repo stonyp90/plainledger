@@ -751,7 +751,6 @@ export default function DriverRow({
             className="relative text-right"
             style={{
               padding: '6px 12px',
-              borderRight: `1px solid ${colors.border.default}`,
               width: `${columnWidths?.period ?? 110}px`,
               minWidth: `${columnWidths?.period ?? 110}px`,
               color: isNegative(value) ? colors.accent.error : colors.text.primary,

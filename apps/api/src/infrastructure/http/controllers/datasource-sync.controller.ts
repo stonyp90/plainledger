@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
 import { Public } from "nest-keycloak-connect";
 import { ConfigService } from "@nestjs/config";
+import { execSync } from "child_process";
 
 /**
  * DataSource Sync Controller
@@ -60,7 +61,6 @@ export class DataSourceSyncController {
     // In production, this would be an ECS task or Lambda
     // For local dev, we can call the script directly
     try {
-      const { execSync } = require("child_process");
       const result = execSync(
         `QUICKBOOKS_REFRESH_TOKEN=${body.refreshToken} QUICKBOOKS_REALM_ID=${body.realmId} npx tsx scripts/providers/quickbooks/sync-to-gold.ts`,
         {

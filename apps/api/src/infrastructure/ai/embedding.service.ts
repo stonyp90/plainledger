@@ -147,7 +147,7 @@ export class EmbeddingService {
    */
   vectorStringToEmbedding(vectorString: string): number[] {
     // Remove brackets and split by comma
-    const cleaned = vectorString.replace(/[\[\]]/g, "");
+    const cleaned = vectorString.replace(/[[\]]/g, "");
     return cleaned.split(",").map((val) => parseFloat(val.trim()));
   }
 }
