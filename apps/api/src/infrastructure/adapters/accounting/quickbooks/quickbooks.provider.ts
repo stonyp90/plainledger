@@ -5,7 +5,7 @@
  * This enables QuickBooks to work with the multi-provider architecture.
  */
 
-import { Injectable, Logger, Inject } from "@nestjs/common";
+import { Injectable, Logger, Inject, Optional } from "@nestjs/common";
 import {
   IAccountingProvider,
   ProviderType,
@@ -42,7 +42,7 @@ export class QuickBooksProvider implements IAccountingProvider {
 
   constructor(
     private readonly quickBooksService: QuickBooksService,
-    @Inject("ITokenService") private readonly tokenService?: ITokenService,
+    @Optional() @Inject("ITokenService") private readonly tokenService?: ITokenService,
   ) {}
 
   /**

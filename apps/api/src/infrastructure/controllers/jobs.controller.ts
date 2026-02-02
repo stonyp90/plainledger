@@ -54,7 +54,7 @@ interface UpdateJobRequest {
 
 @ApiTags("Admin - Jobs")
 @ApiBearerAuth()
-@Controller("api/admin/jobs")
+@Controller("admin/jobs")
 @UseGuards(AuthGuard, RoleGuard)
 @Roles({ roles: ["realm:admin", "realm:super_admin"] })
 export class JobsController {

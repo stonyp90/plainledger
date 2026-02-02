@@ -12,10 +12,57 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiProperty,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
 import { AICacheService } from "../../ai/ai-cache.service";
 import { Logger } from "@nestjs/common";
+
+/**
+ * DTO for AI feedback - defined before controller to avoid circular reference
+ */
+export class AIFeedbackContextDto {
+  @ApiProperty({ required: false })
+  queryIntent?: string;
+
+  @ApiProperty({ required: false })
+  modelTier?: string;
+
+  @ApiProperty({ required: false })
+  query?: string;
+
+  @ApiProperty({ required: false })
+  response?: string;
+}
+
+export class AIFeedbackDto {
+  @ApiProperty({ description: "Unique message ID from the chat response" })
+  messageId: string;
+
+  @ApiProperty({
+    description: "Hash of the query/prompt (for cache invalidation)",
+    required: false,
+  })
+  queryHash?: string;
+
+  @ApiProperty({
+    description: "Whether feedback is positive (true) or negative (false)",
+  })
+  positive: boolean;
+
+  @ApiProperty({
+    description: "Timestamp when feedback was given",
+    required: false,
+  })
+  timestamp?: number;
+
+  @ApiProperty({
+    description: "Additional context about the query/response",
+    required: false,
+    type: AIFeedbackContextDto,
+  })
+  context?: AIFeedbackContextDto;
+}
 
 /**
  * AI Feedback Controller
@@ -94,37 +141,3 @@ export class AIFeedbackController {
   }
 }
 
-/**
- * DTO for AI feedback
- */
-export class AIFeedbackDto {
-  /**
-   * Unique message ID from the chat response
-   */
-  messageId: string;
-
-  /**
-   * Hash of the query/prompt (for cache invalidation)
-   */
-  queryHash?: string;
-
-  /**
-   * Whether feedback is positive (true) or negative (false)
-   */
-  positive: boolean;
-
-  /**
-   * Timestamp when feedback was given
-   */
-  timestamp?: number;
-
-  /**
-   * Additional context about the query/response
-   */
-  context?: {
-    queryIntent?: string;
-    modelTier?: string;
-    query?: string;
-    response?: string;
-  };
-}

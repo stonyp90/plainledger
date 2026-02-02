@@ -12,9 +12,57 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiProperty,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
 import { Logger } from "@nestjs/common";
+
+/**
+ * Analytics event structure - defined first to avoid circular reference
+ */
+export interface AnalyticsEvent {
+  type:
+    | "message_sent"
+    | "initiative_generated"
+    | "okr_generated"
+    | "error"
+    | "rate_limit"
+    | "local_query"
+    | "feedback";
+  timestamp: number;
+  metadata?: {
+    messageLength?: number;
+    responseTime?: number;
+    tokensUsed?: number;
+    errorType?: string;
+    messageType?: string;
+    handlerType?: string;
+    latencyMs?: number;
+    costSaved?: number;
+    messageId?: string;
+    positive?: boolean;
+    queryIntent?: string;
+    modelTier?: string;
+  };
+}
+
+/**
+ * DTO for AI analytics events - defined before controller
+ */
+export class AIAnalyticsDto {
+  @ApiProperty({ description: "Session ID for grouping events" })
+  sessionId: string;
+
+  @ApiProperty({
+    description: "Array of analytics events",
+    type: "array",
+    items: { type: "object" },
+  })
+  events: AnalyticsEvent[];
+
+  @ApiProperty({ description: "Timestamp when events were sent" })
+  timestamp: number;
+}
 
 /**
  * AI Analytics Controller
@@ -118,51 +166,3 @@ export class AIAnalyticsController {
   }
 }
 
-/**
- * DTO for AI analytics events
- */
-export class AIAnalyticsDto {
-  /**
-   * Session ID for grouping events
-   */
-  sessionId: string;
-
-  /**
-   * Array of analytics events
-   */
-  events: AnalyticsEvent[];
-
-  /**
-   * Timestamp when events were sent
-   */
-  timestamp: number;
-}
-
-/**
- * Analytics event structure
- */
-export interface AnalyticsEvent {
-  type:
-    | "message_sent"
-    | "initiative_generated"
-    | "okr_generated"
-    | "error"
-    | "rate_limit"
-    | "local_query"
-    | "feedback";
-  timestamp: number;
-  metadata?: {
-    messageLength?: number;
-    responseTime?: number;
-    tokensUsed?: number;
-    errorType?: string;
-    messageType?: string;
-    handlerType?: string;
-    latencyMs?: number;
-    costSaved?: number;
-    messageId?: string;
-    positive?: boolean;
-    queryIntent?: string;
-    modelTier?: string;
-  };
-}

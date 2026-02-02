@@ -72,6 +72,9 @@ import { EmbeddingService } from "@infrastructure/ai/embedding.service";
 import { SimilaritySearchService } from "@application/services/similarity-search.service";
 import { ProviderFactory } from "@application/services/provider-factory.service";
 import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
+import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
+import { S3CleanupAdapter } from "@infrastructure/adapters/storage/s3/s3-cleanup.adapter";
+import { BenchmarkRefreshService } from "@infrastructure/services/benchmark-refresh.service";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 import { PubSub } from "graphql-subscriptions";
 import { ETLSubscriptionResolver } from "@infrastructure/graphql/resolvers/etl.subscription";
@@ -352,6 +355,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     EmbeddingService,
     SimilaritySearchService,
     ProviderFactory,
+    QuickBooksService,
     QuickBooksProvider,
     ETLPublisherService,
     AccountBalancePublisherService,
@@ -364,6 +368,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     CustomerJourneyJob,
     DataRetentionJob,
     TaxCreditSyncJob,
+    S3CleanupAdapter,
+    BenchmarkRefreshService,
     JobConfigurationService,
     {
       provide: "IPowerBIAdapter",
