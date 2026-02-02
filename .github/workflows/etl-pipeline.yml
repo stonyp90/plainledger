@@ -314,22 +314,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         run: |
           SUBJECT="[ALERT] PlainLedger ETL Pipeline Failed - ${{ github.event.inputs.organization_id || 'demo-org' }}"
-          
-          BODY="PlainLedger ETL Pipeline Failure Alert
-
-Organization: ${{ github.event.inputs.organization_id || 'demo-org' }}
-Environment: ${{ env.QUICKBOOKS_ENVIRONMENT }}
-Trigger: ${{ github.event_name }}
-Run ID: ${{ github.run_id }}
-Commit: ${{ github.sha }}
-
-Failed Stages:
-${{ steps.failures.outputs.failed_stages }}
-
-View full logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
----
-This is an automated message from PlainLedger ETL Pipeline."
+          BODY="PlainLedger ETL Pipeline Failure Alert - Organization: ${{ github.event.inputs.organization_id || 'demo-org' }} - Environment: ${{ env.QUICKBOOKS_ENVIRONMENT }} - Trigger: ${{ github.event_name }} - Run: ${{ github.run_id }} - Failed: ${{ steps.failures.outputs.failed_stages }} - Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
           # Try to send via SES (requires ses:SendEmail permission in IAM role)
           aws ses send-email \
