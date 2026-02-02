@@ -6,7 +6,7 @@
  */
 
 import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
-import { UseGuards, Logger, Injectable } from "@nestjs/common";
+import { UseGuards, Logger, Injectable, Inject } from "@nestjs/common";
 import { Unprotected } from "nest-keycloak-connect";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
 import {
@@ -40,7 +40,9 @@ export class VisualizationResolver {
   private readonly logger = new Logger(VisualizationResolver.name);
 
   constructor(
+    @Inject("IVisualizationRepository")
     private readonly visualizationRepository: IVisualizationRepository,
+    @Inject("ICustomEntityRepository")
     private readonly customEntityRepository: ICustomEntityRepository,
     private readonly queryService: VisualizationQueryService,
   ) {}

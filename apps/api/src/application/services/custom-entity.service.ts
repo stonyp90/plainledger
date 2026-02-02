@@ -6,7 +6,7 @@
  * multiple tables with predefined joins.
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Inject } from "@nestjs/common";
 import { ICustomEntityRepository } from "@application/ports/outbound/ICustomEntityRepository";
 import { IDataSourceMetadataService } from "@application/ports/outbound/IDataSourceMetadataService";
 import { CustomEntity } from "@domain/entities/visualization/types";
@@ -18,7 +18,9 @@ export class CustomEntityService {
   private readonly logger = new Logger(CustomEntityService.name);
 
   constructor(
+    @Inject("ICustomEntityRepository")
     private readonly customEntityRepository: ICustomEntityRepository,
+    @Inject("IDataSourceMetadataService")
     private readonly metadataService: IDataSourceMetadataService,
   ) {}
 

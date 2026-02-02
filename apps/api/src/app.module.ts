@@ -28,6 +28,8 @@ import {
   IndustryBenchmarkEntity,
   BenchmarkRefreshLogEntity,
 } from "@infrastructure/persistence/postgres/entities/industry-benchmark.entity";
+import { VisualizationEntity } from "@infrastructure/persistence/postgres/entities/visualization.entity";
+import { CustomEntityEntity } from "@infrastructure/persistence/postgres/entities/custom-entity.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -74,6 +76,7 @@ import { SettingsService } from "@infrastructure/services/settings.service";
 import { CacheService } from "@infrastructure/cache/cache.service";
 import { EmbeddingService } from "@infrastructure/ai/embedding.service";
 import { SimilaritySearchService } from "@application/services/similarity-search.service";
+import { CustomEntityService } from "@application/services/custom-entity.service";
 import { ProviderFactory } from "@application/services/provider-factory.service";
 import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
 import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
@@ -82,6 +85,9 @@ import { BenchmarkRefreshService } from "@infrastructure/services/benchmark-refr
 import { BenchmarkHealthService } from "@infrastructure/services/benchmark-health.service";
 import { ISEDBenchmarkService } from "@infrastructure/services/ised-benchmark.service";
 import { StatsCanBenchmarkService } from "@infrastructure/services/statscan-benchmark.service";
+import { DataSourceMetadataService } from "@infrastructure/services/datasource-metadata.service";
+import { VisualizationQueryService } from "@application/services/visualization-query.service";
+import { AthenaQueryAdapter } from "@infrastructure/adapters/analytics/athena-query.adapter";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 import { PubSub } from "graphql-subscriptions";
 import { ETLSubscriptionResolver } from "@infrastructure/graphql/resolvers/etl.subscription";
@@ -96,6 +102,7 @@ import { FinancialResolver } from "@infrastructure/graphql/resolvers/financial.r
 import { OrganizationResolver } from "@infrastructure/graphql/resolvers/organization.resolver";
 import { DataSourceResolver } from "@infrastructure/graphql/resolvers/datasource.resolver";
 import { MarketAnalysisResolver } from "@infrastructure/graphql/resolvers/market-analysis.resolver";
+import { VisualizationResolver } from "@infrastructure/graphql/resolvers/visualization.resolver";
 import { TaxCreditResolver } from "@infrastructure/graphql/resolvers/tax-credit.resolver";
 import { GqlAuthGuard } from "@infrastructure/graphql/guards/gql-auth.guard";
 
@@ -118,6 +125,8 @@ import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persiste
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { PostgresOrganizationSettingsRepository } from "@infrastructure/persistence/postgres/postgres-organization-settings.repository";
 import { PostgresUserSettingsRepository } from "@infrastructure/persistence/postgres/postgres-user-settings.repository";
+import { PostgresVisualizationRepository } from "@infrastructure/persistence/postgres/postgres-visualization.repository";
+import { PostgresCustomEntityRepository } from "@infrastructure/persistence/postgres/postgres-custom-entity.repository";
 import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
 
 // Notifications (Email via SES Adapter)
@@ -182,6 +191,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
           EmailEventEntity,
           IndustryBenchmarkEntity,
           BenchmarkRefreshLogEntity,
+          VisualizationEntity,
+          CustomEntityEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -241,6 +252,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       EmailEventEntity,
       IndustryBenchmarkEntity,
       BenchmarkRefreshLogEntity,
+      VisualizationEntity,
+      CustomEntityEntity,
     ]),
 
     // Keycloak Authentication
@@ -414,6 +427,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     DataSourceResolver,
     MarketAnalysisResolver,
     TaxCreditResolver,
+    VisualizationResolver,
     ETLSubscriptionResolver,
     AccountBalanceSubscriptionResolver,
     TransactionSubscriptionResolver,
@@ -459,6 +473,29 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
 
     // CRM (HubSpot)
     HubSpotAdapter,
+
+    // Visualization & Custom Entity Repositories
+    PostgresVisualizationRepository,
+    PostgresCustomEntityRepository,
+    {
+      provide: "IVisualizationRepository",
+      useClass: PostgresVisualizationRepository,
+    },
+    {
+      provide: "ICustomEntityRepository",
+      useClass: PostgresCustomEntityRepository,
+    },
+    {
+      provide: "IDataSourceMetadataService",
+      useClass: DataSourceMetadataService,
+    },
+    AthenaQueryAdapter,
+    {
+      provide: "IQueryExecutor",
+      useClass: AthenaQueryAdapter,
+    },
+    CustomEntityService,
+    VisualizationQueryService,
 
     // Centralized Application Configuration
     {

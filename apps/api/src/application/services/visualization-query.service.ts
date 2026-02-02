@@ -5,7 +5,7 @@
  * Handles joins, aggregations, calculated fields, filters, and sorting.
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Inject } from "@nestjs/common";
 import {
   VisualizationQuery,
   FieldSelection,
@@ -36,7 +36,9 @@ export class VisualizationQueryService {
   private readonly logger = new Logger(VisualizationQueryService.name);
 
   constructor(
+    @Inject("IQueryExecutor")
     private readonly queryExecutor: IQueryExecutor,
+    @Inject("IDataSourceMetadataService")
     private readonly metadataService: IDataSourceMetadataService,
   ) {}
 
