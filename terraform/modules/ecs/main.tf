@@ -651,7 +651,7 @@ resource "aws_ecs_task_definition" "api" {
       environment = [
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3000" },
-        { name = "DB_PORT", value = "5432" },
+        { name = "DATABASE_PORT", value = "5432" },
         { name = "REDIS_PORT", value = "6379" },
         { name = "KEYCLOAK_URL", value = "https://auth.${var.domain_name}" },
         { name = "KEYCLOAK_REALM", value = "plainledger" },
@@ -668,20 +668,21 @@ resource "aws_ecs_task_definition" "api" {
       ]
 
       secrets = concat([
+        # Database credentials - using DATABASE_* names to match NestJS ConfigService
         {
-          name      = "DB_HOST"
+          name      = "DATABASE_HOST"
           valueFrom = "${var.db_credentials_secret_arn}:host::"
         },
         {
-          name      = "DB_USERNAME"
+          name      = "DATABASE_USER"
           valueFrom = "${var.db_credentials_secret_arn}:username::"
         },
         {
-          name      = "DB_PASSWORD"
+          name      = "DATABASE_PASSWORD"
           valueFrom = "${var.db_credentials_secret_arn}:password::"
         },
         {
-          name      = "DB_NAME"
+          name      = "DATABASE_NAME"
           valueFrom = "${var.db_credentials_secret_arn}:dbname::"
         },
         {

@@ -61,7 +61,7 @@ jobs:
     if: ${{ github.event.inputs.deploy_only != 'true' }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -69,26 +69,26 @@ jobs:
           cache-dependency-path: |
             apps/api/package-lock.json
             apps/web/package-lock.json
-      
+
       - name: Cache API node_modules
         id: cache-api
         uses: actions/cache@v5
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
-      
+
       - name: Cache Web node_modules
         id: cache-web
         uses: actions/cache@v5
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
-      
+
       - name: Install API dependencies
         if: steps.cache-api.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: apps/api
-      
+
       - name: Install Web dependencies
         if: steps.cache-web.outputs.cache-hit != 'true'
         run: npm ci
@@ -236,22 +236,22 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      
+
       - name: Restore API cache
         uses: actions/cache@v5
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
-      
+
       - name: Install dependencies if needed
         run: npm ci
         working-directory: apps/api
         if: steps.cache-api.outputs.cache-hit != 'true'
-      
+
       - name: Wait for LocalStack
         run: |
           echo "Waiting for LocalStack to be ready..."
@@ -263,25 +263,25 @@ jobs:
             echo "Waiting... ($i/30)"
             sleep 2
           done
-      
+
       - name: Create S3 Buckets
         run: |
           # Install AWS CLI if not available
           pip install awscli-local awscli
-          
+
           # Create datalake buckets
           export AWS_ACCESS_KEY_ID=test
           export AWS_SECRET_ACCESS_KEY=test
           export AWS_DEFAULT_REGION=us-east-1
-          
+
           awslocal s3 mb s3://plainledger-test
           awslocal s3 mb s3://plainledger-bronze
           awslocal s3 mb s3://plainledger-silver
           awslocal s3 mb s3://plainledger-gold
-          
+
           echo "S3 Buckets created:"
           awslocal s3 ls
-      
+
       - name: Initialize Database Schema
         run: |
           PGPASSWORD=plainledger_secret psql -h localhost -U plainledger -d plainledger -f local-dev/init-db.sql || true
@@ -291,7 +291,7 @@ jobs:
           PGUSER: plainledger
           PGPASSWORD: plainledger_secret
           PGDATABASE: plainledger
-      
+
       - name: Run Datalake Integration Tests
         run: npm test -- --testPathPattern="datalake"
         working-directory: apps/api
@@ -308,7 +308,7 @@ jobs:
           DB_NAME: plainledger
           DB_USERNAME: plainledger
           DB_PASSWORD: plainledger_secret
-      
+
       - name: Datalake Test Summary
         if: always()
         run: |
@@ -357,20 +357,20 @@ jobs:
       image_tag: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
         id: login-ecr
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Build and push ${{ matrix.app.name }}
         if: ${{ matrix.app.name == 'api' || github.event.inputs.deploy_api_only != 'true' }}
         uses: docker/build-push-action@v6
@@ -413,31 +413,71 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Get ECR registry
         id: ecr-registry
         run: |
           echo "registry=$(aws ecr describe-repositories --repository-names plainledger-prod-api --query 'repositories[0].repositoryUri' --output text | sed 's|/plainledger-prod-api||')" >> $GITHUB_OUTPUT
-      
+
       - name: Update API task definition with specific image tag
         id: update-api-task
         run: |
           echo "🔄 Updating API task definition to use commit SHA: ${{ github.sha }}"
-          
+
           # Get current task definition
           TASK_DEF=$(aws ecs describe-task-definition --task-definition plainledger-prod-api --query 'taskDefinition' --output json)
-          
+
           # Update image to use specific commit SHA tag (not :latest to avoid cache issues)
           NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "${{ steps.ecr-registry.outputs.registry }}/plainledger-prod-api:${{ github.sha }}" \
             'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) | 
              .containerDefinitions[0].image = $IMAGE')
-          
+
           # Register new task definition
           echo "$NEW_TASK_DEF" > /tmp/task-def.json
           NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file:///tmp/task-def.json --query 'taskDefinition.revision' --output text)
           echo "revision=$NEW_REVISION" >> $GITHUB_OUTPUT
-          echo "✅ Registered new task definition revision: $NEW_REVISION"
-      
+          echo "✅ Registered new API task definition revision: $NEW_REVISION"
+
+      - name: Update Web task definition with specific image tag
+        id: update-web-task
+        if: ${{ github.event.inputs.deploy_api_only != 'true' }}
+        run: |
+          echo "🔄 Updating Web task definition to use commit SHA: ${{ github.sha }}"
+
+          # Get current task definition
+          TASK_DEF=$(aws ecs describe-task-definition --task-definition plainledger-prod-web --query 'taskDefinition' --output json)
+
+          # Update image to use specific commit SHA tag
+          NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "${{ steps.ecr-registry.outputs.registry }}/plainledger-prod-web:${{ github.sha }}" \
+            'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) | 
+             .containerDefinitions[0].image = $IMAGE')
+
+          # Register new task definition
+          echo "$NEW_TASK_DEF" > /tmp/web-task-def.json
+          NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file:///tmp/web-task-def.json --query 'taskDefinition.revision' --output text)
+          echo "revision=$NEW_REVISION" >> $GITHUB_OUTPUT
+          echo "✅ Registered new Web task definition revision: $NEW_REVISION"
+
+      - name: Update Keycloak task definition with specific image tag
+        id: update-keycloak-task
+        if: ${{ github.event.inputs.deploy_api_only != 'true' }}
+        run: |
+          echo "🔄 Updating Keycloak task definition to use commit SHA: ${{ github.sha }}"
+
+          # Get current task definition
+          TASK_DEF=$(aws ecs describe-task-definition --task-definition plainledger-prod-keycloak --query 'taskDefinition' --output json)
+
+          # Update image to use specific commit SHA tag
+          NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "${{ steps.ecr-registry.outputs.registry }}/plainledger-prod-keycloak:${{ github.sha }}" \
+            'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) | 
+             .containerDefinitions[0].image = $IMAGE')
+
+          # Register new task definition
+          echo "$NEW_TASK_DEF" > /tmp/keycloak-task-def.json
+          NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file:///tmp/keycloak-task-def.json --query 'taskDefinition.revision' --output text)
+          echo "revision=$NEW_REVISION" >> $GITHUB_OUTPUT
+          echo "✅ Registered new Keycloak task definition revision: $NEW_REVISION"
+
       - name: Deploy API service
         run: |
           echo "🚀 Deploying API service with task definition revision ${{ steps.update-api-task.outputs.revision }}..."
@@ -447,27 +487,29 @@ jobs:
             --task-definition plainledger-prod-api:${{ steps.update-api-task.outputs.revision }} \
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ API service not found - infrastructure may need to be deployed first"
-      
+
       - name: Deploy Web service
         if: ${{ github.event.inputs.deploy_api_only != 'true' }}
         run: |
-          echo "🚀 Deploying Web service..."
+          echo "🚀 Deploying Web service with task definition revision ${{ steps.update-web-task.outputs.revision }}..."
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service plainledger-prod-web \
+            --task-definition plainledger-prod-web:${{ steps.update-web-task.outputs.revision }} \
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ Web service not found - infrastructure may need to be deployed first"
-      
+
       - name: Deploy Keycloak service
         if: ${{ github.event.inputs.deploy_api_only != 'true' }}
         run: |
-          echo "🚀 Deploying Keycloak service..."
+          echo "🚀 Deploying Keycloak service with task definition revision ${{ steps.update-keycloak-task.outputs.revision }}..."
           aws ecs update-service \
             --cluster ${{ env.ECS_CLUSTER }} \
             --service plainledger-prod-keycloak \
+            --task-definition plainledger-prod-keycloak:${{ steps.update-keycloak-task.outputs.revision }} \
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ Keycloak service not found - infrastructure may need to be deployed first"
-      
+
       - name: Clear CloudFront Cache (if exists)
         run: |
           echo "🧹 Checking for CloudFront distributions..."
@@ -475,7 +517,7 @@ jobs:
           DISTRIBUTION_ID=$(aws cloudfront list-distributions \
             --query 'DistributionList.Items[?contains(Aliases.Items, `plainledger.ca`)].Id' \
             --output text 2>/dev/null || echo "")
-          
+
           if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
             echo "Found CloudFront distribution: $DISTRIBUTION_ID"
             echo "Creating invalidation..."
@@ -487,17 +529,17 @@ jobs:
           else
             echo "ℹ️ No CloudFront distribution found for plainledger.ca - skipping cache clear"
           fi
-      
+
       - name: Verify ALB Routing Rules
         run: |
           echo "🔍 Verifying ALB routing includes /graphql..."
-          
+
           # Get the ALB ARN
           ALB_ARN=$(aws elbv2 describe-load-balancers \
             --names plainledger-prod-alb \
             --query 'LoadBalancers[0].LoadBalancerArn' \
             --output text 2>/dev/null || echo "")
-          
+
           if [ -n "$ALB_ARN" ]; then
             # Get HTTPS listener
             LISTENER_ARN=$(aws elbv2 describe-listeners \
@@ -517,17 +559,17 @@ jobs:
               echo "⚠️ GraphQL route not found - may need Terraform apply"
             fi
           fi
-      
+
       - name: Wait for services to stabilize
         timeout-minutes: 15
         run: |
           echo "⏳ Waiting for services to stabilize..."
-          
+
           # Wait for API (always deployed)
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services plainledger-prod-api || echo "⚠️ API service wait timed out or not found"
-          
+
           # Wait for Web (only if not API-only deployment)
           if [ "${{ github.event.inputs.deploy_api_only }}" != "true" ]; then
             aws ecs wait services-stable \
@@ -539,9 +581,9 @@ jobs:
               --cluster ${{ env.ECS_CLUSTER }} \
               --services plainledger-prod-keycloak || echo "⚠️ Keycloak service wait timed out or not found"
           fi
-          
+
           echo "✅ Deployment complete"
-      
+
       - name: Verify REST API Health
         run: |
           echo "🔍 Checking REST API health..."
@@ -553,14 +595,14 @@ jobs:
             echo "Waiting for REST API... ($i/5)"
             sleep 10
           done
-      
+
       - name: Verify API Routes (no double /api prefix)
         run: |
           echo "🔍 Checking for double /api/api prefix issues..."
           SWAGGER_ROUTES=$(curl -sf https://plainledger.ca/api/docs-json | jq -r '.paths | keys[]' || echo "")
-          
+
           DOUBLE_PREFIX_COUNT=$(echo "$SWAGGER_ROUTES" | grep -c "^/api/api" || echo "0")
-          
+
           if [ "$DOUBLE_PREFIX_COUNT" -gt "0" ]; then
             echo "❌ ERROR: Found $DOUBLE_PREFIX_COUNT routes with double /api/api prefix!"
             echo "$SWAGGER_ROUTES" | grep "^/api/api" | head -5
@@ -570,7 +612,7 @@ jobs:
             echo "✅ No double /api prefix issues found"
             echo "Total routes: $(echo "$SWAGGER_ROUTES" | wc -l | tr -d ' ')"
           fi
-      
+
       - name: Verify GraphQL API Health
         run: |
           echo "🔍 Checking GraphQL API health..."
@@ -578,7 +620,7 @@ jobs:
           GRAPHQL_RESPONSE=$(curl -sf -X POST https://plainledger.ca/graphql \
             -H "Content-Type: application/json" \
             -d '{"query":"{ __typename }"}' || echo "")
-          
+
           if echo "$GRAPHQL_RESPONSE" | grep -q "__typename"; then
             echo "✅ GraphQL API is healthy"
             echo "GRAPHQL_STATUS=healthy" >> $GITHUB_ENV
@@ -586,12 +628,12 @@ jobs:
             echo "⚠️ GraphQL API health check inconclusive (may require auth)"
             echo "GRAPHQL_STATUS=requires_auth" >> $GITHUB_ENV
           fi
-      
+
       - name: Verify Power BI Data API Health
         run: |
           echo "🔍 Checking Power BI Data API health..."
           POWERBI_RESPONSE=$(curl -sf https://plainledger.ca/api/v1/analytics/data/health/check || echo "")
-          
+
           if echo "$POWERBI_RESPONSE" | grep -q "healthy"; then
             echo "✅ Power BI Data API is healthy"
             echo "POWERBI_STATUS=healthy" >> $GITHUB_ENV
@@ -599,7 +641,7 @@ jobs:
             echo "⚠️ Power BI Data API health check: $POWERBI_RESPONSE"
             echo "POWERBI_STATUS=degraded" >> $GITHUB_ENV
           fi
-      
+
       - name: Deployment summary
         run: |
           echo "## 🎉 Deployment Complete" >> $GITHUB_STEP_SUMMARY
@@ -637,7 +679,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          
+
           # Lint results
           if [ "${{ needs.lint-api.result }}" == "success" ]; then
             echo "| 🔍 Lint API | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
@@ -646,7 +688,7 @@ jobs:
           else
             echo "| 🔍 Lint API | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.lint-web.result }}" == "success" ]; then
             echo "| 🔍 Lint Web | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.lint-web.result }}" == "skipped" ]; then
@@ -654,7 +696,7 @@ jobs:
           else
             echo "| 🔍 Lint Web | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Test results
           if [ "${{ needs.test-api.result }}" == "success" ]; then
             echo "| 🧪 Test API | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
@@ -663,7 +705,7 @@ jobs:
           else
             echo "| 🧪 Test API | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.test-web.result }}" == "success" ]; then
             echo "| 🧪 Test Web | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.test-web.result }}" == "skipped" ]; then
@@ -671,7 +713,7 @@ jobs:
           else
             echo "| 🧪 Test Web | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Datalake integration test results (manual trigger only)
           if [ "${{ needs.test-datalake.result }}" == "success" ]; then
             echo "| 🗃️ Datalake Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
@@ -680,7 +722,7 @@ jobs:
           else
             echo "| 🗃️ Datalake Tests | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Build results
           if [ "${{ needs.build-and-push.result }}" == "success" ]; then
             echo "| 🐳 Docker Build | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
@@ -689,7 +731,7 @@ jobs:
           else
             echo "| 🐳 Docker Build | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Deploy results
           if [ "${{ needs.deploy.result }}" == "success" ]; then
             echo "| 🚀 Deploy | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
@@ -698,9 +740,9 @@ jobs:
           else
             echo "| 🚀 Deploy | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # API Endpoints
           echo "### 🌐 API Endpoints" >> $GITHUB_STEP_SUMMARY
           echo "| API | URL | Description |" >> $GITHUB_STEP_SUMMARY
@@ -709,6 +751,6 @@ jobs:
           echo "| GraphQL | https://plainledger.ca/graphql | GraphQL endpoint |" >> $GITHUB_STEP_SUMMARY
           echo "| Power BI Data | https://plainledger.ca/api/v1/analytics/data | Datalake access for Power BI |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
