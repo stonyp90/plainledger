@@ -4,14 +4,15 @@
  * Wraps dashboard widgets with:
  * - Drag-and-drop reordering
  * - Remove controls
- * - Resize functionality (height adjustment with auto-save)
+ * - Manual resize (drag bottom edge)
+ * - Fullscreen mode
  * 
  * Only shows controls to users with customize:dashboard permission.
- * Settings are automatically saved - no need for pinning.
+ * Settings are automatically saved.
  */
 
-import { useState, useRef, useCallback, ReactNode } from 'react';
-import { X, Lock, Unlock, Maximize2, Minimize2, RotateCcw, GripHorizontal, Move } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect, ReactNode } from 'react';
+import { X, Maximize2, Minimize2, RotateCcw, GripHorizontal, Move } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useSingleChartSize } from '../hooks/useChartSize';
 
@@ -60,15 +61,13 @@ export default function DashboardWidgetWrapper({
   const { language } = useI18n();
   const isEn = language === 'en';
   const [isHovered, setIsHovered] = useState(false);
-  const [showSizeMenu, setShowSizeMenu] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Use chart size hook for persistence (auto-saves)
   const {
     height: savedHeight,
-    locked,
     setHeight,
-    toggleLock,
     reset,
   } = useSingleChartSize(pageId, id, defaultHeight);
   
@@ -76,9 +75,34 @@ export default function DashboardWidgetWrapper({
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
 
-  // Handle resize start - maintains proportional sizing
+  // Handle fullscreen toggle
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Prevent body scroll when fullscreen
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isFullscreen]);
+
+  // Handle resize start - manual drag resize
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (locked || !enableResize) return;
+    if (!enableResize || isFullscreen) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -107,21 +131,51 @@ export default function DashboardWidgetWrapper({
     document.addEventListener('mouseup', handleEnd);
     document.addEventListener('touchmove', handleMove);
     document.addEventListener('touchend', handleEnd);
-  }, [locked, enableResize, savedHeight, minHeight, maxHeight, setHeight]);
-
-  // Size presets - proportional options
-  const sizePresets = [
-    { label: isEn ? 'Compact' : 'Compact', height: 200 },
-    { label: isEn ? 'Standard' : 'Standard', height: 300 },
-    { label: isEn ? 'Large' : 'Grand', height: 420 },
-    { label: isEn ? 'Full' : 'Plein', height: 550 },
-  ];
+  }, [enableResize, isFullscreen, savedHeight, minHeight, maxHeight, setHeight]);
 
   const currentHeight = savedHeight;
   const hasCustomSize = savedHeight !== undefined;
 
   if (!canCustomize) {
     return <div className={className}>{children}</div>;
+  }
+
+  // Fullscreen mode
+  if (isFullscreen) {
+    return (
+      <div
+        className="fixed inset-0 z-[9998] flex flex-col"
+        style={{
+          backgroundColor: 'rgb(var(--color-bg))',
+        }}
+      >
+        {/* Fullscreen header */}
+        <div 
+          className="flex items-center justify-between px-4 py-3 border-b"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
+          <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'Press ESC to exit fullscreen' : 'Appuyez sur ESC pour quitter'}
+          </span>
+          <button
+            onClick={toggleFullscreen}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text))',
+            }}
+          >
+            <Minimize2 className="w-4 h-4" />
+            <span className="text-sm">{isEn ? 'Exit fullscreen' : 'Quitter plein écran'}</span>
+          </button>
+        </div>
+        
+        {/* Fullscreen content */}
+        <div className="flex-1 p-4 overflow-auto">
+          {children}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -134,10 +188,7 @@ export default function DashboardWidgetWrapper({
       onDragOver={onDragOver}
       onDrop={onDrop}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setShowSizeMenu(false);
-      }}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         opacity: isDragging ? 0.5 : 1,
         transition: isResizing ? 'none' : 'opacity 0.2s',
@@ -145,7 +196,7 @@ export default function DashboardWidgetWrapper({
         minHeight: enableResize ? `${minHeight}px` : undefined,
       }}
     >
-      {/* Move Handle - top left inside chart, visible on hover */}
+      {/* Move Handle - top left, visible on hover */}
       {canCustomize && isHovered && !isResizing && id !== 'add-widget' && (
         <div
           className="absolute left-2 top-2 z-20 cursor-grab active:cursor-grabbing flex items-center gap-1 px-2 py-1 rounded-md transition-all hover:scale-105"
@@ -169,131 +220,61 @@ export default function DashboardWidgetWrapper({
         </div>
       )}
 
-      {/* Resize Controls - visible on hover */}
-      {canCustomize && enableResize && isHovered && !isResizing && id !== 'add-widget' && (
+      {/* Control buttons - top right, visible on hover */}
+      {canCustomize && isHovered && !isResizing && id !== 'add-widget' && (
         <div 
-          className="absolute -right-2 top-10 z-10 flex flex-col gap-1"
+          className="absolute right-2 top-2 z-20 flex items-center gap-1"
           style={{
             backgroundColor: 'rgb(var(--color-surface))',
             border: '1px solid rgb(var(--color-border))',
             borderRadius: '8px',
             padding: '4px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
           }}
         >
-          {/* Size menu toggle */}
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSizeMenu(!showSizeMenu);
-              }}
-              className="p-1.5 rounded transition-colors"
-              style={{ 
-                backgroundColor: hasCustomSize ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
-                color: hasCustomSize ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))',
-              }}
-              title={isEn ? 'Resize' : 'Redimensionner'}
-            >
-              {hasCustomSize ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
-            </button>
-
-            {/* Size preset menu */}
-            {showSizeMenu && (
-              <div 
-                className="absolute right-full top-0 mr-1 rounded-lg shadow-lg border overflow-hidden"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-surface))',
-                  borderColor: 'rgb(var(--color-border))',
-                  minWidth: '130px',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="p-1">
-                  <div className="px-2 py-1 text-[10px] uppercase tracking-wide font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Size presets' : 'Tailles prédéfinies'}
-                  </div>
-                  {sizePresets.map((preset) => (
-                    <button
-                      key={preset.height}
-                      onClick={() => {
-                        setHeight(preset.height);
-                        setShowSizeMenu(false);
-                      }}
-                      className={`w-full text-left px-2.5 py-1.5 text-xs rounded transition-colors ${
-                        currentHeight === preset.height ? 'font-medium' : ''
-                      }`}
-                      style={{ 
-                        backgroundColor: currentHeight === preset.height 
-                          ? 'rgb(var(--color-primary-500) / 0.1)' 
-                          : 'transparent',
-                        color: currentHeight === preset.height 
-                          ? 'rgb(var(--color-primary-500))' 
-                          : 'rgb(var(--color-text))',
-                      }}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-                
-                {hasCustomSize && (
-                  <div 
-                    className="border-t p-1"
-                    style={{ borderColor: 'rgb(var(--color-border))' }}
-                  >
-                    <button
-                      onClick={() => {
-                        reset();
-                        setShowSizeMenu(false);
-                      }}
-                      className="w-full text-left px-2.5 py-1.5 text-xs rounded flex items-center gap-1.5 transition-colors"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      {isEn ? 'Reset' : 'Réinit.'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Lock toggle - locks size to prevent accidental changes */}
+          {/* Fullscreen button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleLock();
+              toggleFullscreen();
             }}
-            className="p-1.5 rounded transition-colors"
-            style={{ 
-              backgroundColor: locked ? 'rgb(var(--color-warning) / 0.1)' : 'transparent',
-              color: locked ? 'rgb(var(--color-warning))' : 'rgb(var(--color-text-muted))',
-            }}
-            title={locked ? (isEn ? 'Unlock size' : 'Déverrouiller') : (isEn ? 'Lock size' : 'Verrouiller')}
+            className="p-1.5 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+            title={isEn ? 'Fullscreen' : 'Plein écran'}
           >
-            {locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
-        </div>
-      )}
 
-      {/* Remove Button - visible on hover (but not for add-widget) */}
-      {canCustomize && isHovered && !isResizing && onRemove && id !== 'add-widget' && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className="absolute -right-2 -top-2 z-10 p-1.5 rounded-full transition-all hover:scale-110"
-          style={{
-            backgroundColor: 'rgb(var(--color-error))',
-            color: 'white',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-          }}
-          title={isEn ? 'Remove widget' : 'Retirer le widget'}
-        >
-          <X className="w-3 h-3" />
-        </button>
+          {/* Reset size button - only show if custom size */}
+          {hasCustomSize && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                reset();
+              }}
+              className="p-1.5 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+              title={isEn ? 'Reset size' : 'Réinitialiser la taille'}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Remove button */}
+          {onRemove && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="p-1.5 rounded transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+              style={{ color: 'rgb(var(--color-error))' }}
+              title={isEn ? 'Remove' : 'Retirer'}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       )}
 
       {/* Drop Indicator */}
@@ -317,8 +298,8 @@ export default function DashboardWidgetWrapper({
         {children}
       </div>
 
-      {/* Resize Handle - bottom edge */}
-      {canCustomize && enableResize && !locked && (isHovered || isResizing) && id !== 'add-widget' && (
+      {/* Resize Handle - bottom edge (drag to resize) */}
+      {canCustomize && enableResize && (isHovered || isResizing) && id !== 'add-widget' && (
         <div
           className={`absolute bottom-0 left-0 right-0 h-4 cursor-ns-resize flex items-center justify-center transition-opacity z-20 ${
             isResizing ? 'opacity-100' : 'opacity-70 hover:opacity-100'
@@ -354,7 +335,7 @@ export default function DashboardWidgetWrapper({
           }}
         >
           <div 
-            className="absolute top-2 left-2 px-2 py-1 rounded text-xs font-mono"
+            className="absolute top-2 left-12 px-2 py-1 rounded text-xs font-mono"
             style={{ 
               backgroundColor: 'rgb(var(--color-primary-500))',
               color: 'white',
