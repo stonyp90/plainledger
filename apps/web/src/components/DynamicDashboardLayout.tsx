@@ -4,6 +4,11 @@
  * Renders dashboard sections in an adaptive grid that automatically adjusts
  * to available content without showing white space or empty placeholders.
  * Supports custom ordering when customOrder is provided.
+ * 
+ * Features:
+ * - Responsive grid (1-3 columns based on viewport)
+ * - Custom ordering support
+ * - Visual drag indicators when reordering
  */
 
 import { ReactNode } from 'react';
@@ -19,6 +24,7 @@ interface DynamicDashboardLayoutProps {
   sections: DashboardSection[];
   className?: string;
   customOrder?: string[]; // Array of section IDs in desired order
+  isDragging?: boolean; // Whether a widget is currently being dragged
 }
 
 /**
@@ -43,6 +49,7 @@ export default function DynamicDashboardLayout({
   sections, 
   className = '',
   customOrder,
+  isDragging = false,
 }: DynamicDashboardLayoutProps) {
   // Filter out null/empty sections
   let availableSections = sections.filter(
@@ -68,12 +75,20 @@ export default function DynamicDashboardLayout({
 
   return (
     <div 
-      className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-4 auto-rows-min ${className}`}
+      className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 auto-rows-min transition-all duration-200 ${className}`}
+      style={{
+        // Add subtle visual feedback when dragging
+        opacity: isDragging ? 0.95 : 1,
+      }}
     >
-      {availableSections.map(section => (
+      {availableSections.map((section, index) => (
         <div 
           key={section.id}
-          className={getGridClass(section.gridSpan)}
+          className={`${getGridClass(section.gridSpan)} transition-transform duration-200`}
+          style={{
+            // Subtle animation hint during drag
+            transform: isDragging ? 'translateY(0)' : undefined,
+          }}
         >
           {section.component}
         </div>
