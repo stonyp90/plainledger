@@ -34,6 +34,8 @@ import {
   PieChart,
   Wallet,
   Download,
+  Share2,
+  LayoutDashboard,
   type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
@@ -44,6 +46,8 @@ import {
   REPORT_TEMPLATES,
   ReportType,
 } from '../lib/reportManagement';
+import { ShareReportModal } from './visualization/ShareReportModal';
+import type { ShareConfig } from './visualization/types';
 
 // =====================================================
 // SAVE REPORT MODAL
@@ -576,6 +580,8 @@ interface ReportCardProps {
   onDelete: () => void;
   onToggleFavorite: () => void;
   onExport: (format: 'pdf' | 'excel' | 'json') => void;
+  onAddToDashboard: () => void;
+  onShare: () => void;
   isEn: boolean;
 }
 
@@ -587,6 +593,8 @@ function ReportCard({
   onDelete,
   onToggleFavorite,
   onExport,
+  onAddToDashboard,
+  onShare,
   isEn,
 }: ReportCardProps) {
   const [showMenu, setShowMenu] = useState(false);
@@ -672,6 +680,22 @@ function ReportCard({
                       {isEn ? 'Duplicate' : 'Dupliquer'}
                     </button>
                     <div className="my-1 border-t" style={{ borderColor: 'rgb(var(--color-border))' }} />
+                    <button
+                      onClick={() => { onAddToDashboard(); setShowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      {isEn ? 'Add to Dashboard' : 'Ajouter au tableau de bord'}
+                    </button>
+                    <button
+                      onClick={() => { onShare(); setShowMenu(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      {isEn ? 'Share Link' : 'Partager le lien'}
+                    </button>
                     <button
                       onClick={() => { onExport('pdf'); setShowMenu(false); }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
@@ -771,6 +795,14 @@ function ReportCard({
               }
             </button>
             <button
+              onClick={() => onShare()}
+              className="p-1.5 rounded-lg transition-colors"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+              title={isEn ? 'Share' : 'Partager'}
+            >
+              <Share2 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            </button>
+            <button
               onClick={() => onExport('pdf')}
               className="p-1.5 rounded-lg transition-colors"
               style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
@@ -806,6 +838,10 @@ export function ReportManager({ onOpenReport, onCreateReport }: ReportManagerPro
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate | null>(null);
   const [reportToDelete, setReportToDelete] = useState<SavedReport | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [reportToShare, setReportToShare] = useState<SavedReport | null>(null);
+  const [showAddToDashboardSuccess, setShowAddToDashboardSuccess] = useState(false);
+  const [addedReportName, setAddedReportName] = useState('');
   
   // Load reports
   useEffect(() => {
@@ -874,6 +910,64 @@ export function ReportManager({ onOpenReport, onCreateReport }: ReportManagerPro
       a.download = `${report.name}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
+    }
+  };
+  
+  const handleAddToDashboard = (report: SavedReport) => {
+    // Store report info in localStorage for dashboard to pick up
+    const dashboardSectionKey = 'plainledger_dashboard_sections';
+    const existingSections = JSON.parse(localStorage.getItem(dashboardSectionKey) || '[]');
+    
+    const newSection = {
+      id: `report-${report.id}`,
+      reportId: report.id,
+      name: report.name,
+      nameEn: report.nameEn,
+      type: report.type,
+      charts: report.charts,
+      createdAt: new Date().toISOString(),
+    };
+    
+    // Check if already added
+    const alreadyExists = existingSections.some((s: any) => s.reportId === report.id);
+    if (!alreadyExists) {
+      existingSections.push(newSection);
+      localStorage.setItem(dashboardSectionKey, JSON.stringify(existingSections));
+    }
+    
+    setAddedReportName(isEn ? report.nameEn : report.name);
+    setShowAddToDashboardSuccess(true);
+    setTimeout(() => setShowAddToDashboardSuccess(false), 3000);
+  };
+  
+  const handleShare = (report: SavedReport) => {
+    setReportToShare(report);
+    setShowShareModal(true);
+  };
+  
+  const handleShareSubmit = async (config: ShareConfig): Promise<string> => {
+    // Generate a share link
+    const shareId = Math.random().toString(36).substring(2, 15);
+    const shareUrl = `${window.location.origin}/shared/report/${shareId}`;
+    
+    // Store share config (in real app, this would be an API call)
+    const shareData = {
+      ...config,
+      reportId: reportToShare?.id,
+      shareId,
+      createdAt: new Date().toISOString(),
+    };
+    
+    const existingShares = JSON.parse(localStorage.getItem('plainledger_report_shares') || '[]');
+    existingShares.push(shareData);
+    localStorage.setItem('plainledger_report_shares', JSON.stringify(existingShares));
+    
+    return shareUrl;
+  };
+  
+  const handleExportFromShareModal = async (format: 'pdf' | 'png' | 'csv') => {
+    if (reportToShare) {
+      handleExport(reportToShare, format === 'csv' ? 'excel' : format === 'png' ? 'pdf' : format);
     }
   };
   
@@ -993,6 +1087,8 @@ export function ReportManager({ onOpenReport, onCreateReport }: ReportManagerPro
               }}
               onToggleFavorite={() => handleToggleFavorite(report)}
               onExport={(format) => handleExport(report, format)}
+              onAddToDashboard={() => handleAddToDashboard(report)}
+              onShare={() => handleShare(report)}
             />
           ))}
           
@@ -1133,6 +1229,48 @@ export function ReportManager({ onOpenReport, onCreateReport }: ReportManagerPro
         onConfirm={handleDelete}
         reportName={reportToDelete ? (isEn ? reportToDelete.nameEn : reportToDelete.name) : ''}
       />
+      
+      {/* Share Report Modal */}
+      {reportToShare && (
+        <ShareReportModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setReportToShare(null);
+          }}
+          title={reportToShare.name}
+          titleEn={reportToShare.nameEn}
+          contentType="report"
+          onShare={handleShareSubmit}
+          onExport={handleExportFromShareModal}
+          showDownloadOption={true}
+          showEmbedOption={true}
+          showEmailOption={true}
+        />
+      )}
+      
+      {/* Add to Dashboard Success Toast */}
+      {showAddToDashboardSuccess && (
+        <div 
+          className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-success))',
+            color: 'white',
+          }}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <div>
+            <p className="font-medium text-sm">
+              {isEn ? 'Added to Dashboard' : 'Ajouté au tableau de bord'}
+            </p>
+            <p className="text-xs opacity-90">
+              {isEn 
+                ? `"${addedReportName}" section created`
+                : `Section « ${addedReportName} » créée`}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

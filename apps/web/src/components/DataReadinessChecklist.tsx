@@ -425,7 +425,10 @@ export default function DataReadinessChecklist({
       {/* Compact Header - Clickable to expand */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-[rgb(var(--color-bg-muted)/0.5)] transition-colors"
+        className="w-full p-3 sm:p-4 flex items-center justify-between gap-3 transition-colors duration-150"
+        style={{ backgroundColor: 'transparent' }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted) / 0.5)'}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div 
@@ -473,8 +476,10 @@ export default function DataReadinessChecklist({
           {onDismiss && (
             <span
               onClick={(e) => { e.stopPropagation(); onDismiss(); }}
-              className="p-1 rounded hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
+              className="p-1 rounded transition-colors duration-150 cursor-pointer"
+              style={{ color: 'rgb(var(--color-text-muted))', backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <X className="w-3.5 h-3.5" />
             </span>
@@ -509,7 +514,9 @@ export default function DataReadinessChecklist({
               >
                 <button
                   onClick={() => toggleItem(item.id)}
-                  className="w-full flex items-start gap-3 p-3 sm:p-4 text-left hover:opacity-90 transition-opacity"
+                  className="w-full flex items-start gap-3 p-3 sm:p-4 text-left transition-colors duration-150"
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted) / 0.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <div className="flex-shrink-0 mt-0.5">
                     {getStatusIcon(item.status)}
@@ -571,12 +578,26 @@ export default function DataReadinessChecklist({
                         <Link
                           to={item.helpLink.startsWith('/') ? item.helpLink : '#'}
                           {...(item.helpLink.startsWith('http') ? { href: item.helpLink, target: '_blank', rel: 'noopener noreferrer' } : {})}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-90"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 active:scale-95"
                           style={{ 
                             backgroundColor: item.helpLink === '/app/connections' 
                               ? 'rgb(var(--color-primary-500))'
                               : 'rgb(var(--color-primary-500) / 0.1)',
                             color: item.helpLink === '/app/connections' ? 'white' : 'rgb(var(--color-primary-600))',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (item.helpLink === '/app/connections') {
+                              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))';
+                            } else {
+                              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.15)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (item.helpLink === '/app/connections') {
+                              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+                            } else {
+                              e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                            }
                           }}
                         >
                           {item.helpLink === '/app/connections' ? (

@@ -96,4 +96,14 @@ export interface IDatalakeDataService {
     _contacts: DimContact[],
     bills?: unknown[], // FactBill[]
   ): AgingData;
+
+  /**
+   * Check if datalake connection is healthy
+   * Used for health checks and debugging connectivity issues
+   */
+  healthCheck(): Promise<{
+    healthy: boolean;
+    bucket: string;
+    error?: string;
+  }>;
 }

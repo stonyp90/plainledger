@@ -8,7 +8,7 @@
  * - Export capabilities
  */
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import ShareModal from './ShareModal';
 import { useHasRealData } from '../hooks/useHasRealData';
 import {
@@ -121,7 +121,7 @@ export function ChartTypeSelector({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors hover:border-primary-500"
+        className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border transition-colors active:opacity-80"
         style={{
           backgroundColor: 'rgb(var(--color-bg))',
           borderColor: 'rgb(var(--color-border))',
@@ -129,10 +129,7 @@ export function ChartTypeSelector({
         }}
       >
         <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-          {isEn ? selectedInfo.labelEn : selectedInfo.label}
-        </span>
-        <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
       {isOpen && (
@@ -229,35 +226,56 @@ interface TimeRangeSelectorProps {
 }
 
 export function TimeRangeSelector({ selected, onChange }: TimeRangeSelectorProps) {
-  const ranges: TimeRange[] = ['1W', '1M', '3M', '6M', 'YTD', '1Y', '2Y', 'ALL'];
+  // Show fewer options on mobile for space efficiency
+  const mobileRanges: TimeRange[] = ['1W', '1M', '3M', '6M', 'YTD', '1Y'];
+  const allRanges: TimeRange[] = ['1W', '1M', '3M', '6M', 'YTD', '1Y', '2Y', 'ALL'];
   
   return (
     <div 
-      className="flex rounded-lg border overflow-x-auto scrollbar-hide max-w-[180px] sm:max-w-none"
+      className="flex rounded-md sm:rounded-lg border overflow-hidden"
       style={{ borderColor: 'rgb(var(--color-border))' }}
     >
-      {ranges.map((range) => {
-        const isSelected = range === selected;
-        
-        return (
-          <button
-            key={range}
-            onClick={() => onChange(range)}
-            className="px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium transition-colors border-r last:border-r-0 flex-shrink-0"
-            style={{
-              backgroundColor: isSelected 
-                ? 'rgb(var(--color-primary-500))'
-                : 'rgb(var(--color-bg))',
-              color: isSelected 
-                ? 'white'
-                : 'rgb(var(--color-text-secondary))',
-              borderColor: 'rgb(var(--color-border))',
-            }}
-          >
-            {range}
-          </button>
-        );
-      })}
+      {/* Mobile: show fewer options with compact buttons */}
+      <div className="flex sm:hidden">
+        {mobileRanges.map((range) => {
+          const isSelected = range === selected;
+          return (
+            <button
+              key={range}
+              onClick={() => onChange(range)}
+              className="px-1.5 py-1 text-[9px] font-semibold transition-colors border-r last:border-r-0 flex-shrink-0 active:opacity-80"
+              style={{
+                backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg))',
+                color: isSelected ? 'white' : 'rgb(var(--color-text-muted))',
+                borderColor: 'rgb(var(--color-border))',
+                minWidth: '24px',
+              }}
+            >
+              {range}
+            </button>
+          );
+        })}
+      </div>
+      {/* Desktop: show all options */}
+      <div className="hidden sm:flex">
+        {allRanges.map((range) => {
+          const isSelected = range === selected;
+          return (
+            <button
+              key={range}
+              onClick={() => onChange(range)}
+              className="px-2 py-1.5 text-[10px] font-semibold transition-colors border-r last:border-r-0 flex-shrink-0"
+              style={{
+                backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg))',
+                color: isSelected ? 'white' : 'rgb(var(--color-text-secondary))',
+                borderColor: 'rgb(var(--color-border))',
+              }}
+            >
+              {range}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -311,11 +329,12 @@ export function DataVisualizationCard({
     { id: '3', name: isEn ? 'Team Dashboard' : 'Tableau équipe' },
   ];
   
+  // Responsive size classes - balanced for mobile readability
   const sizeClasses = {
-    small: 'h-48',
-    medium: 'h-72',
-    large: 'h-96',
-    full: 'h-[500px]',
+    small: 'h-44 sm:h-48',
+    medium: 'h-56 sm:h-64',
+    large: 'h-72 sm:h-80',
+    full: 'h-96 sm:h-[420px]',
   };
   
   const handleChartTypeChange = (type: ChartType) => {
@@ -410,47 +429,40 @@ export function DataVisualizationCard({
         }}
       />
       
-      {/* Header */}
+      {/* Header - Stacked on mobile, inline on desktop */}
       <div 
-        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border-b gap-3"
+        className="p-2 sm:p-3 border-b"
         style={{ borderColor: 'rgb(var(--color-border))' }}
       >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div 
-            className="p-2 sm:p-2.5 rounded-xl flex-shrink-0 transition-transform group-hover:scale-110"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.15)',
-            }}
-          >
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          </div>
-          <div className="min-w-0">
+        {/* Mobile: Title on top, controls below */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          {/* Title row */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div 
+              className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            </div>
             <h3 
-              className="font-bold text-sm sm:text-base truncate"
+              className="font-semibold text-sm"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? config.nameEn : config.name}
             </h3>
-            {config.description && (
-              <p 
-                className="text-[10px] sm:text-xs truncate hidden sm:block"
-                style={{ color: 'rgb(var(--color-text-muted))' }}
-              >
-                {isEn ? config.descriptionEn : config.description}
-              </p>
-            )}
           </div>
-        </div>
-        
-        {showControls && (
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap sm:flex-nowrap">
-            {/* Chart Type Selector */}
-            <ChartTypeSelector
-              selected={config.chartType}
-              onChange={handleChartTypeChange}
-              isEn={isEn}
-            />
+          
+          {/* Controls row */}
+          {showControls && (
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+            {/* Chart Type Selector - Desktop only */}
+            <div className="hidden sm:block">
+              <ChartTypeSelector
+                selected={config.chartType}
+                onChange={handleChartTypeChange}
+                isEn={isEn}
+              />
+            </div>
             
             {/* Time Range */}
             <TimeRangeSelector
@@ -459,29 +471,24 @@ export function DataVisualizationCard({
               isEn={isEn}
             />
             
-            {/* Pin/Remove Button - context-aware */}
+            {/* Pin/Remove Button */}
             {isPinned ? (
-              // Remove button when pinned - more intuitive than "unpin"
               <button
                 onClick={onUnpin}
-                className="flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200 hover:bg-[rgb(var(--color-error)/0.15)] group/remove"
+                className="p-1.5 rounded-md transition-colors active:opacity-80"
                 style={{
-                  backgroundColor: 'rgb(var(--color-error) / 0.08)',
+                  backgroundColor: 'rgb(var(--color-error) / 0.1)',
                   color: 'rgb(var(--color-error))',
                 }}
                 title={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
                 aria-label={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
               >
                 <X className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium hidden sm:inline">
-                  {isEn ? 'Remove' : 'Retirer'}
-                </span>
               </button>
             ) : (
-              // Pin button when not pinned
               <button
                 onClick={onPin}
-                className="p-1.5 rounded-md transition-all duration-200 hover:bg-[rgb(var(--color-primary-500)/0.1)]"
+                className="p-1.5 rounded-md transition-colors active:opacity-80"
                 style={{
                   backgroundColor: 'transparent',
                   color: 'rgb(var(--color-text-muted))',
@@ -493,13 +500,13 @@ export function DataVisualizationCard({
               </button>
             )}
             
-            {/* Expand Button - subtle, theme-consistent */}
+            {/* Expand Button - Desktop only */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 rounded-md transition-all duration-200"
+              className="hidden sm:flex p-1.5 rounded-md transition-colors active:opacity-80"
               style={{
                 backgroundColor: isExpanded 
-                  ? 'rgb(var(--color-primary-500) / 0.08)'
+                  ? 'rgb(var(--color-primary-500) / 0.1)'
                   : 'transparent',
                 color: isExpanded 
                   ? 'rgb(var(--color-primary-500))'
@@ -518,14 +525,14 @@ export function DataVisualizationCard({
               {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
             
-            {/* Options Menu - subtle, theme-consistent */}
+            {/* Options Menu */}
             <div className="relative">
               <button
                 onClick={() => setShowOptions(!showOptions)}
-                className="p-1.5 rounded-md transition-all duration-200"
+                className="p-1 sm:p-1.5 rounded-md transition-colors active:opacity-80"
                 style={{
                   backgroundColor: showOptions 
-                    ? 'rgb(var(--color-primary-500) / 0.08)'
+                    ? 'rgb(var(--color-primary-500) / 0.1)'
                     : 'transparent',
                   color: showOptions 
                     ? 'rgb(var(--color-primary-500))'
@@ -547,222 +554,85 @@ export function DataVisualizationCard({
                     }}
                   />
                   <div 
-                    className="absolute top-full right-0 mt-2 w-64 rounded-xl border shadow-2xl z-50 overflow-hidden"
+                    className="absolute top-full right-0 mt-1 w-48 sm:w-56 rounded-lg border shadow-xl z-50 overflow-hidden"
                     style={{
                       backgroundColor: 'rgb(var(--color-surface))',
                       borderColor: 'rgb(var(--color-border))',
                     }}
                   >
-                    {/* Actions Section */}
-                    <div className="py-2">
-                      <p 
-                        className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider"
-                        style={{ color: 'rgb(var(--color-text-muted))' }}
-                      >
-                        {isEn ? 'Actions' : 'Actions'}
-                      </p>
-                      
-                      {/* Remove from dashboard - prominent when pinned */}
+                    {/* Quick Actions */}
+                    <div className="py-1">
+                      {/* Remove from dashboard */}
                       {isPinned && onUnpin && (
                         <button
-                          onClick={() => {
-                            onUnpin();
-                            setShowOptions(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-error)/0.08)] transition-colors"
+                          onClick={() => { onUnpin(); setShowOptions(false); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgb(var(--color-error)/0.08)] transition-colors"
                           style={{ color: 'rgb(var(--color-error))' }}
                         >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="font-medium flex-1 text-left">{isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}</span>
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="font-medium">{isEn ? 'Remove' : 'Retirer'}</span>
                         </button>
                       )}
                       
                       {/* Share */}
                       <button
-                        onClick={() => {
-                          setShowShareModal(true);
-                          setShowOptions(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                        onClick={() => { setShowShareModal(true); setShowOptions(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
-                        <Share2 className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                        <span className="font-medium flex-1 text-left">{isEn ? 'Share' : 'Partager'}</span>
-                        <span 
-                          className="text-[10px] font-mono"
-                          style={{ color: 'rgb(var(--color-text-muted))' }}
-                        >
-                          ⌘S
-                        </span>
+                        <Share2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        <span className="flex-1 text-left">{isEn ? 'Share' : 'Partager'}</span>
+                        <span className="text-[9px] font-mono hidden sm:inline" style={{ color: 'rgb(var(--color-text-muted))' }}>⌘S</span>
                       </button>
                       
                       {/* Bookmark */}
                       <button
                         onClick={handleBookmark}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
                         style={{ color: 'rgb(var(--color-text))' }}
                       >
                         {localBookmarked ? (
-                          <BookmarkCheck className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
+                          <BookmarkCheck className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-warning))' }} />
                         ) : (
-                          <Bookmark className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          <Bookmark className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
                         )}
-                        <span className="font-medium flex-1 text-left">
-                          {localBookmarked 
-                            ? (isEn ? 'Saved' : 'Enregistré')
-                            : (isEn ? 'Save' : 'Enregistrer')}
-                        </span>
-                        <span 
-                          className="text-[10px] font-mono"
-                          style={{ color: 'rgb(var(--color-text-muted))' }}
-                        >
-                          ⌘B
-                        </span>
+                        <span className="flex-1 text-left">{localBookmarked ? (isEn ? 'Saved' : 'Enregistré') : (isEn ? 'Save' : 'Enregistrer')}</span>
                       </button>
-                      
-                      {/* Add to View */}
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowViewMenu(!showViewMenu)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ color: 'rgb(var(--color-text))' }}
-                        >
-                          <Layers className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                          <span className="font-medium flex-1 text-left">{isEn ? 'Add to View' : 'Ajouter à une vue'}</span>
-                          <ChevronDown 
-                            className={`w-4 h-4 transition-transform ${showViewMenu ? 'rotate-180' : ''}`}
-                            style={{ color: 'rgb(var(--color-text-muted))' }}
-                          />
-                        </button>
-                        
-                        {showViewMenu && (
-                          <div 
-                            className="mx-3 mt-1 mb-2 rounded-lg overflow-hidden border"
-                            style={{ 
-                              backgroundColor: 'rgb(var(--color-bg))',
-                              borderColor: 'rgb(var(--color-border))'
-                            }}
-                          >
-                            {savedViews.map((view) => (
-                              <button
-                                key={view.id}
-                                onClick={() => handleAddToView(view.id)}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                                style={{ color: 'rgb(var(--color-text))' }}
-                              >
-                                <Eye className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                                {view.name}
-                              </button>
-                            ))}
-                            <button
-                              onClick={() => {
-                                setShowViewMenu(false);
-                                setShowOptions(false);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors border-t"
-                              style={{ 
-                                color: 'rgb(var(--color-primary-500))',
-                                borderColor: 'rgb(var(--color-border))'
-                              }}
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              {isEn ? 'New View' : 'Nouvelle vue'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
                     
-                    <div 
-                      className="mx-3 border-t"
-                      style={{ borderColor: 'rgb(var(--color-border))' }}
-                    />
+                    <div className="mx-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }} />
                     
-                    {/* Export Section */}
-                    <div className="py-2">
-                      <p 
-                        className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider"
-                        style={{ color: 'rgb(var(--color-text-muted))' }}
-                      >
+                    {/* Export - Compact grid */}
+                    <div className="p-2">
+                      <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
                         {isEn ? 'Export' : 'Exporter'}
                       </p>
-                      
-                      <div className="grid grid-cols-3 gap-1 px-3">
+                      <div className="grid grid-cols-3 gap-1">
                         <button
                           onClick={() => handleExport('png')}
-                          className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ 
-                            color: 'rgb(var(--color-text))',
-                            borderColor: 'rgb(var(--color-border))'
-                          }}
-                          title={isEn ? 'Export as PNG image' : 'Exporter en image PNG'}
+                          className="flex flex-col items-center gap-0.5 p-1.5 rounded border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ borderColor: 'rgb(var(--color-border))' }}
                         >
-                          <FileImage className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
-                          <span className="text-xs font-medium">PNG</span>
+                          <FileImage className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-info))' }} />
+                          <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>PNG</span>
                         </button>
-                        
                         <button
                           onClick={() => handleExport('csv')}
-                          className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ 
-                            color: 'rgb(var(--color-text))',
-                            borderColor: 'rgb(var(--color-border))'
-                          }}
-                          title={isEn ? 'Export as CSV spreadsheet' : 'Exporter en fichier CSV'}
+                          className="flex flex-col items-center gap-0.5 p-1.5 rounded border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ borderColor: 'rgb(var(--color-border))' }}
                         >
-                          <FileSpreadsheet className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-                          <span className="text-xs font-medium">CSV</span>
+                          <FileSpreadsheet className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
+                          <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>CSV</span>
                         </button>
-                        
                         <button
                           onClick={() => handleExport('pdf')}
-                          className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ 
-                            color: 'rgb(var(--color-text))',
-                            borderColor: 'rgb(var(--color-border))'
-                          }}
-                          title={isEn ? 'Export as PDF document' : 'Exporter en document PDF'}
+                          className="flex flex-col items-center gap-0.5 p-1.5 rounded border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ borderColor: 'rgb(var(--color-border))' }}
                         >
-                          <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
-                          <span className="text-xs font-medium">PDF</span>
+                          <FileText className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-error))' }} />
+                          <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>PDF</span>
                         </button>
                       </div>
-                    </div>
-                    
-                    <div 
-                      className="mx-3 border-t"
-                      style={{ borderColor: 'rgb(var(--color-border))' }}
-                    />
-                    
-                    {/* More Section */}
-                    <div className="py-2">
-                      <button
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                        style={{ color: 'rgb(var(--color-text))' }}
-                      >
-                        <Copy className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                        <span className="font-medium flex-1 text-left">{isEn ? 'Duplicate' : 'Dupliquer'}</span>
-                        <span 
-                          className="text-[10px] font-mono"
-                          style={{ color: 'rgb(var(--color-text-muted))' }}
-                        >
-                          ⌘D
-                        </span>
-                      </button>
-                      
-                      <button
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                        style={{ color: 'rgb(var(--color-text))' }}
-                      >
-                        <Sliders className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                        <span className="font-medium flex-1 text-left">{isEn ? 'Configure' : 'Configurer'}</span>
-                        <span 
-                          className="text-[10px] font-mono"
-                          style={{ color: 'rgb(var(--color-text-muted))' }}
-                        >
-                          ⌘,
-                        </span>
-                      </button>
                     </div>
                   </div>
                 </>
@@ -770,10 +640,11 @@ export function DataVisualizationCard({
             </div>
           </div>
         )}
+        </div>
       </div>
       
-      {/* Chart Area */}
-      <div className={`p-4 ${isExpanded ? 'flex-1' : sizeClasses[size]}`}>
+      {/* Chart Area - Reduced padding on mobile */}
+      <div className={`p-2 sm:p-3 mt-1 sm:mt-2 ${isExpanded ? 'flex-1' : sizeClasses[size]}`}>
         {renderChart()}
       </div>
       
@@ -808,9 +679,25 @@ export function DataVisualizationCard({
 // CHART COMPONENTS
 // =====================================================
 
-// Simple Line/Bar/Area Chart with Hover Tooltips
+// Simple Line/Bar/Area Chart with Hover Tooltips - Responsive
 function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Debounced hover handlers to prevent flickering
+  const handleHover = useCallback((index: number) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredIndex(index);
+  }, []);
+  
+  const handleLeave = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredIndex(null);
+    }, 100);
+  }, []);
   
   // Defensive: ensure data is valid array
   const safeData = Array.isArray(data) && data.length > 0 ? data : [{ value: 0, label: '-' }];
@@ -829,6 +716,7 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
         style: 'currency',
         currency: 'CAD',
         maximumFractionDigits: 0,
+        notation: 'compact',
       }).format(value);
     }
     if (metricInfo.unit === 'percentage') {
@@ -852,36 +740,30 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
   
   return (
     <div className="h-full flex flex-col">
-      {/* Summary */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p 
-            className="text-2xl font-bold"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
+      {/* Summary - Compact on mobile */}
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <p className="text-lg sm:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
             {formatValue(hoveredIndex !== null ? safeData[hoveredIndex]?.value ?? 0 : lastValue)}
           </p>
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex items-center gap-0.5">
             {trend >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-success" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-success))' }} />
             ) : (
-              <TrendingDown className="w-4 h-4 text-error" />
+              <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-error))' }} />
             )}
             <span 
-              className="text-sm font-medium"
+              className="text-xs sm:text-sm font-medium"
               style={{ color: trend >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}
             >
               {trend >= 0 ? '+' : ''}{trendPercent.toFixed(1)}%
-            </span>
-            <span className="text-xs text-muted ml-1">
-              {hoveredIndex !== null ? safeData[hoveredIndex]?.label : (isEn ? 'vs prior period' : 'vs période précédente')}
             </span>
           </div>
         </div>
       </div>
       
       {/* Chart */}
-      <div className="flex-1 relative group">
+      <div className="flex-1 relative group" onMouseLeave={handleLeave}>
         <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
           {/* Grid lines */}
           {[0, 25, 50, 75, 100].map((y) => (
@@ -944,9 +826,9 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
                 fill={metricInfo?.color || '#10B981'}
                 rx="2"
                 opacity={hoveredIndex === null || hoveredIndex === i ? 1 : 0.5}
-                className="transition-all duration-200 cursor-pointer hover:opacity-80"
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                className="transition-all duration-150 cursor-pointer"
+                onMouseEnter={() => handleHover(i)}
+                onMouseLeave={handleLeave}
               />
             ))
           )}
@@ -958,57 +840,56 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
               <circle
                 cx={(i / (safeData.length - 1)) * 400}
                 cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
-                r="16"
+                r="20"
                 fill="transparent"
                 className="cursor-pointer"
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                onMouseEnter={() => handleHover(i)}
+                onMouseLeave={handleLeave}
               />
               {/* Visible point */}
               <circle
                 cx={(i / (safeData.length - 1)) * 400}
                 cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
-                r={hoveredIndex === i ? 6 : 4}
+                r={hoveredIndex === i ? 5 : 3}
                 fill={hoveredIndex === i ? (metricInfo?.color || '#10B981') : 'white'}
                 stroke={metricInfo?.color || '#10B981'}
                 strokeWidth="2"
-                className="transition-all duration-200 pointer-events-none"
+                className="transition-all duration-100 pointer-events-none"
               />
-              {/* Pulse animation on hover */}
+              {/* Subtle highlight on hover */}
               {hoveredIndex === i && (
                 <circle
                   cx={(i / (safeData.length - 1)) * 400}
                   cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
-                  r="12"
+                  r="10"
                   fill={metricInfo?.color || '#10B981'}
-                  opacity="0.2"
-                  className="animate-pulse"
+                  opacity="0.15"
                 />
               )}
             </g>
           ))}
         </svg>
         
-        {/* Floating Tooltip */}
+        {/* Floating Tooltip - Stable positioning */}
         {hoveredIndex !== null && safeData[hoveredIndex] && (
           <div 
-            className="absolute pointer-events-none z-10 px-3 py-2 rounded-lg shadow-lg text-sm transform -translate-x-1/2"
+            className="absolute pointer-events-none z-10 px-2 py-1.5 rounded-md shadow-md text-xs transform -translate-x-1/2 transition-opacity duration-75"
             style={{
-              left: `${safeData.length > 1 ? (hoveredIndex / (safeData.length - 1)) * 100 : 50}%`,
-              top: '10px',
+              left: `${safeData.length > 1 ? Math.min(85, Math.max(15, (hoveredIndex / (safeData.length - 1)) * 100)) : 50}%`,
+              top: '8px',
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
               color: 'rgb(var(--color-text))',
             }}
           >
             <p className="font-semibold">{formatValue(safeData[hoveredIndex]?.value ?? 0)}</p>
-            <p className="text-xs opacity-70">{safeData[hoveredIndex]?.label || '-'}</p>
+            <p className="text-[10px] opacity-70">{safeData[hoveredIndex]?.label || '-'}</p>
           </div>
         )}
         
-        {/* X-axis labels */}
-        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {data.filter((_, i) => i % Math.ceil(data.length / 6) === 0).map((d, i) => (
+        {/* X-axis labels - Compact */}
+        <div className="flex justify-between mt-1 text-[9px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {data.filter((_, i) => i % Math.ceil(data.length / 5) === 0).map((d, i) => (
             <span key={i}>{d.label}</span>
           ))}
         </div>
@@ -1017,9 +898,26 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
   );
 }
 
-// Pie/Donut Chart with Hover
+// Pie/Donut Chart with Hover - Responsive layout
 function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Debounced hover handlers
+  const handleHover = useCallback((index: number) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredIndex(index);
+  }, []);
+  
+  const handleLeave = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredIndex(null);
+    }, 100);
+  }, []);
+  
   const total = (data ?? []).reduce((sum, d) => sum + (d?.value ?? 0), 0);
   
   const colors = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
@@ -1038,9 +936,10 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
   });
   
   return (
-    <div className="h-full flex items-center justify-center gap-8">
-      <div className="relative">
-        <svg viewBox="0 0 200 200" className="w-48 h-48">
+    <div className="h-full flex flex-col sm:flex-row items-start sm:items-center sm:justify-center gap-3 sm:gap-6 px-2 sm:px-0">
+      {/* Chart - Centered on mobile */}
+      <div className="relative flex-shrink-0 self-center sm:self-auto">
+        <svg viewBox="0 0 200 200" className="w-32 h-32 sm:w-36 sm:h-36">
           {segments.map((seg, i) => {
             const x1 = 100 + 80 * Math.cos((seg.startAngle - 90) * Math.PI / 180);
             const y1 = 100 + 80 * Math.sin((seg.startAngle - 90) * Math.PI / 180);
@@ -1048,9 +947,8 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
             const y2 = 100 + 80 * Math.sin((seg.endAngle - 90) * Math.PI / 180);
             const largeArc = seg.angle > 180 ? 1 : 0;
             
-            // Calculate offset for hover effect
             const midAngle = (seg.startAngle + seg.endAngle) / 2 - 90;
-            const hoverOffset = hoveredIndex === i ? 5 : 0;
+            const hoverOffset = hoveredIndex === i ? 4 : 0;
             const offsetX = hoverOffset * Math.cos(midAngle * Math.PI / 180);
             const offsetY = hoverOffset * Math.sin(midAngle * Math.PI / 180);
             
@@ -1059,13 +957,13 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
                 key={i}
                 d={`M ${100 + offsetX} ${100 + offsetY} L ${x1 + offsetX} ${y1 + offsetY} A 80 80 0 ${largeArc} 1 ${x2 + offsetX} ${y2 + offsetY} Z`}
                 fill={seg.color}
-                className="transition-all duration-200 cursor-pointer"
+                className="transition-all duration-150 cursor-pointer"
                 style={{
-                  filter: hoveredIndex === i ? 'brightness(1.1) drop-shadow(0 4px 6px rgba(0,0,0,0.3))' : 'none',
+                  filter: hoveredIndex === i ? 'brightness(1.1)' : 'none',
                   opacity: hoveredIndex === null || hoveredIndex === i ? 1 : 0.6,
                 }}
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                onMouseEnter={() => handleHover(i)}
+                onMouseLeave={handleLeave}
               />
             );
           })}
@@ -1077,22 +975,14 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
         {config.chartType === 'donut' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
-              <p className="text-2xl font-bold transition-all" style={{ color: 'rgb(var(--color-text))' }}>
+              <p className="text-base sm:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                 {hoveredIndex !== null ? (
-                  new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
-                    style: 'currency',
-                    currency: 'CAD',
-                    notation: 'compact',
-                  }).format(data[hoveredIndex].value)
+                  new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', { style: 'currency', currency: 'CAD', notation: 'compact' }).format(data[hoveredIndex].value)
                 ) : (
-                  new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
-                    style: 'currency',
-                    currency: 'CAD',
-                    notation: 'compact',
-                  }).format(total)
+                  new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', { style: 'currency', currency: 'CAD', notation: 'compact' }).format(total)
                 )}
               </p>
-              <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {hoveredIndex !== null ? data[hoveredIndex].label : 'Total'}
               </p>
             </div>
@@ -1100,39 +990,24 @@ function PieDonutChart({ data, config, isEn }: { data: any[]; config: ChartConfi
         )}
       </div>
       
-      {/* Legend with hover */}
-      <div className="space-y-2">
+      {/* Legend - Left-aligned grid on mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-1 sm:gap-y-1 w-full sm:w-auto">
         {data.map((d, i) => (
           <div 
             key={i} 
-            className="flex items-center gap-2 px-2 py-1 rounded-lg transition-all cursor-pointer"
-            style={{
-              backgroundColor: hoveredIndex === i ? `${colors[i % colors.length]}20` : 'transparent',
-              transform: hoveredIndex === i ? 'translateX(4px)' : 'none',
-            }}
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
+            className="flex items-center gap-1.5 px-1 py-0.5 rounded transition-all cursor-pointer"
+            style={{ backgroundColor: hoveredIndex === i ? `${colors[i % colors.length]}15` : 'transparent' }}
+            onMouseEnter={() => handleHover(i)}
+            onMouseLeave={handleLeave}
           >
             <div 
-              className="w-3 h-3 rounded-full transition-transform"
-              style={{ 
-                backgroundColor: colors[i % colors.length],
-                transform: hoveredIndex === i ? 'scale(1.3)' : 'scale(1)',
-              }}
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: colors[i % colors.length] }}
             />
-            <span 
-              className="text-sm transition-all"
-              style={{ 
-                color: 'rgb(var(--color-text))',
-                fontWeight: hoveredIndex === i ? 600 : 400,
-              }}
-            >
+            <span className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text))' }}>
               {d.label}
             </span>
-            <span 
-              className="text-sm font-medium" 
-              style={{ color: hoveredIndex === i ? colors[i % colors.length] : 'rgb(var(--color-text-muted))' }}
-            >
+            <span className="text-[10px] sm:text-xs font-medium ml-auto" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {((d.value / total) * 100).toFixed(1)}%
             </span>
           </div>
@@ -1236,7 +1111,7 @@ function RadarChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
   );
 }
 
-// Gauge Chart
+// Gauge Chart - Compact responsive
 function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const value = data[0]?.value ?? 0;
   const maxValue = data[0]?.max ?? 3;
@@ -1251,13 +1126,13 @@ function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
   return (
     <div className="h-full flex flex-col items-center justify-center">
       <div className="relative">
-        <svg viewBox="0 0 200 120" className="w-48 h-28">
+        <svg viewBox="0 0 200 120" className="w-36 h-24 sm:w-40 sm:h-24">
           {/* Background arc */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
             stroke="rgb(var(--color-border))"
-            strokeWidth="16"
+            strokeWidth="14"
             strokeLinecap="round"
           />
           
@@ -1266,7 +1141,7 @@ function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
             d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
             stroke={getColor()}
-            strokeWidth="16"
+            strokeWidth="14"
             strokeLinecap="round"
             strokeDasharray={`${percentage * 2.51} 251`}
           />
@@ -1275,26 +1150,24 @@ function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
           <line
             x1="100"
             y1="100"
-            x2={100 + 60 * Math.cos((percentage * 1.8 - 180) * Math.PI / 180)}
-            y2={100 + 60 * Math.sin((percentage * 1.8 - 180) * Math.PI / 180)}
+            x2={100 + 55 * Math.cos((percentage * 1.8 - 180) * Math.PI / 180)}
+            y2={100 + 55 * Math.sin((percentage * 1.8 - 180) * Math.PI / 180)}
             stroke="rgb(var(--color-text))"
             strokeWidth="2"
             strokeLinecap="round"
           />
           
-          <circle cx="100" cy="100" r="6" fill="rgb(var(--color-text))" />
+          <circle cx="100" cy="100" r="5" fill="rgb(var(--color-text))" />
         </svg>
         
-        <div className="absolute inset-0 flex items-end justify-center pb-2">
-          <div className="text-center">
-            <p className="text-3xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-              {value.toFixed(2)}
-            </p>
-          </div>
+        <div className="absolute inset-0 flex items-end justify-center pb-1">
+          <p className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+            {value.toFixed(2)}
+          </p>
         </div>
       </div>
       
-      <div className="flex justify-between w-48 mt-2 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+      <div className="flex justify-between w-32 sm:w-40 mt-1 text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
         <span>0</span>
         <span>{maxValue}</span>
       </div>
@@ -1372,8 +1245,8 @@ function HeatmapChart({ data, config: _config, isEn }: { data: any[]; config: Ch
   );
 }
 
-// Waterfall Chart
-function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+// Waterfall Chart - Responsive
+function WaterfallChart({ data, config: _config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   let cumulative = 0;
   const processedData = data.map((d) => {
     const start = cumulative;
@@ -1394,11 +1267,19 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
     : 0;
   const range = maxValue - minValue || 1;
   
+  // Format compact numbers for mobile
+  const formatCompact = (value: number) => {
+    return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
+      notation: 'compact',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+  
   return (
     <div className="h-full flex flex-col">
-      <svg className="flex-1" viewBox="0 0 400 200" preserveAspectRatio="none">
+      <svg className="flex-1" viewBox="0 0 400 180" preserveAspectRatio="none">
         {/* Grid */}
-        {[0, 50, 100, 150, 200].map((y) => (
+        {[0, 45, 90, 135, 180].map((y) => (
           <line
             key={y}
             x1="0"
@@ -1413,10 +1294,10 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
         
         {/* Bars */}
         {processedData.map((d, i) => {
-          const x = (i / processedData.length) * 400 + 10;
-          const width = (400 / processedData.length) - 20;
-          const y1 = 200 - ((d.start - minValue) / range) * 180 - 10;
-          const y2 = 200 - ((d.end - minValue) / range) * 180 - 10;
+          const x = (i / processedData.length) * 400 + 8;
+          const width = (400 / processedData.length) - 16;
+          const y1 = 170 - ((d.start - minValue) / range) * 160;
+          const y2 = 170 - ((d.end - minValue) / range) * 160;
           const height = Math.abs(y1 - y2);
           const y = Math.min(y1, y2);
           
@@ -1426,7 +1307,7 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
                 x={x}
                 y={y}
                 width={width}
-                height={height}
+                height={Math.max(2, height)}
                 fill={d.isPositive ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))'}
                 rx="2"
               />
@@ -1434,11 +1315,11 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
                 <line
                   x1={x + width}
                   y1={y2}
-                  x2={(i + 1) / processedData.length * 400 + 10}
+                  x2={(i + 1) / processedData.length * 400 + 8}
                   y2={y2}
                   stroke="rgb(var(--color-border))"
                   strokeWidth="1"
-                  strokeDasharray="4,4"
+                  strokeDasharray="3,3"
                 />
               )}
             </g>
@@ -1446,18 +1327,18 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
         })}
       </svg>
       
-      {/* Labels */}
-      <div className="flex justify-around mt-2">
+      {/* Labels - More compact */}
+      <div className="flex justify-around mt-1">
         {processedData.map((d, i) => (
-          <div key={i} className="text-center">
-            <p className="text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <div key={i} className="text-center min-w-0 flex-1 px-0.5">
+            <p className="text-[8px] sm:text-[10px] truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {d.label}
             </p>
             <p 
-              className="text-xs font-medium"
+              className="text-[9px] sm:text-xs font-medium"
               style={{ color: d.isPositive ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))' }}
             >
-              {d.isPositive ? '+' : ''}{d.value.toLocaleString()}
+              {d.isPositive ? '+' : ''}{formatCompact(d.value)}
             </p>
           </div>
         ))}

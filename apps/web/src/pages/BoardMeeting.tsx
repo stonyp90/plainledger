@@ -75,6 +75,7 @@ import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
 import BoardMeetingEmptyState from '../components/BoardMeetingEmptyState';
+import { ContentLoader } from '../components/PageLoader';
 import {
   boardMeetingService,
   generateExecutiveSummarySlides,
@@ -1318,7 +1319,7 @@ export default function BoardMeeting() {
   const [searchParams] = useSearchParams();
   const { hasAccess } = usePremiumFeature('boardMeeting');
   
-  const { data: financialData } = useFinancialData();
+  const { data: financialData, isLoading } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasSummaryMetrics, hasTrends } = useHasRealData();
   const shouldShowData = hasRealData || shouldShowSandboxData;
   
@@ -1680,6 +1681,16 @@ export default function BoardMeeting() {
   const handleUpgradeClick = () => {
     window.open('https://calendly.com/anthonypaquet1508', '_blank');
   };
+
+  // Show loading state while data is loading
+  if (isLoading && !financialData) {
+    return (
+      <ContentLoader 
+        message="Chargement de la réunion du conseil..."
+        messageEn="Loading board meeting..."
+      />
+    );
+  }
 
   // Show development section for users without access
   if (!hasAccess) {

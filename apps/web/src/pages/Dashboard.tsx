@@ -118,6 +118,42 @@ export default function Dashboard() {
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
   
+  // Report sections added from Reports page
+  const [reportSections, setReportSections] = useState<Array<{
+    id: string;
+    reportId: string;
+    name: string;
+    nameEn: string;
+    type: string;
+    charts: any[];
+    createdAt: string;
+  }>>([]);
+  
+  // Load report sections from localStorage
+  useEffect(() => {
+    const loadReportSections = () => {
+      try {
+        const stored = localStorage.getItem('plainledger_dashboard_sections');
+        if (stored) {
+          setReportSections(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.error('Failed to load report sections:', e);
+      }
+    };
+    loadReportSections();
+    // Listen for storage changes (when adding from Reports page)
+    window.addEventListener('storage', loadReportSections);
+    return () => window.removeEventListener('storage', loadReportSections);
+  }, []);
+  
+  // Remove report section
+  const removeReportSection = useCallback((sectionId: string) => {
+    const updated = reportSections.filter(s => s.id !== sectionId);
+    setReportSections(updated);
+    localStorage.setItem('plainledger_dashboard_sections', JSON.stringify(updated));
+  }, [reportSections]);
+  
   // Auto-enable demo mode for demo-signup users
   const isDemoSignupUser = user?.organization === 'demo-signup';
   useEffect(() => {
@@ -350,79 +386,183 @@ export default function Dashboard() {
       );
     };
 
-    // Period Summary (if has trends) - IBCS-compliant KPI row
-    if (hasTrends && periodSummary.dataPoints > 0 && isWidgetVisible('period-summary')) {
+    // Period Summary + Anomalies Row - Side by side layout
+    const hasKPIs = hasTrends && periodSummary.dataPoints > 0 && isWidgetVisible('period-summary');
+    const hasAnomalies = shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies');
+    
+    if (hasKPIs || hasAnomalies) {
       sections.push({
-        id: 'period-summary',
-        component: wrapSection('period-summary', (
-          <div 
-            className="grid grid-cols-4 gap-1 sm:gap-2 p-2 sm:p-3 rounded-xl"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))',
-            }}
-          >
-            {/* Revenue - Primary metric */}
-            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'Revenue' : 'Revenus'}
-              </p>
-              <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
-                ${(periodSummary.totalRevenue / 1000).toFixed(0)}K
-              </p>
-            </div>
-            
-            {/* Cash Flow - with semantic color */}
-            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'Cash Flow' : 'Trésorerie'}
-              </p>
-              <p 
-                className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" 
-                style={{ 
-                  color: periodSummary.totalCashFlow >= 0 
-                    ? 'rgb(var(--color-success))' 
-                    : 'rgb(var(--color-error))' 
-                }}
-              >
-                {periodSummary.totalCashFlow >= 0 ? '+' : ''}{(periodSummary.totalCashFlow / 1000).toFixed(0)}K
-              </p>
-            </div>
-            
-            {/* Budget Variance - IBCS variance pin */}
-            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                ΔPL
-              </p>
-              <div className="flex items-center justify-center">
-                <VariancePinCompact
-                  variancePct={periodSummary.budgetVariance}
-                  favorable={periodSummary.budgetVariance >= 0}
-                  height={22}
-                />
+        id: 'kpi-anomalies-row',
+        component: (
+          <div className="flex flex-col lg:flex-row gap-3">
+            {/* KPI Cards - Left side (takes more space) */}
+            {hasKPIs && (
+              <div className="flex-1 lg:flex-[2]">
+                {wrapSection('period-summary', (
+                  <div 
+                    className="grid grid-cols-4 gap-1 sm:gap-2 p-2 sm:p-3 rounded-xl h-full"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      border: '1px solid rgb(var(--color-border))',
+                    }}
+                  >
+                    {/* Revenue - Primary metric */}
+                    <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {language === 'en' ? 'Revenue' : 'Revenus'}
+                      </p>
+                      <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
+                        ${(periodSummary.totalRevenue / 1000).toFixed(0)}K
+                      </p>
+                    </div>
+                    
+                    {/* Cash Flow - with semantic color */}
+                    <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {language === 'en' ? 'Cash Flow' : 'Trésorerie'}
+                      </p>
+                      <p 
+                        className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" 
+                        style={{ 
+                          color: periodSummary.totalCashFlow >= 0 
+                            ? 'rgb(var(--color-success))' 
+                            : 'rgb(var(--color-error))' 
+                        }}
+                      >
+                        {periodSummary.totalCashFlow >= 0 ? '+' : ''}{(periodSummary.totalCashFlow / 1000).toFixed(0)}K
+                      </p>
+                    </div>
+                    
+                    {/* Budget Variance - IBCS variance pin */}
+                    <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        ΔPL
+                      </p>
+                      <div className="flex items-center justify-center">
+                        <VariancePinCompact
+                          variancePct={periodSummary.budgetVariance}
+                          favorable={periodSummary.budgetVariance >= 0}
+                          height={22}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Period indicator */}
+                    <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {language === 'en' ? 'Period' : 'Période'}
+                      </p>
+                      <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
+                        {periodSummary.dataPoints}<span className="text-xs sm:text-sm font-normal ml-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>mo</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-            
-            {/* Period indicator */}
-            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'Period' : 'Période'}
-              </p>
-              <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
-                {periodSummary.dataPoints}<span className="text-xs sm:text-sm font-normal ml-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>mo</span>
-              </p>
-            </div>
+            )}
+
+            {/* Anomalies Card - Right side (compact) */}
+            {hasAnomalies && (
+              <div className="lg:w-auto lg:min-w-[280px] lg:max-w-[320px]">
+                {wrapSection('anomalies', (
+                  <Link 
+                    to="/app/anomalies"
+                    className="block rounded-xl p-2.5 sm:p-3 transition-all group hover:shadow-md h-full"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      border: '1px solid rgb(var(--color-border))',
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {/* Icon */}
+                      <div 
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ 
+                          backgroundColor: analysis.summary.critical > 0 
+                            ? 'rgb(var(--color-error) / 0.08)' 
+                            : 'rgb(var(--color-text) / 0.05)',
+                        }}
+                      >
+                        <AlertTriangle 
+                          className="w-4 h-4" 
+                          style={{ 
+                            color: analysis.summary.critical > 0 
+                              ? 'rgb(var(--color-error))' 
+                              : 'rgb(var(--color-text-muted))',
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                            {analysis.summary.total} {language === 'en' ? 'anomalies' : 'anomalies'}
+                          </span>
+                          {/* Compact severity badges */}
+                          <div className="flex items-center gap-0.5">
+                            {analysis.summary.critical > 0 && (
+                              <span 
+                                className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium"
+                                style={{ 
+                                  backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                                  color: 'rgb(var(--color-error))',
+                                }}
+                              >
+                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-error))' }} />
+                                {analysis.summary.critical}
+                              </span>
+                            )}
+                            {analysis.summary.warning > 0 && (
+                              <span 
+                                className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium"
+                                style={{ 
+                                  backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                                  color: 'rgb(var(--color-warning))',
+                                }}
+                              >
+                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-warning))' }} />
+                                {analysis.summary.warning}
+                              </span>
+                            )}
+                            {analysis.summary.info > 0 && (
+                              <span 
+                                className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium"
+                                style={{ 
+                                  backgroundColor: 'rgb(var(--color-info) / 0.08)',
+                                  color: 'rgb(var(--color-info))',
+                                }}
+                              >
+                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-info))' }} />
+                                {analysis.summary.info}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          {language === 'en' ? 'Review required' : 'Examen requis'}
+                        </p>
+                      </div>
+                      
+                      {/* Arrow */}
+                      <ChevronRight className="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-70 transition-opacity" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )),
+        ),
         priority: 1,
         gridSpan: 'full',
       });
     }
 
-    // Anomalies Section (if has anomalies) - IBCS-inspired compact design
-    if (shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies')) {
+    // Legacy anomalies section - kept for backwards compatibility when KPIs are hidden
+    // This is now handled in the combined row above, but keeping the Slack/Teams buttons logic
+    if (false && shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies')) {
       sections.push({
-        id: 'anomalies',
+        id: 'anomalies-legacy',
         component: wrapSection('anomalies', (
           <Link 
             to="/app/anomalies"
@@ -610,7 +750,7 @@ export default function Dashboard() {
                   : `Full year (${cashFlowData.length} months)`
             }
             color="rgb(var(--color-primary-500))"
-            height={220}
+            height={160}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             showVarianceShading={ibcsMode}
@@ -653,7 +793,7 @@ export default function Dashboard() {
             budget={revenueBudget}
             planData={revenuePlanData}
             color="rgb(var(--color-primary-500))"
-            height={220}
+            height={160}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             showVarianceShading={ibcsMode}
@@ -683,7 +823,7 @@ export default function Dashboard() {
             subtitle={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', isEn)}
             subtitleEn={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', true)}
             isEn={language === 'en'}
-            height={220}
+            height={160}
             ibcsMode={ibcsMode}
             showIBCSLegend={ibcsMode}
             chartId="dashboard-cashflow-waterfall"
@@ -740,11 +880,13 @@ export default function Dashboard() {
               {canCustomize && (
                 <button
                   onClick={() => setShowChartGallery(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 active:opacity-80"
                   style={{
                     backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                     color: 'rgb(var(--color-primary-500))',
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.2)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)'}
                 >
                   <span className="text-base leading-none">+</span>
                   {isEn ? 'Add Chart' : 'Ajouter'}
@@ -803,11 +945,13 @@ export default function Dashboard() {
               </h2>
               <Link
                 to="/app/visualizations"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 active:opacity-80"
                 style={{
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))'}
               >
                 <BarChart2 className="w-3.5 h-3.5" />
                 {isEn ? 'Create Charts' : 'Créer des graphiques'}
@@ -867,11 +1011,13 @@ export default function Dashboard() {
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <Link
                     to="/app/visualizations"
-                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-[1.02]"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 active:opacity-80"
                     style={{
                       backgroundColor: 'rgb(var(--color-primary-500))',
                       color: 'white',
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))'}
                   >
                     <BarChart2 className="w-4 h-4" />
                     {isEn ? 'Build Custom Dashboard' : 'Créer un tableau de bord'}
@@ -894,6 +1040,123 @@ export default function Dashboard() {
         ),
         priority: 4,
         gridSpan: 'full',
+      });
+    }
+
+    // Report Sections (added from Reports page)
+    if (reportSections.length > 0) {
+      reportSections.forEach((reportSection) => {
+        sections.push({
+          id: reportSection.id,
+          component: (
+            <div 
+              className="rounded-xl overflow-hidden"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
+            >
+              {/* Report Section Header */}
+              <div 
+                className="flex items-center justify-between px-4 py-3 border-b"
+                style={{ borderColor: 'rgb(var(--color-border))' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-9 h-9 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  >
+                    <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  </div>
+                  <div>
+                    <h3 
+                      className="font-semibold text-sm"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    >
+                      {isEn ? reportSection.nameEn : reportSection.name}
+                    </h3>
+                    <p 
+                      className="text-xs"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {isEn ? 'Report Section' : 'Section de rapport'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/app/reports`}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-bg-muted))',
+                      color: 'rgb(var(--color-text))',
+                    }}
+                  >
+                    {isEn ? 'View Report' : 'Voir le rapport'}
+                  </Link>
+                  {canCustomize && (
+                    <button
+                      onClick={() => removeReportSection(reportSection.id)}
+                      className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                      title={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Report Content Preview */}
+              <div className="p-4">
+                {reportSection.charts && reportSection.charts.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {reportSection.charts.slice(0, 4).map((chart, i) => (
+                      <div 
+                        key={i}
+                        className="p-3 rounded-lg text-center"
+                        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                      >
+                        <p 
+                          className="text-xs font-medium truncate mb-1"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
+                        >
+                          {isEn ? (chart.nameEn || chart.name) : (chart.name || chart.nameEn)}
+                        </p>
+                        <p 
+                          className="text-lg font-bold"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                        >
+                          --
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div 
+                    className="text-center py-6 rounded-lg"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    <FileText 
+                      className="w-8 h-8 mx-auto mb-2"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    />
+                    <p 
+                      className="text-sm"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {isEn 
+                        ? 'Open the report to view full content'
+                        : 'Ouvrez le rapport pour voir le contenu'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ),
+          priority: 6,
+          gridSpan: 'full',
+        });
       });
     }
 
@@ -947,6 +1210,8 @@ export default function Dashboard() {
       if (section.id === 'visualizations' || section.id === 'visualizations-empty') return true;
       // No-anomalies state is always visible when present
       if (section.id === 'no-anomalies') return true;
+      // Report sections are always visible (managed separately)
+      if (section.id.startsWith('report-')) return true;
       return isWidgetVisible(section.id);
     });
 
@@ -1003,6 +1268,8 @@ export default function Dashboard() {
     handleDrop,
     draggedWidgetId,
     dragOverWidgetId,
+    reportSections,
+    removeReportSection,
   ]);
 
 
@@ -1362,11 +1629,13 @@ export default function Dashboard() {
             
             <button
               onClick={() => window.open(CALENDLY_URL, '_blank')}
-              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all hover:scale-105 active:scale-95 flex-shrink-0 w-full sm:w-auto justify-center"
+              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-colors duration-150 active:opacity-80 flex-shrink-0 w-full sm:w-auto justify-center"
               style={{ 
                 backgroundColor: 'rgb(var(--color-primary-500))',
                 color: 'white',
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))'}
             >
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>{language === 'en' ? 'Schedule Demo' : 'Planifier une démo'}</span>
@@ -1612,7 +1881,7 @@ function QuickAction({ to, icon, title, subtitle, hasAttention, isPrimary }: Qui
   return (
     <Link
       to={to}
-      className="relative overflow-hidden rounded-lg sm:rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] group"
+      className="relative overflow-hidden rounded-lg sm:rounded-xl transition-colors duration-150 active:opacity-90 group"
       style={{ 
         backgroundColor: isPrimary ? 'rgb(var(--color-primary-500) / 0.05)' : 'rgb(var(--color-surface))',
         border: `1px solid ${hasAttention ? 'rgb(var(--color-error) / 0.4)' : isPrimary ? 'rgb(var(--color-primary-500) / 0.3)' : 'rgb(var(--color-border))'}`,
@@ -1620,7 +1889,7 @@ function QuickAction({ to, icon, title, subtitle, hasAttention, isPrimary }: Qui
     >
       {/* Hover background overlay */}
       <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
         style={{ backgroundColor: isPrimary ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))' }}
       />
       <div className="relative flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 lg:p-4">

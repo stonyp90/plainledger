@@ -3,6 +3,11 @@
  *
  * Displays tax credit eligibility for the organization with detailed breakdowns
  * and partner referral options.
+ * 
+ * IMPORTANT: Properly validates data access before showing eligibility:
+ * - Checks for QuickBooks/accounting software connection
+ * - Validates gold layer data availability
+ * - Shows meaningful empty states when data is missing
  */
 
 import { useState, useEffect } from 'react';
@@ -19,7 +24,10 @@ import {
   FileText,
   Users,
   Building2,
+  Link2,
+  RefreshCw,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useI18n } from '../lib/i18n';
 import {
   TaxCreditEligibility,
@@ -30,6 +38,8 @@ import {
 } from '../lib/taxCredits';
 import TaxCreditPartnerModal from './TaxCreditPartnerModal';
 import { useAuth } from '../lib/keycloak';
+import { useHasRealData } from '../hooks/useHasRealData';
+import DataReadinessChecklist from './DataReadinessChecklist';
 
 interface TaxCreditsSectionProps {
   industryId?: string;
@@ -43,12 +53,27 @@ export default function TaxCreditsSection({
   organizationId,
 }: TaxCreditsSectionProps) {
   const { t, language } = useI18n();
+  const isEn = language === 'en';
   const { user } = useAuth();
   const [eligibilityData, setEligibilityData] = useState<TaxCreditEligibility[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [expandedCredit, setExpandedCredit] = useState<string | null>(null);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [selectedCredit, setSelectedCredit] = useState<any>(null);
+  const [showDataChecklist, setShowDataChecklist] = useState(true);
+  
+  // Check for real data availability
+  const { 
+    hasRealData, 
+    hasQuickBooksConnection, 
+    hasAccounts,
+    hasSummaryMetrics,
+    dataAvailability 
+  } = useHasRealData();
+  
+  // Determine if we have sufficient data for tax credit analysis
+  const hasFinancialData = hasRealData && (hasAccounts || hasSummaryMetrics);
 
   // Fetch eligibility data from API
   useEffect(() => {
@@ -58,8 +83,16 @@ export default function TaxCreditsSection({
         setLoading(false);
         return;
       }
+      
+      // If no QuickBooks connection, don't fetch - show connection prompt
+      if (!hasQuickBooksConnection) {
+        setEligibilityData([]);
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
+      setFetchError(null);
       try {
         // Import API dynamically to avoid circular dependencies
         const { taxCreditsApi } = await import('../lib/api');
@@ -97,6 +130,7 @@ export default function TaxCreditsSection({
         setEligibilityData(eligibilityResults);
       } catch (error) {
         console.error('Failed to fetch tax credit eligibility:', error);
+        setFetchError(error instanceof Error ? error.message : 'Unknown error');
         setEligibilityData([]);
       } finally {
         setLoading(false);
@@ -104,7 +138,7 @@ export default function TaxCreditsSection({
     };
 
     fetchEligibility();
-  }, [industryId, province, organizationId]);
+  }, [industryId, province, organizationId, hasQuickBooksConnection]);
 
   const likelyEligible = eligibilityData.filter((e) => e.eligibilityStatus === 'likely');
   const possiblyEligible = eligibilityData.filter((e) => e.eligibilityStatus === 'possible');
@@ -136,6 +170,113 @@ export default function TaxCreditsSection({
           className="animate-spin rounded-full h-8 w-8 border-b-2"
           style={{ borderColor: 'rgb(var(--color-primary-500))' }}
         ></div>
+      </div>
+    );
+  }
+  
+  // Show connection prompt if no QuickBooks connection
+  if (!hasQuickBooksConnection) {
+    return (
+      <div className="space-y-6">
+        {/* Empty State - No Connection */}
+        <div 
+          className="rounded-xl border p-6 sm:p-8"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <div className="text-center max-w-md mx-auto">
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
+            >
+              <Link2 className="w-8 h-8" style={{ color: 'rgb(var(--color-warning))' }} />
+            </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Connect Your Accounting Software' : 'Connectez votre logiciel comptable'}
+            </h3>
+            <p className="text-sm mb-6" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn 
+                ? 'To analyze your tax credit eligibility, we need access to your financial data. Connect QuickBooks, Xero, or another supported accounting platform.'
+                : 'Pour analyser votre admissibilité aux crédits d\'impôt, nous avons besoin d\'accéder à vos données financières. Connectez QuickBooks, Xero ou une autre plateforme comptable supportée.'}
+            </p>
+            <Link
+              to="/app/connections"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-white transition-all hover:opacity-90"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+            >
+              <Link2 className="w-4 h-4" />
+              {isEn ? 'Connect Accounting Software' : 'Connecter un logiciel comptable'}
+            </Link>
+          </div>
+        </div>
+        
+        {/* Data Readiness Checklist */}
+        {showDataChecklist && (
+          <DataReadinessChecklist 
+            context="analytics" 
+            onDismiss={() => setShowDataChecklist(false)}
+          />
+        )}
+      </div>
+    );
+  }
+  
+  // Show data sync prompt if connected but no data
+  if (hasQuickBooksConnection && !hasFinancialData && eligibilityData.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Empty State - Connected but No Data */}
+        <div 
+          className="rounded-xl border p-6 sm:p-8"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <div className="text-center max-w-md mx-auto">
+            <div 
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <RefreshCw className="w-8 h-8" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Syncing Your Financial Data' : 'Synchronisation de vos données financières'}
+            </h3>
+            <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn 
+                ? 'Your accounting software is connected. Financial data is being synced and processed. Tax credit eligibility will be calculated once your data is ready.'
+                : 'Votre logiciel comptable est connecté. Les données financières sont en cours de synchronisation. L\'admissibilité aux crédits d\'impôt sera calculée une fois vos données prêtes.'}
+            </p>
+            {fetchError && (
+              <div 
+                className="text-sm p-3 rounded-lg mb-4"
+                style={{ 
+                  backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                  color: 'rgb(var(--color-error))',
+                }}
+              >
+                {isEn ? 'Error fetching data: ' : 'Erreur lors de la récupération des données: '}{fetchError}
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-2 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <RefreshCw className="w-3 h-3 animate-spin" />
+              {isEn 
+                ? 'Data typically syncs within 5-10 minutes after initial connection'
+                : 'Les données se synchronisent généralement dans les 5-10 minutes après la connexion initiale'}
+            </div>
+          </div>
+        </div>
+        
+        {/* Data Readiness Checklist */}
+        {showDataChecklist && (
+          <DataReadinessChecklist 
+            context="analytics" 
+            onDismiss={() => setShowDataChecklist(false)}
+          />
+        )}
       </div>
     );
   }
@@ -172,12 +313,23 @@ export default function TaxCreditsSection({
 
       {/* Eligibility List */}
       {eligibilityData.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-          <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">
+        <div 
+          className="text-center py-12 rounded-lg border"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
+          <Info className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {language === 'fr'
-              ? 'Aucune éligibilité aux crédits d\'impôt détectée pour le moment. Les données seront analysées lors du prochain traitement ETL.'
-              : 'No tax credit eligibility detected yet. Data will be analyzed during the next ETL processing.'}
+              ? 'Aucune éligibilité aux crédits d\'impôt détectée pour le moment. Assurez-vous que vos données financières sont à jour dans votre logiciel comptable.'
+              : 'No tax credit eligibility detected yet. Make sure your financial data is up to date in your accounting software.'}
+          </p>
+          <p className="text-sm mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {language === 'fr'
+              ? 'L\'analyse sera mise à jour lors de la prochaine synchronisation.'
+              : 'Analysis will be updated on the next data sync.'}
           </p>
         </div>
       ) : (

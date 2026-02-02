@@ -20,7 +20,6 @@ import {
   Trash2,
   Settings2,
   BarChart3,
-  Info,
   Sparkles,
   Save,
   Database,
@@ -85,7 +84,6 @@ function FieldPicker({
   isEn,
 }: FieldPickerProps) {
   const [hoveredField, setHoveredField] = useState<DataMetric | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [expandedCategory, setExpandedCategory] = useState<string | null>('financial');
   const [draggedField, setDraggedField] = useState<DataMetric | null>(null);
 
@@ -165,11 +163,7 @@ function FieldPicker({
                     }
                   }}
                   onDragEnd={() => setDraggedField(null)}
-                  onMouseEnter={(e) => {
-                    setHoveredField(field.id);
-                    setTooltipPosition({ x: e.clientX, y: e.clientY });
-                  }}
-                  onMouseMove={(e) => setTooltipPosition({ x: e.clientX, y: e.clientY })}
+                  onMouseEnter={() => setHoveredField(field.id)}
                   onMouseLeave={() => setHoveredField(null)}
                 >
                   <GripVertical 
@@ -275,10 +269,7 @@ function FieldPicker({
                         style={{
                           backgroundColor: metric.isSelected ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
                         }}
-                        onMouseEnter={(e) => {
-                          setHoveredField(metric.id);
-                          setTooltipPosition({ x: e.clientX, y: e.clientY });
-                        }}
+                        onMouseEnter={() => setHoveredField(metric.id)}
                         onMouseLeave={() => setHoveredField(null)}
                       >
                         <div
@@ -302,18 +293,6 @@ function FieldPicker({
                         <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'rgb(var(--color-text-muted))' }}>
                           {metric.isSelected ? (isEn ? 'Remove' : 'Retirer') : (isEn ? 'Add' : 'Ajouter')}
                         </span>
-
-                        {/* Tooltip for available fields */}
-                        {hoveredField === metric.id && !metric.isSelected && (
-                          <ChartTooltip visible={true} position={tooltipPosition}>
-                            <div className="min-w-[180px]">
-                              <p className="text-white font-medium mb-1">{isEn ? metric.labelEn : metric.label}</p>
-                              <p className="text-gray-400 text-xs">
-                                {isEn ? 'Click to add this field to your chart' : 'Cliquez pour ajouter ce champ'}
-                              </p>
-                            </div>
-                          </ChartTooltip>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -338,75 +317,40 @@ interface ChartTypeGridProps {
 }
 
 function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
-  const [hoveredType, setHoveredType] = useState<ChartType | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-
   const chartTypes: ChartType[] = ['line', 'bar', 'area', 'pie', 'donut', 'waterfall', 'gauge', 'radar', 'heatmap', 'table', 'gantt', 'runway', 'scenario', 'burnRate', 'cashForecast'];
 
   return (
-    <div className="grid grid-cols-5 gap-3 overflow-visible">
+    <div className="grid grid-cols-5 gap-2">
       {chartTypes.map((type) => {
         const info = CHART_TYPE_INFO[type];
         const Icon = ChartTypeIcon[type];
         const isSelected = type === selected;
-        const isHovered = hoveredType === type;
 
         return (
           <button
             key={type}
             onClick={() => onChange(type)}
-            className="relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all overflow-visible"
+            className="relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl transition-colors h-[72px]"
             style={{
-              backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : isHovered ? 'rgb(var(--color-bg-muted))' : 'transparent',
+              backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'transparent',
               border: isSelected ? 'none' : '1px solid rgb(var(--color-border))',
-              transform: isHovered && !isSelected ? 'scale(1.02)' : 'scale(1)',
             }}
-            onMouseEnter={(e) => {
-              setHoveredType(type);
-              setTooltipPosition({ x: e.clientX, y: e.clientY });
-            }}
-            onMouseMove={(e) => setTooltipPosition({ x: e.clientX, y: e.clientY })}
-            onMouseLeave={() => setHoveredType(null)}
           >
             <Icon 
-              className="w-5 h-5" 
+              className="w-5 h-5 flex-shrink-0" 
               style={{ color: isSelected ? 'white' : 'rgb(var(--color-text-secondary))' }}
             />
             <span 
-              className="text-xs font-medium"
+              className="text-[10px] font-medium leading-tight text-center line-clamp-2"
               style={{ color: isSelected ? 'white' : 'rgb(var(--color-text))' }}
             >
               {isEn ? info.labelEn : info.label}
             </span>
             
             {isSelected && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-sm">
                 <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
               </div>
-            )}
-
-            {isHovered && (
-              <ChartTooltip visible={true} position={tooltipPosition}>
-                <div className="min-w-[200px]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Icon className="w-4 h-4 text-white" />
-                    <span className="text-white font-medium">{isEn ? info.labelEn : info.label}</span>
-                  </div>
-                  <p className="text-gray-400 text-xs mb-2">
-                    {isEn ? info.descriptionEn : info.description}
-                  </p>
-                  <div className="pt-2 border-t border-gray-700">
-                    <p className="text-xs text-gray-500">{isEn ? 'Best for:' : 'Idéal pour:'}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {info.bestFor.slice(0, 3).map((metric) => (
-                        <span key={metric} className="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
-                          {METRIC_INFO[metric as DataMetric]?.[isEn ? 'labelEn' : 'label'] || metric}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </ChartTooltip>
             )}
           </button>
         );
@@ -426,14 +370,11 @@ interface ConfigurationPanelProps {
 }
 
 function ConfigurationPanel({ config, onConfigChange, isEn }: ConfigurationPanelProps) {
-  const [hoveredOption, setHoveredOption] = useState<string | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-
   const timeRanges: TimeRange[] = ['1W', '1M', '3M', '6M', 'YTD', '1Y', '2Y', 'ALL'];
   const comparisons: { id: ComparisonMode; label: string; labelEn: string }[] = [
     { id: 'none', label: 'Aucune', labelEn: 'None' },
-    { id: 'previousPeriod', label: 'Période précédente', labelEn: 'Previous Period' },
-    { id: 'previousYear', label: 'Année précédente', labelEn: 'Previous Year' },
+    { id: 'previousPeriod', label: 'Période préc.', labelEn: 'Prev. Period' },
+    { id: 'previousYear', label: 'Année préc.', labelEn: 'Prev. Year' },
     { id: 'budget', label: 'Budget', labelEn: 'Budget' },
     { id: 'forecast', label: 'Prévision', labelEn: 'Forecast' },
   ];
@@ -441,55 +382,40 @@ function ConfigurationPanel({ config, onConfigChange, isEn }: ConfigurationPanel
     { id: 'day', label: 'Jour', labelEn: 'Day' },
     { id: 'week', label: 'Semaine', labelEn: 'Week' },
     { id: 'month', label: 'Mois', labelEn: 'Month' },
-    { id: 'quarter', label: 'Trimestre', labelEn: 'Quarter' },
+    { id: 'quarter', label: 'Trim.', labelEn: 'Qtr' },
     { id: 'year', label: 'Année', labelEn: 'Year' },
   ];
 
   const toggleOptions = [
-    { id: 'showLegend', label: 'Légende', labelEn: 'Legend', description: 'Show chart legend', descriptionFr: 'Afficher la légende' },
-    { id: 'showGrid', label: 'Grille', labelEn: 'Grid', description: 'Show background grid', descriptionFr: 'Afficher la grille' },
-    { id: 'animate', label: 'Animation', labelEn: 'Animation', description: 'Animate chart transitions', descriptionFr: 'Animer les transitions' },
-    { id: 'stacked', label: 'Empilé', labelEn: 'Stacked', description: 'Stack multiple metrics', descriptionFr: 'Empiler les métriques' },
-    { id: 'cumulative', label: 'Cumulatif', labelEn: 'Cumulative', description: 'Show cumulative values', descriptionFr: 'Afficher les valeurs cumulatives' },
+    { id: 'showLegend', label: 'Légende', labelEn: 'Legend' },
+    { id: 'showGrid', label: 'Grille', labelEn: 'Grid' },
+    { id: 'animate', label: 'Animation', labelEn: 'Animation' },
+    { id: 'stacked', label: 'Empilé', labelEn: 'Stacked' },
+    { id: 'cumulative', label: 'Cumulatif', labelEn: 'Cumulative' },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Time Range */}
+    <div className="space-y-4">
+      {/* Time Range - Compact inline */}
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {isEn ? 'Time Range' : 'Période'}
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {timeRanges.map((range) => {
-            const info = TIME_RANGE_INFO[range];
             const isSelected = config.timeRange === range;
             return (
               <button
                 key={range}
                 onClick={() => onConfigChange({ timeRange: range })}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                className="px-2 py-1 rounded text-xs font-medium transition-colors"
                 style={{
-                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                  color: isSelected ? 'white' : 'rgb(var(--color-text))',
+                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'transparent',
+                  color: isSelected ? 'white' : 'rgb(var(--color-text-secondary))',
+                  border: isSelected ? 'none' : '1px solid rgb(var(--color-border))',
                 }}
-                onMouseEnter={(e) => {
-                  setHoveredOption(`time-${range}`);
-                  setTooltipPosition({ x: e.clientX, y: e.clientY });
-                }}
-                onMouseLeave={() => setHoveredOption(null)}
               >
                 {range}
-                {hoveredOption === `time-${range}` && (
-                  <ChartTooltip visible={true} position={tooltipPosition}>
-                    <div>
-                      <p className="text-white font-medium">{isEn ? info.labelEn : info.label}</p>
-                      {info.days > 0 && (
-                        <p className="text-gray-400 text-xs">{info.days} {isEn ? 'days' : 'jours'}</p>
-                      )}
-                    </div>
-                  </ChartTooltip>
-                )}
               </button>
             );
           })}
@@ -498,20 +424,21 @@ function ConfigurationPanel({ config, onConfigChange, isEn }: ConfigurationPanel
 
       {/* Comparison Mode */}
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {isEn ? 'Compare With' : 'Comparer avec'}
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {comparisons.map((comp) => {
             const isSelected = config.comparison === comp.id;
             return (
               <button
                 key={comp.id}
                 onClick={() => onConfigChange({ comparison: comp.id })}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                className="px-2 py-1 rounded text-xs font-medium transition-colors"
                 style={{
-                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                  color: isSelected ? 'white' : 'rgb(var(--color-text))',
+                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'transparent',
+                  color: isSelected ? 'white' : 'rgb(var(--color-text-secondary))',
+                  border: isSelected ? 'none' : '1px solid rgb(var(--color-border))',
                 }}
               >
                 {isEn ? comp.labelEn : comp.label}
@@ -523,20 +450,21 @@ function ConfigurationPanel({ config, onConfigChange, isEn }: ConfigurationPanel
 
       {/* Group By */}
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {isEn ? 'Group By' : 'Grouper par'}
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {groupByOptions.map((option) => {
             const isSelected = config.groupBy === option.id;
             return (
               <button
                 key={option.id}
                 onClick={() => onConfigChange({ groupBy: option.id as any })}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                className="px-2 py-1 rounded text-xs font-medium transition-colors"
                 style={{
-                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
-                  color: isSelected ? 'white' : 'rgb(var(--color-text))',
+                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'transparent',
+                  color: isSelected ? 'white' : 'rgb(var(--color-text-secondary))',
+                  border: isSelected ? 'none' : '1px solid rgb(var(--color-border))',
                 }}
               >
                 {isEn ? option.labelEn : option.label}
@@ -546,54 +474,37 @@ function ConfigurationPanel({ config, onConfigChange, isEn }: ConfigurationPanel
         </div>
       </div>
 
-      {/* Toggle Options */}
+      {/* Toggle Options - Compact grid */}
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
           {isEn ? 'Display Options' : 'Options d\'affichage'}
         </label>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
           {toggleOptions.map((option) => {
             const isEnabled = config[option.id as keyof ChartConfig] as boolean;
             return (
               <div
                 key={option.id}
-                className="flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer group"
+                className="flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors cursor-pointer"
                 style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                 onClick={() => onConfigChange({ [option.id]: !isEnabled })}
-                onMouseEnter={(e) => {
-                  setHoveredOption(option.id);
-                  setTooltipPosition({ x: e.clientX, y: e.clientY });
-                }}
-                onMouseLeave={() => setHoveredOption(null)}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? option.labelEn : option.label}
-                  </span>
-                  <Info className="w-3.5 h-3.5 opacity-0 group-hover:opacity-50" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                </div>
+                <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? option.labelEn : option.label}
+                </span>
                 <div
-                  className="relative w-10 h-5 rounded-full transition-colors"
+                  className="relative w-8 h-4 rounded-full transition-colors flex-shrink-0"
                   style={{
                     backgroundColor: isEnabled ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-border))',
                   }}
                 >
                   <div
-                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                    className="absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform"
                     style={{
-                      transform: isEnabled ? 'translateX(22px)' : 'translateX(2px)',
+                      transform: isEnabled ? 'translateX(18px)' : 'translateX(2px)',
                     }}
                   />
                 </div>
-                
-                {hoveredOption === option.id && (
-                  <ChartTooltip visible={true} position={tooltipPosition}>
-                    <div>
-                      <p className="text-white font-medium">{isEn ? option.labelEn : option.label}</p>
-                      <p className="text-gray-400 text-xs">{isEn ? option.description : option.descriptionFr}</p>
-                    </div>
-                  </ChartTooltip>
-                )}
               </div>
             );
           })}
@@ -1823,7 +1734,7 @@ export default function ChartBuilder({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div
         className="absolute inset-0"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)' }}
@@ -1831,31 +1742,31 @@ export default function ChartBuilder({
       />
 
       <div
-        className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden"
+        className="relative w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] flex flex-col rounded-xl sm:rounded-2xl overflow-hidden"
         style={{
           backgroundColor: 'rgb(var(--color-surface))',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         }}
       >
-        {/* Header */}
+        {/* Header - Compact on mobile */}
         <div
-          className="flex items-center justify-between p-4 border-b flex-shrink-0"
+          className="flex items-center justify-between p-3 sm:p-4 border-b flex-shrink-0"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div
-              className="p-2 rounded-xl"
+              className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl"
               style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
             >
-              <Sparkles className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              <h2 className="text-sm sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                 {mode === 'create'
                   ? (isEn ? 'Build New Chart' : 'Créer un graphique')
                   : (isEn ? 'Edit Chart' : 'Modifier le graphique')}
               </h2>
-              <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {isEn
                   ? 'Select fields, choose chart type, and customize'
                   : 'Sélectionnez les champs, choisissez le type et personnalisez'}
@@ -1864,16 +1775,16 @@ export default function ChartBuilder({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            className="p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-colors"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
-        {/* Progress Steps */}
+        {/* Progress Steps - Compact on mobile */}
         <div
-          className="flex items-center justify-between px-6 py-3 border-b flex-shrink-0"
+          className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b flex-shrink-0"
           style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))' }}
         >
           {steps.map((step, index) => {
@@ -1885,11 +1796,11 @@ export default function ChartBuilder({
               <button
                 key={step.id}
                 onClick={() => index <= activeStep && setActiveStep(index)}
-                className="flex items-center gap-2 transition-all"
+                className="flex items-center gap-1 sm:gap-2 transition-all"
                 disabled={index > activeStep}
               >
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors"
                   style={{
                     backgroundColor: isActive
                       ? 'rgb(var(--color-primary-500))'
@@ -1899,10 +1810,10 @@ export default function ChartBuilder({
                     color: isActive || isCompleted ? 'white' : 'rgb(var(--color-text-muted))',
                   }}
                 >
-                  {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                  {isCompleted ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : <Icon className="w-3 h-3 sm:w-4 sm:h-4" />}
                 </div>
                 <span
-                  className="text-sm font-medium hidden sm:block"
+                  className="text-xs sm:text-sm font-medium hidden sm:block"
                   style={{
                     color: isActive ? 'rgb(var(--color-primary-500))' : isCompleted ? 'rgb(var(--color-success))' : 'rgb(var(--color-text-muted))',
                   }}
@@ -1910,15 +1821,15 @@ export default function ChartBuilder({
                   {step.label}
                 </span>
                 {index < steps.length - 1 && (
-                  <ArrowRight className="w-4 h-4 mx-2 hidden sm:block" style={{ color: 'rgb(var(--color-border))' }} />
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 mx-1 sm:mx-2 hidden sm:block" style={{ color: 'rgb(var(--color-border))' }} />
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Content - Reduced padding on mobile */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {activeStep === 0 && (
             <FieldPicker
               selectedFields={fields}
@@ -2097,15 +2008,15 @@ export default function ChartBuilder({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - Compact on mobile */}
         <div
-          className="flex items-center justify-between p-4 border-t flex-shrink-0"
+          className="flex items-center justify-between p-2.5 sm:p-4 border-t flex-shrink-0"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
           <button
             onClick={() => activeStep > 0 && setActiveStep(activeStep - 1)}
             disabled={activeStep === 0}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+            className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
             style={{
               backgroundColor: 'rgb(var(--color-bg-muted))',
               color: 'rgb(var(--color-text))',
@@ -2114,10 +2025,10 @@ export default function ChartBuilder({
             {isEn ? 'Back' : 'Retour'}
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-colors"
               style={{
                 backgroundColor: 'rgb(var(--color-bg-muted))',
                 color: 'rgb(var(--color-text))',
@@ -2129,7 +2040,7 @@ export default function ChartBuilder({
               <button
                 onClick={() => setActiveStep(activeStep + 1)}
                 disabled={!canProceed}
-                className="px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
                 style={{
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
@@ -2141,14 +2052,15 @@ export default function ChartBuilder({
               <button
                 onClick={handleSave}
                 disabled={!canProceed}
-                className="px-6 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-1.5 sm:gap-2"
                 style={{
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
                 }}
               >
-                <Save className="w-4 h-4" />
-                {mode === 'create' ? (isEn ? 'Create Chart' : 'Créer') : (isEn ? 'Save Changes' : 'Enregistrer')}
+                <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">{mode === 'create' ? (isEn ? 'Create Chart' : 'Créer') : (isEn ? 'Save Changes' : 'Enregistrer')}</span>
+                <span className="sm:hidden">{mode === 'create' ? (isEn ? 'Create' : 'Créer') : (isEn ? 'Save' : 'Sauv.')}</span>
               </button>
             )}
           </div>

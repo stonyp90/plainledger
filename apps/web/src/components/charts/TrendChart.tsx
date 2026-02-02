@@ -648,13 +648,14 @@ export default function TrendChart({
           )}
         </div>
         
-        {/* Controls - subtle, theme-consistent */}
+        {/* Controls - hover reveal on desktop, simplified on mobile */}
         <div className="flex items-center gap-0.5">
+          {/* Fullscreen - Desktop only */}
           <button
             onClick={toggleFullscreen}
-            className={`p-1.5 rounded-md transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'}`}
+            className={`hidden sm:flex p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100 ${isFullscreen ? '!opacity-100' : ''}`}
             style={{ 
-              backgroundColor: isFullscreen ? 'rgb(var(--color-primary-500) / 0.08)' : 'transparent',
+              backgroundColor: isFullscreen ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
               color: isFullscreen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))'
             }}
             title={isEn ? (isFullscreen ? 'Exit fullscreen' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran' : 'Plein écran')}
@@ -662,10 +663,11 @@ export default function TrendChart({
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
+          {/* Share - Desktop only (hover reveal) */}
           <button
             onClick={handleShareClick}
             disabled={isCapturing}
-            className={`p-1.5 rounded-md transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'} ${isCapturing ? 'opacity-30 cursor-wait' : ''}`}
+            className={`hidden sm:flex p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100 ${isFullscreen ? '!opacity-100' : ''} ${isCapturing ? '!opacity-30 cursor-wait' : ''}`}
             style={{ 
               backgroundColor: 'transparent',
               color: 'rgb(var(--color-text-muted))'
@@ -679,9 +681,10 @@ export default function TrendChart({
               <Share2 className="w-3.5 h-3.5" />
             )}
           </button>
+          {/* Config - Desktop only (hover reveal) */}
           <button
             onClick={() => setShowConfigPanel(true)}
-            className={`p-1.5 rounded-md transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'}`}
+            className={`hidden sm:flex p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100 ${isFullscreen ? '!opacity-100' : ''}`}
             style={{ 
               backgroundColor: 'transparent',
               color: 'rgb(var(--color-text-muted))'
@@ -704,11 +707,13 @@ export default function TrendChart({
                   period: lastPoint?.period,
                 });
               }}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-all duration-200 hover:scale-[1.02]"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors duration-150 active:opacity-80"
               style={{ 
                 backgroundColor: 'rgb(var(--color-success) / 0.08)',
                 color: 'rgb(var(--color-success))'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-success) / 0.15)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-success) / 0.08)'}
               title={isEn ? 'Record a decision based on this data' : 'Enregistrer une décision basée sur ces données'}
               aria-label={isEn ? 'Record decision' : 'Enregistrer une décision'}
             >
@@ -810,8 +815,8 @@ export default function TrendChart({
 
       {/* Chart */}
       <div 
-        className={`relative flex-1 ${isFullscreen ? '' : ''}`}
-        style={{ height: isFullscreen ? undefined : `${chartHeight}px`, minHeight: isFullscreen ? '400px' : '150px' }}
+        className={`relative ${isFullscreen ? 'flex-1' : ''}`}
+        style={{ height: isFullscreen ? undefined : `${chartHeight}px`, minHeight: isFullscreen ? '400px' : undefined }}
         onMouseLeave={handleChartLeave}
       >
         <svg 

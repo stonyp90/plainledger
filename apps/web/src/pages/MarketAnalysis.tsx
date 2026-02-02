@@ -58,6 +58,7 @@ import PremiumFeatureGate, { usePremiumFeature, PremiumUpgradeBanner } from '../
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -103,7 +104,7 @@ const INDUSTRY_LUCIDE_ICONS: Record<string, typeof Building2> = {
 export default function MarketAnalysis() {
   const { currentTenant } = useTenant();
   const { language } = useI18n();
-  const { data: financialData } = useFinancialData();
+  const { data: financialData, isLoading } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasSummaryMetrics, hasRevenueTrends } = useHasRealData();
   const shouldShowData = hasRealData || shouldShowSandboxData;
   const isEn = language === 'en';
@@ -207,6 +208,16 @@ export default function MarketAnalysis() {
     revenueYoY: benchmark.growth.revenueYoY,
     sampleSize: benchmark.sampleSize,
   } : null;
+
+  // Show loading state while data is loading
+  if ((isLoading || benchmarkLoading) && !financialData && !benchmark) {
+    return (
+      <ContentLoader 
+        message="Chargement de l'analyse de marché..."
+        messageEn="Loading market analysis..."
+      />
+    );
+  }
 
   // Show premium gate for free users
   if (!hasAccess) {

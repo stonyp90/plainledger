@@ -382,20 +382,35 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Mobile Tab Selector */}
-      <div className="lg:hidden">
-        <label className="sr-only">{isEn ? 'Select a section' : 'Sélectionner une section'}</label>
-        <select
-          value={activeTab}
-          onChange={(e) => handleTabChange(e.target.value)}
-          className="select w-full"
-        >
-          {tabs.map((tab) => (
-            <option key={tab.id} value={tab.id}>
-              {tab.name}
-            </option>
-          ))}
-        </select>
+      {/* Mobile Tab Selector - Horizontal scrollable pills */}
+      <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 pb-2 min-w-max">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                style={{
+                  backgroundColor: isActive 
+                    ? 'rgb(var(--color-primary-500))' 
+                    : 'rgb(var(--color-surface))',
+                  color: isActive 
+                    ? 'white' 
+                    : 'rgb(var(--color-text))',
+                  border: isActive 
+                    ? 'none' 
+                    : '1px solid rgb(var(--color-border))',
+                }}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {tab.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div>

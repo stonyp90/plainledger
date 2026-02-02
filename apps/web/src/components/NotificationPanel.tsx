@@ -298,7 +298,7 @@ export default function NotificationPanel() {
                   closePanel();
                   setTimeout(() => navigate('/app/settings'), 0);
                 }}
-                className="text-xs sm:text-sm font-semibold block text-center sm:text-left w-full transition-colors"
+                className="text-xs sm:text-sm font-semibold block text-center sm:text-left w-full transition-colors duration-150"
                 style={{ color: 'rgb(var(--color-primary-600))' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = 'rgb(var(--color-primary-700))'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'rgb(var(--color-primary-600))'}
@@ -408,13 +408,13 @@ function NotificationItem({ notification, onRead, onArchive, onClose, onNavigate
           {notification.actionUrl && (
             <button
               onClick={handleActionLinkClick}
-              className="text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-md cursor-pointer transition-all active:scale-95"
+              className="text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-md cursor-pointer transition-colors duration-150 active:opacity-80"
               style={{ 
                 color: 'rgb(var(--color-primary-600))',
                 backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.15)';
+                e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.2)';
                 e.currentTarget.style.color = 'rgb(var(--color-primary-700))';
               }}
               onMouseLeave={(e) => {

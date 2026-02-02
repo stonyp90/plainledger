@@ -71,6 +71,7 @@ import { useTenant } from '../contexts/TenantContext';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import EmptyDataState from '../components/EmptyDataState';
+import { ContentLoader } from '../components/PageLoader';
 
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
@@ -78,7 +79,7 @@ const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 export default function CustomDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
-  const { data: financialData, refresh } = useFinancialData();
+  const { data: financialData, isLoading, refresh } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasTrends, hasAccounts } = useHasRealData();
   const shouldShowData = hasRealData || shouldShowSandboxData;
   const { currentTenant } = useTenant();
@@ -452,6 +453,16 @@ export default function CustomDashboard() {
   const handleUpgradeClick = () => {
     window.open(CALENDLY_URL, '_blank');
   };
+
+  // Show loading state while data is loading
+  if (isLoading && !financialData) {
+    return (
+      <ContentLoader 
+        message="Chargement des visualisations..."
+        messageEn="Loading visualizations..."
+      />
+    );
+  }
 
   // Show premium gate if user doesn't have access
   if (!hasAccess) {
@@ -1063,8 +1074,6 @@ export default function CustomDashboard() {
                   onDragLeave={handleSuggestionDragLeave}
                   onDrop={() => handleSuggestionDrop(chart.id)}
                   onDragEnd={handleSuggestionDragEnd}
-                  onMouseEnter={(e) => handleSuggestionMouseEnter(chart.id, e)}
-                  onMouseLeave={handleSuggestionMouseLeave}
                   className={`p-4 rounded-xl text-left transition-all hover:shadow-md cursor-grab active:cursor-grabbing relative ${
                     draggedSuggestionId === chart.id ? 'opacity-50 scale-95' : ''
                   } ${
@@ -1092,53 +1101,9 @@ export default function CustomDashboard() {
                   <div className="mt-2 flex items-center gap-1">
                     <Plus className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
                     <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-primary-500))' }}>
-                      {isEn ? 'Add to dashboard' : 'Ajouter'}
+                      {isEn ? 'Add' : 'Ajouter'}
                     </span>
                   </div>
-                  
-                  {hoveredElement === `suggest-${chart.id}` && (
-                    <ChartTooltip visible={true} position={tooltipPosition}>
-                      <div className="min-w-[240px]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Icon className="w-4 h-4 text-white" />
-                          <span className="text-white font-medium">{isEn ? chart.nameEn : chart.name}</span>
-                        </div>
-                        <p className="text-gray-400 text-xs mb-3">
-                          {isEn ? chart.descriptionEn : chart.description}
-                        </p>
-                        <div className="space-y-1 text-xs border-t border-gray-700 pt-2">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">{isEn ? 'Chart Type' : 'Type'}</span>
-                            <span className="text-gray-300">{isEn ? chartTypeInfo.labelEn : chartTypeInfo.label}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">{isEn ? 'Metrics' : 'Métriques'}</span>
-                            <span className="text-gray-300">{chart.metrics?.length ?? 0}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">{isEn ? 'Time Range' : 'Période'}</span>
-                            <span className="text-gray-300">{chart.timeRange}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-700">
-                          {chart.metrics.slice(0, 3).map((metric) => (
-                            <span key={metric} className="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
-                              {isEn ? METRIC_INFO[metric].labelEn : METRIC_INFO[metric].label}
-                            </span>
-                          ))}
-                          {chart.metrics.length > 3 && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
-                              +{(chart.metrics?.length ?? 0) - 3}
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-3 pt-2 border-t border-gray-700 text-xs text-blue-400 flex items-center gap-1">
-                          <Plus className="w-3 h-3" />
-                          {isEn ? 'Click to add • Drag to reorder' : 'Cliquer pour ajouter • Glisser pour réordonner'}
-                        </div>
-                      </div>
-                    </ChartTooltip>
-                  )}
                 </button>
               );
             })}
