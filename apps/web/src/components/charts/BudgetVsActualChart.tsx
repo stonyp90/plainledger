@@ -51,12 +51,7 @@ export default function BudgetVsActualChart({
   isEn = false,
   chartId,
 }: BudgetVsActualChartProps) {
-  // Early return - hide chart completely if no data
-  if (!data || data.length === 0) {
-    return null;
-  }
-
-  // Get graph configuration
+  // Get graph configuration (must be called before any early returns)
   const graphConfig = useGraphConfig(chartId, {
     budgetVsActual: {
       varianceThreshold: propVarianceThreshold ?? 10,
@@ -85,6 +80,16 @@ export default function BudgetVsActualChart({
     favorableCount,
     unfavorableCount,
   } = useMemo(() => {
+    // Return empty data if no input data
+    if (!data || data.length === 0) {
+      return {
+        processedData: [],
+        totals: { actual: 0, budget: 0, variance: 0, priorYear: 0 },
+        maxValue: 0,
+        favorableCount: 0,
+        unfavorableCount: 0,
+      };
+    }
     let maxVal = 0;
     let favorable = 0;
     let unfavorable = 0;
@@ -152,6 +157,11 @@ export default function BudgetVsActualChart({
       unfavorableCount: unfavorable,
     };
   }, [data, varianceThreshold, sortBy]);
+
+  // Early return - hide chart completely if no data (after all hooks)
+  if (!data || data.length === 0) {
+    return null;
+  }
 
   const toggleRow = (category: string) => {
     const newExpanded = new Set(expandedRows);

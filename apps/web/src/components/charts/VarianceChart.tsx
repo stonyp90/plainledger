@@ -30,15 +30,18 @@ export default function VarianceChart({
   showThresholdLines = true,
   maxValue: propMaxValue,
 }: VarianceChartProps) {
-  // Early return - hide chart completely if no data
-  if (!data || data.length === 0) {
-    return null;
-  }
-
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const { maxValue, hasAnomalies, processedData } = useMemo(() => {
+    // Return empty data if no input data
+    if (!data || data.length === 0) {
+      return {
+        maxValue: 0,
+        hasAnomalies: false,
+        processedData: [],
+      };
+    }
     let max = propMaxValue || 0;
     let anomalyCount = 0;
     
@@ -77,6 +80,11 @@ export default function VarianceChart({
       processedData: processed,
     };
   }, [data, thresholds, propMaxValue]);
+
+  // Early return - hide chart completely if no data (after all hooks)
+  if (!data || data.length === 0) {
+    return null;
+  }
 
   const getBarColor = (status: 'normal' | 'warning' | 'critical', isPrior: boolean) => {
     if (isPrior) return 'rgb(var(--color-primary-300))';

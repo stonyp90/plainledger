@@ -71,6 +71,19 @@ export function ContactForm({
   });
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  
+  // App/HelpCenter styles hooks (must be before early return)
+  const [fieldFocus, setFieldFocus] = useState<FieldFocus>({
+    name: false,
+    email: false,
+    company: false,
+    phone: false,
+    industry: false,
+    subject: false,
+    message: false,
+    referralSource: false,
+  });
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -437,18 +450,6 @@ export function ContactForm({
     );
   }
 
-  // App/HelpCenter styles (uses CSS variables)
-  const [fieldFocus, setFieldFocus] = useState<FieldFocus>({
-    name: false,
-    email: false,
-    company: false,
-    phone: false,
-    industry: false,
-    subject: false,
-    message: false,
-    referralSource: false,
-  });
-  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   const handleFocus = (field: keyof FieldFocus) => {
     setFieldFocus(prev => ({ ...prev, [field]: true }));
