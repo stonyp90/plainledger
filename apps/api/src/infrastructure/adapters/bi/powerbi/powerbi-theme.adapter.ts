@@ -15,7 +15,7 @@ export interface ThemeColors {
 // Using a more flexible type to accommodate the actual structure
 export interface PowerBITheme {
   name: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   visualStyles: Record<string, Record<string, Record<string, any>>>;
 }
 

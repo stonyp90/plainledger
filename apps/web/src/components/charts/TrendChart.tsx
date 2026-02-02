@@ -581,8 +581,8 @@ export default function TrendChart({
   return (
     <div 
       ref={chartRef}
-      className={`rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group ${
-        isFullscreen ? 'fixed inset-0 overflow-auto flex flex-col' : ''
+      className={`rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group flex flex-col ${
+        isFullscreen ? 'fixed inset-0 overflow-auto' : 'h-full'
       }`}
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
@@ -810,8 +810,8 @@ export default function TrendChart({
 
       {/* Chart */}
       <div 
-        className={`relative ${isFullscreen ? 'flex-1' : ''}`}
-        style={{ height: isFullscreen ? undefined : `${chartHeight}px`, minHeight: isFullscreen ? '400px' : undefined }}
+        className={`relative flex-1 ${isFullscreen ? '' : ''}`}
+        style={{ height: isFullscreen ? undefined : `${chartHeight}px`, minHeight: isFullscreen ? '400px' : '150px' }}
         onMouseLeave={handleChartLeave}
       >
         <svg 

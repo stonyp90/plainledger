@@ -13,7 +13,6 @@ import ShareModal from './ShareModal';
 import { useHasRealData } from '../hooks/useHasRealData';
 import {
   Pin,
-  PinOff,
   Download,
   Maximize2,
   Minimize2,
@@ -56,6 +55,7 @@ import {
   FileText,
   Plus,
   Sliders,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
@@ -459,30 +459,39 @@ export function DataVisualizationCard({
               isEn={isEn}
             />
             
-            {/* Pin Button - subtle, theme-consistent */}
-            <button
-              onClick={isPinned ? onUnpin : onPin}
-              className="p-1.5 rounded-md transition-all duration-200"
-              style={{
-                backgroundColor: isPinned 
-                  ? 'rgb(var(--color-warning) / 0.08)'
-                  : 'transparent',
-                color: isPinned 
-                  ? 'rgb(var(--color-warning))'
-                  : 'rgb(var(--color-text-muted))',
-              }}
-              title={isPinned 
-                ? (isEn ? 'Unpin from dashboard' : 'Détacher du tableau de bord')
-                : (isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord')
-              }
-              aria-label={isPinned 
-                ? (isEn ? 'Unpin from dashboard' : 'Détacher du tableau de bord')
-                : (isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord')
-              }
-              aria-pressed={isPinned}
-            >
-              {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-            </button>
+            {/* Pin/Remove Button - context-aware */}
+            {isPinned ? (
+              // Remove button when pinned - more intuitive than "unpin"
+              <button
+                onClick={onUnpin}
+                className="flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200 hover:bg-[rgb(var(--color-error)/0.15)] group/remove"
+                style={{
+                  backgroundColor: 'rgb(var(--color-error) / 0.08)',
+                  color: 'rgb(var(--color-error))',
+                }}
+                title={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
+                aria-label={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
+              >
+                <X className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium hidden sm:inline">
+                  {isEn ? 'Remove' : 'Retirer'}
+                </span>
+              </button>
+            ) : (
+              // Pin button when not pinned
+              <button
+                onClick={onPin}
+                className="p-1.5 rounded-md transition-all duration-200 hover:bg-[rgb(var(--color-primary-500)/0.1)]"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'rgb(var(--color-text-muted))',
+                }}
+                title={isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord'}
+                aria-label={isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord'}
+              >
+                <Pin className="w-3.5 h-3.5" />
+              </button>
+            )}
             
             {/* Expand Button - subtle, theme-consistent */}
             <button
@@ -552,6 +561,37 @@ export function DataVisualizationCard({
                       >
                         {isEn ? 'Actions' : 'Actions'}
                       </p>
+                      
+                      {/* Remove from dashboard - prominent when pinned */}
+                      {isPinned && onUnpin && (
+                        <button
+                          onClick={() => {
+                            onUnpin();
+                            setShowOptions(false);
+                          }}
+                          className="w-full flex items-center justify-between px-2.5 py-2 text-sm rounded-lg hover:bg-[rgb(var(--color-error)/0.1)] transition-colors"
+                          style={{ color: 'rgb(var(--color-error))' }}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div 
+                              className="w-7 h-7 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-error))' }} />
+                            </div>
+                            <span className="font-medium">{isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}</span>
+                          </div>
+                          <span 
+                            className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                            style={{ 
+                              backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                              color: 'rgb(var(--color-error))'
+                            }}
+                          >
+                            ⌫
+                          </span>
+                        </button>
+                      )}
                       
                       {/* Share */}
                       <button
@@ -1648,7 +1688,449 @@ function generateMockData(config: ChartConfig): any[] {
 }
 
 // =====================================================
-// CHART GALLERY
+// MINI CHART PREVIEW (for gallery cards)
+// =====================================================
+
+function MiniChartPreview({ chartType }: { chartType: ChartType }) {
+  const primaryColor = 'rgb(var(--color-primary-500))';
+  const mutedColor = 'rgb(var(--color-text-muted) / 0.3)';
+  
+  switch (chartType) {
+    case 'line':
+    case 'area':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full" preserveAspectRatio="none">
+          {/* Grid lines */}
+          <line x1="0" y1="10" x2="100" y2="10" stroke={mutedColor} strokeWidth="0.5" />
+          <line x1="0" y1="20" x2="100" y2="20" stroke={mutedColor} strokeWidth="0.5" />
+          <line x1="0" y1="30" x2="100" y2="30" stroke={mutedColor} strokeWidth="0.5" />
+          {/* Area fill */}
+          {chartType === 'area' && (
+            <path 
+              d="M 5 30 L 20 22 L 40 28 L 60 15 L 80 18 L 95 8 L 95 38 L 5 38 Z" 
+              fill={primaryColor}
+              fillOpacity="0.2"
+            />
+          )}
+          {/* Line */}
+          <path 
+            d="M 5 30 L 20 22 L 40 28 L 60 15 L 80 18 L 95 8" 
+            fill="none" 
+            stroke={primaryColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Points */}
+          <circle cx="5" cy="30" r="2" fill={primaryColor} />
+          <circle cx="20" cy="22" r="2" fill={primaryColor} />
+          <circle cx="40" cy="28" r="2" fill={primaryColor} />
+          <circle cx="60" cy="15" r="2" fill={primaryColor} />
+          <circle cx="80" cy="18" r="2" fill={primaryColor} />
+          <circle cx="95" cy="8" r="2" fill={primaryColor} />
+        </svg>
+      );
+      
+    case 'bar':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full" preserveAspectRatio="none">
+          <rect x="8" y="18" width="12" height="20" rx="2" fill={primaryColor} fillOpacity="0.6" />
+          <rect x="26" y="10" width="12" height="28" rx="2" fill={primaryColor} fillOpacity="0.8" />
+          <rect x="44" y="22" width="12" height="16" rx="2" fill={primaryColor} fillOpacity="0.5" />
+          <rect x="62" y="6" width="12" height="32" rx="2" fill={primaryColor} />
+          <rect x="80" y="14" width="12" height="24" rx="2" fill={primaryColor} fillOpacity="0.7" />
+        </svg>
+      );
+      
+    case 'pie':
+    case 'donut':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          <g transform="translate(50, 20)">
+            {/* Pie segments */}
+            <path d="M 0 -14 A 14 14 0 0 1 12.12 7 L 0 0 Z" fill={primaryColor} />
+            <path d="M 12.12 7 A 14 14 0 0 1 -7 12.12 L 0 0 Z" fill={primaryColor} fillOpacity="0.7" />
+            <path d="M -7 12.12 A 14 14 0 0 1 -14 0 L 0 0 Z" fill={primaryColor} fillOpacity="0.5" />
+            <path d="M -14 0 A 14 14 0 0 1 0 -14 L 0 0 Z" fill={primaryColor} fillOpacity="0.3" />
+            {/* Center hole for donut */}
+            {chartType === 'donut' && (
+              <circle cx="0" cy="0" r="7" fill="rgb(var(--color-bg-muted))" />
+            )}
+          </g>
+        </svg>
+      );
+      
+    case 'radar':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          <g transform="translate(50, 20)">
+            {/* Background pentagon */}
+            <polygon 
+              points="0,-14 13.3,-4.3 8.2,11.3 -8.2,11.3 -13.3,-4.3" 
+              fill="none" 
+              stroke={mutedColor}
+              strokeWidth="0.5"
+            />
+            {/* Data polygon */}
+            <polygon 
+              points="0,-10 8,-3 5,8 -6,6 -9,-2" 
+              fill={primaryColor}
+              fillOpacity="0.3"
+              stroke={primaryColor}
+              strokeWidth="1.5"
+            />
+            {/* Points */}
+            <circle cx="0" cy="-10" r="2" fill={primaryColor} />
+            <circle cx="8" cy="-3" r="2" fill={primaryColor} />
+            <circle cx="5" cy="8" r="2" fill={primaryColor} />
+            <circle cx="-6" cy="6" r="2" fill={primaryColor} />
+            <circle cx="-9" cy="-2" r="2" fill={primaryColor} />
+          </g>
+        </svg>
+      );
+      
+    case 'gauge':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          <g transform="translate(50, 32)">
+            {/* Background arc */}
+            <path 
+              d="M -30 0 A 30 30 0 0 1 30 0" 
+              fill="none" 
+              stroke={mutedColor}
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            {/* Value arc (70%) */}
+            <path 
+              d="M -30 0 A 30 30 0 0 1 15 -26" 
+              fill="none" 
+              stroke={primaryColor}
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            {/* Needle */}
+            <line x1="0" y1="0" x2="10" y2="-20" stroke="rgb(var(--color-text))" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="0" cy="0" r="3" fill="rgb(var(--color-text))" />
+          </g>
+        </svg>
+      );
+      
+    case 'heatmap':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          {/* Heatmap grid */}
+          {[0, 1, 2, 3, 4].map((row) => (
+            [0, 1, 2, 3, 4, 5, 6, 7].map((col) => {
+              const opacity = Math.random() * 0.8 + 0.2;
+              return (
+                <rect 
+                  key={`${row}-${col}`}
+                  x={5 + col * 12} 
+                  y={2 + row * 7} 
+                  width="10" 
+                  height="6" 
+                  rx="1"
+                  fill={primaryColor}
+                  fillOpacity={opacity}
+                />
+              );
+            })
+          ))}
+        </svg>
+      );
+      
+    case 'waterfall':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          {/* Waterfall bars */}
+          <rect x="8" y="5" width="12" height="20" rx="1" fill="rgb(var(--color-success))" />
+          <rect x="26" y="10" width="12" height="10" rx="1" fill="rgb(var(--color-error))" />
+          <rect x="44" y="15" width="12" height="8" rx="1" fill="rgb(var(--color-error))" />
+          <rect x="62" y="18" width="12" height="5" rx="1" fill="rgb(var(--color-error))" />
+          <rect x="80" y="23" width="12" height="12" rx="1" fill={primaryColor} />
+          {/* Connector lines */}
+          <line x1="20" y1="25" x2="26" y2="25" stroke={mutedColor} strokeWidth="1" strokeDasharray="2" />
+          <line x1="38" y1="20" x2="44" y2="20" stroke={mutedColor} strokeWidth="1" strokeDasharray="2" />
+          <line x1="56" y1="23" x2="62" y2="23" stroke={mutedColor} strokeWidth="1" strokeDasharray="2" />
+        </svg>
+      );
+      
+    case 'table':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          {/* Table rows */}
+          <rect x="5" y="4" width="90" height="8" rx="1" fill={primaryColor} fillOpacity="0.2" />
+          <rect x="5" y="14" width="90" height="6" rx="1" fill={mutedColor} />
+          <rect x="5" y="22" width="90" height="6" rx="1" fill={mutedColor} />
+          <rect x="5" y="30" width="90" height="6" rx="1" fill={mutedColor} />
+          {/* Column dividers */}
+          <line x1="35" y1="4" x2="35" y2="36" stroke="rgb(var(--color-bg-muted))" strokeWidth="2" />
+          <line x1="65" y1="4" x2="65" y2="36" stroke="rgb(var(--color-bg-muted))" strokeWidth="2" />
+        </svg>
+      );
+      
+    case 'scatter':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          {/* Grid */}
+          <line x1="10" y1="35" x2="90" y2="35" stroke={mutedColor} strokeWidth="0.5" />
+          <line x1="10" y1="5" x2="10" y2="35" stroke={mutedColor} strokeWidth="0.5" />
+          {/* Scatter points */}
+          <circle cx="20" cy="25" r="3" fill={primaryColor} fillOpacity="0.7" />
+          <circle cx="35" cy="18" r="3" fill={primaryColor} fillOpacity="0.8" />
+          <circle cx="45" cy="28" r="3" fill={primaryColor} fillOpacity="0.6" />
+          <circle cx="55" cy="12" r="3" fill={primaryColor} />
+          <circle cx="70" cy="20" r="3" fill={primaryColor} fillOpacity="0.9" />
+          <circle cx="85" cy="8" r="3" fill={primaryColor} fillOpacity="0.7" />
+        </svg>
+      );
+      
+    case 'treemap':
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full">
+          <rect x="3" y="3" width="45" height="20" rx="2" fill={primaryColor} />
+          <rect x="51" y="3" width="46" height="12" rx="2" fill={primaryColor} fillOpacity="0.7" />
+          <rect x="51" y="18" width="22" height="19" rx="2" fill={primaryColor} fillOpacity="0.5" />
+          <rect x="76" y="18" width="21" height="19" rx="2" fill={primaryColor} fillOpacity="0.3" />
+          <rect x="3" y="26" width="45" height="11" rx="2" fill={primaryColor} fillOpacity="0.4" />
+        </svg>
+      );
+      
+    default:
+      // Default sparkline-style preview
+      return (
+        <svg viewBox="0 0 100 40" className="w-full h-full" preserveAspectRatio="none">
+          <path 
+            d="M 5 25 Q 25 30 35 20 T 55 18 T 75 12 T 95 8" 
+            fill="none" 
+            stroke={primaryColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+  }
+}
+
+// =====================================================
+// CHART GALLERY MODAL
+// =====================================================
+
+interface ChartGalleryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectChart?: (config: ChartConfig) => void;
+  isEn: boolean;
+}
+
+export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: ChartGalleryModalProps) {
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'financial' | 'ratio' | 'operational'>('all');
+  
+  const categories = [
+    { id: 'all', label: isEn ? 'All Charts' : 'Tous les graphiques' },
+    { id: 'financial', label: isEn ? 'Financial' : 'Financiers' },
+    { id: 'ratio', label: isEn ? 'Ratios' : 'Ratios' },
+    { id: 'operational', label: isEn ? 'Operational' : 'Opérationnels' },
+  ];
+  
+  const filteredCharts = PRESET_CHARTS.filter(chart => {
+    if (selectedCategory === 'all') return true;
+    const primaryMetric = chart.metrics[0];
+    return METRIC_INFO[primaryMetric].category === selectedCategory;
+  });
+  
+  if (!isOpen) return null;
+  
+  return (
+    <div 
+      className="fixed inset-0 flex items-start justify-center overflow-y-auto"
+      style={{ zIndex: 9999 }}
+    >
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div 
+        className="relative w-full max-w-4xl my-8 mx-4 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200"
+        style={{ 
+          backgroundColor: 'rgb(var(--color-surface))',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        {/* Header with integrated tabs */}
+        <div 
+          className="sticky top-0 z-10"
+          style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+        >
+          {/* Title row */}
+          <div 
+            className="flex items-center justify-between px-5 pt-5 pb-3"
+          >
+            <div>
+              <h2 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Chart Gallery' : 'Galerie de graphiques'}
+              </h2>
+              <p className="text-sm mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn 
+                  ? 'Choose a chart to add to your dashboard'
+                  : 'Choisissez un graphique à ajouter à votre tableau de bord'}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Category tabs */}
+          <div 
+            className="flex gap-1 px-5 pb-3 border-b overflow-x-auto scrollbar-hide"
+            style={{ borderColor: 'rgb(var(--color-border))' }}
+          >
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id as any)}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                style={{
+                  backgroundColor: selectedCategory === cat.id 
+                    ? 'rgb(var(--color-primary-500))'
+                    : 'transparent',
+                  color: selectedCategory === cat.id 
+                    ? 'white'
+                    : 'rgb(var(--color-text-muted))',
+                }}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Content */}
+        <div className="p-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredCharts.map((chart) => {
+              const isPinned = chartFavoritesService.isPinned(chart.id);
+              const ChartIcon = ChartTypeIcon[chart.chartType];
+              
+              return (
+                <div
+                  key={chart.id}
+                  className={`group relative p-4 rounded-xl cursor-pointer transition-all hover:shadow-lg border ${isPinned ? 'ring-2 ring-offset-2' : ''}`}
+                  style={{
+                    backgroundColor: 'rgb(var(--color-bg))',
+                    borderColor: isPinned ? 'rgb(var(--color-success))' : 'rgb(var(--color-border))',
+                    ringColor: isPinned ? 'rgb(var(--color-success))' : undefined,
+                  }}
+                  onClick={() => {
+                    onSelectChart?.(chart);
+                    onClose();
+                  }}
+                >
+                  {/* Top-right settings icon */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // For now, just add to dashboard - could open config modal in future
+                      onSelectChart?.(chart);
+                      onClose();
+                    }}
+                    className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-[rgb(var(--color-primary-500)/0.1)] z-10"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                    title={isEn ? 'Add to dashboard' : 'Ajouter au tableau de bord'}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                      >
+                        <ChartIcon className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                          {isEn ? chart.nameEn : chart.name}
+                        </h4>
+                        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          {isEn ? CHART_TYPE_INFO[chart.chartType].labelEn : CHART_TYPE_INFO[chart.chartType].label}
+                        </p>
+                      </div>
+                    </div>
+                    {isPinned && (
+                      <span 
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1"
+                        style={{ 
+                          backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                          color: 'rgb(var(--color-success))',
+                        }}
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        {isEn ? 'Added' : 'Ajouté'}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Mini Chart Preview */}
+                  <div 
+                    className="h-16 mb-3 rounded-lg overflow-hidden"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    <MiniChartPreview chartType={chart.chartType} />
+                  </div>
+                  
+                  <p className="text-xs mb-3 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? chart.descriptionEn : chart.description}
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-1">
+                    {chart.metrics.slice(0, 3).map((metric) => (
+                      <span
+                        key={metric}
+                        className="px-2 py-0.5 rounded text-[10px] font-medium"
+                        style={{
+                          backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                          color: 'rgb(var(--color-primary-600))',
+                        }}
+                      >
+                        {isEn ? METRIC_INFO[metric].labelEn : METRIC_INFO[metric].label}
+                      </span>
+                    ))}
+                    {chart.metrics.length > 3 && (
+                      <span
+                        className="px-2 py-0.5 rounded text-[10px]"
+                        style={{
+                          backgroundColor: 'rgb(var(--color-bg-muted))',
+                          color: 'rgb(var(--color-text-muted))',
+                        }}
+                      >
+                        +{chart.metrics.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// CHART GALLERY (Standalone - for backwards compatibility)
 // =====================================================
 
 interface ChartGalleryProps {
@@ -1674,30 +2156,9 @@ export function ChartGallery({ onSelectChart }: ChartGalleryProps) {
   });
   
   return (
-    <div className="space-y-4">
-      {/* Category Filter */}
-      <div className="flex gap-2 flex-wrap">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id as any)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{
-              backgroundColor: selectedCategory === cat.id 
-                ? 'rgb(var(--color-primary-500))'
-                : 'rgb(var(--color-bg-muted))',
-              color: selectedCategory === cat.id 
-                ? 'white'
-                : 'rgb(var(--color-text-secondary))',
-            }}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-      
+    <div>
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {filteredCharts.map((chart) => {
           const isPinned = chartFavoritesService.isPinned(chart.id);
           const ChartIcon = ChartTypeIcon[chart.chartType];
@@ -1705,7 +2166,10 @@ export function ChartGallery({ onSelectChart }: ChartGalleryProps) {
           return (
             <div
               key={chart.id}
-              className="card p-4 cursor-pointer hover:shadow-lg transition-shadow"
+              className={`card p-4 cursor-pointer hover:shadow-lg transition-all ${isPinned ? 'ring-2 ring-offset-2' : ''}`}
+              style={{
+                ringColor: isPinned ? 'rgb(var(--color-success))' : undefined,
+              }}
               onClick={() => onSelectChart?.(chart)}
             >
               <div className="flex items-start justify-between mb-3">
@@ -1726,7 +2190,16 @@ export function ChartGallery({ onSelectChart }: ChartGalleryProps) {
                   </div>
                 </div>
                 {isPinned && (
-                  <Pin className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
+                  <span 
+                    className="px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                      color: 'rgb(var(--color-success))',
+                    }}
+                  >
+                    <CheckCircle className="w-3 h-3" />
+                    {isEn ? 'Added' : 'Ajouté'}
+                  </span>
                 )}
               </div>
               

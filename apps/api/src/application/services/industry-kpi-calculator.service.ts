@@ -180,7 +180,7 @@ export class IndustryKPICalculatorService {
 
     try {
       // Safe evaluation using Function constructor
-      // eslint-disable-next-line no-new-func
+       
       const result = new Function(`return ${formula}`)() as number;
 
       if (typeof result !== "number" || isNaN(result) || !isFinite(result)) {

@@ -37,7 +37,7 @@ describe("SageMakerIntelligenceAdapter", () => {
 
   beforeEach(async () => {
     const { SageMakerRuntimeClient } =
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       require("@aws-sdk/client-sagemaker-runtime");
     mockSagemakerClient = {
       send: jest.fn(),

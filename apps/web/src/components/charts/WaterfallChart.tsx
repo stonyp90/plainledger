@@ -351,18 +351,30 @@ export default function WaterfallChart({
     return label.substring(0, maxLength - 1) + '…';
   };
 
+  // Dynamic height for fullscreen mode
+  const chartHeight = isFullscreen ? Math.min(window.innerHeight - 300, 500) : height;
+
   return (
     <div 
-      className="rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group"
+      ref={chartRef}
+      className={`rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group flex flex-col ${
+        isFullscreen ? 'fixed inset-0 overflow-auto' : 'h-full'
+      }`}
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
-        border: '1px solid rgb(var(--color-border))'
+        border: isFullscreen ? 'none' : '1px solid rgb(var(--color-border))',
+        borderRadius: isFullscreen ? 0 : undefined,
+        zIndex: isFullscreen ? 9998 : undefined,
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+        if (!isFullscreen) {
+          e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
+        if (!isFullscreen) {
+          e.currentTarget.style.backgroundColor = 'rgb(var(--color-surface))';
+        }
       }}
     >
       {/* Header */}
@@ -385,9 +397,41 @@ export default function WaterfallChart({
         </div>
         
         <div className="flex items-center gap-0.5">
+          {/* Fullscreen toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className={`p-1.5 rounded-md transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'}`}
+            style={{ 
+              backgroundColor: isFullscreen ? 'rgb(var(--color-primary-500) / 0.08)' : 'transparent',
+              color: isFullscreen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))'
+            }}
+            title={isEn ? (isFullscreen ? 'Exit fullscreen' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran' : 'Plein écran')}
+            aria-label={isEn ? (isFullscreen ? 'Exit fullscreen' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran' : 'Plein écran')}
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
+          {/* Share button */}
+          <button
+            onClick={handleShareClick}
+            disabled={isCapturing}
+            className={`p-1.5 rounded-md transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'} ${isCapturing ? 'opacity-30 cursor-wait' : ''}`}
+            style={{ 
+              backgroundColor: 'transparent',
+              color: 'rgb(var(--color-text-muted))'
+            }}
+            title={isEn ? 'Share chart' : 'Partager le graphique'}
+            aria-label={isEn ? 'Share chart' : 'Partager le graphique'}
+          >
+            {isCapturing ? (
+              <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin block" />
+            ) : (
+              <Share2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+          {/* Settings button */}
           <button
             onClick={() => setShowConfigPanel(true)}
-            className="p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100"
+            className={`p-1.5 rounded-md transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'}`}
             style={{ 
               backgroundColor: 'transparent',
               color: 'rgb(var(--color-text-muted))'
@@ -452,9 +496,9 @@ export default function WaterfallChart({
       </div>
 
       {/* Chart */}
-      <div className="relative overflow-x-auto" style={{ height: `${height + labelBottomPadding}px` }}>
+      <div className={`relative overflow-x-auto ${isFullscreen ? 'flex-1' : ''}`} style={{ height: isFullscreen ? undefined : `${chartHeight + labelBottomPadding}px`, minHeight: isFullscreen ? '400px' : undefined }}>
         <svg 
-          viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${height + labelBottomPadding}`}
+          viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${chartHeight + labelBottomPadding}`}
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full"
         >
@@ -462,9 +506,9 @@ export default function WaterfallChart({
           {minCumulative < 0 && (
             <line
               x1="20"
-              y1={getYPosition(0) * height / 100}
+              y1={getYPosition(0) * chartHeight / 100}
               x2={data.length * (barWidth + gap) + 20}
-              y2={getYPosition(0) * height / 100}
+              y2={getYPosition(0) * chartHeight / 100}
               stroke="rgb(var(--color-border))"
               strokeWidth="1"
               strokeDasharray="4,4"
@@ -481,13 +525,13 @@ export default function WaterfallChart({
               ? getYPosition(prevItem.end) 
               : getYPosition(item.start);
             
-            return (
+              return (
               <line
                 key={`line-${index}`}
                 x1={x1}
-                y1={y * height / 100}
+                y1={y * chartHeight / 100}
                 x2={x2}
-                y2={y * height / 100}
+                y2={y * chartHeight / 100}
                 stroke="rgb(var(--color-border))"
                 strokeWidth="1"
                 strokeDasharray="3,3"
@@ -540,7 +584,7 @@ export default function WaterfallChart({
                   x={x - 4}
                   y={0}
                   width={barWidth + 8}
-                  height={height}
+                  height={chartHeight}
                   fill={isHovered ? 'rgb(var(--color-primary-500) / 0.05)' : 'transparent'}
                   rx="4"
                 />
@@ -548,9 +592,9 @@ export default function WaterfallChart({
                 {/* Bar */}
                 <rect
                   x={x}
-                  y={barTop * height / 100}
+                  y={barTop * chartHeight / 100}
                   width={barWidth}
-                  height={Math.max(2, barHeight * height / 100)}
+                  height={Math.max(2, barHeight * chartHeight / 100)}
                   fill={fillColor}
                   rx="2"
                   opacity={isHovered ? 1 : isSignificant ? 1 : 0.8}
@@ -566,7 +610,7 @@ export default function WaterfallChart({
                 {isSignificant && !item.variance && (
                   <circle
                     cx={x + barWidth / 2}
-                    cy={barTop * height / 100 - 8}
+                    cy={barTop * chartHeight / 100 - 8}
                     r="4"
                     fill="rgb(var(--color-warning))"
                   />
@@ -578,9 +622,9 @@ export default function WaterfallChart({
                     {/* Plan reference line */}
                     <line
                       x1={x - 2}
-                      y1={getYPosition(item.planValue || 0) * height / 100}
+                      y1={getYPosition(item.planValue || 0) * chartHeight / 100}
                       x2={x + barWidth + 2}
-                      y2={getYPosition(item.planValue || 0) * height / 100}
+                      y2={getYPosition(item.planValue || 0) * chartHeight / 100}
                       stroke={IBCSColors.planStroke}
                       strokeWidth="1.5"
                       strokeDasharray="3,2"
@@ -588,9 +632,9 @@ export default function WaterfallChart({
                     {/* Variance pin line */}
                     <line
                       x1={x + barWidth + 6}
-                      y1={barTop * height / 100 + (barHeight * height / 100) / 2}
+                      y1={barTop * chartHeight / 100 + (barHeight * chartHeight / 100) / 2}
                       x2={x + barWidth + 6}
-                      y2={getYPosition(item.planValue || 0) * height / 100}
+                      y2={getYPosition(item.planValue || 0) * chartHeight / 100}
                       stroke={item.variance.favorable ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable}
                       strokeWidth="2"
                       strokeLinecap="round"
@@ -599,8 +643,8 @@ export default function WaterfallChart({
                     <circle
                       cx={x + barWidth + 6}
                       cy={item.variance.percentage >= 0 
-                        ? Math.min(barTop * height / 100 + (barHeight * height / 100) / 2, getYPosition(item.planValue || 0) * height / 100)
-                        : Math.max(barTop * height / 100 + (barHeight * height / 100) / 2, getYPosition(item.planValue || 0) * height / 100)
+                        ? Math.min(barTop * chartHeight / 100 + (barHeight * chartHeight / 100) / 2, getYPosition(item.planValue || 0) * chartHeight / 100)
+                        : Math.max(barTop * chartHeight / 100 + (barHeight * chartHeight / 100) / 2, getYPosition(item.planValue || 0) * chartHeight / 100)
                       }
                       r="4"
                       fill={item.variance.favorable ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable}
@@ -608,7 +652,7 @@ export default function WaterfallChart({
                     {/* Variance percentage label */}
                     <text
                       x={x + barWidth + 14}
-                      y={(barTop * height / 100 + getYPosition(item.planValue || 0) * height / 100) / 2}
+                      y={(barTop * chartHeight / 100 + getYPosition(item.planValue || 0) * chartHeight / 100) / 2}
                       fontSize="8"
                       fontFamily="ui-monospace, monospace"
                       fontWeight="600"
@@ -625,8 +669,8 @@ export default function WaterfallChart({
                   x={x + barWidth / 2}
                   y={
                     item.value >= 0 
-                      ? barTop * height / 100 - 6 
-                      : (barTop + barHeight) * height / 100 + 14
+                      ? barTop * chartHeight / 100 - 6 
+                      : (barTop + barHeight) * chartHeight / 100 + 14
                   }
                   textAnchor="middle"
                   className="text-[9px] font-mono tabular-nums"
@@ -639,7 +683,7 @@ export default function WaterfallChart({
                 {/* Column label - directly below the bar */}
                 <text
                   x={x + barWidth / 2}
-                  y={height + 12}
+                  y={chartHeight + 12}
                   textAnchor={labelRotation !== 0 ? 'end' : 'middle'}
                   className="text-[9px] font-medium"
                   fill={
@@ -651,7 +695,7 @@ export default function WaterfallChart({
                         ? 'rgb(var(--color-text-secondary))'
                         : 'rgb(var(--color-text-muted))'
                   }
-                  transform={labelRotation !== 0 ? `rotate(${labelRotation}, ${x + barWidth / 2}, ${height + 12})` : undefined}
+                  transform={labelRotation !== 0 ? `rotate(${labelRotation}, ${x + barWidth / 2}, ${chartHeight + 12})` : undefined}
                 >
                   <title>{isEn && item.labelEn ? item.labelEn : item.label}</title>
                   {truncateLabel(isEn && item.labelEn ? item.labelEn : item.label, data.length > 8 ? 10 : 14)}
@@ -856,6 +900,24 @@ export default function WaterfallChart({
           chartName={isEn && titleEn ? titleEn : title}
           currentConfig={graphConfig}
           onClose={() => setShowConfigPanel(false)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => {
+            setShowShareModal(false);
+            setCapturedImage(null);
+            setShareError(null);
+          }}
+          title={isEn && titleEn ? titleEn : title}
+          subtitle={subtitle || subtitleEn}
+          contentType="chart"
+          imageData={capturedImage || undefined}
+          shareUrl={`${window.location.origin}/share/chart/${chartId || title.toLowerCase().replace(/\s/g, '-')}`}
+          message={shareError || undefined}
         />
       )}
     </div>

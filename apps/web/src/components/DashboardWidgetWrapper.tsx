@@ -10,8 +10,8 @@
  * Inspired by Power BI, Looker, and modern dashboard tools.
  */
 
-import { useState, useRef, useCallback, useEffect, ReactNode } from 'react';
-import { X, Maximize2, Minimize2, RotateCcw, GripHorizontal, GripVertical } from 'lucide-react';
+import { useState, useRef, useCallback, ReactNode } from 'react';
+import { X, GripHorizontal, GripVertical } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useSingleChartSize } from '../hooks/useChartSize';
 
@@ -29,6 +29,8 @@ interface DashboardWidgetWrapperProps {
   className?: string;
   /** Enable resize functionality */
   enableResize?: boolean;
+  /** Show chart controls (fullscreen, resize) - only for graph widgets */
+  showChartControls?: boolean;
   /** Page ID for resize persistence (defaults to 'dashboard') */
   pageId?: string;
   /** Default height in pixels */
@@ -55,7 +57,8 @@ export default function DashboardWidgetWrapper({
   isDragging = false,
   isDragOver = false,
   className = '',
-  enableResize = true,
+  enableResize = false, // Disabled by default - only for charts
+  showChartControls = false, // Only show fullscreen/resize on charts
   pageId = 'dashboard',
   defaultHeight,
   minHeight = 150,
@@ -67,14 +70,12 @@ export default function DashboardWidgetWrapper({
   const isEn = language === 'en';
   const [isHovered, setIsHovered] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [localDropPosition, setLocalDropPosition] = useState<'before' | 'after' | null>(null);
   
-  // Use chart size hook for persistence (auto-saves)
+  // Use chart size hook for persistence (auto-saves) - only for charts
   const {
     height: savedHeight,
     setHeight,
-    reset,
   } = useSingleChartSize(pageId, id, defaultHeight);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,30 +85,6 @@ export default function DashboardWidgetWrapper({
   // Use external or local drop position
   const effectiveDropPosition = dropPosition ?? localDropPosition;
   const setEffectiveDropPosition = onDropPositionChange ?? setLocalDropPosition;
-
-  // Handle fullscreen toggle
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev);
-  }, []);
-
-  // Handle ESC key to exit fullscreen
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
-      }
-    };
-    
-    if (isFullscreen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [isFullscreen]);
 
   // Enhanced drag over handler - detect drop position (before/after)
   const handleEnhancedDragOver = useCallback((e: React.DragEvent) => {
@@ -132,9 +109,9 @@ export default function DashboardWidgetWrapper({
     }
   }, [setEffectiveDropPosition]);
 
-  // Handle resize start - manual drag resize
+  // Handle resize start - manual drag resize (only for charts)
   const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!enableResize || isFullscreen) return;
+    if (!enableResize || !showChartControls) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -163,52 +140,13 @@ export default function DashboardWidgetWrapper({
     document.addEventListener('mouseup', handleEnd);
     document.addEventListener('touchmove', handleMove);
     document.addEventListener('touchend', handleEnd);
-  }, [enableResize, isFullscreen, savedHeight, minHeight, maxHeight, setHeight]);
+  }, [enableResize, showChartControls, savedHeight, minHeight, maxHeight, setHeight]);
 
-  const currentHeight = savedHeight;
-  const hasCustomSize = savedHeight !== undefined;
+  const currentHeight = showChartControls ? savedHeight : undefined;
   const showDropIndicator = isDragOver && effectiveDropPosition && !isDragging;
 
   if (!canCustomize) {
     return <div className={className}>{children}</div>;
-  }
-
-  // Fullscreen mode
-  if (isFullscreen) {
-    return (
-      <div
-        className="fixed inset-0 z-[9998] flex flex-col"
-        style={{
-          backgroundColor: 'rgb(var(--color-bg))',
-        }}
-      >
-        {/* Fullscreen header */}
-        <div 
-          className="flex items-center justify-between px-4 py-3 border-b"
-          style={{ borderColor: 'rgb(var(--color-border))' }}
-        >
-          <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn ? 'Press ESC to exit fullscreen' : 'Appuyez sur ESC pour quitter'}
-          </span>
-          <button
-            onClick={toggleFullscreen}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors"
-            style={{
-              backgroundColor: 'rgb(var(--color-bg-muted))',
-              color: 'rgb(var(--color-text))',
-            }}
-          >
-            <Minimize2 className="w-4 h-4" />
-            <span className="text-sm">{isEn ? 'Exit fullscreen' : 'Quitter plein écran'}</span>
-          </button>
-        </div>
-        
-        {/* Fullscreen content */}
-        <div className="flex-1 p-4 overflow-auto">
-          {children}
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -279,8 +217,8 @@ export default function DashboardWidgetWrapper({
           </div>
         )}
 
-        {/* Control buttons - top right, compact, visible on hover */}
-        {canCustomize && isHovered && !isResizing && !isDragging && id !== 'add-widget' && (
+        {/* Control buttons - top right, visible on hover - only show remove for non-charts */}
+        {canCustomize && isHovered && !isResizing && !isDragging && id !== 'add-widget' && onRemove && (
           <div 
             className="absolute right-1.5 top-1.5 z-20 flex items-center gap-0.5 opacity-70 hover:opacity-100 transition-opacity"
             style={{
@@ -290,48 +228,18 @@ export default function DashboardWidgetWrapper({
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
             }}
           >
-            {/* Fullscreen button */}
+            {/* Remove button - always available for removable widgets */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                toggleFullscreen();
+                onRemove();
               }}
-              className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-              title={isEn ? 'Fullscreen' : 'Plein écran'}
+              className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+              style={{ color: 'rgb(var(--color-error))' }}
+              title={isEn ? 'Remove' : 'Retirer'}
             >
-              <Maximize2 className="w-3 h-3" />
+              <X className="w-3 h-3" />
             </button>
-
-            {/* Reset size button - only show if custom size */}
-            {hasCustomSize && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  reset();
-                }}
-                className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
-                style={{ color: 'rgb(var(--color-text-muted))' }}
-                title={isEn ? 'Reset size' : 'Réinitialiser la taille'}
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
-            )}
-
-            {/* Remove button */}
-            {onRemove && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove();
-                }}
-                className="p-1 rounded transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
-                style={{ color: 'rgb(var(--color-error))' }}
-                title={isEn ? 'Remove' : 'Retirer'}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
           </div>
         )}
 
@@ -366,8 +274,8 @@ export default function DashboardWidgetWrapper({
           {children}
         </div>
 
-        {/* Resize Handle - bottom center, compact */}
-        {canCustomize && enableResize && (isHovered || isResizing) && !isDragging && id !== 'add-widget' && (
+        {/* Resize Handle - bottom center, only for chart widgets */}
+        {canCustomize && enableResize && showChartControls && (isHovered || isResizing) && !isDragging && id !== 'add-widget' && (
           <div
             className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-4 cursor-ns-resize flex items-center justify-center transition-opacity z-20 ${
               isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100'
@@ -394,7 +302,7 @@ export default function DashboardWidgetWrapper({
         )}
 
         {/* Resize indicator while dragging */}
-        {isResizing && (
+        {isResizing && showChartControls && (
           <div 
             className="absolute inset-0 border-2 rounded-xl pointer-events-none z-10"
             style={{ 

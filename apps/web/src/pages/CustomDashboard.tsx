@@ -40,7 +40,7 @@ import { useHasRealData } from '../hooks/useHasRealData';
 import { InfoTooltip, LabelTooltip } from '../components/Tooltip';
 import {
   DataVisualizationCard,
-  ChartGallery,
+  ChartGalleryModal,
   ChartTypeSelector,
   TimeRangeSelector,
   ChartTypeIcon,
@@ -1148,54 +1148,12 @@ export default function CustomDashboard() {
       
       {/* Chart Gallery Modal */}
       {showGallery && (
-        <div 
-          className="fixed inset-0 flex items-start justify-center p-4 pt-20 overflow-y-auto"
-          style={{ zIndex: 9999 }}
-        >
-          <div 
-            className="absolute inset-0"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
-            onClick={() => setShowGallery(false)}
-          />
-          
-          <div 
-            className="relative w-full max-w-4xl rounded-2xl overflow-hidden"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            <div 
-              className="sticky top-0 p-6 border-b flex items-center justify-between"
-              style={{ 
-                borderColor: 'rgb(var(--color-border))',
-                backgroundColor: 'rgb(var(--color-surface))',
-              }}
-            >
-              <div>
-                <h2 className="text-xl font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Chart Gallery' : 'Galerie de graphiques'}
-                </h2>
-                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn 
-                    ? 'Choose a chart to add to your dashboard'
-                    : 'Choisissez un graphique à ajouter à votre tableau de bord'}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowGallery(false)}
-                className="p-2 rounded-lg transition-colors"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-              >
-                <X className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <ChartGallery onSelectChart={handlePinChart} />
-            </div>
-          </div>
-        </div>
+        <ChartGalleryModal
+          isOpen={showGallery}
+          onClose={() => setShowGallery(false)}
+          onSelectChart={handlePinChart}
+          isEn={isEn}
+        />
       )}
       
       {/* Save Report Modal */}

@@ -9,10 +9,38 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render } from '../../../test/test-utils';
 import TrendChart from '../TrendChart';
 import WaterfallChart from '../WaterfallChart';
 import BudgetVsActualChart from '../BudgetVsActualChart';
+
+// Mock TenantContext
+vi.mock('../../../contexts/TenantContext', () => ({
+  useTenant: vi.fn(() => ({
+    currentTenant: { id: 'test', settings: { graphConfig: {} } },
+    hasFeature: () => true,
+    getGraphConfig: () => ({}),
+  })),
+}));
+
+// Mock useGraphConfig hook
+vi.mock('../../../hooks/useGraphConfig', () => ({
+  useGraphConfig: vi.fn(() => ({
+    visual: { height: 300 },
+    display: { currency: 'CAD', numberFormat: 'actual' },
+    ibcs: { enabled: false, showVariancePins: false, showLegend: true },
+    waterfall: { varianceThreshold: 20 },
+    budgetVsActual: { varianceThreshold: 10, showPriorYear: true },
+    cpa: { thresholds: {} },
+  })),
+  saveUserPreferences: vi.fn(),
+}));
+
+// Mock useFinancialData
+vi.mock('../../../hooks/useFinancialData', () => ({
+  useFinancialData: vi.fn(() => ({ data: null })),
+  useHasRealData: vi.fn(() => ({ hasRealData: false, shouldShowSandboxData: true })),
+}));
 
 describe('Chart Data Volume Performance', () => {
   describe('TrendChart - Data Volume', () => {

@@ -1310,7 +1310,7 @@ export class ETLPipelineService {
     await import("@domain/datalake/tax-credits");
 
     const eligibilityService = new TaxCreditEligibilityService();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const provinceCode = province as any;
 
     // Convert gold metrics to FactMonthlyMetrics format

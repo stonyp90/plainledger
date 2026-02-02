@@ -64,7 +64,8 @@ import ConnectionWizard from '../components/ConnectionWizard';
 import DynamicDashboardLayout, { type DashboardSection } from '../components/DynamicDashboardLayout';
 import AddWidgetCard from '../components/AddWidgetCard';
 import DashboardWidgetWrapper from '../components/DashboardWidgetWrapper';
-import { ChartGallery } from '../components/DataVisualization';
+import VisualizationGrid from '../components/VisualizationGrid';
+import { ChartGalleryModal, DataVisualizationCard } from '../components/DataVisualization';
 import { useDashboardConfig } from '../hooks/useDashboardConfig';
 import PageLoader, { DashboardSkeleton } from '../components/PageLoader';
 import type { ChartConfig } from '../lib/chartFavorites';
@@ -309,7 +310,7 @@ export default function Dashboard() {
       type: 'custom-chart',
       visible: true,
       position: widgetConfigs.length + 1,
-      size: 'half',
+      size: 'medium', // Half-width in grid
       chartConfig: {
         chartType: chartConfig.chartType,
         metrics: chartConfig.metrics,
@@ -320,7 +321,7 @@ export default function Dashboard() {
     };
     addWidget(widgetConfig);
     setShowChartGallery(false);
-    toast.show(isEn ? 'Widget added to dashboard' : 'Widget ajouté au tableau de bord', 'success');
+    toast.success(isEn ? 'Widget added to dashboard' : 'Widget ajouté au tableau de bord');
   }, [addWidget, widgetConfigs.length, isEn, toast]);
 
   // Collect all available dashboard sections dynamically
@@ -579,11 +580,56 @@ export default function Dashboard() {
       });
     }
 
-    // Revenue Chart (if has revenue data)
+    // Visualizations Section - Groups all charts together with equal heights
+    const visualizationItems: { id: string; component: React.ReactNode; size: 'half' | 'full' }[] = [];
+    
+    // Cash Flow Chart (left side)
+    if (hasCashFlowTrends && cashFlowData.length > 0 && isWidgetVisible('cashflow-chart')) {
+      visualizationItems.push({
+        id: 'cashflow-chart',
+        size: 'half',
+        component: (
+          <TrendChart
+            data={cashFlowData}
+            title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', isEn)}
+            titleEn={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', true)}
+            subtitle={
+              selectedPeriod === 'mtd' 
+                ? (language === 'en' ? `Current month (${cashFlowData.length} points)` : `Mois courant (${cashFlowData.length} points)`)
+                : selectedPeriod === 'qtd'
+                  ? (language === 'en' ? `Last quarter (${cashFlowData.length} months)` : `Dernier trimestre (${cashFlowData.length} mois)`)
+                  : (language === 'en' ? `Full year (${cashFlowData.length} months)` : `Année complète (${cashFlowData.length} mois)`)
+            }
+            subtitleEn={
+              selectedPeriod === 'mtd' 
+                ? `Current month (${cashFlowData.length} points)`
+                : selectedPeriod === 'qtd'
+                  ? `Last quarter (${cashFlowData.length} months)`
+                  : `Full year (${cashFlowData.length} months)`
+            }
+            color="rgb(var(--color-primary-500))"
+            height={280}
+            isEn={language === 'en'}
+            ibcsMode={ibcsMode}
+            showVarianceShading={ibcsMode}
+            showIBCSLegend={ibcsMode}
+            chartId="dashboard-cashflow-trend"
+            enableDecisions={hasDecisionCapture}
+            onRecordDecision={handleRecordDecision}
+            recentDecisions={recentDecisions.filter(d => d.context.metricType === 'cash_flow')}
+            metricType="cash_flow"
+            compact={false}
+          />
+        ),
+      });
+    }
+
+    // Revenue Chart (right side)
     if (hasRevenueTrends && revenueData.length > 0 && isWidgetVisible('revenue-chart')) {
-      sections.push({
+      visualizationItems.push({
         id: 'revenue-chart',
-        component: wrapSection('revenue-chart', (
+        size: 'half',
+        component: (
           <TrendChart
             data={revenueData}
             title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'revenue', isEn)}
@@ -605,7 +651,7 @@ export default function Dashboard() {
             budget={revenueBudget}
             planData={revenuePlanData}
             color="rgb(var(--color-primary-500))"
-            height={200}
+            height={280}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             showVarianceShading={ibcsMode}
@@ -616,83 +662,18 @@ export default function Dashboard() {
             recentDecisions={recentDecisions.filter(d => d.context.metricType === 'revenue')}
             metricType="revenue"
             benchmarkValue={revenueBudget.length > 0 ? revenueBudget[revenueBudget.length - 1] : undefined}
+            compact={false}
           />
-        )),
-        priority: 4,
-        gridSpan: 'half',
-      });
-    }
-
-    // Cash Flow Chart (if has cash flow data)
-    if (hasCashFlowTrends && cashFlowData.length > 0 && isWidgetVisible('cashflow-chart')) {
-      sections.push({
-        id: 'cashflow-chart',
-        component: wrapSection('cashflow-chart', (
-          <TrendChart
-            data={cashFlowData}
-            title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', isEn)}
-            titleEn={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', true)}
-            subtitle={
-              selectedPeriod === 'mtd' 
-                ? (language === 'en' ? `Current month (${cashFlowData.length} points)` : `Mois courant (${cashFlowData.length} points)`)
-                : selectedPeriod === 'qtd'
-                  ? (language === 'en' ? `Last quarter (${cashFlowData.length} months)` : `Dernier trimestre (${cashFlowData.length} mois)`)
-                  : (language === 'en' ? `Full year (${cashFlowData.length} months)` : `Année complète (${cashFlowData.length} mois)`)
-            }
-            subtitleEn={
-              selectedPeriod === 'mtd' 
-                ? `Current month (${cashFlowData.length} points)`
-                : selectedPeriod === 'qtd'
-                  ? `Last quarter (${cashFlowData.length} months)`
-                  : `Full year (${cashFlowData.length} months)`
-            }
-            color="rgb(var(--color-primary-500))"
-            height={200}
-            isEn={language === 'en'}
-            ibcsMode={ibcsMode}
-            showVarianceShading={ibcsMode}
-            showIBCSLegend={ibcsMode}
-            chartId="dashboard-cashflow-trend"
-            enableDecisions={hasDecisionCapture}
-            onRecordDecision={handleRecordDecision}
-            recentDecisions={recentDecisions.filter(d => d.context.metricType === 'cash_flow')}
-            metricType="cash_flow"
-          />
-        )),
-        priority: 5,
-        gridSpan: 'half',
-      });
-    }
-
-    // Add Widget Card (after charts, only if user can customize)
-    if (canCustomize) {
-      sections.push({
-        id: 'add-widget',
-        component: (
-          <DashboardWidgetWrapper
-            id="add-widget"
-            canCustomize={canCustomize}
-            isDragging={draggedWidgetId === 'add-widget'}
-            isDragOver={dragOverWidgetId === 'add-widget'}
-            onDragStart={handleDragStart('add-widget')}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver('add-widget')}
-            onDrop={handleDrop('add-widget')}
-            // Don't allow removing the Add Widget card
-          >
-            <AddWidgetCard onClick={() => setShowChartGallery(true)} />
-          </DashboardWidgetWrapper>
         ),
-        priority: 5.5,
-        gridSpan: 'half',
       });
     }
 
-    // Cash Flow Waterfall (if has waterfall data)
+    // Cash Flow Waterfall (full width)
     if (cashFlowWaterfallData && cashFlowWaterfallData.length > 0 && isWidgetVisible('cashflow-waterfall')) {
-      sections.push({
+      visualizationItems.push({
         id: 'cashflow-waterfall',
-        component: wrapSection('cashflow-waterfall', (
+        size: 'full',
+        component: (
           <WaterfallChart
             data={cashFlowWaterfallData}
             title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'waterfall', isEn)}
@@ -700,7 +681,7 @@ export default function Dashboard() {
             subtitle={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', isEn)}
             subtitleEn={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', true)}
             isEn={language === 'en'}
-            height={260}
+            height={280}
             ibcsMode={ibcsMode}
             showIBCSLegend={ibcsMode}
             chartId="dashboard-cashflow-waterfall"
@@ -708,9 +689,109 @@ export default function Dashboard() {
             onRecordDecision={handleRecordDecision}
             metricType="cash_flow"
           />
-        )),
-        priority: 6,
+        ),
+      });
+    }
+
+    // Add custom chart widgets
+    const customWidgets = widgetConfigs.filter(w => w.type === 'custom-chart' && w.visible && w.chartConfig);
+    customWidgets.forEach((widget) => {
+      if (widget.chartConfig) {
+        visualizationItems.push({
+          id: widget.id,
+          // Map widget sizes: 'full' stays full-width, others are half-width
+          size: widget.size === 'full' ? 'full' : 'half',
+          component: (
+            <DataVisualizationCard
+              config={{
+                id: widget.id,
+                chartType: widget.chartConfig.chartType as any,
+                metrics: widget.chartConfig.metrics as any[],
+                timeRange: widget.chartConfig.timeRange as any,
+                name: widget.chartConfig.name,
+                nameEn: widget.chartConfig.nameEn,
+                comparison: 'previousPeriod',
+              }}
+              size={widget.size || 'medium'}
+              showControls={true}
+              isPinned={true}
+            />
+          ),
+        });
+      }
+    });
+
+    // Visualizations Section with VisualizationGrid
+    if (visualizationItems.length > 0) {
+      sections.push({
+        id: 'visualizations',
+        component: (
+          <div className="space-y-3">
+            {/* Section header with Add Widget button */}
+            <div className="flex items-center justify-between">
+              <h2 
+                className="text-sm font-semibold uppercase tracking-wider"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn ? 'Visualizations' : 'Visualisations'}
+              </h2>
+              {canCustomize && (
+                <button
+                  onClick={() => setShowChartGallery(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-[1.02]"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                    color: 'rgb(var(--color-primary-500))',
+                  }}
+                >
+                  <span className="text-base leading-none">+</span>
+                  {isEn ? 'Add Chart' : 'Ajouter'}
+                </button>
+              )}
+            </div>
+            
+            {/* Visualization Grid */}
+            <VisualizationGrid
+              items={visualizationItems}
+              canCustomize={canCustomize}
+              minHeight={340}
+              onReorder={(newOrder) => {
+                // Reorder visualizations
+                const allIds = widgetConfigs.map(w => w.id);
+                // Keep non-chart widgets in place, update chart order
+                const nonChartIds = allIds.filter(id => 
+                  !['cashflow-chart', 'revenue-chart', 'cashflow-waterfall'].includes(id) &&
+                  !id.startsWith('custom-')
+                );
+                // Insert visualizations in their new order after industry-benchmarks
+                const benchmarkIndex = nonChartIds.indexOf('industry-benchmarks');
+                const reorderedIds = [
+                  ...nonChartIds.slice(0, benchmarkIndex + 1),
+                  ...newOrder,
+                  ...nonChartIds.slice(benchmarkIndex + 1),
+                ];
+                reorderWidgets(reorderedIds);
+              }}
+              onRemove={(id) => {
+                if (id.startsWith('custom-')) {
+                  removeWidget(id);
+                }
+              }}
+            />
+          </div>
+        ),
+        priority: 4,
         gridSpan: 'full',
+      });
+    } else if (canCustomize) {
+      // Show Add Widget card if no visualizations but user can customize
+      sections.push({
+        id: 'add-widget',
+        component: (
+          <AddWidgetCard onClick={() => setShowChartGallery(true)} />
+        ),
+        priority: 4,
+        gridSpan: 'half',
       });
     }
 
@@ -809,6 +890,7 @@ export default function Dashboard() {
     isWidgetVisible,
     widgetConfigs,
     removeWidget,
+    reorderWidgets,
     handleDragStart,
     handleDragEnd,
     handleDragOver,
@@ -1154,72 +1236,12 @@ export default function Dashboard() {
       )}
 
           {/* Chart Gallery Modal */}
-          {showChartGallery && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-              onClick={() => setShowChartGallery(false)}
-            >
-              <div
-                className="relative w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl"
-                style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Modal Header */}
-                <div
-                  className="flex items-center justify-between p-4 sm:p-6 border-b"
-                  style={{ borderColor: 'rgb(var(--color-border))' }}
-                >
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                      {isEn ? 'Add Widget' : 'Ajouter un widget'}
-                    </h2>
-                    <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? 'Select a pre-built chart to add to your dashboard' : 'Sélectionnez un graphique prédéfini à ajouter à votre tableau de bord'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowChartGallery(false)}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-bg-muted))',
-                      color: 'rgb(var(--color-text-muted))',
-                    }}
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Content */}
-                <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
-                  <ChartGallery onSelectChart={handleAddWidget} />
-                </div>
-                
-                {/* Footer with link to visualization builder */}
-                <div 
-                  className="flex items-center justify-between p-4 sm:p-6 border-t"
-                  style={{ borderColor: 'rgb(var(--color-border))' }}
-                >
-                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Want to create custom charts?' : 'Vous voulez créer des graphiques personnalisés?'}
-                  </p>
-                  <Link
-                    to="/app/visualizations"
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                      color: 'rgb(var(--color-primary-500))',
-                    }}
-                    onClick={() => setShowChartGallery(false)}
-                  >
-                    <BarChart2 className="w-4 h-4" />
-                    {isEn ? 'Open Visualization Builder' : 'Ouvrir le constructeur'}
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
+          <ChartGalleryModal
+            isOpen={showChartGallery}
+            onClose={() => setShowChartGallery(false)}
+            onSelectChart={handleAddWidget}
+            isEn={isEn}
+          />
 
           {/* Decision Capture Modal */}
           {showDecisionCapture && decisionTrigger && (
