@@ -68,13 +68,12 @@ jobs:
           S3_BUCKET_BRONZE: plainledger-prod-bronze
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
-          echo "🔧 Running ETL with QuickBooks $QUICKBOOKS_ENVIRONMENT environment"
+          echo "Running ETL with QuickBooks $QUICKBOOKS_ENVIRONMENT environment"
           python3 pipelines/orchestration/github/etl_runner.py \
             --step extract \
             --organization-id "${{ github.event.inputs.organization_id || 'demo-org' }}" \
             --refresh-token "$QUICKBOOKS_REFRESH_TOKEN" \
-            --realm-id "$QUICKBOOKS_REALM_ID" \
-            --environment "$QUICKBOOKS_ENVIRONMENT"
+            --realm-id "$QUICKBOOKS_REALM_ID"
       
       - name: Upload extraction logs
         if: always()
@@ -310,31 +309,34 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Send failure notification email via SES
+        continue-on-error: true
         env:
-          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           SUBJECT="[ALERT] PlainLedger ETL Pipeline Failed - ${{ github.event.inputs.organization_id || 'demo-org' }}"
           
           BODY="PlainLedger ETL Pipeline Failure Alert
 
-          Organization: ${{ github.event.inputs.organization_id || 'demo-org' }}
-          Environment: ${{ env.QUICKBOOKS_ENVIRONMENT }}
-          Trigger: ${{ github.event_name }}
-          Run ID: ${{ github.run_id }}
-          Commit: ${{ github.sha }}
+Organization: ${{ github.event.inputs.organization_id || 'demo-org' }}
+Environment: ${{ env.QUICKBOOKS_ENVIRONMENT }}
+Trigger: ${{ github.event_name }}
+Run ID: ${{ github.run_id }}
+Commit: ${{ github.sha }}
+
+Failed Stages:
+${{ steps.failures.outputs.failed_stages }}
+
+View full logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+---
+This is an automated message from PlainLedger ETL Pipeline."
           
-          Failed Stages:
-          ${{ steps.failures.outputs.failed_stages }}
-          
-          View full logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          
-          ---
-          This is an automated message from PlainLedger ETL Pipeline."
-          
+          # Try to send via SES (requires ses:SendEmail permission in IAM role)
           aws ses send-email \
             --from "noreply@plainledger.ca" \
             --destination "ToAddresses=pipelines@plainledger.ca" \
-            --message "Subject={Data='$SUBJECT',Charset=UTF-8},Body={Text={Data='$BODY',Charset=UTF-8}}"
+            --message "Subject={Data=\"$SUBJECT\",Charset=UTF-8},Body={Text={Data=\"$BODY\",Charset=UTF-8}}" \
+            || echo "Warning: Failed to send email via SES. Check IAM permissions."
       
       - name: Post failure to GitHub Summary
         run: |
