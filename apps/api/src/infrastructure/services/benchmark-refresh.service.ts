@@ -8,7 +8,7 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Cron, CronExpression } from "@nestjs/schedule";
+import { Cron } from "@nestjs/schedule";
 import {
   IndustryBenchmarkEntity,
   BenchmarkRefreshLogEntity,
@@ -22,7 +22,6 @@ import {
   IndustryBenchmark,
   RevenueRange,
 } from "@domain/market-analysis/benchmark.types";
-import { getNAICSMapping } from "@domain/market-analysis/naics-mapping";
 
 @Injectable()
 export class BenchmarkRefreshService implements OnModuleInit {

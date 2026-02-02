@@ -1,35 +1,12 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Query,
-  Param,
-  Body,
-  UseGuards,
-  Logger,
-} from "@nestjs/common";
+import { Controller, Get, Post, Query, Body, Logger } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiQuery,
 } from "@nestjs/swagger";
-import { Roles } from "nest-keycloak-connect";
 import { SimilaritySearchService } from "@application/services/similarity-search.service";
 import { EmbeddingService } from "@infrastructure/ai/embedding.service";
-
-class SimilarAccountsQueryDto {
-  query: string;
-  limit?: number;
-  threshold?: number;
-}
-
-class SimilarTransactionsQueryDto {
-  query: string;
-  limit?: number;
-  threshold?: number;
-}
 
 class CategorizeAccountDto {
   accountName: string;

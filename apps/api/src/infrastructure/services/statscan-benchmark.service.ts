@@ -12,11 +12,7 @@
 
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import axios, { AxiosInstance } from "axios";
-import {
-  GrowthMetrics,
-  StatsCanDataPoint,
-  StatsCanSeriesInfo,
-} from "@domain/market-analysis/benchmark.types";
+import { GrowthMetrics } from "@domain/market-analysis/benchmark.types";
 import { NAICS_MAPPINGS } from "@domain/market-analysis/naics-mapping";
 
 /**

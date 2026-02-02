@@ -75,9 +75,12 @@ describe("API Contract Tests", () => {
     criticalPaths.forEach((path) => {
       const pathKey = path.replace("/api", "");
       const found = currentSpec.paths[pathKey] || currentSpec.paths[path];
-      expect(found).toBeDefined(
-        `Critical endpoint ${path} is not documented in OpenAPI spec`,
-      );
+      expect(found).toBeDefined();
+      if (!found) {
+        throw new Error(
+          `Critical endpoint ${path} is not documented in OpenAPI spec`,
+        );
+      }
     });
   });
 
@@ -85,12 +88,18 @@ describe("API Contract Tests", () => {
     Object.keys(currentSpec.paths).forEach((path) => {
       Object.keys(currentSpec.paths[path]).forEach((method) => {
         const endpoint = currentSpec.paths[path][method];
-        expect(endpoint.summary || endpoint.description).toBeDefined(
-          `Endpoint ${method.toUpperCase()} ${path} missing @ApiOperation summary`,
-        );
-        expect(endpoint.responses).toBeDefined(
-          `Endpoint ${method.toUpperCase()} ${path} missing @ApiResponse decorators`,
-        );
+        expect(endpoint.summary || endpoint.description).toBeDefined();
+        if (!endpoint.summary && !endpoint.description) {
+          throw new Error(
+            `Endpoint ${method.toUpperCase()} ${path} missing @ApiOperation summary`,
+          );
+        }
+        expect(endpoint.responses).toBeDefined();
+        if (!endpoint.responses) {
+          throw new Error(
+            `Endpoint ${method.toUpperCase()} ${path} missing @ApiResponse decorators`,
+          );
+        }
       });
     });
   });

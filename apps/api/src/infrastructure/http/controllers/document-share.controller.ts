@@ -29,9 +29,8 @@ import {
   ApiConsumes,
   ApiBody,
   ApiParam,
-  ApiQuery,
 } from "@nestjs/swagger";
-import { Public, Roles } from "nest-keycloak-connect";
+import { Public } from "nest-keycloak-connect";
 import {
   DocumentShareService,
   ShareResult,

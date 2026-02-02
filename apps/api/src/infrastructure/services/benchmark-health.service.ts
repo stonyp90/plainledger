@@ -7,16 +7,13 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, MoreThan } from "typeorm";
+import { Repository } from "typeorm";
 import { Cron } from "@nestjs/schedule";
 import {
   IndustryBenchmarkEntity,
   BenchmarkRefreshLogEntity,
 } from "../persistence/postgres/entities/industry-benchmark.entity";
-import {
-  ISEDBenchmarkService,
-  ISEDDataFreshness,
-} from "./ised-benchmark.service";
+import { ISEDBenchmarkService } from "./ised-benchmark.service";
 import {
   StatsCanBenchmarkService,
   StatsCanAPIHealth,
@@ -469,7 +466,7 @@ export class BenchmarkHealthService {
         ? "CRITICAL: Benchmark Data Health Issue"
         : "Warning: Benchmark Data Needs Attention";
 
-    const message = `
+    const _message = `
 Benchmark Data Health Alert
 
 Status: ${health.overallHealth.toUpperCase()}

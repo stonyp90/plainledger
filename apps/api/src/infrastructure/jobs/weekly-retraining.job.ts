@@ -6,13 +6,12 @@
  */
 
 import { Injectable, Logger, Inject } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
+import { Cron } from "@nestjs/schedule";
 import {
   IDecisionRepository,
   DECISION_REPOSITORY_TOKEN,
 } from "@application/ports/outbound/IDecisionRepository";
 import { SageMakerIntelligenceAdapter } from "../intelligence/adapters/sagemaker.adapter";
-import { DecisionEvent } from "@domain/DecisionEvent";
 
 @Injectable()
 export class WeeklyRetrainingJob {

@@ -8,7 +8,6 @@
 import { Injectable, Logger, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
-  IIntelligenceEngine,
   IntelligenceRequest,
   DecisionContext,
 } from "@application/ports/outbound/IIntelligenceEngine";

@@ -16,7 +16,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { InjectRepository, InjectDataSource } from "@nestjs/typeorm";
-import { Repository, LessThan, Not, IsNull, DataSource } from "typeorm";
+import { Repository, LessThan, DataSource } from "typeorm";
 import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
 import { S3CleanupAdapter } from "@infrastructure/adapters/storage/s3/s3-cleanup.adapter";
 import { ConfigService } from "@nestjs/config";

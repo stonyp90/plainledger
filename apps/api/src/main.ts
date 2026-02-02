@@ -1,6 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, BadRequestException } from "@nestjs/common";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { SwaggerModule } from "@nestjs/swagger";
 import * as compression from "compression";
 import { AppModule } from "./app.module";
 import { DomainExceptionFilter } from "@infrastructure/http/filters/domain-exception.filter";

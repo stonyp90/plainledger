@@ -65,12 +65,12 @@ export class GqlAuthGuard implements CanActivate {
     const { req } = ctx.getContext();
 
     // SECURITY: Only skip auth in development mode - NEVER in production
-    // Check multiple sources: process.env, configService, and .env file directly (for hot reload)
+    // Check multiple sources: configService first (for tests), then process.env, then .env file
     let nodeEnv =
-      process.env.NODE_ENV || this.configService.get<string>("NODE_ENV");
+      this.configService.get<string>("NODE_ENV") || process.env.NODE_ENV;
     let skipAuth =
-      process.env.SKIP_AUTH === "true" ||
-      this.configService.get<string>("SKIP_AUTH") === "true";
+      this.configService.get<string>("SKIP_AUTH") === "true" ||
+      process.env.SKIP_AUTH === "true";
 
     // If not found, try reading .env file directly (for development hot reload)
     if (!skipAuth || !nodeEnv) {
@@ -93,9 +93,12 @@ export class GqlAuthGuard implements CanActivate {
       }
     }
 
-    // Default to development if not set
-    if (!nodeEnv) nodeEnv = "development";
+    // Default to development if not set (but preserve "test" for test environment)
+    if (!nodeEnv) {
+      nodeEnv = process.env.NODE_ENV || "development";
+    }
     const isProduction = nodeEnv === "production";
+    const isTest = nodeEnv === "test";
 
     // SECURITY: Never skip auth in production, even if SKIP_AUTH is set
     if (isProduction && skipAuth) {
@@ -103,6 +106,11 @@ export class GqlAuthGuard implements CanActivate {
         "SECURITY: SKIP_AUTH is enabled in production - this is ignored for security",
       );
       skipAuth = false; // Force auth check in production
+    }
+
+    // Never skip auth in test mode - tests should validate actual auth behavior
+    if (isTest) {
+      skipAuth = false;
     }
 
     if (skipAuth && !isProduction) {

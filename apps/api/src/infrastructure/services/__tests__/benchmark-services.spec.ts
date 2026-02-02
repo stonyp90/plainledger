@@ -9,10 +9,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import axios from "axios";
-import {
-  ISEDBenchmarkService,
-  AggregatedBenchmark,
-} from "../ised-benchmark.service";
+import { ISEDBenchmarkService } from "../ised-benchmark.service";
 import { StatsCanBenchmarkService } from "../statscan-benchmark.service";
 import { BenchmarkHealthService } from "../benchmark-health.service";
 import { BenchmarkRefreshService } from "../benchmark-refresh.service";

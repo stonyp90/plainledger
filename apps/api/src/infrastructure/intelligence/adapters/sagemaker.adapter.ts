@@ -115,7 +115,7 @@ export class SageMakerIntelligenceAdapter implements IIntelligenceEngine {
   /**
    * Query patterns (not applicable for SageMaker - use Bedrock)
    */
-  async queryPatterns(context: any): Promise<IndustryPattern[]> {
+  async queryPatterns(_context: any): Promise<IndustryPattern[]> {
     throw new Error(
       "SageMaker adapter does not support pattern queries. Use Bedrock adapter.",
     );
@@ -125,8 +125,8 @@ export class SageMakerIntelligenceAdapter implements IIntelligenceEngine {
    * Find similar decisions (not applicable for SageMaker)
    */
   async findSimilarDecisions(
-    context: any,
-    limit?: number,
+    _context: any,
+    _limit?: number,
   ): Promise<DecisionEvent[]> {
     throw new Error(
       "SageMaker adapter does not support decision queries. Use repository.",
@@ -156,7 +156,7 @@ export class SageMakerIntelligenceAdapter implements IIntelligenceEngine {
   private parseModelOutput(
     modelOutput: any,
     request: IntelligenceRequest,
-    latency: number,
+    _latency: number,
   ): IntelligenceRecommendation {
     return IntelligenceRecommendation.create({
       context:

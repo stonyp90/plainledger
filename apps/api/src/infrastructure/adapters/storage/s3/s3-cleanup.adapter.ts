@@ -25,7 +25,6 @@ import {
   ListObjectsV2Command,
   ListObjectVersionsCommand,
   DeleteObjectsCommand,
-  DeleteObjectCommand,
   ListObjectsV2CommandOutput,
   ListObjectVersionsCommandOutput,
 } from "@aws-sdk/client-s3";
