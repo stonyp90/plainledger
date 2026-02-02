@@ -387,9 +387,9 @@ INSERT INTO datasource_connections (
 SELECT 
     o.id,
     'quickbooks',
-    'Demo QuickBooks Connection',
-    'Demo Corp',
-    '4620816365123456789',
+    'Demo QuickBooks US Sandbox',
+    'Sandbox Company_US_1',
+    '9341456072863003',  -- QuickBooks US Sandbox Realm ID
     'connected',
     NOW() - INTERVAL '2 hours',
     'completed',
