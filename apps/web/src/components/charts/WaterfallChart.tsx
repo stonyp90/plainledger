@@ -2,6 +2,12 @@
  * Waterfall Chart - Essential for Cash Flow Analysis
  * Shows how values build up or break down step by step
  * Perfect for understanding cash flow movements, profit/loss composition
+ * 
+ * IBCS Enhanced:
+ * - Optional plan values for AC|PL comparison
+ * - Variance pins showing percentage differences
+ * - IBCS-compliant bar styling
+ * - Bilingual support (EN/FR)
  */
 
 import { useMemo, useState, useRef, useCallback } from 'react';
@@ -11,13 +17,20 @@ import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
 import { useGraphConfig } from '../../hooks/useGraphConfig';
 import { formatCurrencyValue } from '../../lib/graphConfig';
 import GraphConfigPanel from './GraphConfigPanel';
+import { VariancePinCompact } from './ibcs/VariancePin';
+import { IBCSLegendCompact } from './ibcs/IBCSLegend';
+import { IBCSColors, calculateVariance, type IBCSMetricType } from '../../lib/ibcs';
 
 interface WaterfallItem {
   label: string;
   labelEn?: string;
   value: number;
+  /** Optional plan value for IBCS AC|PL comparison */
+  planValue?: number;
   type: 'start' | 'increase' | 'decrease' | 'subtotal' | 'end';
   category?: string;
+  /** Metric type for variance coloring (expense = favorable when under) */
+  metricType?: IBCSMetricType;
 }
 
 interface WaterfallChartProps {
@@ -32,6 +45,12 @@ interface WaterfallChartProps {
   isEn?: boolean;
   /** Chart ID for configuration persistence */
   chartId?: string;
+  
+  // IBCS Mode
+  /** Enable IBCS-compliant display with variance pins and AC|PL comparison */
+  ibcsMode?: boolean;
+  /** Show IBCS legend */
+  showIBCSLegend?: boolean;
   
   // Decision capture integration
   /** Enable decision capture button on chart */
@@ -62,6 +81,8 @@ export default function WaterfallChart({
   height: propHeight,
   isEn = false,
   chartId,
+  ibcsMode: propIBCSMode = false,
+  showIBCSLegend: propShowIBCSLegend = true,
   enableDecisions = false,
   onRecordDecision,
   metricType = 'cash_flow',
@@ -77,6 +98,11 @@ export default function WaterfallChart({
     visual: {
       height: propHeight ?? 280,
     },
+    ibcs: {
+      enabled: propIBCSMode,
+      showVariancePins: propIBCSMode,
+      showLegend: propShowIBCSLegend ?? true,
+    },
     waterfall: {
       varianceThreshold: propShowVarianceThreshold ?? 20,
     },
@@ -87,6 +113,10 @@ export default function WaterfallChart({
   
   const height = propHeight ?? graphConfig.visual.height;
   const showVarianceThreshold = propShowVarianceThreshold ?? graphConfig.waterfall?.varianceThreshold ?? 20;
+  
+  // Use config values, falling back to props
+  const ibcsMode = graphConfig.ibcs?.enabled ?? propIBCSMode;
+  const showIBCSLegend = graphConfig.ibcs?.showLegend ?? propShowIBCSLegend;
   
   // Use config-based formatting if no custom formatter provided
   const formatValue = propFormatValue || ((v) => formatCurrencyValue(v, graphConfig.display));
@@ -121,10 +151,13 @@ export default function WaterfallChart({
     minCumulative,
     totalChange,
     significantItems,
+    hasIBCSData,
+    totalVariance,
   } = useMemo(() => {
     let cumulative = 0;
     let maxCum = 0;
     let minCum = 0;
+    let hasPlanData = false;
     
     const processed = data.map((item, index) => {
       let start = cumulative;
@@ -142,11 +175,23 @@ export default function WaterfallChart({
       maxCum = Math.max(maxCum, start, end);
       minCum = Math.min(minCum, start, end);
       
+      // Calculate IBCS variance if plan value exists
+      let variance = null;
+      if (item.planValue !== undefined) {
+        hasPlanData = true;
+        const itemMetricType = item.metricType || (item.type === 'decrease' ? 'expense' : 'revenue');
+        variance = calculateVariance(item.value, item.planValue, itemMetricType as IBCSMetricType);
+        // Include plan in max/min for proper scaling
+        maxCum = Math.max(maxCum, item.planValue);
+        minCum = Math.min(minCum, item.planValue);
+      }
+      
       return {
         ...item,
         start,
         end,
         cumulative,
+        variance,
       };
     });
     
@@ -154,6 +199,13 @@ export default function WaterfallChart({
     const startValue = data.find(d => d.type === 'start')?.value || 0;
     const endValue = data.find(d => d.type === 'end')?.value || startValue;
     const change = endValue - startValue;
+    
+    // Calculate total plan variance
+    const startPlan = data.find(d => d.type === 'start')?.planValue;
+    const endPlan = data.find(d => d.type === 'end')?.planValue;
+    const planVariance = (startPlan !== undefined && endPlan !== undefined)
+      ? calculateVariance(change, endPlan - (startPlan || 0), 'profit')
+      : null;
     
     const significant = processed.filter(item => {
       if (item.type === 'start' || item.type === 'end') return false;
@@ -167,6 +219,8 @@ export default function WaterfallChart({
       minCumulative: minCum < 0 ? minCum * 1.1 : 0,
       totalChange: change,
       significantItems: significant,
+      hasIBCSData: hasPlanData,
+      totalVariance: planVariance,
     };
   }, [data, showVarianceThreshold]);
 
@@ -222,19 +276,20 @@ export default function WaterfallChart({
           )}
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => setShowConfigPanel(true)}
-            className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+            className="p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100"
             style={{ 
-              backgroundColor: 'rgb(var(--color-surface-hover))',
-              color: 'rgb(var(--color-text))'
+              backgroundColor: 'transparent',
+              color: 'rgb(var(--color-text-muted))'
             }}
             title={isEn ? 'Configure chart' : 'Configurer le graphique'}
+            aria-label={isEn ? 'Configure chart' : 'Configurer le graphique'}
           >
-            <Settings2 className="w-3 h-3" />
+            <Settings2 className="w-3.5 h-3.5" />
           </button>
-          {/* Decision button */}
+          {/* Decision button - subtle, theme-consistent */}
           {enableDecisions && onRecordDecision && (
             <button
               onClick={() => {
@@ -247,15 +302,16 @@ export default function WaterfallChart({
                   benchmarkValue,
                 });
               }}
-              className="flex items-center gap-1 text-xs px-2 py-1.5 rounded transition-colors hover:scale-105"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-all duration-200 hover:scale-[1.02]"
               style={{ 
-                backgroundColor: 'rgb(var(--color-success) / 0.15)',
+                backgroundColor: 'rgb(var(--color-success) / 0.08)',
                 color: 'rgb(var(--color-success))'
               }}
               title={isEn ? 'Record a decision based on this data' : 'Enregistrer une décision basée sur ces données'}
+              aria-label={isEn ? 'Record decision' : 'Enregistrer une décision'}
             >
               <Target className="w-3 h-3" />
-              {isEn ? 'Decide' : 'Décider'}
+              <span className="hidden sm:inline text-[11px]">{isEn ? 'Decide' : 'Décider'}</span>
             </button>
           )}
           
@@ -399,13 +455,61 @@ export default function WaterfallChart({
                 />
                 
                 {/* Significant item indicator */}
-                {isSignificant && (
+                {isSignificant && !item.variance && (
                   <circle
                     cx={x + barWidth / 2}
                     cy={barTop * height / 100 - 8}
                     r="4"
                     fill="rgb(var(--color-warning))"
                   />
+                )}
+                
+                {/* IBCS Variance Pin - show when item has plan value */}
+                {(ibcsMode || hasIBCSData) && item.variance && (
+                  <g>
+                    {/* Plan reference line */}
+                    <line
+                      x1={x - 2}
+                      y1={getYPosition(item.planValue || 0) * height / 100}
+                      x2={x + barWidth + 2}
+                      y2={getYPosition(item.planValue || 0) * height / 100}
+                      stroke={IBCSColors.planStroke}
+                      strokeWidth="1.5"
+                      strokeDasharray="3,2"
+                    />
+                    {/* Variance pin line */}
+                    <line
+                      x1={x + barWidth + 6}
+                      y1={barTop * height / 100 + (barHeight * height / 100) / 2}
+                      x2={x + barWidth + 6}
+                      y2={getYPosition(item.planValue || 0) * height / 100}
+                      stroke={item.variance.favorable ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    {/* Variance pin circle */}
+                    <circle
+                      cx={x + barWidth + 6}
+                      cy={item.variance.percentage >= 0 
+                        ? Math.min(barTop * height / 100 + (barHeight * height / 100) / 2, getYPosition(item.planValue || 0) * height / 100)
+                        : Math.max(barTop * height / 100 + (barHeight * height / 100) / 2, getYPosition(item.planValue || 0) * height / 100)
+                      }
+                      r="4"
+                      fill={item.variance.favorable ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable}
+                    />
+                    {/* Variance percentage label */}
+                    <text
+                      x={x + barWidth + 14}
+                      y={(barTop * height / 100 + getYPosition(item.planValue || 0) * height / 100) / 2}
+                      fontSize="8"
+                      fontFamily="ui-monospace, monospace"
+                      fontWeight="600"
+                      fill={item.variance.favorable ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable}
+                      dominantBaseline="middle"
+                    >
+                      {item.variance.percentage >= 0 ? '+' : ''}{item.variance.percentage.toFixed(0)}%
+                    </text>
+                  </g>
                 )}
 
                 {/* Value label */}
@@ -588,27 +692,34 @@ export default function WaterfallChart({
         className="flex items-center justify-center gap-4 mt-4 text-xs"
         style={{ color: 'rgb(var(--color-text-muted))' }}
       >
-        <span className="flex items-center gap-1.5">
-          <span 
-            className="w-3 h-3 rounded"
-            style={{ backgroundColor: 'rgb(var(--color-text))' }}
-          />
-          {isEn ? 'Total' : 'Total'}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span 
-            className="w-3 h-3 rounded"
-            style={{ backgroundColor: 'rgb(var(--color-success))' }}
-          />
-          {isEn ? 'Increase' : 'Augmentation'}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span 
-            className="w-3 h-3 rounded"
-            style={{ backgroundColor: 'rgb(var(--color-error))' }}
-          />
-          {isEn ? 'Decrease' : 'Diminution'}
-        </span>
+        {/* IBCS Legend when in IBCS mode or has IBCS data */}
+        {(ibcsMode || hasIBCSData) && showIBCSLegend ? (
+          <IBCSLegendCompact />
+        ) : (
+          <>
+            <span className="flex items-center gap-1.5">
+              <span 
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: 'rgb(var(--color-text))' }}
+              />
+              {isEn ? 'Total' : 'Total'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span 
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: 'rgb(var(--color-success))' }}
+              />
+              {isEn ? 'Increase' : 'Augmentation'}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span 
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: 'rgb(var(--color-error))' }}
+              />
+              {isEn ? 'Decrease' : 'Diminution'}
+            </span>
+          </>
+        )}
         {significantItems.length > 0 && (
           <span className="flex items-center gap-1.5">
             <span 
@@ -618,12 +729,23 @@ export default function WaterfallChart({
             {isEn ? 'Significant' : 'Significatif'}
           </span>
         )}
+        {/* Show total variance when IBCS data is available */}
+        {totalVariance && (
+          <span className="flex items-center gap-1.5 ml-2 pl-2 border-l" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            <VariancePinCompact
+              variancePct={totalVariance.percentage}
+              favorable={totalVariance.favorable}
+              height={14}
+            />
+          </span>
+        )}
       </div>
       
       {/* Configuration Panel */}
       {showConfigPanel && (
         <GraphConfigPanel
           chartId={chartId || `waterfall-${title.toLowerCase().replace(/\s/g, '-')}`}
+          chartName={isEn && titleEn ? titleEn : title}
           currentConfig={chartConfig}
           onConfigChange={setChartConfig}
           onClose={() => setShowConfigPanel(false)}

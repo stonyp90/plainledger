@@ -391,7 +391,7 @@ export function DataVisualizationCard({
   return (
     <div 
       className={`group relative overflow-hidden rounded-xl transition-all duration-300 ${
-        isExpanded ? 'fixed inset-4 z-50' : 'hover:shadow-xl hover:-translate-y-1'
+        isExpanded ? 'fixed inset-4' : 'hover:shadow-xl hover:-translate-y-1'
       }`}
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
@@ -399,6 +399,7 @@ export function DataVisualizationCard({
         boxShadow: isExpanded 
           ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
           : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        zIndex: isExpanded ? 9998 : undefined,
       }}
     >
       {/* Hover Gradient Accent */}
@@ -458,14 +459,14 @@ export function DataVisualizationCard({
               isEn={isEn}
             />
             
-            {/* Pin Button */}
+            {/* Pin Button - subtle, theme-consistent */}
             <button
               onClick={isPinned ? onUnpin : onPin}
-              className="p-1.5 sm:p-2 rounded-lg transition-colors"
+              className="p-1.5 rounded-md transition-all duration-200"
               style={{
                 backgroundColor: isPinned 
-                  ? 'rgb(var(--color-warning) / 0.1)'
-                  : 'rgb(var(--color-bg-muted))',
+                  ? 'rgb(var(--color-warning) / 0.08)'
+                  : 'transparent',
                 color: isPinned 
                   ? 'rgb(var(--color-warning))'
                   : 'rgb(var(--color-text-muted))',
@@ -474,37 +475,57 @@ export function DataVisualizationCard({
                 ? (isEn ? 'Unpin from dashboard' : 'Détacher du tableau de bord')
                 : (isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord')
               }
+              aria-label={isPinned 
+                ? (isEn ? 'Unpin from dashboard' : 'Détacher du tableau de bord')
+                : (isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord')
+              }
+              aria-pressed={isPinned}
             >
-              {isPinned ? <PinOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Pin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+              {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
             </button>
             
-            {/* Expand Button - hidden on mobile */}
+            {/* Expand Button - subtle, theme-consistent */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1.5 sm:p-2 rounded-lg transition-colors hidden sm:flex"
+              className="p-1.5 rounded-md transition-all duration-200"
               style={{
-                backgroundColor: 'rgb(var(--color-bg-muted))',
-                color: 'rgb(var(--color-text-muted))',
+                backgroundColor: isExpanded 
+                  ? 'rgb(var(--color-primary-500) / 0.08)'
+                  : 'transparent',
+                color: isExpanded 
+                  ? 'rgb(var(--color-primary-500))'
+                  : 'rgb(var(--color-text-muted))',
               }}
               title={isExpanded 
                 ? (isEn ? 'Minimize' : 'Réduire')
                 : (isEn ? 'Expand' : 'Agrandir')
               }
+              aria-label={isExpanded 
+                ? (isEn ? 'Minimize chart' : 'Réduire le graphique')
+                : (isEn ? 'Expand chart' : 'Agrandir le graphique')
+              }
+              aria-expanded={isExpanded}
             >
-              {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
             
-            {/* Options Menu */}
+            {/* Options Menu - subtle, theme-consistent */}
             <div className="relative">
               <button
                 onClick={() => setShowOptions(!showOptions)}
-                className="p-1.5 sm:p-2 rounded-lg transition-colors"
+                className="p-1.5 rounded-md transition-all duration-200"
                 style={{
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text-muted))',
+                  backgroundColor: showOptions 
+                    ? 'rgb(var(--color-primary-500) / 0.08)'
+                    : 'transparent',
+                  color: showOptions 
+                    ? 'rgb(var(--color-primary-500))'
+                    : 'rgb(var(--color-text-muted))',
                 }}
+                aria-label={isEn ? 'More options' : 'Plus d\'options'}
+                aria-expanded={showOptions}
               >
-                <MoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <MoreVertical className="w-3.5 h-3.5" />
               </button>
               
               {showOptions && (
@@ -786,11 +807,15 @@ export function DataVisualizationCard({
         {renderChart()}
       </div>
       
-      {/* Expanded Overlay */}
+      {/* Expanded Overlay Backdrop */}
       {isExpanded && (
         <div 
-          className="fixed inset-0 -z-10"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          className="fixed inset-0"
+          style={{ 
+            backgroundColor: 'rgba(0, 0, 0, 0.85)', 
+            backdropFilter: 'blur(4px)',
+            zIndex: 9997 
+          }}
           onClick={() => setIsExpanded(false)}
         />
       )}
@@ -1308,7 +1333,7 @@ function GaugeChart({ data }: { data: any[]; config: ChartConfig; isEn: boolean 
 }
 
 // Heatmap Chart
-function HeatmapChart({ data, config: _config }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function HeatmapChart({ data, config: _config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
   const weeks = Array.from({ length: 12 }, (_, i) => i + 1);
   
@@ -1472,7 +1497,7 @@ function WaterfallChart({ data, config: _config }: { data: any[]; config: ChartC
 }
 
 // Table View
-function TableView({ data, config: _config }: { data: any[]; config: ChartConfig; isEn: boolean }) {
+function TableView({ data, config: _config, isEn }: { data: any[]; config: ChartConfig; isEn: boolean }) {
   return (
     <div className="h-full overflow-auto">
       <table className="w-full text-sm">

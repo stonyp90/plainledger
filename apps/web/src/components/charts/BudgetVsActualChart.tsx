@@ -2,6 +2,12 @@
  * Budget vs Actual Chart - Critical for Financial Planning
  * Shows planned vs actual performance with variance analysis
  * Essential for management reporting and forecasting
+ * 
+ * IBCS Enhanced:
+ * - Side-by-side AC|PL bars with correct styling
+ * - Variance pins showing percentage differences
+ * - Semantic coloring (green=favorable, red=unfavorable)
+ * - Bilingual support (EN/FR)
  */
 
 import { useMemo, useState } from 'react';
@@ -19,6 +25,13 @@ import { ChartTooltip } from './ChartTooltip';
 import { useGraphConfig } from '../../hooks/useGraphConfig';
 import { formatCurrencyValue, formatPercentageValue } from '../../lib/graphConfig';
 import GraphConfigPanel from './GraphConfigPanel';
+import { VariancePinCompact } from './ibcs/VariancePin';
+import { IBCSLegendCompact } from './ibcs/IBCSLegend';
+import { 
+  IBCSColors, 
+  calculateVariance,
+  type IBCSMetricType,
+} from '../../lib/ibcs';
 
 interface BudgetItem {
   category: string;
@@ -39,6 +52,10 @@ interface BudgetVsActualChartProps {
   isEn?: boolean;
   /** Chart ID for configuration persistence */
   chartId?: string;
+  /** Enable IBCS-compliant display with semantic colors and variance pins */
+  ibcsMode?: boolean;
+  /** Show IBCS legend */
+  showIBCSLegend?: boolean;
 }
 
 export default function BudgetVsActualChart({
@@ -50,6 +67,8 @@ export default function BudgetVsActualChart({
   formatValue: propFormatValue,
   isEn = false,
   chartId,
+  ibcsMode: propIBCSMode = false,
+  showIBCSLegend: propShowIBCSLegend = true,
 }: BudgetVsActualChartProps) {
   // Get graph configuration (must be called before any early returns)
   const graphConfig = useGraphConfig(chartId, {
@@ -57,7 +76,17 @@ export default function BudgetVsActualChart({
       varianceThreshold: propVarianceThreshold ?? 10,
       showPriorYear: propShowPriorYear ?? true,
     },
+    ibcs: {
+      enabled: propIBCSMode,
+      showVariancePins: propIBCSMode,
+      showLegend: propShowIBCSLegend,
+      showPriorYear: propShowPriorYear ?? true,
+    },
   });
+
+  // Use config values, falling back to props
+  const ibcsMode = graphConfig.ibcs?.enabled ?? propIBCSMode;
+  const showIBCSLegend = graphConfig.ibcs?.showLegend ?? propShowIBCSLegend;
   
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [chartConfig, setChartConfig] = useState({});
@@ -246,20 +275,21 @@ export default function BudgetVsActualChart({
             </button>
             <button
               onClick={() => setShowConfigPanel(true)}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+              className="p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100"
               style={{ 
-                backgroundColor: 'rgb(var(--color-surface-hover))',
-                color: 'rgb(var(--color-text))'
+                backgroundColor: 'transparent',
+                color: 'rgb(var(--color-text-muted))'
               }}
               title={isEn ? 'Configure chart' : 'Configurer le graphique'}
+              aria-label={isEn ? 'Configure chart' : 'Configurer le graphique'}
             >
-              <Settings2 className="w-3 h-3" />
+              <Settings2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Table Header */}
+      {/* Table Header - IBCS notation when enabled */}
       <div 
         className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-medium border-b"
         style={{ 
@@ -269,10 +299,18 @@ export default function BudgetVsActualChart({
         }}
       >
         <div className="col-span-4">{isEn ? 'Category' : 'Catégorie'}</div>
-        <div className="col-span-2 text-right">{isEn ? 'Actual' : 'Réel'}</div>
-        <div className="col-span-2 text-right">{isEn ? 'Budget' : 'Budget'}</div>
-        <div className="col-span-2 text-right">{isEn ? 'Variance' : 'Écart'}</div>
-        <div className="col-span-2 text-right">{isEn ? 'Var %' : 'Écart %'}</div>
+        <div className="col-span-2 text-right font-mono">
+          {ibcsMode ? 'AC' : (isEn ? 'Actual' : 'Réel')}
+        </div>
+        <div className="col-span-2 text-right font-mono">
+          {ibcsMode ? 'PL' : (isEn ? 'Budget' : 'Budget')}
+        </div>
+        <div className="col-span-2 text-right font-mono">
+          {ibcsMode ? 'ΔPL' : (isEn ? 'Variance' : 'Écart')}
+        </div>
+        <div className="col-span-2 text-right font-mono">
+          {ibcsMode ? 'ΔPL%' : (isEn ? 'Var %' : 'Écart %')}
+        </div>
       </div>
 
       {/* Data Rows */}
@@ -357,16 +395,26 @@ export default function BudgetVsActualChart({
                 {formatValue(item.variance)}
               </div>
 
-              {/* Variance % */}
+              {/* Variance % - with IBCS pin when enabled */}
               <div 
-                className="col-span-2 text-right text-sm font-mono tabular-nums"
+                className="col-span-2 text-right text-sm font-mono tabular-nums flex items-center justify-end"
                 style={{ 
-                  color: item.isFavorable 
-                    ? 'rgb(var(--color-success))' 
-                    : 'rgb(var(--color-error))'
+                  color: ibcsMode 
+                    ? (item.isFavorable ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable)
+                    : (item.isFavorable ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))')
                 }}
               >
-                {item.variancePct >= 0 ? '+' : ''}{formatPercentageValue(item.variancePct, graphConfig.display)}
+                {ibcsMode ? (
+                  <VariancePinCompact
+                    variancePct={item.variancePct}
+                    favorable={item.isFavorable}
+                    height={14}
+                  />
+                ) : (
+                  <span>
+                    {item.variancePct >= 0 ? '+' : ''}{formatPercentageValue(item.variancePct, graphConfig.display)}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -376,38 +424,39 @@ export default function BudgetVsActualChart({
                 className="px-4 py-3 space-y-3"
                 style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
               >
-                {/* Visual bar comparison */}
+                {/* Visual bar comparison - IBCS styling when enabled */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-xs w-16"
+                      className="text-xs w-16 font-mono"
                       style={{ color: 'rgb(var(--color-text-muted))' }}
                     >
-                      {isEn ? 'Actual' : 'Réel'}
+                      {ibcsMode ? 'AC' : (isEn ? 'Actual' : 'Réel')}
                     </span>
                     <div className="flex-1 h-5 rounded overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-emphasis))' }}>
                       <div 
                         className="h-full rounded"
                         style={{ 
                           width: `${getBarWidth(item.actual)}%`,
-                          backgroundColor: 'rgb(var(--color-text))'
+                          backgroundColor: ibcsMode ? IBCSColors.actual : 'rgb(var(--color-text))'
                         }}
                       />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span 
-                      className="text-xs w-16"
+                      className="text-xs w-16 font-mono"
                       style={{ color: 'rgb(var(--color-text-muted))' }}
                     >
-                      Budget
+                      {ibcsMode ? 'PL' : 'Budget'}
                     </span>
                     <div className="flex-1 h-5 rounded overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-emphasis))' }}>
                       <div 
-                        className="h-full rounded opacity-50"
+                        className={`h-full rounded ${ibcsMode ? '' : 'opacity-50'}`}
                         style={{ 
                           width: `${getBarWidth(item.budget)}%`,
-                          backgroundColor: 'rgb(var(--color-text))'
+                          backgroundColor: ibcsMode ? 'transparent' : 'rgb(var(--color-text))',
+                          border: ibcsMode ? `2px solid ${IBCSColors.planStroke}` : 'none'
                         }}
                       />
                     </div>
@@ -545,6 +594,7 @@ export default function BudgetVsActualChart({
       {showConfigPanel && (
         <GraphConfigPanel
           chartId={chartId || `budget-vs-actual-${title.toLowerCase().replace(/\s/g, '-')}`}
+          chartName={isEn && titleEn ? titleEn : title}
           currentConfig={chartConfig}
           onConfigChange={setChartConfig}
           onClose={() => setShowConfigPanel(false)}
@@ -595,16 +645,31 @@ export default function BudgetVsActualChart({
           {formatValue(totals.variance)}
         </div>
         <div 
-          className="col-span-2 text-right text-sm font-mono tabular-nums font-semibold"
+          className="col-span-2 text-right text-sm font-mono tabular-nums font-semibold flex items-center justify-end"
           style={{ 
-            color: totals.variance >= 0 
-              ? 'rgb(var(--color-success))' 
-              : 'rgb(var(--color-error))'
+            color: ibcsMode 
+              ? (totals.variance >= 0 ? IBCSColors.variance.favorable : IBCSColors.variance.unfavorable)
+              : (totals.variance >= 0 ? 'rgb(var(--color-success))' : 'rgb(var(--color-error))')
           }}
         >
-          {totals.variancePct >= 0 ? '+' : ''}{totals.variancePct.toFixed(1)}%
+          {ibcsMode ? (
+            <VariancePinCompact
+              variancePct={totals.variancePct}
+              favorable={totals.variance >= 0}
+              height={14}
+            />
+          ) : (
+            <span>{totals.variancePct >= 0 ? '+' : ''}{totals.variancePct.toFixed(1)}%</span>
+          )}
         </div>
       </div>
+      
+      {/* IBCS Legend */}
+      {ibcsMode && showIBCSLegend && (
+        <div className="flex justify-center mt-3 pt-3 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <IBCSLegendCompact />
+        </div>
+      )}
     </div>
   );
 }
