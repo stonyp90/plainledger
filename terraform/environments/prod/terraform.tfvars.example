@@ -14,6 +14,14 @@ stripe_publishable_key = "pk_live_..."
 novu_api_key = "..."
 novu_app_id  = "..."
 
+# Keycloak Client Secret (REQUIRED for authentication)
+# Get this from Keycloak Admin Console:
+# 1. Log into https://auth.plainledger.ca
+# 2. Go to: Realm 'plainledger' → Clients → 'plainledger-api'
+# 3. Go to 'Credentials' tab
+# 4. Copy the 'Secret' value
+keycloak_client_secret = "your-keycloak-client-secret-here"
+
 # Optional overrides
 # domain_name          = "plainledger.ca"
 # create_hosted_zone   = true
