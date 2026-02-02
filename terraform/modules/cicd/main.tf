@@ -207,13 +207,12 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # ECS service operations (tagged resources)
       {
         Effect = "Allow"
         Action = [
           "ecs:UpdateService",
           "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
           "ecs:ListTasks",
           "ecs:DescribeTasks"
         ]
@@ -223,6 +222,23 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
             "aws:ResourceTag/Project" = var.project
           }
         }
+      },
+      # Task definition operations (no tag condition - task defs use name prefix)
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition"
+        ]
+        Resource = "*"
+      },
+      # Wait for services stable
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeServices"
+        ]
+        Resource = "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${var.project}-${var.environment}/*"
       },
       {
         Effect = "Allow"
