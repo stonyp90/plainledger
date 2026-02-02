@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { 
   AlertTriangle, 
   CheckCircle,
@@ -21,10 +21,14 @@ import {
   Calculator,
   ChevronDown,
   ChevronUp,
+  Check,
+  X,
+  RotateCcw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tooltip } from '../components/Tooltip';
 import { TrendChart, WaterfallChart } from '../components/charts';
+import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
 import KPICard from '../components/KPICard';
 import MetricCard from '../components/MetricCard';
 import { 
@@ -53,9 +57,16 @@ import {
 } from '../lib/anomalyDetection';
 import { INDUSTRY_KPIS } from '../lib/industryBenchmarkDisplay';
 import type { DataMetric, DecisionEvent } from '../lib/decisionContext';
+import { calculateVariance, type IBCSMetricType } from '../lib/ibcs';
 import EmptyDataState from '../components/EmptyDataState';
 import ConnectionWizard from '../components/ConnectionWizard';
 import DynamicDashboardLayout, { type DashboardSection } from '../components/DynamicDashboardLayout';
+import AddWidgetCard from '../components/AddWidgetCard';
+import DashboardWidgetWrapper from '../components/DashboardWidgetWrapper';
+import { ChartGallery } from '../components/DataVisualization';
+import { useDashboardConfig } from '../hooks/useDashboardConfig';
+import type { ChartConfig } from '../lib/chartFavorites';
+import type { DashboardWidgetConfig } from '../lib/dashboardConfig';
 
 // =====================================================
 // DASHBOARD COMPONENT
@@ -65,18 +76,39 @@ import DynamicDashboardLayout, { type DashboardSection } from '../components/Dyn
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 
 export default function Dashboard() {
-  const { currentTenant } = useTenant();
+  const { currentTenant, hasPermission } = useTenant();
   const { user } = useAuth();
   const toast = useToast();
   const { isDemoMode, enableDemoMode } = useDemoMode();
   const { t, language } = useI18n();
   const isEn = language === 'en';
   const [selectedPeriod, setSelectedPeriod] = useState<'mtd' | 'qtd' | 'ytd'>('mtd');
+  // IBCS mode is always enabled - industry standard for financial reporting
+  // Settings can be customized per-chart in the chart settings panel
+  const ibcsMode = true;
   const { hasAccess: hasAIAccess } = usePremiumFeature('aiInsights');
   
   // Decision capture feature - must be manually enabled per organization
   // Requires both AI access (premium) AND the decisionCapture feature flag to be enabled
   const hasDecisionCapture = hasAIAccess && (currentTenant?.settings?.features?.decisionCapture ?? false);
+  
+  // Dashboard customization
+  const canCustomize = hasPermission('customize:dashboard');
+  const {
+    widgets: widgetConfigs,
+    addWidget,
+    removeWidget,
+    reorderWidgets,
+    resetToDefaults,
+    isWidgetVisible,
+  } = useDashboardConfig();
+  
+  // Chart Gallery modal state
+  const [showChartGallery, setShowChartGallery] = useState(false);
+  
+  // Drag and drop state
+  const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
+  const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
   
   // Auto-enable demo mode for demo-signup users
   const isDemoSignupUser = user?.organization === 'demo-signup';
@@ -155,6 +187,17 @@ export default function Dashboard() {
     return filterDataByPeriod(budget, selectedPeriod);
   }, [financialData, selectedPeriod]);
 
+  // Convert budget to planData format for IBCS compliance (array of numbers matching data points)
+  const revenuePlanData = useMemo(() => {
+    if (!revenueBudget.length || !revenueData.length) return undefined;
+    // Ensure planData matches revenueData length
+    const planArray: number[] = [];
+    for (let i = 0; i < revenueData.length; i++) {
+      planArray.push(revenueBudget[i] ?? revenueBudget[revenueBudget.length - 1] ?? 0);
+    }
+    return planArray.length > 0 ? planArray : undefined;
+  }, [revenueBudget, revenueData]);
+
   // Calculate period totals for summary display
   const periodSummary = useMemo(() => {
     const totalRevenue = revenueData.reduce((sum, d) => sum + (d?.value ?? 0), 0);
@@ -209,221 +252,302 @@ export default function Dashboard() {
     setShowDecisionCapture(true);
   }, []);
 
+  // Drag and drop handlers
+  const handleDragStart = useCallback((widgetId: string) => (e: React.DragEvent) => {
+    setDraggedWidgetId(widgetId);
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
+  }, []);
+
+  const handleDragOver = useCallback((widgetId: string) => (e: React.DragEvent) => {
+    e.preventDefault();
+    if (widgetId !== draggedWidgetId) {
+      setDragOverWidgetId(widgetId);
+    }
+  }, [draggedWidgetId]);
+
+  const handleDrop = useCallback((targetWidgetId: string) => (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!draggedWidgetId || draggedWidgetId === targetWidgetId) {
+      setDraggedWidgetId(null);
+      setDragOverWidgetId(null);
+      return;
+    }
+
+    // Get current order
+    const currentOrder = widgetConfigs.map(w => w.id);
+    const draggedIndex = currentOrder.indexOf(draggedWidgetId);
+    const targetIndex = currentOrder.indexOf(targetWidgetId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    // Reorder array
+    const newOrder = [...currentOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, draggedWidgetId);
+
+    reorderWidgets(newOrder);
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
+  }, [draggedWidgetId, widgetConfigs, reorderWidgets]);
+
+  // Handle adding widget from chart gallery
+  const handleAddWidget = useCallback((chartConfig: ChartConfig) => {
+    const widgetConfig: DashboardWidgetConfig = {
+      id: `custom-${Date.now()}`,
+      type: 'custom-chart',
+      visible: true,
+      position: widgetConfigs.length + 1,
+      size: 'half',
+      chartConfig: {
+        chartType: chartConfig.chartType,
+        metrics: chartConfig.metrics,
+        timeRange: chartConfig.timeRange,
+        name: chartConfig.name,
+        nameEn: chartConfig.nameEn || chartConfig.name,
+      },
+    };
+    addWidget(widgetConfig);
+    setShowChartGallery(false);
+    toast.show(isEn ? 'Widget added to dashboard' : 'Widget ajouté au tableau de bord', 'success');
+  }, [addWidget, widgetConfigs.length, isEn, toast]);
+
   // Collect all available dashboard sections dynamically
   const dashboardSections = useMemo((): DashboardSection[] => {
     const sections: DashboardSection[] = [];
+    
+    // Helper to wrap section component with DashboardWidgetWrapper
+    const wrapSection = (id: string, component: React.ReactNode): React.ReactNode => {
+      if (!canCustomize) {
+        return component;
+      }
+      return (
+        <DashboardWidgetWrapper
+          id={id}
+          onRemove={() => removeWidget(id)}
+          onDragStart={handleDragStart(id)}
+          onDragEnd={handleDragEnd}
+          onDragOver={handleDragOver(id)}
+          onDrop={handleDrop(id)}
+          canCustomize={canCustomize}
+          isDragging={draggedWidgetId === id}
+          isDragOver={dragOverWidgetId === id}
+        >
+          {component}
+        </DashboardWidgetWrapper>
+      );
+    };
 
-    // Period Summary (if has trends)
-    if (hasTrends && periodSummary.dataPoints > 0) {
+    // Period Summary (if has trends) - IBCS-compliant KPI row
+    if (hasTrends && periodSummary.dataPoints > 0 && isWidgetVisible('period-summary')) {
       sections.push({
         id: 'period-summary',
-        component: (
+        component: wrapSection('period-summary', (
           <div 
-            className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 p-3 sm:p-4 rounded-xl"
+            className="grid grid-cols-4 gap-1 sm:gap-2 p-2 sm:p-3 rounded-xl"
             style={{ 
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
             }}
           >
-            <div className="text-center p-2 sm:p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <p className="text-[10px] sm:text-xs font-medium mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'Period Revenue' : 'Revenus période'}
+            {/* Revenue - Primary metric */}
+            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {language === 'en' ? 'Revenue' : 'Revenus'}
               </p>
-              <p className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+              <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
                 ${(periodSummary.totalRevenue / 1000).toFixed(0)}K
               </p>
             </div>
-            <div className="text-center p-2 sm:p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <p className="text-[10px] sm:text-xs font-medium mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'Cash Flow' : 'Flux trésorerie'}
+            
+            {/* Cash Flow - with semantic color */}
+            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {language === 'en' ? 'Cash Flow' : 'Trésorerie'}
               </p>
               <p 
-                className="text-sm sm:text-base lg:text-lg font-bold" 
+                className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" 
                 style={{ 
                   color: periodSummary.totalCashFlow >= 0 
                     ? 'rgb(var(--color-success))' 
                     : 'rgb(var(--color-error))' 
                 }}
               >
-                {periodSummary.totalCashFlow >= 0 ? '+' : ''}${(periodSummary.totalCashFlow / 1000).toFixed(0)}K
+                {periodSummary.totalCashFlow >= 0 ? '+' : ''}{(periodSummary.totalCashFlow / 1000).toFixed(0)}K
               </p>
             </div>
-            <div className="text-center p-2 sm:p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <p className="text-[10px] sm:text-xs font-medium mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'vs Budget' : 'vs Budget'}
+            
+            {/* Budget Variance - IBCS variance pin */}
+            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                ΔPL
               </p>
-              <p 
-                className="text-sm sm:text-base lg:text-lg font-bold" 
-                style={{ 
-                  color: periodSummary.budgetVariance >= 0 
-                    ? 'rgb(var(--color-success))' 
-                    : 'rgb(var(--color-error))' 
-                }}
-              >
-                {periodSummary.budgetVariance >= 0 ? '+' : ''}{periodSummary.budgetVariance.toFixed(1)}%
-              </p>
+              <div className="flex items-center justify-center">
+                <VariancePinCompact
+                  variancePct={periodSummary.budgetVariance}
+                  favorable={periodSummary.budgetVariance >= 0}
+                  height={22}
+                />
+              </div>
             </div>
-            <div className="text-center p-2 sm:p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-              <p className="text-[10px] sm:text-xs font-medium mb-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {language === 'en' ? 'Data Points' : 'Points données'}
+            
+            {/* Period indicator */}
+            <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {language === 'en' ? 'Period' : 'Période'}
               </p>
-              <p className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                {periodSummary.dataPoints} {language === 'en' ? 'months' : 'mois'}
+              <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
+                {periodSummary.dataPoints}<span className="text-xs sm:text-sm font-normal ml-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>mo</span>
               </p>
             </div>
           </div>
-        ),
+        )),
         priority: 1,
         gridSpan: 'full',
       });
     }
 
-    // Anomalies Section (if has anomalies)
-    if (shouldShowData && analysis.summary.total > 0) {
+    // Anomalies Section (if has anomalies) - IBCS-inspired compact design
+    if (shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies')) {
       sections.push({
         id: 'anomalies',
-        component: (
-          <div 
-            className="rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
+        component: wrapSection('anomalies', (
+          <Link 
+            to="/app/anomalies"
+            className="block rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all group hover:shadow-md"
             style={{ 
               backgroundColor: 'rgb(var(--color-surface))',
-              border: analysis.summary.critical > 0 
-                ? '1px solid rgb(var(--color-error) / 0.3)' 
-                : '1px solid rgb(var(--color-border))',
+              border: '1px solid rgb(var(--color-border))',
             }}
           >
-            <Link 
-              to="/app/anomalies"
-              className="block hover:opacity-90 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-2 sm:gap-3 mb-3">
+            {/* Compact header row */}
+            <div className="flex items-center justify-between gap-3">
+              {/* Left: Icon + Count + Badges */}
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                {/* Minimal icon - IBCS: reduce chart junk */}
                 <div 
-                  className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ 
                     backgroundColor: analysis.summary.critical > 0 
-                      ? 'rgb(var(--color-error) / 0.1)' 
-                      : 'rgb(var(--color-warning) / 0.1)',
+                      ? 'rgb(var(--color-error) / 0.08)' 
+                      : 'rgb(var(--color-text) / 0.05)',
                   }}
                 >
                   <AlertTriangle 
-                    className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" 
+                    className="w-4 h-4 sm:w-4.5 sm:h-4.5" 
                     style={{ 
                       color: analysis.summary.critical > 0 
                         ? 'rgb(var(--color-error))' 
-                        : 'rgb(var(--color-warning))',
+                        : 'rgb(var(--color-text-muted))',
                     }}
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                    {analysis.summary.total} {language === 'en' ? 'anomalies detected' : 'anomalies détectées'}
-                  </h3>
-                  <p className="text-xs sm:text-sm mt-0.5 sm:mt-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {language === 'en' ? 'Action required - Click to review' : 'Action requise - Cliquez pour examiner'}
+                
+                {/* Count and subtitle */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm sm:text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                      {analysis.summary.total} {language === 'en' ? 'anomalies' : 'anomalies'}
+                    </span>
+                    {/* Inline severity badges - compact */}
+                    <div className="flex items-center gap-1">
+                      {analysis.summary.critical > 0 && (
+                        <span 
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                            color: 'rgb(var(--color-error))',
+                          }}
+                        >
+                          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-error))' }} />
+                          {analysis.summary.critical}
+                        </span>
+                      )}
+                      {analysis.summary.warning > 0 && (
+                        <span 
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                            color: 'rgb(var(--color-warning))',
+                          }}
+                        >
+                          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-warning))' }} />
+                          {analysis.summary.warning}
+                        </span>
+                      )}
+                      {analysis.summary.info > 0 && (
+                        <span 
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
+                          style={{ 
+                            backgroundColor: 'rgb(var(--color-info) / 0.08)',
+                            color: 'rgb(var(--color-info))',
+                          }}
+                        >
+                          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-info))' }} />
+                          {analysis.summary.info}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-[10px] sm:text-xs mt-0.5 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {language === 'en' ? 'Review required' : 'Examen requis'}
                   </p>
                 </div>
+              </div>
+              
+              {/* Right: Action area */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Notification CTA - compact pill */}
+                <Link
+                  to="/app/settings?tab=notifications"
+                  className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-1 rounded-full transition-colors"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-bg-muted))',
+                    color: 'rgb(var(--color-text-muted))',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span>Slack • Teams</span>
+                </Link>
                 <ChevronRight 
-                  className="w-4 h-4 sm:w-5 sm:h-5 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0" 
+                  className="w-4 h-4 sm:w-5 sm:h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" 
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 />
               </div>
-              
-              {/* Severity breakdown badges */}
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap ml-0 sm:ml-[52px]">
-                {analysis.summary.critical > 0 && (
-                  <span 
-                    className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-error) / 0.1)',
-                      color: 'rgb(var(--color-error))',
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-error))' }} />
-                    {analysis.summary.critical} {language === 'en' ? 'critical' : 'critique'}{analysis.summary.critical > 1 ? 's' : ''}
-                  </span>
-                )}
-                {analysis.summary.warning > 0 && (
-                  <span 
-                    className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-warning) / 0.1)',
-                      color: 'rgb(var(--color-warning))',
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-warning))' }} />
-                    {analysis.summary.warning} {language === 'en' ? 'warning' : 'avertissement'}{analysis.summary.warning > 1 ? 's' : ''}
-                  </span>
-                )}
-                {analysis.summary.info > 0 && (
-                  <span 
-                    className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-info) / 0.1)',
-                      color: 'rgb(var(--color-info))',
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-info))' }} />
-                    {analysis.summary.info} info
-                  </span>
-                )}
-              </div>
-            </Link>
-            
-            {/* Notification setup CTA */}
-            <div 
-              className="mt-3 pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3"
-              style={{ borderTop: '1px solid rgb(var(--color-border))' }}
-            >
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <span className="text-[10px] sm:text-xs whitespace-nowrap" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {language === 'en' ? 'Get notified via:' : 'Recevoir les alertes via:'}
-                </span>
-                <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
-                  {/* Notification icons - simplified for space */}
-                  <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    Slack • Teams • Email
-                  </div>
-                </div>
-              </div>
-              <Link
-                to="/app/settings?tab=notifications"
-                className="text-[10px] sm:text-xs font-medium px-2 sm:px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                  color: 'rgb(var(--color-primary-500))',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {language === 'en' ? 'Set up alerts' : 'Configurer les alertes'}
-              </Link>
             </div>
-          </div>
-        ),
+          </Link>
+        )),
         priority: 2,
         gridSpan: 'full',
       });
     }
 
     // Industry Benchmarks (if has real data)
-    if (hasRealData && hasSummaryMetrics) {
+    if (hasRealData && hasSummaryMetrics && isWidgetVisible('industry-benchmarks')) {
       sections.push({
         id: 'industry-benchmarks',
-        component: (
+        component: wrapSection('industry-benchmarks', (
           <IndustryBenchmarksSection 
             industry={currentTenant?.industry || 'real_estate'} 
-            isEn={language === 'en'} 
+            isEn={language === 'en'}
+            ibcsMode={ibcsMode}
+            financialData={financialData}
           />
-        ),
+        )),
         priority: 3,
         gridSpan: 'full',
       });
     }
 
     // Revenue Chart (if has revenue data)
-    if (hasRevenueTrends && revenueData.length > 0) {
+    if (hasRevenueTrends && revenueData.length > 0 && isWidgetVisible('revenue-chart')) {
       sections.push({
         id: 'revenue-chart',
-        component: (
+        component: wrapSection('revenue-chart', (
           <TrendChart
             data={revenueData}
             title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'revenue', isEn)}
@@ -443,26 +567,31 @@ export default function Dashboard() {
                   : `Full year (${revenueData.length} months)`
             }
             budget={revenueBudget}
+            planData={revenuePlanData}
             color="rgb(var(--color-primary-500))"
             height={200}
             isEn={language === 'en'}
+            ibcsMode={ibcsMode}
+            showVarianceShading={ibcsMode}
+            showIBCSLegend={ibcsMode}
+            chartId="dashboard-revenue-trend"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
             recentDecisions={recentDecisions.filter(d => d.context.metricType === 'revenue')}
             metricType="revenue"
             benchmarkValue={revenueBudget.length > 0 ? revenueBudget[revenueBudget.length - 1] : undefined}
           />
-        ),
+        )),
         priority: 4,
         gridSpan: 'half',
       });
     }
 
     // Cash Flow Chart (if has cash flow data)
-    if (hasCashFlowTrends && cashFlowData.length > 0) {
+    if (hasCashFlowTrends && cashFlowData.length > 0 && isWidgetVisible('cashflow-chart')) {
       sections.push({
         id: 'cashflow-chart',
-        component: (
+        component: wrapSection('cashflow-chart', (
           <TrendChart
             data={cashFlowData}
             title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', isEn)}
@@ -484,22 +613,50 @@ export default function Dashboard() {
             color="rgb(var(--color-primary-500))"
             height={200}
             isEn={language === 'en'}
+            ibcsMode={ibcsMode}
+            showVarianceShading={ibcsMode}
+            showIBCSLegend={ibcsMode}
+            chartId="dashboard-cashflow-trend"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
             recentDecisions={recentDecisions.filter(d => d.context.metricType === 'cash_flow')}
             metricType="cash_flow"
           />
-        ),
+        )),
         priority: 5,
         gridSpan: 'half',
       });
     }
 
+    // Add Widget Card (after charts, only if user can customize)
+    if (canCustomize) {
+      sections.push({
+        id: 'add-widget',
+        component: (
+          <DashboardWidgetWrapper
+            id="add-widget"
+            canCustomize={canCustomize}
+            isDragging={draggedWidgetId === 'add-widget'}
+            isDragOver={dragOverWidgetId === 'add-widget'}
+            onDragStart={handleDragStart('add-widget')}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver('add-widget')}
+            onDrop={handleDrop('add-widget')}
+            // Don't allow removing the Add Widget card
+          >
+            <AddWidgetCard onClick={() => setShowChartGallery(true)} />
+          </DashboardWidgetWrapper>
+        ),
+        priority: 5.5,
+        gridSpan: 'half',
+      });
+    }
+
     // Cash Flow Waterfall (if has waterfall data)
-    if (cashFlowWaterfallData && cashFlowWaterfallData.length > 0) {
+    if (cashFlowWaterfallData && cashFlowWaterfallData.length > 0 && isWidgetVisible('cashflow-waterfall')) {
       sections.push({
         id: 'cashflow-waterfall',
-        component: (
+        component: wrapSection('cashflow-waterfall', (
           <WaterfallChart
             data={cashFlowWaterfallData}
             title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'waterfall', isEn)}
@@ -508,21 +665,24 @@ export default function Dashboard() {
             subtitleEn={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', true)}
             isEn={language === 'en'}
             height={260}
+            ibcsMode={ibcsMode}
+            showIBCSLegend={ibcsMode}
+            chartId="dashboard-cashflow-waterfall"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
             metricType="cash_flow"
           />
-        ),
+        )),
         priority: 6,
         gridSpan: 'full',
       });
     }
 
     // Accounting Details Section (if has accounting data)
-    if (shouldShowData && (hasAccounts || hasReceivables || hasPayables || hasSummaryMetrics)) {
+    if (shouldShowData && (hasAccounts || hasReceivables || hasPayables || hasSummaryMetrics) && isWidgetVisible('accounting-details')) {
       sections.push({
         id: 'accounting-details',
-        component: (
+        component: wrapSection('accounting-details', (
           <CollapsibleAccountingSection 
             financialData={financialData}
             analysis={analysis}
@@ -530,17 +690,17 @@ export default function Dashboard() {
             isEn={language === 'en'}
             t={t}
           />
-        ),
+        )),
         priority: 7,
         gridSpan: 'full',
       });
     }
 
     // No Anomalies State (if has data but no anomalies)
-    if (shouldShowData && analysis.summary.total === 0) {
+    if (shouldShowData && analysis.summary.total === 0 && isWidgetVisible('no-anomalies')) {
       sections.push({
         id: 'no-anomalies',
-        component: (
+        component: wrapSection('no-anomalies', (
           <div className="alert alert-success">
             <div className="alert-icon">
               <CheckCircle className="w-6 h-6" />
@@ -554,13 +714,34 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-        ),
+        )),
         priority: 8,
         gridSpan: 'full',
       });
     }
 
-    return sections;
+    // Filter sections by visibility and sort by custom order
+    const visibleSections = sections.filter(section => {
+      // Add Widget card is always visible if user can customize
+      if (section.id === 'add-widget') return true;
+      return isWidgetVisible(section.id);
+    });
+
+    // Sort by custom order if available
+    const customOrder = widgetConfigs.map(w => w.id);
+    if (customOrder.length > 0) {
+      visibleSections.sort((a, b) => {
+        const aIndex = customOrder.indexOf(a.id);
+        const bIndex = customOrder.indexOf(b.id);
+        // If not in custom order, use priority
+        if (aIndex === -1 && bIndex === -1) return a.priority - b.priority;
+        if (aIndex === -1) return 999; // Put unknown widgets at end
+        if (bIndex === -1) return -999;
+        return aIndex - bIndex;
+      });
+    }
+
+    return visibleSections;
   }, [
     hasTrends,
     periodSummary,
@@ -581,11 +762,23 @@ export default function Dashboard() {
     isEn,
     selectedPeriod,
     revenueBudget,
+    revenuePlanData,
+    ibcsMode,
     hasDecisionCapture,
     handleRecordDecision,
     recentDecisions,
     financialData,
     t,
+    canCustomize,
+    isWidgetVisible,
+    widgetConfigs,
+    removeWidget,
+    handleDragStart,
+    handleDragEnd,
+    handleDragOver,
+    handleDrop,
+    draggedWidgetId,
+    dragOverWidgetId,
   ]);
 
 
@@ -638,11 +831,11 @@ export default function Dashboard() {
         </div>
         
         {/* KPI cards skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
           {[...Array(4)].map((_, i) => (
             <div 
               key={i}
-              className="rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 relative overflow-hidden"
+              className="rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 relative overflow-hidden"
               style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
             >
               <div className="h-2.5 sm:h-3 w-16 sm:w-20 rounded bg-[rgb(var(--color-bg-muted))] mb-3 sm:mb-4" />
@@ -660,11 +853,11 @@ export default function Dashboard() {
         </div>
         
         {/* Ratios skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
           {[...Array(4)].map((_, i) => (
             <div 
               key={i}
-              className="rounded-lg sm:rounded-xl p-3 sm:p-4"
+              className="rounded-lg sm:rounded-xl p-2.5 sm:p-3"
               style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
             >
               <div className="h-2.5 sm:h-3 w-20 sm:w-24 rounded bg-[rgb(var(--color-border))] mb-2 sm:mb-3" />
@@ -678,7 +871,7 @@ export default function Dashboard() {
           {[...Array(2)].map((_, i) => (
             <div 
               key={i}
-              className="rounded-lg sm:rounded-xl p-4 sm:p-6 h-48 sm:h-56 lg:h-64"
+              className="rounded-lg sm:rounded-xl p-3 sm:p-4 h-44 sm:h-52 lg:h-60"
               style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
             >
               <div className="h-4 sm:h-5 w-24 sm:w-32 rounded bg-[rgb(var(--color-bg-muted))] mb-2" />
@@ -731,137 +924,116 @@ export default function Dashboard() {
       {/* Demo Banner */}
       <DemoBanner />
       
-      {/* Connection Wizard - Show when no data */}
-      {!hasRealData && !hasQuickBooksConnection && !shouldShowSandboxData ? (
-        <>
-          <ConnectionWizard />
-          {/* Don't show other dashboard content when no data */}
-          <div className="text-center py-8">
-            <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn 
-                ? 'Connect your accounting software above to see your financial dashboard.'
-                : 'Connectez votre logiciel comptable ci-dessus pour voir votre tableau de bord financier.'}
-            </p>
+      {/* Connection Wizard - Show when no data available at all */}
+      {/* In mock auth mode (local dev), mock data will be available, so dashboard shows */}
+      {!hasRealData && !hasQuickBooksConnection && !shouldShowSandboxData && !financialData && !isLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] py-6">
+          <div className="w-full max-w-lg">
+            <ConnectionWizard />
           </div>
-        </>
+        </div>
       ) : (
         <>
-          {/* Header */}
-          <div className="flex flex-col gap-3 sm:gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary truncate">
-              {currentTenant ? currentTenant.name : t('dashboard.title')}
-            </h1>
-            <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
-              <p className="text-xs sm:text-sm text-muted">
+          {/* Header - Clean mobile-first design */}
+          <div className="flex flex-col gap-2">
+            {/* Title row with inline controls */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-primary truncate">
+                  {currentTenant ? currentTenant.name : t('dashboard.title')}
+                </h1>
+                {/* Sample data indicator - very subtle */}
+                {shouldShowSandboxData && (
+                  <span 
+                    className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-text-muted) / 0.08)',
+                      color: 'rgb(var(--color-text-muted) / 0.6)',
+                    }}
+                  >
+                    {isEn ? 'Demo' : 'Démo'}
+                  </span>
+                )}
+              </div>
+              
+              {/* Right side controls */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {/* Period filter - themed dropdown */}
+                <PeriodFilter
+                  periods={periods}
+                  selectedPeriod={selectedPeriod}
+                  onSelectPeriod={(id) => setSelectedPeriod(id as 'mtd' | 'qtd' | 'ytd')}
+                  isEn={isEn}
+                />
+                
+                {/* Reset to Defaults - Only show if user can customize */}
+                {canCustomize && (
+                  <button
+                    onClick={() => {
+                      resetToDefaults();
+                      toast.show(
+                        isEn ? 'Dashboard reset to defaults' : 'Tableau de bord réinitialisé',
+                        'success'
+                      );
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      borderColor: 'rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text-muted))',
+                    }}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{isEn ? 'Reset' : 'Réinit.'}</span>
+                  </button>
+                )}
+                
+                {/* Refresh */}
+                <button
+                  onClick={handleRefresh}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    borderColor: 'rgb(var(--color-border))',
+                    color: 'rgb(var(--color-text-muted))',
+                  }}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{isEn ? 'Refresh' : 'Actualiser'}</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Subtitle with live indicator */}
+            <div className="flex items-center gap-2 -mt-0.5">
+              <p className="text-xs md:text-sm text-muted">
                 {t('dashboard.subtitle')}
               </p>
               {hasRealData && financialData?.lastUpdated && (
                 <span 
-                  className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded flex items-center gap-1"
+                  className="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1"
                   style={{ 
                     backgroundColor: 'rgb(var(--color-bg-muted))',
                     color: 'rgb(var(--color-text-muted))'
                   }}
                   title={financialData.lastUpdated ? new Date(financialData.lastUpdated).toLocaleString() : ''}
                 >
-                  <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" style={{ color: 'rgb(var(--color-success))' }} />
-                  {isEn ? 'Live data' : 'Données en direct'}
-                </span>
-              )}
-              {shouldShowSandboxData && (
-                <span 
-                  className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-warning) / 0.1)',
-                    color: 'rgb(var(--color-warning))'
-                  }}
-                >
-                  {isEn ? 'Sample data' : 'Données exemple'}
+                  <CheckCircle className="w-2.5 h-2.5" style={{ color: 'rgb(var(--color-success))' }} />
+                  {isEn ? 'Live' : 'Direct'}
                 </span>
               )}
             </div>
           </div>
-          
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap">
-            <div 
-              className="flex rounded-lg sm:rounded-xl p-0.5"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-            >
-              {periods.map(period => (
-                <button
-                  key={period.id}
-                  onClick={() => setSelectedPeriod(period.id as 'mtd' | 'qtd' | 'ytd')}
-                  className="px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 rounded-md text-xs font-medium transition-all"
-                  style={{
-                    backgroundColor: selectedPeriod === period.id 
-                      ? 'rgb(var(--color-primary-500))' 
-                      : 'transparent',
-                    color: selectedPeriod === period.id 
-                      ? 'white' 
-                      : 'rgb(var(--color-text-muted))',
-                    boxShadow: selectedPeriod === period.id 
-                      ? '0 1px 3px rgb(var(--color-primary-500) / 0.3)' 
-                      : 'none',
-                  }}
-                >
-                  {period.label}
-                </button>
-              ))}
-            </div>
-            
-            <button
-              onClick={handleRefresh}
-              className="btn-secondary btn-sm flex items-center gap-1 sm:gap-1.5 !px-2 sm:!px-3 flex-shrink-0"
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">{isRefreshing ? t('common.refreshing') : t('common.refresh')}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (hasAIAccess) {
-                  setShowAIAssistant(true);
-                } else {
-                  window.open(CALENDLY_URL, '_blank');
-                }
-              }}
-              className={`btn-sm flex items-center gap-1 sm:gap-1.5 !px-2 sm:!px-3 flex-shrink-0 ${
-                hasAIAccess ? 'btn-primary' : ''
-              }`}
-              style={!hasAIAccess ? {
-                background: 'linear-gradient(135deg, rgb(var(--color-warning) / 0.15) 0%, rgb(var(--color-warning) / 0.1) 100%)',
-                color: 'rgb(var(--color-warning))',
-                border: '1px solid rgb(var(--color-warning) / 0.3)',
-              } : undefined}
-              title={hasAIAccess 
-                ? (language === 'en' ? 'Ask James' : 'Demander à James')
-                : (language === 'en' ? 'Upgrade to unlock AI' : 'Passez au niveau supérieur pour l\'IA')
-              }
-            >
-              {hasAIAccess ? (
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              ) : (
-                <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              )}
-              <span className="hidden sm:inline">
-                {hasAIAccess 
-                  ? (language === 'en' ? 'Ask James' : 'Demander')
-                  : (language === 'en' ? 'Upgrade' : 'Mise à niveau')
-                }
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Dynamic Dashboard Layout - Only renders sections with real data */}
-      <DynamicDashboardLayout sections={dashboardSections} />
+      <DynamicDashboardLayout 
+        sections={dashboardSections}
+        customOrder={widgetConfigs.map(w => w.id)}
+      />
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <QuickAction
           to="/app/anomalies"
           icon={<AlertTriangle className="w-5 h-5" />}
@@ -894,7 +1066,7 @@ export default function Dashboard() {
       {/* Upgrade CTA Section - Show for non-premium users */}
       {!hasAIAccess && (
         <div 
-          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6"
+          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
           style={{ 
             backgroundColor: 'rgb(var(--color-surface))',
             border: '1px solid rgb(var(--color-border))',
@@ -983,6 +1155,46 @@ export default function Dashboard() {
         </div>
       )}
 
+          {/* Chart Gallery Modal */}
+          {showChartGallery && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+              onClick={() => setShowChartGallery(false)}
+            >
+              <div
+                className="relative w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl"
+                style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div
+                  className="flex items-center justify-between p-4 sm:p-6 border-b"
+                  style={{ borderColor: 'rgb(var(--color-border))' }}
+                >
+                  <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Add Widget' : 'Ajouter un widget'}
+                  </h2>
+                  <button
+                    onClick={() => setShowChartGallery(false)}
+                    className="p-2 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-bg-muted))',
+                      color: 'rgb(var(--color-text-muted))',
+                    }}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="p-4 sm:p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+                  <ChartGallery onSelectChart={handleAddWidget} />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Decision Capture Modal */}
           {showDecisionCapture && decisionTrigger && (
             <DecisionCapture
@@ -1047,7 +1259,7 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
       {/* Header - Always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 sm:p-4 lg:p-5 flex items-center justify-between transition-colors active:opacity-70 group-hover:bg-[rgb(var(--color-bg-muted))]"
+        className="w-full p-2.5 sm:p-3 lg:p-4 flex items-center justify-between transition-colors active:opacity-70 group-hover:bg-[rgb(var(--color-bg-muted))]"
       >
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <div 
@@ -1236,6 +1448,100 @@ function QuickAction({ to, icon, title, subtitle, hasAttention }: QuickActionPro
 }
 
 // =====================================================
+// PERIOD FILTER COMPONENT - Themed dropdown
+// =====================================================
+
+interface PeriodFilterProps {
+  periods: { id: string; label: string }[];
+  selectedPeriod: string;
+  onSelectPeriod: (id: string) => void;
+  isEn: boolean;
+}
+
+function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodFilterProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const selectedLabel = periods.find(p => p.id === selectedPeriod)?.label || '';
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Filter button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+        style={{
+          backgroundColor: isOpen ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-surface))',
+          color: isOpen ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text))',
+          border: `1px solid ${isOpen ? 'rgb(var(--color-primary-500) / 0.3)' : 'rgb(var(--color-border))'}`,
+        }}
+      >
+        <Calendar className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+        <span>{selectedLabel}</span>
+        <ChevronDown 
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          style={{ color: 'rgb(var(--color-text-muted))' }}
+        />
+      </button>
+      
+      {/* Dropdown menu */}
+      {isOpen && (
+        <div 
+          className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[120px] animate-in fade-in slide-in-from-top-1 duration-150"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+            boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)',
+          }}
+        >
+          {periods.map(period => {
+            const isSelected = period.id === selectedPeriod;
+            return (
+              <button
+                key={period.id}
+                onClick={() => {
+                  onSelectPeriod(period.id);
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium transition-colors text-left"
+                style={{
+                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.08)' : 'transparent',
+                  color: isSelected ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text))',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isSelected ? 'rgb(var(--color-primary-500) / 0.08)' : 'transparent';
+                }}
+              >
+                <span>{period.label}</span>
+                {isSelected && (
+                  <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================
 // HELPER FUNCTIONS FOR INDUSTRY-AWARE LABELS
 // =====================================================
 
@@ -1386,9 +1692,11 @@ function getIndustryChartSubtitle(industry: string, isEn: boolean): string {
 interface IndustryBenchmarksSectionProps {
   industry: string;
   isEn: boolean;
+  ibcsMode?: boolean;
+  financialData?: any;
 }
 
-function IndustryBenchmarksSection({ industry, isEn }: IndustryBenchmarksSectionProps) {
+function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financialData }: IndustryBenchmarksSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   // Find industry data or default to real_estate
   const industryData = INDUSTRY_KPIS.find(ind => ind.id === industry) || INDUSTRY_KPIS[0];
@@ -1511,9 +1819,49 @@ function IndustryBenchmarksSection({ industry, isEn }: IndustryBenchmarksSection
     return TrendingUp;
   };
 
+  // Determine metric type for IBCS variance calculation
+  const getMetricType = (kpiName: string): IBCSMetricType => {
+    if (kpiName.includes('Cost') || kpiName.includes('Coût') || kpiName.includes('Expense') || kpiName.includes('Dépense')) {
+      return 'expense';
+    }
+    if (kpiName.includes('Revenue') || kpiName.includes('Revenus') || kpiName.includes('Sales') || kpiName.includes('Ventes') || kpiName.includes('NOI') || kpiName.includes('GOP')) {
+      return 'revenue';
+    }
+    if (kpiName.includes('Profit') || kpiName.includes('Bénéfice') || kpiName.includes('Margin') || kpiName.includes('Marge')) {
+      return 'profit';
+    }
+    if (kpiName.includes('Rate') || kpiName.includes('Taux') || kpiName.includes('%') || kpiName.includes('Ratio') || kpiName.includes('Turnover') || kpiName.includes('Rotation')) {
+      return 'ratio';
+    }
+    return 'count';
+  };
+
+  // Extract target value from target string (e.g., "85-95%" -> 90, "4-8%" -> 6)
+  const extractTargetValue = (targetStr: string, currentValue: number): number => {
+    // Try to extract numeric range (e.g., "85-95%" -> average = 90)
+    const rangeMatch = targetStr.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+    if (rangeMatch) {
+      const min = parseFloat(rangeMatch[1]);
+      const max = parseFloat(rangeMatch[2]);
+      return (min + max) / 2;
+    }
+    // Try single number
+    const singleMatch = targetStr.match(/(\d+(?:\.\d+)?)/);
+    if (singleMatch) {
+      return parseFloat(singleMatch[1]);
+    }
+    // Fallback: use current value as target (no variance)
+    return currentValue;
+  };
+
   const kpiCards = topKPIs.map((kpi) => {
     const IconComponent = getIconForKPI(kpi.name);
     const isGoodWhenDown = kpi.name.includes('Cost') || kpi.name.includes('Coût') || kpi.name.includes('Shrinkage') || kpi.name.includes('Variance');
+    
+    // Calculate variance for IBCS display
+    const targetValue = extractTargetValue(kpi.target, kpi.currentValue);
+    const metricType = getMetricType(kpi.name);
+    const variance = calculateVariance(kpi.currentValue, targetValue, metricType);
     
     return {
       id: kpi.name.toLowerCase().replace(/\s+/g, '_'),
@@ -1526,12 +1874,18 @@ function IndustryBenchmarksSection({ industry, isEn }: IndustryBenchmarksSection
       color: 'rgb(var(--color-primary-500))',
       bgColor: 'rgb(var(--color-primary-500) / 0.1)',
       isGoodWhenDown,
+      // IBCS variance props
+      ibcsMode,
+      planValue: targetValue,
+      actualValue: kpi.currentValue,
+      variancePct: variance.percentage,
+      isFavorable: variance.favorable,
     };
   });
 
   return (
     <div 
-      className="rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6"
+      className="rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))',
@@ -1620,7 +1974,7 @@ function IndustryBenchmarksSection({ industry, isEn }: IndustryBenchmarksSection
           )}
 
           {/* Benchmark Cards Grid - Responsive with optimal spacing */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-2.5 lg:gap-3">
             {kpiCards.map((kpi) => (
               <KPICard
                 key={kpi.id}
@@ -1636,6 +1990,11 @@ function IndustryBenchmarksSection({ industry, isEn }: IndustryBenchmarksSection
                 isGoodWhenDown={kpi.isGoodWhenDown}
                 compact={true}
                 isEn={isEn}
+                ibcsMode={kpi.ibcsMode}
+                planValue={kpi.planValue}
+                actualValue={kpi.actualValue}
+                variancePct={kpi.variancePct}
+                isFavorable={kpi.isFavorable}
               />
             ))}
           </div>

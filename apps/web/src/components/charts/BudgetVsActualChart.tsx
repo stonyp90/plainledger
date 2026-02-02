@@ -210,7 +210,7 @@ export default function BudgetVsActualChart({
 
   return (
     <div 
-      className="rounded-xl transition-all duration-200 hover:shadow-md group"
+      className="rounded-lg sm:rounded-xl transition-all duration-200 hover:shadow-md group"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'
@@ -223,7 +223,7 @@ export default function BudgetVsActualChart({
       }}
     >
       {/* Header */}
-      <div className="p-4 sm:p-5 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
+      <div className="p-3 sm:p-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 

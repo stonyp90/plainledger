@@ -131,7 +131,7 @@ export default function BenchmarkCard({
 
   return (
     <div 
-      className="rounded-xl border p-3 sm:p-4 hover:shadow-md transition-all"
+      className="rounded-lg sm:rounded-xl border p-2.5 sm:p-3 hover:shadow-md transition-all"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         borderColor: 'rgb(var(--color-border))'

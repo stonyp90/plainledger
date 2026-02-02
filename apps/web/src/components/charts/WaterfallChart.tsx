@@ -247,7 +247,7 @@ export default function WaterfallChart({
 
   return (
     <div 
-      className="rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md group"
+      className="rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-200 hover:shadow-md group"
       style={{ 
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))'

@@ -11,6 +11,7 @@ import OrganizationSwitcher from './OrganizationSwitcher';
 import SearchModal, { useSearchModal } from './SearchModal';
 import { crispUtils } from './CrispChat';
 import { PremiumBadge, type PremiumFeature } from './PremiumFeatureGate';
+import { AIToolbar } from './AIToolbar';
 import config from '../lib/config';
 import {
   LayoutDashboard,
@@ -586,6 +587,7 @@ export default function Layout({ children }: LayoutProps) {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
+
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -1380,14 +1382,17 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Page Content - Responsive padding */}
-        <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* Page Content - Responsive padding - optimized for space efficiency */}
+        <div className="flex-1 p-2.5 sm:p-3 lg:p-4 xl:p-5 overflow-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
           {children}
         </div>
       </main>
 
       {/* Search Modal */}
       <SearchModal isOpen={searchModal.isOpen} onClose={searchModal.close} />
+
+      {/* Global AI Toolbar - Always available */}
+      <AIToolbar />
     </div>
   );
 }

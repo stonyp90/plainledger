@@ -581,7 +581,7 @@ export default function TrendChart({
   return (
     <div 
       ref={chartRef}
-      className={`rounded-xl p-4 sm:p-5 transition-all duration-200 hover:shadow-md group ${
+      className={`rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-200 hover:shadow-md group ${
         isFullscreen ? 'fixed inset-0 overflow-auto flex flex-col' : ''
       }`}
       style={{ 
