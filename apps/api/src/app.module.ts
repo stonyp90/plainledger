@@ -24,6 +24,10 @@ import { DecisionEventEntity } from "@infrastructure/persistence/postgres/entiti
 import { IndustryPatternEntity } from "@infrastructure/persistence/postgres/entities/industry-pattern.entity";
 import { SharedDocumentEntity } from "@infrastructure/persistence/postgres/entities/shared-document.entity";
 import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
+import {
+  IndustryBenchmarkEntity,
+  BenchmarkRefreshLogEntity,
+} from "@infrastructure/persistence/postgres/entities/industry-benchmark.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -75,6 +79,9 @@ import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickboo
 import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
 import { S3CleanupAdapter } from "@infrastructure/adapters/storage/s3/s3-cleanup.adapter";
 import { BenchmarkRefreshService } from "@infrastructure/services/benchmark-refresh.service";
+import { BenchmarkHealthService } from "@infrastructure/services/benchmark-health.service";
+import { ISEDBenchmarkService } from "@infrastructure/services/ised-benchmark.service";
+import { StatsCanBenchmarkService } from "@infrastructure/services/statscan-benchmark.service";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 import { PubSub } from "graphql-subscriptions";
 import { ETLSubscriptionResolver } from "@infrastructure/graphql/resolvers/etl.subscription";
@@ -173,6 +180,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
           IndustryPatternEntity,
           SharedDocumentEntity,
           EmailEventEntity,
+          IndustryBenchmarkEntity,
+          BenchmarkRefreshLogEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -230,6 +239,8 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       IndustryPatternEntity,
       SharedDocumentEntity,
       EmailEventEntity,
+      IndustryBenchmarkEntity,
+      BenchmarkRefreshLogEntity,
     ]),
 
     // Keycloak Authentication
@@ -369,7 +380,10 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     DataRetentionJob,
     TaxCreditSyncJob,
     S3CleanupAdapter,
-    // BenchmarkRefreshService - disabled until IndustryBenchmarkEntity is registered
+    BenchmarkRefreshService,
+    BenchmarkHealthService,
+    ISEDBenchmarkService,
+    StatsCanBenchmarkService,
     JobConfigurationService,
     {
       provide: "IPowerBIAdapter",
@@ -398,7 +412,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     FinancialResolver,
     OrganizationResolver,
     DataSourceResolver,
-    // MarketAnalysisResolver - disabled until BenchmarkRefreshService is fixed
+    MarketAnalysisResolver,
     TaxCreditResolver,
     ETLSubscriptionResolver,
     AccountBalanceSubscriptionResolver,

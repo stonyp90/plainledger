@@ -5,7 +5,7 @@
  * Provides health checks, data validation, and alerting for stale data.
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Optional } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Cron } from "@nestjs/schedule";
@@ -99,7 +99,7 @@ export class BenchmarkHealthService {
     private readonly refreshLogRepo: Repository<BenchmarkRefreshLogEntity>,
     private readonly isedService: ISEDBenchmarkService,
     private readonly statsCanService: StatsCanBenchmarkService,
-    private readonly notificationService: NotificationService,
+    @Optional() private readonly notificationService?: NotificationService,
   ) {}
 
   /**
