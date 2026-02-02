@@ -414,7 +414,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       useClass: DatalakeDataService,
     },
     {
-      provide: "IPowerBIDatalakeAdapter",
+      provide: "IPowerBIDatalakeService",
       useClass: PowerBIDatalakeAdapter,
     },
     {

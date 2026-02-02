@@ -1,7 +1,7 @@
 /**
  * Permissions Controller
  * Handles permission checks for various features
- * Uses database-backed authorization
+ * Uses database-backed authorization with Keycloak roles fallback
  */
 
 import {
@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UnauthorizedException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -19,6 +20,11 @@ import {
 } from "@nestjs/swagger";
 import { CurrentUser } from "@infrastructure/auth/current-user.decorator";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
+
+// DTOs for Swagger documentation
+class StorybookAccessResponseDto {
+  allowed: boolean;
+}
 
 @Controller("permissions")
 @ApiTags("permissions")
@@ -32,25 +38,39 @@ export class PermissionsController {
 
   /**
    * Check if user has access to Storybook
-   * Checks database for storybook:access permission
+   * 
+   * Checks multiple authorization sources:
+   * 1. Database featureFlags.storybook:access
+   * 2. Keycloak role: storybook-viewer
+   * 3. Keycloak role: plainledger-staff (internal staff)
+   * 4. Keycloak role: admin or plainledger-admin
+   * 
+   * @returns {StorybookAccessResponseDto} Permission check result
    */
   @Get("storybook")
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Check Storybook access permission" })
+  @ApiOperation({
+    summary: "Check Storybook access permission",
+    description:
+      "Verifies if the authenticated user has permission to access Storybook component library. " +
+      "Checks both database-backed permissions and Keycloak roles.",
+  })
   @ApiResponse({
     status: 200,
     description: "Permission check result",
-    schema: {
-      type: "object",
-      properties: {
-        allowed: { type: "boolean" },
-      },
-    },
+    type: StorybookAccessResponseDto,
   })
-  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - Missing or invalid authentication token",
+  })
   async checkStorybookAccess(
     @CurrentUser() user: { sub: string; email?: string; roles?: string[] },
-  ): Promise<{ allowed: boolean }> {
+  ): Promise<StorybookAccessResponseDto> {
+    if (!user || !user.sub) {
+      throw new UnauthorizedException("User not authenticated");
+    }
+
     this.logger.log(`Checking Storybook access for user: ${user.sub}`);
 
     try {
@@ -76,7 +96,7 @@ export class PermissionsController {
         user.roles?.includes("plainledger-admin") === true;
 
       this.logger.log(
-        `Storybook access for ${user.sub}: ${hasAccess ? "allowed" : "denied"}`,
+        `Storybook access for ${user.sub} (${user.email}): ${hasAccess ? "allowed" : "denied"}`,
       );
 
       return { allowed: hasAccess };
@@ -85,7 +105,7 @@ export class PermissionsController {
         `Error checking Storybook access: ${error.message}`,
         error.stack,
       );
-      // Deny access on error for security
+      // Deny access on error for security (fail-secure)
       return { allowed: false };
     }
   }
