@@ -1,0 +1,26 @@
+import{j as t}from"./jsx-runtime-D_zvdyIk.js";import{r as X}from"./index-oxIuDU2I.js";import{T as Y,a as Z}from"./trending-up-B7BW5zOW.js";import{M as ee}from"./minus-BofYsvAw.js";import"./_commonjsHelpers-CqkleIqs.js";import"./createLucideIcon-Ek28f7y5.js";function I({data:e,width:i=80,height:n=24,showTrend:$=!0,showValue:F=!1,showChange:O=!1,formatValue:R=o=>o.toLocaleString(),highlightAnomalies:U=!0,anomalyThreshold:V=2}){const{normalizedData:o,min:re,max:ne,trend:m,change:se,changePct:D,mean:te,stdDev:ae,anomalies:B}=X.useMemo(()=>{if(e.length===0)return{normalizedData:[],min:0,max:0,trend:"stable",change:0,changePct:0,mean:0,stdDev:0,anomalies:[]};const s=e.length>0?Math.min(...e):0,l=e.length>0?Math.max(...e):0,c=l-s||1,u=e.length>0?e.reduce((r,a)=>(r??0)+(a??0),0)/e.length:0,J=e.length>0?e.reduce((r,a)=>(r??0)+Math.pow((a??0)-u,2),0)/e.length:0,M=Math.sqrt(J),K=e.map((r,a)=>Math.abs((r-u)/(M||1))>V?a:-1).filter(r=>r!==-1);let v="stable";if(e.length>=2){const r=e.slice(-Math.ceil(e.length/3)).reduce((w,T)=>w+T,0)/Math.ceil(e.length/3),a=e.slice(0,Math.ceil(e.length/3)).reduce((w,T)=>w+T,0)/Math.ceil(e.length/3),y=(r-a)/Math.abs(a||1)*100;y>5?v="up":y<-5&&(v="down")}const b=e[0],j=e[e.length-1]-b,Q=b!==0?j/Math.abs(b)*100:0;return{normalizedData:e.map(r=>(r-s)/c),min:s,max:l,trend:v,change:j,changePct:Q,mean:u,stdDev:M,anomalies:K}},[e,V]);if(!e||e.length===0)return t.jsx("span",{className:"text-xs",style:{color:"rgb(var(--color-text-muted))"},children:"—"});const G=o.map((s,l)=>{const c=l/(e.length-1)*i,u=n-s*n*.8-n*.1;return`${c},${u}`}).join(" "),H=m==="up"?Y:m==="down"?Z:ee,x=m==="up"?"rgb(var(--color-success))":m==="down"?"rgb(var(--color-error))":"rgb(var(--color-text-muted))";return t.jsxs("div",{className:"inline-flex items-center gap-2",children:[t.jsxs("svg",{width:i,height:n,className:"overflow-visible",children:[t.jsx("polyline",{points:G,fill:"none",stroke:"rgb(var(--color-text-secondary))",strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round"}),U&&B.map(s=>{const l=s/(e.length-1)*i,c=n-o[s]*n*.8-n*.1;return t.jsx("circle",{cx:l,cy:c,r:"3",fill:"rgb(var(--color-error))"},s)}),t.jsx("circle",{cx:i,cy:n-o[o.length-1]*n*.8-n*.1,r:"2.5",fill:x})]}),$&&t.jsx(H,{className:"w-3 h-3",style:{color:x}}),F&&t.jsx("span",{className:"text-xs font-mono tabular-nums",style:{color:"rgb(var(--color-text))"},children:R(e[e.length-1])}),O&&t.jsxs("span",{className:"text-xs font-mono tabular-nums",style:{color:x},children:[D>=0?"+":"",D.toFixed(1),"%"]})]})}I.__docgenInfo={description:"",methods:[],displayName:"Sparkline",props:{data:{required:!0,tsType:{name:"Array",elements:[{name:"number"}],raw:"number[]"},description:""},width:{required:!1,tsType:{name:"number"},description:"",defaultValue:{value:"80",computed:!1}},height:{required:!1,tsType:{name:"number"},description:"",defaultValue:{value:"24",computed:!1}},showTrend:{required:!1,tsType:{name:"boolean"},description:"",defaultValue:{value:"true",computed:!1}},showValue:{required:!1,tsType:{name:"boolean"},description:"",defaultValue:{value:"false",computed:!1}},showChange:{required:!1,tsType:{name:"boolean"},description:"",defaultValue:{value:"false",computed:!1}},formatValue:{required:!1,tsType:{name:"signature",type:"function",raw:"(value: number) => string",signature:{arguments:[{type:{name:"number"},name:"value"}],return:{name:"string"}}},description:"",defaultValue:{value:"(v) => v.toLocaleString()",computed:!1}},highlightAnomalies:{required:!1,tsType:{name:"boolean"},description:"",defaultValue:{value:"true",computed:!1}},anomalyThreshold:{required:!1,tsType:{name:"number"},description:"",defaultValue:{value:"2",computed:!1}}}};const pe={title:"Charts/Sparkline",component:I,parameters:{layout:"centered"},tags:["autodocs"]},f=[100,105,110,108,115,120,125,130,128,135,140,145],d={args:{data:f}},p={args:{data:f,showTrend:!0,showValue:!0,showChange:!0}},g={args:{data:[...f,50,60],highlightAnomalies:!0,showTrend:!0}},h={args:{data:f,width:120,height:40,showTrend:!0}};var S,k,q;d.parameters={...d.parameters,docs:{...(S=d.parameters)==null?void 0:S.docs,source:{originalSource:`{
+  args: {
+    data: mockData
+  }
+}`,...(q=(k=d.parameters)==null?void 0:k.docs)==null?void 0:q.source}}};var A,C,z;p.parameters={...p.parameters,docs:{...(A=p.parameters)==null?void 0:A.docs,source:{originalSource:`{
+  args: {
+    data: mockData,
+    showTrend: true,
+    showValue: true,
+    showChange: true
+  }
+}`,...(z=(C=p.parameters)==null?void 0:C.docs)==null?void 0:z.source}}};var N,P,W;g.parameters={...g.parameters,docs:{...(N=g.parameters)==null?void 0:N.docs,source:{originalSource:`{
+  args: {
+    data: [...mockData, 50, 60],
+    // Anomalies at the end
+    highlightAnomalies: true,
+    showTrend: true
+  }
+}`,...(W=(P=g.parameters)==null?void 0:P.docs)==null?void 0:W.source}}};var L,_,E;h.parameters={...h.parameters,docs:{...(L=h.parameters)==null?void 0:L.docs,source:{originalSource:`{
+  args: {
+    data: mockData,
+    width: 120,
+    height: 40,
+    showTrend: true
+  }
+}`,...(E=(_=h.parameters)==null?void 0:_.docs)==null?void 0:E.source}}};const ge=["Default","WithTrend","WithAnomalies","CustomSize"];export{h as CustomSize,d as Default,g as WithAnomalies,p as WithTrend,ge as __namedExportsOrder,pe as default};

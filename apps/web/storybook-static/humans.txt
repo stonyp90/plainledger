@@ -1,0 +1,15 @@
+/* TEAM */
+Product: PlainLedger
+Site: https://plainledger.io
+Location: Canada
+
+/* THANKS */
+Built with React, Vite, TailwindCSS
+Powered by modern web technologies
+
+/* SITE */
+Last update: 2026/01/27
+Language: English, French
+Standards: HTML5, CSS3, ES6+
+Components: React, TypeScript
+Software: Vite, TailwindCSS
