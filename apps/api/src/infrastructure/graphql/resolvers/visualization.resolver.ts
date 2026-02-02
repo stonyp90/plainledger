@@ -17,6 +17,7 @@ import {
   UpdateVisualizationInput,
   VisualizationQueryInput,
   CreateCustomEntityInput,
+  UpdateCustomEntityInput,
 } from "../types/visualization.types";
 import { IVisualizationRepository } from "@application/ports/outbound/IVisualizationRepository";
 import { ICustomEntityRepository } from "@application/ports/outbound/ICustomEntityRepository";
@@ -334,7 +335,7 @@ export class VisualizationResolver {
   })
   async updateCustomEntity(
     @Args("id") id: string,
-    @Args("input") input: Partial<CreateCustomEntityInput>,
+    @Args("input") input: UpdateCustomEntityInput,
     @Context() context: { req: { user: { organizationId: string; userId: string } } },
   ): Promise<CustomEntity> {
     const { organizationId, userId } = context.req.user;

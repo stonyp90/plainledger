@@ -282,6 +282,36 @@ export class CreateCustomEntityInput {
   isPublic?: boolean;
 }
 
+@InputType()
+export class UpdateCustomEntityInput {
+  @Field({ nullable: true })
+  name?: string;
+
+  @Field({ nullable: true })
+  nameEn?: string;
+
+  @Field({ nullable: true })
+  description?: string;
+
+  @Field({ nullable: true })
+  descriptionEn?: string;
+
+  @Field({ nullable: true })
+  icon?: string;
+
+  @Field(() => [DataSourceReferenceInput], { nullable: true })
+  baseSources?: DataSourceReferenceInput[];
+
+  @Field(() => [JoinConfigInput], { nullable: true })
+  joins?: JoinConfigInput[];
+
+  @Field(() => [String], { nullable: true })
+  defaultFields?: string[];
+
+  @Field({ nullable: true })
+  isPublic?: boolean;
+}
+
 // =====================================================
 // OUTPUT TYPES
 // =====================================================

@@ -253,6 +253,45 @@ curl http://localhost:PORT/health
 - **Event-driven** - Use events for loose coupling
 - **Single Responsibility** - One reason to change
 
+### NestJS/GraphQL Critical Rules
+
+#### GraphQL Type Rules (CRITICAL)
+**NEVER use TypeScript utility types in GraphQL decorators:**
+- `Partial<T>` - NOT a valid GraphQL type
+- `Pick<T, K>` - NOT a valid GraphQL type  
+- `Omit<T, K>` - NOT a valid GraphQL type
+- `Record<K, V>` - NOT a valid GraphQL type
+
+**ALWAYS create explicit Input types:**
+```typescript
+// BAD - Will crash at runtime
+@Args("input") input: Partial<CreateUserInput>
+
+// GOOD - Explicit type with @InputType decorator
+@Args("input") input: UpdateUserInput
+```
+
+#### Dependency Injection Rules (CRITICAL)
+**Provider token MUST match what's injected:**
+```typescript
+// In app.module.ts
+{ provide: "IMyService", useClass: MyServiceImpl }
+
+// In consumer - token must match exactly
+@Inject("IMyService") private service: IMyService
+```
+
+#### Pre-Commit Verification Checklist
+Before committing API changes, ALWAYS run:
+```bash
+cd apps/api && npm run build
+```
+This catches:
+- GraphQL schema errors
+- TypeORM entity issues
+- Missing dependencies
+- Type errors
+
 ### Provider-Agnostic Architecture (CRITICAL)
 **All external integrations MUST use interfaces:**
 

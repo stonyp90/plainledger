@@ -974,6 +974,88 @@ export class OrganizationController {
 - **Contract** - Validate API contracts
 - **E2E** - Full user flows (Playwright)
 
+## Common Pitfalls and How to Avoid Them
+
+### 1. GraphQL Type Errors
+**Problem:** Using TypeScript utility types in GraphQL decorators causes runtime crashes.
+
+**Signs:** Container crashes with `UndefinedTypeError` during startup.
+
+**Prevention:**
+- NEVER use `Partial<T>`, `Pick<T>`, `Omit<T>` in `@Args()` decorators
+- ALWAYS create explicit `@InputType()` classes for mutations
+- For update operations, create separate `Update*Input` classes with nullable fields
+
+**Example:**
+```typescript
+// CreateUserInput - fields required
+@InputType()
+export class CreateUserInput {
+  @Field()
+  name: string;
+  
+  @Field()
+  email: string;
+}
+
+// UpdateUserInput - all fields optional
+@InputType()
+export class UpdateUserInput {
+  @Field({ nullable: true })
+  name?: string;
+  
+  @Field({ nullable: true })
+  email?: string;
+}
+```
+
+### 2. Dependency Injection Mismatches
+**Problem:** Provider token in module doesn't match injection token.
+
+**Signs:** `Nest can't resolve dependencies` error at startup.
+
+**Prevention:**
+- Provider token string must EXACTLY match `@Inject("token")` string
+- Use consistent naming: `I{ServiceName}` for interfaces
+- When renaming, update BOTH module registration AND all injection sites
+
+### 3. TypeORM Entity Index Errors
+**Problem:** `@Index` decorator uses database column names instead of property names.
+
+**Signs:** `Index contains column that is missing in the entity` error.
+
+**Prevention:**
+- Use TypeScript property names in `@Index`, not database column names
+- Example: `@Index(["organizationId"])` not `@Index(["organization_id"])`
+
+### 4. Missing Dependencies in Production
+**Problem:** Package used but not in dependencies (works locally with hoisted deps).
+
+**Signs:** `Cannot find module` in production containers.
+
+**Prevention:**
+- If importing a package, ensure it's in `package.json` dependencies
+- Run `npm ls <package>` to verify it's a direct dependency
+
+## Pre-Deployment Verification
+
+**ALWAYS run before committing:**
+```bash
+# 1. Build to catch compile-time errors
+cd apps/api && npm run build
+
+# 2. Run tests
+npm run test
+
+# 3. Lint
+npm run lint
+```
+
+**After pushing, monitor:**
+1. CI/CD pipeline status
+2. ECS deployment events (if deploy fails)
+3. CloudWatch logs for startup errors
+
 ## Self-Improvement
 
 **Update this file when:**

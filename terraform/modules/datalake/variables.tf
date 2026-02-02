@@ -36,3 +36,9 @@ variable "from_email" {
   type        = string
   default     = "noreply@plainledger.ca"
 }
+
+variable "enable_cloudwatch_alarms" {
+  description = "Enable CloudWatch metric alarms and dashboard (costs ~$0.10/alarm/month after free tier)"
+  type        = bool
+  default     = false
+}
