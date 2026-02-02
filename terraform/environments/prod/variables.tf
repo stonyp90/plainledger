@@ -128,10 +128,10 @@ variable "quickbooks_environment" {
 
 # Keycloak
 variable "keycloak_client_secret" {
-  description = "Keycloak API client secret for Admin API (service account)"
+  description = "Keycloak API client secret for Admin API (service account). REQUIRED for authentication. Get from Keycloak Admin Console: Realm 'plainledger' → Clients → 'plainledger-api' → Credentials tab"
   type        = string
   sensitive   = true
-  default     = ""  # Can be empty initially, update via AWS console
+  # No default - must be set explicitly to ensure production security
 }
 
 # SES SMTP (for Keycloak and API email sending)

@@ -602,6 +602,7 @@ resource "aws_ecs_task_definition" "web" {
         { name = "VITE_KEYCLOAK_URL", value = "https://auth.${var.domain_name}" },
         { name = "VITE_KEYCLOAK_REALM", value = "plainledger" },
         { name = "VITE_KEYCLOAK_CLIENT_ID", value = "plainledger-web" },
+        { name = "VITE_MOCK_AUTH", value = "false" },
         { name = "VITE_NOVU_APP_ID", value = "FNfEAbhmW05j" },
         { name = "VITE_STRIPE_PUBLISHABLE_KEY", value = "pk_live_vvnFU7D7nv59fLWYOsVG8BQV" }
       ]
