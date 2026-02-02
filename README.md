@@ -47,76 +47,217 @@ PlainLedger is a financial reporting SaaS platform designed for **Canadian small
 
 ## 🏗️ Architecture
 
+### High-Level System Architecture
+
 ```mermaid
 graph TB
-    subgraph "Client Layer"
-        Web[React Web App<br/>TypeScript + Vite]
-        Mobile[Mobile App<br/>React Native]
+    subgraph "👤 Client Layer"
+        Web["🌐 React Web App<br/>TypeScript + Vite + TailwindCSS"]
+        Mobile["📱 Mobile App<br/>React Native (Planned)"]
     end
     
-    subgraph "API Gateway"
-        API[NestJS API<br/>Clean Architecture]
-        Auth[Keycloak SSO<br/>SAML/OIDC]
+    subgraph "🔐 Authentication & Gateway"
+        Auth["🔑 Keycloak SSO<br/>SAML 2.0 / OIDC / MFA"]
+        API["⚡ NestJS API<br/>GraphQL + REST<br/>Clean Architecture"]
     end
     
-    subgraph "Application Services"
-        ETL[ETL Pipeline<br/>Data Transformation]
-        Reports[Report Engine<br/>IBCS Compliant]
-        AI[AI Anomaly Detection<br/>ML Models]
-        Analytics[Analytics Engine<br/>KPI Calculation]
+    subgraph "🧠 AI & Intelligence Layer"
+        Bedrock["🤖 AWS Bedrock<br/>Claude 3 / RAG"]
+        SageMaker["📊 AWS SageMaker<br/>ML Models"]
+        PatternEngine["🔍 Pattern Recognition<br/>Industry Insights"]
+        AnomalyDetect["⚠️ Anomaly Detection<br/>Fraud & Errors"]
     end
     
-    subgraph "Data Layer"
-        PG[(PostgreSQL<br/>Transactional Data)]
-        Redis[(Redis<br/>Cache & Sessions)]
-        S3[(S3 Data Lake<br/>Bronze/Silver/Gold)]
+    subgraph "⚙️ Application Services"
+        ETL["🔄 ETL Pipeline<br/>Bronze → Silver → Gold"]
+        Reports["📑 Report Engine<br/>IBCS ISO 24896"]
+        KPI["📈 Industry KPIs<br/>11+ Industries"]
+        TaxCredits["💰 Tax Credits<br/>SR&ED Calculator"]
+        Benchmarks["📊 Benchmarks<br/>Stats Can / ISED"]
+        Scenarios["🎯 Scenario Engine<br/>What-If Analysis"]
     end
     
-    subgraph "Integrations"
-        QB[QuickBooks]
-        Xero[Xero]
-        Sage[Sage]
-        FreshBooks[FreshBooks]
+    subgraph "💾 Data Layer"
+        PG[("🐘 PostgreSQL 15+<br/>Transactional Data")]
+        Redis[("⚡ Redis 7+<br/>Cache & Sessions")]
+        S3[("☁️ S3 Data Lake<br/>Bronze/Silver/Gold<br/>Parquet Format")]
+        Athena["🔎 AWS Athena<br/>SQL Analytics"]
     end
     
-    subgraph "External Services"
-        PowerBI[Power BI<br/>Embedded Dashboards]
-        Stripe[Stripe<br/>Billing]
-        CRM[HubSpot/Salesforce<br/>CRM Integration]
+    subgraph "🔌 Accounting Integrations"
+        QB["QuickBooks Online"]
+        Xero["Xero"]
+        Sage["Sage"]
+        FreshBooks["FreshBooks"]
+        CSV["CSV Import"]
     end
     
-    Web --> API
-    Mobile --> API
-    API --> Auth
+    subgraph "🔗 External Services"
+        PowerBI["📊 Power BI Embedded<br/>Interactive Dashboards"]
+        Stripe["💳 Stripe<br/>Subscription Billing"]
+        HubSpot["📞 HubSpot CRM<br/>Lead Management"]
+        SES["📧 AWS SES<br/>Email Notifications"]
+        Novu["🔔 Novu<br/>Multi-channel Alerts"]
+    end
+    
+    subgraph "🏗️ Infrastructure"
+        Docker["🐳 Docker<br/>Containerization"]
+        Terraform["🏗️ Terraform<br/>IaC"]
+        GitHub["⚙️ GitHub Actions<br/>CI/CD"]
+        AWS["☁️ AWS Canada<br/>ECS / RDS / S3"]
+    end
+
+    %% Client connections
+    Web --> Auth
+    Mobile --> Auth
+    Auth --> API
+    
+    %% API to Services
     API --> ETL
     API --> Reports
-    API --> AI
-    API --> Analytics
+    API --> KPI
+    API --> TaxCredits
+    API --> Benchmarks
+    API --> Scenarios
+    
+    %% AI connections
+    API --> Bedrock
+    API --> SageMaker
+    Bedrock --> PatternEngine
+    SageMaker --> AnomalyDetect
+    PatternEngine --> S3
+    AnomalyDetect --> S3
+    
+    %% Data connections
     ETL --> PG
     ETL --> S3
-    Reports --> PG
     Reports --> S3
-    AI --> S3
-    Analytics --> S3
+    KPI --> S3
     API --> Redis
+    Athena --> S3
+    
+    %% Integrations
     ETL --> QB
     ETL --> Xero
     ETL --> Sage
     ETL --> FreshBooks
+    ETL --> CSV
+    
+    %% External services
     API --> PowerBI
     API --> Stripe
-    API --> CRM
+    API --> HubSpot
+    API --> SES
+    API --> Novu
+    
+    %% Infrastructure
+    Docker --> AWS
+    Terraform --> AWS
+    GitHub --> Docker
+```
+
+### Data Lake Architecture (Medallion)
+
+```mermaid
+graph LR
+    subgraph "🥉 Bronze Layer"
+        B1["Raw QuickBooks Data"]
+        B2["Raw Xero Data"]
+        B3["Raw Sage Data"]
+        B4["Raw CSV Imports"]
+    end
+    
+    subgraph "🥈 Silver Layer"
+        S1["Normalized Accounts"]
+        S2["Standardized Transactions"]
+        S3["Validated Balances"]
+        S4["Deduplicated Records"]
+    end
+    
+    subgraph "🥇 Gold Layer"
+        G1["Financial Statements"]
+        G2["KPI Metrics"]
+        G3["Industry Benchmarks"]
+        G4["Anomaly Scores"]
+        G5["AI Insights"]
+    end
+    
+    B1 --> S1
+    B2 --> S1
+    B3 --> S1
+    B4 --> S1
+    B1 --> S2
+    B2 --> S2
+    B3 --> S2
+    B4 --> S2
+    S1 --> G1
+    S2 --> G1
+    S3 --> G2
+    S2 --> G3
+    S4 --> G4
+    S1 --> G5
+```
+
+### Clean Architecture (API)
+
+```mermaid
+graph TB
+    subgraph "🎯 Domain Layer"
+        Entities["Entities<br/>Account, Organization, DataSource"]
+        ValueObjects["Value Objects<br/>Money, TenantId, AccountCode"]
+        DomainServices["Domain Services<br/>Business Rules"]
+    end
+    
+    subgraph "📋 Application Layer"
+        UseCases["Use Cases<br/>ETL, Reports, KPIs"]
+        Ports["Ports (Interfaces)<br/>IAccountingProvider<br/>IStorageProvider<br/>IAIProvider"]
+        Services["Application Services<br/>PatternAggregation<br/>TaxCreditEligibility"]
+    end
+    
+    subgraph "🔧 Infrastructure Layer"
+        Controllers["Controllers<br/>REST + GraphQL"]
+        Adapters["Adapters<br/>QuickBooks, Xero, Bedrock"]
+        Repositories["Repositories<br/>Postgres, Redis, S3"]
+    end
+    
+    Controllers --> UseCases
+    UseCases --> Ports
+    UseCases --> Entities
+    UseCases --> DomainServices
+    Adapters -.->|implements| Ports
+    Repositories -.->|implements| Ports
+    DomainServices --> Entities
+    DomainServices --> ValueObjects
 ```
 
 ### Technology Stack
 
-- **Frontend**: React 18, TypeScript, Vite, TailwindCSS
-- **Backend**: NestJS, TypeScript, Clean Architecture
-- **Database**: PostgreSQL 15+, Redis 7+
-- **Authentication**: Keycloak 22+ (SSO, MFA, SAML/OIDC)
-- **Storage**: AWS S3 / MinIO (S3-compatible)
-- **Infrastructure**: Docker, Docker Compose, Terraform, AWS
-- **Testing**: Playwright (E2E), Vitest (Unit)
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | React 18, TypeScript 5+, Vite 6, TailwindCSS, Recharts, Lucide Icons |
+| **Backend** | NestJS 10, TypeScript, GraphQL (Apollo), REST, Clean Architecture |
+| **Database** | PostgreSQL 15+ (TypeORM), Redis 7+ (Cache/Sessions) |
+| **Data Lake** | AWS S3 / MinIO, Parquet, Bronze/Silver/Gold Medallion |
+| **AI/ML** | AWS Bedrock (Claude 3), SageMaker, pgvector (Embeddings) |
+| **Authentication** | Keycloak 22+ (SSO, MFA, SAML 2.0, OIDC) |
+| **Analytics** | Power BI Embedded, AWS Athena, Stats Canada API |
+| **Infrastructure** | Docker, Terraform, AWS (ECS, RDS, S3, SES) |
+| **CI/CD** | GitHub Actions, AWS CodePipeline |
+| **Testing** | Playwright (E2E), Vitest (Unit), Jest (API) |
+| **Monitoring** | AWS CloudWatch, Sentry (planned) |
+
+### Key Features by Layer
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-Provider ETL** | Unified data extraction from QuickBooks, Xero, Sage, FreshBooks |
+| **IBCS Reports** | Financial statements following ISO 24896 standards |
+| **AI Anomaly Detection** | Automatic detection of fraud, duplicates, billing errors |
+| **Industry KPIs** | 11+ industry-specific KPI calculations (Restaurant, Real Estate, Healthcare...) |
+| **Tax Credits** | SR&ED calculator, eligibility assessment, partner matching |
+| **Scenario Planning** | What-if analysis, financial modeling, projections |
+| **Benchmarking** | Stats Canada & ISED industry benchmarks comparison |
+| **Multi-Tenancy** | Organization isolation, per-tenant branding, feature flags |
 
 ---
 
@@ -473,38 +614,105 @@ docker build -t plainledger-web:latest .
 ```
 plainledger/
 ├── apps/
-│   ├── api/                    # NestJS API (Clean Architecture)
+│   ├── api/                          # 🔧 NestJS API (Clean Architecture)
 │   │   ├── src/
-│   │   │   ├── domain/         # Domain entities, value objects
-│   │   │   ├── application/    # Use cases, ports
-│   │   │   └── infrastructure/ # Controllers, repositories, adapters
-│   │   └── Dockerfile
+│   │   │   ├── domain/               # Domain Layer
+│   │   │   │   ├── entities/         #   Account, Organization, DataSource
+│   │   │   │   ├── value-objects/    #   Money, TenantId, AccountCode
+│   │   │   │   ├── datalake/         #   Bronze/Silver/Gold schemas
+│   │   │   │   └── market-analysis/  #   Benchmark types, NAICS mapping
+│   │   │   │
+│   │   │   ├── application/          # Application Layer
+│   │   │   │   ├── ports/            #   Interfaces (IAccountingProvider, etc.)
+│   │   │   │   ├── use-cases/        #   Business use cases
+│   │   │   │   └── services/         #   ETL, KPIs, Tax Credits, Patterns
+│   │   │   │
+│   │   │   └── infrastructure/       # Infrastructure Layer
+│   │   │       ├── adapters/         #   QuickBooks, Xero, S3, Power BI
+│   │   │       ├── intelligence/     #   Bedrock, SageMaker adapters
+│   │   │       ├── graphql/          #   GraphQL resolvers
+│   │   │       ├── http/             #   REST controllers
+│   │   │       ├── persistence/      #   Postgres, Redis, MongoDB repos
+│   │   │       └── jobs/             #   Scheduled jobs (cron)
+│   │   │
+│   │   └── templates/                # Email templates (29 templates)
 │   │
-│   └── web/                    # React + Vite frontend
+│   └── web/                          # 🌐 React + Vite Frontend
 │       ├── src/
-│       │   ├── pages/          # Page components
-│       │   ├── components/     # Shared components
-│       │   ├── contexts/       # React contexts
-│       │   ├── lib/            # Utilities, hooks, services
-│       │   └── features/      # Feature modules
+│       │   ├── pages/                # 40+ page components
+│       │   │   ├── Dashboard.tsx     #   Main dashboard
+│       │   │   ├── Reports.tsx       #   Financial reports
+│       │   │   ├── Connections.tsx   #   Data source connections
+│       │   │   └── ...
+│       │   │
+│       │   ├── components/           # 100+ shared components
+│       │   │   ├── charts/           #   TrendChart, WaterfallChart, IBCS
+│       │   │   ├── strategic/        #   Strategic planning components
+│       │   │   └── ...
+│       │   │
+│       │   ├── contexts/             # React contexts
+│       │   │   ├── TenantContext     #   Multi-tenant state
+│       │   │   ├── ThemeContext      #   Dark/light mode
+│       │   │   └── ...
+│       │   │
+│       │   ├── domain/               # Frontend domain models
+│       │   │   ├── entities/         #   Account, Money
+│       │   │   └── services/         #   AnomalyDetectionService
+│       │   │
+│       │   ├── features/             # Feature modules
+│       │   │   ├── auth/             #   Authentication
+│       │   │   ├── connections/      #   Data connections
+│       │   │   ├── dashboard/        #   Dashboard features
+│       │   │   └── reports/          #   Report generation
+│       │   │
+│       │   ├── hooks/                # Custom React hooks
+│       │   │   ├── useBenchmarks     #   Industry benchmarks
+│       │   │   ├── useGraphConfig    #   Chart configuration
+│       │   │   └── useFinancialData  #   Financial data fetching
+│       │   │
+│       │   └── lib/                  # Utilities
+│       │       ├── ibcs/             #   IBCS chart utilities
+│       │       ├── nlq/              #   Natural language queries
+│       │       └── graphql/          #   GraphQL client
+│       │
 │       └── Dockerfile
 │
-├── keycloak/
-│   ├── realms/                 # Keycloak realm configuration
-│   └── themes/plainledger/     # Custom Keycloak theme
+├── pipelines/                        # 🐍 Python ETL Pipelines (AWS Glue)
+│   ├── extractors/                   # Data extractors
+│   │   ├── quickbooks/               #   QuickBooks extractor
+│   │   ├── xero/                     #   Xero extractor
+│   │   └── sage/                     #   Sage extractor
+│   ├── transformers/                 # Data transformers
+│   │   ├── bronze_to_silver/         #   Normalization, validation
+│   │   └── silver_to_gold/           #   Aggregation, metrics
+│   └── orchestration/                # Glue job orchestration
 │
-├── terraform/                  # Infrastructure as Code
-│   ├── modules/                # Reusable Terraform modules
-│   └── environments/           # Environment-specific configs
+├── keycloak/                         # 🔐 Authentication
+│   ├── realms/                       # Realm configuration
+│   └── themes/plainledger/           # Custom login theme
 │
-├── local-dev/                  # Local development scripts
-│   ├── start.sh               # Start all services
-│   ├── stop.sh                # Stop all services
-│   └── init-*.sql             # Database initialization scripts
+├── terraform/                        # 🏗️ Infrastructure as Code
+│   ├── modules/                      # Reusable modules
+│   │   ├── ecs/                      #   ECS cluster & services
+│   │   ├── rds/                      #   PostgreSQL RDS
+│   │   ├── s3/                       #   S3 buckets
+│   │   └── vpc/                      #   VPC & networking
+│   └── environments/                 # dev, staging, prod configs
 │
-├── e2e/                        # End-to-end tests (Playwright)
-├── docs/                       # Documentation
-└── docker-compose.yml          # Local development stack
+├── e2e/                              # 🧪 E2E Tests (Playwright)
+│   ├── landing.spec.ts               # Landing page tests
+│   ├── auth.spec.ts                  # Authentication tests
+│   ├── dashboard.spec.ts             # Dashboard tests
+│   └── ...
+│
+├── local-dev/                        # 🐳 Local Development
+│   ├── start.sh                      # Start all services
+│   ├── stop.sh                       # Stop all services
+│   └── init-*.sql                    # DB initialization
+│
+├── docs/                             # 📚 Documentation
+├── fixtures/                         # 📋 Test fixtures
+└── docker-compose.yml                # Local stack definition
 ```
 
 ---
