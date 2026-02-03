@@ -6,8 +6,8 @@ import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
-import FlywheelVisualization from '../components/FlywheelVisualization';
 import AITechnologyStack, { AIMetricsRow } from '../components/AITechnologyStack';
+import FlywheelVisualization from '../components/FlywheelVisualization';
 import ContactForm from '../components/ContactForm';
 import { 
   ArrowRight,
@@ -2035,7 +2035,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto relative z-10">
           {/* Section Header */}
           <motion.div 
-            className="text-center mb-16 lg:mb-20"
+            className="text-center mb-12 lg:mb-16"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -2056,7 +2056,7 @@ export default function Landing() {
                 transition={{ duration: 1.5, repeat: Infinity }}
               />
               <span className="text-sm font-medium" style={{ color: theme.green }}>
-                {isEn ? 'Everything Connected' : 'Tout est connecté'}
+                {isEn ? 'Connected Intelligence' : 'Intelligence connectée'}
               </span>
             </motion.div>
             
@@ -2065,9 +2065,9 @@ export default function Landing() {
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? (
-                <>You at the <span style={{ color: theme.green }}>Center</span></>
+                <>Everything Around <span style={{ color: theme.green }}>You</span></>
               ) : (
-                <>Vous, au <span style={{ color: theme.green }}>Centre</span></>
+                <>Tout gravite autour de <span style={{ color: theme.green }}>Vous</span></>
               )}
             </h2>
             <p 
@@ -2075,134 +2075,133 @@ export default function Landing() {
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'All your financial intelligence orbits around you.'
-                : 'Toute votre intelligence financière gravite autour de vous.'}
+                ? 'Your financial data, insights and decisions in one place.'
+                : 'Vos données, analyses et décisions en un seul endroit.'}
             </p>
           </motion.div>
 
-          {/* Desktop & Tablet - Concentric Circles with Orbiting Icons */}
-          <div className="hidden md:flex items-center justify-center relative" style={{ height: 'clamp(480px, 55vw, 620px)' }}>
+          {/* Desktop & Tablet - Clean Orbital System */}
+          <div className="hidden md:flex items-center justify-center relative" style={{ height: '420px' }}>
             
-            {/* Concentric Orbit Circles - One per domain, bigger */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              {[
-                { radius: 250, color: theme.green, opacity: 0.12 },
-                { radius: 210, color: theme.gold, opacity: 0.10 },
-                { radius: 170, color: '#8b5cf6', opacity: 0.08 },
-                { radius: 130, color: theme.greenDark, opacity: 0.10 },
-                { radius: 90, color: '#059669', opacity: 0.12 },
-              ].map((circle, idx) => (
+            {/* Simple orbital rings */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {[180, 130, 80].map((radius, idx) => (
                 <motion.div
-                  key={`circle-${idx}`}
+                  key={idx}
                   className="absolute rounded-full"
                   style={{
-                    width: circle.radius * 2,
-                    height: circle.radius * 2,
-                    border: `1px solid ${circle.color}`,
-                    opacity: circle.opacity,
+                    width: radius * 2,
+                    height: radius * 2,
+                    border: `1px solid ${theme.green}`,
+                    opacity: 0.15 - idx * 0.03,
                   }}
-                  animate={{ rotate: idx % 2 === 0 ? 360 : -360 }}
-                  transition={{ duration: 120 + idx * 25, repeat: Infinity, ease: "linear" }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 0.15 - idx * 0.03, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1, duration: 0.5 }}
                 />
               ))}
             </div>
 
-            {/* Center Photo */}
-            <motion.div 
-              className="relative z-30"
-              initial={{ opacity: 0, scale: 0 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, type: "spring" }}
-            >
-              <motion.div 
-                className="absolute rounded-full"
-                style={{ 
-                  inset: '-3px',
-                  background: `conic-gradient(from 0deg, ${theme.green}60, ${theme.gold}60, ${theme.greenDark}60, ${theme.green}60)`
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            {/* Center User Avatar */}
+            <div className="relative z-30">
+              <motion.div
+                className="absolute -inset-3 rounded-full opacity-30"
+                style={{ background: `radial-gradient(circle, ${theme.green}30 0%, transparent 70%)` }}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               />
               <div 
-                className="absolute rounded-full"
-                style={{ inset: '-1px', background: isDark ? '#0f172a' : '#ffffff' }}
-              />
-              <div 
-                className="relative w-16 h-16 rounded-full overflow-hidden"
+                className="relative w-14 h-14 rounded-full overflow-hidden"
                 style={{ 
                   border: `2px solid ${theme.green}`,
-                  boxShadow: `0 0 25px ${theme.green}25`
+                  boxShadow: `0 0 20px ${theme.green}25`
                 }}
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=128&h=128&fit=crop&crop=face"
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=112&h=112&fit=crop&crop=face"
                   alt=""
                   className="w-full h-full object-cover"
-                  loading="lazy"
                 />
               </div>
-            </motion.div>
+            </div>
 
-            {/* Orbiting Domain Icons - Spread apart to avoid overlap */}
+            {/* Orbiting Icons - Simple with hover tooltip */}
             {[
-              { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green, radius: 250, speed: 35, startAngle: 180 },
-              { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold, radius: 210, speed: 40, startAngle: 0 },
-              { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6', radius: 170, speed: 32, startAngle: 270 },
-              { icon: Percent, label: { en: 'Tax', fr: 'Impôts' }, color: theme.greenDark, radius: 130, speed: 38, startAngle: 45 },
-              { icon: Calculator, label: { en: 'Accounting', fr: 'Compta' }, color: '#059669', radius: 90, speed: 28, startAngle: 135 },
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                className="absolute z-20"
-                style={{ left: '50%', top: '50%' }}
-                animate={{
-                  x: [...Array(9)].map((_, i) => 
-                    Math.cos((item.startAngle + i * 45) * Math.PI / 180) * item.radius
-                  ),
-                  y: [...Array(9)].map((_, i) => 
-                    Math.sin((item.startAngle + i * 45) * Math.PI / 180) * item.radius
-                  ),
-                }}
-                transition={{
-                  duration: item.speed,
-                  repeat: Infinity,
-                  ease: "linear",
-                  times: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1],
-                }}
-              >
-                {/* Icon with Label on Right */}
-                <div className="flex items-center gap-2 -translate-x-1/2 -translate-y-1/2">
+              { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold, radius: 180, duration: 45, start: -30 },
+              { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6', radius: 130, duration: 35, start: 60 },
+              { icon: Percent, label: { en: 'Tax', fr: 'Fiscalité' }, color: theme.greenDark, radius: 80, duration: 25, start: 180 },
+              { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green, radius: 180, duration: 50, start: 150 },
+              { icon: Calculator, label: { en: 'Accounting', fr: 'Comptabilité' }, color: '#059669', radius: 130, duration: 40, start: 240 },
+            ].map((item, idx) => {
+              const points = 36;
+              const xPos = Array.from({ length: points + 1 }, (_, i) => 
+                Math.cos(((item.start + i * (360 / points)) * Math.PI) / 180) * item.radius
+              );
+              const yPos = Array.from({ length: points + 1 }, (_, i) => 
+                Math.sin(((item.start + i * (360 / points)) * Math.PI) / 180) * item.radius
+              );
+              
+              return (
+                <motion.div
+                  key={idx}
+                  className="absolute z-20 group"
+                  style={{ left: '50%', top: '50%' }}
+                  animate={{ x: xPos, y: yPos }}
+                  transition={{
+                    duration: item.duration,
+                    repeat: Infinity,
+                    ease: "linear",
+                    times: Array.from({ length: points + 1 }, (_, i) => i / points),
+                  }}
+                >
                   <motion.div 
-                    className="relative flex items-center justify-center rounded-xl shrink-0"
-                    style={{ 
-                      width: 44,
-                      height: 44,
-                      background: isDark 
-                        ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)'
-                        : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                      border: `2px solid ${item.color}50`,
-                      boxShadow: `0 0 15px ${item.color}20, 0 4px 12px rgba(0,0,0,0.08)`
-                    }}
-                    whileHover={{ scale: 1.1 }}
+                    className="relative"
+                    style={{ marginLeft: -18, marginTop: -18 }}
+                    initial={{ opacity: 0, scale: 0 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.08 + 0.2, type: "spring", stiffness: 300 }}
                   >
-                    <item.icon className="w-5 h-5" style={{ color: item.color }} />
+                    {/* Icon */}
+                    <motion.div 
+                      className="flex items-center justify-center rounded-xl cursor-pointer"
+                      style={{ 
+                        width: 36,
+                        height: 36,
+                        background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
+                        border: `1.5px solid ${item.color}50`,
+                        boxShadow: `0 2px 10px ${item.color}15`
+                      }}
+                      whileHover={{ 
+                        scale: 1.2,
+                        borderColor: item.color,
+                        boxShadow: `0 4px 20px ${item.color}35`
+                      }}
+                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    >
+                      <item.icon style={{ color: item.color, width: 16, height: 16 }} />
+                    </motion.div>
+                    
+                    {/* Tooltip on hover */}
+                    <div 
+                      className="absolute left-1/2 -translate-x-1/2 -bottom-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                    >
+                      <span 
+                        className="text-[11px] font-semibold whitespace-nowrap px-2 py-1 rounded-md"
+                        style={{ 
+                          color: '#fff',
+                          background: item.color,
+                          boxShadow: `0 2px 8px ${item.color}40`
+                        }}
+                      >
+                        {isEn ? item.label.en : item.label.fr}
+                      </span>
+                    </div>
                   </motion.div>
-                  
-                  {/* Label - Always on Right */}
-                  <span 
-                    className="text-xs font-semibold whitespace-nowrap px-2 py-1 rounded"
-                    style={{ 
-                      color: item.color,
-                      background: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                    }}
-                  >
-                    {isEn ? item.label.en : item.label.fr}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
 
           {/* Mobile - Minimal Orbital */}
@@ -2258,9 +2257,9 @@ export default function Landing() {
             <div className="flex justify-center gap-4">
               {[
                 { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green },
-                { icon: PieChart, label: { en: 'Data', fr: 'Data' }, color: theme.gold },
+                { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold },
                 { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6' },
-                { icon: Percent, label: { en: 'Tax', fr: 'Impôt' }, color: theme.greenDark },
+                { icon: Percent, label: { en: 'Tax', fr: 'Fiscalité' }, color: theme.greenDark },
                 { icon: Calculator, label: { en: 'Acct', fr: 'Compta' }, color: '#059669' },
               ].map((d, i) => (
                 <motion.div 
@@ -4458,7 +4457,7 @@ export default function Landing() {
                     },
                     { 
                       icon: <ShieldCheck className="w-4 h-4" />, 
-                      text: isEn ? 'SOC 2 compliant' : 'Conforme SOC 2' 
+                      text: isEn ? 'PIPEDA compliant' : 'Conforme PIPEDA' 
                     },
                     { 
                       icon: <KeyRound className="w-4 h-4" />, 

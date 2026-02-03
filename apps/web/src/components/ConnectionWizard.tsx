@@ -188,7 +188,7 @@ export default function ConnectionWizard({ onConnect }: ConnectionWizardProps) {
         <div className="flex items-center gap-1">
           <CheckCircle className="w-3 h-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
           <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            SOC 2
+            PIPEDA
           </span>
         </div>
         <div className="flex items-center gap-1">
