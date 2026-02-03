@@ -120,15 +120,21 @@ async function bootstrap() {
   }
 
   // Initialize file storage (create uploads bucket if needed)
+  // Use timeout to prevent blocking app startup
   try {
     const fileStorage = app.get(FileStorageService);
-    await fileStorage.initialize();
+    const initPromise = fileStorage.initialize();
+    const timeoutPromise = new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error("File storage init timed out")), 10000),
+    );
+    await Promise.race([initPromise, timeoutPromise]);
     console.log("[Storage] File storage initialized successfully");
   } catch (error) {
     console.warn(
       "[Storage] Failed to initialize file storage:",
       error instanceof Error ? error.message : error,
     );
+    // Continue startup - file uploads will fail gracefully
   }
 
   const port = process.env.PORT || 3000;
@@ -148,4 +154,4 @@ async function bootstrap() {
 }
 
 bootstrap();
-// Force rebuild Tue Feb  3 12:33:42 EST 2026
+// Force rebuild - Fixed S3 init timeout Mon Feb 3 2026
