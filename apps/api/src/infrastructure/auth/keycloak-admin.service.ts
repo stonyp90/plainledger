@@ -5,13 +5,23 @@
  * Use cases:
  * - Create users programmatically (admin invite, team invites)
  * - Set user attributes (organization, industry)
- * - Send verification/password reset emails
+ * - Send verification/password reset emails via AWS SES (branded emails)
  * - Manage roles
+ *
+ * Email System:
+ * - All emails (verification, password reset) are sent via AWS SES using SESAdapter
+ * - Custom tokens are generated and links point to PlainLedger's custom UI:
+ *   - Password reset: /reset-password?token=...
+ *   - Email verification: /verify-email?token=...
+ * - This ensures consistent branding and user experience instead of Keycloak's default action pages
+ * - Keycloak's executeActionsEmail API is NOT used - we bypass it entirely
  */
 
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
+import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
+import * as crypto from "crypto";
 
 // Dynamic import for ESM module compatibility
 // The @keycloak/keycloak-admin-client v26+ is ESM-only
@@ -73,7 +83,10 @@ export class KeycloakAdminService
   private realm: string;
   private isConfigured = false;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly sesAdapter: SESAdapter,
+  ) {
     this.realm = this.configService.get<string>(
       "KEYCLOAK_REALM",
       "plainledger",
@@ -465,9 +478,60 @@ export class KeycloakAdminService
   }
 
   /**
+   * Get token secret for signing tokens
+   */
+  private getTokenSecret(): string {
+    return (
+      this.configService.get<string>("TOKEN_SECRET") ||
+      this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
+      "plainledger-default-secret-change-me"
+    );
+  }
+
+  /**
+   * Generate a secure email verification token
+   * Format: base64url(verify:userId:email:expiry).signature
+   * Expiry: 24 hours
+   */
+  private generateVerificationToken(userId: string, email: string): string {
+    const secret = this.getTokenSecret();
+    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString(
+      "base64url",
+    );
+
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url");
+
+    return `${payload}.${signature}`;
+  }
+
+  /**
+   * Generate a secure password reset token
+   * Format: base64url(reset:userId:email:expiry).signature
+   * Expiry: 15 minutes
+   */
+  private generateResetToken(userId: string, email: string): string {
+    const secret = this.getTokenSecret();
+    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString(
+      "base64url",
+    );
+
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64url");
+
+    return `${payload}.${signature}`;
+  }
+
+  /**
    * Send verification email to user
-   * Uses executeActionsEmail with VERIFY_EMAIL action for better control
-   * Redirects user back to our app after verification
+   * Uses SES with custom tokens to ensure links point to custom UI
+   * instead of Keycloak's default action pages
    */
   async sendVerificationEmail(
     userId: string,
@@ -478,28 +542,47 @@ export class KeycloakAdminService
     }
 
     try {
-      // Use executeActionsEmail instead of sendVerifyEmail to support redirectUri
-      // This allows us to redirect users back to our app after verification
+      // Get user details for email personalization
+      const user = await this.findUserById(userId);
+      if (!user) {
+        throw new Error(`User not found: ${userId}`);
+      }
+
+      if (!user.email) {
+        throw new Error(`User ${userId} has no email address`);
+      }
+
+      // Generate custom verification token
+      const verificationToken = this.generateVerificationToken(
+        userId,
+        user.email,
+      );
+
+      // Build verification URL pointing to custom UI
       const frontendUrl = this.configService.get<string>(
         "FRONTEND_URL",
         "https://plainledger.ca",
       );
-      const clientId = this.configService.get<string>(
-        "KEYCLOAK_WEB_CLIENT_ID",
-        "plainledger-web",
+      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+      // Send branded email via SES
+      const emailSent = await this.sesAdapter.sendVerificationEmail(
+        user.email,
+        user.firstName || "there",
+        verifyUrl,
+        userId,
       );
 
-      await this.adminClient.users.executeActionsEmail({
-        realm: this.realm,
-        id: userId,
-        clientId: clientId,
-        redirectUri: redirectUri || `${frontendUrl}/login?verified=true`,
-        lifespan: 86400, // 24 hours in seconds
-        actions: ["VERIFY_EMAIL"],
-      });
-      this.logger.log(
-        `Verification email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`,
-      );
+      if (emailSent) {
+        this.logger.log(
+          `Verification email sent via SES to user: ${userId} (${user.email})`,
+        );
+      } else {
+        this.logger.warn(
+          `Failed to send verification email via SES to user: ${userId} (${user.email})`,
+        );
+        throw new Error("Failed to send verification email");
+      }
     } catch (error) {
       this.logger.error(`Failed to send verification email: ${error.message}`);
       throw error;
@@ -536,7 +619,8 @@ export class KeycloakAdminService
 
   /**
    * Send password reset email to user
-   * Uses executeActionsEmail with redirectUri to redirect back to our app after password update
+   * Uses SES with custom tokens to ensure links point to custom UI
+   * instead of Keycloak's default action pages
    */
   async sendPasswordResetEmail(
     userId: string,
@@ -547,26 +631,44 @@ export class KeycloakAdminService
     }
 
     try {
+      // Get user details for email personalization
+      const user = await this.findUserById(userId);
+      if (!user) {
+        throw new Error(`User not found: ${userId}`);
+      }
+
+      if (!user.email) {
+        throw new Error(`User ${userId} has no email address`);
+      }
+
+      // Generate custom password reset token
+      const resetToken = this.generateResetToken(userId, user.email);
+
+      // Build reset URL pointing to custom UI
       const frontendUrl = this.configService.get<string>(
         "FRONTEND_URL",
         "https://plainledger.ca",
       );
-      const clientId = this.configService.get<string>(
-        "KEYCLOAK_WEB_CLIENT_ID",
-        "plainledger-web",
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+      // Send branded email via SES
+      const emailSent = await this.sesAdapter.sendPasswordResetEmail(
+        user.email,
+        user.firstName || "there",
+        resetUrl,
+        userId,
       );
 
-      await this.adminClient.users.executeActionsEmail({
-        realm: this.realm,
-        id: userId,
-        clientId: clientId,
-        redirectUri: redirectUri || `${frontendUrl}/login?passwordReset=true`,
-        lifespan: 900, // 15 minutes in seconds
-        actions: ["UPDATE_PASSWORD"],
-      });
-      this.logger.log(
-        `Password reset email sent to user: ${userId} with redirect to: ${redirectUri || frontendUrl}`,
-      );
+      if (emailSent) {
+        this.logger.log(
+          `Password reset email sent via SES to user: ${userId} (${user.email})`,
+        );
+      } else {
+        this.logger.warn(
+          `Failed to send password reset email via SES to user: ${userId} (${user.email})`,
+        );
+        throw new Error("Failed to send password reset email");
+      }
     } catch (error) {
       this.logger.error(
         `Failed to send password reset email: ${error.message}`,

@@ -26,8 +26,7 @@ import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminAuditController } from './controllers/admin-audit.controller';
 import { AdminAdminsController } from './controllers/admin-admins.controller';
 
-// External services
-import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
+// Note: KeycloakAdminService is imported from app.module.ts
 
 @Module({
   imports: [
@@ -56,8 +55,7 @@ import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.servic
     AdminAuditService,
     AdminOrgService,
     AdminUserService,
-    // External services
-    KeycloakAdminService,
+    // Note: KeycloakAdminService is provided in app.module.ts and will be injected here
   ],
   exports: [
     PlatformAdminGuard,
