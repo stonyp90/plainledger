@@ -22,6 +22,7 @@ import { AdminOrgService } from './services/admin-org.service';
 import { AdminUserService } from './services/admin-user.service';
 import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
 import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
+import { EmailTemplatesService } from '@infrastructure/templates/email-templates.service';
 
 // Controllers
 import { AdminOrganizationsController } from './controllers/admin-organizations.controller';
@@ -62,6 +63,7 @@ import { AdminDashboardController } from './controllers/admin-dashboard.controll
     // External services needed by AdminUserService
     KeycloakAdminService,
     SESAdapter,
+    EmailTemplatesService,
   ],
   exports: [
     PlatformAdminGuard,
