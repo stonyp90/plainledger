@@ -736,6 +736,9 @@ resource "aws_ecs_task_definition" "api" {
         { name = "KEYCLOAK_ADMIN_CLIENT_ID", value = "plainledger-api" },
         { name = "CORS_ORIGIN", value = "https://${var.domain_name},https://www.${var.domain_name}" },
         { name = "APP_URL", value = "https://${var.domain_name}" },
+        # S3 File Uploads (logos, avatars, documents)
+        { name = "S3_BUCKET_UPLOADS", value = "${var.project}-uploads" },
+        { name = "AWS_REGION", value = var.aws_region },
         # SES Email Configuration (region: us-east-1 where domain is verified)
         { name = "SES_REGION", value = "us-east-1" },
         { name = "SES_FROM_ADDRESS", value = "noreply@${var.domain_name}" },
