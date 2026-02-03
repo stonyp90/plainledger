@@ -204,8 +204,9 @@ resource "aws_iam_role_policy" "ecs_task" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
+    Statement = concat(
+      # Data Lake S3 permissions
+      length(var.datalake_bucket_arns) > 0 ? [{
         Effect = "Allow"
         Action = [
           "s3:GetObject",
@@ -213,8 +214,24 @@ resource "aws_iam_role_policy" "ecs_task" {
           "s3:ListBucket"
         ]
         Resource = var.datalake_bucket_arns
-      },
-      {
+      }] : [],
+      # Uploads S3 bucket permissions (logos, avatars, etc.)
+      var.uploads_bucket_arn != "" ? [{
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:HeadBucket"
+        ]
+        Resource = [
+          var.uploads_bucket_arn,
+          "${var.uploads_bucket_arn}/*"
+        ]
+      }] : [],
+      # SSM for ECS Exec
+      [{
         Effect = "Allow"
         Action = [
           "ssmmessages:CreateControlChannel",
@@ -223,8 +240,9 @@ resource "aws_iam_role_policy" "ecs_task" {
           "ssmmessages:OpenDataChannel"
         ]
         Resource = "*"
-      },
-      {
+      }],
+      # CloudWatch Logs
+      [{
         Effect = "Allow"
         Action = [
           "logs:CreateLogStream",
@@ -233,9 +251,9 @@ resource "aws_iam_role_policy" "ecs_task" {
           "logs:PutLogEvents"
         ]
         Resource = "*"
-      },
+      }],
       # SES permissions for email sending via API
-      {
+      [{
         Effect = "Allow"
         Action = [
           "ses:SendEmail",
@@ -249,8 +267,8 @@ resource "aws_iam_role_policy" "ecs_task" {
             "ses:FromAddress" = "noreply@${var.domain_name}"
           }
         }
-      }
-    ]
+      }]
+    )
   })
 }
 

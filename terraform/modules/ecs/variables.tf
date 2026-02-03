@@ -135,6 +135,13 @@ variable "datalake_bucket_arns" {
   default     = []
 }
 
+# File Uploads Bucket
+variable "uploads_bucket_arn" {
+  description = "ARN of the S3 bucket for file uploads (logos, avatars, etc.)"
+  type        = string
+  default     = ""
+}
+
 # ALB
 variable "acm_certificate_arn" {
   description = "ACM certificate ARN"

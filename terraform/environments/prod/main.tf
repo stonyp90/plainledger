@@ -83,6 +83,50 @@ resource "aws_ecr_repository" "admin" {
 }
 
 # ------------------------------------------------------------------------------
+# S3 Bucket for File Uploads (logos, avatars, documents)
+# ------------------------------------------------------------------------------
+resource "aws_s3_bucket" "uploads" {
+  bucket = "${var.project}-uploads"
+
+  tags = {
+    Name        = "${var.project}-uploads"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE"]
+    allowed_origins = ["https://${var.domain_name}", "https://www.${var.domain_name}"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# ------------------------------------------------------------------------------
 # ACM Certificate (created but validation happens asynchronously)
 # ------------------------------------------------------------------------------
 resource "aws_acm_certificate" "main" {
@@ -384,6 +428,7 @@ module "ecs" {
   ecr_admin_repository_url    = aws_ecr_repository.admin.repository_url
 
   datalake_bucket_arns = module.datalake.datalake_bucket_arns
+  uploads_bucket_arn   = aws_s3_bucket.uploads.arn
 
   acm_certificate_arn    = aws_acm_certificate.main.arn
   route53_zone_id        = module.networking.route53_zone_id
