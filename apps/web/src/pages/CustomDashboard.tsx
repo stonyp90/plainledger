@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Plus,
   LayoutGrid,
@@ -37,11 +38,12 @@ import {
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import { InfoTooltip, LabelTooltip } from '../components/Tooltip';
 import {
   DataVisualizationCard,
   ChartGalleryModal,
-  ChartTypeSelector,
   TimeRangeSelector,
   ChartTypeIcon,
 } from '../components/DataVisualization';
@@ -79,6 +81,16 @@ const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 export default function CustomDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const location = useLocation();
+  
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="dashboard" />;
+  }
+  
   const { data: financialData, isLoading, refresh } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasTrends, hasAccounts } = useHasRealData();
   const shouldShowData = hasRealData || shouldShowSandboxData;
@@ -124,6 +136,17 @@ export default function CustomDashboard() {
     setPinnedCharts(pinned);
     setSavedReports(reportManagementService.getAllReports());
   }, []);
+  
+  // Handle editChart state from navigation (e.g., from "Modifier" button)
+  useEffect(() => {
+    const state = location.state as { editChart?: ChartConfig } | null;
+    if (state?.editChart) {
+      setEditingChart(state.editChart);
+      setShowChartBuilder(true);
+      // Clear the state to prevent re-opening on navigation
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
   
   // Cleanup tooltip timeout on unmount
   useEffect(() => {
@@ -674,14 +697,18 @@ export default function CustomDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Success Toast - Enhanced */}
+      {/* Success Toast - Enhanced with glass effect */}
       {showSuccessToast && (
         <div 
-          className="fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl animate-in slide-in-from-top-2 duration-300"
+          className="fixed top-4 right-4 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl animate-in slide-in-from-top-2 duration-300"
           style={{ 
-            backgroundColor: 'rgb(var(--color-success))',
+            zIndex: 9998,
+            backgroundColor: 'rgb(var(--color-success) / 0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             color: 'white',
             boxShadow: '0 10px 40px -10px rgb(var(--color-success) / 0.5)',
+            border: '1px solid rgb(var(--color-success) / 0.3)',
           }}
         >
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -865,79 +892,80 @@ export default function CustomDashboard() {
         />
       )}
       
-      {/* Enhanced Empty State - Mobile-first */}
+      {/* Enhanced Empty State - Responsive & Optimized */}
       {pinnedCharts.length === 0 && (
         <div 
-          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 text-center"
+          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 text-center"
           style={{ 
             background: 'linear-gradient(135deg, rgb(var(--color-bg-muted)) 0%, rgb(var(--color-surface)) 100%)',
             border: '2px dashed rgb(var(--color-border))',
           }}
         >
           {/* Decorative Elements - Hidden on mobile for cleaner look */}
-          <div className="hidden sm:block absolute top-4 left-4 w-20 h-20 rounded-full opacity-20" 
+          <div className="hidden md:block absolute top-4 left-4 w-16 lg:w-20 h-16 lg:h-20 rounded-full opacity-20" 
             style={{ background: 'radial-gradient(circle, rgb(var(--color-primary-500)) 0%, transparent 70%)' }} 
           />
-          <div className="hidden sm:block absolute bottom-4 right-4 w-32 h-32 rounded-full opacity-10" 
+          <div className="hidden md:block absolute bottom-4 right-4 w-24 lg:w-32 h-24 lg:h-32 rounded-full opacity-10" 
             style={{ background: 'radial-gradient(circle, rgb(var(--color-primary-500)) 0%, transparent 70%)' }} 
           />
           
-          <div className="relative">
+          <div className="relative max-w-3xl mx-auto">
             {/* Animated Icon */}
             <div 
-              className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-4 sm:mb-6 rounded-xl sm:rounded-2xl flex items-center justify-center animate-pulse"
+              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 mx-auto mb-3 sm:mb-4 md:mb-6 rounded-xl sm:rounded-2xl flex items-center justify-center animate-pulse"
               style={{ 
                 backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                 boxShadow: '0 10px 40px -10px rgb(var(--color-primary-500) / 0.3)',
               }}
             >
-              <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold mb-2 sm:mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+            <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1.5 sm:mb-2 md:mb-3" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Create Your Perfect Dashboard' : 'Créez votre tableau de bord idéal'}
             </h3>
-            <p className="text-xs sm:text-sm lg:text-base mb-5 sm:mb-8 max-w-lg mx-auto leading-relaxed px-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p className="text-xs sm:text-sm md:text-base mb-4 sm:mb-5 md:mb-6 lg:mb-8 max-w-md lg:max-w-lg mx-auto leading-relaxed px-1 sm:px-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {isEn 
                 ? 'Pin your favorite charts, customize layouts, and build the exact view you need for financial insights.'
                 : 'Épinglez vos graphiques préférés, personnalisez la mise en page et créez la vue exacte dont vous avez besoin.'}
             </p>
             
-            {/* Action buttons - Stack on mobile, row on desktop */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            {/* Action buttons - Stack on mobile, row on tablet+ */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 md:gap-4">
               <button
                 onClick={() => setShowChartBuilder(true)}
-                className="w-full sm:w-auto px-5 sm:px-6 lg:px-8 py-3 sm:py-3.5 lg:py-4 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-semibold transition-all hover:scale-[1.02] active:scale-95"
+                className="w-full sm:w-auto min-w-[160px] px-4 sm:px-5 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-3.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 sm:gap-2.5 md:gap-3 text-sm md:text-base font-semibold transition-all hover:scale-[1.02] active:scale-95 touch-manipulation"
                 style={{
                   backgroundColor: 'rgb(var(--color-success))',
                   color: 'white',
                   boxShadow: '0 8px 30px -8px rgb(var(--color-success) / 0.5)',
                 }}
               >
-                <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Wand2 className="w-4 h-4 md:w-5 md:h-5" />
                 {isEn ? 'Create Custom Chart' : 'Créer un graphique'}
               </button>
-              <span className="text-xs sm:text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'or' : 'ou'}</span>
+              <span className="text-xs md:text-sm hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'or' : 'ou'}</span>
               <button
                 onClick={() => setShowGallery(true)}
-                className="w-full sm:w-auto px-5 sm:px-6 lg:px-8 py-3 sm:py-3.5 lg:py-4 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-semibold transition-all hover:scale-[1.02] active:scale-95"
+                className="w-full sm:w-auto min-w-[160px] px-4 sm:px-5 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-3.5 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 sm:gap-2.5 md:gap-3 text-sm md:text-base font-semibold transition-all hover:scale-[1.02] active:scale-95 touch-manipulation"
                 style={{
                   backgroundColor: 'rgb(var(--color-primary-500))',
                   color: 'white',
                   boxShadow: '0 8px 30px -8px rgb(var(--color-primary-500) / 0.5)',
                 }}
               >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Plus className="w-4 h-4 md:w-5 md:h-5" />
                 {isEn ? 'Browse Gallery' : 'Parcourir la galerie'}
               </button>
             </div>
             
-            {/* Quick Add Suggestions - Responsive grid */}
-            <div className="mt-6 sm:mt-8 lg:mt-10 pt-5 sm:pt-6 lg:pt-8 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            {/* Quick Add Suggestions - Improved responsive grid */}
+            <div className="mt-5 sm:mt-6 md:mt-8 lg:mt-10 pt-4 sm:pt-5 md:pt-6 lg:pt-8 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
               <p className="text-xs sm:text-sm font-semibold mb-3 sm:mb-4 lg:mb-5" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? '⚡ Quick add popular charts' : '⚡ Ajout rapide de graphiques populaires'}
               </p>
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-3">
+              {/* Responsive grid: 2 cols on mobile, 3 on sm, 4 on md, flex-wrap on lg+ */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:flex lg:flex-wrap lg:justify-center gap-2 sm:gap-2.5 md:gap-3">
                 {suggestedCharts.map((chart) => {
                   const Icon = ChartTypeIcon[chart.chartType] || BarChart3;
                   return (
@@ -954,7 +982,7 @@ export default function CustomDashboard() {
                       onDragLeave={handleSuggestionDragLeave}
                       onDrop={() => handleSuggestionDrop(chart.id)}
                       onDragEnd={handleSuggestionDragEnd}
-                      className={`group px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm flex items-center gap-2 sm:gap-3 transition-all hover:scale-[1.02] hover:shadow-md active:scale-95 cursor-grab active:cursor-grabbing ${
+                      className={`group px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg md:rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 md:gap-3 transition-all hover:scale-[1.02] hover:shadow-md active:scale-95 cursor-grab active:cursor-grabbing touch-manipulation ${
                         draggedSuggestionId === chart.id ? 'opacity-50 scale-95' : ''
                       } ${
                         dragOverSuggestionId === chart.id ? 'ring-2 ring-primary-500 scale-105' : ''
@@ -969,14 +997,12 @@ export default function CustomDashboard() {
                         className="p-1.5 sm:p-2 rounded-md sm:rounded-lg flex-shrink-0"
                         style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                       >
-                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       </div>
-                      <LabelTooltip label={isEn ? chart.nameEn : chart.name}>
-                        <span className="font-medium text-sm leading-tight line-clamp-2">
-                          {isEn ? chart.nameEn : chart.name}
-                        </span>
-                      </LabelTooltip>
-                      <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block flex-shrink-0" 
+                      <span className="font-medium text-[11px] sm:text-xs md:text-sm leading-tight line-clamp-1 sm:line-clamp-2 text-left flex-1 min-w-0">
+                        {isEn ? chart.nameEn : chart.name}
+                      </span>
+                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block flex-shrink-0" 
                         style={{ color: 'rgb(var(--color-primary-500))' }} 
                       />
                     </button>
@@ -988,9 +1014,9 @@ export default function CustomDashboard() {
         </div>
       )}
       
-      {/* Pinned Charts Grid - Always grid view */}
+      {/* Pinned Charts Grid - 2 columns on tablet, 3 on desktop */}
       {pinnedCharts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
           {pinnedCharts
             .sort((a, b) => a.position - b.position)
             .map((pinned) => (
@@ -1117,6 +1143,10 @@ export default function CustomDashboard() {
           isOpen={showGallery}
           onClose={() => setShowGallery(false)}
           onSelectChart={handlePinChart}
+          onBuildCustom={() => {
+            setShowGallery(false);
+            setShowChartBuilder(true);
+          }}
           isEn={isEn}
         />
       )}

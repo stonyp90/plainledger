@@ -39,7 +39,7 @@ export interface HasRealDataResult {
   hasQuickBooksConnection: boolean;
   /** True if sandbox/mock data is available (fallback when no connection) */
   hasSandboxData: boolean;
-  /** True if user is on free or starter plan */
+  /** True if user is on free plan */
   isFreeUser: boolean;
   /** True if sandbox data should be shown (only for free users without connection) */
   shouldShowSandboxData: boolean;
@@ -87,10 +87,10 @@ export function useHasRealData(): HasRealDataResult {
   
   const hasRealData = dataSource === 'graphql';
   
-  // Determine if user is on free tier (free or starter plans)
+  // Determine if user is on free tier
   const isFreeUser = useMemo(() => {
     const plan = currentTenant?.plan || 'free';
-    return plan === 'free' || plan === 'starter';
+    return plan === 'free';
   }, [currentTenant?.plan]);
   
   // Check if QuickBooks (or any accounting software) is connected

@@ -16,17 +16,12 @@ import {
   Scale,
   PieChart,
   AlertCircle,
-  Loader2,
   Sparkles,
   Brain,
   Zap,
 } from 'lucide-react';
 import { 
   HealthScoreGauge, 
-  TrendChart,
-  CurrentRatioCard,
-  QuickRatioCard,
-  DebtToEquityCard,
   INDUSTRY_LABELS,
 } from '../components/charts';
 import type { IndustryType } from '../components/charts';
@@ -38,6 +33,8 @@ import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import DataReadinessChecklist from '../components/DataReadinessChecklist';
 import AccountantGuidanceCard from '../components/AccountantGuidanceCard';
 import { ChartEmptyState } from '../components/EmptyDataState';
@@ -92,77 +89,18 @@ const aiTypeLabels: Record<AIAnomalyType, { label: string; labelEn: string; icon
   ratio_drift: { label: 'Dérive ratio', labelEn: 'Ratio Drift', icon: PieChart },
 };
 
-// Industry-specific chart labels
-const INDUSTRY_CHART_LABELS: Record<string, {
-  revenue: { title: string; titleEn: string; subtitle: string; subtitleEn: string };
-  expenses: { title: string; titleEn: string; subtitle: string; subtitleEn: string };
-}> = {
-  real_estate: {
-    revenue: { title: 'Revenus locatifs', titleEn: 'Rental Income', subtitle: 'Analyse mensuelle des loyers perçus', subtitleEn: 'Monthly rent collection analysis' },
-    expenses: { title: "Charges d'exploitation", titleEn: 'Operating Expenses', subtitle: 'Entretien, taxes, assurances', subtitleEn: 'Maintenance, taxes, insurance' },
-  },
-  restaurant: {
-    revenue: { title: 'Revenus ventes', titleEn: 'Sales Revenue', subtitle: 'Ventes alimentaires et boissons', subtitleEn: 'Food and beverage sales' },
-    expenses: { title: 'Coûts principaux', titleEn: 'Prime Costs', subtitle: 'Nourriture et main-d\'œuvre', subtitleEn: 'Food and labor costs' },
-  },
-  hospitality: {
-    revenue: { title: 'Revenus chambres', titleEn: 'Room Revenue', subtitle: 'RevPAR et taux d\'occupation', subtitleEn: 'RevPAR and occupancy analysis' },
-    expenses: { title: 'Coûts opérationnels', titleEn: 'Operating Costs', subtitle: 'Personnel, entretien, services', subtitleEn: 'Staff, maintenance, utilities' },
-  },
-  retail: {
-    revenue: { title: 'Ventes au détail', titleEn: 'Retail Sales', subtitle: 'Performance par catégorie', subtitleEn: 'Category performance analysis' },
-    expenses: { title: 'Coûts des marchandises', titleEn: 'Cost of Goods Sold', subtitle: 'COGS et marge brute', subtitleEn: 'COGS and gross margin' },
-  },
-  construction: {
-    revenue: { title: 'Revenus projets', titleEn: 'Project Revenue', subtitle: 'Facturation et encaissements', subtitleEn: 'Billing and collections' },
-    expenses: { title: 'Coûts directs', titleEn: 'Direct Costs', subtitle: 'Matériaux et sous-traitants', subtitleEn: 'Materials and subcontractors' },
-  },
-  professional_services: {
-    revenue: { title: 'Revenus facturables', titleEn: 'Billable Revenue', subtitle: 'Heures facturées et taux', subtitleEn: 'Billed hours and rates' },
-    expenses: { title: 'Coûts d\'exploitation', titleEn: 'Operating Costs', subtitle: 'Salaires et frais généraux', subtitleEn: 'Salaries and overhead' },
-  },
-  manufacturing: {
-    revenue: { title: 'Ventes produits', titleEn: 'Product Sales', subtitle: 'Volume et prix unitaire', subtitleEn: 'Volume and unit pricing' },
-    expenses: { title: 'Coûts de production', titleEn: 'Production Costs', subtitle: 'Matières premières et main-d\'œuvre', subtitleEn: 'Raw materials and labor' },
-  },
-  agriculture: {
-    revenue: { title: 'Ventes récolte', titleEn: 'Crop Revenue', subtitle: 'Rendement et prix du marché', subtitleEn: 'Yield and market prices' },
-    expenses: { title: 'Coûts agricoles', titleEn: 'Farm Costs', subtitle: 'Intrants et équipement', subtitleEn: 'Inputs and equipment' },
-  },
-  transport: {
-    revenue: { title: 'Revenus transport', titleEn: 'Transport Revenue', subtitle: 'Revenus par kilomètre', subtitleEn: 'Revenue per kilometer' },
-    expenses: { title: 'Coûts d\'exploitation', titleEn: 'Operating Costs', subtitle: 'Carburant et entretien', subtitleEn: 'Fuel and maintenance' },
-  },
-  healthcare: {
-    revenue: { title: 'Revenus patients', titleEn: 'Patient Revenue', subtitle: 'Services et assurances', subtitleEn: 'Services and insurance' },
-    expenses: { title: 'Coûts médicaux', titleEn: 'Medical Costs', subtitle: 'Fournitures et personnel', subtitleEn: 'Supplies and staff' },
-  },
-  education: {
-    revenue: { title: 'Revenus scolarité', titleEn: 'Tuition Revenue', subtitle: 'Inscriptions et frais', subtitleEn: 'Enrollments and fees' },
-    expenses: { title: 'Coûts pédagogiques', titleEn: 'Educational Costs', subtitle: 'Personnel et fournitures', subtitleEn: 'Staff and supplies' },
-  },
-  wholesale: {
-    revenue: { title: 'Ventes en gros', titleEn: 'Wholesale Sales', subtitle: 'Volume et marges', subtitleEn: 'Volume and margins' },
-    expenses: { title: 'Coût des ventes', titleEn: 'Cost of Sales', subtitle: 'Achats et entreposage', subtitleEn: 'Purchases and warehousing' },
-  },
-  automotive: {
-    revenue: { title: 'Ventes véhicules', titleEn: 'Vehicle Sales', subtitle: 'Neufs et services', subtitleEn: 'New and service revenue' },
-    expenses: { title: 'Coûts d\'inventaire', titleEn: 'Inventory Costs', subtitle: 'Floor plan et pièces', subtitleEn: 'Floor plan and parts' },
-  },
-  beauty_wellness: {
-    revenue: { title: 'Revenus services', titleEn: 'Service Revenue', subtitle: 'Services et produits', subtitleEn: 'Services and retail' },
-    expenses: { title: 'Coûts d\'exploitation', titleEn: 'Operating Costs', subtitle: 'Fournitures et personnel', subtitleEn: 'Supplies and staff' },
-  },
-  default: {
-    revenue: { title: 'Revenus', titleEn: 'Revenue', subtitle: 'Analyse mensuelle', subtitleEn: 'Monthly analysis' },
-    expenses: { title: 'Dépenses', titleEn: 'Expenses', subtitle: 'Analyse des coûts', subtitleEn: 'Cost analysis' },
-  },
-};
-
 export default function AnomalyDashboard() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { currentTenant } = useTenant();
+  
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="analysis" />;
+  }
   
   // Get industry from tenant, default to real_estate
   const selectedIndustry = (currentTenant?.industry || 'real_estate') as IndustryType;
@@ -177,14 +115,7 @@ export default function AnomalyDashboard() {
     hasSandboxData,
     shouldShowSandboxData,
     isFreeUser,
-    hasTrends,
-    hasRevenueTrends,
-    hasExpenseTrends,
-    hasAccounts,
-    hasSummaryMetrics,
   } = useHasRealData();
-  
-  const shouldShowData = hasRealData || shouldShowSandboxData;
   
   const [thresholds, setThresholds] = useState<ThresholdConfig>(() => {
     const saved = localStorage.getItem('plainledger-thresholds');
@@ -380,18 +311,6 @@ export default function AnomalyDashboard() {
     if (selectedCategory === 'all') return combinedAnalysis.anomalies;
     return combinedAnalysis.anomalies.filter(a => a.category === selectedCategory);
   }, [combinedAnalysis.anomalies, selectedCategory]);
-
-  // Calculate ratios from financial data
-  const ratios = useMemo(() => {
-    if (!financialData?.metrics) {
-      return { currentRatio: 0, quickRatio: 0, debtToEquity: 0 };
-    }
-    return {
-      currentRatio: financialData.metrics?.currentRatio ?? 0,
-      quickRatio: financialData.metrics?.quickRatio ?? 0,
-      debtToEquity: financialData.metrics?.debtToEquity ?? 0,
-    };
-  }, [financialData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -710,76 +629,8 @@ export default function AnomalyDashboard() {
           name: INDUSTRY_LABELS[selectedIndustry].fr, 
           nameEn: INDUSTRY_LABELS[selectedIndustry].en 
         }}
+        showIndustryMetrics={false}
       />
-
-      {/* Financial Analysis Section - Responsive grid */}
-      {shouldShowData && hasSummaryMetrics ? (
-        <div className="space-y-4">
-          {/* Section header */}
-          <h3 className="text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Financial Analysis' : 'Analyse financière'}
-          </h3>
-
-          {/* Ratios + Trends Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-            {/* Financial Ratios - 4 columns on XL */}
-            {hasAccounts ? (
-              <div className="xl:col-span-4 space-y-3">
-                <CurrentRatioCard value={ratios.currentRatio} industry={selectedIndustry} isEn={isEn} />
-                <QuickRatioCard value={ratios.quickRatio} industry={selectedIndustry} isEn={isEn} />
-                <DebtToEquityCard value={ratios.debtToEquity} industry={selectedIndustry} isEn={isEn} />
-              </div>
-            ) : null}
-
-            {/* Trend Charts - 8 columns on XL, stacked on mobile */}
-            {hasTrends ? (
-              <div className={`${hasAccounts ? 'xl:col-span-8' : 'xl:col-span-12'}`}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {hasRevenueTrends && revenueData.length > 0 ? (
-                    <TrendChart
-                      data={revenueData}
-                      title={isEn 
-                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn)
-                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.title || INDUSTRY_CHART_LABELS.default.revenue.title)}
-                      titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.titleEn || INDUSTRY_CHART_LABELS.default.revenue.titleEn}
-                      subtitle={isEn 
-                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn)
-                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitle || INDUSTRY_CHART_LABELS.default.revenue.subtitle)}
-                      subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.revenue.subtitleEn || INDUSTRY_CHART_LABELS.default.revenue.subtitleEn}
-                      height={220}
-                      isEn={isEn}
-                    />
-                  ) : (
-                    <div className="card">
-                      <ChartEmptyState message={isEn ? 'No revenue data available' : 'Aucune donnée de revenus disponible'} />
-                    </div>
-                  )}
-                  {hasExpenseTrends && expenseData.length > 0 ? (
-                    <TrendChart
-                      data={expenseData}
-                      title={isEn 
-                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn)
-                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.title || INDUSTRY_CHART_LABELS.default.expenses.title)}
-                      titleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.titleEn || INDUSTRY_CHART_LABELS.default.expenses.titleEn}
-                      subtitle={isEn 
-                        ? (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn)
-                        : (INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitle || INDUSTRY_CHART_LABELS.default.expenses.subtitle)}
-                      subtitleEn={INDUSTRY_CHART_LABELS[selectedIndustry]?.expenses.subtitleEn || INDUSTRY_CHART_LABELS.default.expenses.subtitleEn}
-                      color="rgb(var(--color-text-muted))"
-                      height={220}
-                      isEn={isEn}
-                    />
-                  ) : (
-                    <div className="card">
-                      <ChartEmptyState message={isEn ? 'No expense data available' : 'Aucune donnée de dépenses disponible'} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {/* Anomaly List - Responsive */}
       <div ref={anomalyListRef} className="card">

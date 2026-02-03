@@ -12,6 +12,7 @@ import { useState, useRef, useCallback, type ReactNode } from 'react';
 import { Lock, Unlock, GripVertical, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
 import { useSingleChartSize } from '../hooks/useChartSize';
 import { useI18n } from '../lib/i18n';
+import { isChartLocked } from '../hooks/useGraphConfig';
 
 interface ChartResizeWrapperProps {
   /** Unique chart ID for persistence */
@@ -50,11 +51,20 @@ export default function ChartResizeWrapper({
   
   const {
     height,
-    locked,
+    locked: sizeLocked,
     setHeight,
     toggleLock,
     reset,
   } = useSingleChartSize(pageId, chartId, defaultHeight, tenantId);
+
+  // Check if chart configuration is fully locked (prevents all modifications)
+  const chartConfigLocked = isChartLocked(chartId);
+  
+  // Effective lock: either size is locked OR chart config is locked
+  const locked = sizeLocked || chartConfigLocked;
+
+  const [isHovered, setIsHovered] = useState(false);
+  const controlsVisible = showControls && isHovered;
 
   const [isResizing, setIsResizing] = useState(false);
   const [showSizeMenu, setShowSizeMenu] = useState(false);
@@ -113,6 +123,8 @@ export default function ChartResizeWrapper({
         height: locked || height ? `${currentHeight}px` : 'auto',
         minHeight: `${minHeight}px`,
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Chart content */}
       <div 
@@ -124,9 +136,9 @@ export default function ChartResizeWrapper({
         {children}
       </div>
 
-      {/* Resize controls - shown on hover */}
-      {showControls && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      {/* Resize controls - visibility based on user preference */}
+      {controlsVisible && (
+        <div className="absolute top-10 right-2 flex items-center gap-1 transition-opacity z-20">
           {/* Size menu toggle */}
           <div className="relative">
             <button
@@ -142,10 +154,10 @@ export default function ChartResizeWrapper({
               {hasCustomSize ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Size preset menu */}
+            {/* Size preset menu - z-30 for dropdown menus, opens downward */}
             {showSizeMenu && (
               <div 
-                className="absolute right-0 top-full mt-1 rounded-lg shadow-lg border overflow-hidden z-20"
+                className="absolute right-0 top-full mt-1 rounded-lg shadow-lg border overflow-hidden z-30"
                 style={{ 
                   backgroundColor: 'rgb(var(--color-surface))',
                   borderColor: 'rgb(var(--color-border))',
@@ -203,7 +215,8 @@ export default function ChartResizeWrapper({
 
           {/* Lock toggle */}
           <button
-            onClick={toggleLock}
+            onClick={chartConfigLocked ? undefined : toggleLock}
+            disabled={chartConfigLocked}
             className="p-1.5 rounded-md transition-all duration-200"
             style={{ 
               backgroundColor: locked 
@@ -213,10 +226,14 @@ export default function ChartResizeWrapper({
                 ? 'rgb(var(--color-warning))' 
                 : 'rgb(var(--color-text-muted))',
               backdropFilter: 'blur(4px)',
+              opacity: chartConfigLocked ? 0.5 : 1,
+              cursor: chartConfigLocked ? 'not-allowed' : 'pointer',
             }}
-            title={locked 
-              ? (isEn ? 'Unlock size' : 'Déverrouiller la taille')
-              : (isEn ? 'Lock size' : 'Verrouiller la taille')
+            title={chartConfigLocked 
+              ? (isEn ? 'Chart is fully locked' : 'Graphique entièrement verrouillé')
+              : locked 
+                ? (isEn ? 'Unlock size' : 'Déverrouiller la taille')
+                : (isEn ? 'Lock size' : 'Verrouiller la taille')
             }
           >
             {locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
@@ -225,10 +242,10 @@ export default function ChartResizeWrapper({
       )}
 
       {/* Resize handle - bottom edge */}
-      {showControls && !locked && (
+      {(controlsVisible || isResizing) && !locked && (
         <div
           className={`absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize flex items-center justify-center transition-opacity ${
-            isResizing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            isResizing ? 'opacity-100' : 'opacity-70 hover:opacity-100'
           }`}
           onMouseDown={handleResizeStart}
           onTouchStart={handleResizeStart}
@@ -273,6 +290,7 @@ export default function ChartResizeWrapper({
           </div>
         </div>
       )}
+
     </div>
   );
 }
@@ -296,11 +314,15 @@ export function ChartResizeControls({
   
   const {
     height,
-    locked,
+    locked: sizeLocked,
     setHeight,
     toggleLock,
     reset,
   } = useSingleChartSize(pageId, chartId, defaultHeight, tenantId);
+
+  // Check if chart configuration is fully locked
+  const chartConfigLocked = isChartLocked(chartId);
+  const locked = sizeLocked || chartConfigLocked;
 
   const hasCustomSize = height !== undefined && height !== defaultHeight;
 
@@ -344,13 +366,21 @@ export function ChartResizeControls({
 
       {/* Lock toggle */}
       <button
-        onClick={toggleLock}
+        onClick={chartConfigLocked ? undefined : toggleLock}
+        disabled={chartConfigLocked}
         className="p-1 rounded transition-colors"
         style={{ 
           backgroundColor: locked ? 'rgb(var(--color-warning) / 0.1)' : 'transparent',
           color: locked ? 'rgb(var(--color-warning))' : 'rgb(var(--color-text-muted))',
+          opacity: chartConfigLocked ? 0.5 : 1,
+          cursor: chartConfigLocked ? 'not-allowed' : 'pointer',
         }}
-        title={locked ? (isEn ? 'Unlock' : 'Déverrouiller') : (isEn ? 'Lock' : 'Verrouiller')}
+        title={chartConfigLocked 
+          ? (isEn ? 'Chart locked' : 'Graphique verrouillé') 
+          : locked 
+            ? (isEn ? 'Unlock' : 'Déverrouiller') 
+            : (isEn ? 'Lock' : 'Verrouiller')
+        }
       >
         {locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
       </button>

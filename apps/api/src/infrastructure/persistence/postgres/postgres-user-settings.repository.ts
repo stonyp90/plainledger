@@ -7,6 +7,11 @@ export interface UpdateUserSettingsInput {
   notificationPreferences?: UserSettingsEntity["notificationPreferences"];
   uiPreferences?: UserSettingsEntity["uiPreferences"];
   featurePreferences?: UserSettingsEntity["featurePreferences"];
+  chartPreferences?: UserSettingsEntity["chartPreferences"];
+  dashboardConfig?: UserSettingsEntity["dashboardConfig"];
+  savedViews?: UserSettingsEntity["savedViews"];
+  aiPins?: UserSettingsEntity["aiPins"];
+  recentItems?: UserSettingsEntity["recentItems"];
 }
 
 @Injectable()
@@ -46,6 +51,21 @@ export class PostgresUserSettingsRepository {
       }
       if (input.featurePreferences !== undefined) {
         existing.featurePreferences = input.featurePreferences;
+      }
+      if (input.chartPreferences !== undefined) {
+        existing.chartPreferences = input.chartPreferences;
+      }
+      if (input.dashboardConfig !== undefined) {
+        existing.dashboardConfig = input.dashboardConfig;
+      }
+      if (input.savedViews !== undefined) {
+        existing.savedViews = input.savedViews;
+      }
+      if (input.aiPins !== undefined) {
+        existing.aiPins = input.aiPins;
+      }
+      if (input.recentItems !== undefined) {
+        existing.recentItems = input.recentItems;
       }
 
       const saved = await this.repository.save(existing);

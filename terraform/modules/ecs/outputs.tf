@@ -62,6 +62,16 @@ output "keycloak_target_group_arn" {
   value       = aws_lb_target_group.keycloak.arn
 }
 
+output "admin_service_name" {
+  description = "Admin console service name"
+  value       = aws_ecs_service.admin.name
+}
+
+output "admin_target_group_arn" {
+  description = "Admin console target group ARN"
+  value       = aws_lb_target_group.admin.arn
+}
+
 output "ecs_execution_role_arn" {
   description = "ECS execution role ARN"
   value       = aws_iam_role.ecs_execution.arn

@@ -3,7 +3,9 @@ import { ArrowLeft, Download, Calendar, RefreshCw, Loader2, AlertTriangle, Print
 import { Link } from 'react-router-dom';
 import { useBalanceSheet, useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
 import { useTenant } from '../contexts/TenantContext';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
 import Toggle from '../components/Toggle';
@@ -61,6 +63,14 @@ export default function BalanceSheet() {
   const [showShareModal, setShowShareModal] = useState(false);
   // IBCS mode is always enabled - industry standard for financial reporting
   const ibcsMode = true;
+
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="statements" />;
+  }
 
   // Calculate actual date based on preset
   const asOfDate = getPresetDate(datePreset, customDate);

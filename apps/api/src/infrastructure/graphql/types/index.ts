@@ -30,3 +30,6 @@ export * from "./transaction.types";
 
 // Visualization types
 export * from "./visualization.types";
+
+// User settings types
+export * from "./user-settings.types";

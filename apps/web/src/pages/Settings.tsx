@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Building2, 
@@ -8,8 +8,6 @@ import {
   Database, 
   Save,
   CreditCard,
-  BarChart3,
-  Zap,
   ExternalLink,
   Key,
   Smartphone,
@@ -27,16 +25,13 @@ import {
   FileText,
   Copy,
   Target,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth, useKeycloak } from '../lib/keycloak';
 import Avatar, { IDPBadge } from '../components/Avatar';
 import { useTenant } from '../contexts/TenantContext';
 import { useDemoMode } from '../contexts/DemoModeContext';
-import { 
-  getEntitlements, 
-  type SubscriptionTier, 
-} from '../lib/entitlements';
-import config from '../lib/config';
 import { useI18n } from '../lib/i18n';
 import NotificationSettings from '../components/NotificationSettings';
 import ThresholdSettings from '../components/ThresholdSettings';
@@ -55,21 +50,10 @@ import {
   validateImageFile 
 } from '../lib/uploads';
 
-// Mock subscription data - would come from API
-const mockSubscription = {
-  tier: 'professional' as SubscriptionTier,
-  status: 'active',
-  currentPeriodEnd: '2026-02-25',
-  usage: {
-    dataSources: 3,
-    reportsThisMonth: 45,
-  },
-};
-
 export default function Settings() {
   const { user } = useAuth();
   const { currentTenant, canManageSettings, canManageMembers, canManageBilling, isInternalStaff, updateTenantSettings, setCurrentTenant } = useTenant();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
+  useDemoMode(); // Context used by DemoModeBanner
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial tab from URL or default to first available
@@ -81,11 +65,71 @@ export default function Settings() {
   };
   
   const [activeTab, setActiveTab] = useState(getInitialTab);
-  const [subscription] = useState(mockSubscription);
-  const entitlements = getEntitlements(currentTenant?.plan || subscription.tier);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [userPicture, setUserPicture] = useState<string | undefined>(user?.picture);
+  
+  // Scroll state for tab navigation
+  const tabScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  
+  // Check scroll position and update arrow visibility
+  const updateScrollState = useCallback(() => {
+    const container = tabScrollRef.current;
+    if (!container) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 5);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+  }, []);
+  
+  // Scroll tabs by a fixed amount
+  const scrollTabs = useCallback((direction: 'left' | 'right') => {
+    const container = tabScrollRef.current;
+    if (!container) return;
+    
+    const scrollAmount = 200;
+    container.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  }, []);
+  
+  // Initialize scroll state and add resize observer
+  useEffect(() => {
+    const container = tabScrollRef.current;
+    if (!container) return;
+    
+    updateScrollState();
+    container.addEventListener('scroll', updateScrollState, { passive: true });
+    
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(container);
+    
+    return () => {
+      container.removeEventListener('scroll', updateScrollState);
+      resizeObserver.disconnect();
+    };
+  }, [updateScrollState]);
+  
+  // Scroll active tab into view on initial mount
+  useEffect(() => {
+    const container = tabScrollRef.current;
+    if (!container) return;
+    
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      const activeTabButton = container.querySelector(`[data-tab-id="${activeTab}"]`) as HTMLElement;
+      if (activeTabButton) {
+        activeTabButton.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+        updateScrollState();
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
   
   // Sync URL with active tab
   useEffect(() => {
@@ -95,10 +139,29 @@ export default function Settings() {
     }
   }, [searchParams]);
   
-  // Update URL when tab changes
+  // Update URL when tab changes and scroll tab into view
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     setSearchParams({ tab: tabId }, { replace: true });
+    
+    // Scroll the tab button into view
+    setTimeout(() => {
+      const container = tabScrollRef.current;
+      if (!container) return;
+      
+      const tabButton = container.querySelector(`[data-tab-id="${tabId}"]`) as HTMLElement;
+      if (tabButton) {
+        const containerRect = container.getBoundingClientRect();
+        const tabRect = tabButton.getBoundingClientRect();
+        
+        // Calculate if tab is fully visible
+        const isFullyVisible = tabRect.left >= containerRect.left && tabRect.right <= containerRect.right;
+        
+        if (!isFullyVisible) {
+          tabButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    }, 10);
   };
 
   // Handle logo upload
@@ -272,7 +335,8 @@ export default function Settings() {
       name: isEn ? 'Charts & IBCS' : 'Graphiques & IBCS', 
       description: isEn ? 'Default chart preferences' : 'Préférences graphiques par défaut',
       icon: Target, 
-      show: true 
+      // Per-org setting: only org admins can modify, only for paid plans (not free tier)
+      show: canManageSettings && currentTenant?.plan !== 'free'
     },
     { 
       id: 'anomalies', 
@@ -304,20 +368,6 @@ export default function Settings() {
       show: isAdmin 
     },
     // Technical config tabs - internal PlainLedger staff only (we configure this for customers)
-    { 
-      id: 'analytics', 
-      name: 'Analytics Config', 
-      description: 'Power BI configuration',
-      icon: BarChart3, 
-      show: isInternalStaff && entitlements.powerBI.enabled 
-    },
-    { 
-      id: 'integrations', 
-      name: isEn ? 'Integrations' : 'Intégrations', 
-      description: isEn ? 'Data source connections' : 'Connexions sources de données',
-      icon: Database, 
-      show: isInternalStaff 
-    },
     { 
       id: 'api-docs', 
       name: 'API Documentation', 
@@ -382,35 +432,121 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Mobile Tab Selector - Horizontal scrollable pills */}
-      <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2 pb-2 min-w-max">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
-                style={{
-                  backgroundColor: isActive 
-                    ? 'rgb(var(--color-primary-500))' 
-                    : 'rgb(var(--color-surface))',
-                  color: isActive 
-                    ? 'white' 
-                    : 'rgb(var(--color-text))',
-                  border: isActive 
-                    ? 'none' 
-                    : '1px solid rgb(var(--color-border))',
-                }}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {tab.name}
-              </button>
-            );
-          })}
+      {/* Mobile Tab Selector - Horizontal scrollable pills with scroll indicators */}
+      <div className="lg:hidden relative">
+        {/* Left scroll button */}
+        <button
+          onClick={() => scrollTabs('left')}
+          className={`absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center w-10 transition-all duration-200 ${
+            canScrollLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{
+            background: 'linear-gradient(to right, rgb(var(--color-bg)) 60%, transparent)',
+          }}
+          aria-label={isEn ? 'Scroll left' : 'Défiler à gauche'}
+        >
+          <div 
+            className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))'
+            }}
+          >
+            <ChevronLeft className="w-5 h-5" style={{ color: 'rgb(var(--color-text))' }} />
+          </div>
+        </button>
+        
+        {/* Right scroll button */}
+        <button
+          onClick={() => scrollTabs('right')}
+          className={`absolute right-0 top-0 bottom-0 z-10 flex items-center justify-center w-10 transition-all duration-200 ${
+            canScrollRight ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{
+            background: 'linear-gradient(to left, rgb(var(--color-bg)) 60%, transparent)',
+          }}
+          aria-label={isEn ? 'Scroll right' : 'Défiler à droite'}
+        >
+          <div 
+            className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))'
+            }}
+          >
+            <ChevronRight className="w-5 h-5" style={{ color: 'rgb(var(--color-text))' }} />
+          </div>
+        </button>
+        
+        {/* Left fade indicator */}
+        <div 
+          className={`absolute left-0 top-0 bottom-0 w-6 pointer-events-none z-[5] transition-opacity duration-200 ${
+            canScrollLeft ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            background: 'linear-gradient(to right, rgb(var(--color-bg)), transparent)',
+          }}
+        />
+        
+        {/* Right fade indicator */}
+        <div 
+          className={`absolute right-0 top-0 bottom-0 w-6 pointer-events-none z-[5] transition-opacity duration-200 ${
+            canScrollRight ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            background: 'linear-gradient(to left, rgb(var(--color-bg)), transparent)',
+          }}
+        />
+        
+        {/* Scrollable tabs container */}
+        <div 
+          ref={tabScrollRef}
+          className="overflow-x-auto scrollbar-hide px-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <div className="flex flex-nowrap gap-2 py-1 min-w-max px-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  data-tab-id={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200"
+                  style={{
+                    backgroundColor: isActive 
+                      ? 'rgb(var(--color-primary-500))' 
+                      : 'rgb(var(--color-surface))',
+                    color: isActive 
+                      ? 'white' 
+                      : 'rgb(var(--color-text))',
+                    border: isActive 
+                      ? 'none' 
+                      : '1px solid rgb(var(--color-border))',
+                    boxShadow: isActive ? '0 2px 8px rgb(var(--color-primary-500) / 0.3)' : 'none',
+                  }}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  {tab.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
+        
+        {/* Scroll hint for first-time users */}
+        {canScrollRight && (
+          <div 
+            className="absolute right-12 top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-[10px] font-medium animate-pulse pointer-events-none"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+              color: 'rgb(var(--color-primary-600))'
+            }}
+          >
+            {isEn ? 'More →' : 'Plus →'}
+          </div>
+        )}
       </div>
 
       <div>
@@ -867,91 +1003,6 @@ export default function Settings() {
           )}
 
           {activeTab === 'subscription' && <SubscriptionManagement />}
-
-          {/* Internal staff only - Analytics configuration */}
-          {activeTab === 'analytics' && isInternalStaff && (
-            <div className="card">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="section-title mb-0">Analytics Engine Configuration</h3>
-                <span className="badge-warning flex items-center gap-1">
-                  Internal Staff Only
-                </span>
-              </div>
-              
-              {entitlements.powerBI.enabled ? (
-                <div className="space-y-6">
-                  <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    Configure the embedded analytics engine for this organization's interactive dashboards.
-                  </p>
-                  
-                  <div 
-                    className="p-4 rounded-xl border"
-                    style={{ 
-                      backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
-                      borderColor: 'rgb(var(--color-primary-500) / 0.2)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Zap className="w-5 h-5 mt-0.5" style={{ color: 'rgb(var(--color-primary-600))' }} />
-                      <div>
-                        <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>Technical Configuration</p>
-                        <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                          This configuration is managed by PlainLedger support. Customer should not see this section.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="label">Tenant ID</label>
-                      <input type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className="input font-mono" defaultValue={config.powerBI.tenantId} />
-                    </div>
-                    <div>
-                      <label className="label">Client ID</label>
-                      <input type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className="input font-mono" defaultValue={config.powerBI.clientId} />
-                    </div>
-                    <div>
-                      <label className="label">Workspace ID</label>
-                      <input type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className="input font-mono" defaultValue={config.powerBI.groupId} />
-                    </div>
-                    <div>
-                      <label className="label">Default Report ID</label>
-                      <input type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className="input font-mono" defaultValue={config.powerBI.reportId} />
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                    <button type="submit" className="btn-primary">
-                      <Save className="w-4 h-4" />
-                      Save Configuration
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <BarChart3 className="empty-state-icon" />
-                  <p className="empty-state-description">
-                    Interactive dashboards not available on this plan.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'integrations' && (
-            <div className="card">
-              <h3 className="section-title">Intégrations de données</h3>
-              <div className="space-y-4">
-                <IntegrationItem name="QuickBooks" enabled={entitlements.dataSources.quickbooks} connected={false} />
-                <IntegrationItem name="Xero" enabled={entitlements.dataSources.xero} connected={false} />
-                <IntegrationItem name="Sage" enabled={entitlements.dataSources.sage} connected={false} />
-                <IntegrationItem name="FreshBooks" enabled={entitlements.dataSources.freshbooks} connected={false} />
-                <IntegrationItem name="Wave" enabled={entitlements.dataSources.wave} connected={false} />
-                <IntegrationItem name="Import CSV" enabled={entitlements.dataSources.csv} connected={true} />
-              </div>
-            </div>
-          )}
 
           {activeTab === 'api-docs' && isInternalStaff && (
             <APIDocumentationSection />
@@ -1843,36 +1894,3 @@ function SecuritySettings() {
 }
 
 
-// Helper Components
-function IntegrationItem({ name, enabled, connected }: { name: string; enabled: boolean; connected: boolean }) {
-  return (
-    <div 
-      className={`p-4 border rounded-lg flex items-center justify-between ${!enabled ? 'opacity-50' : ''}`}
-      style={{ borderColor: 'rgb(var(--color-border))' }}
-    >
-      <div className="flex items-center gap-4">
-        <div 
-          className="w-12 h-12 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-        >
-          <span className="font-bold text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
-            {name.substring(0, 2).toUpperCase()}
-          </span>
-        </div>
-        <div>
-          <p className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{name}</p>
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {!enabled ? 'Non disponible dans votre plan' : connected ? 'Connecté' : 'Non connecté'}
-          </p>
-        </div>
-      </div>
-      {enabled ? (
-        <button className={connected ? 'btn-secondary btn-sm' : 'btn-primary btn-sm'}>
-          {connected ? 'Gérer' : 'Connecter'}
-        </button>
-      ) : (
-        <button className="btn-secondary btn-sm" disabled>Upgrade</button>
-      )}
-    </div>
-  );
-}

@@ -86,6 +86,7 @@ function FieldPicker({
   const [hoveredField, setHoveredField] = useState<DataMetric | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>('financial');
   const [draggedField, setDraggedField] = useState<DataMetric | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   const categories = [
     { id: 'financial', label: isEn ? 'Financial Metrics' : 'Métriques financières' },
@@ -163,7 +164,10 @@ function FieldPicker({
                     }
                   }}
                   onDragEnd={() => setDraggedField(null)}
-                  onMouseEnter={() => setHoveredField(field.id)}
+                  onMouseEnter={(e) => {
+                    setHoveredField(field.id);
+                    setTooltipPosition({ x: e.clientX, y: e.clientY });
+                  }}
                   onMouseLeave={() => setHoveredField(null)}
                 >
                   <GripVertical 
@@ -320,7 +324,7 @@ function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
   const chartTypes: ChartType[] = ['line', 'bar', 'area', 'pie', 'donut', 'waterfall', 'gauge', 'radar', 'heatmap', 'table', 'gantt', 'runway', 'scenario', 'burnRate', 'cashForecast'];
 
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2">
       {chartTypes.map((type) => {
         const info = CHART_TYPE_INFO[type];
         const Icon = ChartTypeIcon[type];
@@ -330,26 +334,26 @@ function ChartTypeGrid({ selected, onChange, isEn }: ChartTypeGridProps) {
           <button
             key={type}
             onClick={() => onChange(type)}
-            className="relative flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl transition-colors h-[72px]"
+            className="relative flex flex-col items-center justify-center gap-1 sm:gap-1.5 p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-colors h-[60px] sm:h-[68px] md:h-[72px] touch-manipulation active:scale-95"
             style={{
               backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'transparent',
               border: isSelected ? 'none' : '1px solid rgb(var(--color-border))',
             }}
           >
             <Icon 
-              className="w-5 h-5 flex-shrink-0" 
+              className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" 
               style={{ color: isSelected ? 'white' : 'rgb(var(--color-text-secondary))' }}
             />
             <span 
-              className="text-[10px] font-medium leading-tight text-center line-clamp-2"
+              className="text-[9px] sm:text-[10px] font-medium leading-tight text-center line-clamp-2"
               style={{ color: isSelected ? 'white' : 'rgb(var(--color-text))' }}
             >
               {isEn ? info.labelEn : info.label}
             </span>
             
             {isSelected && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow-sm">
-                <Check className="w-3 h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white flex items-center justify-center shadow-sm">
+                <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" style={{ color: 'rgb(var(--color-primary-500))' }} />
               </div>
             )}
           </button>
@@ -1863,24 +1867,24 @@ export default function ChartBuilder({
           )}
 
           {activeStep === 3 && (
-            <div className="space-y-6">
-              {/* Full-width Live Preview */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Full-width Live Preview - Responsive height */}
               <div
-                className="rounded-xl p-5"
+                className="rounded-lg sm:rounded-xl p-3 sm:p-5"
                 style={{ 
                   border: '1px solid rgb(var(--color-border))',
                   backgroundColor: 'rgb(var(--color-surface))',
-                  minHeight: '320px',
+                  minHeight: '200px',
                 }}
               >
                 <LivePreview config={config} fields={fields} isEn={isEn} />
               </div>
 
-              {/* Name, Description & Summary Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Name, Description & Summary - Responsive grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {/* Name */}
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <label className="block text-[10px] sm:text-xs font-medium mb-1 sm:mb-1.5 uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? 'Chart Name' : 'Nom du graphique'} *
                   </label>
                   <input
@@ -1888,7 +1892,7 @@ export default function ChartBuilder({
                     value={isEn ? chartNameEn : chartName}
                     onChange={(e) => isEn ? setChartNameEn(e.target.value) : setChartName(e.target.value)}
                     placeholder={isEn ? 'e.g. Revenue Trend Analysis' : 'ex. Analyse des revenus'}
-                    className="w-full px-4 py-3 rounded-xl border text-sm transition-all focus:ring-2 focus:ring-primary-500/20"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border text-sm transition-all focus:ring-2 focus:ring-primary-500/20"
                     style={{
                       backgroundColor: 'rgb(var(--color-bg))',
                       borderColor: 'rgb(var(--color-border))',
@@ -1899,7 +1903,7 @@ export default function ChartBuilder({
 
                 {/* Description */}
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <label className="block text-[10px] sm:text-xs font-medium mb-1 sm:mb-1.5 uppercase tracking-wide" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? 'Description' : 'Description'}
                   </label>
                   <input
@@ -1907,7 +1911,7 @@ export default function ChartBuilder({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder={isEn ? 'Brief description (optional)' : 'Brève description (optionnel)'}
-                    className="w-full px-4 py-3 rounded-xl border text-sm transition-all focus:ring-2 focus:ring-primary-500/20"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border text-sm transition-all focus:ring-2 focus:ring-primary-500/20"
                     style={{
                       backgroundColor: 'rgb(var(--color-bg))',
                       borderColor: 'rgb(var(--color-border))',
@@ -1916,27 +1920,27 @@ export default function ChartBuilder({
                   />
                 </div>
 
-                {/* Quick Summary */}
+                {/* Quick Summary - Responsive layout */}
                 <div
-                  className="p-3 rounded-xl flex items-center justify-between"
+                  className="p-2.5 sm:p-3 rounded-lg sm:rounded-xl sm:col-span-2 lg:col-span-1"
                   style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                 >
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                    <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-1 text-[10px] sm:text-xs">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Type:' : 'Type:'}</span>
-                      <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                        {config.chartType ? CHART_TYPE_INFO[config.chartType].icon : ''} {config.chartType ? (isEn ? CHART_TYPE_INFO[config.chartType].labelEn : CHART_TYPE_INFO[config.chartType].label) : '-'}
+                      <span className="font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                        {config.chartType ? (isEn ? CHART_TYPE_INFO[config.chartType].labelEn : CHART_TYPE_INFO[config.chartType].label) : '-'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Fields:' : 'Champs:'}</span>
                       <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{fields.filter(f => f.enabled).length}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Range:' : 'Période:'}</span>
                       <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{config.timeRange}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Compare:' : 'Comparer:'}</span>
                       <span className="font-medium" style={{ color: config.comparison !== 'none' ? 'rgb(var(--color-success))' : 'rgb(var(--color-text))' }}>
                         {config.comparison === 'none' ? (isEn ? 'No' : 'Non') : (isEn ? 'Yes' : 'Oui')}

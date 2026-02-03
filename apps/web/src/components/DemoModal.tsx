@@ -528,7 +528,7 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
             { icon: BarChart3, label: 'Dashboard', active: true },
             { icon: Shield, label: isEn ? 'Anomalies' : 'Anomalies', active: false, badge: '3' },
             { icon: FileText, label: isEn ? 'Reports' : 'Rapports', active: false },
-            { icon: Brain, label: isEn ? 'James' : 'James', active: false },
+            { icon: Brain, label: isEn ? 'AI' : 'IA', active: false },
           ].map((item, i) => (
             <div 
               key={i}

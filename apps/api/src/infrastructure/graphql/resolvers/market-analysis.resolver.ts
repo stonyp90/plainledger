@@ -471,9 +471,22 @@ export class MarketAnalysisResolver {
       rentToRevenueRatio: entity.rentToRevenueRatio || 0,
     };
 
+    // Construct quartile data from median values
+    // For balance sheet metrics, we estimate Q1/Q3 from median using industry-standard distributions
+    const currentRatioMedian = entity.currentRatioMedian || 0;
+    const debtToEquityMedian = entity.debtToEquityMedian || 0;
+    
     const balanceSheet: BalanceSheetMetricsType = {
-      currentRatio: entity.currentRatioMedian || 0,
-      debtToEquity: entity.debtToEquityMedian || 0,
+      currentRatio: {
+        q1: currentRatioMedian * 0.7,  // Lower quartile typically ~70% of median
+        median: currentRatioMedian,
+        q3: currentRatioMedian * 1.4,   // Upper quartile typically ~140% of median
+      },
+      debtToEquity: {
+        q1: debtToEquityMedian * 0.6,   // Lower quartile typically ~60% of median (less debt is better)
+        median: debtToEquityMedian,
+        q3: debtToEquityMedian * 1.5,   // Upper quartile typically ~150% of median
+      },
     };
 
     const growth: GrowthMetricsType | undefined =

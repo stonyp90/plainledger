@@ -577,6 +577,23 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_org ON accounting.user_profiles(org
 CREATE INDEX IF NOT EXISTS idx_user_profiles_journey ON accounting.user_profiles(journey_stage);
 
 -- ============================================
+-- USER SETTINGS - User preferences & chart configuration
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS accounting.user_settings (
+    user_id VARCHAR(100) PRIMARY KEY REFERENCES accounting.user_profiles(id) ON DELETE CASCADE,
+    notification_preferences JSONB,
+    ui_preferences JSONB,
+    feature_preferences JSONB,
+    chart_preferences JSONB,  -- Tooltip, IBCS, display config, per-chart overrides
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+COMMENT ON TABLE accounting.user_settings IS 'User-specific settings and preferences';
+COMMENT ON COLUMN accounting.user_settings.chart_preferences IS 'Chart/graph configuration including tooltip, IBCS, display, and per-chart overrides';
+
+-- ============================================
 -- EMAIL EVENTS - Track all email interactions
 -- ============================================
 

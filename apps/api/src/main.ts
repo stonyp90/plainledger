@@ -5,9 +5,15 @@ import * as compression from "compression";
 import { AppModule } from "./app.module";
 import { DomainExceptionFilter } from "@infrastructure/http/filters/domain-exception.filter";
 import { FileStorageService } from "@infrastructure/storage/file-storage.service";
+import { createSwaggerConfig } from "@infrastructure/http/swagger.config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Trust proxy headers when behind ALB/reverse proxy
+  // This ensures correct protocol/host detection for Swagger UI and redirects
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set("trust proxy", 1);
 
   // Enable response compression (gzip)
   app.use(compression());
@@ -73,25 +79,44 @@ async function bootstrap() {
   });
 
   // Swagger API Documentation (dynamically generated from decorators)
-  const { createSwaggerConfig } =
-    await import("./infrastructure/http/swagger.config");
-  const config = createSwaggerConfig();
+  const isProduction = process.env.NODE_ENV === "production";
+  const config = createSwaggerConfig(isProduction);
   const document = SwaggerModule.createDocument(app, config);
+  
+  // Always enable Swagger - useful for API consumers and debugging
   SwaggerModule.setup("api/docs", app, document, {
     swaggerOptions: {
       persistAuthorization: true,
       tagsSorter: "alpha",
       operationsSorter: "alpha",
+      // Ensure proper base URL detection behind reverse proxy
+      url: isProduction ? "/api/docs-json" : undefined,
+      // Display request duration
+      displayRequestDuration: true,
+      // Try it out enabled by default
+      tryItOutEnabled: !isProduction,
+      // Filter by tag
+      filter: true,
     },
+    customSiteTitle: "PlainLedger API Documentation",
+    // Custom CSS for better branding
+    customCss: `
+      .swagger-ui .topbar { background-color: #1e3a5f; }
+      .swagger-ui .topbar-wrapper img { content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30"><text x="0" y="22" fill="white" font-size="20" font-weight="bold">PlainLedger</text></svg>'); }
+    `,
   });
 
   // Export OpenAPI spec for contract testing (in non-production)
   if (process.env.NODE_ENV !== "production") {
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const specPath = path.join(process.cwd(), "openapi-spec.json");
-    await fs.writeFile(specPath, JSON.stringify(document, null, 2));
-    console.log(`[Swagger] OpenAPI spec exported to: ${specPath}`);
+    try {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const specPath = path.join(process.cwd(), "openapi-spec.json");
+      await fs.writeFile(specPath, JSON.stringify(document, null, 2));
+      console.log(`[Swagger] OpenAPI spec exported to: ${specPath}`);
+    } catch (err) {
+      console.warn(`[Swagger] Could not export OpenAPI spec: ${err.message}`);
+    }
   }
 
   // Initialize file storage (create uploads bucket if needed)

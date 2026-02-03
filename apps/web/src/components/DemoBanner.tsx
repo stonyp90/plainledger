@@ -4,7 +4,7 @@
  * Clearly communicates that integration is not possible without a subscription
  */
 
-import { X, AlertTriangle, ArrowRight, Link2Off, Calendar, Sparkles, Lock } from 'lucide-react';
+import { X, AlertTriangle, ArrowRight, Calendar, Sparkles, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useDemoMode } from '../contexts/DemoModeContext';
 import { useAuth } from '../lib/keycloak';
@@ -103,28 +103,7 @@ export default function DemoBanner() {
 
         {/* Key Points */}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-          {/* No Integration */}
-          <div 
-            className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
-            style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
-          >
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-            >
-              <Link2Off className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Integration Disabled' : 'Intégration désactivée'}
-              </p>
-              <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Cannot connect software' : 'Connexion logiciel impossible'}
-              </p>
-            </div>
-          </div>
-
-          {/* Test Data Only */}
+          {/* Demo Data */}
           <div 
             className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
             style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
@@ -137,15 +116,36 @@ export default function DemoBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Test Data Only' : 'Données de test uniquement'}
+                {isEn ? 'Demo Data Only' : 'Données de démo uniquement'}
               </p>
               <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Not your real data' : 'Pas vos vraies données'}
+                {isEn ? 'Sample financial data' : 'Données financières d\'exemple'}
               </p>
             </div>
           </div>
 
-          {/* Upgrade Required */}
+          {/* Free Plan */}
+          <div 
+            className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
+          >
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgb(var(--color-info) / 0.1)' }}
+            >
+              <AlertTriangle className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Free Plan' : 'Plan Gratuit'}
+              </p>
+              <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Explore features risk-free' : 'Explorez les fonctionnalités'}
+              </p>
+            </div>
+          </div>
+
+          {/* Upgrade for Real Data */}
           <div 
             className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
             style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.08)' }}
@@ -158,10 +158,10 @@ export default function DemoBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Subscription Required' : 'Abonnement requis'}
+                {isEn ? 'Upgrade for Real Data' : 'Passez à l\'abonnement supérieur'}
               </p>
               <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'For real data access' : 'Pour accéder aux vraies données'}
+                {isEn ? 'Connect your software' : 'Connectez votre logiciel'}
               </p>
             </div>
           </div>
@@ -174,8 +174,8 @@ export default function DemoBanner() {
         >
           <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn 
-              ? 'Ready to connect your accounting software and see your real financial data?'
-              : 'Prêt à connecter votre logiciel comptable et voir vos vraies données financières?'
+              ? 'Upgrade to Professional to connect your accounting software and see real data.'
+              : 'Passez à Professional pour connecter votre logiciel comptable et voir vos vraies données.'
             }
           </p>
           <button
@@ -187,7 +187,7 @@ export default function DemoBanner() {
             }}
           >
             <Calendar className="w-4 h-4" />
-            <span className="text-sm">{isEn ? 'Schedule a Demo' : 'Planifier une démo'}</span>
+            <span className="text-sm">{isEn ? 'Upgrade Now' : 'Passer à l\'abonnement supérieur'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

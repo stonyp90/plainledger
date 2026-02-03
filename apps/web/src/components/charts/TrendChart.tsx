@@ -9,7 +9,7 @@
  * - Bilingual support (EN/FR)
  */
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { AlertTriangle, TrendingUp, TrendingDown, Settings2, Target, Share2, Maximize2, Minimize2 } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, Settings2, Target, Share2, Maximize2, Minimize2, Calendar, ChevronDown } from 'lucide-react';
 import { 
   DEFAULT_THRESHOLDS, 
   formatCurrency,
@@ -20,13 +20,141 @@ import {
 import { ChartTooltip, DataPointTooltip } from './ChartTooltip';
 import { ChartEmptyState } from '../EmptyDataState';
 import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
-import { useGraphConfig } from '../../hooks/useGraphConfig';
-import { formatCurrencyValue, formatPercentageValue } from '../../lib/graphConfig';
+import { useGraphConfig, saveChartSettings } from '../../hooks/useGraphConfig';
+import { useChartResponsive } from '../../hooks/useChartResponsive';
+import { formatCurrencyValue, formatPercentageValue, type PeriodPreset } from '../../lib/graphConfig';
 import GraphConfigPanel from './GraphConfigPanel';
 import { IBCSLegendCompact } from './ibcs/IBCSLegend';
 import { IBCSColors } from '../../lib/ibcs';
 import { useChartCapture } from '../../hooks/useChartCapture';
 import ShareModal from '../ShareModal';
+
+// =====================================================
+// CHART PERIOD SELECTOR (Per-chart date filter)
+// =====================================================
+
+interface ChartPeriodSelectorProps {
+  chartId: string;
+  currentPeriod: PeriodPreset;
+  isEn: boolean;
+  isFullscreen: boolean;
+  /** Icon class for responsive sizing */
+  iconClass?: string;
+  /** Text class for responsive sizing */
+  textClass?: string;
+  /** Whether chart is in compact mode */
+  isCompact?: boolean;
+}
+
+function ChartPeriodSelector({ 
+  chartId, 
+  currentPeriod, 
+  isEn, 
+  isFullscreen,
+  iconClass = 'w-3 h-3',
+  textClass = 'text-xs',
+  isCompact = false,
+}: ChartPeriodSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const periods: { id: PeriodPreset; label: string; labelEn: string; short: string; shortEn: string }[] = [
+    { id: 'mtd', label: 'Mois en cours', labelEn: 'Month to Date', short: 'MTD', shortEn: 'MTD' },
+    { id: 'qtd', label: 'Trimestre en cours', labelEn: 'Quarter to Date', short: 'QTD', shortEn: 'QTD' },
+    { id: 'ytd', label: 'Année en cours', labelEn: 'Year to Date', short: 'YTD', shortEn: 'YTD' },
+    { id: 'last_month', label: 'Mois dernier', labelEn: 'Last Month', short: '1M', shortEn: '1M' },
+    { id: 'last_quarter', label: 'Trimestre dernier', labelEn: 'Last Quarter', short: '1Q', shortEn: '1Q' },
+    { id: 'last_year', label: 'Année dernière', labelEn: 'Last Year', short: '1Y', shortEn: '1Y' },
+  ];
+  
+  const currentPeriodInfo = periods.find(p => p.id === currentPeriod) || periods[2]; // Default to YTD
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+  
+  const handlePeriodChange = (periodId: PeriodPreset) => {
+    // Save only to this specific chart's settings - does not affect other charts
+    saveChartSettings(chartId, { period: { defaultPeriod: periodId } });
+    setIsOpen(false);
+  };
+
+  // Hide on very compact charts
+  if (isCompact) return null;
+  
+  return (
+    <div ref={dropdownRef} className={`relative ${isFullscreen ? 'block' : 'hidden sm:block'}`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-md ${textClass} font-medium transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'}`}
+        style={{ 
+          backgroundColor: isOpen ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
+          color: isOpen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))',
+          border: '1px solid transparent',
+          position: 'relative',
+          zIndex: isFullscreen ? 10 : undefined,
+        }}
+        title={isEn ? 'Change time period (chart-specific)' : 'Changer la période (spécifique au graphique)'}
+      >
+        <Calendar className={iconClass} />
+        <span>{isEn ? currentPeriodInfo.shortEn : currentPeriodInfo.short}</span>
+        <ChevronDown className={`${iconClass} transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <div 
+          className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[160px]"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          <div 
+            className="px-3 py-1.5 text-xs font-medium border-b mb-1"
+            style={{ 
+              color: 'rgb(var(--color-text-muted))',
+              borderColor: 'rgb(var(--color-border))',
+            }}
+          >
+            {isEn ? 'This chart only' : 'Ce graphique uniquement'}
+          </div>
+          {periods.map((period) => (
+            <button
+              key={period.id}
+              onClick={() => handlePeriodChange(period.id)}
+              className="w-full px-3 py-1.5 text-left text-sm flex items-center justify-between hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+              style={{ 
+                color: currentPeriod === period.id 
+                  ? 'rgb(var(--color-primary-500))' 
+                  : 'rgb(var(--color-text))',
+                backgroundColor: currentPeriod === period.id 
+                  ? 'rgb(var(--color-primary-500) / 0.05)' 
+                  : 'transparent',
+              }}
+            >
+              <span>{isEn ? period.labelEn : period.label}</span>
+              <span 
+                className="text-xs font-mono"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn ? period.shortEn : period.short}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface TrendChartProps {
   data: FinancialDataPoint[];
@@ -139,6 +267,9 @@ export default function TrendChart({
   const [shareError, setShareError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const { chartRef, capture } = useChartCapture<HTMLDivElement>();
+  
+  // Chart-responsive sizing based on actual container width (not viewport)
+  const { ref: responsiveRef, classes: rClasses, values: rValues, isCompact: isChartCompact } = useChartResponsive();
   
   // Generate stable chart ID for config persistence
   const effectiveChartId = chartId || `trend-${title.toLowerCase().replace(/\s/g, '-')}`;
@@ -284,6 +415,22 @@ export default function TrendChart({
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
   }, []);
+
+  // Handle Escape key to exit fullscreen (for both CSS and browser fullscreen)
+  useEffect(() => {
+    if (!isFullscreen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleFullscreen();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [isFullscreen, toggleFullscreen]);
 
   // Debounced hover handlers to prevent flickering
   const handlePointEnter = useCallback((index: number, e: React.MouseEvent) => {
@@ -578,17 +725,30 @@ export default function TrendChart({
       })()
     : '';
 
+  // Combine refs for capture and responsive sizing
+  const setRefs = useCallback((node: HTMLDivElement | null) => {
+    // Set chart capture ref
+    (chartRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    // Set responsive sizing ref
+    (responsiveRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+  }, [chartRef, responsiveRef]);
+
   return (
     <div 
-      ref={chartRef}
-      className={`rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all duration-200 hover:shadow-md group flex flex-col ${
+      ref={setRefs}
+      className={`rounded-lg sm:rounded-xl ${rClasses.padding} transition-all duration-200 hover:shadow-md group flex flex-col ${
         isFullscreen ? 'fixed inset-0 overflow-auto' : ''
       }`}
       style={{ 
-        backgroundColor: 'rgb(var(--color-surface))',
+        backgroundColor: isFullscreen ? 'rgb(var(--color-bg))' : 'rgb(var(--color-surface))',
         border: isFullscreen ? 'none' : '1px solid rgb(var(--color-border))',
         borderRadius: isFullscreen ? 0 : undefined,
-        zIndex: isFullscreen ? 9998 : undefined,
+        zIndex: isFullscreen ? 9997 : undefined, // Below toasts (9998) but above everything else
+        // Ensure fullscreen has an opaque background
+        ...(isFullscreen && { 
+          padding: '1rem',
+          boxShadow: 'none',
+        }),
       }}
       onMouseEnter={(e) => {
         if (!isFullscreen) {
@@ -601,46 +761,55 @@ export default function TrendChart({
         }
       }}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4 gap-4">
+      {/* Header - responsive to chart size, sticky in fullscreen */}
+      <div 
+        className={`flex items-start justify-between mb-2 ${rClasses.gap} ${isFullscreen ? 'sticky top-0 py-2 -mx-4 px-4' : ''}`}
+        style={isFullscreen ? { 
+          backgroundColor: 'rgb(var(--color-bg))',
+          zIndex: 10,
+        } : undefined}
+      >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className={`flex items-center ${rClasses.gap} flex-wrap`}>
             <h3 
-              className="font-semibold"
+              className={rClasses.title}
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn && titleEn ? titleEn : title}
             </h3>
             
-            {/* Key metrics inline */}
-            <span 
-              className="text-sm font-mono tabular-nums flex items-center gap-1"
-              style={{ 
-                color: percentChange >= 0 
-                  ? 'rgb(var(--color-success))' 
-                  : 'rgb(var(--color-error))'
-              }}
-            >
-              {percentChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(1)}%
-            </span>
-            
-            {outliers.length > 0 && (
+            {/* Key metrics inline - hide on very compact charts */}
+            {!isChartCompact && (
               <span 
-                className="text-xs flex items-center gap-1 px-2 py-0.5 rounded"
+                className={`${rClasses.textSm} font-mono tabular-nums flex items-center gap-0.5`}
+                style={{ 
+                  color: percentChange >= 0 
+                    ? 'rgb(var(--color-success))' 
+                    : 'rgb(var(--color-error))'
+                }}
+              >
+                {percentChange >= 0 ? <TrendingUp className={rClasses.iconSm} /> : <TrendingDown className={rClasses.iconSm} />}
+                {percentChange >= 0 ? '+' : ''}{percentChange.toFixed(1)}%
+              </span>
+            )}
+            
+            {/* Anomaly badge - hide on compact charts */}
+            {!isChartCompact && outliers.length > 0 && (
+              <span 
+                className={`${rClasses.textSm} flex items-center gap-0.5 px-1.5 py-0.5 rounded`}
                 style={{ 
                   backgroundColor: 'rgb(var(--color-error) / 0.1)',
                   color: 'rgb(var(--color-error))'
                 }}
               >
-                <AlertTriangle className="w-3 h-3" />
+                <AlertTriangle className={rClasses.iconSm} />
                 {outliers.length} {isEn ? 'anomal' + (outliers.length > 1 ? 'ies' : 'y') : 'anomalie' + (outliers.length > 1 ? 's' : '')}
               </span>
             )}
           </div>
-          {(subtitle || subtitleEn) && (
+          {(subtitle || subtitleEn) && !isChartCompact && (
             <p 
-              className="text-sm mt-0.5"
+              className={`${rClasses.subtitle} mt-0.5`}
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
               {isEn && subtitleEn ? subtitleEn : subtitle}
@@ -648,51 +817,68 @@ export default function TrendChart({
           )}
         </div>
         
-        {/* Controls - hover reveal on desktop, simplified on mobile */}
-        <div className="flex items-center gap-0.5">
-          {/* Fullscreen - Desktop only */}
+        {/* Controls - hover reveal on desktop, simplified on mobile - sized by chart width */}
+        <div className={`flex items-center ${rClasses.gap}`}>
+          {/* Period selector - Desktop only (hover reveal) */}
+          <ChartPeriodSelector
+            chartId={effectiveChartId}
+            currentPeriod={graphConfig.period.defaultPeriod}
+            isEn={isEn}
+            isFullscreen={isFullscreen}
+            iconClass={rClasses.iconSm}
+            textClass={rClasses.textSm}
+            isCompact={isChartCompact}
+          />
+          
+          {/* Fullscreen - Always visible in fullscreen mode, hover reveal otherwise */}
           <button
             onClick={toggleFullscreen}
-            className={`hidden sm:flex p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100 ${isFullscreen ? '!opacity-100' : ''}`}
+            className={`${isFullscreen ? 'flex' : 'hidden sm:flex'} ${rClasses.buttonSm} transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'}`}
             style={{ 
               backgroundColor: isFullscreen ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
-              color: isFullscreen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))'
+              color: isFullscreen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))',
+              position: 'relative',
+              zIndex: isFullscreen ? 10 : undefined,
             }}
-            title={isEn ? (isFullscreen ? 'Exit fullscreen' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran' : 'Plein écran')}
+            title={isEn ? (isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran (Esc)' : 'Plein écran')}
             aria-label={isEn ? (isFullscreen ? 'Exit fullscreen' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran' : 'Plein écran')}
           >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            {isFullscreen ? <Minimize2 className={rClasses.icon} /> : <Maximize2 className={rClasses.icon} />}
           </button>
-          {/* Share - Desktop only (hover reveal) */}
+          {/* Share - Always visible in fullscreen mode, hover reveal otherwise */}
           <button
             onClick={handleShareClick}
             disabled={isCapturing}
-            className={`hidden sm:flex p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100 ${isFullscreen ? '!opacity-100' : ''} ${isCapturing ? '!opacity-30 cursor-wait' : ''}`}
+            className={`${isFullscreen ? 'flex' : 'hidden sm:flex'} ${rClasses.buttonSm} transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'} ${isCapturing ? 'opacity-30 cursor-wait' : ''}`}
             style={{ 
               backgroundColor: 'transparent',
-              color: 'rgb(var(--color-text-muted))'
+              color: 'rgb(var(--color-text-muted))',
+              position: 'relative',
+              zIndex: isFullscreen ? 10 : undefined,
             }}
             title={isEn ? 'Share chart' : 'Partager le graphique'}
             aria-label={isEn ? 'Share chart' : 'Partager le graphique'}
           >
             {isCapturing ? (
-              <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin block" />
+              <span className={`${rClasses.icon} border border-current border-t-transparent rounded-full animate-spin block`} />
             ) : (
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className={rClasses.icon} />
             )}
           </button>
-          {/* Config - Desktop only (hover reveal) */}
+          {/* Config - Always visible in fullscreen mode, hover reveal otherwise */}
           <button
             onClick={() => setShowConfigPanel(true)}
-            className={`hidden sm:flex p-1.5 rounded-md transition-all duration-200 opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100 ${isFullscreen ? '!opacity-100' : ''}`}
+            className={`${isFullscreen ? 'flex' : 'hidden sm:flex'} ${rClasses.buttonSm} transition-all duration-200 ${isFullscreen ? 'opacity-100' : 'opacity-0 group-hover:opacity-70 hover:opacity-100 focus:opacity-100'}`}
             style={{ 
               backgroundColor: 'transparent',
-              color: 'rgb(var(--color-text-muted))'
+              color: 'rgb(var(--color-text-muted))',
+              position: 'relative',
+              zIndex: isFullscreen ? 10 : undefined,
             }}
             title={isEn ? 'Configure chart' : 'Configurer le graphique'}
             aria-label={isEn ? 'Configure chart' : 'Configurer le graphique'}
           >
-            <Settings2 className="w-3.5 h-3.5" />
+            <Settings2 className={rClasses.icon} />
           </button>
           {enableDecisions && onRecordDecision && (
             <button
@@ -750,61 +936,68 @@ export default function TrendChart({
         </div>
       </div>
 
-      {/* Legend - IBCS notation when enabled */}
-      <div className="flex items-center gap-3 sm:gap-4 mb-3 text-[10px] sm:text-xs flex-wrap" style={{ color: 'rgb(var(--color-text-muted))' }}>
+      {/* Legend - IBCS notation when enabled - fixed height for consistency */}
+      <div 
+        className={`flex items-center gap-2 mb-2 ${rClasses.textSm} overflow-x-auto scrollbar-hide`}
+        style={{ 
+          color: 'rgb(var(--color-text-muted))',
+          minHeight: '20px', // Fixed height prevents layout shifts
+          maxHeight: '20px',
+        }}
+      >
         {ibcsMode && showIBCSLegend ? (
           <IBCSLegendCompact />
         ) : (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <span 
-              className="w-6 h-0.5 rounded"
+              className="w-4 h-0.5 rounded flex-shrink-0"
               style={{ backgroundColor: '#10b981' }}
             />
-            {isEn ? 'Actual' : 'Réel'}
+            AC
           </span>
         )}
         {showMA && (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <span 
-              className="w-6 h-0.5 rounded"
+              className="w-4 h-0.5 rounded flex-shrink-0"
               style={{ backgroundColor: 'rgb(var(--color-text-muted))', opacity: 0.6 }}
             />
             MA({movingAveragePeriod})
           </span>
         )}
         {(budget || planData) && (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <span 
-              className="w-6 h-0.5 rounded"
+              className="w-4 h-0.5 rounded flex-shrink-0"
               style={{ 
                 backgroundColor: ibcsMode ? IBCSColors.planStroke : 'rgb(var(--color-warning))', 
                 borderStyle: 'dashed' 
               }}
             />
-            {ibcsMode ? 'PL' : 'Budget'}
+            PL
           </span>
         )}
         {forecastData && (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <span 
-              className="w-6 h-0.5 rounded"
+              className="w-4 h-0.5 rounded flex-shrink-0"
               style={{ backgroundColor: IBCSColors.forecast, borderStyle: 'dotted' }}
             />
-            {ibcsMode ? 'FC' : (isEn ? 'Forecast' : 'Prévision')}
+            FC
           </span>
         )}
         {showBands && (
           <>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 whitespace-nowrap">
               <span 
-                className="w-3 h-3 rounded"
+                className="w-2.5 h-2.5 rounded flex-shrink-0"
                 style={{ backgroundColor: 'rgb(var(--color-success) / 0.15)' }}
               />
-              {isEn ? 'Normal' : 'Normal'}
+              Normal
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 whitespace-nowrap">
               <span 
-                className="w-3 h-3 rounded"
+                className="w-2.5 h-2.5 rounded flex-shrink-0"
                 style={{ backgroundColor: 'rgb(var(--color-warning) / 0.15)' }}
               />
               ±{thresholds.varianceWarning}%

@@ -33,8 +33,8 @@ interface UserMetrics {
 interface BenchmarkData {
   grossMargin: QuartileData;
   netMargin: QuartileData;
-  currentRatio: number;
-  debtToEquity: number;
+  currentRatio: QuartileData;  // Changed from number to QuartileData
+  debtToEquity: QuartileData;  // Changed from number to QuartileData
   operatingExpenseRatio: number;
   wagesToRevenueRatio: number;
   revenueYoY: number;
@@ -132,15 +132,15 @@ export default function BenchmarkComparison({
       name: 'Current Ratio',
       nameFr: 'Ratio de liquidité',
       userValue: userMetrics?.currentRatio ?? 0,
-      industryMedian: benchmark?.currentRatio ?? 0,
+      industryMedian: benchmark?.currentRatio?.median ?? 0,
       percentileRank: calculatePercentile(
         userMetrics?.currentRatio ?? 0, 
-        { q1: (benchmark?.currentRatio ?? 0) * 0.7, median: benchmark?.currentRatio ?? 0, q3: (benchmark?.currentRatio ?? 0) * 1.4 },
+        benchmark?.currentRatio ?? { q1: 0, median: 0, q3: 0 },
         true
       ),
       status: getStatus(calculatePercentile(
         userMetrics?.currentRatio ?? 0,
-        { q1: (benchmark?.currentRatio ?? 0) * 0.7, median: benchmark?.currentRatio ?? 0, q3: (benchmark?.currentRatio ?? 0) * 1.4 },
+        benchmark?.currentRatio ?? { q1: 0, median: 0, q3: 0 },
         true
       )),
       higherIsBetter: true,
@@ -150,15 +150,15 @@ export default function BenchmarkComparison({
       name: 'Debt-to-Equity',
       nameFr: 'Dette/Capitaux propres',
       userValue: userMetrics?.debtToEquity ?? 0,
-      industryMedian: benchmark?.debtToEquity ?? 0,
+      industryMedian: benchmark?.debtToEquity?.median ?? 0,
       percentileRank: calculatePercentile(
         userMetrics?.debtToEquity ?? 0,
-        { q1: (benchmark?.debtToEquity ?? 0) * 0.6, median: benchmark?.debtToEquity ?? 0, q3: (benchmark?.debtToEquity ?? 0) * 1.5 },
+        benchmark?.debtToEquity ?? { q1: 0, median: 0, q3: 0 },
         false
       ),
       status: getStatus(calculatePercentile(
         userMetrics?.debtToEquity ?? 0,
-        { q1: (benchmark?.debtToEquity ?? 0) * 0.6, median: benchmark?.debtToEquity ?? 0, q3: (benchmark?.debtToEquity ?? 0) * 1.5 },
+        benchmark?.debtToEquity ?? { q1: 0, median: 0, q3: 0 },
         false
       )),
       higherIsBetter: false,

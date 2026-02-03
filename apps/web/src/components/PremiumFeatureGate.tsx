@@ -1,6 +1,6 @@
 /**
  * Premium Feature Gate Component
- * Shows premium sections with upgrade CTA for free/starter tier users
+ * Shows premium sections with upgrade CTA for free tier users
  * Redesigned for better UI/UX with aspirational design
  */
 

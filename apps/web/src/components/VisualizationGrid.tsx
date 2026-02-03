@@ -9,8 +9,9 @@
  */
 
 import { useState, useCallback, ReactNode } from 'react';
-import { GripVertical, X, Maximize2 } from 'lucide-react';
+import { GripVertical, Lock, Unlock, Trash2, Loader2 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import { isChartLocked, toggleChartLock } from '../hooks/useGraphConfig';
 
 interface VisualizationItem {
   id: string;
@@ -27,6 +28,12 @@ interface VisualizationGridProps {
   /** @deprecated Use CSS to control chart heights instead */
   minHeight?: number;
   className?: string;
+  /** Whether the dashboard is currently locked */
+  isDashboardLocked?: boolean;
+  /** Callback to toggle dashboard lock */
+  onToggleLock?: () => void;
+  /** Whether user has permission to customize (separate from lock state) */
+  hasCustomizePermission?: boolean;
 }
 
 export default function VisualizationGrid({
@@ -36,6 +43,9 @@ export default function VisualizationGrid({
   canCustomize = false,
   minHeight: _minHeight, // Deprecated - charts control their own height
   className = '',
+  isDashboardLocked = false,
+  onToggleLock,
+  hasCustomizePermission = false,
 }: VisualizationGridProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -43,6 +53,20 @@ export default function VisualizationGrid({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
+  const [lockingChartId, setLockingChartId] = useState<string | null>(null);
+  
+  // Show controls if user has permission (even if locked)
+  const showControls = hasCustomizePermission || canCustomize;
+  
+  // Handle toggling chart lock
+  const handleToggleChartLock = useCallback(async (chartId: string) => {
+    setLockingChartId(chartId);
+    try {
+      await toggleChartLock(chartId);
+    } finally {
+      setLockingChartId(null);
+    }
+  }, []);
 
   // Handle drag start
   const handleDragStart = useCallback((id: string) => (e: React.DragEvent) => {
@@ -143,6 +167,9 @@ export default function VisualizationGrid({
             const isDragOver = dragOverId === item.id;
             const showDropBefore = isDragOver && dropPosition === 'before';
             const showDropAfter = isDragOver && dropPosition === 'after';
+            const chartLocked = isChartLocked(item.id);
+            const isLocking = lockingChartId === item.id;
+            const isEffectivelyLocked = isDashboardLocked || chartLocked;
             
             return (
               <div
@@ -150,8 +177,8 @@ export default function VisualizationGrid({
                 className={`relative group transition-all duration-150 ${
                   isDragging ? 'opacity-40 scale-[0.98]' : ''
                 }`}
-                draggable={canCustomize}
-                onDragStart={handleDragStart(item.id)}
+                draggable={canCustomize && !isEffectivelyLocked}
+                onDragStart={canCustomize && !isEffectivelyLocked ? handleDragStart(item.id) : undefined}
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver(item.id)}
                 onDragLeave={handleDragLeave}
@@ -184,39 +211,106 @@ export default function VisualizationGrid({
                   />
                 )}
                 
-                {/* Drag handle + controls */}
-                {canCustomize && (
+                {/* Drag handle + Lock + Remove - Only show when unlocked */}
+                {showControls && !isEffectivelyLocked && (
                   <div 
-                    className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                    className="absolute top-10 left-2 right-2 z-20 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
                   >
                     {/* Drag handle */}
                     <div
-                      className="cursor-grab active:cursor-grabbing p-1.5 rounded-md pointer-events-auto"
+                      className="p-1.5 rounded-md pointer-events-auto cursor-grab active:cursor-grabbing"
                       style={{
                         backgroundColor: 'rgb(var(--color-surface))',
                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                       }}
                       title={isEn ? 'Drag to reorder' : 'Glisser pour réorganiser'}
                     >
-                      <GripVertical
-                        className="w-4 h-4"
-                        style={{ color: 'rgb(var(--color-text-muted))' }}
-                      />
+                      <GripVertical className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
                     </div>
                     
-                    {/* Remove button */}
-                    {onRemove && (
+                    {/* Right side controls */}
+                    <div className="flex items-center gap-1 pointer-events-auto">
+                      {/* Chart lock toggle */}
                       <button
-                        onClick={() => onRemove(item.id)}
-                        className="p-1.5 rounded-md pointer-events-auto transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+                        onClick={() => handleToggleChartLock(item.id)}
+                        disabled={isLocking}
+                        className="p-1.5 rounded-md transition-colors"
                         style={{
                           backgroundColor: 'rgb(var(--color-surface))',
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                          color: 'rgb(var(--color-error))',
+                          color: 'rgb(var(--color-text-muted))',
                         }}
-                        title={isEn ? 'Remove' : 'Retirer'}
+                        title={isEn ? 'Lock chart' : 'Verrouiller le graphique'}
                       >
-                        <X className="w-4 h-4" />
+                        {isLocking ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Unlock className="w-4 h-4" />
+                        )}
+                      </button>
+                      
+                      {/* Remove button */}
+                      {onRemove && (
+                        <button
+                          onClick={() => onRemove(item.id)}
+                          className="p-1.5 rounded-md transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+                          style={{
+                            backgroundColor: 'rgb(var(--color-surface))',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                            color: 'rgb(var(--color-error))',
+                          }}
+                          title={isEn ? 'Remove' : 'Supprimer'}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Locked indicator - Shows when dashboard or chart is locked */}
+                {showControls && isEffectivelyLocked && (
+                  <div 
+                    className="absolute top-10 left-2 right-2 z-20 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <div
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                        border: '1px solid rgb(var(--color-warning) / 0.3)',
+                      }}
+                      title={chartLocked 
+                        ? (isEn ? 'Chart is locked' : 'Graphique verrouillé')
+                        : (isEn ? 'Dashboard is locked' : 'Tableau verrouillé')
+                      }
+                    >
+                      <Lock className="w-3 h-3" style={{ color: 'rgb(var(--color-warning))' }} />
+                      <span className="text-[10px] font-medium" style={{ color: 'rgb(var(--color-warning))' }}>
+                        {chartLocked 
+                          ? (isEn ? 'Chart Locked' : 'Graphique verrouillé')
+                          : (isEn ? 'Locked' : 'Verrouillé')
+                        }
+                      </span>
+                    </div>
+                    
+                    {/* Unlock button for chart-level lock (not dashboard lock) */}
+                    {chartLocked && !isDashboardLocked && (
+                      <button
+                        onClick={() => handleToggleChartLock(item.id)}
+                        disabled={isLocking}
+                        className="p-1.5 rounded-md transition-colors"
+                        style={{
+                          backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                          color: 'rgb(var(--color-warning))',
+                        }}
+                        title={isEn ? 'Unlock chart' : 'Déverrouiller le graphique'}
+                      >
+                        {isLocking ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Lock className="w-4 h-4" />
+                        )}
                       </button>
                     )}
                   </div>
@@ -235,6 +329,9 @@ export default function VisualizationGrid({
       {/* Full-width items */}
       {fullWidthItems.map((item) => {
         const isDragging = draggedId === item.id;
+        const chartLocked = isChartLocked(item.id);
+        const isLocking = lockingChartId === item.id;
+        const isEffectivelyLocked = isDashboardLocked || chartLocked;
         
         return (
           <div
@@ -242,39 +339,108 @@ export default function VisualizationGrid({
             className={`relative group transition-all duration-150 ${
               isDragging ? 'opacity-40 scale-[0.99]' : ''
             }`}
-            draggable={canCustomize}
-            onDragStart={handleDragStart(item.id)}
+            draggable={canCustomize && !isEffectivelyLocked}
+            onDragStart={canCustomize && !isEffectivelyLocked ? handleDragStart(item.id) : undefined}
             onDragEnd={handleDragEnd}
           >
-            {/* Drag handle + controls for full-width */}
-            {canCustomize && (
+            {/* Drag handle + Lock + Remove - Only show when unlocked */}
+            {showControls && !isEffectivelyLocked && (
               <div 
-                className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                className="absolute top-10 left-2 right-2 z-20 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
               >
                 <div
-                  className="cursor-grab active:cursor-grabbing p-1.5 rounded-md pointer-events-auto"
+                  className="p-1.5 rounded-md pointer-events-auto cursor-grab active:cursor-grabbing"
                   style={{
                     backgroundColor: 'rgb(var(--color-surface))',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                   }}
+                  title={isEn ? 'Drag to reorder' : 'Glisser pour réorganiser'}
                 >
-                  <GripVertical
-                    className="w-4 h-4"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  />
+                  <GripVertical className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
                 </div>
                 
-                {onRemove && (
+                {/* Right side controls */}
+                <div className="flex items-center gap-1 pointer-events-auto">
+                  {/* Chart lock toggle */}
                   <button
-                    onClick={() => onRemove(item.id)}
-                    className="p-1.5 rounded-md pointer-events-auto transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+                    onClick={() => handleToggleChartLock(item.id)}
+                    disabled={isLocking}
+                    className="p-1.5 rounded-md transition-colors"
                     style={{
                       backgroundColor: 'rgb(var(--color-surface))',
                       boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                      color: 'rgb(var(--color-error))',
+                      color: 'rgb(var(--color-text-muted))',
                     }}
+                    title={isEn ? 'Lock chart' : 'Verrouiller le graphique'}
                   >
-                    <X className="w-4 h-4" />
+                    {isLocking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Unlock className="w-4 h-4" />
+                    )}
+                  </button>
+                  
+                  {onRemove && (
+                    <button
+                      onClick={() => onRemove(item.id)}
+                      className="p-1.5 rounded-md pointer-events-auto transition-colors hover:bg-[rgb(var(--color-error)/0.1)]"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-surface))',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        color: 'rgb(var(--color-error))',
+                      }}
+                      title={isEn ? 'Remove' : 'Supprimer'}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Locked indicator - Shows when dashboard or chart is locked */}
+            {showControls && isEffectivelyLocked && (
+              <div 
+                className="absolute top-10 left-2 right-2 z-20 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <div
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                    border: '1px solid rgb(var(--color-warning) / 0.3)',
+                  }}
+                  title={chartLocked 
+                    ? (isEn ? 'Chart is locked' : 'Graphique verrouillé')
+                    : (isEn ? 'Dashboard is locked' : 'Tableau verrouillé')
+                  }
+                >
+                  <Lock className="w-3 h-3" style={{ color: 'rgb(var(--color-warning))' }} />
+                  <span className="text-[10px] font-medium" style={{ color: 'rgb(var(--color-warning))' }}>
+                    {chartLocked 
+                      ? (isEn ? 'Chart Locked' : 'Graphique verrouillé')
+                      : (isEn ? 'Locked' : 'Verrouillé')
+                    }
+                  </span>
+                </div>
+                
+                {/* Unlock button for chart-level lock (not dashboard lock) */}
+                {chartLocked && !isDashboardLocked && (
+                  <button
+                    onClick={() => handleToggleChartLock(item.id)}
+                    disabled={isLocking}
+                    className="p-1.5 rounded-md transition-colors"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      color: 'rgb(var(--color-warning))',
+                    }}
+                    title={isEn ? 'Unlock chart' : 'Déverrouiller le graphique'}
+                  >
+                    {isLocking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
                   </button>
                 )}
               </div>

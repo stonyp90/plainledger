@@ -258,7 +258,7 @@ export default function ShareModal({
   
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center p-4"
+      className="fixed inset-0 flex items-center justify-center p-4 animate-fade-in"
       style={{ 
         backgroundColor: 'rgba(0, 0, 0, 0.85)', 
         backdropFilter: 'blur(8px)', 
@@ -280,7 +280,7 @@ export default function ShareModal({
       }}
     >
       <div 
-        className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl"
+        className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl animate-scale-in"
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
         onClick={(e) => e.stopPropagation()}
       >

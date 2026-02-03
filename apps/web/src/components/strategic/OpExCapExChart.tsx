@@ -5,7 +5,7 @@
  * with interactive controls, multiple view modes, and export capabilities
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp,
   Maximize2,
+  Minimize2,
   Info,
   Plus,
   Minus,
@@ -215,6 +216,22 @@ export default function OpExCapExChart({
   const [hoveredPoint, setHoveredPoint] = useState<{ month: string; x: number; y: number } | null>(null);
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set(categories.map(c => c.id)));
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Handle Escape key to exit fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsFullscreen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [isFullscreen]);
   
   const historical = historicalData || [];
   const projected = useMemo(() => {
@@ -580,8 +597,11 @@ export default function OpExCapExChart({
   
   return (
     <div 
-      className={`card transition-all ${isFullscreen ? 'fixed inset-4 z-50' : ''}`}
-      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
+      className={`card transition-all ${isFullscreen ? 'fixed inset-4 z-50 overflow-auto' : ''}`}
+      style={{ 
+        backgroundColor: 'rgb(var(--color-bg))',
+        zIndex: isFullscreen ? 9997 : undefined, // Use same z-index as TrendChart/WaterfallChart
+      }}
     >
       {/* Header */}
       <div className="p-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
@@ -657,9 +677,13 @@ export default function OpExCapExChart({
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
               className="p-2 rounded-lg transition-colors"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
+              style={{ 
+                color: isFullscreen ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))',
+                backgroundColor: isFullscreen ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
+              }}
+              title={isEn ? (isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen') : (isFullscreen ? 'Quitter plein écran (Esc)' : 'Plein écran')}
             >
-              <Maximize2 className="w-4 h-4" />
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
           </div>
         </div>

@@ -242,24 +242,39 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
   const updateFlyoutPosition = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const flyoutHeight = 520; // Height to fit all settings items
       const viewportHeight = window.innerHeight;
+      const padding = 16; // Padding from viewport edges
+      
+      // Calculate available height
+      const availableHeight = viewportHeight - (padding * 2);
+      
+      // Estimate flyout height based on number of visible items
+      const headerHeight = 48;
+      const categoryHeaderHeight = 32;
+      const itemHeight = 52;
+      const totalCategories = visibleCategories.length;
+      const totalItems = visibleCategories.reduce((acc, cat) => acc + cat.items.length, 0);
+      const estimatedContentHeight = (totalCategories * categoryHeaderHeight) + (totalItems * itemHeight) + 8; // 8px for padding
+      const estimatedFlyoutHeight = headerHeight + estimatedContentHeight;
+      
+      // Clamp flyout height to available space
+      const flyoutHeight = Math.min(estimatedFlyoutHeight, availableHeight, 600);
       
       // Position to the right of the button, trying to center vertically on button
       let top = rect.top - (flyoutHeight / 2) + (rect.height / 2);
       
       // Make sure flyout doesn't go above viewport
-      if (top < 10) {
-        top = 10;
+      if (top < padding) {
+        top = padding;
       }
       
       // Make sure flyout doesn't go below viewport
-      if (top + flyoutHeight > viewportHeight - 10) {
-        top = viewportHeight - flyoutHeight - 10;
+      if (top + flyoutHeight > viewportHeight - padding) {
+        top = viewportHeight - flyoutHeight - padding;
       }
       
       setFlyoutPosition({
-        top: Math.max(10, top),
+        top: Math.max(padding, top),
         left: rect.right + 8,
       });
     }
@@ -323,7 +338,7 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
         top: flyoutPosition.top,
         left: flyoutPosition.left,
         width: 'min(320px, calc(100vw - 100px))',
-        maxHeight: 'min(500px, calc(100vh - 80px))',
+        maxHeight: 'calc(100vh - 32px)', // Dynamic height with 16px padding on each side
         zIndex: 9999,
       }}
       onMouseEnter={handleFlyoutMouseEnter}
@@ -346,15 +361,22 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
       </div>
       
       {/* Flyout Content - Settings Items by Category - Scrollable */}
-      <div className="py-1 overflow-y-auto flex-1 min-h-0">
+      <div 
+        className="py-1 overflow-y-auto flex-1 min-h-0 overscroll-contain"
+        style={{ 
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgb(var(--color-border)) transparent',
+        }}
+      >
         {visibleCategories.map((category, categoryIndex) => (
           <div key={category.id}>
             {/* Category Header */}
             <div 
-              className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${categoryIndex > 0 ? 'mt-2 border-t' : ''}`}
+              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider sticky top-0 ${categoryIndex > 0 ? 'mt-1 border-t pt-2' : ''}`}
               style={{ 
                 color: 'rgb(var(--color-text-muted))',
                 borderColor: 'rgb(var(--color-border))',
+                backgroundColor: 'rgb(var(--color-surface))',
               }}
             >
               {category.label[language]}
@@ -843,7 +865,7 @@ export default function Layout({ children }: LayoutProps) {
             );
           })}
           
-          {/* Mobile Settings with Expandable Submenu */}
+          {/* Mobile Settings - Direct link (tabs are on the Settings page) */}
           {showSettings && (
             <div className="mt-2">
               <div 
@@ -853,12 +875,14 @@ export default function Layout({ children }: LayoutProps) {
                 {language === 'en' ? 'Settings' : 'Paramètres'}
               </div>
               <div className="mt-1">
-                <MobileSettingsSubmenu
-                  isActive={isActive('/app/settings')}
-                  language={language as 'en' | 'fr'}
-                  permissions={settingsPermissions}
-                  onNavigate={() => setIsMobileMenuOpen(false)}
-                />
+                <Link
+                  to="/app/settings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`nav-item w-full ${isActive('/app/settings') ? 'active' : ''}`}
+                >
+                  <Settings className="w-5 h-5 flex-shrink-0" />
+                  <span className="flex-1 truncate text-left">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
+                </Link>
               </div>
             </div>
           )}

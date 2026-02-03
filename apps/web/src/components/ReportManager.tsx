@@ -1252,10 +1252,15 @@ export function ReportManager({ onOpenReport, onCreateReport }: ReportManagerPro
       {/* Add to Dashboard Success Toast */}
       {showAddToDashboardSuccess && (
         <div 
-          className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom"
+          className="fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom"
           style={{ 
-            backgroundColor: 'rgb(var(--color-success))',
+            zIndex: 9998,
+            backgroundColor: 'rgb(var(--color-success) / 0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             color: 'white',
+            border: '1px solid rgb(var(--color-success) / 0.3)',
+            boxShadow: '0 10px 40px -10px rgb(var(--color-success) / 0.5)',
           }}
         >
           <LayoutDashboard className="w-5 h-5" />

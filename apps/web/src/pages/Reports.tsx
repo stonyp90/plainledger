@@ -14,13 +14,19 @@ import {
   Loader2,
   Search,
   CheckCircle,
+  CheckCircle2,
   LinkIcon,
   AlertCircle,
+  Clock,
+  Database,
+  RefreshCw,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useToast } from '../contexts/ToastContext';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
 import { useTenant } from '../contexts/TenantContext';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 
 // Report Preview Modal with actual data
 function ReportPreviewModal({ 
@@ -638,6 +644,15 @@ export default function Reports() {
   const isEn = language === 'en';
   const toast = useToast();
   const { currentTenant } = useTenant();
+  
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="reports" />;
+  }
+  
   const [previewReport, setPreviewReport] = useState<any | null>(null);
   const [showAllReports, setShowAllReports] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -647,7 +662,16 @@ export default function Reports() {
     hasRealData, 
     hasQuickBooksConnection, 
     shouldShowSandboxData, 
-    isFreeUser 
+    isFreeUser,
+    hasBalanceSheet,
+    hasIncomeStatement,
+    hasCashFlowStatement,
+    hasTrialBalance,
+    hasAccounts,
+    hasRevenueTrends,
+    hasExpenseTrends,
+    hasCashFlowTrends,
+    dataAvailability,
   } = useHasRealData();
 
   // Determine if user can see sample reports
@@ -656,6 +680,71 @@ export default function Reports() {
   // - Users with connection: would show their actual reports
   const canShowSampleReports = shouldShowSandboxData || isFreeUser;
   const hasNoDataAndIsPaidUser = !hasRealData && !hasQuickBooksConnection && !isFreeUser;
+
+  // Helper to determine report availability status
+  type ReportStatus = 'ready' | 'partial' | 'unavailable';
+  
+  const getReportStatus = (reportId: string): { status: ReportStatus; message: string; messageEn: string } => {
+    // If showing sandbox data, all reports are "ready" with sample data
+    if (shouldShowSandboxData) {
+      return { 
+        status: 'ready', 
+        message: 'Données exemple disponibles',
+        messageEn: 'Sample data available'
+      };
+    }
+    
+    // If no connection and not showing sandbox, reports are unavailable
+    if (!hasQuickBooksConnection && !hasRealData) {
+      return { 
+        status: 'unavailable', 
+        message: 'Connectez votre logiciel comptable',
+        messageEn: 'Connect your accounting software'
+      };
+    }
+    
+    // Check specific report requirements
+    switch (reportId) {
+      case 'balance-sheet':
+        if (hasBalanceSheet && hasAccounts) {
+          return { status: 'ready', message: 'Prêt à générer', messageEn: 'Ready to generate' };
+        }
+        if (hasAccounts) {
+          return { status: 'partial', message: 'Données partielles', messageEn: 'Partial data available' };
+        }
+        return { status: 'unavailable', message: 'Comptes requis', messageEn: 'Account data required' };
+        
+      case 'income-statement':
+        if (hasIncomeStatement && hasRevenueTrends && hasExpenseTrends) {
+          return { status: 'ready', message: 'Prêt à générer', messageEn: 'Ready to generate' };
+        }
+        if (hasRevenueTrends || hasExpenseTrends) {
+          return { status: 'partial', message: 'Données partielles', messageEn: 'Partial data available' };
+        }
+        return { status: 'unavailable', message: 'Transactions requises', messageEn: 'Transaction data required' };
+        
+      case 'cash-flow':
+        if (hasCashFlowStatement && hasCashFlowTrends) {
+          return { status: 'ready', message: 'Prêt à générer', messageEn: 'Ready to generate' };
+        }
+        if (hasCashFlowTrends) {
+          return { status: 'partial', message: 'Données partielles', messageEn: 'Partial data available' };
+        }
+        return { status: 'unavailable', message: 'Flux de trésorerie requis', messageEn: 'Cash flow data required' };
+        
+      case 'trial-balance':
+        if (hasTrialBalance && hasAccounts) {
+          return { status: 'ready', message: 'Prêt à générer', messageEn: 'Ready to generate' };
+        }
+        if (hasAccounts) {
+          return { status: 'partial', message: 'Données partielles', messageEn: 'Partial data available' };
+        }
+        return { status: 'unavailable', message: 'Comptes requis', messageEn: 'Account data required' };
+        
+      default:
+        return { status: 'unavailable', message: 'Données requises', messageEn: 'Data required' };
+    }
+  };
 
   const reportTypes = [
     {
@@ -851,51 +940,137 @@ export default function Reports() {
         </p>
       </div>
 
-      {/* Report Types Grid - Unified monochromatic icons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {reportTypes.map((report) => (
-          <Link
-            key={report.id}
-            to={report.href}
-            className="group p-4 sm:p-5 rounded-xl transition-all hover:shadow-md"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))'
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div 
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-              >
-                <report.icon 
-                  className="w-5 h-5" 
-                  style={{ color: 'rgb(var(--color-primary-500))' }} 
+      {/* Data Readiness Banner - Show when user has connection but incomplete data */}
+      {hasQuickBooksConnection && dataAvailability.completenessScore < 100 && dataAvailability.completenessScore > 0 && (
+        <div 
+          className="rounded-xl p-4"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
+            border: '1px solid rgb(var(--color-primary-500) / 0.2)'
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+            >
+              <Database className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Data Readiness' : 'Disponibilité des données'}
+                </h4>
+                <span 
+                  className="px-2 py-0.5 text-xs font-medium rounded"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-primary-500) / 0.15)',
+                    color: 'rgb(var(--color-primary-500))'
+                  }}
+                >
+                  {dataAvailability.completenessScore}%
+                </span>
+              </div>
+              <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn 
+                  ? 'Some reports may have partial data. Sync more data or wait for initial sync to complete.'
+                  : 'Certains rapports peuvent avoir des données partielles. Synchronisez plus de données ou attendez la fin de la synchronisation initiale.'}
+              </p>
+              {/* Progress bar */}
+              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-border))' }}>
+                <div 
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${dataAvailability.completenessScore}%`,
+                    backgroundColor: 'rgb(var(--color-primary-500))'
+                  }}
                 />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 
-                    className="font-semibold text-sm sm:text-base"
-                    style={{ color: 'rgb(var(--color-text))' }}
-                  >
-                    {isEn ? report.nameEn : report.nameFr}
-                  </h3>
-                  <ArrowRight 
-                    className="w-4 h-4 flex-shrink-0 transition-transform group-hover:translate-x-1" 
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Types Grid - With availability badges */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {reportTypes.map((report) => {
+          const { status, message, messageEn } = getReportStatus(report.id);
+          
+          // Status badge styling
+          const statusStyles = {
+            ready: {
+              bg: 'rgb(var(--color-success) / 0.1)',
+              color: 'rgb(var(--color-success))',
+              icon: CheckCircle2,
+            },
+            partial: {
+              bg: 'rgb(var(--color-warning) / 0.1)',
+              color: 'rgb(var(--color-warning))',
+              icon: Clock,
+            },
+            unavailable: {
+              bg: 'rgb(var(--color-text-muted) / 0.1)',
+              color: 'rgb(var(--color-text-muted))',
+              icon: AlertCircle,
+            },
+          };
+          
+          const StatusIcon = statusStyles[status].icon;
+          
+          return (
+            <Link
+              key={report.id}
+              to={report.href}
+              className="group p-4 sm:p-5 rounded-xl transition-all hover:shadow-md"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))'
+              }}
+            >
+              <div className="flex items-start gap-4">
+                <div 
+                  className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                >
+                  <report.icon 
+                    className="w-5 h-5" 
+                    style={{ color: 'rgb(var(--color-primary-500))' }} 
                   />
                 </div>
-                <p 
-                  className="text-sm mt-1"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {isEn ? report.descEn : report.descFr}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 
+                      className="font-semibold text-sm sm:text-base"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    >
+                      {isEn ? report.nameEn : report.nameFr}
+                    </h3>
+                    <ArrowRight 
+                      className="w-4 h-4 flex-shrink-0 transition-transform group-hover:translate-x-1" 
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    />
+                  </div>
+                  <p 
+                    className="text-sm mt-1"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {isEn ? report.descEn : report.descFr}
+                  </p>
+                  {/* Status Badge */}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <StatusIcon className="w-3.5 h-3.5" style={{ color: statusStyles[status].color }} />
+                    <span 
+                      className="text-xs font-medium"
+                      style={{ color: statusStyles[status].color }}
+                    >
+                      {isEn ? messageEn : message}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Recent Reports */}
@@ -926,6 +1101,17 @@ export default function Reports() {
                   {isEn ? 'Sample Data' : 'Données exemple'}
                 </span>
               )}
+              {hasQuickBooksConnection && !isShowingSampleData && (
+                <span 
+                  className="px-2 py-0.5 text-xs font-medium rounded"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-success) / 0.15)',
+                    color: 'rgb(var(--color-success))'
+                  }}
+                >
+                  {isEn ? 'Connected' : 'Connecté'}
+                </span>
+              )}
             </div>
             <p 
               className="text-xs mt-0.5"
@@ -935,21 +1121,40 @@ export default function Reports() {
                 ? (isEn 
                     ? 'Preview with sample data - connect your accounting software for real reports'
                     : 'Aperçu avec données exemple - connectez votre logiciel comptable pour des rapports réels')
-                : (isEn 
-                    ? 'Quickly access your latest generated reports'
-                    : 'Accédez rapidement à vos derniers rapports générés')}
+                : hasQuickBooksConnection
+                  ? (isEn 
+                      ? 'Reports generated from your connected accounting data'
+                      : 'Rapports générés à partir de vos données comptables connectées')
+                  : (isEn 
+                      ? 'Quickly access your latest generated reports'
+                      : 'Accédez rapidement à vos derniers rapports générés')}
             </p>
           </div>
-          {recentReports.length > 0 && (
-            <button 
-              onClick={() => setShowAllReports(true)}
-              className="text-sm font-medium flex items-center gap-1 hover:underline"
-              style={{ color: 'rgb(var(--color-primary-500))' }}
-            >
-              {isEn ? 'View all' : 'Voir tous'}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {hasQuickBooksConnection && (
+              <button 
+                onClick={() => toast.info(
+                  isEn ? 'Sync Started' : 'Synchronisation lancée',
+                  isEn ? 'Fetching latest data from your accounting software...' : 'Récupération des dernières données de votre logiciel comptable...'
+                )}
+                className="p-2 rounded-lg transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+                title={isEn ? 'Sync data' : 'Synchroniser'}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            )}
+            {recentReports.length > 0 && (
+              <button 
+                onClick={() => setShowAllReports(true)}
+                className="text-sm font-medium flex items-center gap-1 hover:underline"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              >
+                {isEn ? 'View all' : 'Voir tous'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {recentReports.length > 0 ? (
@@ -1064,6 +1269,36 @@ export default function Reports() {
               <LinkIcon className="w-4 h-4" />
               {isEn ? 'Connect Now' : 'Connecter maintenant'}
             </Link>
+          </div>
+        ) : hasQuickBooksConnection ? (
+          /* Empty state for connected users who haven't generated reports yet */
+          <div 
+            className="text-center py-8 px-4 rounded-lg"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-success) / 0.05)',
+              border: '1px solid rgb(var(--color-success) / 0.2)'
+            }}
+          >
+            <div 
+              className="w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+            >
+              <CheckCircle2 className="w-6 h-6" style={{ color: 'rgb(var(--color-success))' }} />
+            </div>
+            <h4 
+              className="font-semibold mb-2"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'Ready to Generate Reports' : 'Prêt à générer des rapports'}
+            </h4>
+            <p 
+              className="text-sm mb-4 max-w-md mx-auto"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn 
+                ? 'Your accounting software is connected. Select a report type above to generate your first financial report.'
+                : 'Votre logiciel comptable est connecté. Sélectionnez un type de rapport ci-dessus pour générer votre premier rapport financier.'}
+            </p>
           </div>
         ) : (
           <div className="text-center py-8">

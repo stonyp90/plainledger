@@ -87,11 +87,11 @@ export class OperationsMetricsType {
  */
 @ObjectType({ description: "Balance sheet benchmark metrics" })
 export class BalanceSheetMetricsType {
-  @Field(() => Float, { description: "Current ratio (liquidity)" })
-  currentRatio: number;
+  @Field(() => QuartileDataType, { description: "Current ratio (liquidity) quartiles" })
+  currentRatio: QuartileDataType;
 
-  @Field(() => Float, { description: "Debt-to-equity ratio" })
-  debtToEquity: number;
+  @Field(() => QuartileDataType, { description: "Debt-to-equity ratio quartiles" })
+  debtToEquity: QuartileDataType;
 }
 
 /**

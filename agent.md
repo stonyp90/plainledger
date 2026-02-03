@@ -1003,6 +1003,158 @@ npm run check:class-sizes # Enforce 1000 line limit
 
 ---
 
+## 15. GitHub CI/CD Pipelines
+
+PlainLedger uses GitHub Actions for continuous integration, deployment, and automation.
+
+### Workflow Files
+
+| Workflow | File | Trigger | Purpose |
+|----------|------|---------|---------|
+| **CI/CD Pipeline** | `.github/workflows/ci.yml` | Push to `main`/`develop`, PRs | Build, test, deploy to AWS ECS |
+| **ETL Pipeline** | `.github/workflows/etl-pipeline.yml` | Manual, Daily at 6AM UTC | Extract/Transform/Load QuickBooks data |
+| **Storybook** | `.github/workflows/storybook.yml` | Push to `main` (component changes) | Deploy Storybook to S3/CloudFront |
+
+### CI/CD Pipeline (`ci.yml`)
+
+**Stages:**
+1. **Setup** - Install and cache dependencies
+2. **Lint** (parallel) - Lint API and Web
+3. **Test** (parallel) - Unit tests for API and Web
+4. **Datalake Tests** (manual) - Integration tests with LocalStack
+5. **Build & Push** - Build Docker images, push to ECR
+6. **Deploy** - Update ECS task definitions, deploy services
+
+**Manual Inputs:**
+```yaml
+workflow_dispatch:
+  inputs:
+    skip_tests: 'Skip tests (use with caution)'
+    deploy_only: 'Deploy only (skip build, use existing images)'
+    deploy_api_only: 'Deploy API service only'
+    run_datalake_tests: 'Run Datalake Integration Tests'
+    run_e2e_tests: 'Run E2E Tests (Playwright)'
+    no_cache: 'Build without Docker cache'
+```
+
+**Services Deployed:**
+- `plainledger-prod-api` - NestJS API
+- `plainledger-prod-web` - React frontend
+- `plainledger-prod-keycloak` - Keycloak authentication
+- `plainledger-prod-admin` - Admin console
+
+**AWS Resources Used:**
+- ECR (container registry)
+- ECS Fargate (container orchestration)
+- ALB (load balancer)
+- CloudFront (CDN cache invalidation)
+
+### ETL Pipeline (`etl-pipeline.yml`)
+
+**Medallion Architecture Stages:**
+1. **Extract** - QuickBooks → Bronze (raw S3)
+2. **Transform Bronze→Silver** - Cleansing, validation
+3. **Transform Silver→Gold** - Analytics-ready format
+4. **Invalidate Cache** - Clear Redis, trigger GraphQL refresh
+
+**Manual Inputs:**
+```yaml
+workflow_dispatch:
+  inputs:
+    organization_id: 'Organization ID to process' (default: 'demo-org')
+    environment: 'sandbox' | 'production'
+    industry: 'Industry to sync' (default: 'all')
+```
+
+**Schedule:** Daily at 6 AM UTC (2 AM EST)
+
+**S3 Buckets:**
+- `plainledger-prod-bronze` - Raw data
+- `plainledger-prod-silver` - Cleansed data
+- `plainledger-prod-gold` - Analytics-ready
+- `plainledger-prod-quarantine` - Data quality failures
+
+### Storybook Pipeline (`storybook.yml`)
+
+**Trigger Paths:**
+- `apps/web/src/components/**`
+- `apps/web/.storybook/**`
+- `.github/workflows/storybook.yml`
+
+**Deployment:**
+- S3 bucket: `plainledger-prod-storybook`
+- CloudFront distribution for CDN
+- URL: `https://storybook.plainledger.ca`
+
+### Required Secrets
+
+| Secret | Used By | Description |
+|--------|---------|-------------|
+| `AWS_ACCOUNT_ID` | All | AWS account ID for OIDC role |
+| `QUICKBOOKS_CLIENT_ID` | ETL | QuickBooks OAuth client ID |
+| `QUICKBOOKS_CLIENT_SECRET` | ETL | QuickBooks OAuth client secret |
+| `QUICKBOOKS_REFRESH_TOKEN` | ETL | QuickBooks refresh token |
+| `QUICKBOOKS_REALM_ID` | ETL | QuickBooks company ID |
+| `REDIS_ENDPOINT` | ETL | Redis endpoint for cache invalidation |
+| `API_INTERNAL_TOKEN` | ETL | Internal API token for webhooks |
+
+### Running Workflows Manually
+
+**Via GitHub UI:**
+1. Go to **Actions** tab
+2. Select workflow
+3. Click **Run workflow**
+4. Fill in inputs
+
+**Via GitHub CLI:**
+```bash
+# Run CI/CD with defaults
+gh workflow run ci.yml
+
+# Run CI/CD with specific inputs
+gh workflow run ci.yml -f deploy_api_only=true -f no_cache=true
+
+# Run ETL for specific organization
+gh workflow run etl-pipeline.yml -f organization_id=my-org -f environment=sandbox
+
+# Trigger Storybook deploy
+gh workflow run storybook.yml
+```
+
+### Monitoring Workflows
+
+```bash
+# List recent runs
+gh run list --workflow=ci.yml
+
+# Watch a run
+gh run watch
+
+# View run details
+gh run view <run-id>
+
+# Download artifacts
+gh run download <run-id>
+```
+
+### Pipeline Best Practices
+
+1. **Before pushing to main:** Run lint and build locally
+   ```bash
+   cd apps/api && npm run lint && npm run build
+   cd apps/web && npm run build
+   ```
+
+2. **For urgent fixes:** Use `deploy_api_only=true` to speed up deployment
+
+3. **If builds fail with cache issues:** Use `no_cache=true`
+
+4. **To test without deploying:** Create a PR (CI runs without deploy stage)
+
+5. **For data sync issues:** Trigger ETL pipeline manually with specific org
+
+---
+
 ## Quick Reference Checklist
 
 When working on PlainLedger, ensure:
@@ -1046,7 +1198,7 @@ When working on PlainLedger, ensure:
 ---
 
 **Last Updated**: February 2026
-**Version**: 2.2.0
+**Version**: 2.3.0
 
 **Sub-Agents:**
 - [`apps/api/agent.md`](apps/api/agent.md) v1.1.0 (Added: Architecture enforcement, contract testing, DDD)
@@ -1061,7 +1213,13 @@ When working on PlainLedger, ensure:
 - Local Setup: `LOCAL_SETUP.md`
 - QuickBooks: `QUICKBOOKS_SETUP_GUIDE.md`
 
+**CI/CD Pipelines:**
+- CI/CD: `.github/workflows/ci.yml` (Build, Test, Deploy to ECS)
+- ETL: `.github/workflows/etl-pipeline.yml` (QuickBooks data sync)
+- Storybook: `.github/workflows/storybook.yml` (Component library deploy)
+
 **Tools & Scripts:**
 - Class size checker: `npm run check:class-sizes`
 - Contract tests: `npm run test:contract` (API)
 - OpenAPI spec: Auto-generated, available at `/api/docs`
+- Run workflow: `gh workflow run <workflow>.yml`

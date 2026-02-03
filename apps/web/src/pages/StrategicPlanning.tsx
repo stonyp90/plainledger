@@ -37,6 +37,8 @@ import { useI18n } from '../lib/i18n';
 import { useTenant } from '../contexts/TenantContext';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import { usePremiumFeature, PremiumUpgradeBanner } from '../components/PremiumFeatureGate';
 import { jamesAI, ChatMessage, ChatResponse } from '../lib/jamesAI';
 import { 
@@ -279,6 +281,15 @@ export default function StrategicPlanning() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { currentTenant } = useTenant();
+  
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="analysis" />;
+  }
+  
   const { data: financialData, isLoading: dataLoading } = useFinancialData();
   const { hasQuickBooksConnection, hasRealData } = useHasRealData();
   const { hasAccess } = usePremiumFeature('strategicPlanning');
@@ -416,7 +427,7 @@ export default function StrategicPlanning() {
             </div>
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-bold flex items-center gap-2 flex-wrap" style={{ color: 'rgb(var(--color-text))' }}>
-                <span className="truncate">{isEn ? 'James AI' : 'James IA'}</span>
+                <span className="truncate">{isEn ? 'AI Assistant' : 'Assistant IA'}</span>
                 <span 
                   className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-full uppercase flex-shrink-0"
                   style={{ 
@@ -469,8 +480,8 @@ export default function StrategicPlanning() {
                 </h2>
                 <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   {isEn 
-                    ? 'James AI analyzes your financial data and provides recommendations based on 75,000+ Canadian businesses.'
-                    : 'James AI analyse vos données et fournit des recommandations basées sur plus de 75 000 entreprises canadiennes.'}
+                    ? 'AI analyzes your financial data and provides recommendations based on 75,000+ Canadian businesses.'
+                    : 'L\'IA analyse vos données et fournit des recommandations basées sur plus de 75 000 entreprises canadiennes.'}
                 </p>
                 <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                   {[
@@ -567,7 +578,7 @@ export default function StrategicPlanning() {
             </div>
             <div className="min-w-0">
               <h1 className="text-xl font-bold truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'James AI' : 'James IA'}
+                {isEn ? 'AI Assistant' : 'Assistant IA'}
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <IndustryIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
@@ -611,7 +622,7 @@ export default function StrategicPlanning() {
                 <MessageSquare className="w-6 h-6 sm:w-8 md:w-10 sm:h-8 md:h-10 text-white" />
               </div>
               <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? `Hi, I'm James` : `Bonjour, je suis James`}
+                {isEn ? `Hi, I'm your AI Assistant` : `Bonjour, je suis votre Assistant IA`}
               </h2>
               <p className="text-xs sm:text-sm md:text-base mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {isEn 
@@ -742,7 +753,7 @@ export default function StrategicPlanning() {
                       <div className="flex items-center gap-1.5 mb-1 sm:mb-2">
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
                         <span className="text-[10px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-primary-600))' }}>
-                          James AI
+                          AI Assistant
                         </span>
                       </div>
                     )}
@@ -797,7 +808,7 @@ export default function StrategicPlanning() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder={isEn ? 'Ask James...' : 'Demandez à James...'}
+                placeholder={isEn ? 'Ask anything...' : 'Posez votre question...'}
                 className="flex-1 bg-transparent border-none outline-none resize-none text-xs sm:text-sm min-h-[36px] sm:min-h-[44px] max-h-[80px] sm:max-h-[120px] py-1.5 sm:py-2 px-2"
                 style={{ color: 'rgb(var(--color-text))' }}
                 rows={1}

@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Admin Console Styles */
+:root {
+  --admin-bg: #102a43;
+  --admin-surface: #243b53;
+  --admin-border: #334e68;
+  --admin-text: #f0f4f8;
+  --admin-text-muted: #9fb3c8;
+  --admin-primary: #2563eb;
+  --admin-success: #10b981;
+  --admin-warning: #f59e0b;
+  --admin-error: #ef4444;
+}
+
+body {
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--admin-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--admin-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text-muted);
+}

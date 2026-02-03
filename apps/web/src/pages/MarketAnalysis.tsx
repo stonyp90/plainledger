@@ -48,6 +48,8 @@ import {
 } from 'lucide-react';
 import { useTenant } from '../contexts/TenantContext';
 import { useI18n } from '../lib/i18n';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
 import { useBenchmark, type RevenueRange } from '../hooks/useBenchmarks';
@@ -104,10 +106,19 @@ const INDUSTRY_LUCIDE_ICONS: Record<string, typeof Building2> = {
 export default function MarketAnalysis() {
   const { currentTenant } = useTenant();
   const { language } = useI18n();
+  const isEn = language === 'en';
+  
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="analysis" />;
+  }
+  
   const { data: financialData, isLoading } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasSummaryMetrics, hasRevenueTrends } = useHasRealData();
   const shouldShowData = hasRealData || shouldShowSandboxData;
-  const isEn = language === 'en';
   const { hasAccess } = usePremiumFeature('marketAnalysis');
   
   // Default to organization's industry if set, otherwise professional services
@@ -116,6 +127,7 @@ export default function MarketAnalysis() {
   const [revenueRange, setRevenueRange] = useState<RevenueRange>('30k-5m');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showComparison, setShowComparison] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(false);
   
   // Update selected industry when tenant changes
   useEffect(() => {
@@ -136,21 +148,31 @@ export default function MarketAnalysis() {
       return null;
     }
 
-    const revenue = financialData.kpis?.revenue || 500000;
-    const grossProfit = financialData.kpis?.grossProfit || revenue * 0.58;
-    const netIncome = financialData.kpis?.netIncome || revenue * 0.12;
-    const currentAssets = financialData.kpis?.currentAssets || 150000;
-    const currentLiabilities = financialData.kpis?.currentLiabilities || 80000;
-    const totalDebt = financialData.kpis?.totalDebt || 200000;
-    const equity = financialData.kpis?.equity || 250000;
-    const operatingExpenses = financialData.kpis?.operatingExpenses || revenue * 0.42;
+    // Use actual data from summary and metrics
+    const revenue = financialData.summary?.revenue?.current || financialData.summary?.revenue?.ytd || 0;
+    const expenses = financialData.summary?.expenses?.current || financialData.summary?.expenses?.ytd || 0;
+    const netIncome = financialData.summary?.netIncome?.current || financialData.summary?.netIncome?.ytd || 0;
+    
+    // Calculate gross profit: revenue - COGS (approximate COGS as 60% of expenses for service businesses)
+    // For more accurate calculation, we'd need income statement breakdown
+    const estimatedCOGS = expenses * 0.6;
+    const grossProfit = revenue > 0 ? revenue - estimatedCOGS : 0;
+    
+    // Use metrics if available, otherwise calculate from balance sheet data
+    const currentRatio = financialData.metrics?.currentRatio || 0;
+    const debtToEquity = financialData.metrics?.debtToEquity || 0;
+    
+    // Calculate margins (avoid division by zero)
+    const grossMargin = revenue > 0 ? grossProfit / revenue : 0;
+    const netMargin = revenue > 0 ? netIncome / revenue : 0;
+    const operatingExpenseRatio = revenue > 0 ? expenses / revenue : 0;
 
     return {
-      grossMargin: grossProfit / revenue,
-      netMargin: netIncome / revenue,
-      currentRatio: currentAssets / currentLiabilities,
-      debtToEquity: totalDebt / equity,
-      operatingExpenseRatio: operatingExpenses / revenue,
+      grossMargin,
+      netMargin,
+      currentRatio,
+      debtToEquity,
+      operatingExpenseRatio,
     };
   }, [financialData]);
 
@@ -166,6 +188,24 @@ export default function MarketAnalysis() {
       operatingExpenseRatio: benchmark.operations.operatingExpenseRatio,
     });
   }, [userMetrics, benchmark]);
+
+  // Calculate YoY revenue growth from trend data
+  const revenueYoYGrowth = useMemo(() => {
+    const revData = financialData?.trends?.revenue?.data;
+    if (!revData || revData.length < 12) return null;
+    
+    // Sum last 12 months (current year)
+    const currentYear = revData.slice(-12).reduce((sum, d) => sum + (d.value || 0), 0);
+    
+    // Sum previous 12 months (prior year)
+    const priorYear = revData.length >= 24 
+      ? revData.slice(-24, -12).reduce((sum, d) => sum + (d.value || 0), 0)
+      : null;
+    
+    if (!priorYear || priorYear === 0) return null;
+    
+    return (currentYear - priorYear) / priorYear;
+  }, [financialData]);
 
   // Calculate overall score
   const overallScore = useMemo(() => {
@@ -198,11 +238,12 @@ export default function MarketAnalysis() {
   const IndustryIcon = INDUSTRY_LUCIDE_ICONS[selectedIndustry] || Building2;
 
   // Convert benchmark format for BenchmarkCard/BenchmarkComparison compatibility
+  // Preserve full quartile data structure for balance sheet metrics
   const legacyBenchmark = benchmark ? {
     grossMargin: benchmark.profitability.grossMargin,
     netMargin: benchmark.profitability.netMargin,
-    currentRatio: benchmark.balanceSheet.currentRatio.median,
-    debtToEquity: benchmark.balanceSheet.debtToEquity.median,
+    currentRatio: benchmark.balanceSheet.currentRatio,  // Full quartile structure { q1, median, q3 }
+    debtToEquity: benchmark.balanceSheet.debtToEquity,  // Full quartile structure { q1, median, q3 }
     operatingExpenseRatio: benchmark.operations.operatingExpenseRatio,
     wagesToRevenueRatio: benchmark.operations.wagesToRevenueRatio,
     revenueYoY: benchmark.growth.revenueYoY,
@@ -241,18 +282,14 @@ export default function MarketAnalysis() {
                 <Crown className="w-3 h-3" />
                 PRO
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white whitespace-nowrap flex-shrink-0">
-                <Brain className="w-3 h-3" />
-                {isEn ? 'AI-Powered' : 'Propulsé par IA'}
-              </span>
             </h1>
             <p 
               className="mt-1 text-sm line-clamp-2 sm:line-clamp-none" 
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
               {isEn 
-                ? 'Our AI analyzes industry benchmark data to reveal your competitive position, identify growth opportunities, and compare your performance with industry leaders.'
-                : 'Notre IA analyse les données de référence de votre secteur pour révéler votre position concurrentielle, identifier les opportunités de croissance et comparer vos performances aux leaders du secteur.'}
+                ? 'Compare your performance to industry benchmarks, reveal your competitive position, and identify growth opportunities.'
+                : 'Comparez vos performances aux benchmarks de votre secteur, révélez votre position concurrentielle et identifiez les opportunités de croissance.'}
             </p>
           </div>
         </div>
@@ -365,21 +402,21 @@ export default function MarketAnalysis() {
                 <div>
                   <h2 className="text-base sm:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
                     {isEn 
-                      ? 'AI-Powered Market Intelligence' 
-                      : 'Intelligence de marché propulsée par l\'IA'}
+                      ? 'Industry Benchmark Comparison' 
+                      : 'Comparaison aux benchmarks de l\'industrie'}
                   </h2>
                   <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Compare with industry benchmarks' : 'Comparez avec les benchmarks de votre secteur'}
+                    {isEn ? 'See how you compare to your industry' : 'Voyez comment vous vous comparez à votre secteur'}
                   </p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
                 {[
-                  { en: 'AI-analyzed benchmarks', fr: 'Benchmarks analysés par IA' },
-                  { en: 'Smart recommendations', fr: 'Recommandations intelligentes' },
+                  { en: 'Industry benchmarks', fr: 'Benchmarks sectoriels' },
+                  { en: 'Performance comparison', fr: 'Comparaison de performance' },
                   { en: 'Competitive positioning', fr: 'Positionnement concurrentiel' },
-                  { en: 'Industry insights', fr: 'Insights sectoriels' },
+                  { en: 'Optional AI insights', fr: 'Insights IA optionnels' },
                 ].map((item, idx) => (
                   <div 
                     key={idx} 
@@ -515,25 +552,57 @@ export default function MarketAnalysis() {
 
   return (
     <div className="space-y-6">
-      {/* Header with AI Badge */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap" style={{ color: 'rgb(var(--color-text))' }}>
             <BarChart2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600 flex-shrink-0" />
             <span className="whitespace-nowrap">{isEn ? 'Market Analysis' : 'Analyse de marché'}</span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white whitespace-nowrap flex-shrink-0">
-              <Brain className="w-3 h-3" />
-              {isEn ? 'AI-Powered' : 'Propulsé par IA'}
-            </span>
+            {aiEnabled && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gradient-to-r from-primary-500 to-primary-600 text-white whitespace-nowrap flex-shrink-0">
+                <Brain className="w-3 h-3" />
+                {isEn ? 'AI-Powered' : 'Propulsé par IA'}
+              </span>
+            )}
           </h1>
           <p className="mt-1 text-sm line-clamp-2 sm:line-clamp-none" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn 
-              ? 'Compare your performance to industry benchmarks using AI-powered analysis'
-              : 'Comparez vos performances aux benchmarks de votre secteur avec une analyse propulsée par IA'}
+              ? 'Compare your performance to industry benchmarks'
+              : 'Comparez vos performances aux benchmarks de votre secteur'}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* AI Toggle */}
+          <button
+            onClick={() => setAiEnabled(!aiEnabled)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              aiEnabled 
+                ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md' 
+                : 'border hover:bg-gray-50 dark:hover:bg-gray-800'
+            }`}
+            style={!aiEnabled ? { 
+              borderColor: 'rgb(var(--color-border))',
+              color: 'rgb(var(--color-text-secondary))'
+            } : {}}
+          >
+            <Brain className="w-4 h-4" />
+            {isEn ? 'AI Insights' : 'Insights IA'}
+            <div 
+              className={`w-8 h-5 rounded-full relative transition-colors ${
+                aiEnabled ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            >
+              <div 
+                className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${
+                  aiEnabled 
+                    ? 'left-3.5 bg-white' 
+                    : 'left-0.5 bg-gray-400 dark:bg-gray-500'
+                }`}
+              />
+            </div>
+          </button>
+          
           <button
             onClick={handleRefresh}
             disabled={isRefreshing || benchmarkLoading}
@@ -644,8 +713,8 @@ export default function MarketAnalysis() {
                 </select>
                 <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   {isEn 
-                    ? `AI-analyzed data from ${(benchmark?.sampleSize || 5000).toLocaleString()}+ businesses`
-                    : `Données analysées par IA de ${(benchmark?.sampleSize || 5000).toLocaleString()}+ entreprises`}
+                    ? `${aiEnabled ? 'AI-analyzed data' : 'Benchmark data'} from ${(benchmark?.sampleSize || 5000).toLocaleString()}+ businesses`
+                    : `${aiEnabled ? 'Données analysées par IA' : 'Données de référence'} de ${(benchmark?.sampleSize || 5000).toLocaleString()}+ entreprises`}
                 </p>
               </div>
             </div>
@@ -733,11 +802,7 @@ export default function MarketAnalysis() {
             title={isEn ? 'Current Ratio' : 'Ratio de liquidité'}
             icon={<Scale className="w-5 h-5" />}
             userValue={userMetrics?.currentRatio}
-            benchmark={{ 
-              q1: legacyBenchmark.currentRatio * 0.7, 
-              median: legacyBenchmark.currentRatio, 
-              q3: legacyBenchmark.currentRatio * 1.4 
-            }}
+            benchmark={legacyBenchmark.currentRatio}
             format="ratio"
             higherIsBetter={true}
             description={isEn 
@@ -758,8 +823,8 @@ export default function MarketAnalysis() {
         </div>
       )}
 
-      {/* AI-Powered Insights Panel - Only show when we have real user data */}
-      {hasAccess && shouldShowData && hasSummaryMetrics && userMetrics && benchmark && (
+      {/* AI-Powered Insights Panel - Only show when AI is enabled and we have real user data */}
+      {hasAccess && aiEnabled && shouldShowData && hasSummaryMetrics && userMetrics && benchmark && (
         <div className="rounded-xl border p-4 sm:p-6" style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
           <MarketInsightsPanel
             insights={aiInsights}
@@ -778,11 +843,7 @@ export default function MarketAnalysis() {
             title={isEn ? 'Debt-to-Equity' : 'Dette/Capitaux propres'}
             icon={<Target className="w-5 h-5" />}
             userValue={userMetrics?.debtToEquity}
-            benchmark={{ 
-              q1: legacyBenchmark.debtToEquity * 0.6, 
-              median: legacyBenchmark.debtToEquity, 
-              q3: legacyBenchmark.debtToEquity * 1.5 
-            }}
+            benchmark={legacyBenchmark.debtToEquity}
             format="ratio"
             higherIsBetter={false}
             description={isEn 
@@ -809,7 +870,7 @@ export default function MarketAnalysis() {
           <BenchmarkCard
             title={isEn ? 'YoY Growth' : 'Croissance annuelle'}
             icon={<TrendingUp className="w-5 h-5" />}
-            userValue={hasRevenueTrends ? userMetrics?.grossMargin : null}
+            userValue={revenueYoYGrowth}
             benchmark={{ 
               q1: legacyBenchmark.revenueYoY * 0.5, 
               median: legacyBenchmark.revenueYoY, 
@@ -834,7 +895,7 @@ export default function MarketAnalysis() {
             <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
               <Target className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600 flex-shrink-0" />
               <span className="whitespace-nowrap">{isEn ? 'Your Industry Position' : 'Votre position dans l\'industrie'}</span>
-              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
+              {aiEnabled && <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />}
             </h2>
             {showComparison ? (
               <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />

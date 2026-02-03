@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../infrastructure/api/client';
+import { useState, useEffect } from 'react';
 
 /**
  * AI Pin State Hook
  * 
- * Manages pin/unpin state for AI toolbar with persistence
+ * Manages pin/unpin state for AI toolbar with persistence.
+ * Uses localStorage only - this is non-critical UI state that doesn't
+ * need cross-device sync (user settings via GraphQL handle critical settings).
  */
 
 interface AIPinState {
@@ -44,29 +45,6 @@ export function useAIPinState() {
       console.warn('[useAIPinState] Failed to save state:', error);
     }
   }, [state]);
-
-  // Sync to backend for cross-device persistence (optional, best-effort)
-  const syncToBackend = useCallback(async () => {
-    try {
-      await apiClient.patch('/users/me/preferences', {
-        aiPinState: state,
-      });
-    } catch (error) {
-      // Silently fail - localStorage is the source of truth
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('[useAIPinState] Failed to sync to backend:', error);
-      }
-    }
-  }, [state]);
-
-  // Sync to backend on state change (debounced)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      syncToBackend();
-    }, 1000); // Debounce by 1 second
-
-    return () => clearTimeout(timeoutId);
-  }, [state, syncToBackend]);
 
   return {
     isPinned: state.isPinned,

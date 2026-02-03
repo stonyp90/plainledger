@@ -9,19 +9,16 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ShareModal from './ShareModal';
 import { useHasRealData } from '../hooks/useHasRealData';
 import {
-  Pin,
-  Download,
   Maximize2,
   Minimize2,
-  Settings2,
   MoreVertical,
   TrendingUp,
   TrendingDown,
   Minus,
-  Copy,
   ChevronDown,
   Check,
   Table,
@@ -30,12 +27,8 @@ import {
   PieChart,
   Activity,
   Share2,
-  Link,
-  Mail,
-  Eye,
   Bookmark,
   BookmarkCheck,
-  Layers,
   X,
   CheckCircle,
   AreaChart,
@@ -48,13 +41,13 @@ import {
   Sparkles,
   Calendar,
   Clock,
+  Pencil,
   GitBranch,
   TrendingDown as TrendingDownIcon,
   FileImage,
   FileSpreadsheet,
   FileText,
   Plus,
-  Sliders,
   Trash2,
   type LucideIcon,
 } from 'lucide-react';
@@ -234,6 +227,7 @@ export function TimeRangeSelector({ selected, onChange }: TimeRangeSelectorProps
     <div 
       className="flex rounded-md sm:rounded-lg border overflow-hidden"
       style={{ borderColor: 'rgb(var(--color-border))' }}
+      onClick={(e) => e.stopPropagation()}
     >
       {/* Mobile: show fewer options with compact buttons */}
       <div className="flex sm:hidden">
@@ -242,7 +236,10 @@ export function TimeRangeSelector({ selected, onChange }: TimeRangeSelectorProps
           return (
             <button
               key={range}
-              onClick={() => onChange(range)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(range);
+              }}
               className="px-1.5 py-1 text-[9px] font-semibold transition-colors border-r last:border-r-0 flex-shrink-0 active:opacity-80"
               style={{
                 backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg))',
@@ -263,7 +260,10 @@ export function TimeRangeSelector({ selected, onChange }: TimeRangeSelectorProps
           return (
             <button
               key={range}
-              onClick={() => onChange(range)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(range);
+              }}
               className="px-2 py-1.5 text-[10px] font-semibold transition-colors border-r last:border-r-0 flex-shrink-0"
               style={{
                 backgroundColor: isSelected ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg))',
@@ -313,11 +313,11 @@ export function DataVisualizationCard({
 }: DataVisualizationCardProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const navigate = useNavigate();
   const { hasRealData, shouldShowSandboxData } = useHasRealData();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showViewMenu, setShowViewMenu] = useState(false);
   const [localBookmarked, setLocalBookmarked] = useState(isBookmarked);
   
   const Icon = ChartTypeIcon[config.chartType];
@@ -429,223 +429,222 @@ export function DataVisualizationCard({
         }}
       />
       
-      {/* Header - Stacked on mobile, inline on desktop */}
+      {/* Header - Clean, minimal design */}
       <div 
-        className="p-2 sm:p-3 border-b"
+        className="px-3 py-2.5 sm:px-4 sm:py-3 border-b"
         style={{ borderColor: 'rgb(var(--color-border))' }}
       >
-        {/* Mobile: Title on top, controls below */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          {/* Title row */}
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center justify-between gap-3">
+          {/* Left: Icon + Title */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div 
-              className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
+              className="p-1.5 rounded-lg flex-shrink-0"
               style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
             >
-              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Icon className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             <h3 
-              className="font-semibold text-sm"
+              className="font-semibold text-sm truncate"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? config.nameEn : config.name}
             </h3>
           </div>
           
-          {/* Controls row */}
+          {/* Right: Time Range + Menu */}
           {showControls && (
-            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-            {/* Chart Type Selector - Desktop only */}
-            <div className="hidden sm:block">
-              <ChartTypeSelector
-                selected={config.chartType}
-                onChange={handleChartTypeChange}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Time Range Selector - always visible */}
+              <TimeRangeSelector
+                selected={config.timeRange}
+                onChange={handleTimeRangeChange}
                 isEn={isEn}
               />
-            </div>
-            
-            {/* Time Range */}
-            <TimeRangeSelector
-              selected={config.timeRange}
-              onChange={handleTimeRangeChange}
-              isEn={isEn}
-            />
-            
-            {/* Pin/Remove Button */}
-            {isPinned ? (
-              <button
-                onClick={onUnpin}
-                className="p-1.5 rounded-md transition-colors active:opacity-80"
-                style={{
-                  backgroundColor: 'rgb(var(--color-error) / 0.1)',
-                  color: 'rgb(var(--color-error))',
-                }}
-                title={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
-                aria-label={isEn ? 'Remove from dashboard' : 'Retirer du tableau de bord'}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                onClick={onPin}
-                className="p-1.5 rounded-md transition-colors active:opacity-80"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: 'rgb(var(--color-text-muted))',
-                }}
-                title={isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord'}
-                aria-label={isEn ? 'Pin to dashboard' : 'Épingler au tableau de bord'}
-              >
-                <Pin className="w-3.5 h-3.5" />
-              </button>
-            )}
-            
-            {/* Expand Button - Desktop only */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="hidden sm:flex p-1.5 rounded-md transition-colors active:opacity-80"
-              style={{
-                backgroundColor: isExpanded 
-                  ? 'rgb(var(--color-primary-500) / 0.1)'
-                  : 'transparent',
-                color: isExpanded 
-                  ? 'rgb(var(--color-primary-500))'
-                  : 'rgb(var(--color-text-muted))',
-              }}
-              title={isExpanded 
-                ? (isEn ? 'Minimize' : 'Réduire')
-                : (isEn ? 'Expand' : 'Agrandir')
-              }
-              aria-label={isExpanded 
-                ? (isEn ? 'Minimize chart' : 'Réduire le graphique')
-                : (isEn ? 'Expand chart' : 'Agrandir le graphique')
-              }
-              aria-expanded={isExpanded}
-            >
-              {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-            
-            {/* Options Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setShowOptions(!showOptions)}
-                className="p-1 sm:p-1.5 rounded-md transition-colors active:opacity-80"
-                style={{
-                  backgroundColor: showOptions 
-                    ? 'rgb(var(--color-primary-500) / 0.1)'
-                    : 'transparent',
-                  color: showOptions 
-                    ? 'rgb(var(--color-primary-500))'
-                    : 'rgb(var(--color-text-muted))',
-                }}
-                aria-label={isEn ? 'More options' : 'Plus d\'options'}
-                aria-expanded={showOptions}
-              >
-                <MoreVertical className="w-3.5 h-3.5" />
-              </button>
               
-              {showOptions && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40"
-                    onClick={() => {
-                      setShowOptions(false);
-                      setShowViewMenu(false);
-                    }}
-                  />
-                  <div 
-                    className="absolute top-full right-0 mt-1 w-48 sm:w-56 rounded-lg border shadow-xl z-50 overflow-hidden"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-surface))',
-                      borderColor: 'rgb(var(--color-border))',
-                    }}
-                  >
-                    {/* Quick Actions */}
-                    <div className="py-1">
-                      {/* Remove from dashboard */}
-                      {isPinned && onUnpin && (
+              {/* Actions Menu */}
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowOptions(!showOptions);
+                  }}
+                  className="p-1.5 rounded-md transition-colors active:opacity-80 hover:bg-[rgb(var(--color-bg-muted))]"
+                  style={{
+                    backgroundColor: showOptions 
+                      ? 'rgb(var(--color-primary-500) / 0.1)'
+                      : 'transparent',
+                    color: showOptions 
+                      ? 'rgb(var(--color-primary-500))'
+                      : 'rgb(var(--color-text-muted))',
+                  }}
+                  aria-label={isEn ? 'Chart options' : 'Options du graphique'}
+                  aria-expanded={showOptions}
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                
+                {showOptions && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowOptions(false);
+                      }}
+                    />
+                    <div 
+                      className="absolute top-full right-0 mt-1.5 w-52 rounded-xl border shadow-xl z-50 overflow-hidden"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-surface))',
+                        borderColor: 'rgb(var(--color-border))',
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Primary Actions */}
+                      <div className="p-1.5">
+                        {/* Edit in Builder */}
                         <button
-                          onClick={() => { onUnpin(); setShowOptions(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgb(var(--color-error)/0.08)] transition-colors"
-                          style={{ color: 'rgb(var(--color-error))' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowOptions(false);
+                            navigate('/app/visualizations', { state: { editChart: config } });
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ color: 'rgb(var(--color-text))' }}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span className="font-medium">{isEn ? 'Remove' : 'Retirer'}</span>
+                          <Pencil className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                          <span className="font-medium">{isEn ? 'Edit Chart' : 'Modifier'}</span>
                         </button>
-                      )}
-                      
-                      {/* Share */}
-                      <button
-                        onClick={() => { setShowShareModal(true); setShowOptions(false); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                        style={{ color: 'rgb(var(--color-text))' }}
-                      >
-                        <Share2 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                        <span className="flex-1 text-left">{isEn ? 'Share' : 'Partager'}</span>
-                        <span className="text-[9px] font-mono hidden sm:inline" style={{ color: 'rgb(var(--color-text-muted))' }}>⌘S</span>
-                      </button>
-                      
-                      {/* Bookmark */}
-                      <button
-                        onClick={handleBookmark}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                        style={{ color: 'rgb(var(--color-text))' }}
-                      >
-                        {localBookmarked ? (
-                          <BookmarkCheck className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-warning))' }} />
-                        ) : (
-                          <Bookmark className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                        )}
-                        <span className="flex-1 text-left">{localBookmarked ? (isEn ? 'Saved' : 'Enregistré') : (isEn ? 'Save' : 'Enregistrer')}</span>
-                      </button>
-                    </div>
-                    
-                    <div className="mx-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }} />
-                    
-                    {/* Export - Compact grid */}
-                    <div className="p-2">
-                      <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                        {isEn ? 'Export' : 'Exporter'}
-                      </p>
-                      <div className="grid grid-cols-3 gap-1">
+                        
+                        {/* Expand/Fullscreen */}
                         <button
-                          onClick={() => handleExport('png')}
-                          className="flex flex-col items-center gap-0.5 p-1.5 rounded border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ borderColor: 'rgb(var(--color-border))' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowOptions(false);
+                            setIsExpanded(!isExpanded);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ color: 'rgb(var(--color-text))' }}
                         >
-                          <FileImage className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-info))' }} />
-                          <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>PNG</span>
+                          {isExpanded ? (
+                            <>
+                              <Minimize2 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                              <span>{isEn ? 'Exit Fullscreen' : 'Quitter plein écran'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Maximize2 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                              <span>{isEn ? 'Fullscreen' : 'Plein écran'}</span>
+                            </>
+                          )}
                         </button>
+                        
+                        {/* Share */}
                         <button
-                          onClick={() => handleExport('csv')}
-                          className="flex flex-col items-center gap-0.5 p-1.5 rounded border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ borderColor: 'rgb(var(--color-border))' }}
+                          onClick={(e) => { 
+                            e.stopPropagation();
+                            setShowOptions(false); 
+                            requestAnimationFrame(() => setShowShareModal(true));
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ color: 'rgb(var(--color-text))' }}
                         >
-                          <FileSpreadsheet className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-success))' }} />
-                          <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>CSV</span>
+                          <Share2 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                          <span>{isEn ? 'Share' : 'Partager'}</span>
                         </button>
+                        
+                        {/* Bookmark */}
                         <button
-                          onClick={() => handleExport('pdf')}
-                          className="flex flex-col items-center gap-0.5 p-1.5 rounded border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
-                          style={{ borderColor: 'rgb(var(--color-border))' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookmark();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                          style={{ color: 'rgb(var(--color-text))' }}
                         >
-                          <FileText className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-error))' }} />
-                          <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>PDF</span>
+                          {localBookmarked ? (
+                            <>
+                              <BookmarkCheck className="w-4 h-4" style={{ color: 'rgb(var(--color-warning))' }} />
+                              <span>{isEn ? 'Saved' : 'Enregistré'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Bookmark className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                              <span>{isEn ? 'Save' : 'Enregistrer'}</span>
+                            </>
+                          )}
                         </button>
                       </div>
+                      
+                      <div className="mx-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }} />
+                      
+                      {/* Export Section */}
+                      <div className="p-2">
+                        <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                          {isEn ? 'Export' : 'Exporter'}
+                        </p>
+                        <div className="grid grid-cols-3 gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleExport('png'); }}
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                            style={{ borderColor: 'rgb(var(--color-border))' }}
+                          >
+                            <FileImage className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
+                            <span className="text-[10px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>PNG</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                            style={{ borderColor: 'rgb(var(--color-border))' }}
+                          >
+                            <FileSpreadsheet className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+                            <span className="text-[10px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>CSV</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleExport('pdf'); }}
+                            className="flex flex-col items-center gap-1 p-2 rounded-lg border hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
+                            style={{ borderColor: 'rgb(var(--color-border))' }}
+                          >
+                            <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+                            <span className="text-[10px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>PDF</span>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Danger Zone */}
+                      {isPinned && onUnpin && (
+                        <>
+                          <div className="mx-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }} />
+                          <div className="p-1.5">
+                            <button
+                              onClick={(e) => { 
+                                e.stopPropagation();
+                                setShowOptions(false);
+                                onUnpin(); 
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-[rgb(var(--color-error)/0.08)] transition-colors"
+                              style={{ color: 'rgb(var(--color-error))' }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="font-medium">{isEn ? 'Remove from Dashboard' : 'Retirer du tableau'}</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
       
-      {/* Chart Area - Reduced padding on mobile */}
-      <div className={`p-2 sm:p-3 mt-1 sm:mt-2 ${isExpanded ? 'flex-1' : sizeClasses[size]}`}>
-        {renderChart()}
+      {/* Chart Area - Proper aspect ratio with padding */}
+      <div className={`p-3 sm:p-4 ${isExpanded ? 'flex-1' : sizeClasses[size]}`}>
+        <div className="h-full w-full max-w-4xl mx-auto">
+          {renderChart()}
+        </div>
       </div>
       
       {/* Expanded Overlay Backdrop */}
@@ -732,9 +731,9 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
   const trendPercent = firstValue !== 0 ? ((trend / firstValue) * 100) : 0;
   
   const getPointPosition = (index: number) => {
-    if (safeData.length <= 1) return { x: 200, y: 100 };
+    if (safeData.length <= 1) return { x: 200, y: 80 };
     const x = (index / (safeData.length - 1)) * 400;
-    const y = 200 - ((safeData[index]?.value ?? 0 - minValue) / range) * 180;
+    const y = 150 - ((safeData[index]?.value ?? 0 - minValue) / range) * 130;
     return { x, y };
   };
   
@@ -762,20 +761,21 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
         </div>
       </div>
       
-      {/* Chart */}
-      <div className="flex-1 relative group" onMouseLeave={handleLeave}>
-        <svg className="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
-          {/* Grid lines */}
+      {/* Chart - Maintain aspect ratio with proper padding */}
+      <div className="flex-1 relative group min-h-0" onMouseLeave={handleLeave}>
+        <svg className="w-full h-full" viewBox="0 0 400 160" preserveAspectRatio="xMidYMid meet">
+          {/* Grid lines - subtle background */}
           {[0, 25, 50, 75, 100].map((y) => (
             <line
               key={y}
-              x1="0"
-              y1={200 - y * 2}
-              x2="400"
-              y2={200 - y * 2}
+              x1="10"
+              y1={150 - (y / 100) * 130}
+              x2="390"
+              y2={150 - (y / 100) * 130}
               stroke="rgb(var(--color-border))"
               strokeWidth="0.5"
               strokeDasharray="4,4"
+              opacity="0.5"
             />
           ))}
           
@@ -783,9 +783,9 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
           {hoveredIndex !== null && (
             <line
               x1={getPointPosition(hoveredIndex).x}
-              y1="0"
+              y1="10"
               x2={getPointPosition(hoveredIndex).x}
-              y2="200"
+              y2="150"
               stroke="rgb(var(--color-primary-500))"
               strokeWidth="1"
               strokeDasharray="4,4"
@@ -796,10 +796,10 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
           {config.chartType === 'area' && safeData.length > 1 && (
             <path
               d={`M ${safeData.map((d, i) => 
-                `${(i / (safeData.length - 1)) * 400} ${200 - (((d?.value ?? 0) - minValue) / range) * 180}`
-              ).join(' L ')} L 400 200 L 0 200 Z`}
+                `${(i / (safeData.length - 1)) * 400} ${150 - (((d?.value ?? 0) - minValue) / range) * 130}`
+              ).join(' L ')} L 400 150 L 0 150 Z`}
               fill={metricInfo?.color || '#10B981'}
-              fillOpacity="0.2"
+              fillOpacity="0.15"
               className="transition-all duration-200"
             />
           )}
@@ -807,25 +807,26 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
           {(config.chartType === 'line' || config.chartType === 'area') && safeData.length > 1 ? (
             <path
               d={`M ${safeData.map((d, i) => 
-                `${(i / (safeData.length - 1)) * 400} ${200 - (((d?.value ?? 0) - minValue) / range) * 180}`
+                `${(i / (safeData.length - 1)) * 400} ${150 - (((d?.value ?? 0) - minValue) / range) * 130}`
               ).join(' L ')}`}
               fill="none"
               stroke={metricInfo?.color || '#10B981'}
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
+              strokeLinejoin="round"
               className="transition-all duration-200"
             />
           ) : (
             safeData.map((d, i) => (
               <rect
                 key={i}
-                x={(i / safeData.length) * 400 + 5}
-                y={200 - (((d?.value ?? 0) - minValue) / range) * 180}
-                width={(400 / safeData.length) - 10}
-                height={(((d?.value ?? 0) - minValue) / range) * 180}
+                x={(i / safeData.length) * 400 + 8}
+                y={150 - (((d?.value ?? 0) - minValue) / range) * 130}
+                width={(400 / safeData.length) - 16}
+                height={(((d?.value ?? 0) - minValue) / range) * 130}
                 fill={metricInfo?.color || '#10B981'}
-                rx="2"
-                opacity={hoveredIndex === null || hoveredIndex === i ? 1 : 0.5}
+                rx="3"
+                opacity={hoveredIndex === null || hoveredIndex === i ? 1 : 0.6}
                 className="transition-all duration-150 cursor-pointer"
                 onMouseEnter={() => handleHover(i)}
                 onMouseLeave={handleLeave}
@@ -839,7 +840,7 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
               {/* Larger invisible hit area */}
               <circle
                 cx={(i / (safeData.length - 1)) * 400}
-                cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
+                cy={150 - (((d?.value ?? 0) - minValue) / range) * 130}
                 r="20"
                 fill="transparent"
                 className="cursor-pointer"
@@ -849,8 +850,8 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
               {/* Visible point */}
               <circle
                 cx={(i / (safeData.length - 1)) * 400}
-                cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
-                r={hoveredIndex === i ? 5 : 3}
+                cy={150 - (((d?.value ?? 0) - minValue) / range) * 130}
+                r={hoveredIndex === i ? 6 : 4}
                 fill={hoveredIndex === i ? (metricInfo?.color || '#10B981') : 'white'}
                 stroke={metricInfo?.color || '#10B981'}
                 strokeWidth="2"
@@ -860,8 +861,8 @@ function LineBarAreaChart({ data, config, isEn }: { data: any[]; config: ChartCo
               {hoveredIndex === i && (
                 <circle
                   cx={(i / (safeData.length - 1)) * 400}
-                  cy={200 - (((d?.value ?? 0) - minValue) / range) * 180}
-                  r="10"
+                  cy={150 - (((d?.value ?? 0) - minValue) / range) * 130}
+                  r="12"
                   fill={metricInfo?.color || '#10B981'}
                   opacity="0.15"
                 />
@@ -1732,10 +1733,12 @@ interface ChartGalleryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectChart?: (config: ChartConfig) => void;
+  onBuildCustom?: () => void;
   isEn: boolean;
 }
 
-export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: ChartGalleryModalProps) {
+export function ChartGalleryModal({ isOpen, onClose, onSelectChart, onBuildCustom, isEn }: ChartGalleryModalProps) {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'financial' | 'ratio' | 'operational'>('all');
   
   const categories = [
@@ -1751,11 +1754,21 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
     return METRIC_INFO[primaryMetric].category === selectedCategory;
   });
   
+  const handleBuildCustom = () => {
+    onClose();
+    if (onBuildCustom) {
+      onBuildCustom();
+    } else {
+      // Navigate to visualizations page for chart building
+      navigate('/app/visualizations');
+    }
+  };
+  
   if (!isOpen) return null;
   
   return (
     <div 
-      className="fixed inset-0 flex items-start justify-center overflow-y-auto"
+      className="fixed inset-0 flex items-start justify-center overflow-y-auto p-2 sm:p-0"
       style={{ zIndex: 9999 }}
     >
       {/* Backdrop */}
@@ -1765,9 +1778,9 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
         onClick={onClose}
       />
       
-      {/* Modal */}
+      {/* Modal - Responsive sizing */}
       <div 
-        className="relative w-full max-w-4xl my-8 mx-4 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200"
+        className="relative w-full max-w-4xl my-2 sm:my-4 md:my-8 mx-0 sm:mx-4 rounded-xl sm:rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-200"
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
@@ -1780,37 +1793,37 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
         >
           {/* Title row */}
           <div 
-            className="flex items-center justify-between px-5 pt-5 pb-3"
+            className="flex items-center justify-between px-3 sm:px-5 pt-3 sm:pt-5 pb-2 sm:pb-3"
           >
-            <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Chart Gallery' : 'Galerie de graphiques'}
               </h2>
-              <p className="text-sm mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p className="text-xs sm:text-sm mt-0.5 hidden sm:block" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {isEn 
-                  ? 'Choose a chart to add to your dashboard'
-                  : 'Choisissez un graphique à ajouter à votre tableau de bord'}
+                  ? 'Choose a chart or build your own custom visualization'
+                  : 'Choisissez un graphique ou créez votre propre visualisation'}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg transition-colors hover:bg-[rgb(var(--color-bg-muted))]"
+              className="p-1.5 sm:p-2 rounded-lg transition-colors hover:bg-[rgb(var(--color-bg-muted))] flex-shrink-0 ml-2"
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
           
-          {/* Category tabs */}
+          {/* Category tabs - Responsive */}
           <div 
-            className="flex gap-1 px-5 pb-3 border-b overflow-x-auto scrollbar-hide"
+            className="flex gap-1 px-3 sm:px-5 pb-2 sm:pb-3 border-b overflow-x-auto scrollbar-hide"
             style={{ borderColor: 'rgb(var(--color-border))' }}
           >
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id as any)}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap touch-manipulation active:scale-95"
                 style={{
                   backgroundColor: selectedCategory === cat.id 
                     ? 'rgb(var(--color-primary-500))'
@@ -1826,9 +1839,55 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
           </div>
         </div>
         
-        {/* Content */}
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* Content - Responsive padding and grid */}
+        <div className="p-3 sm:p-5">
+          {/* Build Custom Card - Prominent at top */}
+          <button
+            onClick={handleBuildCustom}
+            className="w-full mb-4 p-4 sm:p-5 rounded-xl border-2 border-dashed transition-all hover:shadow-lg hover:border-solid group touch-manipulation active:scale-[0.99]"
+            style={{
+              borderColor: 'rgb(var(--color-primary-500))',
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.03)',
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div 
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
+                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+              >
+                <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="text-sm sm:text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Build Custom Chart' : 'Créer un graphique personnalisé'}
+                </h3>
+                <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn 
+                    ? 'Select your own metrics, chart type, and customize every detail'
+                    : 'Sélectionnez vos métriques, type de graphique et personnalisez chaque détail'}
+                </p>
+              </div>
+              <div 
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm"
+                style={{
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                }}
+              >
+                <Pencil className="w-4 h-4" />
+                {isEn ? 'Build' : 'Créer'}
+              </div>
+            </div>
+          </button>
+          
+          {/* Preset Charts Section */}
+          <div className="mb-3">
+            <h4 className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Preset Charts' : 'Graphiques prédéfinis'}
+            </h4>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             {filteredCharts.map((chart) => {
               const isPinned = chartFavoritesService.isPinned(chart.id);
               const ChartIcon = ChartTypeIcon[chart.chartType];
@@ -1836,7 +1895,7 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
               return (
                 <div
                   key={chart.id}
-                  className={`group relative p-4 rounded-xl cursor-pointer transition-all hover:shadow-lg border ${isPinned ? 'ring-2 ring-offset-2' : ''}`}
+                  className={`group relative p-3 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer transition-all hover:shadow-lg border touch-manipulation active:scale-[0.98] ${isPinned ? 'ring-2 ring-offset-1 sm:ring-offset-2' : ''}`}
                   style={{
                     backgroundColor: 'rgb(var(--color-bg))',
                     borderColor: isPinned ? 'rgb(var(--color-success))' : 'rgb(var(--color-border))',
@@ -1847,41 +1906,43 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
                     onClose();
                   }}
                 >
-                  {/* Top-right settings icon */}
+                  {/* Top-right add icon - Always visible on mobile */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      // For now, just add to dashboard - could open config modal in future
                       onSelectChart?.(chart);
                       onClose();
                     }}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-[rgb(var(--color-primary-500)/0.1)] z-10"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1 sm:p-1.5 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-all hover:bg-[rgb(var(--color-primary-500)/0.1)] z-10"
+                    style={{ 
+                      color: 'rgb(var(--color-primary-500))',
+                      backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                    }}
                     title={isEn ? 'Add to dashboard' : 'Ajouter au tableau de bord'}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                   
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 pr-8 sm:pr-0">
                       <div 
-                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                       >
-                        <ChartIcon className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                        <ChartIcon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
                       </div>
-                      <div>
-                        <h4 className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-medium text-xs sm:text-sm truncate" style={{ color: 'rgb(var(--color-text))' }}>
                           {isEn ? chart.nameEn : chart.name}
                         </h4>
-                        <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        <p className="text-[10px] sm:text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
                           {isEn ? CHART_TYPE_INFO[chart.chartType].labelEn : CHART_TYPE_INFO[chart.chartType].label}
                         </p>
                       </div>
                     </div>
                     {isPinned && (
                       <span 
-                        className="px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1"
+                        className="hidden sm:flex px-2 py-0.5 rounded-full text-[10px] font-medium items-center gap-1 flex-shrink-0"
                         style={{ 
                           backgroundColor: 'rgb(var(--color-success) / 0.1)',
                           color: 'rgb(var(--color-success))',
@@ -1893,23 +1954,24 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
                     )}
                   </div>
                   
-                  {/* Mini Chart Preview */}
+                  {/* Mini Chart Preview - Responsive height */}
                   <div 
-                    className="h-16 mb-3 rounded-lg overflow-hidden"
+                    className="h-12 sm:h-16 mb-2 sm:mb-3 rounded-md sm:rounded-lg overflow-hidden"
                     style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                   >
                     <MiniChartPreview chartType={chart.chartType} />
                   </div>
                   
-                  <p className="text-xs mb-3 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <p className="text-[10px] sm:text-xs mb-2 sm:mb-3 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? chart.descriptionEn : chart.description}
                   </p>
                   
+                  {/* Metric tags - Responsive */}
                   <div className="flex flex-wrap gap-1">
-                    {chart.metrics.slice(0, 3).map((metric) => (
+                    {chart.metrics.slice(0, 2).map((metric) => (
                       <span
                         key={metric}
-                        className="px-2 py-0.5 rounded text-[10px] font-medium"
+                        className="px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-medium"
                         style={{
                           backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                           color: 'rgb(var(--color-primary-600))',
@@ -1918,15 +1980,15 @@ export function ChartGalleryModal({ isOpen, onClose, onSelectChart, isEn }: Char
                         {isEn ? METRIC_INFO[metric].labelEn : METRIC_INFO[metric].label}
                       </span>
                     ))}
-                    {chart.metrics.length > 3 && (
+                    {chart.metrics.length > 2 && (
                       <span
-                        className="px-2 py-0.5 rounded text-[10px]"
+                        className="px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px]"
                         style={{
                           backgroundColor: 'rgb(var(--color-bg-muted))',
                           color: 'rgb(var(--color-text-muted))',
                         }}
                       >
-                        +{chart.metrics.length - 3}
+                        +{chart.metrics.length - 2}
                       </span>
                     )}
                   </div>

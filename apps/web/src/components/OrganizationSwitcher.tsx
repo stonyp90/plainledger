@@ -46,6 +46,11 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
     createTenant,
   } = useTenant();
   const { showToast } = useNotifications();
+  const { language } = useI18n();
+  const isEn = language === 'en';
+  
+  // Only paid users (Professional/Enterprise) can create new organizations
+  const isPaidUser = currentTenant?.plan === 'professional' || currentTenant?.plan === 'enterprise';
   
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -395,13 +400,21 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
             }}
           >
             <button
-              disabled
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium cursor-not-allowed opacity-40"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-              title="Bientôt disponible"
+              disabled={!isPaidUser}
+              onClick={() => isPaidUser && setShowCreateModal(true)}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-colors ${
+                isPaidUser 
+                  ? 'cursor-pointer hover:bg-[rgb(var(--color-bg-muted))]' 
+                  : 'cursor-not-allowed opacity-40'
+              }`}
+              style={{ color: isPaidUser ? 'rgb(var(--color-text-secondary))' : 'rgb(var(--color-text-muted))' }}
+              title={isPaidUser 
+                ? (isEn ? 'Create new organization' : 'Créer une nouvelle organisation') 
+                : (isEn ? 'Upgrade to Professional or Enterprise to create organizations' : 'Passez à Professionnel ou Entreprise pour créer des organisations')
+              }
             >
               <Plus className="w-3.5 h-3.5" />
-              Créer
+              {isEn ? 'Create' : 'Créer'}
             </button>
             
             <div className="w-px h-4" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
@@ -430,15 +443,15 @@ export default function OrganizationSwitcher({ compact = false }: OrganizationSw
         </div>
       )}
 
-      {/* Create Organization Modal - Mobile-first with enhanced styling */}
+      {/* Create Organization Modal - Centered on screen */}
       {showCreateModal && (
         <div 
-          className="fixed inset-0 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-fade-in"
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-fade-in"
           style={{ backgroundColor: 'rgb(0 0 0 / 0.5)', backdropFilter: 'blur(4px)' }}
           onClick={(e) => e.target === e.currentTarget && setShowCreateModal(false)}
         >
           <div 
-            className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-scale-in"
+            className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col animate-scale-in"
             style={{ backgroundColor: 'rgb(var(--color-surface))' }}
           >
             {/* Header with gradient accent */}

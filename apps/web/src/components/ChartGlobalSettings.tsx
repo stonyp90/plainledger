@@ -19,14 +19,25 @@ import {
   Globe,
   Save,
   ChevronRight,
+  Eye,
+  EyeOff,
+  MousePointer,
+  MessageSquare,
+  Crosshair,
+  Zap,
+  BarChart3,
+  Percent,
+  Clock,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import {
   DEFAULT_GRAPH_CONFIG,
   DEFAULT_IBCS_CONFIG,
   DEFAULT_DISPLAY_CONFIG,
+  DEFAULT_TOOLTIP_CONFIG,
   type IBCSConfig,
   type DisplayConfig,
+  type TooltipConfig,
   type PartialGraphConfig,
 } from '../lib/graphConfig';
 import {
@@ -34,6 +45,7 @@ import {
   getAllChartSettings,
   resetAllChartSettings,
 } from '../hooks/useGraphConfig';
+import { useChartControls, type ChartControlsMode } from '../hooks/useChartControls';
 
 export default function ChartGlobalSettings() {
   const { language } = useI18n();
@@ -41,8 +53,12 @@ export default function ChartGlobalSettings() {
   
   const [ibcsConfig, setIBCSConfig] = useState<IBCSConfig>({ ...DEFAULT_IBCS_CONFIG });
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig>({ ...DEFAULT_DISPLAY_CONFIG });
+  const [tooltipConfig, setTooltipConfig] = useState<TooltipConfig>({ ...DEFAULT_TOOLTIP_CONFIG });
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [chartOverridesCount, setChartOverridesCount] = useState(0);
+  
+  // Chart controls visibility
+  const { mode: controlsMode, setMode: setControlsMode } = useChartControls();
   
   // Load saved preferences on mount
   useEffect(() => {
@@ -57,6 +73,9 @@ export default function ChartGlobalSettings() {
         if (config.display) {
           setDisplayConfig({ ...DEFAULT_DISPLAY_CONFIG, ...config.display });
         }
+        if (config.tooltip) {
+          setTooltipConfig({ ...DEFAULT_TOOLTIP_CONFIG, ...config.tooltip });
+        }
       }
       // Count chart-specific overrides
       const chartSettings = getAllChartSettings();
@@ -70,6 +89,7 @@ export default function ChartGlobalSettings() {
     const preferences: PartialGraphConfig = {
       ibcs: ibcsConfig,
       display: displayConfig,
+      tooltip: tooltipConfig,
     };
     saveUserPreferences(preferences);
     setShowSaveConfirm(true);
@@ -79,6 +99,7 @@ export default function ChartGlobalSettings() {
   const handleResetAll = () => {
     setIBCSConfig({ ...DEFAULT_IBCS_CONFIG });
     setDisplayConfig({ ...DEFAULT_DISPLAY_CONFIG });
+    setTooltipConfig({ ...DEFAULT_TOOLTIP_CONFIG });
     saveUserPreferences({});
     resetAllChartSettings();
     setChartOverridesCount(0);
@@ -90,6 +111,10 @@ export default function ChartGlobalSettings() {
   
   const updateDisplay = (updates: Partial<DisplayConfig>) => {
     setDisplayConfig(prev => ({ ...prev, ...updates }));
+  };
+  
+  const updateTooltip = (updates: Partial<TooltipConfig>) => {
+    setTooltipConfig(prev => ({ ...prev, ...updates }));
   };
 
   return (
@@ -129,6 +154,480 @@ export default function ChartGlobalSettings() {
           </p>
         </div>
       </div>
+
+      {/* Chart Controls Visibility */}
+      <section 
+        className="p-4 rounded-lg"
+        style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+      >
+        <h3 className="font-medium flex items-center gap-2 mb-3">
+          <Settings2 className="w-4 h-4 text-primary" />
+          {isEn ? 'Chart Controls Visibility' : 'Visibilité des contrôles'}
+        </h3>
+        <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn 
+            ? 'Choose when to show chart controls (resize, settings, etc.)'
+            : 'Choisissez quand afficher les contrôles des graphiques (redimensionner, paramètres, etc.)'}
+        </p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Hover mode */}
+          <button
+            onClick={() => setControlsMode('hover')}
+            className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
+              controlsMode === 'hover' ? 'ring-2 ring-primary' : ''
+            }`}
+            style={{ 
+              backgroundColor: controlsMode === 'hover' 
+                ? 'rgb(var(--color-primary-500) / 0.1)' 
+                : 'rgb(var(--color-bg-muted))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ 
+                backgroundColor: controlsMode === 'hover' 
+                  ? 'rgb(var(--color-primary-500) / 0.2)' 
+                  : 'rgb(var(--color-bg-muted))',
+              }}
+            >
+              <MousePointer className="w-4 h-4" style={{ 
+                color: controlsMode === 'hover' 
+                  ? 'rgb(var(--color-primary-500))' 
+                  : 'rgb(var(--color-text-muted))'
+              }} />
+            </div>
+            <div>
+              <span className="text-sm font-medium block" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'On Hover' : 'Au survol'}
+              </span>
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Show when hovering' : 'Afficher au survol'}
+              </span>
+            </div>
+          </button>
+          
+          {/* Always mode */}
+          <button
+            onClick={() => setControlsMode('always')}
+            className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
+              controlsMode === 'always' ? 'ring-2 ring-primary' : ''
+            }`}
+            style={{ 
+              backgroundColor: controlsMode === 'always' 
+                ? 'rgb(var(--color-primary-500) / 0.1)' 
+                : 'rgb(var(--color-bg-muted))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ 
+                backgroundColor: controlsMode === 'always' 
+                  ? 'rgb(var(--color-primary-500) / 0.2)' 
+                  : 'rgb(var(--color-bg-muted))',
+              }}
+            >
+              <Eye className="w-4 h-4" style={{ 
+                color: controlsMode === 'always' 
+                  ? 'rgb(var(--color-primary-500))' 
+                  : 'rgb(var(--color-text-muted))'
+              }} />
+            </div>
+            <div>
+              <span className="text-sm font-medium block" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Always Visible' : 'Toujours visible'}
+              </span>
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Always show controls' : 'Toujours afficher'}
+              </span>
+            </div>
+          </button>
+          
+          {/* Hidden mode */}
+          <button
+            onClick={() => setControlsMode('hidden')}
+            className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
+              controlsMode === 'hidden' ? 'ring-2 ring-primary' : ''
+            }`}
+            style={{ 
+              backgroundColor: controlsMode === 'hidden' 
+                ? 'rgb(var(--color-primary-500) / 0.1)' 
+                : 'rgb(var(--color-bg-muted))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ 
+                backgroundColor: controlsMode === 'hidden' 
+                  ? 'rgb(var(--color-primary-500) / 0.2)' 
+                  : 'rgb(var(--color-bg-muted))',
+              }}
+            >
+              <EyeOff className="w-4 h-4" style={{ 
+                color: controlsMode === 'hidden' 
+                  ? 'rgb(var(--color-primary-500))' 
+                  : 'rgb(var(--color-text-muted))'
+              }} />
+            </div>
+            <div>
+              <span className="text-sm font-medium block" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Hidden' : 'Masqués'}
+              </span>
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Hide all controls' : 'Masquer les contrôles'}
+              </span>
+            </div>
+          </button>
+        </div>
+        
+        <p className="text-xs mt-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn 
+            ? 'Tip: You can also toggle this by clicking the eye icon on any chart when hovering.'
+            : 'Astuce: Vous pouvez aussi basculer en cliquant l\'icône œil sur n\'importe quel graphique au survol.'}
+        </p>
+      </section>
+
+      {/* Tooltip/Hover Settings */}
+      <section 
+        className="p-4 rounded-lg"
+        style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+      >
+        <h3 className="font-medium flex items-center gap-2 mb-3">
+          <MessageSquare className="w-4 h-4 text-primary" />
+          {isEn ? 'Hover Tooltip Settings' : 'Paramètres des infobulles'}
+        </h3>
+        <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn 
+            ? 'Customize what information appears when you hover over chart data points'
+            : 'Personnalisez les informations affichées au survol des points de données'}
+        </p>
+
+        {/* Master toggle */}
+        <div 
+          className="flex items-center justify-between p-3 rounded-lg mb-4"
+          style={{ 
+            backgroundColor: tooltipConfig.enabled 
+              ? 'rgb(var(--color-success) / 0.1)' 
+              : 'rgb(var(--color-bg-muted))',
+            border: '1px solid rgb(var(--color-border))',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ 
+                backgroundColor: tooltipConfig.enabled 
+                  ? 'rgb(var(--color-success) / 0.2)' 
+                  : 'rgb(var(--color-bg-muted))',
+              }}
+            >
+              <MessageSquare className="w-4 h-4" style={{ 
+                color: tooltipConfig.enabled 
+                  ? 'rgb(var(--color-success))' 
+                  : 'rgb(var(--color-text-muted))'
+              }} />
+            </div>
+            <div>
+              <span className="text-sm font-medium block" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Enable Tooltips' : 'Activer les infobulles'}
+              </span>
+              <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Show information on hover' : 'Afficher les infos au survol'}
+              </span>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={tooltipConfig.enabled}
+              onChange={(e) => updateTooltip({ enabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[rgb(var(--color-success))]"></div>
+          </label>
+        </div>
+
+        {tooltipConfig.enabled && (
+          <>
+            {/* Timing Settings */}
+            <div className="mb-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                {isEn ? 'Timing' : 'Délais'}
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Show delay (ms)' : 'Délai d\'apparition (ms)'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="50"
+                    value={tooltipConfig.delayShow}
+                    onChange={(e) => updateTooltip({ delayShow: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-bg))', 
+                      border: '1px solid rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    {isEn ? 'Hide delay (ms)' : 'Délai de disparition (ms)'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="50"
+                    value={tooltipConfig.delayHide}
+                    onChange={(e) => updateTooltip({ delayHide: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-bg))', 
+                      border: '1px solid rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Information to Show */}
+            <div className="mb-4">
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <BarChart3 className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                {isEn ? 'Information to Display' : 'Informations à afficher'}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showValue}
+                    onChange={(e) => updateTooltip({ showValue: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Current Value' : 'Valeur actuelle'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showLabel}
+                    onChange={(e) => updateTooltip({ showLabel: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Label/Period' : 'Libellé/Période'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showComparison}
+                    onChange={(e) => updateTooltip({ showComparison: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Comparison Value' : 'Valeur de comparaison'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showPercentageChange}
+                    onChange={(e) => updateTooltip({ showPercentageChange: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Percentage Change' : 'Variation en %'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showTrendIndicator}
+                    onChange={(e) => updateTooltip({ showTrendIndicator: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Trend Indicator' : 'Indicateur de tendance'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showStatus}
+                    onChange={(e) => updateTooltip({ showStatus: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Status Badge' : 'Badge de statut'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showMovingAverage}
+                    onChange={(e) => updateTooltip({ showMovingAverage: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Moving Average' : 'Moyenne mobile'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showBudget}
+                    onChange={(e) => updateTooltip({ showBudget: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Budget/Target' : 'Budget/Cible'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showCategory}
+                    onChange={(e) => updateTooltip({ showCategory: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Category' : 'Catégorie'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showCumulative}
+                    onChange={(e) => updateTooltip({ showCumulative: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Cumulative Total' : 'Total cumulé'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showPercentOfTotal}
+                    onChange={(e) => updateTooltip({ showPercentOfTotal: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? '% of Total' : '% du total'}</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Visual Effects */}
+            <div>
+              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                {isEn ? 'Visual Effects' : 'Effets visuels'}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.highlightOnHover}
+                    onChange={(e) => updateTooltip({ highlightOnHover: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Highlight Data Point' : 'Mettre en évidence le point'}</span>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.showCrosshair}
+                    onChange={(e) => updateTooltip({ showCrosshair: e.target.checked })}
+                    className="rounded"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Crosshair className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <span className="text-sm">{isEn ? 'Show Crosshair' : 'Afficher le réticule'}</span>
+                  </div>
+                </label>
+                
+                <label 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors hover:bg-surface-hover"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={tooltipConfig.animate}
+                    onChange={(e) => updateTooltip({ animate: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{isEn ? 'Animate Tooltip' : 'Animer l\'infobulle'}</span>
+                </label>
+                
+                <div 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg"
+                  style={{ border: '1px solid rgb(var(--color-border))' }}
+                >
+                  <label className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                    {isEn ? 'Theme:' : 'Thème:'}
+                  </label>
+                  <select
+                    value={tooltipConfig.theme}
+                    onChange={(e) => updateTooltip({ theme: e.target.value as 'auto' | 'light' | 'dark' })}
+                    className="flex-1 px-2 py-1 rounded text-sm"
+                    style={{ 
+                      backgroundColor: 'rgb(var(--color-bg))', 
+                      border: '1px solid rgb(var(--color-border))',
+                      color: 'rgb(var(--color-text))'
+                    }}
+                  >
+                    <option value="auto">{isEn ? 'Auto' : 'Auto'}</option>
+                    <option value="light">{isEn ? 'Light' : 'Clair'}</option>
+                    <option value="dark">{isEn ? 'Dark' : 'Sombre'}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </section>
 
       {/* Per-chart overrides count */}
       {chartOverridesCount > 0 && (

@@ -169,6 +169,40 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
 // Get all permission IDs
 const ALL_PERMISSIONS = PERMISSION_CATEGORIES.flatMap(c => c.permissions.map(p => p.id));
 
+// Role color configurations using theme colors
+const ROLE_COLORS = {
+  owner: {
+    bg: 'rgb(var(--color-warning) / 0.1)',
+    border: 'rgb(var(--color-warning) / 0.3)',
+    icon: 'rgb(var(--color-warning))',
+    text: 'rgb(var(--color-warning))',
+  },
+  admin: {
+    bg: 'rgb(var(--color-primary-500) / 0.1)',
+    border: 'rgb(var(--color-primary-500) / 0.3)',
+    icon: 'rgb(var(--color-primary-500))',
+    text: 'rgb(var(--color-primary-600))',
+  },
+  member: {
+    bg: 'rgb(var(--color-info) / 0.1)',
+    border: 'rgb(var(--color-info) / 0.3)',
+    icon: 'rgb(var(--color-info))',
+    text: 'rgb(var(--color-info))',
+  },
+  viewer: {
+    bg: 'rgb(var(--color-success) / 0.1)',
+    border: 'rgb(var(--color-success) / 0.3)',
+    icon: 'rgb(var(--color-success))',
+    text: 'rgb(var(--color-success))',
+  },
+  default: {
+    bg: 'rgb(var(--color-bg-muted))',
+    border: 'rgb(var(--color-border))',
+    icon: 'rgb(var(--color-text-muted))',
+    text: 'rgb(var(--color-text-secondary))',
+  },
+} as const;
+
 // Default role definitions
 const DEFAULT_ROLES: RoleDefinition[] = [
   {
@@ -179,7 +213,7 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     descFr: 'Accès complet incluant facturation et paramètres',
     icon: Crown,
     color: 'warning',
-    badge: '👑',
+    badge: '',
     isSystem: true,
     permissions: ALL_PERMISSIONS, // All permissions
   },
@@ -191,7 +225,7 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     descFr: 'Peut gérer les connexions, utilisateurs et paramètres',
     icon: Shield,
     color: 'primary',
-    badge: '🛡️',
+    badge: '',
     isSystem: true,
     permissions: ALL_PERMISSIONS.filter(p => p !== 'manage:billing'),
   },
@@ -203,7 +237,7 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     descFr: 'Peut voir les données, créer et modifier les rapports',
     icon: User,
     color: 'info',
-    badge: '👤',
+    badge: '',
     isSystem: true,
     permissions: [
       'view:connections', 'view:dashboard', 'view:reports', 'create:reports', 
@@ -219,7 +253,7 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     descFr: 'Accès lecture seule aux tableaux de bord et rapports',
     icon: Eye,
     color: 'muted',
-    badge: '👁️',
+    badge: '',
     isSystem: true,
     permissions: [
       'view:connections', 'view:dashboard', 'view:reports', 'view:anomalies',
@@ -227,6 +261,11 @@ const DEFAULT_ROLES: RoleDefinition[] = [
     ],
   },
 ];
+
+// Helper to get role colors
+function getRoleColors(roleId: string) {
+  return ROLE_COLORS[roleId as keyof typeof ROLE_COLORS] || ROLE_COLORS.default;
+}
 
 // For backward compatibility
 export const ROLE_DEFINITIONS = Object.fromEntries(
@@ -270,7 +309,7 @@ export function RoleSelector({
       >
         {availableRoles.map((role) => (
           <option key={role.id} value={role.id}>
-            {role.badge} {isEn ? role.nameEn : role.nameFr}
+            {isEn ? role.nameEn : role.nameFr}
           </option>
         ))}
       </select>
@@ -282,6 +321,7 @@ export function RoleSelector({
       {availableRoles.map((role) => {
         const Icon = role.icon;
         const isSelected = value === role.id;
+        const colors = getRoleColors(role.id);
         
         return (
           <button
@@ -306,10 +346,10 @@ export function RoleSelector({
                 style={{ 
                   backgroundColor: isSelected 
                     ? 'rgb(var(--color-primary-500))' 
-                    : 'rgb(var(--color-bg-muted))',
+                    : colors.bg,
                   color: isSelected 
                     ? 'white' 
-                    : 'rgb(var(--color-text-muted))'
+                    : colors.icon
                 }}
               >
                 <Icon className="w-5 h-5" />
@@ -320,7 +360,7 @@ export function RoleSelector({
                     className="font-medium"
                     style={{ color: 'rgb(var(--color-text))' }}
                   >
-                    {role.badge} {isEn ? role.nameEn : role.nameFr}
+                    {isEn ? role.nameEn : role.nameFr}
                   </span>
                   {isSelected && (
                     <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
@@ -359,6 +399,7 @@ export function RoleBadge({ role, roles = DEFAULT_ROLES, size = 'sm', showIcon =
   const isEn = language === 'en';
   const roleInfo = roles.find(r => r.id === role) || DEFAULT_ROLES[0];
   const Icon = roleInfo.icon;
+  const colors = getRoleColors(role);
 
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5',
@@ -367,13 +408,14 @@ export function RoleBadge({ role, roles = DEFAULT_ROLES, size = 'sm', showIcon =
 
   return (
     <span 
-      className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses[size]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium ${sizeClasses[size]}`}
       style={{ 
-        backgroundColor: 'rgb(var(--color-bg-muted))',
-        color: 'rgb(var(--color-text-secondary))'
+        backgroundColor: colors.bg,
+        color: colors.text,
+        border: `1px solid ${colors.border}`
       }}
     >
-      {showIcon && <Icon className="w-3 h-3" />}
+      {showIcon && <Icon className="w-3 h-3" style={{ color: colors.icon }} />}
       {isEn ? roleInfo.nameEn : roleInfo.nameFr}
     </span>
   );
@@ -447,6 +489,7 @@ interface MobilePermissionCardProps {
 function MobilePermissionCard({ role, categories, onTogglePermission, isEditable, isEn }: MobilePermissionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const Icon = role.icon;
+  const colors = getRoleColors(role.id);
   
   const totalPermissions = categories.flatMap(c => c.permissions).length;
   const enabledPermissions = role.permissions.length;
@@ -467,13 +510,20 @@ function MobilePermissionCard({ role, categories, onTogglePermission, isEditable
         <div className="flex items-center gap-3">
           <div 
             className="w-10 h-10 rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            style={{ 
+              backgroundColor: colors.bg,
+              border: `1px solid ${colors.border}`
+            }}
           >
-            <Icon className="w-5 h-5" style={{ color: 'rgb(var(--color-text))' }} />
+            <Icon className="w-5 h-5" style={{ color: colors.icon }} />
           </div>
           <div className="text-left">
-            <h4 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              {role.badge} {isEn ? role.nameEn : role.nameFr}
+            <h4 className="font-semibold flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+              <span 
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: colors.icon }}
+              />
+              {isEn ? role.nameEn : role.nameFr}
             </h4>
             <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
               {enabledPermissions}/{totalPermissions} {isEn ? 'permissions' : 'permissions'}
@@ -579,9 +629,18 @@ function DesktopPermissionMatrix({ roles, categories, onTogglePermission, isEdit
         </div>
         {roles.map((role) => {
           const Icon = role.icon;
+          const colors = getRoleColors(role.id);
           return (
             <div key={role.id} className="text-center">
-              <Icon className="w-5 h-5 mx-auto mb-1" style={{ color: 'rgb(var(--color-text-muted))' }} />
+              <div 
+                className="w-8 h-8 rounded-lg mx-auto mb-1 flex items-center justify-center"
+                style={{ 
+                  backgroundColor: colors.bg,
+                  border: `1px solid ${colors.border}`
+                }}
+              >
+                <Icon className="w-4 h-4" style={{ color: colors.icon }} />
+              </div>
               <span className="text-xs font-medium block" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? role.nameEn : role.nameFr}
               </span>
@@ -844,7 +903,7 @@ function RoleModal({ role, onSave, onClose, existingRoles, isEn }: RoleModalProp
                 <option value="">{isEn ? 'Select a role...' : 'Sélectionner un rôle...'}</option>
                 {existingRoles.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.badge} {isEn ? r.nameEn : r.nameFr}
+                    {isEn ? r.nameEn : r.nameFr}
                   </option>
                 ))}
               </select>
@@ -1133,49 +1192,59 @@ export default function RolesPermissionsSection() {
             {isEn ? 'Custom Roles' : 'Rôles personnalisés'}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {roles.filter(r => !r.isSystem).map((role) => (
-              <div
-                key={role.id}
-                className="p-4 rounded-xl flex items-center justify-between"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-surface))',
-                  border: '1px solid rgb(var(--color-border))'
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-                  >
-                    <User className="w-5 h-5" style={{ color: 'rgb(var(--color-text))' }} />
+            {roles.filter(r => !r.isSystem).map((role) => {
+              const colors = getRoleColors(role.id);
+              return (
+                <div
+                  key={role.id}
+                  className="p-4 rounded-xl flex items-center justify-between"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    border: '1px solid rgb(var(--color-border))'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ 
+                        backgroundColor: colors.bg,
+                        border: `1px solid ${colors.border}`
+                      }}
+                    >
+                      <User className="w-5 h-5" style={{ color: colors.icon }} />
+                    </div>
+                    <div>
+                      <h5 className="font-medium flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
+                        <span 
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: colors.icon }}
+                        />
+                        {isEn ? role.nameEn : role.nameFr}
+                      </h5>
+                      <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {role.permissions.length} {isEn ? 'permissions' : 'permissions'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                      {role.badge} {isEn ? role.nameEn : role.nameFr}
-                    </h5>
-                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {role.permissions.length} {isEn ? 'permissions' : 'permissions'}
-                    </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingRole(role)}
+                      className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+                      title={isEn ? 'Edit' : 'Modifier'}
+                    >
+                      <Edit3 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRole(role.id)}
+                      className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                      title={isEn ? 'Delete' : 'Supprimer'}
+                    >
+                      <Trash2 className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setEditingRole(role)}
-                    className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
-                    title={isEn ? 'Edit' : 'Modifier'}
-                  >
-                    <Edit3 className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteRole(role.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                    title={isEn ? 'Delete' : 'Supprimer'}
-                  >
-                    <Trash2 className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

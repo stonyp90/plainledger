@@ -4,7 +4,9 @@ import { Link } from 'react-router-dom';
 import { InfoBanner } from '../components/HelpTooltip';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
 import { useTenant } from '../contexts/TenantContext';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import { useI18n } from '../lib/i18n';
 import ShareModal from '../components/ShareModal';
 import Toggle from '../components/Toggle';
@@ -20,6 +22,14 @@ export default function IncomeStatement() {
   const { currentTenant } = useTenant();
   const { language } = useI18n();
   const isEn = language === 'en';
+  
+  // Account data access rules - check if paid user needs to connect
+  const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="statements" />;
+  }
   
   const currentYear = new Date().getFullYear();
   const [periodStart, setPeriodStart] = useState(`${currentYear}-01-01`);

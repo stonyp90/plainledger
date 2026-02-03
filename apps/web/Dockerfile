@@ -10,8 +10,14 @@ WORKDIR /app
 
 # Install dependencies including optional ones for native modules (rollup, etc.)
 COPY apps/web/package*.json ./
+# Install the correct rollup binary based on platform
 RUN npm ci --include=optional && \
-    npm install @rollup/rollup-linux-x64-gnu --save-optional || true
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+      npm install @rollup/rollup-linux-arm64-gnu --save-optional || true; \
+    else \
+      npm install @rollup/rollup-linux-x64-gnu --save-optional || true; \
+    fi
 
 # Copy source and build
 COPY apps/web/ ./

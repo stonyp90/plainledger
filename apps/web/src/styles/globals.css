@@ -466,6 +466,39 @@
 }
 
 /* ============================================================================
+   Z-INDEX LAYERING SYSTEM
+   
+   Clear rules to prevent menu/control overlaps with chart content
+   
+   Layer 0  (z-0):   Base content - chart backgrounds, card backgrounds
+   Layer 10 (z-10):  Chart content - titles, headers, legends inside charts
+   Layer 20 (z-20):  Inline controls - resize handles, hover controls
+   Layer 30 (z-30):  Dropdown menus - menus that open from inline controls  
+   Layer 40 (z-40):  Floating elements - popovers, floating panels
+   Layer 50 (z-50):  Overlays - tooltips, notifications panels
+   Layer 60 (z-60):  Modals - dialog overlays, modal backdrops
+   Layer 70 (z-70):  Modal content - modal dialogs, drawers
+   Layer 9997:       Fullscreen charts - above all content
+   Layer 9998:       Toast notifications - always visible, even over fullscreen
+   Layer 99999:      Critical overlays - blocking overlays only
+   
+   RULES FOR CHART/GRAPH MENUS:
+   1. Chart controls (settings, resize) should be at z-20, positioned at 
+      corners to avoid overlapping chart titles
+   2. Dropdown menus from controls should use z-30 and open DOWNWARD to 
+      avoid overlapping the chart header/title area
+   3. Controls should have enough top padding (min 40px) from chart edge 
+      to leave room for title and subtitle
+   4. Use pointer-events-none on wrapper elements that might block clicks
+   5. Menus should close on click-outside and ESC key
+   
+   RULES FOR TOAST NOTIFICATIONS:
+   1. Toast container uses z-9998 to appear above all page content
+   2. Only critical blocking overlays (z-99999) should appear above toasts
+   3. Toasts should not block user interaction with the page
+   ============================================================================ */
+
+/* ============================================================================
    COMPONENTS - Corporate Design System
    ============================================================================ */
 
@@ -1372,9 +1405,17 @@
   @apply text-lg sm:text-xl;
 }
 
-/* Toast notifications - Design system colors */
+/* Toast notifications - Design system colors
+   Using z-[9998] to ensure toasts are always visible above all page content,
+   modals, and overlays. Only critical blocking overlays (z-99999) should be above toasts.
+   Semi-transparent with backdrop blur for modern glass effect. */
 .toast-container {
-  @apply fixed bottom-6 right-6 z-50 flex flex-col gap-3;
+  @apply fixed bottom-6 right-6 flex flex-col gap-3;
+  z-index: 9998;
+  pointer-events: none;
+}
+.toast-container > * {
+  pointer-events: auto;
 }
 @media (max-width: 640px) {
   .toast-container {
@@ -1383,9 +1424,11 @@
 }
 .toast {
   @apply flex items-start gap-3 p-4 rounded-xl animate-slide-in min-w-[320px] max-w-md;
-  background-color: rgb(var(--color-surface));
-  border: 1px solid rgb(var(--color-border));
-  box-shadow: var(--shadow-xl);
+  background-color: rgb(var(--color-surface) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgb(var(--color-border) / 0.5);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgb(var(--color-surface) / 0.1);
   transition: all var(--transition-normal);
 }
 @media (max-width: 640px) {
@@ -1395,27 +1438,48 @@
   }
 }
 .toast:hover {
-  box-shadow: var(--shadow-2xl);
+  box-shadow: var(--shadow-2xl), 0 0 0 1px rgb(var(--color-surface) / 0.15);
   transform: translateY(-1px);
+  background-color: rgb(var(--color-surface) / 0.92);
 }
 .toast.exiting {
   animation: slideOut 150ms ease-out forwards;
 }
 .toast-error {
   border-left: 4px solid rgb(var(--color-error));
-  background-color: rgb(var(--color-error) / 0.03);
+  background-color: rgb(var(--color-error) / 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.toast-error:hover {
+  background-color: rgb(var(--color-error) / 0.12);
 }
 .toast-success {
   border-left: 4px solid rgb(var(--color-success));
-  background-color: rgb(var(--color-success) / 0.03);
+  background-color: rgb(var(--color-success) / 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.toast-success:hover {
+  background-color: rgb(var(--color-success) / 0.12);
 }
 .toast-warning {
   border-left: 4px solid rgb(var(--color-warning));
-  background-color: rgb(var(--color-warning) / 0.03);
+  background-color: rgb(var(--color-warning) / 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.toast-warning:hover {
+  background-color: rgb(var(--color-warning) / 0.12);
 }
 .toast-info {
   border-left: 4px solid rgb(var(--color-info));
-  background-color: rgb(var(--color-info) / 0.03);
+  background-color: rgb(var(--color-info) / 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.toast-info:hover {
+  background-color: rgb(var(--color-info) / 0.12);
 }
 
 /* Notification panel - Mobile optimized with design system colors */

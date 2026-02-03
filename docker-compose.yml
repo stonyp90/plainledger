@@ -99,6 +99,7 @@ services:
       - ./local-dev/init-pgvector.sql:/docker-entrypoint-initdb.d/03-pgvector.sql
       - ./local-dev/init-tax-credits.sql:/docker-entrypoint-initdb.d/04-tax-credits.sql
       - ./local-dev/init-jobs.sql:/docker-entrypoint-initdb.d/05-jobs.sql
+      - ./local-dev/init-platform.sql:/docker-entrypoint-initdb.d/06-platform.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U plainledger"]
       interval: 5s
@@ -206,8 +207,8 @@ services:
   # ============================================
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: plainledger-api
     environment:
       NODE_ENV: development
@@ -216,11 +217,11 @@ services:
       SKIP_AUTH: "true"
       PORT: 3000
       # Database
-      DB_HOST: app-db
-      DB_PORT: 5432
-      DB_NAME: plainledger
-      DB_USERNAME: plainledger
-      DB_PASSWORD: plainledger_secret
+      DATABASE_HOST: app-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: plainledger
+      DATABASE_USER: plainledger
+      DATABASE_PASSWORD: plainledger_secret
       # Keycloak
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: plainledger
@@ -302,8 +303,8 @@ services:
   # ============================================
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
     container_name: plainledger-web
     environment:
       VITE_API_URL: ${API_URL:-http://localhost:3000}
@@ -337,12 +338,12 @@ services:
       S3_BUCKET_SILVER: plainledger-silver
       S3_BUCKET_GOLD: plainledger-gold
       S3_BUCKET_QUARANTINE: plainledger-quarantine
-      # Database
-      DB_HOST: app-db
-      DB_PORT: 5432
-      DB_NAME: plainledger
-      DB_USER: plainledger
-      DB_PASSWORD: plainledger_secret
+      # Database for ETL
+      DATABASE_HOST: app-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: plainledger
+      DATABASE_USER: plainledger
+      DATABASE_PASSWORD: plainledger_secret
       # Redis (for cache invalidation)
       REDIS_HOST: redis
       REDIS_PORT: 6379

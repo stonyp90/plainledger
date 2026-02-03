@@ -3,7 +3,8 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
-import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { GqlThrottlerGuard } from "@infrastructure/http/guards/gql-throttler.guard";
 import {
   KeycloakConnectModule,
   ResourceGuard,
@@ -30,6 +31,9 @@ import {
 } from "@infrastructure/persistence/postgres/entities/industry-benchmark.entity";
 import { VisualizationEntity } from "@infrastructure/persistence/postgres/entities/visualization.entity";
 import { CustomEntityEntity } from "@infrastructure/persistence/postgres/entities/custom-entity.entity";
+import { SavedReportEntity } from "@infrastructure/persistence/postgres/entities/saved-report.entity";
+import { BoardMeetingEntity } from "@infrastructure/persistence/postgres/entities/board-meeting.entity";
+import { ScenarioEntity } from "@infrastructure/persistence/postgres/entities/scenario.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -105,6 +109,7 @@ import { DataSourceResolver } from "@infrastructure/graphql/resolvers/datasource
 import { MarketAnalysisResolver } from "@infrastructure/graphql/resolvers/market-analysis.resolver";
 import { VisualizationResolver } from "@infrastructure/graphql/resolvers/visualization.resolver";
 import { TaxCreditResolver } from "@infrastructure/graphql/resolvers/tax-credit.resolver";
+import { UserSettingsResolver } from "@infrastructure/graphql/resolvers/user-settings.resolver";
 import { GqlAuthGuard } from "@infrastructure/graphql/guards/gql-auth.guard";
 
 // Application - Use Cases
@@ -158,6 +163,9 @@ import { HubSpotAdapter } from "@infrastructure/adapters/crm/hubspot/hubspot.ada
 // Intelligence Platform
 import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.module";
 
+// Platform Admin Module
+import { PlatformAdminModule } from "./modules/platform-admin";
+
 @Module({
   imports: [
     // Configuration
@@ -194,6 +202,9 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
           BenchmarkRefreshLogEntity,
           VisualizationEntity,
           CustomEntityEntity,
+          SavedReportEntity,
+          BoardMeetingEntity,
+          ScenarioEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -227,6 +238,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS reporting");
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS integration");
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS intelligence");
+          await tempDs.query("CREATE SCHEMA IF NOT EXISTS platform");
           console.log("[Database] Schemas created successfully");
           await tempDs.destroy();
         } catch (error) {
@@ -255,6 +267,9 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
       BenchmarkRefreshLogEntity,
       VisualizationEntity,
       CustomEntityEntity,
+      SavedReportEntity,
+      BoardMeetingEntity,
+      ScenarioEntity,
     ]),
 
     // Keycloak Authentication
@@ -284,6 +299,9 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
 
     // Intelligence Platform
     IntelligenceModule,
+
+    // Platform Admin Module (admin.plainledger.ca)
+    PlatformAdminModule,
 
     // Scheduled Jobs
     ScheduleModule.forRoot(),
@@ -353,10 +371,10 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
             useClass: RoleGuard,
           },
         ]),
-    // Rate Limiting Guard (applies to all routes)
+    // Rate Limiting Guard (applies to all routes including GraphQL)
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: GqlThrottlerGuard,
     },
     CPAAdminGuard,
 
@@ -433,6 +451,7 @@ import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.mo
     ETLSubscriptionResolver,
     AccountBalanceSubscriptionResolver,
     TransactionSubscriptionResolver,
+    UserSettingsResolver,
     GqlAuthGuard,
 
     // GraphQL PubSub for subscriptions

@@ -122,7 +122,7 @@ export default function EmptyDataState({
   
   // Determine organization size for context-aware messaging
   const isLargeOrg = currentTenant?.plan === 'enterprise' || currentTenant?.plan === 'professional';
-  const isSmallOrg = currentTenant?.plan === 'free' || currentTenant?.plan === 'starter';
+  const isSmallOrg = currentTenant?.plan === 'free';
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">

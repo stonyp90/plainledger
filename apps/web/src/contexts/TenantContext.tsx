@@ -8,7 +8,7 @@ export interface Tenant {
   slug: string;
   logo?: string;
   primaryColor?: string;
-  plan: 'free' | 'starter' | 'professional' | 'enterprise';
+  plan: 'free' | 'professional' | 'enterprise';
   status: 'active' | 'suspended';
   createdAt: string;
   settings: TenantSettings;
@@ -209,9 +209,9 @@ const DEFAULT_SETTINGS: TenantSettings = {
 };
 
 // Plan-based limits
+// Note: Free tier has 0 connections - cannot connect datasources
 const PLAN_LIMITS: Record<Tenant['plan'], Omit<TenantLimits, 'currentUsage'>> = {
-  free: { users: 1, connections: 1, reports: 5, storage: 100, apiCalls: 100 },
-  starter: { users: 3, connections: 3, reports: 25, storage: 1000, apiCalls: 1000 },
+  free: { users: 1, connections: 0, reports: 5, storage: 100, apiCalls: 100 },
   professional: { users: 10, connections: 10, reports: 100, storage: 10000, apiCalls: 10000 },
   enterprise: { users: -1, connections: -1, reports: -1, storage: -1, apiCalls: -1 }, // Unlimited
 };
@@ -222,17 +222,6 @@ const STORAGE_KEY = 'plainledger-current-tenant';
 // Feature settings for different plans
 // Note: decisionCapture is always false by default - must be manually enabled per org
 const FREE_FEATURES: TenantSettings['features'] = {
-  powerBI: false,
-  aiInsights: false,
-  customReports: false,
-  apiAccess: false,
-  auditLogs: false,
-  webhooks: false,
-  sso: false,
-  decisionCapture: false,
-};
-
-const STARTER_FEATURES: TenantSettings['features'] = {
   powerBI: false,
   aiInsights: false,
   customReports: false,
@@ -300,23 +289,6 @@ const MOCK_TENANTS: Tenant[] = [
     members: 1,
     role: 'owner',
     industry: 'real_estate',  // Match seeded QuickBooks data industry
-    region: 'canada',
-  },
-  {
-    id: 'tenant-2',
-    name: 'Acme Inc.',
-    slug: 'acme-inc',
-    plan: 'starter',
-    status: 'active',
-    createdAt: '2025-01-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: STARTER_FEATURES, currency: 'USD' },
-    limits: {
-      ...PLAN_LIMITS.starter,
-      currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 150 },
-    },
-    members: 1,
-    role: 'admin',
-    industry: 'retail',
     region: 'canada',
   },
   {

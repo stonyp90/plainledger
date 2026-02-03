@@ -253,8 +253,11 @@ export default function FullScreenChart({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col"
-      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
+      className="fixed inset-0 flex flex-col"
+      style={{ 
+        backgroundColor: 'rgb(var(--color-bg))',
+        zIndex: 9997, // Below toasts (9998) but above everything else
+      }}
     >
       {/* Header */}
       {showControls && (

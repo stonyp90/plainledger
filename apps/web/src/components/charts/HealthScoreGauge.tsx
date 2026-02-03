@@ -36,6 +36,8 @@ interface HealthScoreGaugeProps {
   anomalies?: AnomalySummary[];
   // Industry info
   industry?: { id?: string; name: string; nameEn: string };
+  // Whether to show industry-specific KPI metrics (default: false)
+  showIndustryMetrics?: boolean;
 }
 
 // Industry-specific KPI metrics with ROI focus
@@ -746,13 +748,16 @@ export default function HealthScoreGauge({
   topRisks,
   anomalies,
   industry,
+  showIndustryMetrics = false,
 }: HealthScoreGaugeProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
 
-  // Use provided metrics or defaults based on industry
-  const displayMetrics = metrics || getDefaultMetrics(isEn, industry?.id);
+  // Use provided metrics or defaults based on industry (only if showIndustryMetrics is true)
+  const displayMetrics = showIndustryMetrics 
+    ? (metrics || getDefaultMetrics(isEn, industry?.id))
+    : (metrics || []);
 
   // Calculate an adjusted score if score is 0 but we have metrics
   const adjustedScore = useMemo(() => {

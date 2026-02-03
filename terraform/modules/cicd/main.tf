@@ -68,6 +68,26 @@ resource "aws_ecr_repository" "keycloak" {
   }
 }
 
+resource "aws_ecr_repository" "admin" {
+  name                 = "${var.project}-${var.environment}-admin"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = var.kms_key_arn
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-admin"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
 # ECR Lifecycle Policies
 resource "aws_ecr_lifecycle_policy" "web" {
   repository = aws_ecr_repository.web.name
@@ -111,6 +131,11 @@ resource "aws_ecr_lifecycle_policy" "api" {
 
 resource "aws_ecr_lifecycle_policy" "keycloak" {
   repository = aws_ecr_repository.keycloak.name
+  policy     = aws_ecr_lifecycle_policy.web.policy
+}
+
+resource "aws_ecr_lifecycle_policy" "admin" {
+  repository = aws_ecr_repository.admin.name
   policy     = aws_ecr_lifecycle_policy.web.policy
 }
 
@@ -192,7 +217,8 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Resource = [
           aws_ecr_repository.web.arn,
           aws_ecr_repository.api.arn,
-          aws_ecr_repository.keycloak.arn
+          aws_ecr_repository.keycloak.arn,
+          aws_ecr_repository.admin.arn
         ]
       }
     ]

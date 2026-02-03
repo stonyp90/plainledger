@@ -936,7 +936,7 @@ export default function SmartSpreadsheet() {
           <div className="flex items-center gap-2 mb-2">
             <Bot className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
             <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Ask James for formula help' : 'Demander l\'aide de James pour les formules'}
+              {isEn ? 'Ask AI for formula help' : 'Demander l\'aide de l\'IA pour les formules'}
             </span>
           </div>
           <div className="flex gap-2">

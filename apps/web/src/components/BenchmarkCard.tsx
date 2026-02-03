@@ -7,14 +7,11 @@
 
 import React, { ReactNode } from 'react';
 import {
-  TrendingUp,
-  TrendingDown,
   Minus,
   AlertCircle,
   CheckCircle,
-  Info,
 } from 'lucide-react';
-import { Tooltip, LabelTooltip } from './Tooltip';
+import { LabelTooltip } from './Tooltip';
 import { useI18n } from '../lib/i18n';
 
 interface QuartileData {
@@ -155,11 +152,6 @@ export default function BenchmarkCard({
                 {title}
               </h3>
             </LabelTooltip>
-            {description && (
-              <Tooltip content={description}>
-                <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 cursor-help inline-block ml-1 flex-shrink-0" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              </Tooltip>
-            )}
           </div>
         </div>
         {hasUserValue && (

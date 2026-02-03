@@ -33,6 +33,16 @@ output "ecr_keycloak_repository_arn" {
   value       = aws_ecr_repository.keycloak.arn
 }
 
+output "ecr_admin_repository_url" {
+  description = "ECR repository URL for admin console"
+  value       = aws_ecr_repository.admin.repository_url
+}
+
+output "ecr_admin_repository_arn" {
+  description = "ECR repository ARN for admin console"
+  value       = aws_ecr_repository.admin.arn
+}
+
 # GitHub OIDC
 output "github_oidc_provider_arn" {
   description = "GitHub OIDC provider ARN"

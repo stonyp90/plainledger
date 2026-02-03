@@ -95,6 +95,17 @@ resource "aws_cloudwatch_log_group" "keycloak" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "admin" {
+  name              = "/aws/ecs/${var.project}-${var.environment}/admin"
+  retention_in_days = 30
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-admin-logs"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
 # ------------------------------------------------------------------------------
 # IAM Roles
 # ------------------------------------------------------------------------------
@@ -494,6 +505,30 @@ resource "aws_lb_listener_rule" "keycloak_host" {
   }
 }
 
+# Admin console host-based routing (admin.${domain_name})
+resource "aws_lb_listener_rule" "admin_host" {
+  count        = var.acm_certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 40
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.admin.arn
+  }
+
+  condition {
+    host_header {
+      values = ["admin.${var.domain_name}"]
+    }
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-admin-host-rule"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
 # ------------------------------------------------------------------------------
 # Target Groups
 # ------------------------------------------------------------------------------
@@ -564,6 +599,30 @@ resource "aws_lb_target_group" "keycloak" {
 
   tags = {
     Name        = "${var.project}-${var.environment}-keycloak"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
+resource "aws_lb_target_group" "admin" {
+  name        = "${var.project}-${var.environment}-admin"
+  port        = 3001
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    path                = "/"
+    matcher             = "200-399"
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-admin"
     Project     = var.project
     Environment = var.environment
   }
@@ -864,6 +923,56 @@ resource "aws_ecs_task_definition" "keycloak" {
   }
 }
 
+# Admin Console Task Definition
+resource "aws_ecs_task_definition" "admin" {
+  family                   = "${var.project}-${var.environment}-admin"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = var.admin_cpu
+  memory                   = var.admin_memory
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "admin"
+      image     = "${var.ecr_admin_repository_url}:latest"
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = 3001
+          protocol      = "tcp"
+        }
+      ]
+
+      environment = [
+        { name = "NODE_ENV", value = "production" },
+        { name = "PORT", value = "3001" },
+        { name = "NEXT_PUBLIC_API_URL", value = "https://${var.domain_name}" },
+        { name = "NEXT_PUBLIC_KEYCLOAK_URL", value = "https://auth.${var.domain_name}" },
+        { name = "NEXT_PUBLIC_KEYCLOAK_REALM", value = "plainledger" },
+        { name = "NEXT_PUBLIC_KEYCLOAK_CLIENT_ID", value = "plainledger-admin" }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.admin.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "admin"
+        }
+      }
+    }
+  ])
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-admin"
+    Project     = var.project
+    Environment = var.environment
+  }
+}
+
 # ------------------------------------------------------------------------------
 # ECS Services
 # ------------------------------------------------------------------------------
@@ -981,6 +1090,44 @@ resource "aws_ecs_service" "keycloak" {
   }
 }
 
+resource "aws_ecs_service" "admin" {
+  name                              = "${var.project}-${var.environment}-admin"
+  cluster                           = aws_ecs_cluster.main.id
+  task_definition                   = aws_ecs_task_definition.admin.arn
+  desired_count                     = var.admin_desired_count
+  launch_type                       = "FARGATE"
+  platform_version                  = "LATEST"
+  health_check_grace_period_seconds = 60
+  enable_execute_command            = true
+
+  network_configuration {
+    subnets          = var.private_subnet_ids
+    security_groups  = [var.ecs_security_group_id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.admin.arn
+    container_name   = "admin"
+    container_port   = 3001
+  }
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  tags = {
+    Name        = "${var.project}-${var.environment}-admin"
+    Project     = var.project
+    Environment = var.environment
+  }
+
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+}
+
 # ------------------------------------------------------------------------------
 # Auto Scaling
 # ------------------------------------------------------------------------------
@@ -1034,6 +1181,32 @@ resource "aws_appautoscaling_policy" "api_cpu" {
   }
 }
 
+# Admin Console Auto Scaling
+resource "aws_appautoscaling_target" "admin" {
+  max_capacity       = var.admin_max_count
+  min_capacity       = var.admin_min_count
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.admin.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "admin_cpu" {
+  name               = "${var.project}-${var.environment}-admin-cpu"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.admin.resource_id
+  scalable_dimension = aws_appautoscaling_target.admin.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.admin.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
 # ------------------------------------------------------------------------------
 # Route53 Records
 # ------------------------------------------------------------------------------
@@ -1054,6 +1227,19 @@ resource "aws_route53_record" "www" {
   count   = var.create_route53_records ? 1 : 0
   zone_id = var.route53_zone_id
   name    = "www.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_route53_record" "admin" {
+  count   = var.create_route53_records ? 1 : 0
+  zone_id = var.route53_zone_id
+  name    = "admin.${var.domain_name}"
   type    = "A"
 
   alias {

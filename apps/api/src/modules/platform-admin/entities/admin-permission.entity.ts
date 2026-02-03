@@ -1,0 +1,33 @@
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  CreateDateColumn,
+  ManyToMany,
+} from 'typeorm';
+import { AdminGroupEntity } from './admin-group.entity';
+
+@Entity({ name: 'permissions', schema: 'platform' })
+export class AdminPermissionEntity {
+  @PrimaryColumn()
+  id: string; // e.g., 'org:view', 'user:delete'
+
+  @Column()
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column()
+  category: string; // org, user, billing, sync, support, config, admin, analytics
+
+  @Column({ name: 'is_dangerous', default: false })
+  isDangerous: boolean;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
+
+  // Many-to-many relationship with groups
+  @ManyToMany(() => AdminGroupEntity, (group) => group.permissions)
+  groups: AdminGroupEntity[];
+}

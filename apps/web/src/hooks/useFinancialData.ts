@@ -121,104 +121,49 @@ export function useFinancialData(options: {
   }, [dataSourcesQueryResult, dataSourcesLoading]);
 
   // Check if we should use mock/demo data
-  // IMPORTANT: 
-  // 1. If user has a real connection, ALWAYS use real data
-  // 2. Mock data is ONLY for free/starter tier users when no connection exists
-  // 3. Paid users (professional/enterprise) NEVER see mock data - they see empty states
+  // IMPORTANT BUSINESS RULES:
+  // 1. FREE users ALWAYS see demo data (cannot connect datasources)
+  // 2. PAID users (professional/enterprise) with connection see ONLY real data
+  // 3. PAID users WITHOUT connection see nothing (blocked by PaidNoConnectionGate)
   const shouldUseMockData = useMemo(() => {
-    // Wait for dataSources query to complete before deciding
-    // This prevents race condition where we skip queries before connection status is known
+    // Determine if user is on free tier - checked FIRST before connection status
+    const plan = currentTenant?.plan || 'free';
+    const isFreeUser = plan === 'free';
+    
+    // FREE USERS ALWAYS GET MOCK DATA - they cannot connect datasources
+    if (isFreeUser) {
+      console.log('[useFinancialData] FREE tier user - ALWAYS using demo data (cannot connect)', {
+        plan,
+        isDemoMode,
+      });
+      return true;
+    }
+    
+    // Wait for dataSources query to complete before deciding (for paid users only)
     if (dataSourcesLoading) {
       // While loading, assume we'll use real data to avoid skipping queries prematurely
       return false;
     }
     
-    // If we have a real connection, NEVER use mock data - always show real data
+    // PAID users with a real connection use real data
     if (hasRealConnection) {
-      console.log('[useFinancialData] Using REAL data - connection detected, ignoring free tier/demo mode', {
+      console.log('[useFinancialData] Using REAL data - paid user with connection', {
         hasConnection: true,
-        plan: currentTenant?.plan,
-        isDemoMode,
+        plan,
       });
       return false;
     }
     
-    // Determine if user is on free tier (free or starter plans)
-    const plan = currentTenant?.plan || 'free';
-    const isFreeUser = plan === 'free' || plan === 'starter';
-    
-    // In mock auth mode (local dev), allow paid users to fetch real data
-    // Free users get mock data, paid users try real data first
-    if (isMockAuthEnabled()) {
-      const testRealData = import.meta.env.VITE_TEST_REAL_DATA === 'true';
-      
-      // Paid users in mock auth mode: try real data first, fallback to mock if GraphQL fails
-      if (!isFreeUser) {
-        if (!hasLoggedMockAuth.current) {
-          console.log('[useFinancialData] Mock auth enabled - paid user, will try GraphQL first, fallback to mock if fails', {
-            hasConnection: hasRealConnection,
-            plan: currentTenant?.plan,
-            isDemoMode,
-          });
-          hasLoggedMockAuth.current = true;
-        }
-        // Don't skip queries - allow paid users to fetch real data
-        return false;
-      }
-      
-      if (testRealData) {
-        // In test mode, allow GraphQL queries to run even in mock auth mode
-        // This allows testing real S3 data connections
-        if (!hasLoggedMockAuth.current) {
-          console.log('[useFinancialData] Mock auth enabled but TEST_REAL_DATA=true - allowing GraphQL queries', {
-            hasConnection: hasRealConnection,
-            plan: currentTenant?.plan,
-            isDemoMode,
-          });
-          hasLoggedMockAuth.current = true;
-        }
-        // Don't skip queries - allow them to run and fetch from S3
-        return false;
-      }
-      
-      // Free users in mock auth mode: use mock data
-      // Only log once when mock auth is detected, not on every render
-      if (!hasLoggedMockAuth.current) {
-        console.log('[useFinancialData] Using mock/sandbox data - mock auth mode enabled (local dev), free user', {
-          hasConnection: false,
-          plan: currentTenant?.plan,
-          isDemoMode,
-        });
-        hasLoggedMockAuth.current = true;
-      }
-      return true;
-    }
-    
-    // PAID USERS (professional/enterprise) NEVER get mock data (unless free user in mock auth mode above)
-    if (!isFreeUser) {
-      console.log('[useFinancialData] Paid user detected - NOT using mock data, will show empty states', {
+    // PAID USERS WITHOUT CONNECTION - return false (they'll be blocked by PaidNoConnectionGate)
+    // This ensures they don't see mock data OR real data - they see the connection gate
+    if (!hasLoggedMockAuth.current) {
+      console.log('[useFinancialData] PAID user without connection - will be blocked by connection gate', {
         plan,
         hasConnection: false,
       });
-      return false;
+      hasLoggedMockAuth.current = true;
     }
-    
-    // Only use mock data if no connection AND free tier (free or starter)
-    // Demo mode is also allowed for free users
-    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
-    const useMock = isFreeUser && hasDemoModeEnabled;
-    
-    if (useMock) {
-      console.log('[useFinancialData] Using mock/sandbox data - free user, no connection, demo mode enabled', {
-        isFreeUser,
-        hasDemoModeEnabled,
-        plan: currentTenant?.plan,
-        isDemoMode,
-        hasConnection: false,
-      });
-    }
-    
-    return useMock;
+    return false;
   }, [dataSourcesLoading, hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
 
   // Fetch dashboard summary from GraphQL (no filter - use defaults)
@@ -684,22 +629,20 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
   }, [dataSourcesQueryResult, dataSourcesLoading]);
   
   // Check if we should use mock data
-  // IMPORTANT: Only free/starter users get mock data. Paid users see empty states.
+  // IMPORTANT: Free users ALWAYS get mock data. Paid users see real data or connection gate.
   const shouldUseMockData = useMemo(() => {
+    const plan = currentTenant?.plan || 'free';
+    const isFreeUser = plan === 'free';
+    
+    // FREE users ALWAYS get mock data - they cannot connect datasources
+    if (isFreeUser) return true;
+    
+    // Paid users with connection get real data
     if (hasRealConnection) return false;
     
-    const plan = currentTenant?.plan || 'free';
-    const isFreeUser = plan === 'free' || plan === 'starter';
-    
-    // Paid users never get mock data
-    if (!isFreeUser) return false;
-    
-    // In mock auth mode (local dev), always use mock data as fallback for free users
-    if (isMockAuthEnabled()) return true;
-    
-    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
-    return hasDemoModeEnabled;
-  }, [hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
+    // Paid users without connection - return false (blocked by connection gate)
+    return false;
+  }, [hasRealConnection, currentTenant?.plan]);
   
   const { 
     data: queryData, 
@@ -817,22 +760,20 @@ export function useIncomeStatement(startDate: string, endDate: string): UseIncom
   }, [dataSourcesQueryResult, dataSourcesLoading]);
   
   // Check if we should use mock data
-  // IMPORTANT: Only free/starter users get mock data. Paid users see empty states.
+  // IMPORTANT: Free users ALWAYS get mock data. Paid users see real data or connection gate.
   const shouldUseMockData = useMemo(() => {
+    const plan = currentTenant?.plan || 'free';
+    const isFreeUser = plan === 'free';
+    
+    // FREE users ALWAYS get mock data - they cannot connect datasources
+    if (isFreeUser) return true;
+    
+    // Paid users with connection get real data
     if (hasRealConnection) return false;
     
-    const plan = currentTenant?.plan || 'free';
-    const isFreeUser = plan === 'free' || plan === 'starter';
-    
-    // Paid users never get mock data
-    if (!isFreeUser) return false;
-    
-    // In mock auth mode (local dev), always use mock data as fallback for free users
-    if (isMockAuthEnabled()) return true;
-    
-    const hasDemoModeEnabled = currentTenant?.settings?.demoMode === true || isDemoMode;
-    return hasDemoModeEnabled;
-  }, [hasRealConnection, currentTenant?.plan, currentTenant?.settings?.demoMode, isDemoMode]);
+    // Paid users without connection - return false (blocked by connection gate)
+    return false;
+  }, [hasRealConnection, currentTenant?.plan]);
   
   const { 
     data: queryData, 

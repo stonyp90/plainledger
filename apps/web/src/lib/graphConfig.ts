@@ -103,6 +103,53 @@ export interface ChartVisualConfig {
 }
 
 // ============================================================================
+// TOOLTIP/HOVER CONFIGURATION
+// ============================================================================
+
+export type TooltipPosition = 'auto' | 'top' | 'bottom' | 'left' | 'right' | 'cursor';
+
+export interface TooltipConfig {
+  /** Enable tooltips on hover */
+  enabled: boolean;
+  /** Delay before tooltip appears (ms) */
+  delayShow: number;
+  /** Delay before tooltip hides (ms) */
+  delayHide: number;
+  /** Tooltip position relative to data point */
+  position: TooltipPosition;
+  /** Show current value in tooltip */
+  showValue: boolean;
+  /** Show label/period in tooltip */
+  showLabel: boolean;
+  /** Show comparison value (previous period/budget) in tooltip */
+  showComparison: boolean;
+  /** Show percentage change from comparison */
+  showPercentageChange: boolean;
+  /** Show trend indicator (up/down arrow) */
+  showTrendIndicator: boolean;
+  /** Show status badge (critical/warning/normal) */
+  showStatus: boolean;
+  /** Show moving average value */
+  showMovingAverage: boolean;
+  /** Show budget/target value */
+  showBudget: boolean;
+  /** Show category/grouping info */
+  showCategory: boolean;
+  /** Show cumulative total (for waterfall charts) */
+  showCumulative: boolean;
+  /** Show percentage of total */
+  showPercentOfTotal: boolean;
+  /** Highlight data point on hover */
+  highlightOnHover: boolean;
+  /** Show crosshair line on hover */
+  showCrosshair: boolean;
+  /** Animate tooltip appearance */
+  animate: boolean;
+  /** Tooltip theme */
+  theme: 'auto' | 'light' | 'dark';
+}
+
+// ============================================================================
 // ENTREPRENEUR-FOCUSED CONFIGURATION
 // ============================================================================
 
@@ -273,6 +320,19 @@ export interface IBCSConfig {
 }
 
 // ============================================================================
+// CHART LOCK CONFIGURATION
+// ============================================================================
+
+export interface ChartLockConfig {
+  /** Whether the chart is locked from modifications */
+  locked: boolean;
+  /** When the chart was locked (ISO timestamp) */
+  lockedAt?: string;
+  /** Who locked the chart (user ID) */
+  lockedBy?: string;
+}
+
+// ============================================================================
 // COMPREHENSIVE GRAPH CONFIGURATION
 // ============================================================================
 
@@ -285,6 +345,8 @@ export interface GraphConfig {
   display: DisplayConfig;
   /** Chart visualization */
   visual: ChartVisualConfig;
+  /** Tooltip/hover configuration */
+  tooltip: TooltipConfig;
   /** Entrepreneur-focused settings */
   entrepreneur: EntrepreneurConfig;
   /** CPA-focused settings */
@@ -297,6 +359,10 @@ export interface GraphConfig {
   ibcs?: IBCSConfig;
   /** Locale for formatting (e.g., 'en-CA', 'fr-CA') */
   locale?: string;
+  /** Chart lock configuration */
+  lock?: ChartLockConfig;
+  /** Last update timestamp for sync */
+  updatedAt?: string;
 }
 
 /**
@@ -544,10 +610,33 @@ export const DEFAULT_IBCS_CONFIG: IBCSConfig = {
   useSemanticColors: true,
 };
 
+export const DEFAULT_TOOLTIP_CONFIG: TooltipConfig = {
+  enabled: true,
+  delayShow: 150,
+  delayHide: 100,
+  position: 'auto',
+  showValue: true,
+  showLabel: true,
+  showComparison: true,
+  showPercentageChange: true,
+  showTrendIndicator: true,
+  showStatus: true,
+  showMovingAverage: false,
+  showBudget: true,
+  showCategory: true,
+  showCumulative: true,
+  showPercentOfTotal: false,
+  highlightOnHover: true,
+  showCrosshair: true,
+  animate: true,
+  theme: 'auto',
+};
+
 export const DEFAULT_GRAPH_CONFIG: GraphConfig = {
   period: DEFAULT_PERIOD_CONFIG,
   display: DEFAULT_DISPLAY_CONFIG,
   visual: DEFAULT_CHART_VISUAL_CONFIG,
+  tooltip: DEFAULT_TOOLTIP_CONFIG,
   entrepreneur: DEFAULT_ENTREPRENEUR_CONFIG,
   cpa: DEFAULT_CPA_CONFIG,
   waterfall: DEFAULT_WATERFALL_CONFIG,
@@ -589,6 +678,12 @@ export function mergeGraphConfig(
       ...orgSettings?.visual,
       ...userPreferences?.visual,
       ...chartOverrides?.visual,
+    },
+    tooltip: {
+      ...DEFAULT_TOOLTIP_CONFIG,
+      ...orgSettings?.tooltip,
+      ...userPreferences?.tooltip,
+      ...chartOverrides?.tooltip,
     },
     entrepreneur: {
       ...DEFAULT_ENTREPRENEUR_CONFIG,

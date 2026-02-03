@@ -12,6 +12,11 @@
  * 2. User global preferences
  * 3. Organization settings
  * 4. System defaults (with IBCS enforced)
+ * 
+ * Features:
+ * - Chart lock/unlock support
+ * - Batch sync to database
+ * - Conflict detection
  */
 
 import { useMemo, useCallback, useState, useEffect } from 'react';
@@ -23,7 +28,9 @@ import {
   type PartialGraphConfig,
   validateGraphConfig,
   type IBCSConfig,
+  type ChartLockConfig,
 } from '../lib/graphConfig';
+import { chartSettingsSync } from '../services/chartSettingsSync';
 
 const USER_PREFERENCES_KEY = 'plainledger-graph-preferences';
 const CHART_SETTINGS_KEY = 'plainledger-chart-settings';
@@ -172,10 +179,44 @@ export function saveUserPreferences(preferences: PartialGraphConfig): void {
 }
 
 /**
+ * Deep merge helper for nested objects
+ */
+function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+  const result = { ...target };
+  
+  for (const key in source) {
+    if (source[key] !== undefined) {
+      if (
+        typeof source[key] === 'object' && 
+        source[key] !== null && 
+        !Array.isArray(source[key]) &&
+        typeof target[key] === 'object' &&
+        target[key] !== null
+      ) {
+        // Recursively merge nested objects
+        result[key] = deepMerge(target[key], source[key] as any);
+      } else {
+        result[key] = source[key] as any;
+      }
+    }
+  }
+  
+  return result;
+}
+
+/**
  * Save per-chart settings to localStorage with debouncing
+ * Properly merges with existing settings for the specific chart
  */
 export function saveChartSettings(chartId: string, settings: PartialGraphConfig): void {
   if (typeof window === 'undefined' || !chartId) return;
+  
+  // Check if chart is locked
+  const existing = getAllChartSettings();
+  if (existing[chartId]?.lock?.locked) {
+    console.warn(`Chart ${chartId} is locked. Cannot save settings.`);
+    return;
+  }
   
   // Clear existing debounce timer
   if (saveChartSettingsTimer) {
@@ -184,18 +225,27 @@ export function saveChartSettings(chartId: string, settings: PartialGraphConfig)
   
   saveChartSettingsTimer = setTimeout(() => {
     try {
-      const existing = getAllChartSettings();
+      const existingChartSettings = existing[chartId] || {};
+      
+      // Deep merge the new settings with existing chart settings
+      const mergedChartSettings = deepMerge(existingChartSettings as Record<string, any>, settings as Record<string, any>);
+      
+      // Add timestamp for sync
+      mergedChartSettings.updatedAt = new Date().toISOString();
+      
       const storedData: StoredChartSettings = {
         version: PREFERENCES_VERSION,
         charts: {
           ...existing,
-          [chartId]: settings,
+          [chartId]: mergedChartSettings,
         },
         updatedAt: new Date().toISOString(),
       };
       localStorage.setItem(CHART_SETTINGS_KEY, JSON.stringify(storedData));
       // Notify all hooks to re-read config
       notifyConfigChange();
+      // Mark pending changes for sync
+      chartSettingsSync.markPendingChanges();
     } catch (error) {
       if (error instanceof Error && error.name === 'QuotaExceededError') {
         console.error('localStorage quota exceeded.');
@@ -322,7 +372,12 @@ export function useGraphConfig(
       ? { ...chartOverrides, ...chartSettings }
       : chartOverrides;
     
-    const config = mergeGraphConfig(mergedChartOverrides, userPreferences, orgSettings);
+    // Cast to Partial<GraphConfig> as mergeGraphConfig handles nested merging internally
+    const config = mergeGraphConfig(
+      mergedChartOverrides as Partial<GraphConfig> | undefined, 
+      userPreferences as Partial<GraphConfig> | undefined, 
+      orgSettings as Partial<GraphConfig> | undefined
+    );
     
     // Enforce IBCS as industry standard
     return enforceIBCS(config);
@@ -372,4 +427,203 @@ export function getIBCSConfig(chartId?: string): IBCSConfig {
     ...chartSettings?.ibcs,
     enabled: true, // Always enforced
   };
+}
+
+// ============================================================================
+// CHART LOCK/UNLOCK FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if a chart is locked
+ */
+export function isChartLocked(chartId: string): boolean {
+  if (typeof window === 'undefined' || !chartId) return false;
+  
+  const chartSettings = getChartSettings(chartId);
+  return chartSettings?.lock?.locked === true;
+}
+
+/**
+ * Get lock info for a chart
+ */
+export function getChartLockInfo(chartId: string): Partial<ChartLockConfig> | undefined {
+  if (typeof window === 'undefined' || !chartId) return undefined;
+  
+  const chartSettings = getChartSettings(chartId);
+  return chartSettings?.lock;
+}
+
+/**
+ * Lock a chart (prevents modifications to settings, position, resize, delete)
+ * Also syncs to server immediately
+ */
+export async function lockChart(chartId: string): Promise<boolean> {
+  if (typeof window === 'undefined' || !chartId) return false;
+  
+  try {
+    const existing = getAllChartSettings();
+    const lockedAt = new Date().toISOString();
+    
+    const storedData: StoredChartSettings = {
+      version: PREFERENCES_VERSION,
+      charts: {
+        ...existing,
+        [chartId]: {
+          ...existing[chartId],
+          lock: {
+            locked: true,
+            lockedAt,
+          },
+          updatedAt: lockedAt,
+        },
+      },
+      updatedAt: lockedAt,
+    };
+    
+    localStorage.setItem(CHART_SETTINGS_KEY, JSON.stringify(storedData));
+    notifyConfigChange();
+    
+    // Sync to server immediately
+    const serverSuccess = await chartSettingsSync.lockChart(chartId);
+    if (!serverSuccess) {
+      console.warn('Failed to sync lock to server, will retry on next sync');
+      chartSettingsSync.markPendingChanges();
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to lock chart:', error);
+    return false;
+  }
+}
+
+/**
+ * Unlock a chart (allows modifications)
+ * Also syncs to server immediately
+ */
+export async function unlockChart(chartId: string): Promise<boolean> {
+  if (typeof window === 'undefined' || !chartId) return false;
+  
+  try {
+    const existing = getAllChartSettings();
+    const updatedAt = new Date().toISOString();
+    
+    const storedData: StoredChartSettings = {
+      version: PREFERENCES_VERSION,
+      charts: {
+        ...existing,
+        [chartId]: {
+          ...existing[chartId],
+          lock: {
+            locked: false,
+            lockedAt: undefined,
+          },
+          updatedAt,
+        },
+      },
+      updatedAt,
+    };
+    
+    localStorage.setItem(CHART_SETTINGS_KEY, JSON.stringify(storedData));
+    notifyConfigChange();
+    
+    // Sync to server immediately
+    const serverSuccess = await chartSettingsSync.unlockChart(chartId);
+    if (!serverSuccess) {
+      console.warn('Failed to sync unlock to server, will retry on next sync');
+      chartSettingsSync.markPendingChanges();
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to unlock chart:', error);
+    return false;
+  }
+}
+
+/**
+ * Toggle chart lock state
+ */
+export async function toggleChartLock(chartId: string): Promise<boolean> {
+  const isLocked = isChartLocked(chartId);
+  if (isLocked) {
+    return unlockChart(chartId);
+  } else {
+    return lockChart(chartId);
+  }
+}
+
+/**
+ * Hook to manage chart lock state
+ */
+export function useChartLock(chartId: string) {
+  const config = useGraphConfig(chartId);
+  const [isLocking, setIsLocking] = useState(false);
+  
+  const locked = config.lock?.locked ?? false;
+  const lockedAt = config.lock?.lockedAt;
+  
+  const lock = useCallback(async () => {
+    setIsLocking(true);
+    try {
+      await lockChart(chartId);
+    } finally {
+      setIsLocking(false);
+    }
+  }, [chartId]);
+  
+  const unlock = useCallback(async () => {
+    setIsLocking(true);
+    try {
+      await unlockChart(chartId);
+    } finally {
+      setIsLocking(false);
+    }
+  }, [chartId]);
+  
+  const toggle = useCallback(async () => {
+    setIsLocking(true);
+    try {
+      await toggleChartLock(chartId);
+    } finally {
+      setIsLocking(false);
+    }
+  }, [chartId]);
+  
+  return {
+    locked,
+    lockedAt,
+    isLocking,
+    lock,
+    unlock,
+    toggle,
+  };
+}
+
+// ============================================================================
+// SYNC INITIALIZATION HOOK
+// ============================================================================
+
+/**
+ * Hook to initialize the settings sync service
+ * Should be called once at app root level
+ */
+export function useSettingsSyncInit(
+  graphqlEndpoint: string,
+  getAuthToken: () => Promise<string | null>
+) {
+  useEffect(() => {
+    chartSettingsSync.initialize(graphqlEndpoint, getAuthToken);
+    
+    // Listen for sync events to refresh config
+    const handleSync = () => {
+      notifyConfigChange();
+    };
+    
+    window.addEventListener('plainledger-settings-sync', handleSync);
+    
+    return () => {
+      window.removeEventListener('plainledger-settings-sync', handleSync);
+    };
+  }, [graphqlEndpoint, getAuthToken]);
 }

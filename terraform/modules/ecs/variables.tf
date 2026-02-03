@@ -239,3 +239,39 @@ variable "keycloak_desired_count" {
   type        = number
   default     = 2
 }
+
+# Admin Console Service
+variable "admin_cpu" {
+  description = "CPU units for admin task"
+  type        = number
+  default     = 256
+}
+
+variable "admin_memory" {
+  description = "Memory for admin task"
+  type        = number
+  default     = 512
+}
+
+variable "admin_desired_count" {
+  description = "Desired count for admin service"
+  type        = number
+  default     = 1
+}
+
+variable "admin_min_count" {
+  description = "Minimum count for admin service"
+  type        = number
+  default     = 1
+}
+
+variable "admin_max_count" {
+  description = "Maximum count for admin service"
+  type        = number
+  default     = 4
+}
+
+variable "ecr_admin_repository_url" {
+  description = "ECR repository URL for admin console"
+  type        = string
+}

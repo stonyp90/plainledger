@@ -3,8 +3,8 @@
  * Manages feature access based on subscription tier
  */
 
-// Subscription tiers
-export type SubscriptionTier = 'free' | 'starter' | 'professional' | 'enterprise';
+// Subscription tiers (simplified - no starter tier)
+export type SubscriptionTier = 'free' | 'professional' | 'enterprise';
 
 // Feature flags
 export interface Entitlements {
@@ -81,14 +81,14 @@ export interface Entitlements {
 // Tier configurations
 const tierEntitlements: Record<SubscriptionTier, Entitlements> = {
   free: {
-    maxDataSources: 1,
+    maxDataSources: 0, // Free users cannot connect datasources
     dataSources: {
-      quickbooks: true,
+      quickbooks: false, // Requires upgrade to connect
       xero: false,
       sage: false,
       freshbooks: false,
       wave: false,
-      csv: true,
+      csv: false,
     },
     maxReportsPerMonth: 5,
     reportTypes: {
@@ -125,62 +125,6 @@ const tierEntitlements: Record<SubscriptionTier, Entitlements> = {
     },
     support: {
       level: 'community',
-      sla: false,
-      slaDays: 0,
-    },
-    branding: {
-      customLogo: false,
-      customColors: false,
-      customDomain: false,
-      removeWatermark: false,
-    },
-  },
-  
-  starter: {
-    maxDataSources: 2,
-    dataSources: {
-      quickbooks: true,
-      xero: true,
-      sage: false,
-      freshbooks: false,
-      wave: false,
-      csv: true,
-    },
-    maxReportsPerMonth: 25,
-    reportTypes: {
-      balanceSheet: true,
-      incomeStatement: true,
-      cashFlow: true,
-      customReports: false,
-    },
-    anomalyDetection: true,
-    powerBI: {
-      enabled: true,
-      embedded: false,
-      whiteLabel: false,
-      customThemes: false,
-      maxDashboards: 3,
-    },
-    dataLake: {
-      enabled: true,
-      maxStorageGB: 5,
-      queryAccess: false,
-      aiInsights: false,
-    },
-    security: {
-      sso: false,
-      mfa: true,
-      auditLogs: true,
-      dataRetentionDays: 90,
-      customRoles: false,
-    },
-    api: {
-      enabled: true,
-      rateLimit: 100,
-      webhooks: false,
-    },
-    support: {
-      level: 'email',
       sla: false,
       slaDays: 0,
     },

@@ -353,6 +353,10 @@ jobs:
             ecr_repo: plainledger-prod-keycloak
             dockerfile: keycloak/Dockerfile
             context: keycloak
+          - name: admin
+            ecr_repo: plainledger-prod-admin
+            dockerfile: apps/admin/Dockerfile
+            context: apps/admin
     outputs:
       image_tag: ${{ github.sha }}
     steps:
@@ -478,6 +482,31 @@ jobs:
           echo "revision=$NEW_REVISION" >> $GITHUB_OUTPUT
           echo "✅ Registered new Keycloak task definition revision: $NEW_REVISION"
 
+      - name: Update Admin Console task definition with specific image tag
+        id: update-admin-task
+        if: ${{ github.event.inputs.deploy_api_only != 'true' }}
+        run: |
+          echo "🔄 Updating Admin Console task definition to use commit SHA: ${{ github.sha }}"
+
+          # Get current task definition (may not exist yet)
+          TASK_DEF=$(aws ecs describe-task-definition --task-definition plainledger-prod-admin --query 'taskDefinition' --output json 2>/dev/null || echo "")
+
+          if [ -n "$TASK_DEF" ]; then
+            # Update image to use specific commit SHA tag
+            NEW_TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "${{ steps.ecr-registry.outputs.registry }}/plainledger-prod-admin:${{ github.sha }}" \
+              'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) | 
+               .containerDefinitions[0].image = $IMAGE')
+
+            # Register new task definition
+            echo "$NEW_TASK_DEF" > /tmp/admin-task-def.json
+            NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file:///tmp/admin-task-def.json --query 'taskDefinition.revision' --output text)
+            echo "revision=$NEW_REVISION" >> $GITHUB_OUTPUT
+            echo "✅ Registered new Admin Console task definition revision: $NEW_REVISION"
+          else
+            echo "ℹ️ Admin Console task definition not found - infrastructure needs to be deployed first"
+            echo "revision=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy API service
         run: |
           echo "🚀 Deploying API service with task definition revision ${{ steps.update-api-task.outputs.revision }}..."
@@ -509,6 +538,17 @@ jobs:
             --task-definition plainledger-prod-keycloak:${{ steps.update-keycloak-task.outputs.revision }} \
             --force-new-deployment \
             --no-cli-pager || echo "⚠️ Keycloak service not found - infrastructure may need to be deployed first"
+
+      - name: Deploy Admin Console service
+        if: ${{ github.event.inputs.deploy_api_only != 'true' && steps.update-admin-task.outputs.revision != '' }}
+        run: |
+          echo "🚀 Deploying Admin Console service with task definition revision ${{ steps.update-admin-task.outputs.revision }}..."
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service plainledger-prod-admin \
+            --task-definition plainledger-prod-admin:${{ steps.update-admin-task.outputs.revision }} \
+            --force-new-deployment \
+            --no-cli-pager || echo "⚠️ Admin Console service not found - infrastructure may need to be deployed first"
 
       - name: Clear CloudFront Cache (if exists)
         run: |
@@ -652,7 +692,8 @@ jobs:
           echo "| Web | ✅ Deployed | https://plainledger.ca |" >> $GITHUB_STEP_SUMMARY
           echo "| REST API | ✅ Deployed | https://plainledger.ca/api |" >> $GITHUB_STEP_SUMMARY
           echo "| GraphQL API | ✅ Deployed | https://plainledger.ca/graphql |" >> $GITHUB_STEP_SUMMARY
-          echo "| Keycloak | ✅ Deployed | https://plainledger.ca/realms/plainledger |" >> $GITHUB_STEP_SUMMARY
+          echo "| Keycloak | ✅ Deployed | https://auth.plainledger.ca |" >> $GITHUB_STEP_SUMMARY
+          echo "| Admin Console | ✅ Deployed | https://admin.plainledger.ca |" >> $GITHUB_STEP_SUMMARY
           echo "| Power BI Data | ✅ Deployed | https://plainledger.ca/api/v1/analytics/data |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### GraphQL Features" >> $GITHUB_STEP_SUMMARY

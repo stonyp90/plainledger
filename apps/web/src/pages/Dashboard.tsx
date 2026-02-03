@@ -28,7 +28,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tooltip, ActionTooltip } from '../components/Tooltip';
-import { TrendChart, WaterfallChart } from '../components/charts';
+import { TrendChart, WaterfallChart, CurrentRatioCard, QuickRatioCard, DebtToEquityCard } from '../components/charts';
+import type { IndustryType } from '../components/charts';
 import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
 import KPICard from '../components/KPICard';
 import MetricCard from '../components/MetricCard';
@@ -42,6 +43,7 @@ import {
 import AIQueryAssistant from '../components/AIQueryAssistant';
 import DecisionCapture from '../components/DecisionCapture';
 import PremiumFeatureGate, { usePremiumFeature } from '../components/PremiumFeatureGate';
+import PaidNoConnectionGate from '../components/PaidNoConnectionGate';
 import DemoBanner from '../components/DemoBanner';
 import DemoSignupWelcome from '../components/DemoSignupWelcome';
 import { useTenant } from '../contexts/TenantContext';
@@ -51,6 +53,7 @@ import { useAuth } from '../lib/keycloak';
 import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
 import { 
   runFullAnalysis, 
   DEFAULT_THRESHOLDS,
@@ -162,6 +165,22 @@ export default function Dashboard() {
     }
   }, [isDemoSignupUser, isDemoMode, enableDemoMode]);
   
+  // Account data access rules - determines what data the user can see
+  const { 
+    shouldBlockUI, 
+    isFreeUser, 
+    isPaidUser, 
+    hasConnection,
+    showEnterpriseCTA,
+    isLoading: accessLoading,
+  } = useAccountDataAccess();
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  // They must connect before seeing any data
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="dashboard" />;
+  }
+  
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
   
@@ -211,6 +230,49 @@ export default function Dashboard() {
         return data; // All 12 months
     }
   };
+
+  // Calculate available data points to determine which period options to show
+  const availableDataPoints = useMemo(() => {
+    if (!financialData) return 0;
+    const revenuePoints = financialData.trends?.revenue?.data?.length ?? 0;
+    const cashFlowPoints = financialData.trends?.cashFlow?.data?.length ?? 0;
+    // Use the max of available trend data to determine period options
+    return Math.max(revenuePoints, cashFlowPoints);
+  }, [financialData]);
+
+  // Determine which periods have enough data to be shown
+  // MTD needs at least 2 points, QTD needs at least 3, YTD works with any data
+  const availablePeriods = useMemo(() => {
+    const periods: { id: string; label: string; minDataPoints: number }[] = [];
+    
+    // MTD always available if we have at least 2 data points
+    if (availableDataPoints >= 2) {
+      periods.push({ id: 'mtd', label: t('dashboard.period.month'), minDataPoints: 2 });
+    }
+    
+    // QTD available if we have at least 3 data points
+    if (availableDataPoints >= 3) {
+      periods.push({ id: 'qtd', label: t('dashboard.period.quarter'), minDataPoints: 3 });
+    }
+    
+    // YTD available if we have more than 3 months (otherwise same as QTD)
+    if (availableDataPoints > 3) {
+      periods.push({ id: 'ytd', label: t('dashboard.period.year'), minDataPoints: 4 });
+    }
+    
+    return periods;
+  }, [availableDataPoints, t]);
+
+  // Auto-select a valid period if the current selection is no longer available
+  useEffect(() => {
+    if (availablePeriods.length === 0) return;
+    
+    const isCurrentPeriodAvailable = availablePeriods.some(p => p.id === selectedPeriod);
+    if (!isCurrentPeriodAvailable) {
+      // Select the first available period (MTD is preferred as it's most recent)
+      setSelectedPeriod(availablePeriods[0].id as 'mtd' | 'qtd' | 'ytd');
+    }
+  }, [availablePeriods, selectedPeriod]);
 
   // Get revenue trend data filtered by period
   const revenueData = useMemo(() => {
@@ -270,6 +332,18 @@ export default function Dashboard() {
     }
     return runFullAnalysis(accountsData, revenueData, DEFAULT_THRESHOLDS);
   }, [accountsData, revenueData]);
+
+  // Calculate financial ratios from financial data
+  const ratios = useMemo(() => {
+    if (!financialData?.metrics) {
+      return { currentRatio: 0, quickRatio: 0, debtToEquity: 0 };
+    }
+    return {
+      currentRatio: financialData.metrics?.currentRatio ?? 0,
+      quickRatio: financialData.metrics?.quickRatio ?? 0,
+      debtToEquity: financialData.metrics?.debtToEquity ?? 0,
+    };
+  }, [financialData]);
 
   // Decision capture state (moved before dashboardSections useMemo to avoid TDZ error)
   const [showDecisionCapture, setShowDecisionCapture] = useState(false);
@@ -365,13 +439,17 @@ export default function Dashboard() {
     const sections: DashboardSection[] = [];
     
     // Helper to wrap section component with DashboardWidgetWrapper
-    const wrapSection = (id: string, component: React.ReactNode): React.ReactNode => {
-      if (!canCustomize) {
+    // Shows controls even when locked, but disables drag/remove functionality
+    // Pass chartId for chart widgets to enable individual chart locking
+    const wrapSection = (id: string, component: React.ReactNode, chartId?: string): React.ReactNode => {
+      // Show wrapper if user has customize permission (even if currently locked)
+      if (!hasCustomizePermission) {
         return component;
       }
       return (
         <DashboardWidgetWrapper
           id={id}
+          chartId={chartId}
           onRemove={() => removeWidget(id)}
           onDragStart={handleDragStart(id)}
           onDragEnd={handleDragEnd}
@@ -380,6 +458,9 @@ export default function Dashboard() {
           canCustomize={canCustomize}
           isDragging={draggedWidgetId === id}
           isDragOver={dragOverWidgetId === id}
+          isDashboardLocked={isDashboardLocked}
+          onToggleLock={toggleDashboardLock}
+          hasCustomizePermission={hasCustomizePermission}
         >
           {component}
         </DashboardWidgetWrapper>
@@ -716,6 +797,34 @@ export default function Dashboard() {
           />
         )),
         priority: 3,
+        gridSpan: 'full',
+      });
+    }
+
+    // Financial Analysis Section - Financial Ratios (if has accounts data)
+    if (hasRealData && hasAccounts && isWidgetVisible('financial-analysis')) {
+      const selectedIndustry = (currentTenant?.industry || 'real_estate') as IndustryType;
+      sections.push({
+        id: 'financial-analysis',
+        component: wrapSection('financial-analysis', (
+          <div 
+            className="rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
+          >
+            <h3 className="text-sm sm:text-base lg:text-lg font-semibold mb-3 sm:mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn ? 'Financial Analysis' : 'Analyse financière'}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <CurrentRatioCard value={ratios.currentRatio} industry={selectedIndustry} isEn={isEn} />
+              <QuickRatioCard value={ratios.quickRatio} industry={selectedIndustry} isEn={isEn} />
+              <DebtToEquityCard value={ratios.debtToEquity} industry={selectedIndustry} isEn={isEn} />
+            </div>
+          </div>
+        )),
+        priority: 4,
         gridSpan: 'full',
       });
     }
@@ -1258,6 +1367,9 @@ export default function Dashboard() {
     financialData,
     t,
     canCustomize,
+    hasCustomizePermission,
+    isDashboardLocked,
+    toggleDashboardLock,
     isWidgetVisible,
     widgetConfigs,
     removeWidget,
@@ -1324,11 +1436,11 @@ export default function Dashboard() {
     );
   }
 
-  const periods = [
-    { id: 'mtd', label: t('dashboard.period.month') },
-    { id: 'qtd', label: t('dashboard.period.quarter') },
-    { id: 'ytd', label: t('dashboard.period.year') },
-  ];
+  // Use dynamically calculated available periods based on data points
+  // This hides period options that don't have enough data
+  const periods = availablePeriods.length > 0 
+    ? availablePeriods 
+    : [{ id: 'mtd', label: t('dashboard.period.month'), minDataPoints: 2 }]; // Fallback to MTD
 
   return (
     <div className="space-y-1.5 sm:space-y-2 lg:space-y-2.5" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
@@ -1372,13 +1484,28 @@ export default function Dashboard() {
               
               {/* Right side controls */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                {/* Period filter - themed dropdown */}
-                <PeriodFilter
-                  periods={periods}
-                  selectedPeriod={selectedPeriod}
-                  onSelectPeriod={(id) => setSelectedPeriod(id as 'mtd' | 'qtd' | 'ytd')}
-                  isEn={isEn}
-                />
+                {/* Period filter - themed dropdown (only show if multiple options available) */}
+                {periods.length > 1 ? (
+                  <PeriodFilter
+                    periods={periods}
+                    selectedPeriod={selectedPeriod}
+                    onSelectPeriod={(id) => setSelectedPeriod(id as 'mtd' | 'qtd' | 'ytd')}
+                    isEn={isEn}
+                  />
+                ) : periods.length === 1 && (
+                  // Show static label when only one period available
+                  <div 
+                    className="flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 rounded-lg text-xs font-medium"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-surface))',
+                      color: 'rgb(var(--color-text))',
+                      border: '1px solid rgb(var(--color-border))',
+                    }}
+                  >
+                    <Calendar className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    <span>{periods[0].label}</span>
+                  </div>
+                )}
                 
                 {/* Lock/Unlock Dashboard - Prevents move/delete on graphs */}
                 {hasCustomizePermission && (
@@ -1677,6 +1804,7 @@ export default function Dashboard() {
             onClose={() => setShowChartGallery(false)}
             onSelectChart={handleAddWidget}
             isEn={isEn}
+            // onBuildCustom not passed - will default to navigating to /app/visualizations
           />
 
           {/* Decision Capture Modal */}
@@ -1941,7 +2069,7 @@ function QuickAction({ to, icon, title, subtitle, hasAttention, isPrimary }: Qui
 // =====================================================
 
 interface PeriodFilterProps {
-  periods: { id: string; label: string }[];
+  periods: { id: string; label: string; minDataPoints?: number }[];
   selectedPeriod: string;
   onSelectPeriod: (id: string) => void;
   isEn: boolean;

@@ -11,9 +11,9 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Settings2, TrendingUp, FileText, Target, X, Globe, RotateCcw, Info, Check } from 'lucide-react';
-import { useGraphConfig, saveUserPreferences, saveChartSettings, clearChartSettings } from '../../hooks/useGraphConfig';
-import type { GraphConfig, PartialGraphConfig, IBCSConfig } from '../../lib/graphConfig';
+import { Settings2, TrendingUp, FileText, Target, X, Globe, RotateCcw, Info, Check, Calendar, Lock, Unlock, Loader2 } from 'lucide-react';
+import { useGraphConfig, saveUserPreferences, saveChartSettings, clearChartSettings, useChartLock } from '../../hooks/useGraphConfig';
+import type { GraphConfig, PartialGraphConfig, IBCSConfig, PeriodConfig } from '../../lib/graphConfig';
 import { useI18n } from '../../lib/i18n';
 
 interface GraphConfigPanelProps {
@@ -39,10 +39,13 @@ export default function GraphConfigPanel({
   const { language } = useI18n();
   const isEn = language === 'en';
   const defaultConfig = useGraphConfig(chartId);
-  const [activeTab, setActiveTab] = useState<'display' | 'entrepreneur' | 'cpa' | 'ibcs'>('ibcs');
+  const [activeTab, setActiveTab] = useState<'period' | 'display' | 'entrepreneur' | 'cpa' | 'ibcs'>('period');
   const [config, setConfig] = useState<Partial<GraphConfig>>(currentConfig || {});
   const [saveMode, setSaveMode] = useState<'chart' | 'global'>(chartId ? 'chart' : 'global');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  
+  // Chart lock state
+  const { locked, lockedAt, isLocking, toggle: toggleLock } = useChartLock(chartId || '');
   
   // Sync config state when currentConfig prop changes
   useEffect(() => {
@@ -52,6 +55,12 @@ export default function GraphConfigPanel({
   }, [currentConfig]);
   
   const handleConfigUpdate = (updates: Partial<GraphConfig>) => {
+    // Don't allow updates if chart is locked
+    if (chartId && locked) {
+      console.warn('Chart is locked. Cannot update settings.');
+      return;
+    }
+    
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
     onConfigChange?.(newConfig);
@@ -130,25 +139,68 @@ export default function GraphConfigPanel({
                   <Check className="w-3 h-3" />
                   IBCS {isEn ? 'enforced' : 'appliqué'}
                 </span>
+                {chartId && locked && (
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning">
+                    <Lock className="w-3 h-3" />
+                    {isEn ? 'Locked' : 'Verrouillé'}
+                  </span>
+                )}
               </div>
             </div>
           </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
-              aria-label={isEn ? 'Close' : 'Fermer'}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Lock/Unlock Button */}
+            {chartId && (
+              <button
+                onClick={toggleLock}
+                disabled={isLocking}
+                className={`p-2 rounded-lg transition-colors ${
+                  locked 
+                    ? 'bg-warning/10 text-warning hover:bg-warning/20' 
+                    : 'hover:bg-surface-hover text-muted hover:text-text'
+                }`}
+                title={locked 
+                  ? (isEn ? 'Unlock chart (allow modifications)' : 'Déverrouiller le graphique')
+                  : (isEn ? 'Lock chart (prevent modifications)' : 'Verrouiller le graphique')
+                }
+              >
+                {isLocking ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : locked ? (
+                  <Lock className="w-5 h-5" />
+                ) : (
+                  <Unlock className="w-5 h-5" />
+                )}
+              </button>
+            )}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+                aria-label={isEn ? 'Close' : 'Fermer'}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
         
         {/* Tabs */}
-        <div className="flex border-b">
+        <div className="flex border-b overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('period')}
+            className={`px-4 py-2 text-sm font-medium flex items-center gap-1 whitespace-nowrap ${
+              activeTab === 'period'
+                ? 'border-b-2 border-primary text-primary'
+                : 'text-muted hover:text-text'
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            {isEn ? 'Period' : 'Période'}
+          </button>
           <button
             onClick={() => setActiveTab('display')}
-            className={`px-4 py-2 text-sm font-medium ${
+            className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
               activeTab === 'display'
                 ? 'border-b-2 border-primary text-primary'
                 : 'text-muted hover:text-text'
@@ -193,37 +245,86 @@ export default function GraphConfigPanel({
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {activeTab === 'display' && (
-            <DisplayConfigTab
-              config={effectiveConfig}
-              onUpdate={(updates) => handleConfigUpdate({ display: { ...effectiveConfig.display, ...updates } })}
-              isEn={isEn}
-            />
+          {/* Locked Warning Banner */}
+          {chartId && locked && (
+            <div className="flex items-start gap-3 p-4 mb-4 rounded-lg bg-warning/10 border border-warning/30">
+              <div className="p-2 rounded-full bg-warning/20">
+                <Lock className="w-5 h-5 text-warning" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-warning">
+                  {isEn ? 'Chart is Locked' : 'Graphique verrouillé'}
+                </h3>
+                <p className="text-sm text-muted mt-1">
+                  {isEn 
+                    ? 'This chart is locked and cannot be modified. Unlock it to make changes to settings, position, or size.'
+                    : 'Ce graphique est verrouillé et ne peut pas être modifié. Déverrouillez-le pour modifier les paramètres, la position ou la taille.'}
+                </p>
+                {lockedAt && (
+                  <p className="text-xs text-muted mt-2">
+                    {isEn ? 'Locked on: ' : 'Verrouillé le: '}
+                    {new Date(lockedAt).toLocaleString(isEn ? 'en-CA' : 'fr-CA')}
+                  </p>
+                )}
+                <button
+                  onClick={toggleLock}
+                  disabled={isLocking}
+                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-warning text-warning-foreground rounded-lg hover:bg-warning/90 transition-colors"
+                >
+                  {isLocking ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Unlock className="w-4 h-4" />
+                  )}
+                  {isEn ? 'Unlock Chart' : 'Déverrouiller'}
+                </button>
+              </div>
+            </div>
           )}
           
-          {activeTab === 'entrepreneur' && (
-            <EntrepreneurConfigTab
-              config={effectiveConfig}
-              onUpdate={(updates) => handleConfigUpdate({ entrepreneur: { ...effectiveConfig.entrepreneur, ...updates } })}
-              isEn={isEn}
-            />
-          )}
-          
-          {activeTab === 'cpa' && (
-            <CPAConfigTab
-              config={effectiveConfig}
-              onUpdate={(updates) => handleConfigUpdate({ cpa: { ...effectiveConfig.cpa, ...updates } })}
-              isEn={isEn}
-            />
-          )}
-          
-          {activeTab === 'ibcs' && (
-            <IBCSConfigTab
-              config={effectiveConfig}
-              onUpdate={(updates) => handleConfigUpdate({ ibcs: { ...effectiveConfig.ibcs, ...updates } })}
-              isEn={isEn}
-            />
-          )}
+          {/* Content wrapper - disabled when locked */}
+          <div className={chartId && locked ? 'opacity-50 pointer-events-none' : ''}>
+            {activeTab === 'period' && (
+              <PeriodConfigTab
+                config={effectiveConfig}
+                onUpdate={(updates) => handleConfigUpdate({ period: { ...effectiveConfig.period, ...updates } })}
+                isEn={isEn}
+                chartId={chartId}
+              />
+            )}
+            
+            {activeTab === 'display' && (
+              <DisplayConfigTab
+                config={effectiveConfig}
+                onUpdate={(updates) => handleConfigUpdate({ display: { ...effectiveConfig.display, ...updates } })}
+                isEn={isEn}
+              />
+            )}
+            
+            {activeTab === 'entrepreneur' && (
+              <EntrepreneurConfigTab
+                config={effectiveConfig}
+                onUpdate={(updates) => handleConfigUpdate({ entrepreneur: { ...effectiveConfig.entrepreneur, ...updates } })}
+                isEn={isEn}
+              />
+            )}
+            
+            {activeTab === 'cpa' && (
+              <CPAConfigTab
+                config={effectiveConfig}
+                onUpdate={(updates) => handleConfigUpdate({ cpa: { ...effectiveConfig.cpa, ...updates } })}
+                isEn={isEn}
+              />
+            )}
+            
+            {activeTab === 'ibcs' && (
+              <IBCSConfigTab
+                config={effectiveConfig}
+                onUpdate={(updates) => handleConfigUpdate({ ibcs: { ...effectiveConfig.ibcs, ...updates } })}
+                isEn={isEn}
+              />
+            )}
+          </div>
         </div>
         
         {/* Footer */}
@@ -282,6 +383,226 @@ export default function GraphConfigPanel({
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Period Configuration Tab
+ * 
+ * Allows users to set the date range for THIS SPECIFIC CHART.
+ * Settings are saved per-chart and do not affect other charts.
+ */
+function PeriodConfigTab({
+  config,
+  onUpdate,
+  isEn,
+  chartId,
+}: {
+  config: GraphConfig;
+  onUpdate: (updates: Partial<PeriodConfig>) => void;
+  isEn: boolean;
+  chartId?: string;
+}) {
+  const periodPresets = [
+    { id: 'mtd', label: 'Mois en cours', labelEn: 'Month to Date' },
+    { id: 'qtd', label: 'Trimestre en cours', labelEn: 'Quarter to Date' },
+    { id: 'ytd', label: 'Année en cours', labelEn: 'Year to Date' },
+    { id: 'last_month', label: 'Mois dernier', labelEn: 'Last Month' },
+    { id: 'last_quarter', label: 'Trimestre dernier', labelEn: 'Last Quarter' },
+    { id: 'last_year', label: 'Année dernière', labelEn: 'Last Year' },
+    { id: 'custom', label: 'Personnalisé', labelEn: 'Custom Range' },
+  ];
+
+  const comparisonModes = [
+    { id: 'none', label: 'Aucune', labelEn: 'None' },
+    { id: 'previousPeriod', label: 'Période précédente', labelEn: 'Previous Period' },
+    { id: 'previousYear', label: 'Année précédente', labelEn: 'Previous Year' },
+    { id: 'budget', label: 'Budget', labelEn: 'Budget' },
+    { id: 'forecast', label: 'Prévision', labelEn: 'Forecast' },
+    { id: 'benchmark', label: 'Benchmark', labelEn: 'Benchmark' },
+  ];
+
+  const aggregationLevels = [
+    { id: 'daily', label: 'Quotidien', labelEn: 'Daily' },
+    { id: 'weekly', label: 'Hebdomadaire', labelEn: 'Weekly' },
+    { id: 'monthly', label: 'Mensuel', labelEn: 'Monthly' },
+    { id: 'quarterly', label: 'Trimestriel', labelEn: 'Quarterly' },
+    { id: 'annual', label: 'Annuel', labelEn: 'Annual' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Per-chart notice */}
+      {chartId && (
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Calendar className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-medium text-primary">
+              {isEn ? 'Chart-Specific Date Filter' : 'Filtre de date spécifique au graphique'}
+            </h3>
+            <p className="text-sm text-muted mt-1">
+              {isEn 
+                ? 'These date settings apply ONLY to this chart and will not affect other charts on the dashboard.'
+                : 'Ces paramètres de date s\'appliquent UNIQUEMENT à ce graphique et n\'affecteront pas les autres graphiques du tableau de bord.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Period Preset */}
+      <div className="space-y-3">
+        <h3 className="font-medium flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          {isEn ? 'Time Period' : 'Période'}
+        </h3>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {periodPresets.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => onUpdate({ defaultPeriod: preset.id as any })}
+              className={`px-3 py-2 text-sm rounded-lg border transition-all ${
+                config.period.defaultPeriod === preset.id
+                  ? 'bg-primary/10 border-primary text-primary font-medium'
+                  : 'hover:bg-surface-hover border-border'
+              }`}
+            >
+              {isEn ? preset.labelEn : preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Custom Date Range (only shown when 'custom' is selected) */}
+      {config.period.defaultPeriod === 'custom' && (
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-dashed">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {isEn ? 'Start Date' : 'Date de début'}
+            </label>
+            <input
+              type="date"
+              value={config.period.customStartDate || ''}
+              onChange={(e) => onUpdate({ customStartDate: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg bg-surface"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {isEn ? 'End Date' : 'Date de fin'}
+            </label>
+            <input
+              type="date"
+              value={config.period.customEndDate || ''}
+              onChange={(e) => onUpdate({ customEndDate: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg bg-surface"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Comparison Mode */}
+      <div className="space-y-3">
+        <h3 className="font-medium">
+          {isEn ? 'Compare With' : 'Comparer avec'}
+        </h3>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {comparisonModes.map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => onUpdate({ comparisonMode: mode.id as any })}
+              className={`px-3 py-2 text-sm rounded-lg border transition-all ${
+                config.period.comparisonMode === mode.id
+                  ? 'bg-primary/10 border-primary text-primary font-medium'
+                  : 'hover:bg-surface-hover border-border'
+              }`}
+            >
+              {isEn ? mode.labelEn : mode.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Aggregation Level */}
+      <div className="space-y-3">
+        <h3 className="font-medium">
+          {isEn ? 'Data Aggregation' : 'Agrégation des données'}
+        </h3>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {aggregationLevels.map((level) => (
+            <button
+              key={level.id}
+              onClick={() => onUpdate({ aggregationLevel: level.id as any })}
+              className={`px-3 py-2 text-sm rounded-lg border transition-all ${
+                config.period.aggregationLevel === level.id
+                  ? 'bg-primary/10 border-primary text-primary font-medium'
+                  : 'hover:bg-surface-hover border-border'
+              }`}
+            >
+              {isEn ? level.labelEn : level.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-muted">
+          {isEn 
+            ? 'Choose how data points are grouped on this chart'
+            : 'Choisissez comment les points de données sont regroupés sur ce graphique'}
+        </p>
+      </div>
+
+      {/* Fiscal Year Settings */}
+      <div className="space-y-3">
+        <h3 className="font-medium">
+          {isEn ? 'Fiscal Year' : 'Année fiscale'}
+        </h3>
+        
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <label className="block text-sm mb-2">
+              {isEn ? 'Fiscal Year Start Month' : 'Mois de début de l\'année fiscale'}
+            </label>
+            <select
+              value={config.period.fiscalYearStartMonth}
+              onChange={(e) => onUpdate({ fiscalYearStartMonth: parseInt(e.target.value) })}
+              className="w-full px-3 py-2 border rounded-lg bg-surface"
+            >
+              {[
+                { value: 1, label: isEn ? 'January' : 'Janvier' },
+                { value: 2, label: isEn ? 'February' : 'Février' },
+                { value: 3, label: isEn ? 'March' : 'Mars' },
+                { value: 4, label: isEn ? 'April' : 'Avril' },
+                { value: 5, label: isEn ? 'May' : 'Mai' },
+                { value: 6, label: isEn ? 'June' : 'Juin' },
+                { value: 7, label: isEn ? 'July' : 'Juillet' },
+                { value: 8, label: isEn ? 'August' : 'Août' },
+                { value: 9, label: isEn ? 'September' : 'Septembre' },
+                { value: 10, label: isEn ? 'October' : 'Octobre' },
+                { value: 11, label: isEn ? 'November' : 'Novembre' },
+                { value: 12, label: isEn ? 'December' : 'Décembre' },
+              ].map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Help text */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-surface-hover">
+        <Info className="w-4 h-4 text-muted mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-muted">
+          {isEn 
+            ? 'Tip: Each chart can have its own date filter. This allows you to compare different time periods side by side on the same dashboard.'
+            : 'Astuce : Chaque graphique peut avoir son propre filtre de date. Cela vous permet de comparer différentes périodes côte à côte sur le même tableau de bord.'}
+        </p>
       </div>
     </div>
   );

@@ -10,20 +10,15 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- Add embedding columns to existing tables
 -- ============================================
 
--- Accounts table - for semantic search
-ALTER TABLE accounts ADD COLUMN IF NOT EXISTS embedding vector(1536);
-ALTER TABLE accounts ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(50);
-ALTER TABLE accounts ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
+-- Accounts table - for semantic search (in accounting schema)
+ALTER TABLE accounting.accounts ADD COLUMN IF NOT EXISTS embedding vector(1536);
+ALTER TABLE accounting.accounts ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(50);
+ALTER TABLE accounting.accounts ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
 
--- Transactions table - for semantic search
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS embedding vector(1536);
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(50);
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
-
--- Contacts table - for semantic search
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS embedding vector(1536);
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(50);
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
+-- Journal entries table - for semantic search (transactions are journal entries in this schema)
+ALTER TABLE accounting.journal_entries ADD COLUMN IF NOT EXISTS embedding vector(1536);
+ALTER TABLE accounting.journal_entries ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(50);
+ALTER TABLE accounting.journal_entries ADD COLUMN IF NOT EXISTS embedding_updated_at TIMESTAMPTZ;
 
 -- ============================================
 -- Create IVFFlat indexes for similarity search
@@ -67,7 +62,7 @@ BEGIN
     a.name AS account_name,
     a.account_type,
     1 - (a.embedding <=> query_embedding) AS similarity
-  FROM accounts a
+  FROM accounting.accounts a
   WHERE 
     a.organization_id = org_id
     AND a.embedding IS NOT NULL
@@ -77,8 +72,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Search for similar transactions
-CREATE OR REPLACE FUNCTION search_similar_transactions(
+-- Search for similar journal entries
+CREATE OR REPLACE FUNCTION search_similar_journal_entries(
   query_embedding vector(1536),
   org_id UUID,
   match_threshold FLOAT DEFAULT 0.5,
@@ -87,24 +82,24 @@ CREATE OR REPLACE FUNCTION search_similar_transactions(
 RETURNS TABLE (
   id UUID,
   description TEXT,
-  amount DECIMAL,
-  transaction_date DATE,
+  total_amount DECIMAL,
+  entry_date DATE,
   similarity FLOAT
 ) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    t.id,
-    t.description,
-    t.amount,
-    t.transaction_date,
-    1 - (t.embedding <=> query_embedding) AS similarity
-  FROM transactions t
+    je.id,
+    je.description,
+    je.total_amount,
+    je.entry_date,
+    1 - (je.embedding <=> query_embedding) AS similarity
+  FROM accounting.journal_entries je
   WHERE 
-    t.organization_id = org_id
-    AND t.embedding IS NOT NULL
-    AND 1 - (t.embedding <=> query_embedding) > match_threshold
-  ORDER BY t.embedding <=> query_embedding
+    je.organization_id = org_id
+    AND je.embedding IS NOT NULL
+    AND 1 - (je.embedding <=> query_embedding) > match_threshold
+  ORDER BY je.embedding <=> query_embedding
   LIMIT match_count;
 END;
 $$ LANGUAGE plpgsql;
@@ -113,21 +108,21 @@ $$ LANGUAGE plpgsql;
 -- Performance Indexes
 -- ============================================
 
--- Accounts table indexes for common queries
+-- Accounts table indexes for common queries (in accounting schema)
 CREATE INDEX IF NOT EXISTS idx_accounts_org_type 
-  ON accounts(organization_id, account_type) 
+  ON accounting.accounts(organization_id, account_type) 
   WHERE is_active = true;
 
 CREATE INDEX IF NOT EXISTS idx_accounts_code 
-  ON accounts(organization_id, code) 
+  ON accounting.accounts(organization_id, code) 
   WHERE is_active = true;
 
 CREATE INDEX IF NOT EXISTS idx_accounts_org_active_type 
-  ON accounts(organization_id, is_active, account_type);
+  ON accounting.accounts(organization_id, is_active, account_type);
 
 -- Partial index for active accounts only
 CREATE INDEX IF NOT EXISTS idx_accounts_active_only 
-  ON accounts(organization_id, code) 
+  ON accounting.accounts(organization_id, code) 
   WHERE is_active = true;
 
 -- Enable pg_stat_statements for query performance monitoring

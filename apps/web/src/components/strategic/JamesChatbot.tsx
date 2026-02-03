@@ -312,8 +312,8 @@ export default function JamesChatbot({
         id: 'welcome',
         role: 'assistant',
         content: isEn
-          ? `## Welcome! 👋\n\nI'm **James**, your AI strategic advisor. I'm here to help you make smarter financial decisions.\n\n### What I can help with:\n- **Runway Analysis** - Understand how long your cash will last\n- **Cost Optimization** - Find ways to reduce expenses\n- **Growth Strategy** - Plan initiatives to increase revenue\n- **Hiring Decisions** - Evaluate if you can afford new team members\n\nTry one of the quick actions below, or ask me anything!`
-          : `## Bienvenue! 👋\n\nJe suis **James**, votre conseiller stratégique IA. Je suis là pour vous aider à prendre de meilleures décisions financières.\n\n### Comment je peux vous aider:\n- **Analyse du runway** - Comprendre combien de temps durera votre trésorerie\n- **Optimisation des coûts** - Trouver des moyens de réduire les dépenses\n- **Stratégie de croissance** - Planifier des initiatives pour augmenter les revenus\n- **Décisions d'embauche** - Évaluer si vous pouvez embaucher\n\nEssayez une action rapide ci-dessous, ou posez-moi n'importe quelle question!`,
+          ? `## Welcome! 👋\n\nI'm your **AI strategic advisor**. I'm here to help you make smarter financial decisions.\n\n### What I can help with:\n- **Runway Analysis** - Understand how long your cash will last\n- **Cost Optimization** - Find ways to reduce expenses\n- **Growth Strategy** - Plan initiatives to increase revenue\n- **Hiring Decisions** - Evaluate if you can afford new team members\n\nTry one of the quick actions below, or ask me anything!`
+          : `## Bienvenue! 👋\n\nJe suis votre **conseiller stratégique IA**. Je suis là pour vous aider à prendre de meilleures décisions financières.\n\n### Comment je peux vous aider:\n- **Analyse du runway** - Comprendre combien de temps durera votre trésorerie\n- **Optimisation des coûts** - Trouver des moyens de réduire les dépenses\n- **Stratégie de croissance** - Planifier des initiatives pour augmenter les revenus\n- **Décisions d'embauche** - Évaluer si vous pouvez embaucher\n\nEssayez une action rapide ci-dessous, ou posez-moi n'importe quelle question!`,
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -361,7 +361,7 @@ export default function JamesChatbot({
 
   const handleExportConversation = useCallback(() => {
     const exportData = {
-      title: `James AI Conversation - ${new Date().toISOString()}`,
+      title: `AI Conversation - ${new Date().toISOString()}`,
       messages: messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -378,7 +378,7 @@ export default function JamesChatbot({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `james-conversation-${Date.now()}.json`;
+    a.download = `ai-conversation-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, [messages, financialContext]);
@@ -676,14 +676,14 @@ export default function JamesChatbot({
           background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
           zIndex: 1400,
         }}
-        aria-label={isEn ? 'Open James AI (⌘K)' : 'Ouvrir James IA (⌘K)'}
+        aria-label={isEn ? 'Open AI Assistant (⌘K)' : 'Ouvrir Assistant IA (⌘K)'}
       >
         <div className="relative">
           <Bot className="w-6 h-6 text-white" />
           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white animate-pulse" />
         </div>
         <div className="text-left hidden sm:block">
-          <span className="text-white font-semibold text-sm block">James AI</span>
+          <span className="text-white font-semibold text-sm block">AI Assistant</span>
           <span className="text-white/60 text-xs">⌘K</span>
         </div>
         <Sparkles className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
@@ -720,7 +720,7 @@ export default function JamesChatbot({
           </div>
           <div>
             <h3 className="font-semibold text-sm text-white flex items-center gap-2">
-              James AI
+              AI Assistant
               <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
             </h3>
             <p className="text-xs text-white/60">
@@ -780,7 +780,7 @@ export default function JamesChatbot({
           <div className="space-y-1.5 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
             <div className="flex justify-between gap-6">
               <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">⌘K</kbd>
-              <span>{isEn ? 'Toggle James' : 'Basculer James'}</span>
+              <span>{isEn ? 'Toggle AI' : 'Basculer IA'}</span>
             </div>
             <div className="flex justify-between gap-6">
               <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono">⌘N</kbd>
@@ -999,7 +999,7 @@ export default function JamesChatbot({
                       <span className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: 'rgb(var(--color-primary-500))', animationDelay: '300ms' }} />
                     </div>
                     <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? 'James is thinking...' : 'James réfléchit...'}
+                      {isEn ? 'Thinking...' : 'Réflexion en cours...'}
                     </span>
                   </div>
                 </div>
@@ -1197,7 +1197,7 @@ export default function JamesChatbot({
                 value={input}
                 onChange={(e) => { setInput(e.target.value); setError(null); }}
                 onKeyDown={handleKeyDown}
-                placeholder={isEn ? 'Ask James anything...' : 'Demandez à James...'}
+                placeholder={isEn ? 'Ask anything...' : 'Posez votre question...'}
                 className="w-full min-h-[48px] max-h-32 px-4 py-3 resize-none text-sm bg-transparent focus:outline-none"
                 style={{ color: 'rgb(var(--color-text))' }}
                 rows={1}

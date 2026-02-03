@@ -232,7 +232,7 @@ export function AIQuickChat({ onClose, financialContext: providedContext }: AIQu
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
           <h3 className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'James AI Assistant' : 'Assistant IA James'}
+            {isEn ? 'AI Assistant' : 'Assistant IA'}
           </h3>
         </div>
         <button
@@ -278,7 +278,7 @@ export function AIQuickChat({ onClose, financialContext: providedContext }: AIQu
           {isLoading ? (
             <div className="flex items-center gap-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{isEn ? 'James is thinking...' : 'James réfléchit...'}</span>
+              <span>{isEn ? 'Thinking...' : 'Réflexion en cours...'}</span>
             </div>
           ) : (
             <div className="whitespace-pre-wrap">{lastResponse}</div>
@@ -293,7 +293,7 @@ export function AIQuickChat({ onClose, financialContext: providedContext }: AIQu
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isEn ? 'Ask James anything...' : 'Demandez à James...'}
+          placeholder={isEn ? 'Ask anything...' : 'Posez votre question...'}
           disabled={isLoading}
           className="flex-1 px-3 py-2 text-sm rounded-lg border transition-all focus:outline-none focus:ring-2"
           style={{
