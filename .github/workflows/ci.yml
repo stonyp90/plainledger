@@ -338,7 +338,8 @@ jobs:
       (needs.lint-web.result == 'success' || needs.lint-web.result == 'skipped') &&
       (needs.test-api.result == 'success' || needs.test-api.result == 'skipped') &&
       (needs.test-web.result == 'success' || needs.test-web.result == 'skipped') &&
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
       github.event.inputs.deploy_only != 'true'
     strategy:
       fail-fast: false
