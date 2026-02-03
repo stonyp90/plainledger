@@ -188,6 +188,9 @@ jobs:
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
+      - name: Ensure Rollup Linux bindings (npm bug workaround)
+        run: npm install @rollup/rollup-linux-x64-gnu --save-optional || true
+        working-directory: apps/web
       - run: npm run test:run || echo "No tests configured"
         working-directory: apps/web
       - name: Check test coverage
