@@ -8,7 +8,9 @@ import { FileStorageService } from "@infrastructure/storage/file-storage.service
 import { createSwaggerConfig } from "@infrastructure/http/swagger.config";
 
 async function bootstrap() {
+  console.log("[Bootstrap] Starting NestJS application...");
   const app = await NestFactory.create(AppModule);
+  console.log("[Bootstrap] NestJS app created successfully");
 
   // Trust proxy headers when behind ALB/reverse proxy
   // This ensures correct protocol/host detection for Swagger UI and redirects
@@ -17,6 +19,7 @@ async function bootstrap() {
 
   // Enable response compression (gzip)
   app.use(compression());
+  console.log("[Bootstrap] Middleware configured");
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -79,6 +82,7 @@ async function bootstrap() {
   });
 
   // Swagger API Documentation (dynamically generated from decorators)
+  console.log("[Bootstrap] Setting up Swagger...");
   const isProduction = process.env.NODE_ENV === "production";
   const config = createSwaggerConfig(isProduction);
   const document = SwaggerModule.createDocument(app, config);
@@ -120,24 +124,34 @@ async function bootstrap() {
   }
 
   // Initialize file storage (create uploads bucket if needed)
-  // Use timeout to prevent blocking app startup
-  try {
-    const fileStorage = app.get(FileStorageService);
-    const initPromise = fileStorage.initialize();
-    const timeoutPromise = new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error("File storage init timed out")), 10000),
-    );
-    await Promise.race([initPromise, timeoutPromise]);
-    console.log("[Storage] File storage initialized successfully");
-  } catch (error) {
-    console.warn(
-      "[Storage] Failed to initialize file storage:",
-      error instanceof Error ? error.message : error,
-    );
-    // Continue startup - file uploads will fail gracefully
+  // Skip in production if S3_BUCKET_UPLOADS is not configured
+  console.log("[Bootstrap] Checking file storage configuration...");
+  const s3BucketUploads = process.env.S3_BUCKET_UPLOADS;
+  if (s3BucketUploads) {
+    console.log(`[Storage] Initializing S3 bucket: ${s3BucketUploads}`);
+    try {
+      const fileStorage = app.get(FileStorageService);
+      const initPromise = fileStorage.initialize();
+      const timeoutPromise = new Promise<void>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("File storage init timed out")),
+          10000,
+        ),
+      );
+      await Promise.race([initPromise, timeoutPromise]);
+      console.log("[Storage] File storage initialized successfully");
+    } catch (error) {
+      console.warn(
+        "[Storage] Failed to initialize file storage:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  } else {
+    console.log("[Storage] S3_BUCKET_UPLOADS not configured - skipping file storage init");
   }
 
   const port = process.env.PORT || 3000;
+  console.log(`[Bootstrap] Starting HTTP server on port ${port}...`);
   await app.listen(port);
 
   console.log(`
@@ -154,4 +168,4 @@ async function bootstrap() {
 }
 
 bootstrap();
-// Force rebuild - Fixed S3 init timeout Mon Feb 3 2026
+// Force rebuild v2 - Added bootstrap logging Mon Feb 3 2026
