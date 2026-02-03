@@ -3,8 +3,8 @@
 # Multi-stage build for Next.js 14 App Router
 # ==============================================================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install dependencies needed for node-gyp
@@ -13,15 +13,10 @@ RUN apk add --no-cache libc6-compat
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for build tools like tailwindcss)
+RUN npm ci
 
-# Stage 2: Build
-FROM node:20-alpine AS builder
-WORKDIR /app
-
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source files
 COPY . .
 
 # Set environment variables for build

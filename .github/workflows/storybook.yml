@@ -40,7 +40,10 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Install dependencies (with optional deps for native modules)
-        run: npm ci --include=optional
+        run: |
+          npm ci --include=optional
+          # Explicitly install Rollup Linux bindings (npm bug workaround)
+          npm install @rollup/rollup-linux-x64-gnu --save-optional || true
         working-directory: apps/web
 
       - name: Build Storybook
@@ -93,7 +96,7 @@ jobs:
             --cache-control "public, max-age=3600" \
             --exclude "*.html" \
             --exclude "*.json"
-          
+
           # HTML and JSON files with no-cache for auth
           aws s3 sync apps/web/storybook-static \
             s3://${{ steps.vars.outputs.bucket }} \
@@ -111,7 +114,7 @@ jobs:
             --query 'Invalidation.Id' \
             --output text)
           echo "✓ CloudFront invalidation created: $INVALIDATION_ID"
-          
+
           # Wait for invalidation to complete (optional, can be async)
           echo "Waiting for invalidation to complete..."
           aws cloudfront wait invalidation-completed \
