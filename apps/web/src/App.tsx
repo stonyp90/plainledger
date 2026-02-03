@@ -242,6 +242,12 @@ function App() {
           element={authenticated ? <Navigate to="/app" replace /> : <Landing />} 
         />
         
+        {/* Preview landing page (bypasses auth redirect) */}
+        <Route 
+          path="/preview-landing" 
+          element={<Landing />} 
+        />
+        
         {/* Legacy routes redirect to root */}
         <Route 
           path="/store" 

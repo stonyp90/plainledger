@@ -24,8 +24,8 @@ export default function DashboardPage() {
     queryFn: async () => {
       try {
         const [orgRes, userRes] = await Promise.all([
-          fetch(`${API_URL}/admin/organizations/stats`, { credentials: 'include' }),
-          fetch(`${API_URL}/admin/users/stats`, { credentials: 'include' }),
+          fetch(`${API_URL}/api/admin/organizations/stats`, { credentials: 'include' }),
+          fetch(`${API_URL}/api/admin/users/stats`, { credentials: 'include' }),
         ]);
 
         const orgStats = orgRes.ok ? await orgRes.json() : { totalOrganizations: 0, activeOrganizations: 0 };

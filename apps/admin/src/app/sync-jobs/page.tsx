@@ -38,7 +38,7 @@ export default function SyncJobsPage() {
     queryFn: async () => {
       try {
         // Try to fetch from sync jobs endpoint
-        const res = await fetch(`${API_URL}/admin/sync-jobs?limit=50`, {
+        const res = await fetch(`${API_URL}/api/admin/sync-jobs?limit=50`, {
           credentials: 'include',
         });
         if (!res.ok) {

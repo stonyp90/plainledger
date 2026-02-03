@@ -54,6 +54,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "quarantine_lifecycle" {
     id     = "expire-old-quarantine"
     status = "Enabled"
 
+    filter {}  # Apply to all objects
+
     expiration {
       days = 90  # Keep quarantined records for 90 days
     }

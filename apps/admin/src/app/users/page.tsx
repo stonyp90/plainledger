@@ -30,7 +30,7 @@ export default function UsersPage() {
       });
       if (search) params.set('search', search);
 
-      const res = await fetch(`${API_URL}/admin/users?${params}`, {
+      const res = await fetch(`${API_URL}/api/admin/users?${params}`, {
         credentials: 'include',
       });
       if (!res.ok) {

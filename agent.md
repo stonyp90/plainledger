@@ -209,6 +209,29 @@ Reference: [`apps/web/src/styles/globals.css`](apps/web/src/styles/globals.css)
 
 Reference: [`apps/web/src/styles/globals.css`](apps/web/src/styles/globals.css)
 
+### Copywriting & Marketing Text Rules
+
+**CRITICAL: All user-facing text must follow these guidelines for clean, professional copy.**
+
+**Characters to NEVER use in marketing copy:**
+- `-` (dash in sentences) → Replace with "and" or rewrite
+- `;` (semicolon) → Replace with periods
+
+**Examples:**
+```
+❌ "Voyez exactement où agir - et combien ça vaut"
+✅ "Voyez exactement où agir et combien ça vaut"
+
+❌ "Save 10+ hours; get better insights"
+✅ "Save 10+ hours. Get better insights."
+```
+
+**Best practices:**
+1. Keep sentences short and punchy
+2. One idea per sentence
+3. Apply same rules to both EN and FR
+4. Review all dashes and semicolons before committing
+
 ---
 
 ## 3. Demo Mode and New Signup Flow

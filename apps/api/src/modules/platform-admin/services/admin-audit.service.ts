@@ -229,4 +229,15 @@ export class AdminAuditService {
       take: limit,
     });
   }
+
+  /**
+   * Get recent audit logs for dashboard
+   */
+  async getRecentLogs(limit = 10): Promise<AdminAuditLogEntity[]> {
+    return this.auditLogRepository.find({
+      relations: ['adminUser'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+  }
 }

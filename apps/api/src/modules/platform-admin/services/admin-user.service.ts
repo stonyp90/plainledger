@@ -30,6 +30,8 @@ export interface UserStats {
   activeUsers: number;
   verifiedUsers: number;
   recentSignups: number;
+  activeToday: number;
+  newThisMonth: number;
 }
 
 @Injectable()
@@ -278,11 +280,32 @@ export class AdminUserService {
       .where('user.createdAt >= :date', { date: sevenDaysAgo })
       .getCount();
 
+    // Active today (users who logged in today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const activeToday = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.lastLoginAt >= :date', { date: today })
+      .getCount();
+
+    // New this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const newThisMonth = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.createdAt >= :date', { date: startOfMonth })
+      .getCount();
+
     return {
       totalUsers,
       activeUsers,
       verifiedUsers,
       recentSignups,
+      activeToday,
+      newThisMonth,
     };
   }
 

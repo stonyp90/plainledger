@@ -32,7 +32,7 @@ export default function AdminUsersPage() {
     queryKey: ['admin', 'admins', search],
     queryFn: async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/admins`, {
+        const res = await fetch(`${API_URL}/api/admin/admins`, {
           credentials: 'include',
         });
         if (!res.ok) {

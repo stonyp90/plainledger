@@ -502,6 +502,46 @@ terraform output
 
 ---
 
+## ✍️ Copywriting & Marketing Text Rules
+
+**CRITICAL: All user-facing text must follow these guidelines for clean, professional copy.**
+
+### Punctuation to AVOID in Marketing Copy
+
+| Character | Rule | Example |
+|-----------|------|---------|
+| `-` (dash in sentences) | **NEVER use** | ❌ "where to act - and what it's worth" → ✅ "where to act and what it's worth" |
+| `;` (semicolon) | **NEVER use** | ❌ "Save time; save money" → ✅ "Save time. Save money." |
+| `...` (ellipsis) | **Avoid** unless intentional pause | Use sparingly |
+
+### Preferred Alternatives
+
+- **Instead of dashes**: Use periods, commas, or rewrite the sentence
+- **Instead of semicolons**: Use periods for separate sentences or commas for lists
+- **Keep sentences short and punchy**: Better for scanning and mobile
+
+### Examples
+
+```
+❌ BAD:  "Voyez exactement où agir - et combien ça vaut"
+✅ GOOD: "Voyez exactement où agir et combien ça vaut"
+
+❌ BAD:  "Save 10+ hours; get better insights"
+✅ GOOD: "Save 10+ hours. Get better insights."
+
+❌ BAD:  "Finance - Accounting - Tax Credits"
+✅ GOOD: "Finance. Accounting. Tax Credits." or "Finance, Accounting, Tax Credits"
+```
+
+### When Writing Copy
+
+1. **Review all dashes** - Remove or replace with appropriate punctuation
+2. **Review all semicolons** - Replace with periods
+3. **Keep sentences short** - One idea per sentence
+4. **Bilingual consistency** - Apply same rules to EN and FR
+
+---
+
 **Remember:** 
 - **NO new .md files in root** - Use `docs/` or update existing files
 - **Update agent.md files** instead of creating docs
@@ -509,3 +549,4 @@ terraform output
 - **Use interfaces** for all external integrations
 - **Follow component organization** patterns
 - **Optimize token usage** by reading only what's needed
+- **NO dashes or semicolons** in marketing copy

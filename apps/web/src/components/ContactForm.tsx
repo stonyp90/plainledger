@@ -5,11 +5,270 @@
  * Used in both the Landing page (website) and HelpCenter (app).
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, CheckCircle, AlertCircle, Loader2, User, Mail, Tag, MessageSquare, Building2, Phone, Briefcase, HelpCircle } from 'lucide-react';
+import { 
+  Send, CheckCircle, AlertCircle, Loader2, User, Mail, Tag, MessageSquare, 
+  Building2, Phone, Briefcase, HelpCircle, ChevronDown, Check,
+  // Industry icons
+  Calculator, HardHat, Heart, Factory, Users, Home, ShoppingCart, UtensilsCrossed, 
+  Laptop, Truck, HandHeart, MoreHorizontal,
+  // Subject icons
+  MessageCircle, Play, Headphones, CreditCard, Handshake, ThumbsUp,
+  // Referral icons
+  Search, Linkedin, Users2, UserCheck, Share2, Calendar
+} from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import config from '../lib/config';
+
+// Custom Dropdown Component with Icons
+interface DropdownOption {
+  value: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+interface CustomDropdownProps {
+  options: DropdownOption[];
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  icon?: React.ReactNode;
+  hasError?: boolean;
+  isValid?: boolean;
+  theme?: {
+    green: string;
+    greenDark: string;
+    greenLight: string;
+  };
+  id?: string;
+  required?: boolean;
+}
+
+function CustomDropdown({ 
+  options, 
+  value, 
+  onChange, 
+  onBlur,
+  placeholder,
+  icon,
+  hasError,
+  isValid,
+  theme,
+  id,
+  required
+}: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  const selectedOption = options.find(opt => opt.value === value);
+  const selectableOptions = options.filter(opt => opt.value !== '');
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        onBlur?.();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onBlur]);
+
+  useEffect(() => {
+    if (isOpen && highlightedIndex >= 0 && listRef.current) {
+      const item = listRef.current.children[highlightedIndex] as HTMLElement;
+      item?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex, isOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        setIsOpen(true);
+        setHighlightedIndex(0);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev < selectableOptions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => prev > 0 ? prev - 1 : prev);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (highlightedIndex >= 0) {
+          onChange(selectableOptions[highlightedIndex].value);
+          setIsOpen(false);
+          onBlur?.();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        onBlur?.();
+        break;
+    }
+  };
+
+  const getBorderColor = () => {
+    if (hasError) return '#ef4444';
+    if (isValid && value) return theme?.green || 'rgb(var(--color-primary-500))';
+    return 'rgb(var(--color-border))';
+  };
+
+  const getBoxShadow = () => {
+    if (isOpen) return `0 0 0 3px ${theme?.green || 'rgb(var(--color-primary-500))'}20`;
+    if (isValid && value) return `0 0 0 3px ${theme?.green || 'rgb(var(--color-primary-500))'}15`;
+    return 'none';
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        id={id}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-required={required}
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
+        className="w-full py-3 pr-10 rounded-xl border-2 transition-all duration-200 focus:outline-none text-left flex items-center gap-3 cursor-pointer"
+        style={{
+          backgroundColor: 'rgb(var(--color-background))',
+          borderColor: getBorderColor(),
+          color: 'rgb(var(--color-text))',
+          paddingLeft: '0.875rem',
+          boxShadow: getBoxShadow(),
+        }}
+      >
+        {/* Left icon */}
+        <span 
+          className="flex-shrink-0"
+          style={{ color: value ? (theme?.green || 'rgb(var(--color-primary-500))') : 'rgb(var(--color-text-muted))' }}
+        >
+          {icon}
+        </span>
+        
+        {/* Selected value or placeholder */}
+        <span className="flex-1 flex items-center gap-2.5 truncate">
+          {selectedOption?.value ? (
+            <>
+              <span 
+                className="flex-shrink-0"
+                style={{ color: theme?.green || 'rgb(var(--color-primary-500))' }}
+              >
+                {selectedOption.icon}
+              </span>
+              <span>{selectedOption.label}</span>
+            </>
+          ) : (
+            <span style={{ color: 'rgb(var(--color-text-muted))' }}>{placeholder}</span>
+          )}
+        </span>
+
+        {/* Chevron */}
+        <span 
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-transform duration-200"
+          style={{ 
+            color: 'rgb(var(--color-text-muted))',
+            transform: isOpen ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)',
+          }}
+        >
+          <ChevronDown className="w-4 h-4" />
+        </span>
+      </button>
+
+      {/* Dropdown list */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.ul
+            ref={listRef}
+            role="listbox"
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute z-50 w-full mt-2 py-2 rounded-xl border-2 shadow-xl max-h-64 overflow-auto"
+            style={{
+              backgroundColor: 'rgb(var(--color-surface))',
+              borderColor: theme?.green ? `${theme.green}30` : 'rgb(var(--color-border))',
+              boxShadow: `0 12px 40px ${theme?.green || 'rgb(var(--color-primary-500))'}15`,
+            }}
+          >
+            {selectableOptions.map((option, index) => (
+              <li
+                key={option.value}
+                role="option"
+                aria-selected={option.value === value}
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                  onBlur?.();
+                }}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                className="px-3 py-2.5 cursor-pointer flex items-center gap-3 mx-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: highlightedIndex === index 
+                    ? `${theme?.green || 'rgb(var(--color-primary-500))'}10`
+                    : option.value === value 
+                      ? `${theme?.green || 'rgb(var(--color-primary-500))'}08`
+                      : 'transparent',
+                }}
+              >
+                {/* Option icon */}
+                <span 
+                  className="flex-shrink-0 w-5 h-5 flex items-center justify-center"
+                  style={{ 
+                    color: option.value === value 
+                      ? (theme?.green || 'rgb(var(--color-primary-500))') 
+                      : 'rgb(var(--color-text-muted))' 
+                  }}
+                >
+                  {option.icon}
+                </span>
+                
+                {/* Option label */}
+                <span 
+                  className="flex-1"
+                  style={{ 
+                    color: option.value === value 
+                      ? (theme?.green || 'rgb(var(--color-primary-500))') 
+                      : 'rgb(var(--color-text))' 
+                  }}
+                >
+                  {option.label}
+                </span>
+
+                {/* Checkmark for selected */}
+                {option.value === value && (
+                  <Check 
+                    className="w-4 h-4 flex-shrink-0" 
+                    style={{ color: theme?.green || 'rgb(var(--color-primary-500))' }}
+                  />
+                )}
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 interface ContactFormData {
   name: string;
@@ -127,271 +386,417 @@ export function ContactForm({
     }
   };
 
-  const subjects = [
-    { value: '', label: isEn ? 'Select a subject...' : 'Sélectionnez un sujet...' },
-    { value: 'general', label: isEn ? '• General Inquiry' : '• Demande générale' },
-    { value: 'demo', label: isEn ? '• Request a Demo' : '• Demander une démo' },
-    { value: 'support', label: isEn ? '• Technical Support' : '• Support technique' },
-    { value: 'billing', label: isEn ? '• Billing Question' : '• Question de facturation' },
-    { value: 'partnership', label: isEn ? '• Partnership Opportunity' : '• Opportunité de partenariat' },
-    { value: 'feedback', label: isEn ? '• Feedback' : '• Commentaires' },
+  const subjects: DropdownOption[] = [
+    { value: '', label: isEn ? 'Select a subject' : 'Sélectionnez un sujet' },
+    { value: 'general', label: isEn ? 'General Inquiry' : 'Demande générale', icon: <MessageCircle className="w-4 h-4" /> },
+    { value: 'demo', label: isEn ? 'Request a Demo' : 'Demander une démo', icon: <Play className="w-4 h-4" /> },
+    { value: 'support', label: isEn ? 'Technical Support' : 'Support technique', icon: <Headphones className="w-4 h-4" /> },
+    { value: 'billing', label: isEn ? 'Billing Question' : 'Question de facturation', icon: <CreditCard className="w-4 h-4" /> },
+    { value: 'partnership', label: isEn ? 'Partnership Opportunity' : 'Opportunité de partenariat', icon: <Handshake className="w-4 h-4" /> },
+    { value: 'feedback', label: isEn ? 'Feedback' : 'Commentaires', icon: <ThumbsUp className="w-4 h-4" /> },
   ];
 
-  const industries = [
-    { value: '', label: isEn ? 'Select your industry...' : 'Sélectionnez votre industrie...' },
-    { value: 'accounting', label: isEn ? '• Accounting / CPA Firm' : '• Comptabilité / Cabinet CPA' },
-    { value: 'construction', label: isEn ? '• Construction' : '• Construction' },
-    { value: 'healthcare', label: isEn ? '• Healthcare' : '• Santé' },
-    { value: 'manufacturing', label: isEn ? '• Manufacturing' : '• Fabrication' },
-    { value: 'professional-services', label: isEn ? '• Professional Services' : '• Services professionnels' },
-    { value: 'real-estate', label: isEn ? '• Real Estate' : '• Immobilier' },
-    { value: 'retail', label: isEn ? '• Retail / E-commerce' : '• Commerce de détail' },
-    { value: 'restaurant', label: isEn ? '• Restaurant / Hospitality' : '• Restauration / Hôtellerie' },
-    { value: 'technology', label: isEn ? '• Technology / SaaS' : '• Technologie / SaaS' },
-    { value: 'transportation', label: isEn ? '• Transportation / Logistics' : '• Transport / Logistique' },
-    { value: 'nonprofit', label: isEn ? '• Non-profit' : '• Organisme à but non lucratif' },
-    { value: 'other', label: isEn ? '• Other' : '• Autre' },
+  const industries: DropdownOption[] = [
+    { value: '', label: isEn ? 'Select your industry' : 'Sélectionnez votre industrie' },
+    { value: 'accounting', label: isEn ? 'Accounting / CPA Firm' : 'Comptabilité / Cabinet CPA', icon: <Calculator className="w-4 h-4" /> },
+    { value: 'construction', label: isEn ? 'Construction' : 'Construction', icon: <HardHat className="w-4 h-4" /> },
+    { value: 'healthcare', label: isEn ? 'Healthcare' : 'Santé', icon: <Heart className="w-4 h-4" /> },
+    { value: 'manufacturing', label: isEn ? 'Manufacturing' : 'Fabrication', icon: <Factory className="w-4 h-4" /> },
+    { value: 'professional-services', label: isEn ? 'Professional Services' : 'Services professionnels', icon: <Users className="w-4 h-4" /> },
+    { value: 'real-estate', label: isEn ? 'Real Estate' : 'Immobilier', icon: <Home className="w-4 h-4" /> },
+    { value: 'retail', label: isEn ? 'Retail / E-commerce' : 'Commerce de détail', icon: <ShoppingCart className="w-4 h-4" /> },
+    { value: 'restaurant', label: isEn ? 'Restaurant / Hospitality' : 'Restauration / Hôtellerie', icon: <UtensilsCrossed className="w-4 h-4" /> },
+    { value: 'technology', label: isEn ? 'Technology / SaaS' : 'Technologie / SaaS', icon: <Laptop className="w-4 h-4" /> },
+    { value: 'transportation', label: isEn ? 'Transportation / Logistics' : 'Transport / Logistique', icon: <Truck className="w-4 h-4" /> },
+    { value: 'nonprofit', label: isEn ? 'Non-profit' : 'Organisme à but non lucratif', icon: <HandHeart className="w-4 h-4" /> },
+    { value: 'other', label: isEn ? 'Other' : 'Autre', icon: <MoreHorizontal className="w-4 h-4" /> },
   ];
 
-  const referralSources = [
-    { value: '', label: isEn ? 'How did you hear about us?' : 'Comment avez-vous entendu parler de nous?' },
-    { value: 'google', label: isEn ? '• Google Search' : '• Recherche Google' },
-    { value: 'linkedin', label: '• LinkedIn' },
-    { value: 'referral', label: isEn ? '• Referral / Word of mouth' : '• Référence / Bouche à oreille' },
-    { value: 'accountant', label: isEn ? '• My Accountant / CPA' : '• Mon comptable / CPA' },
-    { value: 'social', label: isEn ? '• Social Media' : '• Médias sociaux' },
-    { value: 'event', label: isEn ? '• Conference / Event' : '• Conférence / Événement' },
-    { value: 'other', label: isEn ? '• Other' : '• Autre' },
+  const referralSources: DropdownOption[] = [
+    { value: '', label: isEn ? 'Select an option' : 'Sélectionnez une option' },
+    { value: 'google', label: isEn ? 'Google Search' : 'Recherche Google', icon: <Search className="w-4 h-4" /> },
+    { value: 'linkedin', label: 'LinkedIn', icon: <Linkedin className="w-4 h-4" /> },
+    { value: 'referral', label: isEn ? 'Referral / Word of mouth' : 'Référence / Bouche à oreille', icon: <Users2 className="w-4 h-4" /> },
+    { value: 'accountant', label: isEn ? 'My Accountant / CPA' : 'Mon comptable / CPA', icon: <UserCheck className="w-4 h-4" /> },
+    { value: 'social', label: isEn ? 'Social Media' : 'Médias sociaux', icon: <Share2 className="w-4 h-4" /> },
+    { value: 'event', label: isEn ? 'Conference / Event' : 'Conférence / Événement', icon: <Calendar className="w-4 h-4" /> },
+    { value: 'other', label: isEn ? 'Other' : 'Autre', icon: <MoreHorizontal className="w-4 h-4" /> },
   ];
+
+  // Form validation state
+  const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof ContactFormData, boolean>>>({});
+
+  const validateField = (name: keyof ContactFormData, value: string): string => {
+    switch (name) {
+      case 'name':
+        if (!value.trim()) return isEn ? 'Name is required' : 'Le nom est requis';
+        if (value.length < 2) return isEn ? 'Name must be at least 2 characters' : 'Le nom doit avoir au moins 2 caractères';
+        return '';
+      case 'email':
+        if (!value.trim()) return isEn ? 'Email is required' : 'Le courriel est requis';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return isEn ? 'Please enter a valid email' : 'Veuillez entrer un courriel valide';
+        return '';
+      case 'company':
+        if (!value.trim()) return isEn ? 'Company is required' : 'L\'entreprise est requise';
+        return '';
+      case 'industry':
+        if (!value) return isEn ? 'Please select an industry' : 'Veuillez sélectionner une industrie';
+        return '';
+      case 'subject':
+        if (!value) return isEn ? 'Please select a subject' : 'Veuillez sélectionner un sujet';
+        return '';
+      case 'message':
+        if (!value.trim()) return isEn ? 'Message is required' : 'Le message est requis';
+        if (value.length < 10) return isEn ? 'Message must be at least 10 characters' : 'Le message doit avoir au moins 10 caractères';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const handleLandingBlur = (name: keyof ContactFormData) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const error = validateField(name, formData[name]);
+    setErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  const getFieldStyle = (name: keyof ContactFormData, hasIcon: boolean = true) => {
+    const hasError = touched[name] && errors[name];
+    const hasValue = !!formData[name];
+    return {
+      backgroundColor: 'rgb(var(--color-background))',
+      borderColor: hasError ? '#ef4444' : hasValue ? theme?.green : 'rgb(var(--color-border))',
+      color: 'rgb(var(--color-text))',
+      paddingLeft: hasIcon ? '2.75rem' : '1rem',
+    };
+  };
 
   // Landing page styles
   if (landingStyle && theme) {
     return (
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Name & Email Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Name Field */}
+          <div className="space-y-1.5">
             <label 
               htmlFor="contact-name" 
-              className="block text-sm font-medium mb-1.5"
+              className="flex items-center gap-1.5 text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Name' : 'Nom'} *
+              <User className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Name' : 'Nom'} <span style={{ color: theme.green }}>*</span>
             </label>
-            <input
-              id="contact-name"
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              minLength={2}
-              maxLength={100}
-              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-                '--tw-ring-color': theme.green,
-              } as React.CSSProperties}
-              placeholder={isEn ? 'Your name' : 'Votre nom'}
-            />
+            <div className="relative">
+              <div 
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: formData.name ? theme.green : 'rgb(var(--color-text-muted))' }}
+              >
+                <User className="w-4 h-4" />
+              </div>
+              <input
+                id="contact-name"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                onBlur={() => handleLandingBlur('name')}
+                required
+                minLength={2}
+                maxLength={100}
+                className="w-full py-3 pr-4 rounded-xl border-2 transition-all duration-200 focus:outline-none"
+                style={{
+                  ...getFieldStyle('name'),
+                  boxShadow: touched.name && !errors.name && formData.name ? `0 0 0 3px ${theme.green}15` : 'none',
+                }}
+                placeholder={isEn ? 'Your name' : 'Votre nom'}
+              />
+              {touched.name && errors.name && (
+                <motion.p 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs mt-1.5 flex items-center gap-1"
+                  style={{ color: '#ef4444' }}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.name}
+                </motion.p>
+              )}
+            </div>
           </div>
-          <div>
+
+          {/* Email Field */}
+          <div className="space-y-1.5">
             <label 
               htmlFor="contact-email" 
-              className="block text-sm font-medium mb-1.5"
+              className="flex items-center gap-1.5 text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Email' : 'Courriel'} *
+              <Mail className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Email' : 'Courriel'} <span style={{ color: theme.green }}>*</span>
             </label>
-            <input
-              id="contact-email"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-                '--tw-ring-color': theme.green,
-              } as React.CSSProperties}
-              placeholder={isEn ? 'your@email.com' : 'votre@courriel.com'}
-            />
+            <div className="relative">
+              <div 
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: formData.email ? theme.green : 'rgb(var(--color-text-muted))' }}
+              >
+                <Mail className="w-4 h-4" />
+              </div>
+              <input
+                id="contact-email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={() => handleLandingBlur('email')}
+                required
+                className="w-full py-3 pr-4 rounded-xl border-2 transition-all duration-200 focus:outline-none"
+                style={{
+                  ...getFieldStyle('email'),
+                  boxShadow: touched.email && !errors.email && formData.email ? `0 0 0 3px ${theme.green}15` : 'none',
+                }}
+                placeholder={isEn ? 'your@email.com' : 'votre@courriel.com'}
+              />
+              {touched.email && errors.email && (
+                <motion.p 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs mt-1.5 flex items-center gap-1"
+                  style={{ color: '#ef4444' }}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.email}
+                </motion.p>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Company & Phone Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Company Field */}
+          <div className="space-y-1.5">
             <label 
               htmlFor="contact-company" 
-              className="block text-sm font-medium mb-1.5"
+              className="flex items-center gap-1.5 text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Company' : 'Entreprise'} *
+              <Building2 className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Company' : 'Entreprise'} <span style={{ color: theme.green }}>*</span>
             </label>
-            <input
-              id="contact-company"
-              type="text"
-              name="company"
-              value={formData.company}
-              onChange={handleChange}
-              required
-              maxLength={200}
-              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-                '--tw-ring-color': theme.green,
-              } as React.CSSProperties}
-              placeholder={isEn ? 'Your company name' : 'Nom de votre entreprise'}
-            />
+            <div className="relative">
+              <div 
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: formData.company ? theme.green : 'rgb(var(--color-text-muted))' }}
+              >
+                <Building2 className="w-4 h-4" />
+              </div>
+              <input
+                id="contact-company"
+                type="text"
+                name="company"
+                value={formData.company}
+                onChange={handleChange}
+                onBlur={() => handleLandingBlur('company')}
+                required
+                maxLength={200}
+                className="w-full py-3 pr-4 rounded-xl border-2 transition-all duration-200 focus:outline-none"
+                style={{
+                  ...getFieldStyle('company'),
+                  boxShadow: touched.company && !errors.company && formData.company ? `0 0 0 3px ${theme.green}15` : 'none',
+                }}
+                placeholder={isEn ? 'Your company name' : 'Nom de votre entreprise'}
+              />
+              {touched.company && errors.company && (
+                <motion.p 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs mt-1.5 flex items-center gap-1"
+                  style={{ color: '#ef4444' }}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.company}
+                </motion.p>
+              )}
+            </div>
           </div>
-          <div>
+
+          {/* Phone Field */}
+          <div className="space-y-1.5">
             <label 
               htmlFor="contact-phone" 
-              className="block text-sm font-medium mb-1.5"
+              className="flex items-center gap-1.5 text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Phone' : 'Téléphone'} <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
+              <Phone className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Phone' : 'Téléphone'} <span className="text-xs ml-1" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
             </label>
-            <input
-              id="contact-phone"
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              maxLength={20}
-              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-                '--tw-ring-color': theme.green,
-              } as React.CSSProperties}
-              placeholder={isEn ? '(555) 123-4567' : '(555) 123-4567'}
-            />
+            <div className="relative">
+              <div 
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: formData.phone ? theme.green : 'rgb(var(--color-text-muted))' }}
+              >
+                <Phone className="w-4 h-4" />
+              </div>
+              <input
+                id="contact-phone"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                maxLength={20}
+                className="w-full py-3 pr-4 rounded-xl border-2 transition-all duration-200 focus:outline-none"
+                style={{
+                  ...getFieldStyle('phone'),
+                  boxShadow: formData.phone ? `0 0 0 3px ${theme.green}15` : 'none',
+                }}
+                placeholder={isEn ? '(555) 123-4567' : '(555) 123-4567'}
+              />
+            </div>
           </div>
         </div>
 
         {/* Industry & Subject Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {/* Industry Field */}
+          <div className="space-y-1.5">
             <label 
-              htmlFor="contact-industry" 
-              className="block text-sm font-medium mb-1.5"
+              className="flex items-center gap-1.5 text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Industry' : 'Industrie'} *
+              <Briefcase className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Industry' : 'Industrie'} <span style={{ color: theme.green }}>*</span>
             </label>
-            <select
+            <CustomDropdown
               id="contact-industry"
-              name="industry"
+              options={industries}
               value={formData.industry}
-              onChange={handleChange}
+              onChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}
+              onBlur={() => handleLandingBlur('industry')}
+              placeholder={isEn ? 'Select your industry' : 'Sélectionnez votre industrie'}
+              icon={<Briefcase className="w-4 h-4" />}
+              hasError={!!(touched.industry && errors.industry)}
+              isValid={touched.industry && !errors.industry}
+              theme={theme}
               required
-              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-                '--tw-ring-color': theme.green,
-              } as React.CSSProperties}
-            >
-              {industries.map(i => (
-                <option key={i.value} value={i.value}>{i.label}</option>
-              ))}
-            </select>
+            />
+            {touched.industry && errors.industry && (
+              <motion.p 
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xs flex items-center gap-1"
+                style={{ color: '#ef4444' }}
+              >
+                <AlertCircle className="w-3 h-3" />
+                {errors.industry}
+              </motion.p>
+            )}
           </div>
-          <div>
+
+          {/* Subject Field */}
+          <div className="space-y-1.5">
             <label 
-              htmlFor="contact-subject" 
-              className="block text-sm font-medium mb-1.5"
+              className="flex items-center gap-1.5 text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Subject' : 'Sujet'} *
+              <Tag className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              {isEn ? 'Subject' : 'Sujet'} <span style={{ color: theme.green }}>*</span>
             </label>
-            <select
+            <CustomDropdown
               id="contact-subject"
-              name="subject"
+              options={subjects}
               value={formData.subject}
-              onChange={handleChange}
+              onChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
+              onBlur={() => handleLandingBlur('subject')}
+              placeholder={isEn ? 'Select a subject' : 'Sélectionnez un sujet'}
+              icon={<Tag className="w-4 h-4" />}
+              hasError={!!(touched.subject && errors.subject)}
+              isValid={touched.subject && !errors.subject}
+              theme={theme}
               required
-              className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text))',
-                '--tw-ring-color': theme.green,
-              } as React.CSSProperties}
-            >
-              {subjects.map(s => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
+            />
+            {touched.subject && errors.subject && (
+              <motion.p 
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xs flex items-center gap-1"
+                style={{ color: '#ef4444' }}
+              >
+                <AlertCircle className="w-3 h-3" />
+                {errors.subject}
+              </motion.p>
+            )}
           </div>
         </div>
         
         {/* Message */}
-        <div>
+        <div className="space-y-1.5">
           <label 
             htmlFor="contact-message" 
-            className="block text-sm font-medium mb-1.5"
+            className="flex items-center gap-1.5 text-sm font-medium"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
-            {isEn ? 'Message' : 'Message'} *
+            <MessageSquare className="w-3.5 h-3.5" style={{ color: theme.green }} />
+            {isEn ? 'Message' : 'Message'} <span style={{ color: theme.green }}>*</span>
           </label>
-          <textarea
-            id="contact-message"
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            required
-            minLength={10}
-            maxLength={5000}
-            rows={4}
-            className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 resize-none"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              borderColor: 'rgb(var(--color-border))',
-              color: 'rgb(var(--color-text))',
-              '--tw-ring-color': theme.green,
-            } as React.CSSProperties}
-            placeholder={isEn ? 'How can we help you?' : 'Comment pouvons-nous vous aider?'}
-          />
+          <div className="relative">
+            <div 
+              className="absolute left-3.5 top-3.5 pointer-events-none"
+              style={{ color: formData.message ? theme.green : 'rgb(var(--color-text-muted))' }}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </div>
+            <textarea
+              id="contact-message"
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              onBlur={() => handleLandingBlur('message')}
+              required
+              minLength={10}
+              maxLength={5000}
+              rows={4}
+              className="w-full py-3 pr-4 rounded-xl border-2 transition-all duration-200 focus:outline-none resize-none"
+              style={{
+                ...getFieldStyle('message'),
+                boxShadow: touched.message && !errors.message && formData.message ? `0 0 0 3px ${theme.green}15` : 'none',
+              }}
+              placeholder={isEn ? 'How can we help you?' : 'Comment pouvons-nous vous aider?'}
+            />
+            {touched.message && errors.message && (
+              <motion.p 
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xs mt-1.5 flex items-center gap-1"
+                style={{ color: '#ef4444' }}
+              >
+                <AlertCircle className="w-3 h-3" />
+                {errors.message}
+              </motion.p>
+            )}
+          </div>
         </div>
 
         {/* How did you hear about us */}
-        <div>
+        <div className="space-y-1.5">
           <label 
-            htmlFor="contact-referral" 
-            className="block text-sm font-medium mb-1.5"
+            className="flex items-center gap-1.5 text-sm font-medium"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
           >
-            {isEn ? 'How did you hear about us?' : 'Comment avez-vous entendu parler de nous?'} <span className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
+            <HelpCircle className="w-3.5 h-3.5" style={{ color: theme.green }} />
+            {isEn ? 'How did you hear about us?' : 'Comment avez-vous entendu parler de nous?'} <span className="text-xs ml-1" style={{ color: 'rgb(var(--color-text-muted))' }}>({isEn ? 'optional' : 'optionnel'})</span>
           </label>
-          <select
+          <CustomDropdown
             id="contact-referral"
-            name="referralSource"
+            options={referralSources}
             value={formData.referralSource}
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-surface))',
-              borderColor: 'rgb(var(--color-border))',
-              color: 'rgb(var(--color-text))',
-              '--tw-ring-color': theme.green,
-            } as React.CSSProperties}
-          >
-            {referralSources.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, referralSource: value }))}
+            placeholder={isEn ? 'Select an option' : 'Sélectionnez une option'}
+            icon={<HelpCircle className="w-4 h-4" />}
+            isValid={!!formData.referralSource}
+            theme={theme}
+          />
         </div>
 
         <AnimatePresence mode="wait">
@@ -400,33 +805,53 @@ export function ContactForm({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-3 p-4 rounded-xl"
-              style={{ backgroundColor: `${theme.green}15` }}
+              className="flex items-center gap-3 p-4 rounded-xl border"
+              style={{ 
+                backgroundColor: `${theme.green}10`,
+                borderColor: `${theme.green}30`,
+              }}
             >
-              <CheckCircle className="w-5 h-5" style={{ color: theme.green }} />
-              <span style={{ color: theme.green }}>
-                {isEn 
-                  ? 'Thank you! We\'ll get back to you soon.' 
-                  : 'Merci! Nous vous répondrons bientôt.'}
-              </span>
+              <div 
+                className="p-2 rounded-full"
+                style={{ backgroundColor: `${theme.green}20` }}
+              >
+                <CheckCircle className="w-5 h-5" style={{ color: theme.green }} />
+              </div>
+              <div>
+                <p className="font-medium" style={{ color: theme.green }}>
+                  {isEn ? 'Message sent!' : 'Message envoyé!'}
+                </p>
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn 
+                    ? 'We\'ll get back to you within 24 hours.' 
+                    : 'Nous vous répondrons dans les 24 heures.'}
+                </p>
+              </div>
             </motion.div>
           ) : status === 'error' ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20"
+              className="flex items-center gap-3 p-4 rounded-xl border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
             >
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              <span className="text-red-600 dark:text-red-400">{errorMessage}</span>
+              <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="font-medium text-red-600 dark:text-red-400">
+                  {isEn ? 'Something went wrong' : 'Une erreur s\'est produite'}
+                </p>
+                <p className="text-sm text-red-500 dark:text-red-400/80">{errorMessage}</p>
+              </div>
             </motion.div>
           ) : (
             <motion.button
               type="submit"
               disabled={status === 'submitting'}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01, y: -1 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-white transition-all disabled:opacity-70"
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl font-semibold text-white transition-all disabled:opacity-70 mt-2"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 20px ${theme.green}40`,
@@ -435,7 +860,7 @@ export function ContactForm({
               {status === 'submitting' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {isEn ? 'Sending...' : 'Envoi...'}
+                  {isEn ? 'Sending...' : 'Envoi en cours...'}
                 </>
               ) : (
                 <>

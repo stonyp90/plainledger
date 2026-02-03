@@ -42,3 +42,34 @@ variable "enable_cloudwatch_alarms" {
   type        = bool
   default     = false
 }
+
+variable "kms_key_id" {
+  description = "KMS key ID for encrypting SNS topics"
+  type        = string
+  default     = ""
+}
+
+variable "tags" {
+  description = "Tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "api_endpoint" {
+  description = "API endpoint URL for ETL alerts"
+  type        = string
+  default     = ""
+}
+
+variable "ses_region" {
+  description = "AWS region for SES"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "internal_api_token" {
+  description = "Internal API token for Lambda to API communication"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

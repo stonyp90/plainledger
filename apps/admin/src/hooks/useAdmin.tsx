@@ -33,7 +33,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const { data: adminData, isLoading } = useQuery({
     queryKey: ['admin', 'me'],
     queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/admins/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/admins/me`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',

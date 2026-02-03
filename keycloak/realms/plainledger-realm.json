@@ -206,6 +206,48 @@
         "access.token.lifespan": "300",
         "client.secret.creation.time": "0"
       }
+    },
+    {
+      "clientId": "plainledger-admin",
+      "name": "PlainLedger Admin Console",
+      "description": "Platform administration console for PlainLedger",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "protocol": "openid-connect",
+      "rootUrl": "${ADMIN_URL:https://admin.plainledger.ca}",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:3001/*",
+        "http://127.0.0.1:3001/*",
+        "https://admin.plainledger.ca/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "https://admin.plainledger.ca",
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3001/*##https://admin.plainledger.ca/*"
+      }
     }
   ],
   "roles": {
@@ -213,6 +255,10 @@
       {
         "name": "plainledger_cpa_admin",
         "description": "PlainLedger CPA Admin - Can configure organization analytics features"
+      },
+      {
+        "name": "platform_admin",
+        "description": "Platform Administrator - Full access to PlainLedger admin console"
       },
       {
         "name": "admin",

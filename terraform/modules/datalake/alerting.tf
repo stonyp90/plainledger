@@ -10,9 +10,13 @@
 resource "aws_sns_topic" "etl_alerts" {
   name              = "${var.environment}-etl-alerts"
   display_name      = "PlainLedger ETL Alerts"
-  kms_master_key_id = var.kms_key_id
+  kms_master_key_id = var.kms_key_id != "" ? var.kms_key_id : null
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name        = "${var.project}-${var.environment}-etl-alerts"
+    Project     = var.project
+    Environment = var.environment
+  })
 }
 
 # SNS Topic Subscription (Primary Email)
@@ -48,7 +52,11 @@ resource "aws_cloudwatch_event_rule" "glue_state_change" {
     }
   })
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name        = "${var.project}-${var.environment}-glue-state-change"
+    Project     = var.project
+    Environment = var.environment
+  })
 }
 
 # EventBridge Target: Lambda Function
@@ -88,7 +96,11 @@ resource "aws_lambda_function" "etl_alert_sender" {
     }
   }
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name        = "${var.project}-${var.environment}-etl-alert-sender"
+    Project     = var.project
+    Environment = var.environment
+  })
 }
 
 # IAM Role for Lambda
@@ -108,7 +120,11 @@ resource "aws_iam_role" "etl_alert_sender" {
     ]
   })
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name        = "${var.project}-${var.environment}-etl-alert-sender-role"
+    Project     = var.project
+    Environment = var.environment
+  })
 }
 
 # IAM Policy: SES Send Email
@@ -164,7 +180,11 @@ resource "aws_cloudwatch_log_group" "etl_alert_sender" {
   name              = "/aws/lambda/${aws_lambda_function.etl_alert_sender.function_name}"
   retention_in_days = 14
 
-  tags = var.tags
+  tags = merge(var.tags, {
+    Name        = "${var.project}-${var.environment}-etl-alert-sender-logs"
+    Project     = var.project
+    Environment = var.environment
+  })
 }
 
 # Outputs
