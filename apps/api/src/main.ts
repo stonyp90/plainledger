@@ -1,5 +1,5 @@
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe, BadRequestException } from "@nestjs/common";
+import { ValidationPipe, BadRequestException, RequestMethod } from "@nestjs/common";
 import { SwaggerModule } from "@nestjs/swagger";
 import * as compression from "compression";
 import { AppModule } from "./app.module";
@@ -50,7 +50,7 @@ async function bootstrap() {
   // Set global prefix for all routes except health check
   // This aligns with ALB routing rules that route /api/* to API service
   app.setGlobalPrefix("api", {
-    exclude: ["/health"],
+    exclude: ["health", "/health", "health/(.*)", { path: "health", method: RequestMethod.ALL }],
   });
 
   // CORS
