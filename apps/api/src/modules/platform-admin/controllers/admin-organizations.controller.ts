@@ -26,7 +26,7 @@ import {
 
 @ApiTags('Platform Admin - Organizations')
 @ApiBearerAuth()
-@Controller('api/admin/organizations')
+@Controller('admin/organizations')
 @UseGuards(PlatformAdminGuard)
 export class AdminOrganizationsController {
   constructor(

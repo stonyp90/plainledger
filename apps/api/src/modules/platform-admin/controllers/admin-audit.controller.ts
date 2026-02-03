@@ -11,7 +11,7 @@ import { AdminAuditService, AuditLogFilter } from '../services/admin-audit.servi
 
 @ApiTags('Platform Admin - Audit')
 @ApiBearerAuth()
-@Controller('api/admin/audit')
+@Controller('admin/audit')
 @UseGuards(PlatformAdminGuard)
 export class AdminAuditController {
   constructor(private readonly auditService: AdminAuditService) {}

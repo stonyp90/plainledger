@@ -26,7 +26,7 @@ import {
 
 @ApiTags('Platform Admin - Admin Management')
 @ApiBearerAuth()
-@Controller('api/admin/admins')
+@Controller('admin/admins')
 @UseGuards(PlatformAdminGuard)
 export class AdminAdminsController {
   constructor(

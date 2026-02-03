@@ -12,7 +12,7 @@ import { AdminAuditService } from '../services/admin-audit.service';
 
 @ApiTags('Platform Admin - Dashboard')
 @ApiBearerAuth()
-@Controller('api/admin/dashboard')
+@Controller('admin/dashboard')
 @UseGuards(PlatformAdminGuard)
 export class AdminDashboardController {
   constructor(
