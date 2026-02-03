@@ -2,6 +2,7 @@
 
 import { useAdmin } from '@/hooks/useAdmin';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Building2, 
   Users, 
@@ -9,10 +10,40 @@ import {
   Activity,
   AlertTriangle,
   TrendingUp,
+  RefreshCw,
 } from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function DashboardPage() {
   const { admin, isLoading } = useAdmin();
+
+  // Fetch dashboard stats
+  const { data: stats, isLoading: statsLoading, refetch } = useQuery({
+    queryKey: ['admin', 'dashboard-stats'],
+    queryFn: async () => {
+      try {
+        const [orgRes, userRes] = await Promise.all([
+          fetch(`${API_URL}/admin/organizations/stats`, { credentials: 'include' }),
+          fetch(`${API_URL}/admin/users/stats`, { credentials: 'include' }),
+        ]);
+
+        const orgStats = orgRes.ok ? await orgRes.json() : { totalOrganizations: 0, activeOrganizations: 0 };
+        const userStats = userRes.ok ? await userRes.json() : { totalUsers: 0, activeUsers: 0, activeToday: 0 };
+
+        return {
+          organizations: orgStats.totalOrganizations || 0,
+          users: userStats.totalUsers || 0,
+          activeToday: userStats.activeToday || 0,
+          mrr: 0, // Would come from billing system
+        };
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+        return { organizations: 0, users: 0, activeToday: 0, mrr: 0 };
+      }
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
 
   if (isLoading) {
     return (
@@ -22,43 +53,58 @@ export default function DashboardPage() {
     );
   }
 
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num.toString();
+  };
+
   return (
     <AdminShell>
       <div className="p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-admin-400 mt-1">
-            Welcome back, {admin?.user?.displayName || 'Admin'}
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+            <p className="text-admin-400 mt-1">
+              Welcome back, {admin?.user?.displayName || 'Admin'}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Organizations"
-            value="--"
+            value={statsLoading ? '...' : formatNumber(stats?.organizations || 0)}
             change="+12%"
             icon={Building2}
             color="blue"
           />
           <StatCard
             title="Total Users"
-            value="--"
+            value={statsLoading ? '...' : formatNumber(stats?.users || 0)}
             change="+8%"
             icon={Users}
             color="green"
           />
           <StatCard
             title="MRR"
-            value="$--"
+            value={statsLoading ? '...' : `$${formatNumber(stats?.mrr || 0)}`}
             change="+15%"
             icon={CreditCard}
             color="purple"
           />
           <StatCard
             title="Active Today"
-            value="--"
+            value={statsLoading ? '...' : formatNumber(stats?.activeToday || 0)}
             icon={Activity}
             color="orange"
           />

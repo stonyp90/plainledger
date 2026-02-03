@@ -26,9 +26,9 @@ const navigation = [
   { name: 'Organizations', href: '/organizations', icon: Building2 },
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Billing', href: '/billing', icon: CreditCard },
-  { name: 'Sync Jobs', href: '/sync', icon: RefreshCw },
+  { name: 'Sync Jobs', href: '/sync-jobs', icon: RefreshCw },
   { name: 'Audit Logs', href: '/audit', icon: FileText },
-  { name: 'Admin Users', href: '/admins', icon: Shield },
+  { name: 'Admin Users', href: '/admin-users', icon: Shield },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
