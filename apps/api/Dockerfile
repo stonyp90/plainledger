@@ -34,6 +34,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 
+# Copy email templates (not compiled by TypeScript)
+COPY --from=builder /app/src/templates ./dist/infrastructure/templates
+
 USER nestjs
 
 EXPOSE 3000

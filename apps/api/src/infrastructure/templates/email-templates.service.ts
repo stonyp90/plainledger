@@ -559,8 +559,12 @@ export class EmailTemplatesService {
   contactFormNotification(data: {
     name: string;
     email: string;
+    company?: string;
+    phone?: string;
+    industry?: string;
     subject: string;
     message: string;
+    referralSource?: string;
     source?: string;
     timestamp: string;
   }): string {
@@ -573,9 +577,13 @@ export class EmailTemplatesService {
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;">
           <strong>From:</strong> ${data.name} &lt;${data.email}&gt;
         </p>
+        ${data.company ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Company:</strong> ${data.company}</p>` : ""}
+        ${data.phone ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Phone:</strong> ${data.phone}</p>` : ""}
+        ${data.industry ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Industry:</strong> ${data.industry}</p>` : ""}
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;">
           <strong>Subject:</strong> ${data.subject}
         </p>
+        ${data.referralSource ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>How they found us:</strong> ${data.referralSource}</p>` : ""}
         ${data.source ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Source:</strong> ${data.source}</p>` : ""}
         <p style="margin: 0; font-size: 14px; color: #64748b;">
           <strong>Submitted:</strong> ${new Date(data.timestamp).toLocaleString("en-CA")}

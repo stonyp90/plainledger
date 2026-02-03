@@ -45,6 +45,9 @@ import Montreal from './pages/cities/Montreal';
 import Security from './pages/Security';
 import CrispChat from './components/CrispChat';
 import CookieConsent from './components/CookieConsent';
+import { SmartInstallBanner } from './components/SmartInstallBanner';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { ClientOnly } from './components/ClientOnly';
 import { AnalyticsVisibilityProvider } from './contexts/AnalyticsVisibilityContext';
 import config from './lib/config';
 import { analytics } from './lib/analytics';
@@ -234,6 +237,12 @@ function App() {
         
         {/* Cookie Consent Banner - GDPR/Law 25 Compliant */}
         <CookieConsent />
+        
+        {/* PWA Components - Only render on client to prevent hydration issues */}
+        <ClientOnly>
+          <SmartInstallBanner />
+          <OfflineIndicator />
+        </ClientOnly>
         
         <Routes>
         {/* Public routes - Main marketing website at root */}

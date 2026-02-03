@@ -355,7 +355,7 @@ export function ContactForm({
     setErrorMessage('');
 
     try {
-      const response = await fetch(`${config.api.baseUrl}/contact`, {
+      const response = await fetch(`${config.api.baseUrl}/api/contact`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

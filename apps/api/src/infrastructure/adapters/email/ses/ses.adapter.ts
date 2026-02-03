@@ -586,8 +586,12 @@ export class SESAdapter implements OnModuleInit {
   async sendContactFormNotification(data: {
     name: string;
     email: string;
+    company?: string;
+    phone?: string;
+    industry?: string;
     subject: string;
     message: string;
+    referralSource?: string;
     source?: string;
   }): Promise<SESEmailResult> {
     const html = this.emailTemplates.contactFormNotification({

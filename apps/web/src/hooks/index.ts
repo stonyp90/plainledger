@@ -1,5 +1,14 @@
 export { useFinancialData, useBalanceSheet, useDashboardData } from './useFinancialData';
 export { useAccountDataAccess, type AccountAccessType, type AccountDataAccessResult } from './useAccountDataAccess';
+export { useInstallPrompt } from './useInstallPrompt';
+export { 
+  usePlatformDetect, 
+  useIsMobile, 
+  useIsIOS, 
+  useIsAndroid, 
+  useIsDesktop,
+  type Platform 
+} from './usePlatformDetect';
 export { 
   useBenchmark, 
   useComparison, 

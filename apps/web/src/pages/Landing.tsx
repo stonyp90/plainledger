@@ -9,6 +9,8 @@ import DemoModal from '../components/DemoModal';
 import AITechnologyStack, { AIMetricsRow } from '../components/AITechnologyStack';
 import FlywheelVisualization from '../components/FlywheelVisualization';
 import ContactForm from '../components/ContactForm';
+import { GetTheApp } from '../components/GetTheApp';
+import { InstallAppModal } from '../components/InstallAppModal';
 import { 
   ArrowRight,
   ArrowDown,
@@ -113,6 +115,39 @@ function useInView(options?: IntersectionObserverInit) {
   }, []);
   
   return { ref, isInView };
+}
+
+// =====================================================
+// ANIMATED COUNTER COMPONENT
+// =====================================================
+
+function AnimatedCounter({ 
+  end, 
+  prefix = '', 
+  suffix = '',
+  separator = ',',
+  duration = 2000,
+  delay = 0 
+}: { 
+  end: number; 
+  prefix?: string;
+  suffix?: string;
+  separator?: string;
+  duration?: number;
+  delay?: number;
+}) {
+  const { ref, isInView } = useInView();
+  const count = useAnimatedCounter(end, duration, delay, isInView);
+  
+  const formatNumber = (num: number) => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+  };
+  
+  return (
+    <span ref={ref}>
+      {prefix}{formatNumber(count)}{suffix}
+    </span>
+  );
 }
 
 // =====================================================
@@ -1517,6 +1552,7 @@ export default function Landing() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   // Listen for theme changes
   useEffect(() => {
@@ -3124,7 +3160,7 @@ export default function Landing() {
       {/* Tax Credits Section */}
       <section 
         id="tax-credits" 
-        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
+        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative overflow-hidden"
         aria-label={isEn ? 'Tax credits and subventions' : 'Crédits d\'impôt et subventions'}
         style={{ 
           background: isDark 
@@ -3132,7 +3168,42 @@ export default function Landing() {
             : 'linear-gradient(180deg, rgba(240, 253, 244, 0.3) 0%, rgba(255, 255, 255, 0.9) 100%)'
         }}
       >
-        <div className="max-w-6xl mx-auto">
+        {/* Animated background elements */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.5 }}
+        >
+          {/* Floating dollar signs */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-2xl sm:text-3xl"
+              style={{ 
+                color: `${theme.gold}15`,
+                left: `${10 + i * 15}%`,
+                top: `${20 + (i % 3) * 25}%`,
+              }}
+              animate={{
+                y: [0, -20, 0],
+                rotate: [0, 10, -10, 0],
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{
+                duration: 4 + i * 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.3,
+              }}
+            >
+              $
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -3140,139 +3211,248 @@ export default function Landing() {
             transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-8 sm:mb-12"
           >
+            {/* Animated badge with shimmer effect */}
             <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 relative overflow-hidden"
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1, delay: 0.2 }}
+              transition={{ duration: 0.8, delay: 0.2, type: "spring", stiffness: 100 }}
               style={{ 
                 background: `linear-gradient(135deg, ${theme.gold}15 0%, ${theme.green}10 100%)`,
                 border: `1px solid ${theme.gold}30`
               }}
             >
-              <DollarSign className="w-4 h-4" style={{ color: theme.gold }} />
-              <span className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(90deg, transparent 0%, ${theme.gold}20 50%, transparent 100%)`,
+                }}
+                animate={{
+                  x: ['-100%', '200%'],
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  repeatDelay: 3,
+                  ease: "easeInOut",
+                }}
+              />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+              >
+                <DollarSign className="w-4 h-4" style={{ color: theme.gold }} />
+              </motion.div>
+              <span className="text-sm font-semibold relative z-10" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
                 {isEn ? 'Average unclaimed credits: ' : 'Crédits non réclamés moyens: '}
-                <span style={{ color: theme.gold }}>$47,000</span>
+                <span style={{ color: theme.gold }}>
+                  <AnimatedCounter end={47000} prefix="$" separator="," duration={2000} delay={500} />
+                </span>
               </span>
             </motion.div>
             
             <motion.h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
-              initial={{ opacity: 0, scale: 0.92 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? 'Money You\'re Leaving on the Table' : 'L\'argent que vous laissez sur la table'}
             </motion.h2>
             <motion.p 
               className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-2xl mx-auto px-2 text-center"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Most business owners miss $15K-50K in tax credits every year. Not because they don\'t qualify - because nobody told them in plain language.'
-                : 'La plupart des entrepreneurs manquent 15K-50K$ en crédits d\'impôt chaque année. Pas parce qu\'ils ne se qualifient pas - parce que personne ne leur a expliqué clairement.'}
+                ? 'Most business owners miss $15K-50K in tax credits every year. Not because they don\'t qualify. Because nobody told them in plain language.'
+                : 'La plupart des entrepreneurs manquent 15K-50K$ en crédits d\'impôt chaque année. Pas parce qu\'ils ne se qualifient pas. Parce que personne ne leur a expliqué clairement.'}
             </motion.p>
           </motion.div>
 
-          {/* Tax Credits Grid */}
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
-          >
+          {/* Tax Credits Grid with staggered animations */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               {
                 id: 'sred',
                 name: { en: 'SR&ED', fr: 'RSDE' },
                 description: { en: 'Up to 35% refundable credit on R&D expenditures', fr: 'Jusqu\'à 35% de crédit remboursable sur les dépenses R-D' },
                 industries: { en: 'Technology, Manufacturing', fr: 'Technologie, Manufacturier' },
+                highlight: '35%',
               },
               {
                 id: 'cric',
                 name: { en: 'CRIC', fr: 'CRIC' },
                 description: { en: 'Quebec R&D credit: 20-30% on innovation', fr: 'Crédit R-D Québec: 20-30% sur l\'innovation' },
                 industries: { en: 'Quebec businesses', fr: 'Entreprises québécoises' },
+                highlight: '30%',
               },
               {
                 id: 'cdae',
                 name: { en: 'CDAE', fr: 'CDAE' },
                 description: { en: '30% credit on IT salaries, max $25K/employee', fr: '30% crédit sur salaires TI, max 25K$/employé' },
                 industries: { en: 'Quebec IT companies', fr: 'Entreprises TI québécoises' },
+                highlight: '$25K',
               },
               {
                 id: 'oidmtc',
                 name: { en: 'OIDMTC', fr: 'OIDMTC' },
                 description: { en: '40% credit on digital media development', fr: '40% crédit sur développement médias numériques' },
                 industries: { en: 'Ontario digital media', fr: 'Médias numériques Ontario' },
+                highlight: '40%',
               },
               {
                 id: 'ommitc',
                 name: { en: 'OMMITC', fr: 'OMMITC' },
                 description: { en: '15% credit on manufacturing investments', fr: '15% crédit sur investissements manufacturiers' },
                 industries: { en: 'Ontario manufacturing', fr: 'Manufacturier Ontario' },
+                highlight: '15%',
               },
               {
                 id: 'apprenticeship',
                 name: { en: 'Apprenticeship', fr: 'Apprentissage' },
                 description: { en: '$2,000 per eligible apprentice per year', fr: '2 000 $ par apprenti admissible par année' },
                 industries: { en: 'Construction, Manufacturing', fr: 'Construction, Manufacturier' },
+                highlight: '$2K',
               },
             ].map((credit, idx) => (
               <motion.div
                 key={credit.id}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 sm:p-6 hover:shadow-lg transition-all"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 + 0.5 }}
-                whileHover={{ y: -4, scale: 1.02 }}
+                className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 sm:p-6 cursor-pointer"
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ 
+                  duration: 0.5, 
+                  delay: idx * 0.1 + 0.3,
+                  ease: [0.25, 0.46, 0.45, 0.94]
+                }}
+                whileHover={{ 
+                  y: -8, 
+                  scale: 1.03,
+                  boxShadow: `0 20px 40px ${theme.gold}15`,
+                  transition: { duration: 0.3 }
+                }}
+                whileTap={{ scale: 0.98 }}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {credit.name[language]}
-                  </h3>
-                  <ExternalLink className="w-4 h-4 text-gray-400" />
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  {credit.description[language]}
-                </p>
-                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                  <Building2 className="w-3 h-3" />
-                  <span>{credit.industries[language]}</span>
+                {/* Animated border gradient on hover */}
+                <motion.div
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: `linear-gradient(135deg, ${theme.gold}20 0%, ${theme.green}20 100%)`,
+                    padding: '1px',
+                  }}
+                />
+                
+                {/* Highlight badge */}
+                <motion.div
+                  className="absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-bold"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.gold}dd 100%)`,
+                    color: 'white',
+                    boxShadow: `0 4px 12px ${theme.gold}40`
+                  }}
+                  initial={{ scale: 0, rotate: -20 }}
+                  whileInView={{ scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 200, 
+                    delay: idx * 0.1 + 0.6 
+                  }}
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                >
+                  {credit.highlight}
+                </motion.div>
+
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-3">
+                    <motion.h3 
+                      className="text-lg font-bold text-gray-900 dark:text-white"
+                      whileHover={{ x: 3 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {credit.name[language]}
+                    </motion.h3>
+                    <motion.div
+                      whileHover={{ scale: 1.2, rotate: 45 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                    </motion.div>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
+                    {credit.description[language]}
+                  </p>
+                  <motion.div 
+                    className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 + 0.7 }}
+                  >
+                    <Building2 className="w-3 h-3" />
+                    <span>{credit.industries[language]}</span>
+                  </motion.div>
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
 
-          {/* CTA */}
+          {/* CTA with enhanced animation */}
           <motion.div 
-            className="text-center mt-8 sm:mt-10"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            className="text-center mt-10 sm:mt-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.8 }}
+            transition={{ duration: 0.8, delay: 1 }}
           >
-            <button 
+            <motion.button 
               onClick={() => register()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 hover:shadow-lg text-sm"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm relative overflow-hidden"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 16px ${theme.green}35`
               }}
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: `0 8px 30px ${theme.green}50`
+              }}
+              whileTap={{ scale: 0.98 }}
             >
-              {isEn ? 'Connect Your Data to See Your Eligibility' : 'Connectez vos données pour voir votre éligibilité'}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              {/* Button shimmer effect */}
+              <motion.div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)`,
+                }}
+                animate={{
+                  x: ['-100%', '200%'],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatDelay: 4,
+                  ease: "easeInOut",
+                }}
+              />
+              <span className="relative z-10">
+                {isEn ? 'Connect Your Data to See Your Eligibility' : 'Connectez vos données pour voir votre éligibilité'}
+              </span>
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <ArrowRight className="w-4 h-4 relative z-10" />
+              </motion.div>
+            </motion.button>
           </motion.div>
         </div>
       </section>
@@ -4511,6 +4691,9 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Get The App Section */}
+      <GetTheApp />
+
       {/* Footer */}
       <footer 
         className="py-6 sm:py-8 px-4 sm:px-6 border-t"
@@ -4536,6 +4719,14 @@ export default function Landing() {
             <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
             <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
             <a href="#contact" className="transition-colors hover:underline">Contact</a>
+            <button 
+              onClick={() => setShowInstallModal(true)}
+              className="flex items-center gap-1.5 transition-colors hover:underline"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>{isEn ? 'Get the app' : 'Obtenir l\'app'}</span>
+            </button>
           </div>
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             © 2026 PlainLedger 🇨🇦
@@ -4552,6 +4743,12 @@ export default function Landing() {
           setShowDemoModal(false);
           register();
         }}
+      />
+
+      {/* Install App Modal */}
+      <InstallAppModal 
+        isOpen={showInstallModal} 
+        onClose={() => setShowInstallModal(false)} 
       />
     </div>
   );

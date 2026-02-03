@@ -30,8 +30,23 @@ export class ContactFormDto {
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(5)
+  @MaxLength(200)
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  industry?: string;
+
+  @IsString()
+  @MinLength(2)
   @MaxLength(200)
   subject: string;
 
@@ -39,6 +54,11 @@ export class ContactFormDto {
   @MinLength(10)
   @MaxLength(5000)
   message: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  referralSource?: string;
 
   @IsOptional()
   @IsString()
@@ -70,8 +90,12 @@ export class ContactController {
       await this.sesEmailService.sendContactFormNotification({
         name: dto.name,
         email: dto.email,
+        company: dto.company,
+        phone: dto.phone,
+        industry: dto.industry,
         subject: dto.subject,
         message: dto.message,
+        referralSource: dto.referralSource,
         source: dto.source || "website",
       });
 
