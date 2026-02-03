@@ -2,12 +2,13 @@
  * FlywheelVisualization Component
  * 
  * Premium circular visualization showing the compounding intelligence loop.
- * Features a true circular layout to emphasize the continuous improvement cycle.
+ * Features Lottie animation with orbiting particles and step card overlays.
  */
 
 import { motion } from 'framer-motion';
-import { Building2, Target, Layers, Lightbulb, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
+import { Building2, Target, Layers, Lightbulb, ArrowRight, RefreshCw } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import { DataCycleAnimation } from './LottieAnimations';
 
 interface FlywheelVisualizationProps {
   theme: {
@@ -74,126 +75,41 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
         className="absolute inset-0 pointer-events-none"
         style={{
           background: isDark 
-            ? `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}08 0%, transparent 70%)`
-            : `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}06 0%, transparent 70%)`,
+            ? `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}12 0%, transparent 70%)`
+            : `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}08 0%, transparent 70%)`,
         }}
       />
 
-      {/* Circular Flywheel Container */}
+      {/* Circular Flywheel Container - Rotating */}
       <div className="relative flex items-center justify-center">
-        {/* The circular track */}
-        <div 
+        {/* The circular track with Lottie animation - Rotates slowly */}
+        <motion.div 
           className="relative w-[240px] h-[240px] sm:w-[320px] sm:h-[320px]"
+          animate={{ rotate: 360 }}
+          transition={{ 
+            duration: 15, 
+            repeat: Infinity, 
+            ease: "linear" 
+          }}
         >
-          {/* Outer rotating ring with gradient */}
+          {/* Lottie Data Cycle Animation - Base Layer */}
           <motion.div
-            className="absolute inset-0 rounded-full"
-            style={{
-              border: `2px dashed ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.5)'}`,
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-          />
-
-          {/* Inner circle track */}
-          <div 
-            className="absolute inset-4 sm:inset-6 rounded-full"
-            style={{
-              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.6)'}`,
-            }}
-          />
-
-          {/* Animated flowing particles around the circle */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-            <defs>
-              <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={theme.green} stopOpacity="0" />
-                <stop offset="50%" stopColor={theme.green} stopOpacity="0.8" />
-                <stop offset="100%" stopColor={theme.green} stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {/* Circular path for the flowing effect */}
-            <circle
-              cx="160"
-              cy="160"
-              r="130"
-              fill="none"
-              stroke="url(#flowGradient)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray="60 200"
-              className="origin-center"
-              style={{
-                animation: 'spin 4s linear infinite',
-              }}
-            />
-          </svg>
-
-          {/* Second flowing particle (offset) */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-            <circle
-              cx="160"
-              cy="160"
-              r="130"
-              fill="none"
-              stroke={theme.gold}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeDasharray="40 240"
-              strokeOpacity="0.6"
-              className="origin-center"
-              style={{
-                animation: 'spin 4s linear infinite',
-                animationDelay: '-2s',
-              }}
-            />
-          </svg>
-
-          {/* Center element - AI Brain */}
-          <motion.div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            initial={{ scale: 0, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
+            className="absolute inset-0"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.5, duration: 0.6, type: "spring" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <motion.div
-              className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center"
-              style={{
-                background: isDark 
-                  ? `linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(51, 65, 85, 0.9) 100%)`
-                  : `linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)`,
-                border: `2px solid ${theme.green}40`,
-                boxShadow: isDark 
-                  ? `0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.05)`
-                  : `0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.8)`,
+            <DataCycleAnimation 
+              className="w-full h-full"
+              style={{ 
+                opacity: isDark ? 1 : 0.9,
+                filter: isDark ? 'brightness(1.1)' : 'none'
               }}
-              animate={{
-                boxShadow: [
-                  `0 8px 32px rgba(0, 0, 0, ${isDark ? '0.4' : '0.08'}), 0 0 0px ${theme.green}00`,
-                  `0 8px 32px rgba(0, 0, 0, ${isDark ? '0.4' : '0.08'}), 0 0 30px ${theme.green}30`,
-                  `0 8px 32px rgba(0, 0, 0, ${isDark ? '0.4' : '0.08'}), 0 0 0px ${theme.green}00`,
-                ],
-              }}
-              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            >
-              {/* Rotating ring around center */}
-              <motion.div
-                className="absolute inset-[-6px] rounded-full"
-                style={{ border: `1px dashed ${theme.green}25` }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-              />
-              
-              <Sparkles 
-                className="w-7 h-7 sm:w-8 sm:h-8" 
-                style={{ color: theme.green }}
-                strokeWidth={1.5}
-              />
-            </motion.div>
+            />
           </motion.div>
 
-          {/* Flywheel Steps positioned around the circle */}
+          {/* Flywheel Steps positioned around the circle - Counter-rotate to stay upright */}
           {flywheelSteps.map((step, idx) => {
             const pos = getPosition(idx, radius);
             const mobilePos = getPosition(idx, mobileRadius);
@@ -201,19 +117,19 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
             return (
               <motion.div
                 key={idx}
-                className="absolute top-1/2 left-1/2"
+                className="absolute top-1/2 left-1/2 z-10"
                 style={{
                   // Desktop positioning
                   transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
                 }}
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
+                animate={{ rotate: -360 }}
                 transition={{ 
-                  delay: idx * 0.15 + 0.2, 
-                  duration: 0.5, 
-                  type: "spring",
-                  stiffness: 200,
+                  rotate: { duration: 15, repeat: Infinity, ease: "linear" },
+                  opacity: { delay: idx * 0.15 + 0.3, duration: 0.5 },
+                  scale: { delay: idx * 0.15 + 0.3, duration: 0.5, type: "spring", stiffness: 200 }
                 }}
               >
                 {/* Responsive positioning using CSS */}
@@ -232,55 +148,7 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
               </motion.div>
             );
           })}
-
-          {/* Curved arrows between steps */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 320 320">
-            {flywheelSteps.map((_, idx) => {
-              // Calculate arrow positions between steps
-              const startAngle = (-90 + idx * 90 + 25) * (Math.PI / 180);
-              const endAngle = (-90 + idx * 90 + 65) * (Math.PI / 180);
-              const arrowRadius = 130;
-              
-              const startX = 160 + Math.cos(startAngle) * arrowRadius;
-              const startY = 160 + Math.sin(startAngle) * arrowRadius;
-              const endX = 160 + Math.cos(endAngle) * arrowRadius;
-              const endY = 160 + Math.sin(endAngle) * arrowRadius;
-              
-              // Control point for curve
-              const midAngle = (-90 + idx * 90 + 45) * (Math.PI / 180);
-              const controlX = 160 + Math.cos(midAngle) * (arrowRadius + 15);
-              const controlY = 160 + Math.sin(midAngle) * (arrowRadius + 15);
-
-              return (
-                <motion.g key={idx}>
-                  <motion.path
-                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
-                    fill="none"
-                    stroke={theme.gold}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeDasharray="4 4"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    whileInView={{ pathLength: 1, opacity: 0.5 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.15 + 0.6, duration: 0.5 }}
-                  />
-                  {/* Arrow head */}
-                  <motion.circle
-                    cx={endX}
-                    cy={endY}
-                    r="3"
-                    fill={theme.gold}
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.15 + 0.8 }}
-                  />
-                </motion.g>
-              );
-            })}
-          </svg>
-        </div>
+        </motion.div>
       </div>
 
       {/* "Continuous Improvement" label */}
@@ -312,14 +180,6 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
           </span>
         </motion.div>
       </motion.div>
-
-      {/* CSS for spinning animation */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

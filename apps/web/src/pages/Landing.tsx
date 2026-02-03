@@ -6,8 +6,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
-import AITechnologyStack, { AIMetricsRow } from '../components/AITechnologyStack';
-import FlywheelVisualization from '../components/FlywheelVisualization';
+import AITechnologyStack from '../components/AITechnologyStack';
 import ContactForm from '../components/ContactForm';
 import { GetTheApp } from '../components/GetTheApp';
 import { InstallAppModal } from '../components/InstallAppModal';
@@ -1643,7 +1642,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 group">
+            <Link to="/" className="flex items-center gap-2 group">
               <img 
                 src="/logo-mark.svg" 
                 alt="PlainLedger" 
@@ -1811,9 +1810,20 @@ export default function Landing() {
 
           {/* Professional Credibility Badges */}
           <div 
-            className="flex flex-wrap justify-center gap-2 mb-6 animate-fade-up opacity-0"
+            className="flex flex-wrap justify-center gap-3 mb-6 animate-fade-up opacity-0"
             style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
           >
+            <span 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`,
+                color: theme.gold
+              }}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              {isEn ? 'Data stays in Canada' : 'Données au Canada'} 🇨🇦
+            </span>
             <span 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
               style={{ 
@@ -1824,17 +1834,6 @@ export default function Landing() {
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {isEn ? 'FP&A Intelligence, IBCS Certified' : 'Intelligence FP&A, Certifié IBCS'}
-            </span>
-            <span 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ 
-                backgroundColor: `${theme.gold}15`,
-                border: `1px solid ${theme.gold}25`,
-                color: theme.gold
-              }}
-            >
-              <Users className="w-3.5 h-3.5" />
-              {isEn ? '75,000+ businesses benchmarked' : '75 000+ entreprises analysées'}
             </span>
           </div>
 
@@ -1851,31 +1850,6 @@ export default function Landing() {
                 ? 'We transform your raw financial data into industry KPIs with clear ROI. See exactly where to act and what it\'s worth. Tax credits you\'re missing. Costs you can cut. Opportunities you didn\'t know existed.'
                 : 'Nous transformons vos données brutes en KPIs sectoriels avec un ROI clair. Voyez exactement où agir et combien ça vaut. Crédits d\'impôt manqués. Coûts à réduire. Opportunités cachées.'}
             </p>
-            {/* Key value metrics */}
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm">
-              <span 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-                style={{ 
-                  backgroundColor: `${theme.green}15`,
-                  color: theme.green,
-                  fontWeight: 600,
-                }}
-              >
-                <Check className="w-4 h-4" />
-                {isEn ? 'Not a finance person? Perfect.' : 'Pas un expert en finances? Parfait.'}
-              </span>
-              <span 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-                style={{ 
-                  backgroundColor: `${theme.gold}15`,
-                  color: theme.gold,
-                  fontWeight: 600,
-                }}
-              >
-                <Shield className="w-4 h-4" />
-                {isEn ? 'Data stays in Canada' : 'Données au Canada'}
-              </span>
-            </div>
           </div>
 
           {/* CTAs - Smaller buttons */}
@@ -2023,29 +1997,34 @@ export default function Landing() {
       >
         {/* Animated Background Particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 rounded-full"
-              style={{ 
-                backgroundColor: i % 3 === 0 ? theme.green : i % 3 === 1 ? theme.gold : theme.greenDark,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: 0.3
-              }}
-              animate={{ 
-                y: [0, -30, 0],
-                opacity: [0.2, 0.5, 0.2],
-                scale: [1, 1.5, 1]
-              }}
-              transition={{ 
-                duration: 3 + Math.random() * 2, 
-                repeat: Infinity, 
-                delay: Math.random() * 2,
-                ease: "easeInOut"
-              }}
-            />
-          ))}
+          {[...Array(100)].map((_, i) => {
+            const size = i % 5 === 0 ? 'w-1.5 h-1.5' : i % 3 === 0 ? 'w-1 h-1' : 'w-0.5 h-0.5';
+            const colors = [theme.green, theme.gold, theme.greenDark, '#8b5cf6', '#059669'];
+            return (
+              <motion.div
+                key={i}
+                className={`absolute ${size} rounded-full`}
+                style={{ 
+                  backgroundColor: colors[i % colors.length],
+                  left: `${(i * 17) % 100}%`,
+                  top: `${(i * 23) % 100}%`,
+                  opacity: 0.3
+                }}
+                animate={{ 
+                  y: [0, -20 - (i % 4) * 10, 0],
+                  x: [0, (i % 2 === 0 ? 10 : -10), 0],
+                  opacity: [0.15, 0.4 + (i % 3) * 0.1, 0.15],
+                  scale: [1, 1.3 + (i % 3) * 0.2, 1]
+                }}
+                transition={{ 
+                  duration: 2.5 + (i % 5) * 0.8, 
+                  repeat: Infinity, 
+                  delay: (i % 10) * 0.3,
+                  ease: "easeInOut"
+                }}
+              />
+            );
+          })}
         </div>
 
         <div className="max-w-6xl mx-auto relative z-10">
@@ -2469,10 +2448,10 @@ export default function Landing() {
                 icon: Target,
                 title: isEn ? 'Goal Tracking' : 'Suivi des objectifs',
                 desc: isEn 
-                  ? 'Track progress against AI benchmarks from 75,000+ businesses.'
-                  : 'Suivez la progression vs benchmarks IA de 75 000+ entreprises.',
-                highlight: isEn ? 'AI benchmarks' : 'Benchmarks IA',
-                stat: isEn ? '75K+ businesses' : '75K+ entreprises',
+                  ? 'Track progress against industry KPIs tailored to your sector.'
+                  : 'Suivez la progression vs KPIs sectoriels adaptés à votre industrie.',
+                highlight: isEn ? 'Industry KPIs' : 'KPIs sectoriels',
+                stat: isEn ? '15+ industries' : '15+ industries',
                 color: theme.green,
                 delay: 0.2,
               },
@@ -2491,9 +2470,9 @@ export default function Landing() {
                 icon: FileCheck,
                 title: isEn ? 'Board-Ready Reports' : 'Rapports prêts pour le CA',
                 desc: isEn 
-                  ? 'Get presentations that make sense - without calling your accountant.'
-                  : 'Obtenez des présentations claires - sans appeler votre comptable.',
-                highlight: isEn ? 'PDF, Excel, PPT' : 'PDF, Excel, PPT',
+                  ? 'Get presentations that make sense, without calling your accountant.'
+                  : 'Obtenez des présentations claires, sans appeler votre comptable.',
+                highlight: isEn ? 'Interactive dashboards' : 'Tableaux interactifs',
                 stat: isEn ? '3hrs saved' : '3h économisées',
                 color: theme.green,
                 delay: 0.4,
@@ -3022,61 +3001,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Compounding Intelligence Section */}
-      <section 
-        id="compounding-intelligence" 
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
-        aria-label={isEn ? 'Compounding Industry Intelligence' : 'Intelligence industrielle composée'}
-        style={{ 
-          background: isDark 
-            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.95) 100%)' 
-            : 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 50%, #ffffff 100%)'
-        }}
-      >
-        <div className="max-w-6xl mx-auto">
-          {/* Section Header - Minimal */}
-          <motion.div 
-            className="text-center mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
-              style={{ 
-                background: `${theme.gold}15`,
-                border: `1px solid ${theme.gold}25`,
-                color: theme.gold
-              }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              {isEn ? 'CPA-Designed • Recalibrated Weekly' : 'Conçu par des CPA • Recalibré chaque semaine'}
-            </div>
-            <p 
-              className="text-sm sm:text-base max-w-2xl mx-auto"
-              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-            >
-              {isEn 
-                ? 'Recommendations designed by CPAs and refined by 847,000+ Canadian business decisions.'
-                : 'Des recommandations conçues par des CPA et affinées par 847 000+ décisions d\'entreprises canadiennes.'}
-            </p>
-          </motion.div>
-
-          {/* Flywheel Visualization */}
-          <motion.div 
-            className="mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <FlywheelVisualization theme={theme} isDark={isDark} />
-          </motion.div>
-
-          {/* Key Metrics */}
-          <AIMetricsRow theme={theme} isDark={isDark} />
-        </div>
+      {/* Industry KPIs Section - Formulas & Benchmarks */}
+      <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
+      <section id="industries" className="relative" aria-label={isEn ? 'Industry-specific KPIs and benchmarks' : 'KPIs et références par industrie'}>
+        <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
       {/* AI Technology Stack Section */}
@@ -3129,12 +3057,6 @@ export default function Landing() {
           {/* AI Technology Stack Component */}
           <AITechnologyStack theme={theme} isDark={isDark} />
         </div>
-      </section>
-
-      {/* Industry KPIs Section - Formulas & Benchmarks */}
-      <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
-      <section id="industries" className="relative" aria-label={isEn ? 'Industry-specific KPIs and benchmarks' : 'KPIs et références par industrie'}>
-        <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
       {/* Tax Credits Section */}
@@ -3492,7 +3414,7 @@ export default function Landing() {
               {isEn ? 'From Spreadsheets to Insights in 5 Minutes' : 'De vos feuilles de calcul aux insights en 5 minutes'}
             </motion.h2>
             <motion.p 
-              className="text-sm sm:text-base max-w-lg mx-auto"
+              className="text-sm sm:text-base max-w-lg mx-auto mb-8 sm:mb-12"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -3506,7 +3428,7 @@ export default function Landing() {
           </motion.div>
 
           {/* Pipeline Steps - Horizontal on Desktop */}
-          <div className="relative">
+          <div className="relative mt-8 sm:mt-12">
             {/* Enhanced Animated Connection Line - Desktop */}
             <div className="hidden lg:block absolute top-[120px] left-[14%] right-[14%] h-[3px] z-0 rounded-full overflow-hidden">
               {/* Base gradient line */}
@@ -4088,8 +4010,8 @@ export default function Landing() {
               <RefreshCw className="w-4 h-4" style={{ color: theme.gold }} />
               <span className="text-sm font-semibold" style={{ color: theme.gold }}>
                 {isEn 
-                  ? 'Gets smarter every day - same price' 
-                  : 'Plus intelligent chaque jour - même prix'}
+                  ? 'Gets smarter every day. Same price.' 
+                  : 'Plus intelligent chaque jour. Même prix.'}
               </span>
             </motion.div>
             
