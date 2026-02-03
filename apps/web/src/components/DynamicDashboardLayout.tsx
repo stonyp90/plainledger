@@ -52,7 +52,7 @@ export default function DynamicDashboardLayout({
   isDragging = false,
 }: DynamicDashboardLayoutProps) {
   // Filter out null/empty sections
-  let availableSections = sections.filter(
+  const availableSections = sections.filter(
     section => section.component !== null && section.component !== undefined
   );
 

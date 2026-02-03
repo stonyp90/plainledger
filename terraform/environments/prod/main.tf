@@ -76,12 +76,18 @@ resource "aws_ecr_repository" "keycloak" {
   image_scanning_configuration { scan_on_push = true }
 }
 
+resource "aws_ecr_repository" "admin" {
+  name                 = "${var.project}-${var.environment}-admin"
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration { scan_on_push = true }
+}
+
 # ------------------------------------------------------------------------------
 # ACM Certificate (created but validation happens asynchronously)
 # ------------------------------------------------------------------------------
 resource "aws_acm_certificate" "main" {
-  domain_name       = var.domain_name
-  validation_method = "DNS"
+  domain_name               = var.domain_name
+  validation_method         = "DNS"
   subject_alternative_names = ["*.${var.domain_name}"]
   lifecycle { create_before_destroy = true }
 }
@@ -89,9 +95,9 @@ resource "aws_acm_certificate" "main" {
 # ACM Certificate for CloudFront (must be in us-east-1)
 # ------------------------------------------------------------------------------
 resource "aws_acm_certificate" "cloudfront" {
-  provider          = aws.us_east_1
-  domain_name       = var.domain_name
-  validation_method = "DNS"
+  provider                  = aws.us_east_1
+  domain_name               = var.domain_name
+  validation_method         = "DNS"
   subject_alternative_names = ["*.${var.domain_name}"]
   lifecycle { create_before_destroy = true }
 }
@@ -168,7 +174,7 @@ module "datalake" {
   project     = var.project
   environment = var.environment
   aws_region  = var.aws_region
-  
+
   # ETL Pipeline Alert Configuration
   alert_email             = var.alert_email
   additional_alert_emails = ["bartosz@plainledger.ca"]
@@ -221,7 +227,7 @@ resource "aws_secretsmanager_secret_version" "quickbooks" {
     client_id     = var.quickbooks_client_id
     client_secret = var.quickbooks_client_secret
     redirect_uri  = "https://${var.domain_name}/api/v1/datasources/oauth/quickbooks/callback"
-    environment   = var.quickbooks_environment  # "production" for real QBO data
+    environment   = var.quickbooks_environment # "production" for real QBO data
   })
 }
 
@@ -360,10 +366,10 @@ module "ecs" {
   alb_security_group_id = module.networking.alb_security_group_id
   ecs_security_group_id = module.networking.ecs_security_group_id
 
-  db_credentials_secret_arn = module.database.db_credentials_secret_arn
-  redis_auth_secret_arn     = module.database.redis_auth_secret_arn
-  stripe_secret_arn         = aws_secretsmanager_secret.stripe.arn
-  novu_secret_arn           = aws_secretsmanager_secret.novu.arn
+  db_credentials_secret_arn  = module.database.db_credentials_secret_arn
+  redis_auth_secret_arn      = module.database.redis_auth_secret_arn
+  stripe_secret_arn          = aws_secretsmanager_secret.stripe.arn
+  novu_secret_arn            = aws_secretsmanager_secret.novu.arn
   keycloak_smtp_secret_arn   = aws_secretsmanager_secret.keycloak_smtp.arn
   keycloak_client_secret_arn = aws_secretsmanager_secret.keycloak_client.arn
   quickbooks_secret_arn      = aws_secretsmanager_secret.quickbooks.arn
@@ -375,6 +381,7 @@ module "ecs" {
   ecr_web_repository_url      = aws_ecr_repository.web.repository_url
   ecr_api_repository_url      = aws_ecr_repository.api.repository_url
   ecr_keycloak_repository_url = aws_ecr_repository.keycloak.repository_url
+  ecr_admin_repository_url    = aws_ecr_repository.admin.repository_url
 
   datalake_bucket_arns = module.datalake.datalake_bucket_arns
 
@@ -424,12 +431,12 @@ resource "aws_route53_record" "auth" {
 module "storybook" {
   source = "../../modules/storybook"
 
-  project            = var.project
-  environment        = var.environment
-  domain_name        = var.domain_name
+  project             = var.project
+  environment         = var.environment
+  domain_name         = var.domain_name
   acm_certificate_arn = aws_acm_certificate.cloudfront.arn
-  route53_zone_id    = module.networking.route53_zone_id
-  kms_key_arn        = module.database.kms_key_arn
+  route53_zone_id     = module.networking.route53_zone_id
+  kms_key_arn         = module.database.kms_key_arn
 }
 
 # CloudFront Certificate DNS Validation Records
@@ -465,12 +472,12 @@ resource "aws_iam_role" "github_actions" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
-      Action = "sts:AssumeRoleWithWebIdentity"
+      Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = { "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com" }
-        StringLike = { "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*" }
+        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*" }
       }
     }]
   })
@@ -484,23 +491,23 @@ resource "aws_iam_role_policy" "github_actions" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = ["ecr:GetAuthorizationToken"]
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
         Resource = "*"
       },
       {
-        Effect = "Allow"
-        Action = ["ecr:*"]
-        Resource = [aws_ecr_repository.web.arn, aws_ecr_repository.api.arn, aws_ecr_repository.keycloak.arn]
+        Effect   = "Allow"
+        Action   = ["ecr:*"]
+        Resource = [aws_ecr_repository.web.arn, aws_ecr_repository.api.arn, aws_ecr_repository.keycloak.arn, aws_ecr_repository.admin.arn]
       },
       {
-        Effect = "Allow"
-        Action = ["ecs:UpdateService", "ecs:DescribeServices", "ecs:DescribeClusters"]
+        Effect   = "Allow"
+        Action   = ["ecs:UpdateService", "ecs:DescribeServices", "ecs:DescribeClusters"]
         Resource = "*"
       },
       {
-        Effect = "Allow"
-        Action = ["iam:PassRole"]
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
         Resource = [module.ecs.ecs_execution_role_arn, module.ecs.ecs_task_role_arn]
       },
       {

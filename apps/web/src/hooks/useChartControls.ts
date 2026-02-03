@@ -22,7 +22,7 @@ interface ChartControlsConfig {
 
 // Shared state for synchronization across all hook instances
 let currentMode: ChartControlsMode = 'hover';
-let listeners = new Set<() => void>();
+const listeners = new Set<() => void>();
 
 /**
  * Load controls visibility preference from localStorage

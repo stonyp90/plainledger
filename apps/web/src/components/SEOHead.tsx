@@ -96,49 +96,49 @@ export default function SEOHead({ title, description, canonicalPath, noIndex = f
     document.title = isEn ? finalTitle.en : finalTitle.fr;
     
     // Update meta description
-    let metaDescription = document.querySelector('meta[name="description"]');
+    const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.setAttribute('content', isEn ? finalDescription.en : finalDescription.fr);
     }
     
     // Update canonical URL
-    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
     if (canonicalLink) {
       canonicalLink.setAttribute('href', `${BASE_DOMAIN}${currentPath}`);
     }
     
     // Update og:url
-    let ogUrl = document.querySelector('meta[property="og:url"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
     if (ogUrl) {
       ogUrl.setAttribute('content', `${BASE_DOMAIN}${currentPath}`);
     }
     
     // Update og:title
-    let ogTitle = document.querySelector('meta[property="og:title"]');
+    const ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) {
       ogTitle.setAttribute('content', isEn ? finalTitle.en : finalTitle.fr);
     }
     
     // Update og:description
-    let ogDescription = document.querySelector('meta[property="og:description"]');
+    const ogDescription = document.querySelector('meta[property="og:description"]');
     if (ogDescription) {
       ogDescription.setAttribute('content', isEn ? finalDescription.en : finalDescription.fr);
     }
     
     // Update og:locale
-    let ogLocale = document.querySelector('meta[property="og:locale"]');
+    const ogLocale = document.querySelector('meta[property="og:locale"]');
     if (ogLocale) {
       ogLocale.setAttribute('content', isEn ? 'en_CA' : 'fr_CA');
     }
     
     // Update twitter:title
-    let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
     if (twitterTitle) {
       twitterTitle.setAttribute('content', isEn ? finalTitle.en : finalTitle.fr);
     }
     
     // Update twitter:description
-    let twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    const twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (twitterDescription) {
       twitterDescription.setAttribute('content', isEn ? finalDescription.en : finalDescription.fr);
     }
@@ -147,7 +147,7 @@ export default function SEOHead({ title, description, canonicalPath, noIndex = f
     document.documentElement.lang = isEn ? 'en-CA' : 'fr-CA';
     
     // Handle noindex
-    let robotsMeta = document.querySelector('meta[name="robots"]');
+    const robotsMeta = document.querySelector('meta[name="robots"]');
     if (robotsMeta && noIndex) {
       robotsMeta.setAttribute('content', 'noindex, nofollow');
     }
