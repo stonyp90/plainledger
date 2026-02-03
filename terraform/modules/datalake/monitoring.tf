@@ -2,27 +2,8 @@
 # ETL Monitoring & Alerting Infrastructure
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# SNS Topic for ETL Alerts
-# ------------------------------------------------------------------------------
-resource "aws_sns_topic" "etl_alerts" {
-  name = "${var.project}-${var.environment}-etl-alerts"
-  
-  tags = {
-    Name        = "${var.project}-${var.environment}-etl-alerts"
-    Project     = var.project
-    Environment = var.environment
-    Service     = "ETL"
-  }
-}
-
-# Email subscription (configure email via variable)
-resource "aws_sns_topic_subscription" "email_alerts" {
-  count     = var.alert_email != "" ? 1 : 0
-  topic_arn = aws_sns_topic.etl_alerts.arn
-  protocol  = "email"
-  endpoint  = var.alert_email
-}
+# NOTE: SNS Topic for ETL Alerts is defined in alerting.tf (aws_sns_topic.etl_alerts)
+# NOTE: Email subscriptions are defined in alerting.tf
 
 # ------------------------------------------------------------------------------
 # Quarantine Bucket for Bad Records
@@ -304,115 +285,6 @@ resource "aws_cloudwatch_dashboard" "etl_monitoring" {
   })
 }
 
-# ------------------------------------------------------------------------------
-# Glue Job IAM Role (for ETL jobs with monitoring)
-# ------------------------------------------------------------------------------
-resource "aws_iam_role" "glue_etl" {
-  name = "${var.project}-${var.environment}-glue-etl"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "glue.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name        = "${var.project}-${var.environment}-glue-etl"
-    Project     = var.project
-    Environment = var.environment
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "glue_etl_service" {
-  role       = aws_iam_role.glue_etl.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
-}
-
-resource "aws_iam_role_policy" "glue_etl_s3" {
-  name = "${var.project}-${var.environment}-glue-etl-s3"
-  role = aws_iam_role.glue_etl.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.bronze.arn,
-          "${aws_s3_bucket.bronze.arn}/*",
-          aws_s3_bucket.silver.arn,
-          "${aws_s3_bucket.silver.arn}/*",
-          aws_s3_bucket.gold.arn,
-          "${aws_s3_bucket.gold.arn}/*",
-          aws_s3_bucket.quarantine.arn,
-          "${aws_s3_bucket.quarantine.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Decrypt",
-          "kms:Encrypt",
-          "kms:GenerateDataKey"
-        ]
-        Resource = [aws_kms_key.datalake.arn]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "sns:Publish"
-        ]
-        Resource = [aws_sns_topic.etl_alerts.arn]
-      }
-    ]
-  })
-}
-# ------------------------------------------------------------------------------
-# Glue Job for Silver to Gold Transformation
-# ------------------------------------------------------------------------------
-resource "aws_glue_job" "silver_to_gold" {
-  name     = "${var.project}-${var.environment}-silver-to-gold"
-  role_arn = aws_iam_role.glue_etl.arn
-
-  command {
-    script_location = "s3://${aws_s3_bucket.gold.id}/scripts/silver_to_gold.py"
-    python_version  = "3"
-  }
-
-  default_arguments = {
-    "--TempDir" = "s3://${aws_s3_bucket.gold.id}/temp/"
-    "--enable-metrics" = ""
-    "--enable-spark-ui" = "true"
-    "--spark-event-logs-path" = "s3://${aws_s3_bucket.gold.id}/spark-logs/"
-    "--enable-continuous-cloudwatch-log" = "true"
-  }
-
-  max_retries = 2
-  timeout     = 60  # 60 minute timeout
-  
-  execution_property {
-    max_concurrent_runs = 5  # Allow parallel runs for different orgs
-  }
-
-  glue_version = "4.0"
-
-  tags = {
-    Name        = "${var.project}-${var.environment}-silver-to-gold"
-    Project     = var.project
-    Environment = var.environment
-  }
-}
+# NOTE: Glue Job IAM Role (glue_etl) is defined in etl_jobs.tf
+# NOTE: Glue Job for Silver to Gold is defined in etl_jobs.tf
 

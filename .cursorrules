@@ -433,6 +433,75 @@ export function ComponentName({ props }: Props) {
 
 ---
 
+## 🏗️ Terraform State Management (CRITICAL)
+
+**All Terraform state MUST be stored in S3 with DynamoDB locking. NEVER use local state.**
+
+### Backend Configuration (REQUIRED)
+
+Every Terraform environment MUST have this backend configuration:
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "plainledger-terraform-state"
+    key            = "{environment}/terraform.tfstate"  # e.g., "prod/terraform.tfstate"
+    region         = "ca-central-1"
+    encrypt        = true
+    dynamodb_table = "plainledger-terraform-lock"
+  }
+}
+```
+
+### State Resources (Already Created)
+
+| Resource | Value |
+|----------|-------|
+| S3 Bucket | `plainledger-terraform-state` |
+| DynamoDB Lock Table | `plainledger-terraform-lock` |
+| Region | `ca-central-1` |
+
+### State Management Rules
+
+**NEVER:**
+- ❌ Use local state (`terraform.tfstate` file)
+- ❌ Commit state files to git
+- ❌ Run `terraform apply` without backend configured
+- ❌ Use `-backend=false` in production workflows
+
+**ALWAYS:**
+- ✅ Use S3 backend with encryption enabled
+- ✅ Use DynamoDB for state locking
+- ✅ Run `terraform init` before any operations
+- ✅ Check state with `terraform state list` before destructive operations
+
+### Terraform Workflow
+
+```bash
+# Initialize (connects to S3 backend)
+cd terraform/environments/prod
+terraform init
+
+# Plan (always plan before apply)
+terraform plan -out=tfplan
+
+# Apply (use the saved plan)
+terraform apply tfplan
+
+# Check state
+terraform state list
+terraform output
+```
+
+### Environment Keys
+
+| Environment | State Key |
+|-------------|-----------|
+| Production | `prod/terraform.tfstate` |
+| Development | `dev/terraform.tfstate` |
+
+---
+
 **Remember:** 
 - **NO new .md files in root** - Use `docs/` or update existing files
 - **Update agent.md files** instead of creating docs

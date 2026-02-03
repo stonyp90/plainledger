@@ -5,6 +5,7 @@ This is a specialized agent guide for PlainLedger infrastructure (Terraform). Fo
 ## 🤖 Using Skills and Sub-Agents
 
 **ALWAYS** check for available skills and use sub-agents when appropriate:
+
 - Use skills for infrastructure tasks (AWS, Terraform patterns)
 - Reference this file for infrastructure-specific patterns
 - Delegate to module-specific knowledge when working on complex infrastructure
@@ -42,6 +43,7 @@ terraform/
 ### Module Pattern
 
 **Module Structure:**
+
 ```
 modules/your-module/
 ├── main.tf          # Main resources
@@ -51,10 +53,11 @@ modules/your-module/
 ```
 
 **Module Usage:**
+
 ```hcl
 module "your_module" {
   source = "../modules/your-module"
-  
+
   project     = var.project
   environment = var.environment
   # ... other variables
@@ -105,20 +108,23 @@ tags = {
 ### Security Patterns
 
 **Encryption:**
+
 - Always enable encryption at rest
 - Use KMS keys for sensitive data
 - Enable encryption in transit (TLS)
 
 **Access Control:**
+
 - Use least privilege IAM policies
 - Enable VPC endpoints for AWS services
 - Use security groups restrictively
 
 **Example:**
+
 ```hcl
 resource "aws_s3_bucket" "example" {
   bucket = "${var.project}-${var.environment}-example"
-  
+
   encryption {
     sse_algorithm = "aws:kms"
     kms_key_id    = aws_kms_key.example.arn
@@ -145,41 +151,75 @@ resource "aws_s3_bucket" "example" {
 4. **Create `terraform.tfvars`** with environment-specific values
 5. **Update state backend** configuration
 
-### State Management
+### State Management (CRITICAL)
 
-**Backend Configuration:**
+**⚠️ ALL state MUST be stored in S3. NEVER use local state.**
+
+**Backend Configuration (REQUIRED for every environment):**
+
 ```hcl
 terraform {
   backend "s3" {
     bucket         = "plainledger-terraform-state"
-    key            = "environments/prod/terraform.tfstate"
+    key            = "prod/terraform.tfstate"  # Use environment name: prod/, dev/
     region         = "ca-central-1"
-    dynamodb_table = "plainledger-terraform-lock"
     encrypt        = true
+    dynamodb_table = "plainledger-terraform-lock"
   }
 }
 ```
 
+**State Resources:**
+| Resource | Value | Purpose |
+|----------|-------|---------|
+| S3 Bucket | `plainledger-terraform-state` | State storage |
+| DynamoDB Table | `plainledger-terraform-lock` | State locking |
+| Region | `ca-central-1` | Canada (Montreal) |
+
 **State Commands:**
+
 ```bash
-# Initialize backend
+# Initialize backend (ALWAYS run first)
+cd terraform/environments/prod
 terraform init
 
-# Plan changes
-terraform plan
+# Plan changes (review before apply)
+terraform plan -out=tfplan
 
-# Apply changes
-terraform apply
+# Apply changes (use saved plan)
+terraform apply tfplan
 
-# Show state
-terraform show
+# List resources in state
+terraform state list
+
+# Show specific resource
+terraform state show aws_ecs_service.web
+
+# Get outputs
+terraform output
+terraform output -json
 ```
+
+**NEVER:**
+
+- ❌ Use local state files
+- ❌ Commit `terraform.tfstate` to git
+- ❌ Run without `terraform init`
+- ❌ Skip the plan step
+
+**ALWAYS:**
+
+- ✅ Use S3 backend
+- ✅ Enable encryption
+- ✅ Use DynamoDB locking
+- ✅ Plan before apply
 
 ## Module-Specific Patterns
 
 ### Data Lake Module
 
 **Patterns:**
+
 - Bronze (raw), Silver (cleansed), Gold (curated) layers
 - Glue for schema discovery
 - Athena for querying
@@ -190,6 +230,7 @@ terraform show
 ### ECS Module
 
 **Patterns:**
+
 - Fargate tasks (no EC2 management)
 - Application Load Balancer
 - Auto-scaling based on CPU/memory
@@ -200,6 +241,7 @@ terraform show
 ### Database Module
 
 **Patterns:**
+
 - Multi-AZ for production
 - Automated backups
 - Read replicas for scaling
@@ -239,15 +281,68 @@ terraform show
 - Include examples in README
 - Document variable descriptions
 
+## Infrastructure Deployment Workflow
+
+### Manual Apply (Local)
+
+For infrastructure changes that require manual review:
+
+```bash
+# 1. Set AWS credentials (SSO or env vars)
+aws sso login --profile plainledger-prod
+
+# 2. Navigate to environment
+cd terraform/environments/prod
+
+# 3. Initialize (downloads providers, connects to S3)
+terraform init
+
+# 4. Plan and review
+terraform plan -out=tfplan
+
+# 5. Apply after review
+terraform apply tfplan
+
+# 6. Verify outputs
+terraform output
+```
+
+### Getting Outputs
+
+```bash
+# All outputs
+terraform output
+
+# Specific output
+terraform output github_actions_role_arn
+terraform output storybook_url
+
+# JSON format (for scripting)
+terraform output -json | jq '.alb_dns_name.value'
+```
+
+### Key Outputs
+
+| Output                    | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| `app_url`                 | Main application URL (https://plainledger.ca) |
+| `alb_dns_name`            | ALB DNS for CNAME records                     |
+| `github_actions_role_arn` | IAM role for CI/CD                            |
+| `storybook_url`           | Storybook URL                                 |
+| `storybook_cloudfront_id` | CloudFront distribution ID                    |
+| `route53_name_servers`    | NS records for domain                         |
+
 ## Self-Improvement
 
 **Update this file when:**
+
 - Discovering better Terraform patterns
 - Fixing recurring infrastructure issues
 - Adding new modules or patterns
 - Improving security or cost optimization
 
 **Pattern to Follow:**
+
 1. Implement infrastructure change
 2. Document pattern if reusable
 3. Update this agent.md
