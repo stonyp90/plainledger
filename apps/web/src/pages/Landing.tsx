@@ -2080,380 +2080,209 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          {/* Desktop & Tablet - Responsive Orbital Animation */}
-          <div className="hidden md:flex items-center justify-center relative" style={{ height: 'clamp(400px, 50vw, 550px)' }}>
+          {/* Desktop & Tablet - Concentric Circles with Orbiting Icons */}
+          <div className="hidden md:flex items-center justify-center relative" style={{ height: 'clamp(480px, 55vw, 620px)' }}>
             
-            {/* Responsive Orbit Rings */}
+            {/* Concentric Orbit Circles - One per domain, bigger */}
             <div className="absolute inset-0 flex items-center justify-center">
-              {/* Outer Ring */}
-              <motion.div 
-                className="absolute rounded-full border border-dashed"
-                style={{ 
-                  width: 'clamp(320px, 42vw, 480px)', 
-                  height: 'clamp(320px, 42vw, 480px)',
-                  borderColor: `${theme.green}12`
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
-              />
-              
-              {/* Middle Ring */}
-              <motion.div 
-                className="absolute rounded-full"
-                style={{ 
-                  width: 'clamp(240px, 32vw, 380px)', 
-                  height: 'clamp(240px, 32vw, 380px)',
-                  border: `1px solid ${theme.green}15`
-                }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-              />
-              
-              {/* Inner Ring */}
-              <motion.div 
-                className="absolute rounded-full border border-dashed"
-                style={{ 
-                  width: 'clamp(140px, 18vw, 220px)', 
-                  height: 'clamp(140px, 18vw, 220px)',
-                  borderColor: `${theme.green}20`
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-              />
-              
-              {/* Subtle Glow */}
-              <motion.div 
-                className="absolute rounded-full"
-                style={{ 
-                  width: 'clamp(100px, 14vw, 160px)', 
-                  height: 'clamp(100px, 14vw, 160px)',
-                  background: `radial-gradient(circle, ${theme.green}15 0%, transparent 70%)`,
-                  filter: 'blur(20px)'
-                }}
-                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.6, 0.4] }}
-                transition={{ duration: 4, repeat: Infinity }}
-              />
+              {[
+                { radius: 250, color: theme.green, opacity: 0.12 },
+                { radius: 210, color: theme.gold, opacity: 0.10 },
+                { radius: 170, color: '#8b5cf6', opacity: 0.08 },
+                { radius: 130, color: theme.greenDark, opacity: 0.10 },
+                { radius: 90, color: '#059669', opacity: 0.12 },
+              ].map((circle, idx) => (
+                <motion.div
+                  key={`circle-${idx}`}
+                  className="absolute rounded-full"
+                  style={{
+                    width: circle.radius * 2,
+                    height: circle.radius * 2,
+                    border: `1px solid ${circle.color}`,
+                    opacity: circle.opacity,
+                  }}
+                  animate={{ rotate: idx % 2 === 0 ? 360 : -360 }}
+                  transition={{ duration: 120 + idx * 25, repeat: Infinity, ease: "linear" }}
+                />
+              ))}
             </div>
 
-            {/* Center CEO - Smaller & Responsive */}
+            {/* Center Photo */}
             <motion.div 
               className="relative z-30"
               initial={{ opacity: 0, scale: 0 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, type: "spring", bounce: 0.3 }}
+              transition={{ duration: 0.5, type: "spring" }}
             >
-              {/* Rotating Gradient Ring */}
               <motion.div 
                 className="absolute rounded-full"
                 style={{ 
                   inset: '-3px',
-                  background: `conic-gradient(from 0deg, ${theme.green}80, ${theme.gold}80, ${theme.greenDark}80, ${theme.green}80)`,
-                  opacity: 0.6
+                  background: `conic-gradient(from 0deg, ${theme.green}60, ${theme.gold}60, ${theme.greenDark}60, ${theme.green}60)`
                 }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
               />
-              <motion.div 
+              <div 
                 className="absolute rounded-full"
-                style={{ 
-                  inset: '-1px',
-                  background: isDark ? '#0f172a' : '#ffffff'
-                }}
+                style={{ inset: '-1px', background: isDark ? '#0f172a' : '#ffffff' }}
               />
-              
-              {/* CEO Photo - Smaller */}
-              <motion.div 
-                className="relative rounded-full overflow-hidden"
+              <div 
+                className="relative w-16 h-16 rounded-full overflow-hidden"
                 style={{ 
-                  width: 'clamp(72px, 9vw, 96px)',
-                  height: 'clamp(72px, 9vw, 96px)',
-                  border: `3px solid ${theme.green}`,
-                  boxShadow: `0 0 25px ${theme.green}30`
+                  border: `2px solid ${theme.green}`,
+                  boxShadow: `0 0 25px ${theme.green}25`
                 }}
-                animate={{ 
-                  boxShadow: [
-                    `0 0 25px ${theme.green}30`,
-                    `0 0 35px ${theme.green}45`,
-                    `0 0 25px ${theme.green}30`
-                  ]
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=face"
-                  alt={isEn ? 'You' : 'Vous'}
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=128&h=128&fit=crop&crop=face"
+                  alt=""
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
-              </motion.div>
-              
-              {/* Label */}
-              <motion.div 
-                className="absolute -bottom-8 left-1/2 -translate-x-1/2"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-              >
-                <span className="text-base font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'You' : 'Vous'}
-                </span>
-              </motion.div>
+              </div>
             </motion.div>
 
-            {/* Orbiting Domain Icons - Better Icons & Responsive */}
+            {/* Orbiting Domain Icons - Spread apart to avoid overlap */}
             {[
-              { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green, angle: -90 },
-              { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold, angle: -18 },
-              { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6', angle: 54 },
-              { icon: Percent, label: { en: 'Tax Credits', fr: 'Crédits' }, color: theme.greenDark, angle: 126 },
-              { icon: Calculator, label: { en: 'Accounting', fr: 'Compta' }, color: '#059669', angle: 198 },
-            ].map((item, idx) => {
-              const orbitRadius = 160; // Will be scaled by CSS
-              return (
-                <motion.div
-                  key={idx}
-                  className="absolute"
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                  }}
-                  animate={{
-                    x: [
-                      Math.cos((item.angle) * Math.PI / 180) * orbitRadius,
-                      Math.cos((item.angle + 72) * Math.PI / 180) * orbitRadius,
-                      Math.cos((item.angle + 144) * Math.PI / 180) * orbitRadius,
-                      Math.cos((item.angle + 216) * Math.PI / 180) * orbitRadius,
-                      Math.cos((item.angle + 288) * Math.PI / 180) * orbitRadius,
-                      Math.cos((item.angle + 360) * Math.PI / 180) * orbitRadius,
-                    ],
-                    y: [
-                      Math.sin((item.angle) * Math.PI / 180) * orbitRadius,
-                      Math.sin((item.angle + 72) * Math.PI / 180) * orbitRadius,
-                      Math.sin((item.angle + 144) * Math.PI / 180) * orbitRadius,
-                      Math.sin((item.angle + 216) * Math.PI / 180) * orbitRadius,
-                      Math.sin((item.angle + 288) * Math.PI / 180) * orbitRadius,
-                      Math.sin((item.angle + 360) * Math.PI / 180) * orbitRadius,
-                    ]
-                  }}
-                  transition={{
-                    duration: 30,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                >
+              { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green, radius: 250, speed: 35, startAngle: 180 },
+              { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold, radius: 210, speed: 40, startAngle: 0 },
+              { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6', radius: 170, speed: 32, startAngle: 270 },
+              { icon: Percent, label: { en: 'Tax', fr: 'Impôts' }, color: theme.greenDark, radius: 130, speed: 38, startAngle: 45 },
+              { icon: Calculator, label: { en: 'Accounting', fr: 'Compta' }, color: '#059669', radius: 90, speed: 28, startAngle: 135 },
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                className="absolute z-20"
+                style={{ left: '50%', top: '50%' }}
+                animate={{
+                  x: [...Array(9)].map((_, i) => 
+                    Math.cos((item.startAngle + i * 45) * Math.PI / 180) * item.radius
+                  ),
+                  y: [...Array(9)].map((_, i) => 
+                    Math.sin((item.startAngle + i * 45) * Math.PI / 180) * item.radius
+                  ),
+                }}
+                transition={{
+                  duration: item.speed,
+                  repeat: Infinity,
+                  ease: "linear",
+                  times: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1],
+                }}
+              >
+                {/* Icon with Label on Right */}
+                <div className="flex items-center gap-2 -translate-x-1/2 -translate-y-1/2">
                   <motion.div 
-                    className="relative flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+                    className="relative flex items-center justify-center rounded-xl shrink-0"
+                    style={{ 
+                      width: 44,
+                      height: 44,
+                      background: isDark 
+                        ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%)'
+                        : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                      border: `2px solid ${item.color}50`,
+                      boxShadow: `0 0 15px ${item.color}20, 0 4px 12px rgba(0,0,0,0.08)`
+                    }}
                     whileHover={{ scale: 1.1 }}
                   >
-                    {/* Glow */}
-                    <motion.div 
-                      className="absolute -inset-1 rounded-full opacity-50"
-                      style={{ 
-                        background: `radial-gradient(circle, ${item.color}40 0%, transparent 70%)`,
-                        filter: 'blur(6px)'
-                      }}
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2.5, repeat: Infinity, delay: idx * 0.2 }}
-                    />
-                    
-                    {/* Icon */}
-                    <motion.div 
-                      className="relative w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center"
-                      style={{ 
-                        background: isDark 
-                          ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)'
-                          : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-                        border: `2px solid ${item.color}`,
-                        boxShadow: `0 0 15px ${item.color}25, 0 4px 20px rgba(0,0,0,0.08)`
-                      }}
-                    >
-                      <item.icon className="w-5 h-5 md:w-6 md:h-6" style={{ color: item.color }} />
-                    </motion.div>
-                    
-                    {/* Label */}
-                    <span 
-                      className="mt-1.5 text-xs font-semibold whitespace-nowrap px-2 py-0.5 rounded-full"
-                      style={{ 
-                        color: item.color,
-                        background: isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-                        boxShadow: `0 2px 8px ${item.color}15`
-                      }}
-                    >
-                      {isEn ? item.label.en : item.label.fr}
-                    </span>
+                    <item.icon className="w-5 h-5" style={{ color: item.color }} />
                   </motion.div>
-                </motion.div>
-              );
-            })}
-
-            {/* Particle Streams - Optimized */}
-            {[
-              { color: theme.green, angle: -90 },
-              { color: theme.gold, angle: -18 },
-              { color: '#8b5cf6', angle: 54 },
-              { color: theme.greenDark, angle: 126 },
-              { color: '#059669', angle: 198 },
-            ].map((stream, idx) => (
-              [...Array(3)].map((_, pIdx) => (
-                <motion.div
-                  key={`p-${idx}-${pIdx}`}
-                  className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full z-20"
-                  style={{
-                    backgroundColor: stream.color,
-                    boxShadow: `0 0 8px ${stream.color}`
-                  }}
-                  animate={{
-                    x: [
-                      Math.cos(stream.angle * Math.PI / 180) * 140,
-                      Math.cos(stream.angle * Math.PI / 180) * 70,
-                      0
-                    ],
-                    y: [
-                      Math.sin(stream.angle * Math.PI / 180) * 140,
-                      Math.sin(stream.angle * Math.PI / 180) * 70,
-                      0
-                    ],
-                    opacity: [0, 0.8, 0],
-                    scale: [0.5, 1, 0.3]
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    delay: idx * 0.4 + pIdx * 0.5,
-                    ease: "easeIn"
-                  }}
-                />
-              ))
+                  
+                  {/* Label - Always on Right */}
+                  <span 
+                    className="text-xs font-semibold whitespace-nowrap px-2 py-1 rounded"
+                    style={{ 
+                      color: item.color,
+                      background: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    {isEn ? item.label.en : item.label.fr}
+                  </span>
+                </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* Mobile - Simplified Animated Layout */}
-          <div className="lg:hidden relative">
-            {/* Center CEO */}
+          {/* Mobile - Minimal Orbital */}
+          <div className="md:hidden relative flex flex-col items-center">
+            {/* Tiny Center Photo */}
             <motion.div 
-              className="flex flex-col items-center mb-12 relative"
+              className="relative mb-6"
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
             >
-              {/* Animated Ring */}
               <motion.div 
-                className="absolute w-36 h-36 rounded-full border-2 border-dashed"
-                style={{ borderColor: `${theme.green}30` }}
+                className="absolute -inset-1 rounded-full"
+                style={{ border: `1px dashed ${theme.green}20` }}
                 animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               />
-              
-              {/* Glow */}
               <motion.div 
-                className="absolute w-32 h-32 rounded-full"
+                className="relative w-14 h-14 rounded-full overflow-hidden"
                 style={{ 
-                  background: `radial-gradient(circle, ${theme.green}20 0%, transparent 70%)`,
-                  filter: 'blur(15px)'
+                  border: `2px solid ${theme.green}`,
+                  boxShadow: `0 0 15px ${theme.green}25`
                 }}
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              
-              {/* Mobile CEO Photo */}
-              <motion.div 
-                className="relative w-28 h-28 rounded-full overflow-hidden mb-4"
-                style={{ 
-                  border: `4px solid ${theme.green}`,
-                  boxShadow: `0 0 30px ${theme.green}40`
-                }}
-                animate={{ 
-                  boxShadow: [
-                    `0 0 30px ${theme.green}40`,
-                    `0 0 50px ${theme.green}50`,
-                    `0 0 30px ${theme.green}40`
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=face"
-                  alt={isEn ? 'Professional executive' : 'Dirigeant professionnel'}
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=112&h=112&fit=crop&crop=face"
+                  alt=""
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </motion.div>
-              <span className="text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'You' : 'Vous'}
-              </span>
             </motion.div>
 
-            {/* Connection Animation */}
-            <div className="flex justify-center mb-8 relative h-16">
-              {/* Vertical Lines with Particles - 5 Domains */}
-              {[
-                { color: theme.green, x: -60 },
-                { color: theme.gold, x: -30 },
-                { color: '#8b5cf6', x: 0 },
-                { color: theme.greenDark, x: 30 },
-                { color: '#059669', x: 60 },
-              ].map((line, idx) => (
-                <div 
-                  key={idx} 
-                  className="absolute top-0 h-full"
-                  style={{ left: `calc(50% + ${line.x}px)` }}
+            {/* Connection Dots */}
+            <div className="flex justify-center gap-3 mb-5">
+              {[theme.green, theme.gold, '#8b5cf6', theme.greenDark, '#059669'].map((color, i) => (
+                <motion.div
+                  key={i}
+                  className="w-1 h-8 relative"
+                  style={{ background: `linear-gradient(to bottom, ${color}30, transparent)` }}
                 >
-                  <div 
-                    className="w-px h-full"
-                    style={{ background: `linear-gradient(to bottom, ${line.color}50, ${line.color}10)` }}
+                  <motion.div
+                    className="absolute w-1.5 h-1.5 rounded-full -left-[1px]"
+                    style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}` }}
+                    animate={{ y: [0, 28, 0], opacity: [0, 1, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.12 }}
                   />
-                  <motion.div 
-                    className="absolute w-2 h-2 rounded-full -left-[3px]"
-                    style={{ 
-                      backgroundColor: line.color,
-                      boxShadow: `0 0 8px ${line.color}`
-                    }}
-                    animate={{ y: [0, 56, 0], opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: idx * 0.2 }}
-                  />
-                </div>
+                </motion.div>
               ))}
             </div>
 
-            {/* Domain Icons - 5 Domains Grid */}
-            <div className="flex flex-wrap justify-center gap-4">
+            {/* Domain Icons Row */}
+            <div className="flex justify-center gap-4">
               {[
-                { icon: TrendingUp, label: { en: 'Finance', fr: 'Finance' }, color: theme.green },
-                { icon: Database, label: { en: 'Data', fr: 'Données' }, color: theme.gold },
-                { icon: Brain, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6' },
-                { icon: Gift, label: { en: 'Tax Credits', fr: 'Crédits' }, color: theme.greenDark },
-                { icon: FileCheck, label: { en: 'Accounting', fr: 'Compta' }, color: '#059669' },
-              ].map((domain, idx) => (
+                { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green },
+                { icon: PieChart, label: { en: 'Data', fr: 'Data' }, color: theme.gold },
+                { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6' },
+                { icon: Percent, label: { en: 'Tax', fr: 'Impôt' }, color: theme.greenDark },
+                { icon: Calculator, label: { en: 'Acct', fr: 'Compta' }, color: '#059669' },
+              ].map((d, i) => (
                 <motion.div 
-                  key={idx}
+                  key={i}
                   className="flex flex-col items-center"
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.1 + idx * 0.08 }}
+                  transition={{ delay: i * 0.05 }}
                 >
-                  <motion.div 
-                    className="relative w-12 h-12 rounded-full flex items-center justify-center mb-1"
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-0.5"
                     style={{ 
-                      background: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                      border: `2px solid ${domain.color}`,
-                      boxShadow: `0 0 15px ${domain.color}30`
+                      background: isDark ? 'rgba(30, 41, 59, 0.95)' : '#fff',
+                      border: `1.5px solid ${d.color}40`,
+                      boxShadow: `0 0 8px ${d.color}15`
                     }}
-                    animate={{ 
-                      boxShadow: [
-                        `0 0 15px ${domain.color}30`,
-                        `0 0 25px ${domain.color}50`,
-                        `0 0 15px ${domain.color}30`
-                      ]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity, delay: idx * 0.3 }}
-                    whileTap={{ scale: 0.95 }}
                   >
-                    <domain.icon className="w-5 h-5" style={{ color: domain.color }} />
-                  </motion.div>
-                  <span className="font-bold text-[10px] text-center" style={{ color: domain.color }}>
-                    {isEn ? domain.label.en : domain.label.fr}
+                    <d.icon className="w-4 h-4" style={{ color: d.color }} />
+                  </div>
+                  <span className="text-[8px] font-medium" style={{ color: d.color }}>
+                    {isEn ? d.label.en : d.label.fr}
                   </span>
                 </motion.div>
               ))}
@@ -3190,13 +3019,13 @@ export default function Landing() {
         }}
       >
         <div className="max-w-6xl mx-auto">
-          {/* Section Header */}
+          {/* Section Header - Minimal */}
           <motion.div 
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
+            className="text-center mb-10"
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6 }}
           >
             <div 
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
@@ -3209,19 +3038,13 @@ export default function Landing() {
               <Sparkles className="w-3.5 h-3.5" />
               {isEn ? 'CPA-Designed • Recalibrated Weekly' : 'Conçu par des CPA • Recalibré chaque semaine'}
             </div>
-            <h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
-              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-            >
-              {isEn ? 'Intelligence That Compounds With Your Industry' : 'Une intelligence qui s\'affine avec votre industrie'}
-            </h2>
             <p 
               className="text-sm sm:text-base max-w-2xl mx-auto"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'Recommendations designed by CPAs and refined by 847,000+ Canadian business decisions. Our AI recalibrates weekly for your industry and company size.'
-                : 'Des recommandations conçues par des CPA et affinées par 847 000+ décisions d\'entreprises canadiennes. Notre IA se recalibre chaque semaine pour votre industrie et votre taille d\'entreprise.'}
+                ? 'Recommendations designed by CPAs and refined by 847,000+ Canadian business decisions.'
+                : 'Des recommandations conçues par des CPA et affinées par 847 000+ décisions d\'entreprises canadiennes.'}
             </p>
           </motion.div>
 

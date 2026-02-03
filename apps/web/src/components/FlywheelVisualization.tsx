@@ -42,9 +42,9 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Horizontal Flow Layout */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+    <div className="w-full max-w-4xl mx-auto relative pb-12 sm:pb-16">
+      {/* Items Row */}
+      <div className="relative flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         {flywheelSteps.map((step, idx) => (
           <motion.div
             key={idx}
@@ -56,9 +56,9 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
           >
             {/* Step Card */}
             <motion.div
-              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg"
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg relative z-10"
               style={{
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
                 border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 1)'}`,
                 boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)',
               }}
@@ -85,14 +85,14 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
               </span>
             </motion.div>
 
-            {/* Arrow (except after last item) */}
+            {/* Arrow between items */}
             {idx < flywheelSteps.length - 1 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.15 + 0.1, duration: 0.3 }}
-                className="mx-1 sm:mx-2"
+                className="mx-1 sm:mx-2 z-10"
               >
                 <ArrowRight 
                   className="w-4 h-4 sm:w-5 sm:h-5" 
@@ -103,20 +103,22 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
           </motion.div>
         ))}
 
-        {/* Loop Back Arrow */}
+        {/* Loop Back Icon */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.6, duration: 0.4 }}
-          className="ml-1 sm:ml-2"
+          className="ml-1 sm:ml-2 z-10"
         >
-          <div 
+          <motion.div 
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center"
             style={{ 
               backgroundColor: `${theme.green}15`,
-              border: `2px dashed ${theme.green}40`,
+              border: `2px solid ${theme.green}40`,
             }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
           >
             <svg 
               className="w-4 h-4 sm:w-5 sm:h-5" 
@@ -125,49 +127,77 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
               style={{ color: theme.green }}
             >
               <path 
-                d="M17 1l4 4-4 4" 
+                d="M21 12a9 9 0 11-9-9" 
                 stroke="currentColor" 
                 strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
+                strokeLinecap="round"
               />
               <path 
-                d="M3 11V9a4 4 0 014-4h14" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-              <path 
-                d="M7 23l-4-4 4-4" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-              <path 
-                d="M21 13v2a4 4 0 01-4 4H3" 
+                d="M21 3v6h-6" 
                 stroke="currentColor" 
                 strokeWidth="2" 
                 strokeLinecap="round" 
                 strokeLinejoin="round"
               />
             </svg>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
 
-      {/* Subtitle */}
-      <motion.p
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.7, duration: 0.4 }}
-        className="text-center mt-4 text-xs sm:text-sm"
-        style={{ color: isDark ? '#64748b' : '#94a3b8' }}
+      {/* Loop Path - From Better Insights back to More Businesses */}
+      <svg 
+        className="absolute w-full h-12 sm:h-14 pointer-events-none"
+        style={{ bottom: 0, left: 0 }}
+        viewBox="0 0 100 14"
+        preserveAspectRatio="none"
       >
-        {isEn ? 'A continuous cycle of improvement' : 'Un cycle continu d\'amélioration'}
-      </motion.p>
+        {/* Path: starts right, curves down, goes left, curves up to start */}
+        <motion.path
+          d="M 88 0 Q 95 0, 95 7 Q 95 13, 50 13 Q 5 13, 5 7 Q 5 0, 12 0"
+          fill="none"
+          stroke={theme.green}
+          strokeWidth="0.4"
+          strokeOpacity="0.4"
+          initial={{ pathLength: 0 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, delay: 0.8 }}
+        />
+        {/* Arrow pointing to start */}
+        <motion.path
+          d="M 10 -1.5 L 14 0 L 10 1.5"
+          fill="none"
+          stroke={theme.green}
+          strokeWidth="0.4"
+          strokeOpacity="0.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 1.8 }}
+        />
+      </svg>
+
+      {/* Animated Dot on Loop Path */}
+      <motion.div
+        className="absolute w-2 h-2 rounded-full hidden sm:block"
+        style={{
+          backgroundColor: theme.green,
+          boxShadow: `0 0 8px ${theme.green}`,
+          bottom: '4px',
+        }}
+        animate={{
+          left: ['88%', '95%', '95%', '50%', '5%', '5%', '12%'],
+          bottom: ['48px', '28px', '8px', '4px', '8px', '28px', '48px'],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "linear",
+          times: [0, 0.1, 0.2, 0.5, 0.8, 0.9, 1],
+        }}
+      />
     </div>
   );
 }
