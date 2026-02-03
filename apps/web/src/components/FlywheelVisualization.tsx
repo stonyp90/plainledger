@@ -1,12 +1,12 @@
 /**
  * FlywheelVisualization Component
  * 
- * Clean, modern visualization showing the compounding intelligence effect
- * with a horizontal flow layout.
+ * Premium visualization showing the compounding intelligence loop.
+ * Features smooth animations, hover interactions, and a flowing data effect.
  */
 
 import { motion } from 'framer-motion';
-import { Building2, Target, Layers, Lightbulb, ArrowRight } from 'lucide-react';
+import { Building2, Target, Layers, Lightbulb, ArrowRight, Sparkles } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 
 interface FlywheelVisualizationProps {
@@ -26,178 +26,282 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
     { 
       label: isEn ? 'More Businesses' : 'Plus d\'entreprises', 
       icon: Building2,
+      color: theme.green,
     },
     { 
       label: isEn ? 'More Decisions' : 'Plus de décisions', 
       icon: Target,
+      color: theme.gold,
     },
     { 
       label: isEn ? 'Richer Patterns' : 'Modèles enrichis', 
       icon: Layers,
+      color: '#8b5cf6', // Purple for variety
     },
     { 
       label: isEn ? 'Better Insights' : 'Meilleurs insights', 
       icon: Lightbulb,
+      color: theme.green,
     },
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto relative pb-12 sm:pb-16">
-      {/* Items Row */}
-      <div className="relative flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+    <div className="w-full max-w-4xl mx-auto relative py-4">
+      {/* Background glow effect */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: isDark 
+            ? `radial-gradient(ellipse 80% 50% at 50% 50%, ${theme.green}08 0%, transparent 70%)`
+            : `radial-gradient(ellipse 80% 50% at 50% 50%, ${theme.green}05 0%, transparent 70%)`,
+        }}
+      />
+
+      {/* Main Flow Container */}
+      <div className="relative flex flex-wrap items-center justify-center gap-y-4">
         {flywheelSteps.map((step, idx) => (
           <motion.div
             key={idx}
             className="flex items-center"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: idx * 0.15, duration: 0.4, ease: "easeOut" }}
+            transition={{ 
+              delay: idx * 0.12, 
+              duration: 0.5, 
+              ease: [0.25, 0.46, 0.45, 0.94] 
+            }}
           >
             {/* Step Card */}
             <motion.div
-              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg relative z-10"
+              className="group relative flex items-center gap-2.5 px-4 py-3 sm:px-5 sm:py-3.5 rounded-xl cursor-default"
               style={{
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 1)'}`,
-                boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)',
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                boxShadow: isDark 
+                  ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
+                  : '0 4px 20px rgba(0, 0, 0, 0.06)',
               }}
               whileHover={{ 
-                scale: 1.02,
-                borderColor: theme.gold,
+                scale: 1.03,
+                boxShadow: isDark 
+                  ? `0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px ${step.color}20`
+                  : `0 8px 30px rgba(0, 0, 0, 0.1), 0 0 20px ${step.color}15`,
               }}
-              transition={{ type: "spring", stiffness: 400 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
             >
-              <div 
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${theme.gold}15` }}
+              {/* Hover glow ring */}
+              <motion.div
+                className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style={{
+                  border: `1.5px solid ${step.color}40`,
+                }}
+              />
+              
+              {/* Icon Container */}
+              <motion.div 
+                className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 overflow-hidden"
+                style={{ 
+                  backgroundColor: `${step.color}12`,
+                  border: `1px solid ${step.color}20`,
+                }}
+                whileHover={{ scale: 1.05 }}
               >
-                <step.icon 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
-                  style={{ color: theme.gold }} 
+                {/* Subtle shimmer effect on hover */}
+                <motion.div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                  style={{
+                    background: `linear-gradient(135deg, transparent 40%, ${step.color}15 50%, transparent 60%)`,
+                  }}
+                  animate={{
+                    x: ['-100%', '200%'],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    repeatDelay: 2,
+                    ease: "easeInOut",
+                  }}
                 />
-              </div>
+                <step.icon 
+                  className="w-4.5 h-4.5 sm:w-5 sm:h-5 relative z-10" 
+                  style={{ color: step.color }} 
+                  strokeWidth={1.8}
+                />
+              </motion.div>
+
+              {/* Label */}
               <span 
-                className="text-xs sm:text-sm font-medium whitespace-nowrap"
+                className="text-sm sm:text-[15px] font-medium whitespace-nowrap tracking-tight"
                 style={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
               >
                 {step.label}
               </span>
             </motion.div>
 
-            {/* Arrow between items */}
+            {/* Animated Connector */}
             {idx < flywheelSteps.length - 1 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.15 + 0.1, duration: 0.3 }}
-                className="mx-1 sm:mx-2 z-10"
-              >
-                <ArrowRight 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
-                  style={{ color: theme.gold, opacity: 0.6 }} 
-                />
-              </motion.div>
+              <div className="mx-3 sm:mx-4 flex items-center">
+                {/* Flowing energy line */}
+                <div 
+                  className="relative w-8 sm:w-10 h-[3px] rounded-full overflow-hidden"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
+                  }}
+                >
+                  {/* Animated gradient pulse */}
+                  <motion.div
+                    className="absolute inset-y-0 w-1/2 rounded-full"
+                    style={{
+                      background: `linear-gradient(90deg, transparent, ${theme.gold}, transparent)`,
+                    }}
+                    animate={{
+                      x: ['-50%', '200%'],
+                    }}
+                    transition={{
+                      duration: 1.2,
+                      repeat: Infinity,
+                      delay: idx * 0.2,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </div>
+                
+                {/* Arrow head */}
+                <motion.div
+                  className="ml-0.5"
+                  animate={{
+                    x: [0, 3, 0],
+                    opacity: [0.6, 1, 0.6],
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    repeat: Infinity,
+                    delay: idx * 0.2,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <svg 
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4" 
+                    viewBox="0 0 24 24" 
+                    fill="none"
+                  >
+                    <path 
+                      d="M9 6l6 6-6 6" 
+                      stroke={theme.gold}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </motion.div>
+              </div>
             )}
           </motion.div>
         ))}
 
-        {/* Loop Back Icon */}
+        {/* Loop Indicator - "Gets Smarter" */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-          className="ml-1 sm:ml-2 z-10"
+          transition={{ delay: 0.6, duration: 0.5, ease: "backOut" }}
+          className="ml-3 sm:ml-4"
         >
           <motion.div 
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center"
+            className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center cursor-default group"
             style={{ 
-              backgroundColor: `${theme.green}15`,
-              border: `2px solid ${theme.green}40`,
+              backgroundColor: `${theme.green}10`,
+              border: `2px solid ${theme.green}25`,
             }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            whileHover={{ 
+              scale: 1.1,
+              borderColor: `${theme.green}50`,
+            }}
+            animate={{ 
+              boxShadow: [
+                `0 0 0px ${theme.green}00`,
+                `0 0 20px ${theme.green}30`,
+                `0 0 0px ${theme.green}00`,
+              ],
+            }}
+            transition={{ 
+              boxShadow: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+              scale: { type: "spring", stiffness: 400 },
+            }}
           >
-            <svg 
-              className="w-4 h-4 sm:w-5 sm:h-5" 
-              viewBox="0 0 24 24" 
-              fill="none"
+            {/* Rotating ring */}
+            <motion.div
+              className="absolute inset-[-3px] rounded-full"
+              style={{
+                border: `1px dashed ${theme.green}30`,
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            />
+            
+            {/* Sparkle icon */}
+            <Sparkles 
+              className="w-4.5 h-4.5 sm:w-5 sm:h-5" 
               style={{ color: theme.green }}
-            >
-              <path 
-                d="M21 12a9 9 0 11-9-9" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round"
-              />
-              <path 
-                d="M21 3v6h-6" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
+              strokeWidth={2}
+            />
           </motion.div>
         </motion.div>
       </div>
 
-      {/* Loop Path - From Better Insights back to More Businesses */}
-      <svg 
-        className="absolute w-full h-12 sm:h-14 pointer-events-none"
-        style={{ bottom: 0, left: 0 }}
-        viewBox="0 0 100 14"
-        preserveAspectRatio="none"
-      >
-        {/* Path: starts right, curves down, goes left, curves up to start */}
-        <motion.path
-          d="M 88 0 Q 95 0, 95 7 Q 95 13, 50 13 Q 5 13, 5 7 Q 5 0, 12 0"
-          fill="none"
-          stroke={theme.green}
-          strokeWidth="0.4"
-          strokeOpacity="0.4"
-          initial={{ pathLength: 0 }}
-          whileInView={{ pathLength: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, delay: 0.8 }}
-        />
-        {/* Arrow pointing to start */}
-        <motion.path
-          d="M 10 -1.5 L 14 0 L 10 1.5"
-          fill="none"
-          stroke={theme.green}
-          strokeWidth="0.4"
-          strokeOpacity="0.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 1.8 }}
-        />
-      </svg>
+      {/* Bottom flowing line - represents continuous improvement */}
+      <div className="mt-6 sm:mt-8 flex justify-center">
+        <div 
+          className="relative w-full max-w-md h-[2px] rounded-full overflow-hidden"
+          style={{ 
+            backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)',
+          }}
+        >
+          {/* Multiple flowing particles */}
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="absolute inset-y-0 w-16 rounded-full"
+              style={{
+                background: `linear-gradient(90deg, transparent, ${theme.green}80, transparent)`,
+              }}
+              animate={{
+                x: ['-64px', 'calc(100% + 64px)'],
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                delay: i * 0.8,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+      </div>
 
-      {/* Animated Dot on Loop Path */}
-      <motion.div
-        className="absolute w-2 h-2 rounded-full hidden sm:block"
-        style={{
-          backgroundColor: theme.green,
-          boxShadow: `0 0 8px ${theme.green}`,
-          bottom: '4px',
-        }}
-        animate={{
-          left: ['88%', '95%', '95%', '50%', '5%', '5%', '12%'],
-          bottom: ['48px', '28px', '8px', '4px', '8px', '28px', '48px'],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "linear",
-          times: [0, 0.1, 0.2, 0.5, 0.8, 0.9, 1],
-        }}
-      />
+      {/* "Gets Smarter" label */}
+      <motion.div 
+        className="mt-3 sm:mt-4 flex justify-center"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.8 }}
+      >
+        <motion.span 
+          className="text-xs sm:text-sm font-medium px-3 py-1 rounded-full"
+          style={{ 
+            color: theme.green,
+            backgroundColor: `${theme.green}08`,
+          }}
+          animate={{
+            opacity: [0.7, 1, 0.7],
+          }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {isEn ? '↻ Gets smarter every cycle' : '↻ S\'améliore à chaque cycle'}
+        </motion.span>
+      </motion.div>
     </div>
   );
 }
@@ -208,10 +312,10 @@ export function FlywheelStatic({ theme, isDark }: FlywheelVisualizationProps) {
   const isEn = language === 'en';
 
   const steps = [
-    { label: isEn ? 'More Businesses' : 'Plus d\'entreprises', icon: Building2 },
-    { label: isEn ? 'More Decisions' : 'Plus de décisions', icon: Target },
-    { label: isEn ? 'Richer Patterns' : 'Modèles enrichis', icon: Layers },
-    { label: isEn ? 'Better Insights' : 'Meilleurs insights', icon: Lightbulb },
+    { label: isEn ? 'More Businesses' : 'Plus d\'entreprises', icon: Building2, color: theme.green },
+    { label: isEn ? 'More Decisions' : 'Plus de décisions', icon: Target, color: theme.gold },
+    { label: isEn ? 'Richer Patterns' : 'Modèles enrichis', icon: Layers, color: '#8b5cf6' },
+    { label: isEn ? 'Better Insights' : 'Meilleurs insights', icon: Lightbulb, color: theme.green },
   ];
 
   return (
@@ -219,20 +323,24 @@ export function FlywheelStatic({ theme, isDark }: FlywheelVisualizationProps) {
       {steps.map((step, idx) => (
         <div key={idx} className="flex items-center">
           <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
             style={{
               backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 1)'}`,
+              border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+              boxShadow: isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)',
             }}
           >
             <div 
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${theme.gold}15` }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ 
+                backgroundColor: `${step.color}12`,
+                border: `1px solid ${step.color}20`,
+              }}
             >
-              <step.icon className="w-4 h-4" style={{ color: theme.gold }} />
+              <step.icon className="w-4 h-4" style={{ color: step.color }} strokeWidth={1.8} />
             </div>
             <span 
-              className="text-xs font-medium"
+              className="text-sm font-medium"
               style={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
             >
               {step.label}
@@ -240,25 +348,20 @@ export function FlywheelStatic({ theme, isDark }: FlywheelVisualizationProps) {
           </div>
           {idx < steps.length - 1 && (
             <ArrowRight 
-              className="w-4 h-4 mx-1.5" 
+              className="w-4 h-4 mx-2" 
               style={{ color: theme.gold, opacity: 0.6 }} 
             />
           )}
         </div>
       ))}
       <div 
-        className="w-7 h-7 ml-1.5 rounded-full flex items-center justify-center"
+        className="w-9 h-9 ml-2 rounded-full flex items-center justify-center"
         style={{ 
-          backgroundColor: `${theme.green}15`,
-          border: `2px dashed ${theme.green}40`,
+          backgroundColor: `${theme.green}10`,
+          border: `2px solid ${theme.green}25`,
         }}
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" style={{ color: theme.green }}>
-          <path d="M17 1l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M3 11V9a4 4 0 014-4h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M7 23l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M21 13v2a4 4 0 01-4 4H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        <Sparkles className="w-4 h-4" style={{ color: theme.green }} />
       </div>
     </div>
   );
