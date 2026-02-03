@@ -30,18 +30,14 @@ export default function TrialBalance() {
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
   
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="statements" />;
-  }
-  
+  // All hooks must be called before any conditional returns
   const [asOfDate, setAsOfDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [showShareModal, setShowShareModal] = useState(false);
 
   const { data: financialData, isLoading, error, refresh } = useFinancialData();
-  const { hasTrialBalance, hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasAccounts } = useHasRealData();
+  const { hasTrialBalance, hasRealData, hasQuickBooksConnection: _hasQuickBooksConnection, hasSandboxData: _hasSandboxData, shouldShowSandboxData, hasAccounts } = useHasRealData();
   const shouldShowData = hasRealData || shouldShowSandboxData;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -153,6 +149,11 @@ export default function TrialBalance() {
     
     return { totalDebit, totalCredit, isBalanced, difference: totalDebit - totalCredit };
   }, [trialBalanceData]);
+
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="statements" />;
+  }
 
   const typeLabels = {
     all: isEn ? 'All Accounts' : 'Tous les comptes',

@@ -285,13 +285,9 @@ export default function StrategicPlanning() {
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
   
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="analysis" />;
-  }
-  
+  // All hooks must be called before any conditional returns
   const { data: financialData, isLoading: dataLoading } = useFinancialData();
-  const { hasQuickBooksConnection, hasRealData } = useHasRealData();
+  const { hasQuickBooksConnection: _hasQuickBooksConnection, hasRealData: _hasRealData } = useHasRealData();
   const { hasAccess } = usePremiumFeature('strategicPlanning');
   
   // Chat state
@@ -327,6 +323,11 @@ export default function StrategicPlanning() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  // CRITICAL: Block paid users without connection - show connection gate
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="analysis" />;
+  }
   
   // Handle sending a message
   const handleSend = async (messageText?: string) => {
