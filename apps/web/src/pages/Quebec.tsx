@@ -406,13 +406,13 @@ export default function Quebec() {
             >
               {isEn ? (
                 <>
-                  Quebec Business,<br />
-                  <span style={{ color: quebecTheme.blue }}>Quebec Tools.</span>
+                  Quebec Entrepreneurs:<br />
+                  <span style={{ color: quebecTheme.blue }}>Stop Leaving Money on the Table</span>
                 </>
               ) : (
                 <>
-                  Votre entreprise québécoise<br />
-                  <span style={{ color: quebecTheme.blue }}>mérite des outils québécois.</span>
+                  Entrepreneurs québécois:<br />
+                  <span style={{ color: quebecTheme.blue }}>Arrêtez de laisser de l'argent sur la table</span>
                 </>
               )}
             </motion.h1>
@@ -426,8 +426,8 @@ export default function Quebec() {
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Tax Credits. Government Funding. Industry Benchmarks. All in One Platform.'
-                : 'Crédits d\'impôt. Financement gouvernemental. Benchmarks sectoriels. Tout en un.'}
+                ? 'CDAE alone could mean $25,000 per employee - if you knew you qualified. We bridge the gap between accounting and business decisions.'
+                : 'Le CDAE seul pourrait signifier 25 000$ par employé - si vous saviez que vous vous qualifiez. Nous comblons l\'écart entre comptabilité et décisions d\'affaires.'}
             </motion.p>
 
             {/* Key Benefits */}
@@ -507,15 +507,15 @@ export default function Quebec() {
               className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
               style={{ color: 'rgb(var(--color-text))' }}
             >
-              {isEn ? 'Quebec Tax Credits' : 'Crédits d\'impôt du Québec'}
+              {isEn ? 'Money You\'re Leaving on the Table' : 'L\'argent que vous laissez sur la table'}
             </h2>
             <p 
               className="text-lg max-w-2xl mx-auto"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Discover tax credits you may be missing. PlainLedger analyzes your data to identify eligible programs.'
-                : 'Découvrez les crédits d\'impôt que vous manquez peut-être. PlainLedger analyse vos données pour identifier les programmes admissibles.'}
+                ? 'CDAE alone could mean $25,000 per employee - if you knew you qualified. Most Quebec businesses miss 15K-50K$ in credits every year.'
+                : 'Le CDAE seul pourrait signifier 25 000$ par employé - si vous saviez que vous vous qualifiez. La plupart des entreprises québécoises manquent 15K-50K$ en crédits chaque année.'}
             </p>
           </motion.div>
 

@@ -1766,39 +1766,50 @@ export default function Landing() {
             {isEn ? (
               <>
                 <span style={{ color: theme.green }}>
-                  Know Your Numbers.
+                  Your Accountant Speaks Numbers.
                 </span>{' '}
-                <span>Grow Your Business.</span>
+                <span>We Speak Business.</span>
               </>
             ) : (
               <>
                 <span style={{ color: theme.green }}>
-                  Maîtrisez vos chiffres.
+                  Votre comptable parle chiffres.
                 </span>{' '}
-                <span>Faites croître votre entreprise.</span>
+                <span>Nous parlons affaires.</span>
               </>
             )}
           </h1>
 
-          {/* Compounding Intelligence Badge */}
+          {/* Professional Credibility Badges */}
           <div 
-            className="flex justify-center mb-6 animate-fade-up opacity-0"
+            className="flex flex-wrap justify-center gap-2 mb-6 animate-fade-up opacity-0"
             style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
           >
             <span 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.green}15`,
+                border: `1px solid ${theme.green}25`,
+                color: theme.green
+              }}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              {isEn ? 'FP&A Intelligence, IBCS Certified' : 'Intelligence FP&A, Certifié IBCS'}
+            </span>
+            <span 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
               style={{ 
                 backgroundColor: `${theme.gold}15`,
                 border: `1px solid ${theme.gold}25`,
                 color: theme.gold
               }}
             >
-              <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" style={{ animationDuration: '8s' }} />
-              {isEn ? 'AI that learns from 75,000+ Canadian businesses' : 'IA qui apprend de 75 000+ entreprises canadiennes'}
+              <Users className="w-3.5 h-3.5" />
+              {isEn ? '75,000+ businesses benchmarked' : '75 000+ entreprises analysées'}
             </span>
           </div>
 
-          {/* Value Proposition - Compounding Intelligence focused */}
+          {/* Value Proposition - Bridge the Gap focused */}
           <div 
             className="max-w-3xl mx-auto mb-8 px-2 animate-fade-up opacity-0"
             style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}
@@ -1808,22 +1819,11 @@ export default function Landing() {
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Industry-specific recommendations backed by real decisions from businesses like yours. Every insight gets smarter over time.'
-                : 'Recommandations sectorielles basées sur de vraies décisions d\'entreprises comme la vôtre. Chaque insight devient plus intelligent avec le temps.'}
+                ? 'We transform your raw financial data into industry KPIs with clear ROI. See exactly where to act - and what it\'s worth. Tax credits you\'re missing. Costs you can cut. Opportunities you didn\'t know existed.'
+                : 'Nous transformons vos données brutes en KPIs sectoriels avec un ROI clair. Voyez exactement où agir - et combien ça vaut. Crédits d\'impôt manqués. Coûts à réduire. Opportunités cachées.'}
             </p>
             {/* Key value metrics */}
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm">
-              <span 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-                style={{ 
-                  backgroundColor: `${theme.gold}15`,
-                  color: theme.gold,
-                  fontWeight: 600,
-                }}
-              >
-                <Target className="w-4 h-4" />
-                {isEn ? '92% Accuracy' : '92% Précision'}
-              </span>
               <span 
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full"
                 style={{ 
@@ -1832,8 +1832,8 @@ export default function Landing() {
                   fontWeight: 600,
                 }}
               >
-                <TrendingUp className="w-4 h-4" />
-                {isEn ? '15+ Industries' : '15+ Industries'}
+                <Check className="w-4 h-4" />
+                {isEn ? 'Not a finance person? Perfect.' : 'Pas un expert en finances? Parfait.'}
               </span>
               <span 
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full"
@@ -1843,8 +1843,8 @@ export default function Landing() {
                   fontWeight: 600,
                 }}
               >
-                <Sparkles className="w-4 h-4" />
-                {isEn ? 'Gets Smarter Daily' : 'S\'améliore chaque jour'}
+                <Shield className="w-4 h-4" />
+                {isEn ? 'Data stays in Canada' : 'Données au Canada'}
               </span>
             </div>
           </div>
@@ -1863,7 +1863,7 @@ export default function Landing() {
                 boxShadow: `0 8px 24px ${theme.green}40`
               }}
             >
-              {isEn ? 'Get started free' : 'Commencer gratuitement'}
+              {isEn ? 'See what you\'re missing' : 'Voyez ce que vous manquez'}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button 
@@ -1876,7 +1876,7 @@ export default function Landing() {
               }}
             >
               <Calendar className="w-4 h-4" />
-              {isEn ? 'Schedule a call' : 'Planifier un appel'}
+              {isEn ? 'Talk to a real person' : 'Parlez à une vraie personne'}
             </button>
           </div>
 
@@ -1982,6 +1982,284 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Bridge the Gap Section */}
+      <section 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' 
+            : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)'
+        }}
+      >
+        <div className="max-w-5xl mx-auto">
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <h2 
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'The Gap We Bridge' : 'L\'écart que nous comblons'}
+            </h2>
+            <p 
+              className="text-lg sm:text-xl max-w-3xl mx-auto mb-8"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'Your accountant is great at compliance. We\'re great at translation. PlainLedger turns financial jargon into business decisions you can actually make.'
+                : 'Votre comptable excelle en conformité. Nous excellons en traduction. PlainLedger transforme le jargon financier en décisions d\'affaires concrètes.'}
+            </p>
+          </motion.div>
+
+          {/* Visual Gap Illustration */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <div 
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 rounded-2xl"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`
+              }}
+            >
+              {/* Accountant World */}
+              <div className="text-center">
+                <div 
+                  className="text-2xl font-bold mb-4"
+                  style={{ color: theme.green }}
+                >
+                  {isEn ? 'Accountant World' : 'Monde du comptable'}
+                </div>
+                <div className="space-y-3 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <div>Balance sheets</div>
+                  <div>EBITDA margins</div>
+                  <div>Working capital</div>
+                  <div>Accrual basis</div>
+                  <div>Depreciation</div>
+                </div>
+              </div>
+
+              {/* The Gap / PlainLedger Bridge */}
+              <div className="flex flex-col items-center justify-center">
+                <div 
+                  className="text-4xl mb-4 font-bold"
+                  style={{ color: theme.gold }}
+                >
+                  →
+                </div>
+                <div 
+                  className="text-center px-4 py-2 rounded-lg font-bold text-sm"
+                  style={{ 
+                    backgroundColor: `${theme.green}15`,
+                    color: theme.green
+                  }}
+                >
+                  PlainLedger
+                </div>
+                <div 
+                  className="text-4xl mt-4 font-bold"
+                  style={{ color: theme.gold }}
+                >
+                  →
+                </div>
+              </div>
+
+              {/* Entrepreneur World */}
+              <div className="text-center">
+                <div 
+                  className="text-2xl font-bold mb-4"
+                  style={{ color: theme.green }}
+                >
+                  {isEn ? 'Entrepreneur World' : 'Monde de l\'entrepreneur'}
+                </div>
+                <div className="space-y-3 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <div>&quot;Can I hire?&quot;</div>
+                  <div>&quot;Am I profitable?&quot;</div>
+                  <div>&quot;When do I run out of money?&quot;</div>
+                  <div>&quot;Should I expand?&quot;</div>
+                  <div>&quot;What should I cut?&quot;</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Visibility Graph Section */}
+      <section 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.95) 100%)' 
+            : 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)'
+        }}
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-4"
+              style={{ 
+                background: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`,
+                color: theme.gold
+              }}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {isEn ? 'The Visibility Graph' : 'Le Graphique de Visibilité'}
+            </div>
+            <h2 
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? 'From Scattered Numbers to Strategic Clarity' : 'De chiffres éparpillés à une clarté stratégique'}
+            </h2>
+            <p 
+              className="text-lg sm:text-xl max-w-3xl mx-auto"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'We crunch your data into industry-ready KPIs - so you see exactly where to act and what it\'s worth'
+                : 'Nous transformons vos données en KPIs sectoriels - pour voir exactement où agir et combien ça vaut'}
+            </p>
+          </motion.div>
+
+          {/* Visibility Graph Visual */}
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            {/* Raw Data */}
+            <div 
+              className="p-6 rounded-xl"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`
+              }}
+            >
+              <div className="text-center mb-4">
+                <Database className="w-8 h-8 mx-auto mb-2" style={{ color: theme.green }} />
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Raw Data' : 'Données brutes'}
+                </h3>
+                <div className="text-xs" style={{ color: theme.green }}>(Bronze)</div>
+              </div>
+              <div className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <div>QuickBooks</div>
+                <div>Bank feeds</div>
+                <div>Invoices</div>
+                <div>Expenses</div>
+              </div>
+            </div>
+
+            {/* Industry KPIs */}
+            <div 
+              className="p-6 rounded-xl"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                border: `2px solid ${theme.gold}40`
+              }}
+            >
+              <div className="text-center mb-4">
+                <BarChart3 className="w-8 h-8 mx-auto mb-2" style={{ color: theme.gold }} />
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Industry KPIs' : 'KPIs sectoriels'}
+                </h3>
+                <div className="text-xs" style={{ color: theme.gold }}>(Silver/Gold)</div>
+              </div>
+              <div className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <div>Food Cost %</div>
+                <div>Labor Ratio</div>
+                <div>Cash Runway</div>
+                <div>Industry Rank</div>
+              </div>
+            </div>
+
+            {/* Actionable ROI */}
+            <div 
+              className="p-6 rounded-xl"
+              style={{ 
+                backgroundColor: `${theme.green}10`,
+                border: `2px solid ${theme.green}40`
+              }}
+            >
+              <div className="text-center mb-4">
+                <DollarSign className="w-8 h-8 mx-auto mb-2" style={{ color: theme.green }} />
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Actionable ROI' : 'ROI actionnable'}
+                </h3>
+                <div className="text-xs" style={{ color: theme.green }}>(Decisions)</div>
+              </div>
+              <div className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <div>&quot;Cut supplier X, save $8K&quot;</div>
+                <div>&quot;Hire at 15% margin bump&quot;</div>
+                <div>&quot;12 weeks runway left&quot;</div>
+                <div>&quot;Top 25% in Montreal&quot;</div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Professional Standards Badge */}
+          <motion.div 
+            className="flex flex-wrap justify-center gap-4 mt-8"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <span 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.green}15`,
+                border: `1px solid ${theme.green}25`,
+                color: theme.green
+              }}
+            >
+              <FileCheck className="w-4 h-4" />
+              {isEn ? 'IBCS Compliant Reporting' : 'Rapports certifiés IBCS'}
+            </span>
+            <span 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.gold}15`,
+                border: `1px solid ${theme.gold}25`,
+                color: theme.gold
+              }}
+            >
+              <BarChart3 className="w-4 h-4" />
+              {isEn ? 'Enterprise-grade FP&A' : 'FP&A de niveau entreprise'}
+            </span>
+            <span 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.green}15`,
+                border: `1px solid ${theme.green}25`,
+                color: theme.green
+              }}
+            >
+              <Shield className="w-4 h-4" />
+              {isEn ? 'PIPEDA Compliant' : 'Conforme PIPEDA'}
+            </span>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Exec Dashboard Features Section */}
       <span id="features" className="absolute" style={{ top: '-100px' }} />
       <section 
@@ -2045,12 +2323,12 @@ export default function Landing() {
               },
               {
                 icon: Brain,
-                title: isEn ? 'AI-Powered Intelligence' : 'Intelligence alimentée par l\'IA',
+                title: isEn ? 'Expensive Mistakes, Caught Before They Hurt' : 'Erreurs coûteuses, détectées avant qu\'elles ne fassent mal',
                 desc: isEn 
-                  ? 'Catch issues before they cost you. Get specific recommendations on costs to cut, when to collect receivables, and where to invest.'
-                  : 'Détectez les problèmes avant qu\'ils ne coûtent cher. Obtenez des recommandations sur les coûts, créances et investissements.',
+                  ? 'Duplicate payments. Billing errors. Unusual charges. The stuff that slips through when you\'re busy running your business.'
+                  : 'Paiements en double. Erreurs de facturation. Frais inhabituels. Ce qui passe entre les mailles quand vous gérez votre entreprise.',
                 highlight: isEn ? '97% accuracy' : '97% de précision',
-                stat: isEn ? '+8% avg margin' : '+8% marge moy.',
+                stat: isEn ? '$28K avg recovery' : '28K$ récup. moy.',
                 color: theme.gold,
               },
               {
@@ -2075,20 +2353,20 @@ export default function Landing() {
               },
               {
                 icon: FileCheck,
-                title: isEn ? 'One-Click Reports' : 'Rapports en un clic',
+                title: isEn ? 'Clear Answers, Not Spreadsheet Confusion' : 'Réponses claires, pas de confusion Excel',
                 desc: isEn 
-                  ? 'Export board-ready reports instantly. No more hours in Excel preparing for meetings.'
-                  : 'Exportez des rapports prêts pour le CA instantanément. Fini les heures dans Excel avant les réunions.',
+                  ? 'Board meeting in 2 hours? Get a presentation that makes sense - without calling your accountant.'
+                  : 'Réunion du CA dans 2 heures? Obtenez une présentation qui a du sens - sans appeler votre comptable.',
                 highlight: isEn ? 'PDF, Excel, PPT' : 'PDF, Excel, PPT',
                 stat: isEn ? '3hrs/report saved' : '3h/rapport écon.',
                 color: theme.green,
               },
               {
                 icon: BarChart3,
-                title: isEn ? 'Market Intelligence' : 'Intelligence de marché',
+                title: isEn ? 'How Do You Really Stack Up?' : 'Comment vous comparez-vous vraiment?',
                 desc: isEn 
-                  ? 'See how you stack up against 75,000+ Canadian businesses. AI-analyzed benchmarks for your industry and size.'
-                  : 'Voyez votre position vs 75 000+ entreprises canadiennes. Benchmarks IA pour votre secteur et taille.',
+                  ? 'Your accountant can tell you your margins. We tell you if they\'re good for a restaurant your size in Montreal.'
+                  : 'Votre comptable peut vous donner vos marges. Nous vous disons si elles sont bonnes pour un restaurant de votre taille à Montréal.',
                 highlight: isEn ? 'AI benchmarks' : 'Benchmarks IA',
                 stat: isEn ? '15+ industries' : '15+ industries',
                 color: theme.green,
@@ -2206,7 +2484,7 @@ export default function Landing() {
                 boxShadow: `0 4px 16px ${theme.green}35`
               }}
             >
-              {isEn ? 'Start saving time today' : 'Commencez à économiser du temps'}
+              {isEn ? 'Start understanding your numbers' : 'Commencez à comprendre vos chiffres'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </motion.div>
@@ -2257,15 +2535,15 @@ export default function Landing() {
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
               style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
             >
-              {isEn ? 'AI That Learns From Your Industry' : 'IA qui apprend de votre industrie'}
+              {isEn ? 'Expensive Mistakes, Caught Before They Hurt' : 'Erreurs coûteuses, détectées avant qu\'elles ne fassent mal'}
             </h2>
             <p 
               className="text-sm sm:text-base max-w-2xl mx-auto mb-4"
               style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
             >
               {isEn 
-                ? 'Our AI catches duplicate payments, billing errors, and unusual expenses that typically go unnoticed. Average recovery: $28,000/year per business.'
-                : 'Notre IA détecte les paiements en double, erreurs de facturation et dépenses inhabituelles qui passent souvent inaperçues. Récupération moyenne: 28 000$/an par entreprise.'}
+                ? 'Duplicate payments. Billing errors. Unusual charges. The stuff that slips through when you\'re busy running your business.'
+                : 'Paiements en double. Erreurs de facturation. Frais inhabituels. Ce qui passe entre les mailles quand vous gérez votre entreprise.'}
             </p>
             {/* Learning Badge */}
             <div className="flex items-center justify-center gap-2 mt-4">
@@ -2710,7 +2988,7 @@ export default function Landing() {
               transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ color: 'rgb(var(--color-text))' }}
             >
-              {isEn ? 'Discover Tax Credits You May Be Missing' : 'Découvrez les crédits d\'impôt que vous pourriez manquer'}
+              {isEn ? 'Money You\'re Leaving on the Table' : 'L\'argent que vous laissez sur la table'}
             </motion.h2>
             <motion.p 
               className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-2xl mx-auto px-2 text-center"
@@ -2721,8 +2999,8 @@ export default function Landing() {
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'PlainLedger automatically analyzes your financial data to identify eligible federal and provincial tax credits. Get matched with certified specialists to maximize your benefits.'
-                : 'PlainLedger analyse automatiquement vos données financières pour identifier les crédits d\'impôt fédéraux et provinciaux admissibles. Obtenez une mise en relation avec des spécialistes certifiés pour maximiser vos avantages.'}
+                ? 'Most business owners miss $15K-50K in tax credits every year. Not because they don\'t qualify - because nobody told them in plain language.'
+                : 'La plupart des entrepreneurs manquent 15K-50K$ en crédits d\'impôt chaque année. Pas parce qu\'ils ne se qualifient pas - parce que personne ne leur a expliqué clairement.'}
             </motion.p>
           </motion.div>
 
