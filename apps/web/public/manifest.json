@@ -13,21 +13,9 @@
   "categories": ["business", "finance", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/logo-mark.svg",
       "type": "image/svg+xml",
       "sizes": "any",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.svg",
-      "type": "image/svg+xml",
-      "sizes": "512x512",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/apple-touch-icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "180x180",
       "purpose": "any"
     },
     {
@@ -41,6 +29,12 @@
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192-maskable.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512-maskable.png",

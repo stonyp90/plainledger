@@ -1076,24 +1076,14 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         >
           {/* Logo Header - Matches App */}
           <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
-            <div 
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 2px 6px ${theme.green}40`
-              }}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              Plain<span style={{ color: theme.green }}>Ledger</span>
+            <img 
+              src="/logo-mark.svg" 
+              alt="PlainLedger" 
+              className="w-7 h-7"
+            />
+            <span className="text-xs font-bold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
+              <span style={{ color: isDark ? '#f1f5f9' : '#0f172a' }}>Plain</span>
+              <span style={{ color: theme.green }}>Ledger</span>
             </span>
           </div>
           
@@ -1653,25 +1643,15 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                  boxShadow: `0 2px 6px ${theme.green}40`
-                }}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                  <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-                PlainLedger
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <img 
+                src="/logo-mark.svg" 
+                alt="PlainLedger" 
+                className="w-8 h-8 transition-transform group-hover:scale-105"
+              />
+              <span className="font-bold text-lg tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
+                <span style={{ color: isDark ? '#f1f5f9' : '#0f172a' }}>Plain</span>
+                <span style={{ color: theme.green }}>Ledger</span>
               </span>
             </Link>
 

@@ -719,22 +719,11 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Logo on the left */}
           <Link to="/app/dashboard" className="flex items-center group">
-            <div 
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
-              }}
-            >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+            <img 
+              src="/logo-mark.svg" 
+              alt="PlainLedger" 
+              className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 transition-transform group-hover:scale-105"
+            />
           </Link>
           {/* Hamburger menu button */}
           <button
@@ -973,29 +962,14 @@ export default function Layout({ children }: LayoutProps) {
               isSidebarCollapsed ? 'justify-center w-full' : ''
             }`}
           >
-            <div 
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all group-hover:scale-105 group-hover:shadow-lg flex-shrink-0"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.25)'
-              }}
-            >
-              <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Ledger book spine */}
-                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                {/* Ledger pages */}
-                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                {/* Ledger lines */}
-                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                {/* Checkmark */}
-                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+            <img 
+              src="/logo-mark.svg" 
+              alt="PlainLedger" 
+              className="w-9 h-9 flex-shrink-0 transition-all group-hover:scale-105"
+            />
             {!isSidebarCollapsed && (
               <span 
-                className="font-semibold text-base tracking-tight"
+                className="font-bold text-base tracking-tight"
                 style={{ color: 'rgb(var(--color-text))' }}
               >
                 Plain<span style={{ color: 'rgb(var(--color-primary-500))' }}>Ledger</span>
