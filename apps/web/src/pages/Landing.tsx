@@ -1984,16 +1984,16 @@ export default function Landing() {
 
       {/* Bridge the Gap Section */}
       <section 
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative"
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
         style={{ 
           background: isDark 
             ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' 
             : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)'
         }}
       >
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <motion.div 
-            className="text-center mb-12"
+            className="text-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -2006,7 +2006,7 @@ export default function Landing() {
               {isEn ? 'The Gap We Bridge' : 'L\'écart que nous comblons'}
             </h2>
             <p 
-              className="text-lg sm:text-xl max-w-3xl mx-auto mb-8"
+              className="text-lg sm:text-xl max-w-3xl mx-auto"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
@@ -2023,71 +2023,160 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <div 
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8 rounded-2xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
-                border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`
-              }}
-            >
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto,1fr] gap-6 lg:gap-4 items-stretch">
               {/* Accountant World */}
-              <div className="text-center">
-                <div 
-                  className="text-2xl font-bold mb-4"
-                  style={{ color: theme.green }}
-                >
-                  {isEn ? 'Accountant World' : 'Monde du comptable'}
+              <motion.div 
+                className="p-6 sm:p-8 rounded-2xl"
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                  border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                  boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.05)'
+                }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.green}15` }}
+                  >
+                    <FileCheck className="w-5 h-5" style={{ color: theme.green }} />
+                  </div>
+                  <h3 
+                    className="text-xl sm:text-2xl font-bold"
+                    style={{ color: theme.green }}
+                  >
+                    {isEn ? 'Accountant World' : 'Monde du comptable'}
+                  </h3>
                 </div>
-                <div className="space-y-3 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  <div>Balance sheets</div>
-                  <div>EBITDA margins</div>
-                  <div>Working capital</div>
-                  <div>Accrual basis</div>
-                  <div>Depreciation</div>
+                <div className="space-y-3">
+                  {[
+                    { en: 'Balance sheets', fr: 'Bilans' },
+                    { en: 'EBITDA margins', fr: 'Marges BAIIA' },
+                    { en: 'Working capital', fr: 'Fonds de roulement' },
+                    { en: 'Accrual basis', fr: 'Comptabilité d\'exercice' },
+                    { en: 'Depreciation', fr: 'Amortissement' },
+                  ].map((item, idx) => (
+                    <div 
+                      key={idx}
+                      className="flex items-center gap-3 p-2.5 rounded-lg text-left"
+                      style={{ 
+                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(248, 250, 252, 0.8)',
+                        color: 'rgb(var(--color-text-secondary))'
+                      }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.green }} />
+                      <span className="text-sm font-medium">{isEn ? item.en : item.fr}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </motion.div>
 
               {/* The Gap / PlainLedger Bridge */}
-              <div className="flex flex-col items-center justify-center">
-                <div 
-                  className="text-4xl mb-4 font-bold"
-                  style={{ color: theme.gold }}
-                >
-                  →
+              <motion.div 
+                className="flex flex-col items-center justify-center py-6 lg:py-0 lg:px-4"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                {/* Mobile: Vertical arrows */}
+                <div className="lg:hidden flex flex-col items-center gap-3">
+                  <ArrowRight className="w-6 h-6 rotate-90" style={{ color: theme.gold }} />
+                  <div 
+                    className="px-6 py-3 rounded-xl font-bold text-base shadow-lg"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                      color: 'white',
+                      boxShadow: `0 4px 20px ${theme.green}40`
+                    }}
+                  >
+                    PlainLedger
+                  </div>
+                  <ArrowRight className="w-6 h-6 rotate-90" style={{ color: theme.gold }} />
                 </div>
-                <div 
-                  className="text-center px-4 py-2 rounded-lg font-bold text-sm"
-                  style={{ 
-                    backgroundColor: `${theme.green}15`,
-                    color: theme.green
-                  }}
-                >
-                  PlainLedger
+                
+                {/* Desktop: Horizontal arrows with centered badge */}
+                <div className="hidden lg:flex flex-col items-center gap-4">
+                  <motion.div
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ArrowRight className="w-8 h-8" style={{ color: theme.gold }} />
+                  </motion.div>
+                  <div 
+                    className="px-6 py-4 rounded-xl font-bold text-base shadow-lg whitespace-nowrap"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                      color: 'white',
+                      boxShadow: `0 8px 30px ${theme.green}40`
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      PlainLedger
+                    </div>
+                  </div>
+                  <motion.div
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                  >
+                    <ArrowRight className="w-8 h-8" style={{ color: theme.gold }} />
+                  </motion.div>
                 </div>
-                <div 
-                  className="text-4xl mt-4 font-bold"
-                  style={{ color: theme.gold }}
-                >
-                  →
-                </div>
-              </div>
+              </motion.div>
 
               {/* Entrepreneur World */}
-              <div className="text-center">
-                <div 
-                  className="text-2xl font-bold mb-4"
-                  style={{ color: theme.green }}
-                >
-                  {isEn ? 'Entrepreneur World' : 'Monde de l\'entrepreneur'}
+              <motion.div 
+                className="p-6 sm:p-8 rounded-2xl"
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                style={{ 
+                  backgroundColor: `${theme.gold}08`,
+                  border: `2px solid ${theme.gold}30`,
+                  boxShadow: `0 4px 20px ${theme.gold}10`
+                }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.gold}15` }}
+                  >
+                    <Zap className="w-5 h-5" style={{ color: theme.gold }} />
+                  </div>
+                  <h3 
+                    className="text-xl sm:text-2xl font-bold"
+                    style={{ color: theme.gold }}
+                  >
+                    {isEn ? 'Entrepreneur World' : 'Monde de l\'entrepreneur'}
+                  </h3>
                 </div>
-                <div className="space-y-3 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  <div>&quot;Can I hire?&quot;</div>
-                  <div>&quot;Am I profitable?&quot;</div>
-                  <div>&quot;When do I run out of money?&quot;</div>
-                  <div>&quot;Should I expand?&quot;</div>
-                  <div>&quot;What should I cut?&quot;</div>
+                <div className="space-y-3">
+                  {[
+                    { en: '"Can I hire?"', fr: '"Puis-je embaucher?"' },
+                    { en: '"Am I profitable?"', fr: '"Suis-je rentable?"' },
+                    { en: '"When do I run out of money?"', fr: '"Quand serai-je à court d\'argent?"' },
+                    { en: '"Should I expand?"', fr: '"Devrais-je m\'agrandir?"' },
+                    { en: '"What should I cut?"', fr: '"Que devrais-je couper?"' },
+                  ].map((item, idx) => (
+                    <div 
+                      key={idx}
+                      className="flex items-center gap-3 p-2.5 rounded-lg text-left"
+                      style={{ 
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                        color: 'rgb(var(--color-text))'
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: theme.gold }} />
+                      <span className="text-sm font-medium italic">{isEn ? item.en : item.fr}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         </div>
@@ -2137,81 +2226,176 @@ export default function Landing() {
             </p>
           </motion.div>
 
-          {/* Visibility Graph Visual */}
+          {/* Visibility Graph Visual - Pipeline Flow */}
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            className="relative mb-8"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            {/* Raw Data */}
-            <div 
-              className="p-6 rounded-xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-                border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`
-              }}
-            >
-              <div className="text-center mb-4">
-                <Database className="w-8 h-8 mx-auto mb-2" style={{ color: theme.green }} />
-                <h3 className="font-bold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Raw Data' : 'Données brutes'}
-                </h3>
-                <div className="text-xs" style={{ color: theme.green }}>(Bronze)</div>
+            {/* Flow Arrows - Desktop only */}
+            <div className="hidden md:flex absolute top-1/2 left-0 right-0 -translate-y-1/2 justify-center items-center pointer-events-none z-10">
+              <div className="w-[33%]" />
+              <div className="flex items-center justify-center w-12">
+                <ArrowRight className="w-8 h-8" style={{ color: theme.gold }} />
               </div>
-              <div className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                <div>QuickBooks</div>
-                <div>Bank feeds</div>
-                <div>Invoices</div>
-                <div>Expenses</div>
+              <div className="w-[33%]" />
+              <div className="flex items-center justify-center w-12">
+                <ArrowRight className="w-8 h-8" style={{ color: theme.green }} />
               </div>
+              <div className="w-[33%]" />
             </div>
 
-            {/* Industry KPIs */}
-            <div 
-              className="p-6 rounded-xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-                border: `2px solid ${theme.gold}40`
-              }}
-            >
-              <div className="text-center mb-4">
-                <BarChart3 className="w-8 h-8 mx-auto mb-2" style={{ color: theme.gold }} />
-                <h3 className="font-bold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Industry KPIs' : 'KPIs sectoriels'}
-                </h3>
-                <div className="text-xs" style={{ color: theme.gold }}>(Silver/Gold)</div>
-              </div>
-              <div className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                <div>Food Cost %</div>
-                <div>Labor Ratio</div>
-                <div>Cash Runway</div>
-                <div>Industry Rank</div>
-              </div>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+              {/* Raw Data */}
+              <motion.div 
+                className="p-6 rounded-2xl relative"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                  border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                  boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.05)'
+                }}
+              >
+                {/* Mobile arrow */}
+                <div className="md:hidden flex justify-center mb-4">
+                  <ArrowRight className="w-6 h-6 rotate-90" style={{ color: theme.gold }} />
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.green}15` }}
+                  >
+                    <Database className="w-6 h-6" style={{ color: theme.green }} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Raw Data' : 'Données brutes'}
+                    </h3>
+                    <div className="text-xs font-semibold" style={{ color: theme.green }}>(Bronze)</div>
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-sm text-left" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                    QuickBooks
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                    {isEn ? 'Bank feeds' : 'Flux bancaires'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                    {isEn ? 'Invoices' : 'Factures'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                    {isEn ? 'Expenses' : 'Dépenses'}
+                  </div>
+                </div>
+              </motion.div>
 
-            {/* Actionable ROI */}
-            <div 
-              className="p-6 rounded-xl"
-              style={{ 
-                backgroundColor: `${theme.green}10`,
-                border: `2px solid ${theme.green}40`
-              }}
-            >
-              <div className="text-center mb-4">
-                <DollarSign className="w-8 h-8 mx-auto mb-2" style={{ color: theme.green }} />
-                <h3 className="font-bold text-lg mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Actionable ROI' : 'ROI actionnable'}
-                </h3>
-                <div className="text-xs" style={{ color: theme.green }}>(Decisions)</div>
-              </div>
-              <div className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                <div>&quot;Cut supplier X, save $8K&quot;</div>
-                <div>&quot;Hire at 15% margin bump&quot;</div>
-                <div>&quot;12 weeks runway left&quot;</div>
-                <div>&quot;Top 25% in Montreal&quot;</div>
-              </div>
+              {/* Industry KPIs */}
+              <motion.div 
+                className="p-6 rounded-2xl relative"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                  border: `2px solid ${theme.gold}50`,
+                  boxShadow: `0 4px 20px ${theme.gold}15`
+                }}
+              >
+                {/* Mobile arrow */}
+                <div className="md:hidden flex justify-center mb-4">
+                  <ArrowRight className="w-6 h-6 rotate-90" style={{ color: theme.green }} />
+                </div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.gold}15` }}
+                  >
+                    <BarChart3 className="w-6 h-6" style={{ color: theme.gold }} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Industry KPIs' : 'KPIs sectoriels'}
+                    </h3>
+                    <div className="text-xs font-semibold" style={{ color: theme.gold }}>(Silver/Gold)</div>
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-sm text-left" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                    Food Cost %
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                    Labor Ratio
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                    Cash Runway
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                    Industry Rank
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Actionable ROI */}
+              <motion.div 
+                className="p-6 rounded-2xl relative"
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                style={{ 
+                  backgroundColor: `${theme.green}08`,
+                  border: `2px solid ${theme.green}50`,
+                  boxShadow: `0 4px 20px ${theme.green}15`
+                }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${theme.green}20` }}
+                  >
+                    <DollarSign className="w-6 h-6" style={{ color: theme.green }} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
+                      {isEn ? 'Actionable ROI' : 'ROI actionnable'}
+                    </h3>
+                    <div className="text-xs font-semibold" style={{ color: theme.green }}>(Decisions)</div>
+                  </div>
+                </div>
+                <div className="space-y-2.5 text-sm text-left" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.green }} />
+                    <span>&quot;Cut supplier X, save $8K&quot;</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.green }} />
+                    <span>&quot;Hire at 15% margin bump&quot;</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.green }} />
+                    <span>&quot;12 weeks runway left&quot;</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.green }} />
+                    <span>&quot;Top 25% in Montreal&quot;</span>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
 
@@ -3807,11 +3991,12 @@ export default function Landing() {
             transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="p-6 sm:p-8 lg:p-10 rounded-2xl"
             style={{ 
-              background: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)',
+              background: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.95)',
               border: isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)',
+              boxShadow: isDark ? 'none' : '0 4px 30px rgba(0,0,0,0.06)'
             }}
           >
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 justify-items-start">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {[
                 { en: 'AI anomaly detection', fr: 'Détection d\'anomalies IA', highlight: true },
                 { en: '75K+ business benchmarks', fr: 'Benchmarks 75K+ entreprises', highlight: true },
@@ -3828,20 +4013,20 @@ export default function Landing() {
               ].map((feature, idx) => (
                 <motion.div 
                   key={feature.en}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -15 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 * idx, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-3"
+                  transition={{ duration: 0.4, delay: 0.05 * idx, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-start gap-3 text-left p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 >
                   <div 
-                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: (feature as any).highlight ? `${theme.gold}20` : `${theme.green}20` }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ backgroundColor: (feature as any).highlight ? `${theme.gold}18` : `${theme.green}15` }}
                   >
-                    <Check className="w-3.5 h-3.5" style={{ color: (feature as any).highlight ? theme.gold : theme.green }} />
+                    <Check className="w-4 h-4" style={{ color: (feature as any).highlight ? theme.gold : theme.green }} />
                   </div>
                   <span 
-                    className="text-sm sm:text-base flex items-center gap-2" 
+                    className="text-sm sm:text-base leading-relaxed" 
                     style={{ 
                       color: 'rgb(var(--color-text-secondary))',
                       fontWeight: (feature as any).highlight ? 600 : 400
@@ -3850,7 +4035,7 @@ export default function Landing() {
                     {isEn ? feature.en : feature.fr}
                     {(feature as any).pro && (
                       <span 
-                        className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
+                        className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
                         style={{ 
                           backgroundColor: `${theme.gold}25`,
                           color: theme.gold
