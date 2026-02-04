@@ -27,9 +27,9 @@ import { join } from "path";
         const isProduction =
           configService.get<string>("NODE_ENV") === "production";
 
-        return {
+        // Build base config
+        const baseConfig = {
           // Schema generation - use in-memory (no file system access needed in Docker)
-          // Write to /tmp in development if file system access is needed
           autoSchemaFile: isProduction ? true : join("/tmp", "schema.gql"),
           sortSchema: true,
 
@@ -39,31 +39,11 @@ import { join } from "path";
             !isProduction ||
             configService.get<boolean>("GRAPHQL_INTROSPECTION"),
 
-          // Context setup - pass request for auth
-          context: ({
+          // Context setup - pass request for auth (no WebSocket in production)
+          context: ({ req, res }: { req?: Request; res?: Response }) => ({
             req,
             res,
-            connection,
-          }: {
-            req?: Request;
-            res?: Response;
-            connection?: any;
-          }) => {
-            // Support both HTTP (queries/mutations) and WebSocket (subscriptions)
-            if (connection) {
-              // WebSocket connection for subscriptions
-              return {
-                req: connection.context?.req,
-                res: connection.context?.res,
-                connection,
-              };
-            }
-            // HTTP request for queries/mutations
-            return {
-              req,
-              res,
-            };
-          },
+          }),
 
           // CORS handled by NestJS main config
           cors: false,
@@ -71,43 +51,17 @@ import { join } from "path";
           // Path configuration
           path: "/graphql",
 
-          // Subscriptions configuration (WebSocket)
-          // DISABLED in production - WebSocket causes app.listen() to hang in ECS/Fargate
-          // See: https://github.com/apollographql/apollo-server/issues/6855
-          // TODO: Re-enable after investigating ECS networking/ALB WebSocket configuration
-          subscriptions: isProduction
-            ? undefined
-            : {
-                "graphql-ws": {
-                  path: "/graphql",
-                  onConnect: (context: any) => {
-                    // Extract auth token from connection params
-                    const token =
-                      context.connectionParams?.authorization?.replace(
-                        "Bearer ",
-                        "",
-                      );
-                    return { token };
-                  },
-                  onDisconnect: () => {
-                    // Cleanup on disconnect
-                  },
-                },
-                "subscriptions-transport-ws": false, // Legacy protocol, disabled
-              },
-
           // Performance & Security
-          cache: "bounded",
-          persistedQueries: false, // Disable for now, can enable with Redis
+          cache: "bounded" as const,
+          persistedQueries: false as const, // Disable for now, can enable with Redis
 
           // Error formatting - hide internal errors in production
-          formatError: (error) => {
+          formatError: (error: any) => {
             const originalError = error.extensions?.originalError as
               | { message?: string }
               | undefined;
 
             if (isProduction) {
-              // Don't expose internal error details
               return {
                 message: error.message,
                 path: error.path,
@@ -117,7 +71,6 @@ import { join } from "path";
               };
             }
 
-            // Development: include full error details
             return {
               message: error.message,
               path: error.path,
@@ -128,6 +81,54 @@ import { join } from "path";
                 originalError: originalError?.message,
               },
             };
+          },
+        };
+
+        // Only add subscriptions config in non-production environments
+        // In production, completely omit the subscriptions key to prevent
+        // any WebSocket/subscription initialization that hangs app.listen()
+        if (isProduction) {
+          console.log("[GraphQL] Production mode - subscriptions DISABLED");
+          return baseConfig;
+        }
+
+        console.log("[GraphQL] Development mode - subscriptions enabled");
+        return {
+          ...baseConfig,
+          // Context with WebSocket support for development
+          context: ({
+            req,
+            res,
+            connection,
+          }: {
+            req?: Request;
+            res?: Response;
+            connection?: any;
+          }) => {
+            if (connection) {
+              return {
+                req: connection.context?.req,
+                res: connection.context?.res,
+                connection,
+              };
+            }
+            return { req, res };
+          },
+          // Subscriptions only in development
+          subscriptions: {
+            "graphql-ws": {
+              path: "/graphql",
+              onConnect: (context: any) => {
+                const token =
+                  context.connectionParams?.authorization?.replace(
+                    "Bearer ",
+                    "",
+                  );
+                return { token };
+              },
+              onDisconnect: () => {},
+            },
+            "subscriptions-transport-ws": false,
           },
         };
       },
