@@ -175,12 +175,6 @@ export default function Dashboard() {
     isLoading: accessLoading,
   } = useAccountDataAccess();
   
-  // CRITICAL: Block paid users without connection - show connection gate
-  // They must connect before seeing any data
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="dashboard" />;
-  }
-  
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
   
@@ -1441,6 +1435,13 @@ export default function Dashboard() {
   const periods = availablePeriods.length > 0 
     ? availablePeriods 
     : [{ id: 'mtd', label: t('dashboard.period.month'), minDataPoints: 2 }]; // Fallback to MTD
+
+  // CRITICAL: Block paid users without connection - show connection gate
+  // They must connect before seeing any data
+  // Note: This check must be AFTER all hooks to comply with Rules of Hooks
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="dashboard" />;
+  }
 
   return (
     <div className="space-y-1.5 sm:space-y-2 lg:space-y-2.5" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>

@@ -648,11 +648,6 @@ export default function Reports() {
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
   
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="reports" />;
-  }
-  
   const [previewReport, setPreviewReport] = useState<any | null>(null);
   const [showAllReports, setShowAllReports] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -919,6 +914,12 @@ export default function Reports() {
   const handleView = (report: any) => {
     setPreviewReport(report);
   };
+
+  // CRITICAL: Block paid users without connection - show connection gate
+  // Note: This check must be AFTER all hooks to comply with Rules of Hooks
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="reports" />;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

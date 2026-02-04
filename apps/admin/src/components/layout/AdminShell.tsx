@@ -18,6 +18,10 @@ import {
   X,
   ChevronDown,
   LogOut,
+  Activity,
+  Plug,
+  UserCheck,
+  Mail,
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 
@@ -25,6 +29,10 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Organizations', href: '/organizations', icon: Building2 },
   { name: 'Users', href: '/users', icon: Users },
+  { name: 'Onboarding', href: '/onboarding', icon: UserCheck },
+  { name: 'Integrations', href: '/integrations', icon: Plug },
+  { name: 'System Health', href: '/health', icon: Activity },
+  { name: 'Communications', href: '/communications', icon: Mail },
   { name: 'Billing', href: '/billing', icon: CreditCard },
   { name: 'Sync Jobs', href: '/sync-jobs', icon: RefreshCw },
   { name: 'Audit Logs', href: '/audit', icon: FileText },

@@ -23,23 +23,33 @@ export default function DashboardPage() {
     queryKey: ['admin', 'dashboard-stats'],
     queryFn: async () => {
       try {
-        const [orgRes, userRes] = await Promise.all([
-          fetch(`${API_URL}/api/admin/organizations/stats`, { credentials: 'include' }),
-          fetch(`${API_URL}/api/admin/users/stats`, { credentials: 'include' }),
-        ]);
-
-        const orgStats = orgRes.ok ? await orgRes.json() : { totalOrganizations: 0, activeOrganizations: 0 };
-        const userStats = userRes.ok ? await userRes.json() : { totalUsers: 0, activeUsers: 0, activeToday: 0 };
-
+        const res = await fetch(`${API_URL}/api/admin/dashboard/stats`, {
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          throw new Error('Failed to fetch stats');
+        }
+        const data = await res.json();
         return {
-          organizations: orgStats.totalOrganizations || 0,
-          users: userStats.totalUsers || 0,
-          activeToday: userStats.activeToday || 0,
-          mrr: 0, // Would come from billing system
+          organizations: data.organizations?.total || 0,
+          users: data.users?.total || 0,
+          activeToday: data.users?.activeToday || 0,
+          mrr: data.billing?.mrr || 0,
+          health: data.health,
+          syncJobs: data.syncJobs,
+          onboarding: data.onboarding,
         };
       } catch (error) {
         console.error('Failed to fetch stats:', error);
-        return { organizations: 0, users: 0, activeToday: 0, mrr: 0 };
+        return {
+          organizations: 0,
+          users: 0,
+          activeToday: 0,
+          mrr: 0,
+          health: { overallStatus: 'unknown', degradedServices: 0, unhealthyServices: 0 },
+          syncJobs: { total24h: 0, completed: 0, failed: 0, running: 0 },
+          onboarding: { trialsActive: 0, conversionsThisMonth: 0, conversionRate: 0, atRiskCount: 0 },
+        };
       }
     },
     refetchInterval: 60000, // Refresh every minute
@@ -108,6 +118,15 @@ export default function DashboardPage() {
             icon={Activity}
             color="orange"
           />
+          {stats?.health && (
+            <StatCard
+              title="System Health"
+              value={statsLoading ? '...' : stats.health.overallStatus.toUpperCase()}
+              change={`${stats.health.unhealthyServices || 0} unhealthy`}
+              icon={Activity}
+              color={stats.health.overallStatus === 'healthy' ? 'green' : stats.health.overallStatus === 'degraded' ? 'yellow' : 'red'}
+            />
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -134,13 +153,48 @@ export default function DashboardPage() {
           </div>
 
           <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Recent Activity</h2>
-            <div className="space-y-3 text-admin-400">
-              <p className="text-sm">No recent activity to display.</p>
-              <p className="text-sm">Activity will appear here once you start using the admin console.</p>
-            </div>
+            <h2 className="text-lg font-semibold text-white mb-4">Sync Jobs (Last 24h)</h2>
+            {stats?.syncJobs ? (
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <p className="text-admin-400 text-sm">Total</p>
+                  <p className="text-xl font-bold text-white">{stats.syncJobs.total24h || 0}</p>
+                </div>
+                <div>
+                  <p className="text-admin-400 text-sm">Completed</p>
+                  <p className="text-xl font-bold text-green-400">{stats.syncJobs.completed || 0}</p>
+                </div>
+                <div>
+                  <p className="text-admin-400 text-sm">Failed</p>
+                  <p className="text-xl font-bold text-red-400">{stats.syncJobs.failed || 0}</p>
+                </div>
+                <div>
+                  <p className="text-admin-400 text-sm">Running</p>
+                  <p className="text-xl font-bold text-blue-400">{stats.syncJobs.running || 0}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-admin-400">
+                <p className="text-sm">Loading sync stats...</p>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* System Health Alert */}
+        {stats?.health && stats.health.unhealthyServices > 0 && (
+          <div className="mt-6 bg-red-900/20 border border-red-600 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div>
+                <p className="text-red-400 font-semibold">System Health Alert</p>
+                <p className="text-admin-400 text-sm">
+                  {stats.health.unhealthyServices} service(s) are unhealthy. Check the System Health page for details.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Alerts */}
         <div className="mt-6 bg-yellow-900/20 border border-yellow-700/50 rounded-xl p-4">
@@ -177,6 +231,8 @@ function StatCard({
     green: 'bg-green-500/10 text-green-400',
     purple: 'bg-purple-500/10 text-purple-400',
     orange: 'bg-orange-500/10 text-orange-400',
+    yellow: 'bg-yellow-500/10 text-yellow-400',
+    red: 'bg-red-500/10 text-red-400',
   };
 
   return (

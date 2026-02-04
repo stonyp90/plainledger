@@ -66,11 +66,6 @@ export default function BalanceSheet() {
 
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
-  
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="statements" />;
-  }
 
   // Calculate actual date based on preset
   const asOfDate = getPresetDate(datePreset, customDate);
@@ -338,6 +333,12 @@ export default function BalanceSheet() {
       </tr>
     );
   };
+
+  // CRITICAL: Block paid users without connection - show connection gate
+  // Note: This check must be AFTER all hooks to comply with Rules of Hooks
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="statements" />;
+  }
 
   return (
     <div className="space-y-2 sm:space-y-4 lg:space-y-6">

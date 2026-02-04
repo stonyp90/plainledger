@@ -4,6 +4,7 @@ import { useAIPinState } from '../hooks/useAIPinState';
 import { usePremiumFeature } from './PremiumFeatureGate';
 import { AIQuickChat } from './AIQuickChat';
 import { useI18n } from '../lib/i18n';
+import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
 
 interface AIToolbarProps {
   className?: string;
@@ -12,13 +13,18 @@ interface AIToolbarProps {
 export function AIToolbar({ className }: AIToolbarProps) {
   const { isExpanded, toggleExpanded, collapse } = useAIPinState();
   const { hasAccess } = usePremiumFeature('aiInsights');
+  const { plan, hasConnection, isLoading } = useAccountDataAccess();
   const { language } = useI18n();
   const isEn = language === 'en';
   const [isHovered, setIsHovered] = useState(false);
 
+  // AI Assistant is only available for enterprise users with connected data
+  const isEnterpriseUser = plan === 'enterprise';
+  const canShowAI = hasAccess && isEnterpriseUser && hasConnection && !isLoading;
+
   // Keyboard shortcuts: Cmd/Ctrl+J to toggle, Escape to close
   useEffect(() => {
-    if (!hasAccess) return;
+    if (!canShowAI) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd/Ctrl + J to toggle AI toolbar
@@ -35,10 +41,10 @@ export function AIToolbar({ className }: AIToolbarProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasAccess, isExpanded, toggleExpanded, collapse]);
+  }, [canShowAI, isExpanded, toggleExpanded, collapse]);
 
-  // Don't render if user doesn't have AI access
-  if (!hasAccess) return null;
+  // Don't render if user doesn't have AI access, is not enterprise, or has no data connection
+  if (!canShowAI) return null;
 
   return (
     <div
@@ -57,33 +63,30 @@ export function AIToolbar({ className }: AIToolbarProps) {
           </div>
         )}
 
-        {/* AI Toggle Button - Subtle, bottom-right */}
+        {/* AI Toggle Button - Compact, subtle */}
         {!isExpanded && (
           <button
             onClick={toggleExpanded}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="flex items-center gap-2 rounded-full transition-all duration-200"
+            className="flex items-center gap-1.5 rounded-full transition-all duration-150"
             style={{
               backgroundColor: isHovered 
-                ? 'rgb(var(--color-primary-500))' 
+                ? 'rgb(var(--color-primary-500) / 0.1)' 
                 : 'rgb(var(--color-surface))',
               color: isHovered 
-                ? 'white' 
+                ? 'rgb(var(--color-primary-600))' 
                 : 'rgb(var(--color-text-muted))',
               border: '1px solid rgb(var(--color-border))',
-              boxShadow: isHovered 
-                ? '0 4px 12px rgb(var(--color-primary-500) / 0.3)' 
-                : '0 2px 8px rgb(0 0 0 / 0.08)',
-              padding: isHovered ? '0.625rem 1rem' : '0.625rem',
-              transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+              boxShadow: '0 1px 4px rgb(0 0 0 / 0.06)',
+              padding: isHovered ? '0.375rem 0.75rem' : '0.375rem',
             }}
             title={isEn ? 'AI Assistant (⌘J)' : 'Assistant IA (⌘J)'}
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5" />
             {isHovered && (
-              <span className="text-sm font-medium whitespace-nowrap animate-in fade-in duration-150">
-                {isEn ? 'Ask AI' : 'Demander à l\'IA'}
+              <span className="text-xs font-medium whitespace-nowrap animate-in fade-in duration-100">
+                {isEn ? 'Ask AI' : 'IA'}
               </span>
             )}
           </button>

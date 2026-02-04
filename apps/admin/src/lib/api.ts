@@ -105,3 +105,88 @@ export const adminsApi = {
   enable: (id: string) =>
     fetchApi<void>(`/api/admin/admins/${id}/enable`, { method: 'POST' }),
 };
+
+// Health
+export const healthApi = {
+  getOverall: () => fetchApi<any>('/api/admin/dashboard/health'),
+  getServices: () => fetchApi<{ services: any[] }>('/api/admin/dashboard/health/services'),
+  getMetrics: () => fetchApi<any>('/api/admin/dashboard/health/metrics'),
+  getSyncStats: () => fetchApi<any>('/api/admin/dashboard/sync/stats'),
+};
+
+// Integrations
+export const integrationsApi = {
+  listProviders: () => fetchApi<{ providers: any[] }>('/api/admin/integrations/providers'),
+  getProvider: (id: string) => fetchApi<any>(`/api/admin/integrations/providers/${id}`),
+  updateProvider: (id: string, data: any) =>
+    fetchApi<any>(`/api/admin/integrations/providers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  listConnections: (params?: Record<string, string>) => {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    return fetchApi<{ connections: any[]; total: number }>(
+      `/api/admin/integrations/connections${query}`,
+    );
+  },
+  getWebhookLogs: (params?: Record<string, string>) => {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    return fetchApi<{ logs: any[]; total: number; limit: number; offset: number }>(
+      `/api/admin/integrations/webhooks/logs${query}`,
+    );
+  },
+  testProvider: (provider: string) =>
+    fetchApi<any>(`/api/admin/integrations/test/${provider}`, { method: 'POST' }),
+};
+
+// Onboarding
+export const onboardingApi = {
+  getFunnel: () => fetchApi<any>('/api/admin/onboarding/funnel'),
+  getTrials: () => fetchApi<{ trials: any[] }>('/api/admin/onboarding/trials'),
+  getOrgProgress: (orgId: string) =>
+    fetchApi<any>(`/api/admin/onboarding/${orgId}/progress`),
+  extendTrial: (orgId: string, days: number) =>
+    fetchApi<any>(`/api/admin/onboarding/${orgId}/extend`, {
+      method: 'POST',
+      body: JSON.stringify({ days }),
+    }),
+  convertOrg: (orgId: string) =>
+    fetchApi<any>(`/api/admin/onboarding/${orgId}/convert`, { method: 'POST' }),
+  getAtRisk: () => fetchApi<{ atRisk: any[] }>('/api/admin/onboarding/at-risk'),
+};
+
+// Communications
+export const communicationsApi = {
+  listTemplates: () => fetchApi<{ templates: any[] }>('/api/admin/communications/templates'),
+  getTemplate: (name: string) =>
+    fetchApi<{ name: string; content: string }>(`/api/admin/communications/templates/${name}`),
+  updateTemplate: (name: string, content: string) =>
+    fetchApi<any>(`/api/admin/communications/templates/${name}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    }),
+  previewTemplate: (name: string, testData?: Record<string, unknown>) =>
+    fetchApi<{ preview: string }>('/api/admin/communications/templates/preview', {
+      method: 'POST',
+      body: JSON.stringify({ name, testData }),
+    }),
+  sendBulk: (data: {
+    templateName: string;
+    recipientIds: string[];
+    subject: string;
+    metadata?: Record<string, unknown>;
+  }) =>
+    fetchApi<any>('/api/admin/communications/send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  listCampaigns: () => fetchApi<{ campaigns: any[] }>('/api/admin/communications/campaigns'),
+  getCampaign: (id: string) =>
+    fetchApi<any>(`/api/admin/communications/campaigns/${id}`),
+  getLogs: (params?: Record<string, string>) => {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    return fetchApi<{ logs: any[]; total: number; limit: number; offset: number }>(
+      `/api/admin/communications/logs${query}`,
+    );
+  },
+};

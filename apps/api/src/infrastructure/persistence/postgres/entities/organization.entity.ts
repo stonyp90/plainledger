@@ -37,6 +37,19 @@ export class OrganizationEntity {
   @Column({ length: 100, nullable: true })
   industry?: string;
 
+  @Column({ name: "trial_start_date", type: "timestamptz", nullable: true })
+  trialStartDate?: Date;
+
+  @Column({ name: "trial_end_date", type: "timestamptz", nullable: true })
+  trialEndDate?: Date;
+
+  @Column({ name: "onboarding_status", length: 20, default: "active" })
+  @Index()
+  onboardingStatus: "trial" | "active" | "churned" | "expired";
+
+  @Column({ name: "converted_at", type: "timestamptz", nullable: true })
+  convertedAt?: Date;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 
