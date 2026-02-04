@@ -3,12 +3,20 @@
  * 
  * Premium circular visualization showing the compounding intelligence loop.
  * Features Lottie animation with orbiting particles and step card overlays.
+ * 
+ * Responsive improvements:
+ * - Mobile: Vertical stack layout
+ * - Tablet: Circular animation with 2-column step cards below
+ * - Desktop: Full circular layout with orbiting cards
+ * - Reduced motion: Static layout with sequential reveal
  */
 
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Building2, Target, Layers, Lightbulb, ArrowRight, RefreshCw } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { DataCycleAnimation } from './LottieAnimations';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface FlywheelVisualizationProps {
   theme: {
@@ -22,6 +30,22 @@ interface FlywheelVisualizationProps {
 export default function FlywheelVisualization({ theme, isDark }: FlywheelVisualizationProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const prefersReducedMotion = useReducedMotion();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+      setIsTablet(width >= 640 && width < 1024);
+    };
+    
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
 
   const flywheelSteps = [
     { 
@@ -56,6 +80,7 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
 
   // Circle radius for positioning (responsive)
   const radius = 130; // Base radius for desktop
+  const tabletRadius = 100; // Smaller for tablet
   const mobileRadius = 90; // Smaller for mobile
 
   // Calculate positions around the circle
@@ -67,6 +92,215 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
       y: Math.sin(angle) * r,
     };
   };
+
+  // Animation duration based on device and preferences
+  const rotationDuration = prefersReducedMotion ? 0 : (isMobile ? 20 : 15); // Slower on mobile
+
+  // Mobile: Vertical stack layout
+  if (isMobile && !prefersReducedMotion) {
+    return (
+      <div className="w-full max-w-4xl mx-auto relative py-6">
+        {/* Background glow effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: isDark 
+              ? `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}12 0%, transparent 70%)`
+              : `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}08 0%, transparent 70%)`,
+          }}
+        />
+
+        {/* Centered Lottie animation - smaller on mobile */}
+        <div className="relative flex items-center justify-center mb-6">
+          <motion.div 
+            className="relative w-[200px] h-[200px]"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <DataCycleAnimation 
+              className="w-full h-full"
+              style={{ 
+                opacity: isDark ? 1 : 0.9,
+                filter: isDark ? 'brightness(1.1)' : 'none',
+                willChange: 'transform',
+              }}
+            />
+          </motion.div>
+        </div>
+
+        {/* Vertical stack of step cards */}
+        <div className="flex flex-col gap-3 px-4">
+          {flywheelSteps.map((step, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 + 0.3, duration: 0.5 }}
+            >
+              <StepCard step={step} theme={theme} isDark={isDark} idx={idx} compact={false} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* "Continuous Improvement" label */}
+        <motion.div 
+          className="mt-6 flex justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.8 }}
+        >
+          <div 
+            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ 
+              backgroundColor: `${theme.green}08`,
+              border: `1px solid ${theme.green}15`,
+            }}
+          >
+            <RefreshCw className="w-4 h-4" style={{ color: theme.green }} />
+            <span 
+              className="text-sm font-medium"
+              style={{ color: theme.green }}
+            >
+              {isEn ? 'Continuous improvement cycle' : 'Cycle d\'amélioration continue'}
+            </span>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Tablet: Circular animation with 2-column step cards below
+  if (isTablet) {
+    const tabletPos = flywheelSteps.map((_, idx) => getPosition(idx, tabletRadius));
+    
+    return (
+      <div className="w-full max-w-4xl mx-auto relative py-8">
+        {/* Background glow effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: isDark 
+              ? `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}12 0%, transparent 70%)`
+              : `radial-gradient(ellipse 60% 60% at 50% 50%, ${theme.green}08 0%, transparent 70%)`,
+          }}
+        />
+
+        {/* Circular Flywheel Container - Rotating */}
+        <div className="relative flex items-center justify-center mb-8">
+          <motion.div 
+            className="relative w-[280px] h-[280px]"
+            animate={prefersReducedMotion ? {} : { rotate: 360 }}
+            transition={{ 
+              duration: rotationDuration, 
+              repeat: prefersReducedMotion ? 0 : Infinity, 
+              ease: "linear" 
+            }}
+            style={{ willChange: prefersReducedMotion ? 'auto' : 'transform' }}
+          >
+            {/* Lottie Data Cycle Animation - Base Layer */}
+            <motion.div
+              className="absolute inset-0"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <DataCycleAnimation 
+                className="w-full h-full"
+                style={{ 
+                  opacity: isDark ? 1 : 0.9,
+                  filter: isDark ? 'brightness(1.1)' : 'none'
+                }}
+              />
+            </motion.div>
+
+            {/* Flywheel Steps positioned around the circle - Counter-rotate to stay upright */}
+            {flywheelSteps.map((step, idx) => {
+              const pos = tabletPos[idx];
+              
+              return (
+                <motion.div
+                  key={idx}
+                  className="absolute top-1/2 left-1/2 z-10"
+                  style={{
+                    transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
+                  }}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  animate={prefersReducedMotion ? {} : { rotate: -360 }}
+                  transition={{ 
+                    rotate: { duration: rotationDuration, repeat: Infinity, ease: "linear" },
+                    opacity: { delay: idx * 0.15 + 0.3, duration: 0.5 },
+                    scale: { delay: idx * 0.15 + 0.3, duration: 0.5, type: "spring", stiffness: 200 }
+                  }}
+                >
+                  <StepCard step={step} theme={theme} isDark={isDark} idx={idx} compact={true} />
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        {/* 2-column step cards below animation */}
+        <div className="grid grid-cols-2 gap-3 px-4">
+          {flywheelSteps.map((step, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 + 0.5, duration: 0.5 }}
+            >
+              <StepCard step={step} theme={theme} isDark={isDark} idx={idx} compact={false} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* "Continuous Improvement" label */}
+        <motion.div 
+          className="mt-6 flex justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 1 }}
+        >
+          <div 
+            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ 
+              backgroundColor: `${theme.green}08`,
+              border: `1px solid ${theme.green}15`,
+            }}
+          >
+            {!prefersReducedMotion && (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              >
+                <RefreshCw className="w-4 h-4" style={{ color: theme.green }} />
+              </motion.div>
+            )}
+            {prefersReducedMotion && (
+              <RefreshCw className="w-4 h-4" style={{ color: theme.green }} />
+            )}
+            <span 
+              className="text-sm font-medium"
+              style={{ color: theme.green }}
+            >
+              {isEn ? 'Continuous improvement cycle' : 'Cycle d\'amélioration continue'}
+            </span>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Desktop: Full circular layout with orbiting cards
+  const desktopPos = flywheelSteps.map((_, idx) => getPosition(idx, radius));
 
   return (
     <div className="w-full max-w-4xl mx-auto relative py-8">
@@ -82,15 +316,15 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
 
       {/* Circular Flywheel Container - Rotating */}
       <div className="relative flex items-center justify-center">
-        {/* The circular track with Lottie animation - Rotates slowly */}
         <motion.div 
           className="relative w-[240px] h-[240px] sm:w-[320px] sm:h-[320px]"
-          animate={{ rotate: 360 }}
+          animate={prefersReducedMotion ? {} : { rotate: 360 }}
           transition={{ 
-            duration: 15, 
-            repeat: Infinity, 
+            duration: rotationDuration, 
+            repeat: prefersReducedMotion ? 0 : Infinity, 
             ease: "linear" 
           }}
+          style={{ willChange: prefersReducedMotion ? 'auto' : 'transform' }}
         >
           {/* Lottie Data Cycle Animation - Base Layer */}
           <motion.div
@@ -111,40 +345,26 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
 
           {/* Flywheel Steps positioned around the circle - Counter-rotate to stay upright */}
           {flywheelSteps.map((step, idx) => {
-            const pos = getPosition(idx, radius);
-            const mobilePos = getPosition(idx, mobileRadius);
+            const pos = desktopPos[idx];
             
             return (
               <motion.div
                 key={idx}
                 className="absolute top-1/2 left-1/2 z-10"
                 style={{
-                  // Desktop positioning
                   transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
                 }}
-                initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+                initial={{ opacity: 0, scale: 0.5 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                animate={{ rotate: -360 }}
+                animate={prefersReducedMotion ? {} : { rotate: -360 }}
                 transition={{ 
-                  rotate: { duration: 15, repeat: Infinity, ease: "linear" },
+                  rotate: { duration: rotationDuration, repeat: Infinity, ease: "linear" },
                   opacity: { delay: idx * 0.15 + 0.3, duration: 0.5 },
                   scale: { delay: idx * 0.15 + 0.3, duration: 0.5, type: "spring", stiffness: 200 }
                 }}
               >
-                {/* Responsive positioning using CSS */}
-                <div 
-                  className="hidden sm:block"
-                  style={{ transform: `translate(${pos.x - radius}px, ${pos.y - radius}px)` }}
-                >
-                  <StepCard step={step} theme={theme} isDark={isDark} idx={idx} />
-                </div>
-                <div 
-                  className="sm:hidden"
-                  style={{ transform: `translate(${mobilePos.x - mobileRadius}px, ${mobilePos.y - mobileRadius}px)` }}
-                >
-                  <StepCard step={step} theme={theme} isDark={isDark} idx={idx} compact />
-                </div>
+                <StepCard step={step} theme={theme} isDark={isDark} idx={idx} />
               </motion.div>
             );
           })}
@@ -159,32 +379,37 @@ export default function FlywheelVisualization({ theme, isDark }: FlywheelVisuali
         viewport={{ once: true }}
         transition={{ delay: 1 }}
       >
-        <motion.div 
+        <div 
           className="flex items-center gap-2 px-4 py-2 rounded-full"
           style={{ 
             backgroundColor: `${theme.green}08`,
             border: `1px solid ${theme.green}15`,
           }}
         >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          >
+          {!prefersReducedMotion && (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            >
+              <RefreshCw className="w-4 h-4" style={{ color: theme.green }} />
+            </motion.div>
+          )}
+          {prefersReducedMotion && (
             <RefreshCw className="w-4 h-4" style={{ color: theme.green }} />
-          </motion.div>
+          )}
           <span 
             className="text-sm font-medium"
             style={{ color: theme.green }}
           >
             {isEn ? 'Continuous improvement cycle' : 'Cycle d\'amélioration continue'}
           </span>
-        </motion.div>
+        </div>
       </motion.div>
     </div>
   );
 }
 
-// Step Card Component
+// Step Card Component - Improved with flexbox positioning and touch optimization
 function StepCard({ 
   step, 
   theme, 
@@ -202,7 +427,7 @@ function StepCard({
   
   return (
     <motion.div
-      className={`group relative flex items-center gap-2 rounded-xl cursor-default ${
+      className={`group relative flex items-center gap-2 rounded-xl cursor-default min-h-[44px] ${
         compact ? 'px-2.5 py-2' : 'px-3 py-2.5 sm:px-4 sm:py-3'
       }`}
       style={{
@@ -213,11 +438,12 @@ function StepCard({
           : '0 4px 20px rgba(0, 0, 0, 0.08)',
       }}
       whileHover={{ 
-        scale: 1.08,
+        scale: 1.05,
         boxShadow: isDark 
           ? `0 8px 30px rgba(0, 0, 0, 0.5), 0 0 20px ${step.color}25`
           : `0 8px 30px rgba(0, 0, 0, 0.12), 0 0 20px ${step.color}20`,
       }}
+      whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
       {/* Hover glow ring */}
@@ -227,7 +453,7 @@ function StepCard({
       />
       
       {/* Icon */}
-      <motion.div 
+      <div 
         className={`relative rounded-lg flex items-center justify-center shrink-0 overflow-hidden ${
           compact ? 'w-7 h-7' : 'w-8 h-8 sm:w-9 sm:h-9'
         }`}
@@ -241,11 +467,11 @@ function StepCard({
           style={{ color: step.color }} 
           strokeWidth={1.8}
         />
-      </motion.div>
+      </div>
 
       {/* Label */}
       <span 
-        className={`font-medium whitespace-nowrap ${compact ? 'text-xs' : 'text-xs sm:text-sm'}`}
+        className={`font-medium flex-1 ${compact ? 'text-xs' : 'text-xs sm:text-sm'}`}
         style={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
       >
         {compact ? step.shortLabel : step.label}

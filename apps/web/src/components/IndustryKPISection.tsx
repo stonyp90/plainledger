@@ -61,7 +61,40 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   
   const [selectedIndustry, setSelectedIndustry] = useState<string>('hospitality');
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(true);
   const { ref: sectionRef, isInView } = useInView(0.1);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+    };
+    
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
+  // Check scroll position for fade indicators
+  useEffect(() => {
+    const checkScroll = () => {
+      if (!tabsScrollRef.current) return;
+      const { scrollLeft, scrollWidth, clientWidth } = tabsScrollRef.current;
+      setShowLeftFade(scrollLeft > 10);
+      setShowRightFade(scrollLeft < scrollWidth - clientWidth - 10);
+    };
+    
+    const scrollEl = tabsScrollRef.current;
+    if (scrollEl) {
+      scrollEl.addEventListener('scroll', checkScroll);
+      checkScroll();
+      return () => scrollEl.removeEventListener('scroll', checkScroll);
+    }
+  }, [selectedIndustry]);
   
   // Filter to only show 5 target industries
   const TARGET_INDUSTRIES = ['hospitality', 'real_estate', 'restaurant', 'construction', 'retail'];
@@ -97,14 +130,15 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           {/* Section Label Badge */}
           <div className="flex justify-center mb-4">
             <span 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium"
               style={{ 
-                backgroundColor: `rgb(var(--color-accent-400) / ${isDark ? '0.15' : '0.12'})`,
-                color: `rgb(var(--color-accent-${isDark ? '400' : '600'}))`,
-                border: `1px solid rgb(var(--color-accent-${isDark ? '400' : '500'}) / ${isDark ? '0.3' : '0.25'})`
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              <Sparkles className="w-3 h-3" />
+              <Sparkles className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-accent-500))' }} />
               {isEn ? 'Industry Benchmarks' : 'Références sectorielles'}
             </span>
           </div>
@@ -130,38 +164,70 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           </p>
         </div>
         
-        {/* Industry Tabs - Minimal Pills */}
+        {/* Industry Tabs - Horizontal scroll with fade indicators */}
         <div 
-          className={`flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-8 sm:mb-10 transition-all duration-700 delay-100 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          className={`relative mb-8 sm:mb-10 transition-all duration-700 delay-100 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
-          {filteredIndustries.map((industry) => {
-            const TabIcon = industry.icon;
-            const isSelected = validSelectedIndustry === industry.id;
-            
-            return (
-              <button
-                key={industry.id}
-                onClick={() => setSelectedIndustry(industry.id)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-medium transition-all duration-200"
-                style={{
-                  backgroundColor: isSelected 
-                    ? (isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)') 
-                    : 'transparent',
-                  color: isSelected 
-                    ? (isDark ? 'rgb(15, 23, 42)' : 'rgb(255, 255, 255)') 
-                    : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                  border: `1px solid ${isSelected 
-                    ? 'transparent' 
-                    : (isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(226, 232, 240, 1)')}`,
-                }}
-              >
-                <TabIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden min-[400px]:inline">
-                  {isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim()}
-                </span>
-              </button>
-            );
-          })}
+          {/* Left fade indicator */}
+          {showLeftFade && (
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
+              style={{
+                background: `linear-gradient(to right, ${isDark ? 'rgb(15, 23, 42)' : '#fafafa'} 0%, transparent 100%)`
+              }}
+            />
+          )}
+          {/* Right fade indicator */}
+          {showRightFade && (
+            <div 
+              className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
+              style={{
+                background: `linear-gradient(to left, ${isDark ? 'rgb(15, 23, 42)' : '#fafafa'} 0%, transparent 100%)`
+              }}
+            />
+          )}
+          <div 
+            ref={tabsScrollRef}
+            className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-2"
+            style={{ scrollSnapType: 'x proximity' }}
+          >
+            {filteredIndustries.map((industry) => {
+              const TabIcon = industry.icon;
+              const isSelected = validSelectedIndustry === industry.id;
+              
+              return (
+                <button
+                  key={industry.id}
+                  onClick={() => setSelectedIndustry(industry.id)}
+                  className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 flex-shrink-0 ${
+                    isSelected 
+                      ? 'shadow-lg scale-[1.02]' 
+                      : 'hover:scale-[1.02]'
+                  }`}
+                  style={{
+                    backgroundColor: isSelected 
+                      ? `rgb(var(--color-accent-${isDark ? '500' : '600'}))` 
+                      : (isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.9)'),
+                    color: isSelected 
+                      ? 'rgb(255, 255, 255)' 
+                      : (isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)'),
+                    border: isSelected 
+                      ? 'none' 
+                      : `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.6)'}`,
+                    boxShadow: isSelected 
+                      ? `0 4px 14px rgba(var(--color-accent-500), 0.4)` 
+                      : 'none',
+                    scrollSnapAlign: 'start',
+                  }}
+                >
+                  <TabIcon className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden min-[400px]:inline whitespace-nowrap">
+                    {isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim()}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         
         {/* Main Card Container */}
@@ -267,89 +333,114 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             </div>
           </div>
           
-          {/* KPI List - Clean Rows */}
+          {/* KPI List - Full text visible, clean tooltip on hover */}
           <div className="divide-y" style={{ borderColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.6)' }}>
             {currentIndustry.kpis.map((kpi, idx) => (
               <div 
                 key={idx}
-                className="group relative px-4 sm:px-5 py-4 sm:py-5 transition-colors duration-150"
+                className="group relative px-4 sm:px-5 py-3 sm:py-3.5 transition-all duration-200 cursor-default"
                 style={{ 
                   backgroundColor: hoveredKpi === idx 
                     ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 1)')
                     : 'transparent',
                 }}
-                onMouseEnter={() => setHoveredKpi(idx)}
-                onMouseLeave={() => setHoveredKpi(null)}
+                onMouseEnter={() => !isMobile && setHoveredKpi(idx)}
+                onMouseLeave={() => !isMobile && setHoveredKpi(null)}
+                onClick={() => isMobile && setHoveredKpi(hoveredKpi === idx ? null : idx)}
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                  {/* Left: Name + Formula */}
-                  <div className="flex-1 min-w-0">
-                    {/* Metric Name with Check */}
-                    <div className="flex items-center gap-2 mb-2.5">
-                      <span 
-                        className="text-sm font-medium"
-                        style={{ color: isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)' }}
-                      >
-                        {isEn ? kpi.name : kpi.nameFr}
-                      </span>
-                      <div 
-                        className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}
-                      >
-                        <Check className="w-2.5 h-2.5" style={{ color: '#10b981' }} strokeWidth={3} />
-                      </div>
-                    </div>
-                    
-                    {/* Formula Display */}
-                    <div 
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
-                      style={{ 
-                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 1)',
-                        border: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 1)'}`,
-                      }}
+                {/* Main row - responsive grid */}
+                <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(140px,1.2fr)_1fr_auto] gap-2 sm:gap-3 items-center">
+                  {/* KPI Name - full text */}
+                  <div className="min-w-0">
+                    <span 
+                      className="text-[12px] sm:text-[13px] font-semibold leading-tight"
+                      style={{ color: isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)' }}
                     >
-                      <span 
-                        className="text-xs font-medium"
-                        style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
-                      >
-                        =
-                      </span>
-                      <code 
-                        className="text-xs sm:text-sm font-mono font-medium"
-                        style={{ color: '#10b981' }}
-                      >
-                        {kpi.formula}
-                      </code>
-                    </div>
+                      {isEn ? kpi.name : kpi.nameFr}
+                    </span>
                   </div>
                   
-                  {/* Right: Target */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="text-right">
-                      <p 
-                        className="text-[10px] font-medium uppercase tracking-wide mb-1.5"
-                        style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
-                      >
-                        {isEn ? 'Target' : 'Cible'}
-                      </p>
-                      <span 
-                        className="inline-block text-xs sm:text-sm px-3 py-1.5 rounded-lg font-semibold"
-                        style={{ 
-                          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
-                          color: '#10b981',
-                        }}
-                      >
-                        {kpi.target}
-                      </span>
-                    </div>
+                  {/* Formula - visible on sm+ */}
+                  <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+                    <span 
+                      className="text-xs font-medium flex-shrink-0"
+                      style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                    >
+                      =
+                    </span>
+                    <code 
+                      className="text-xs font-mono font-medium"
+                      style={{ color: '#10b981' }}
+                    >
+                      {kpi.formula}
+                    </code>
                   </div>
+                  
+                  {/* Target badge */}
+                  <span 
+                    className="text-[11px] sm:text-xs px-2 py-1 rounded-md font-semibold whitespace-nowrap justify-self-end"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(217, 119, 6, 0.1)',
+                      color: isDark ? '#fbbf24' : '#b45309',
+                    }}
+                  >
+                    {kpi.target}
+                  </span>
                 </div>
+                
+                {/* Mobile: show formula below name */}
+                <div className="sm:hidden mt-1.5 flex items-center gap-1.5">
+                  <span 
+                    className="text-[10px] font-medium"
+                    style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                  >
+                    =
+                  </span>
+                  <code 
+                    className="text-[10px] font-mono font-medium"
+                    style={{ color: '#10b981' }}
+                  >
+                    {kpi.formula}
+                  </code>
+                </div>
+                
+                {/* Hover tooltip - clean label style */}
+                {hoveredKpi === idx && !isMobile && (
+                  <div 
+                    className="absolute left-4 right-4 sm:left-auto sm:right-4 sm:w-auto top-full mt-1 z-20 px-3 py-2 rounded-lg shadow-lg text-[11px] flex items-center gap-3"
+                    style={{ 
+                      backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgb(255, 255, 255)',
+                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(226, 232, 240, 1)'}`,
+                      boxShadow: isDark 
+                        ? '0 4px 12px rgba(0, 0, 0, 0.4)' 
+                        : '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    }}
+                  >
+                    <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                      {isEn ? 'Formula:' : 'Formule:'}
+                    </span>
+                    <code className="font-mono font-semibold" style={{ color: '#10b981' }}>
+                      {kpi.formula}
+                    </code>
+                    <span 
+                      className="w-px h-3"
+                      style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(226, 232, 240, 1)' }}
+                    />
+                    <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                      {isEn ? 'Target:' : 'Cible:'}
+                    </span>
+                    <span className="font-semibold" style={{ color: isDark ? '#fbbf24' : '#b45309' }}>
+                      {kpi.target}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
+          </div>
             
             {/* Add Custom Formula Row */}
             <button 
-              className="w-full px-4 sm:px-5 py-4 flex items-center justify-center gap-2 transition-colors duration-150 group/add"
+              className="w-full px-4 sm:px-5 py-4 flex items-center justify-center gap-2 transition-colors duration-150 group/add min-h-[44px] active:scale-95"
               style={{ 
                 backgroundColor: isDark ? 'rgba(51, 65, 85, 0.15)' : 'rgba(248, 250, 252, 0.5)',
               }}
@@ -373,7 +464,6 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
                 {isEn ? 'Add custom formula' : 'Ajouter une formule personnalisée'}
               </span>
             </button>
-          </div>
           
           {/* Footer Note */}
           <div 

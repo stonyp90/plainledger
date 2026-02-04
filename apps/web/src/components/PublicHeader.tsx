@@ -7,11 +7,12 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useAuth } from '../lib/keycloak';
+import { useTheme } from '../contexts/ThemeContext';
 import ThemeToggle from './ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface PublicHeaderProps {
   /** Show full navigation menu (for landing page) */
@@ -32,16 +33,11 @@ export default function PublicHeader({
   className = ''
 }: PublicHeaderProps) {
   const { language } = useI18n();
-  const { resolvedTheme } = useTheme();
   const { authenticated, login, register } = useAuth();
+  const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Theme colors for logo
-  const theme = {
-    green: isDark ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-primary-600))',
-  };
 
   return (
     <header 
@@ -53,54 +49,34 @@ export default function PublicHeader({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
-              }}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              </svg>
-            </div>
-            <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-              PlainLedger
-            </span>
+          {/* Logo - switches between light and dark variants */}
+          <Link to="/" className="flex items-center group transition-transform group-hover:scale-[1.02]">
+            <img 
+              src={isDark ? "/logo-full-dark.svg" : "/logo-full.svg"} 
+              alt="PlainLedger" 
+              className="h-9 sm:h-10 lg:h-11"
+            />
           </Link>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav - Aligned breakpoints */}
           {fullMenu ? (
-            <nav className="hidden lg:flex items-center gap-4 xl:gap-5" aria-label={isEn ? 'Main navigation' : 'Navigation principale'}>
-              <a href="/#features" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Features' : 'Fonctionnalités'}
-              </a>
-              <a href="/#industries" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Industries' : 'Industries'}
-              </a>
-              <a href="/#ecosystem" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Intelligence' : 'Intelligence'}
-              </a>
-              <a href="/#pipeline" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'How it Works' : 'Comment ça marche'}
-              </a>
-              <a href="/#pricing" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Pricing' : 'Tarifs'}
-              </a>
-              <a href="/#contact" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                Contact
-              </a>
-            </nav>
+            <>
+              {/* Desktop Nav - Optimized to 4 main sections */}
+              <nav className="hidden md:flex items-center gap-4 lg:gap-6" aria-label={isEn ? 'Main navigation' : 'Navigation principale'}>
+                <a href="/#features" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Features' : 'Fonctionnalités'}
+                </a>
+                <a href="/#industries" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Industries' : 'Industries'}
+                </a>
+                <a href="/#pricing" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Pricing' : 'Tarifs'}
+                </a>
+                <a href="/#contact" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  Contact
+                </a>
+              </nav>
+            </>
           ) : (
             <nav className="hidden md:flex items-center gap-6" aria-label={isEn ? 'Main navigation' : 'Navigation principale'}>
               <a href="/#industries" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
@@ -112,7 +88,7 @@ export default function PublicHeader({
             </nav>
           )}
 
-          {/* Desktop Actions */}
+          {/* Desktop Actions - Aligned with nav breakpoints */}
           <div className="hidden md:flex items-center gap-3">
             {/* Progress indicator (if provided) */}
             {showProgress && (
@@ -163,12 +139,12 @@ export default function PublicHeader({
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Show on mobile only, hide when nav shows */}
           <div className="md:hidden flex items-center gap-2">
             <ThemeToggle />
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
               style={{ color: 'rgb(var(--color-text))' }}
               aria-label={isEn ? 'Toggle menu' : 'Ouvrir le menu'}
             >
@@ -177,11 +153,15 @@ export default function PublicHeader({
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
+        {/* Mobile Menu Dropdown - Smooth slide animation */}
         {isMobileMenuOpen && (
-          <div 
+          <motion.div 
             className="md:hidden py-4 border-t"
             style={{ borderColor: 'rgb(var(--color-border))' }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <nav className="flex flex-col gap-1" aria-label={isEn ? 'Mobile navigation' : 'Navigation mobile'}>
               {fullMenu ? (
@@ -191,12 +171,6 @@ export default function PublicHeader({
                   </a>
                   <a href="/#industries" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     {isEn ? 'Industries' : 'Industries'}
-                  </a>
-                  <a href="/#ecosystem" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn ? 'Intelligence' : 'Intelligence'}
-                  </a>
-                  <a href="/#pipeline" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn ? 'How it Works' : 'Comment ça marche'}
                   </a>
                   <a href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     {isEn ? 'Pricing' : 'Tarifs'}
@@ -266,7 +240,7 @@ export default function PublicHeader({
                 </div>
               )}
             </nav>
-          </div>
+          </motion.div>
         )}
       </div>
     </header>

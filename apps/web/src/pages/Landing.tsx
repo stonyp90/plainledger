@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
 import { useI18n } from '../lib/i18n';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import PublicHeader from '../components/PublicHeader';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
@@ -36,7 +37,6 @@ import {
   Smartphone,
   Hash,
   Users,
-  User,
   DollarSign,
   Building2,
   ExternalLink,
@@ -53,6 +53,9 @@ import {
   Cpu,
   Percent,
   PieChart,
+  Receipt,
+  Briefcase,
+  LineChart,
 } from 'lucide-react';
 
 // =====================================================
@@ -508,7 +511,23 @@ function AnimatedAreaChart({
 }) {
   const [progress, setProgress] = useState(0);
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const [containerWidth, setContainerWidth] = useState(120);
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Measure container width for responsive sizing
+  useEffect(() => {
+    const measureWidth = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.getBoundingClientRect().width;
+        setContainerWidth(Math.max(width, 80)); // Minimum width
+      }
+    };
+    
+    measureWidth();
+    window.addEventListener('resize', measureWidth);
+    return () => window.removeEventListener('resize', measureWidth);
+  }, []);
   
   useEffect(() => {
     if (!trigger) return;
@@ -534,7 +553,7 @@ function AnimatedAreaChart({
     return () => clearTimeout(timeoutId);
   }, [delay, trigger]);
 
-  const width = 120;
+  const width = containerWidth;
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
@@ -595,16 +614,18 @@ function AnimatedAreaChart({
   };
 
   return (
-    <svg 
-      ref={svgRef}
-      width="100%"
-      height={height} 
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      className="overflow-visible cursor-crosshair"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div ref={containerRef} className="w-full">
+      <svg 
+        ref={svgRef}
+        width="100%"
+        height={height} 
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="overflow-visible"
+        style={{ cursor: showHoverValues ? 'crosshair' : 'default' }}
+        onMouseMove={showHoverValues ? handleMouseMove : undefined}
+        onMouseLeave={showHoverValues ? handleMouseLeave : undefined}
+      >
       <defs>
         <linearGradient id={`area-gradient-${color.replace(/[^a-z0-9]/gi, '')}`} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor={color} stopOpacity="0.3" />
@@ -732,7 +753,8 @@ function AnimatedAreaChart({
           className="animate-pulse"
         />
       )}
-    </svg>
+      </svg>
+    </div>
   );
 }
 
@@ -740,13 +762,47 @@ function AnimatedAreaChart({
 // HERO DASHBOARD PREVIEW COMPONENT (Runway-inspired)
 // =====================================================
 
-function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: boolean; theme: typeof colors.light; isEn: boolean; isVisible: boolean }) {
+function HeroDashboardPreview({ 
+  isDark, 
+  theme, 
+  isEn, 
+  isVisible,
+  selectedIndustry: externalSelectedIndustry,
+  onIndustryChange 
+}: { 
+  isDark: boolean; 
+  theme: typeof colors.light; 
+  isEn: boolean; 
+  isVisible: boolean;
+  selectedIndustry?: number;
+  onIndustryChange?: (index: number) => void;
+}) {
   const [showElements, setShowElements] = useState(false);
-  const [selectedIndustry, setSelectedIndustry] = useState(0); // Default to Real Estate (first in array)
+  const [internalSelectedIndustry, setInternalSelectedIndustry] = useState(0);
+  
+  // Use external state if provided, otherwise use internal state
+  const selectedIndustry = externalSelectedIndustry ?? internalSelectedIndustry;
+  const setSelectedIndustry = onIndustryChange ?? setInternalSelectedIndustry;
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
-  const [roadmapView, setRoadmapView] = useState<'quarterly' | 'monthly' | 'yearly'>('quarterly');
+  const [showAllKpis, setShowAllKpis] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   
+  // Detect screen size
+  useEffect(() => {
+    const checkSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+      setIsTablet(width >= 640 && width < 1024);
+    };
+    
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => setShowElements(true), 300);
@@ -808,9 +864,6 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Occupancy Rate' : 'Taux d\'occupation', yours: '94.5%', target: '90-95%', status: 'good' },
-        { metric: isEn ? 'Cap Rate' : 'Taux de capitalisation', yours: '6.8%', target: '5-8%', status: 'good' },
-        { metric: isEn ? 'Cash-on-Cash Return' : 'Rendement cash-on-cash', yours: '12.4%', target: '8-12%', status: 'excellent' },
         { metric: isEn ? 'DSC Ratio' : 'Ratio couverture dette', yours: '1.35', target: '>1.25', status: 'good' },
         { metric: isEn ? 'Operating Expense Ratio' : 'Ratio dépenses exploitation', yours: '38%', target: '35-45%', status: 'good' },
         { metric: isEn ? 'Rent per Sq Ft' : 'Loyer par pi²', yours: '$18.50', target: '$17-20', status: 'excellent' },
@@ -888,11 +941,9 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Food Cost %' : 'Coût nourriture %', yours: '28.5%', target: '25-35%', status: 'good' },
-        { metric: isEn ? 'Labor Cost %' : 'Coût main-d\'œuvre %', yours: '24.2%', target: '20-30%', status: 'good' },
-        { metric: isEn ? 'Prime Cost %' : 'Coût principal %', yours: '52.7%', target: '55-65%', status: 'excellent' },
         { metric: isEn ? 'Net Margin' : 'Marge nette', yours: '8.2%', target: '6-9%', status: 'good' },
         { metric: isEn ? 'Beverage Cost %' : 'Coût boissons %', yours: '18.4%', target: '18-24%', status: 'excellent' },
+        { metric: isEn ? 'Table Turnover' : 'Rotation tables', yours: '3.2', target: '2.5-4', status: 'good' },
       ],
       roadmapItems: [
         { 
@@ -967,10 +1018,9 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Gross Margin' : 'Marge brute', yours: '22.5%', target: '15-30%', status: 'good' },
-        { metric: isEn ? 'Backlog (Months)' : 'Carnet (mois)', yours: '8', target: '3-12', status: 'good' },
-        { metric: isEn ? 'Bid-to-Win Ratio' : 'Ratio soumissions', yours: '24%', target: '15-25%', status: 'excellent' },
         { metric: isEn ? 'Job Margin Variance' : 'Écart marge projet', yours: '2.1%', target: '<5%', status: 'excellent' },
+        { metric: isEn ? 'Equipment Utilization' : 'Utilisation équipement', yours: '78%', target: '70-85%', status: 'good' },
+        { metric: isEn ? 'Safety Incidents' : 'Incidents sécurité', yours: '0.8', target: '<1.0', status: 'excellent' },
       ],
       roadmapItems: [
         { 
@@ -1008,9 +1058,9 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.6)'}`,
       }}
     >
-      {/* Top Bar - Browser Chrome Style */}
+      {/* Top Bar - Browser Chrome Style - Simplified */}
       <div 
-        className="h-10 sm:h-12 flex items-center px-3 sm:px-4 gap-3 border-b"
+        className="h-8 sm:h-10 flex items-center justify-between px-3 sm:px-4 border-b"
         style={{ 
           backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(250, 250, 250, 0.95)',
           borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
@@ -1022,41 +1072,20 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary-400" />
         </div>
         
-        {/* Industry Tabs - Switchable */}
-        <div className="flex items-center gap-1 ml-2">
-          {industries.map((industry, idx) => (
-            <button
-              key={industry.id}
-              onClick={() => setSelectedIndustry(idx)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-medium transition-all"
-              style={{ 
-                backgroundColor: selectedIndustry === idx ? `${industry.iconColor}15` : 'transparent',
-                color: selectedIndustry === idx ? industry.iconColor : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                border: selectedIndustry === idx ? `1px solid ${industry.iconColor}30` : '1px solid transparent',
-              }}
-            >
-              <industry.icon className="w-3.5 h-3.5" style={{ color: selectedIndustry === idx ? industry.iconColor : undefined }} />
-              <span className="hidden sm:inline">{industry.name}</span>
-            </button>
-          ))}
-        </div>
-        
-        <div className="flex-1" />
-        
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {/* Real-time badge */}
           <div 
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-medium"
             style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
           >
             <div className="relative">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
               <div className="absolute inset-0 w-1.5 h-1.5 rounded-full animate-ping" style={{ backgroundColor: theme.green, opacity: 0.5 }} />
             </div>
-            {isEn ? 'Live Data' : 'Temps réel'}
+            {isEn ? 'Live' : 'Direct'}
           </div>
-          {/* User avatar */}
-          <div className="w-7 h-7 rounded-full overflow-hidden border-2 shadow-sm" style={{ borderColor: theme.green }}>
+          {/* User avatar - hidden on mobile */}
+          <div className="hidden sm:block w-6 h-6 rounded-full overflow-hidden border-2 shadow-sm" style={{ borderColor: theme.green }}>
             <img 
               src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" 
               alt="User" 
@@ -1067,14 +1096,192 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
       </div>
       
       <div className="flex">
-        {/* Sidebar - Hidden on mobile - Matches App Layout */}
-        <div 
-          className="hidden md:flex flex-col w-52 border-r py-3 px-2"
-          style={{ 
-            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(250, 250, 250, 0.8)',
-            borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
-          }}
-        >
+        {/* Sidebar - Collapsed on tablet, full on desktop, hidden on mobile */}
+        {isTablet ? (
+          <div 
+            className={`flex flex-col border-r py-3 px-2 transition-all duration-300 ${
+              sidebarExpanded ? 'w-52' : 'w-12'
+            }`}
+            style={{ 
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(250, 250, 250, 0.8)',
+              borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
+            }}
+          >
+            <button
+              onClick={() => setSidebarExpanded(!sidebarExpanded)}
+              className="mb-4 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              aria-label={isEn ? 'Toggle sidebar' : 'Basculer la barre latérale'}
+            >
+              <Layers className="w-4 h-4" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }} />
+            </button>
+            {sidebarExpanded && (
+              <>
+                {/* Logo Header */}
+                <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
+                  <div 
+                    className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                      boxShadow: `0 2px 6px ${theme.green}40`
+                    }}
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                      <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                    </svg>
+                  </div>
+                  <span className="text-xs font-bold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
+                    <span style={{ color: 'rgb(var(--color-text))' }}>Plain</span>
+                    <span style={{ color: theme.green }}>Ledger</span>
+                  </span>
+                </div>
+                
+                {/* Dashboard - Active */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '0ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-semibold cursor-pointer"
+                    style={{ 
+                      backgroundColor: `${theme.green}15`,
+                      color: theme.green,
+                    }}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    {isEn ? 'Dashboard' : 'Tableau de bord'}
+                  </div>
+                </div>
+                
+                {/* Visualizations */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '50ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    {isEn ? 'Visualizations' : 'Visualisations'}
+                  </div>
+                </div>
+                
+                {/* Strategic Planning */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '100ms' }}>
+                  <div 
+                    className="flex items-center justify-start gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors text-left"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <Target className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-left">{isEn ? 'Strategic Planning' : 'Planification stratégique'}</span>
+                  </div>
+                </div>
+                
+                {/* Anomalies */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '150ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    {isEn ? 'Anomalies' : 'Anomalies'}
+                    <span 
+                      className="ml-auto flex items-center justify-center w-4 h-4 text-[9px] rounded-full font-semibold"
+                      style={{ backgroundColor: 'rgb(239, 68, 68)', color: 'white' }}
+                    >
+                      2
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Connections */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '200ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <Database className="w-4 h-4" />
+                    {isEn ? 'Connections' : 'Connexions'}
+                  </div>
+                </div>
+                
+                {/* Reports */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '250ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <FileCheck className="w-4 h-4" />
+                    {isEn ? 'Reports' : 'Rapports'}
+                  </div>
+                </div>
+                
+                {/* Board Meeting */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '300ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <Users className="w-4 h-4" />
+                    {isEn ? 'Board Meeting' : 'Réunion CA'}
+                  </div>
+                </div>
+                
+                {/* Settings */}
+                <div className={`mb-1 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '350ms' }}>
+                  <div 
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium cursor-pointer hover:bg-black/5 transition-colors"
+                    style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                  >
+                    <Layers className="w-4 h-4" />
+                    {isEn ? 'Settings' : 'Paramètres'}
+                  </div>
+                </div>
+                
+                {/* Insights Status - Bottom */}
+                <div 
+                  className="mt-auto p-3 rounded-xl"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(248, 250, 252, 0.95)',
+                    border: `1px solid ${theme.green}25`,
+                    boxShadow: `0 2px 8px ${theme.green}10`
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="relative">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.green }} />
+                      <div className="absolute inset-0 w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: theme.green, opacity: 0.4 }} />
+                    </div>
+                    <span className="text-[10px] font-semibold" style={{ color: theme.green }}>
+                      {isEn ? 'Live Insights' : 'Insights actifs'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-3 h-3" style={{ color: theme.gold }} />
+                    <p className="text-[9px] font-medium" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)' }}>
+                      {current.id === 'realestate' 
+                        ? (isEn ? '2 rent optimization tips' : '2 conseils optimisation loyers')
+                        : (isEn ? '3 opportunities detected' : '3 opportunités détectées')
+                      }
+                    </p>
+                  </div>
+                  <p className="text-[8px]" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                    {isEn ? 'Monitoring your metrics in real-time' : 'Surveillance de vos métriques en temps réel'}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div 
+            className="hidden md:flex flex-col w-52 border-r py-3 px-2"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(250, 250, 250, 0.8)',
+              borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
+            }}
+          >
           {/* Logo Header - Matches App */}
           <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
             <div 
@@ -1199,7 +1406,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             </div>
           </div>
           
-          {/* AI Status - Bottom */}
+          {/* Insights Status - Bottom */}
           <div 
             className="mt-auto p-3 rounded-xl"
             style={{ 
@@ -1214,7 +1421,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                 <div className="absolute inset-0 w-2 h-2 rounded-full animate-ping" style={{ backgroundColor: theme.green, opacity: 0.4 }} />
               </div>
               <span className="text-[10px] font-semibold" style={{ color: theme.green }}>
-                {isEn ? 'AI Insights' : 'IA Insights'}
+                {isEn ? 'Live Insights' : 'Insights actifs'}
               </span>
             </div>
             <div className="flex items-center gap-2 mb-2">
@@ -1230,23 +1437,19 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               {isEn ? 'Monitoring your metrics in real-time' : 'Surveillance de vos métriques en temps réel'}
             </p>
           </div>
-        </div>
+          </div>
+        )}
         
         {/* Main Content */}
         <div className="flex-1 p-3 sm:p-4 min-h-[400px]">
-          {/* Breadcrumb */}
-          <div className={`flex items-center gap-2 mb-4 text-[10px] transition-all duration-500 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
-            <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Overview' : 'Aperçu'}</span>
-            <span style={{ color: 'rgb(var(--color-text-muted))' }}>›</span>
-            <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Board' : 'Tableau'}</span>
-          </div>
-          
-          {/* KPI Cards Row - Runway Style */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 relative">
-            {current.kpis.map((kpi, i) => (
+          {/* KPI Cards Row - Responsive: 2-col mobile, 2-col tablet, 4-col desktop */}
+          <div className={`grid gap-2 mb-3 relative ${
+            isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-2' : 'grid-cols-4'
+          }`}>
+            {(isMobile && !showAllKpis ? current.kpis.slice(0, 2) : current.kpis).map((kpi, i) => (
               <div 
                 key={i}
-                className={`p-2 rounded-lg transition-all duration-300 cursor-pointer relative group ${
+                className={`p-2 rounded-lg transition-all duration-300 cursor-pointer relative group min-h-[44px] ${
                   showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                 }`}
                 style={{ 
@@ -1256,49 +1459,52 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                   transitionDelay: `${i * 100 + 200}ms`,
                   zIndex: hoveredKpi === i ? 10 : 1,
                 }}
-                onMouseEnter={() => setHoveredKpi(i)}
-                onMouseLeave={() => setHoveredKpi(null)}
+                onMouseEnter={() => !isMobile && setHoveredKpi(i)}
+                onMouseLeave={() => !isMobile && setHoveredKpi(null)}
+                onClick={() => isMobile && setHoveredKpi(hoveredKpi === i ? null : i)}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[8px] font-medium" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     {kpi.label}
                   </span>
-                  <span className="text-[10px] sm:text-xs font-bold" style={{ color: theme.green }}>
+                  <span className="text-[11px] sm:text-xs font-bold" style={{ color: theme.green }}>
                     {kpi.value}
                   </span>
                 </div>
-                <AnimatedAreaChart 
-                  data={kpi.data}
-                  color={theme.green}
-                  height={35}
-                  delay={400 + i * 100}
-                  trigger={isVisible}
-                  showDashed={kpi.projection}
-                  showHoverValues={true}
-                  isDark={isDark}
-                />
+                <div className="w-full" style={{ minHeight: '35px' }}>
+                  <AnimatedAreaChart 
+                    data={kpi.data}
+                    color={theme.green}
+                    height={35}
+                    delay={400 + i * 100}
+                    trigger={isVisible}
+                    showDashed={kpi.projection}
+                    showHoverValues={!isMobile}
+                    isDark={isDark}
+                  />
+                </div>
                 
                 {/* Hover Tooltip - Slick & Compact */}
                 {hoveredKpi === i && kpi.threshold && (
                   <div 
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1.5 rounded-md shadow-xl z-20 whitespace-nowrap"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2.5 py-1.5 rounded-md shadow-xl z-20 whitespace-nowrap"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                       border: `1px solid ${theme.green}25`,
                       backdropFilter: 'blur(12px)',
                     }}
                   >
-                    <div className="flex items-center gap-2 text-[8px]">
+                    <div className="flex items-center gap-2 text-[9px]">
                       <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 rounded-full" style={{ backgroundColor: theme.green }} />
-                        <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>{kpi.threshold}</span>
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.green }} />
+                        <span style={{ color: 'rgb(var(--color-text-muted))' }}>{kpi.threshold}</span>
                       </div>
-                      <div className="w-px h-2.5" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
+                      <div className="w-px h-3" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
                       <div className="flex items-center gap-1">
-                        <div className="w-1 h-1 rounded-full" style={{ backgroundColor: theme.gold }} />
-                        <span style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>{kpi.target}</span>
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.gold }} />
+                        <span style={{ color: 'rgb(var(--color-text-muted))' }}>{kpi.target}</span>
                       </div>
-                      <div className="w-px h-2.5" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
+                      <div className="w-px h-3" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }} />
                       <span className="font-medium" style={{ color: theme.green }}>{kpi.insight}</span>
                     </div>
                   </div>
@@ -1307,9 +1513,9 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             ))}
           </div>
           
-          {/* Strategic Roadmap */}
+          {/* Strategic Roadmap - Improved UX for M, T, A */}
           <div 
-            className={`p-3 sm:p-4 rounded-xl mb-4 transition-all duration-700 ${
+            className={`p-3 sm:p-4 lg:p-5 rounded-xl mb-4 transition-all duration-700 ${
               showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{ 
@@ -1318,94 +1524,98 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               transitionDelay: '500ms'
             }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {/* Header - Left aligned */}
+            <div className="mb-3 sm:mb-4 text-left">
+              <h4 className="text-xs sm:text-sm font-semibold text-left" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Strategic Roadmap' : 'Feuille de route stratégique'}
               </h4>
-              <div className="flex items-center gap-2">
-                {/* View Toggle */}
-                <div className="flex items-center gap-1 rounded border" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }}>
-                  {(['monthly', 'quarterly', 'yearly'] as const).map((view) => (
-                    <button
-                      key={view}
-                      onClick={() => setRoadmapView(view)}
-                      className="px-2 py-0.5 text-[8px] font-medium transition-colors rounded"
-                      style={{
-                        backgroundColor: roadmapView === view ? theme.green : 'transparent',
-                        color: roadmapView === view ? 'white' : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
-                      }}
-                    >
-                      {isEn 
-                        ? (view === 'monthly' ? 'Mo' : view === 'quarterly' ? 'Q' : 'Yr')
-                        : (view === 'monthly' ? 'M' : view === 'quarterly' ? 'T' : 'A')
-                      }
-                    </button>
-                  ))}
-                </div>
-                <button 
-                  className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
-                  style={{ backgroundColor: `${theme.green}15`, color: theme.green }}
-                >
-                  <Sparkles className="w-3 h-3" />
-                  {isEn ? 'Customize' : 'Personnaliser'}
-                </button>
-              </div>
             </div>
             
-            {/* Timeline Header */}
-            <div className="flex mb-2">
-              <div className="w-28 sm:w-36" />
-              <div className="flex-1 flex justify-between text-[8px] sm:text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {roadmapView === 'monthly' ? (
-                  <>
-                    <span>Jan</span>
-                    <span>Apr</span>
-                    <span>Jul</span>
-                    <span>Oct</span>
-                  </>
-                ) : roadmapView === 'quarterly' ? (
-                  <>
-                    <span>Q1 '26</span>
-                    <span>Q2 '26</span>
-                    <span>Q3 '26</span>
-                    <span>Q4 '26</span>
-                  </>
-                ) : (
-                  <>
-                    <span>2025</span>
-                    <span>2026</span>
-                    <span>2027</span>
-                    <span>2028</span>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Roadmap Items */}
-            {roadmapItems.map((item, i) => (
-              <div 
-                key={i} 
-                className="flex items-center mb-2"
-              >
-                <div className="w-28 sm:w-36 text-[9px] sm:text-[10px] font-medium pr-2 text-left" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {item.plan}
+            {/* Timeline with Grid - Improved mobile visibility */}
+            <div className="relative">
+              {/* Timeline Header - Better mobile spacing */}
+              <div className={`flex mb-2 sm:mb-2 ${isMobile ? 'flex-col gap-2' : ''}`}>
+                <div className={`${isMobile ? 'w-full text-[10px] font-medium mb-1 text-left' : 'w-24 sm:w-32 lg:w-40 text-left'}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isMobile && (isEn ? 'Timeline' : 'Calendrier')}
                 </div>
-                <div className="flex-1 h-6 relative rounded overflow-hidden" style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.5)' }}>
+                <div className={`flex-1 flex ${isMobile ? 'justify-around' : 'justify-between'} text-[9px] sm:text-[10px] font-medium`} style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <span>Q1 '26</span>
+                  <span>Q2 '26</span>
+                  <span>Q3 '26</span>
+                  <span>Q4 '26</span>
+                </div>
+              </div>
+              
+              {/* Roadmap Items with Grid Lines - Improved mobile layout */}
+              <div className="relative">
+                {/* Vertical Grid Lines - Show on tablet+ */}
+                <div className="absolute inset-0 flex pointer-events-none" style={{ left: isMobile ? '0' : 'calc(6rem)', right: 0 }}>
+                  <div className={`${isMobile ? 'hidden' : 'hidden sm:block'} absolute inset-0`} style={{ left: isMobile ? '0' : 'calc(8rem - 6rem)', right: 0 }}>
+                    {[0, 25, 50, 75, 100].map((pos) => (
+                      <div 
+                        key={pos}
+                        className="absolute top-0 bottom-0 w-px"
+                        style={{ 
+                          left: `${pos}%`,
+                          backgroundColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.5)',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {roadmapItems.map((item, i) => (
                   <div 
-                    className="absolute top-1 bottom-1 rounded transition-all duration-1000"
-                    style={{ 
-                      left: `${item.start}%`,
-                      width: showElements ? `${item.end - item.start}%` : '0%',
-                      backgroundColor: item.color,
-                      transitionDelay: `${600 + i * 150}ms`
-                    }}
-                  />
-                </div>
+                    key={i} 
+                    className={`${isMobile ? 'flex-col' : 'flex items-center'} mb-2 sm:mb-1.5 lg:mb-2 relative gap-2`}
+                  >
+                    {/* Label - Left aligned */}
+                    <div className={`${isMobile ? 'w-full text-[10px] font-medium mb-1 text-left' : 'w-24 sm:w-32 lg:w-40 text-[10px] sm:text-[11px] font-medium pr-2 text-left truncate'}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                      {item.plan}
+                    </div>
+                    {/* Progress Bar */}
+                    <div className={`relative ${isMobile ? 'w-full' : 'flex-1'}`} style={{ minWidth: isMobile ? 'auto' : '200px' }}>
+                      <div 
+                        className={`${isMobile ? 'h-5' : 'h-4 sm:h-5 lg:h-6'} w-full relative rounded-md overflow-hidden`}
+                        style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}
+                      >
+                        {/* Grid lines inside bar */}
+                        {[25, 50, 75].map((pos) => (
+                          <div 
+                            key={pos}
+                            className="absolute top-0 bottom-0 w-px"
+                            style={{ 
+                              left: `${pos}%`,
+                              backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(203, 213, 225, 0.8)',
+                            }}
+                          />
+                        ))}
+                        {/* Progress fill - animated */}
+                        <div 
+                          className={`absolute ${isMobile ? 'top-0.5 bottom-0.5' : 'top-0.5 bottom-0.5'} rounded-sm`}
+                          style={{ 
+                            left: `${item.start}%`,
+                            width: showElements ? `${item.end - item.start}%` : '0%',
+                            backgroundColor: item.color,
+                            transition: 'width 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transitionDelay: `${400 + i * 200}ms`,
+                            boxShadow: `0 0 8px ${item.color}40`,
+                          }}
+                        />
+                      </div>
+                      {/* Percentage label */}
+                      <div className="flex justify-between text-[7px] mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        <span>{item.start}%</span>
+                        <span>{item.end}%</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
           
-          {/* Industry Benchmarks Table - Responsive Optimized */}
+          {/* Industry Benchmarks - Grid Cards Layout */}
           <div 
             className={`rounded-xl overflow-hidden transition-all duration-700 ${
               showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -1416,154 +1626,125 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               transitionDelay: '700ms'
             }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 border-b" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
-              <h4 className="text-xs sm:text-sm lg:text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Industry Benchmarks' : 'Références sectorielles'} {current.name}
+            {/* Header - Left aligned */}
+            <div className="px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 lg:py-3.5 border-b text-left" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+              <h4 className="text-xs sm:text-sm font-semibold text-left" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Benchmarks' : 'Références'} {current.name}
               </h4>
-              <button 
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors hover:opacity-90"
-                style={{ backgroundColor: `${theme.gold}15`, color: theme.goldDark }}
-              >
-                <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">{isEn ? 'AI Analyze' : 'Analyser IA'}</span>
-                <span className="xs:hidden">IA</span>
-              </button>
             </div>
             
-            {/* Table Container - No horizontal scroll, fully responsive */}
-            <div>
-              {/* Table Header - Desktop/Tablet */}
-              <div 
-                className="hidden sm:grid text-[10px] sm:text-[11px] lg:text-xs font-semibold uppercase tracking-wider px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-                  gridTemplateColumns: '2fr 1fr 1fr 1.2fr 40px'
-                }}
-              >
-                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
-                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current' : 'Actuel'}</span>
-                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
-                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
-                <span></span>
-              </div>
-              
-              {/* Table Rows */}
+            {/* Benchmark Cards - Matching KPI cards style */}
+            <div className={`grid gap-2 p-2 sm:p-3 ${
+              isMobile ? 'grid-cols-1' : 'grid-cols-3'
+            }`}>
               {current.benchmarks.map((row, i) => {
                 const isExcellent = row.status === 'excellent';
                 const isGood = row.status === 'good';
                 const statusColor = isExcellent ? theme.green : isGood ? theme.gold : 'rgb(var(--color-error))';
                 
+                // Parse for bar visualization
+                const currentVal = parseFloat(row.yours.replace(/[^0-9.-]/g, ''));
+                const targetParts = row.target.match(/([0-9.]+)/g) || ['0'];
+                const targetMax = targetParts.length > 1 ? parseFloat(targetParts[1]) : parseFloat(targetParts[0]) * 1.1;
+                const barPercent = Math.min(95, Math.max(10, (currentVal / targetMax) * 70));
+                
                 return (
                   <div 
                     key={i}
-                    className="border-b last:border-b-0 cursor-pointer transition-all group"
+                    className="p-2 rounded-lg transition-all duration-300 cursor-pointer relative group"
                     style={{ 
-                      borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
-                      backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent',
+                      backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(255, 255, 255, 0.9)',
+                      border: `1px solid ${hoveredRow === i ? statusColor : (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)')}`,
+                      boxShadow: hoveredRow === i ? `0 8px 24px ${statusColor}30` : 'none',
                     }}
-                    onMouseEnter={() => setHoveredRow(i)}
-                    onMouseLeave={() => setHoveredRow(null)}
+                    onMouseEnter={() => !isMobile && setHoveredRow(i)}
+                    onMouseLeave={() => !isMobile && setHoveredRow(null)}
                   >
-                    {/* Mobile Layout - Stacked card style */}
-                    <div className="sm:hidden px-3 py-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                          <span className="text-[11px] font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
-                            {row.metric}
-                          </span>
-                          <Info 
-                            className="w-3 h-3 opacity-50 flex-shrink-0" 
-                            style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-                          />
-                        </div>
-                        <button
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-lg flex-shrink-0"
-                          style={{ backgroundColor: `${theme.gold}12`, color: theme.gold }}
-                        >
-                          <Sparkles className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <span className="text-[9px] uppercase tracking-wide block mb-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                              {isEn ? 'Current' : 'Actuel'}
-                            </span>
-                            <span className="text-sm font-bold" style={{ color: theme.green }}>{row.yours}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] uppercase tracking-wide block mb-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                              {isEn ? 'Target' : 'Cible'}
-                            </span>
-                            <span 
-                              className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium"
-                              style={{ backgroundColor: `${theme.gold}12`, color: theme.goldDark }}
-                            >
-                              {row.target}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {isExcellent || isGood ? (
-                            <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
-                          ) : (
-                            <AlertCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
-                          )}
-                          <span 
-                            className="px-2 py-1 rounded text-[10px] font-medium"
-                            style={{ backgroundColor: `${statusColor}15`, color: statusColor }}
-                          >
-                            {isExcellent ? 'Excellent' : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
-                          </span>
-                        </div>
-                      </div>
+                    {/* Header: Label & Value */}
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[9px] sm:text-[10px] font-medium truncate" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                        {row.metric}
+                      </span>
+                      <span className="text-[11px] sm:text-xs font-bold" style={{ color: statusColor }}>
+                        {row.yours}
+                      </span>
                     </div>
                     
-                    {/* Tablet/Desktop Layout - Grid row */}
-                    <div 
-                      className="hidden sm:grid text-[11px] sm:text-xs lg:text-sm px-3 sm:px-4 lg:px-5 py-3 sm:py-3.5 lg:py-4 items-center"
-                      style={{ gridTemplateColumns: '2fr 1fr 1fr 1.2fr 40px' }}
-                    >
-                      <span className="font-medium flex items-center gap-1.5 text-left truncate pr-2" style={{ color: 'rgb(var(--color-text))' }}>
-                        <span className="truncate">{row.metric}</span>
-                        <span title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}>
-                          <Info 
-                            className="w-3.5 h-3.5 lg:w-4 lg:h-4 opacity-40 group-hover:opacity-100 transition-opacity cursor-help flex-shrink-0" 
-                            style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                    {/* Mini bar chart visualization - animated */}
+                    <div className="w-full" style={{ minHeight: '35px' }}>
+                      <svg width="100%" height="35" className="overflow-visible">
+                        {/* Background bars */}
+                        {[0, 1, 2, 3, 4, 5, 6].map((_, idx) => (
+                          <rect
+                            key={idx}
+                            x={`${idx * 14}%`}
+                            y={35 - (15 + idx * 2.5)}
+                            width="10%"
+                            height={15 + idx * 2.5}
+                            rx="2"
+                            fill={isDark ? 'rgba(71, 85, 105, 0.25)' : 'rgba(229, 231, 235, 0.5)'}
                           />
-                        </span>
+                        ))}
+                        {/* Filled bars - animated growth */}
+                        {[0, 1, 2, 3, 4, 5, 6].map((_, idx) => {
+                          const maxHeight = 15 + idx * 2.5;
+                          const fillHeight = Math.min(maxHeight, (barPercent / 100) * maxHeight * 1.4);
+                          const animatedHeight = showElements ? fillHeight : 0;
+                          return (
+                            <rect
+                              key={`fill-${idx}`}
+                              x={`${idx * 14}%`}
+                              y={35 - animatedHeight}
+                              width="10%"
+                              height={animatedHeight}
+                              rx="2"
+                              fill={statusColor}
+                              opacity={0.85}
+                              style={{
+                                transition: `height 0.8s cubic-bezier(0.4, 0, 0.2, 1), y 0.8s cubic-bezier(0.4, 0, 0.2, 1)`,
+                                transitionDelay: `${800 + i * 100 + idx * 50}ms`,
+                              }}
+                            />
+                          );
+                        })}
+                        {/* Target line */}
+                        <line
+                          x1="0"
+                          y1="12"
+                          x2="100%"
+                          y2="12"
+                          stroke={theme.gold}
+                          strokeWidth="1"
+                          strokeDasharray="3,3"
+                          opacity={showElements ? 0.6 : 0}
+                          style={{ transition: 'opacity 0.5s', transitionDelay: `${1200 + i * 100}ms` }}
+                        />
+                      </svg>
+                    </div>
+                    
+                    {/* Footer: Target & Status - more visible */}
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        {isEn ? 'Target:' : 'Cible:'} {row.target}
                       </span>
-                      <span className="font-bold text-left" style={{ color: theme.green }}>{row.yours}</span>
-                      <span 
-                        className="px-2 py-1 rounded-full font-medium w-fit text-left text-[10px] sm:text-[11px] lg:text-xs"
-                        style={{ backgroundColor: `${theme.gold}12`, color: theme.goldDark }}
+                      <div 
+                        className="flex items-center gap-1 px-2 py-0.5 rounded"
+                        style={{ 
+                          backgroundColor: isExcellent 
+                            ? (isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)')
+                            : isGood 
+                              ? (isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(217, 119, 6, 0.1)')
+                              : (isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)')
+                        }}
                       >
-                        {row.target}
-                      </span>
-                      <div className="flex items-center gap-1.5 justify-start">
                         {isExcellent || isGood ? (
-                          <CheckCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0" style={{ color: statusColor }} />
+                          <CheckCircle className="w-3 h-3" style={{ color: statusColor }} />
                         ) : (
-                          <AlertCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0" style={{ color: statusColor }} />
+                          <AlertCircle className="w-3 h-3" style={{ color: statusColor }} />
                         )}
-                        <span 
-                          className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] lg:text-[11px] font-medium whitespace-nowrap"
-                          style={{ backgroundColor: `${statusColor}15`, color: statusColor }}
-                        >
-                          {isExcellent ? 'Excellent' : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
+                        <span className="text-[9px] sm:text-[10px] font-semibold" style={{ color: statusColor }}>
+                          {isExcellent ? (isEn ? 'Excellent' : 'Excellent') : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
                         </span>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <button
-                          onClick={(e) => e.stopPropagation()}
-                          className="opacity-60 group-hover:opacity-100 transition-opacity p-1.5 sm:p-2 rounded-lg"
-                          style={{ backgroundColor: `${theme.gold}12`, color: theme.gold }}
-                          title={isEn ? 'AI Analysis' : 'Analyse IA'}
-                        >
-                          <Sparkles className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -1602,12 +1783,62 @@ const colors = {
   }
 };
 
+// =====================================================
+// Section Badge Component - Reusable badge for section titles
+// =====================================================
+type ThemeColors = typeof colors.light;
+type BadgeVariant = 'gold' | 'green';
+
+interface SectionBadgeProps {
+  variant: BadgeVariant;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  children: React.ReactNode;
+  theme: ThemeColors;
+  isDark?: boolean;
+  className?: string;
+}
+
+function SectionBadge({ variant, icon: Icon, children, theme, isDark = false, className = '' }: SectionBadgeProps) {
+  const iconColor = variant === 'gold' ? theme.gold : theme.green;
+  
+  return (
+    <span 
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${className}`}
+      style={{ 
+        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+        color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)',
+        border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+        boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
+      }}
+    >
+      <Icon className="w-3.5 h-3.5" style={{ color: iconColor }} />
+      {children}
+    </span>
+  );
+}
+
 export default function Landing() {
   const { language } = useI18n();
   const { register } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
   const [isDark, setIsDark] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+      setIsTablet(width >= 640 && width < 1024);
+    };
+    
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
 
   // Listen for theme changes
   useEffect(() => {
@@ -1622,20 +1853,23 @@ export default function Landing() {
 
   const isEn = language === 'en';
   const theme = isDark ? colors.dark : colors.light;
+  
+  // Industry selection state for dashboard preview
+  const [selectedIndustry, setSelectedIndustry] = useState(0);
+  
+  // Industries for the selector pills (matches HeroDashboardPreview order)
+  const industryOptions = [
+    { id: 'realestate', name: isEn ? 'Real Estate' : 'Immobilier', icon: Building2 },
+    { id: 'restaurant', name: isEn ? 'Restaurant' : 'Restauration', icon: UtensilsCrossed },
+    { id: 'construction', name: 'Construction', icon: Hammer },
+  ];
 
   const handleScheduleCall = () => {
     window.open('https://calendly.com/anthonypaquet1508', '_blank');
   };
 
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden"
-      style={{ 
-        background: isDark 
-          ? 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)'
-          : 'linear-gradient(135deg, #fefefe 0%, #f0fdf4 25%, #f8fafc 50%, #fef3c7 75%, #fefefe 100%)'
-      }}
-    >
+    <>
       {/* Global Animation Styles */}
       <style>{`
         @keyframes fadeInUp {
@@ -1658,6 +1892,30 @@ export default function Landing() {
           from { opacity: 0; transform: translateX(30px); }
           to { opacity: 1; transform: translateX(0); }
         }
+        @keyframes orbit-rotate-0 {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes orbit-rotate-1 {
+          from { transform: rotate(180deg); }
+          to { transform: rotate(540deg); }
+        }
+        @keyframes orbit-rotate-2 {
+          from { transform: rotate(90deg); }
+          to { transform: rotate(-270deg); }
+        }
+        @keyframes orbit-rotate-3 {
+          from { transform: rotate(270deg); }
+          to { transform: rotate(-90deg); }
+        }
+        @keyframes orbit-rotate-4 {
+          from { transform: rotate(45deg); }
+          to { transform: rotate(405deg); }
+        }
+        @keyframes orbit-rotate-5 {
+          from { transform: rotate(225deg); }
+          to { transform: rotate(585deg); }
+        }
         .animate-fade-up { animation: fadeInUp 0.8s ease-out forwards; }
         .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
         .animate-scale-in { animation: scaleIn 0.6s ease-out forwards; }
@@ -1668,37 +1926,56 @@ export default function Landing() {
         .delay-300 { animation-delay: 0.3s; }
         .delay-400 { animation-delay: 0.4s; }
         .delay-500 { animation-delay: 0.5s; }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-fade-up,
+          .animate-fade-in,
+          .animate-scale-in,
+          .animate-slide-left,
+          .animate-slide-right {
+            animation: none;
+            opacity: 1;
+            transform: none;
+          }
+        }
       `}</style>
       
-      {/* Decorative background gradients - Light theme */}
-      {!isDark && (
-        <>
-          <div 
-            className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full pointer-events-none"
-            style={{ 
-              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 60%)',
-              transform: 'translate(20%, -30%)'
-            }}
-          />
-          <div 
-            className="absolute top-1/3 left-0 w-[600px] h-[600px] rounded-full pointer-events-none"
-            style={{ 
-              background: 'radial-gradient(circle, rgba(251, 191, 36, 0.06) 0%, transparent 60%)',
-              transform: 'translate(-30%, 0%)'
-            }}
-          />
-          <div 
-            className="absolute bottom-1/4 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
-            style={{ 
-              background: 'radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 60%)',
-              transform: 'translate(30%, 20%)'
-            }}
-          />
-        </>
-      )}
-      
-      {/* Navigation - Using shared PublicHeader component */}
+      {/* Navigation - Sticky header outside overflow container */}
       <PublicHeader fullMenu={true} />
+
+      <div 
+        className="min-h-screen relative overflow-x-hidden"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)'
+            : 'linear-gradient(135deg, #fefefe 0%, #f0fdf4 25%, #f8fafc 50%, #fef3c7 75%, #fefefe 100%)'
+        }}
+      >
+        {/* Decorative background gradients - Light theme */}
+        {!isDark && (
+          <>
+            <div 
+              className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full pointer-events-none"
+              style={{ 
+                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 60%)',
+                transform: 'translate(20%, -30%)'
+              }}
+            />
+            <div 
+              className="absolute top-1/3 left-0 w-[600px] h-[600px] rounded-full pointer-events-none"
+              style={{ 
+                background: 'radial-gradient(circle, rgba(251, 191, 36, 0.06) 0%, transparent 60%)',
+                transform: 'translate(-30%, 0%)'
+              }}
+            />
+            <div 
+              className="absolute bottom-1/4 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+              style={{ 
+                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 60%)',
+                transform: 'translate(30%, 20%)'
+              }}
+            />
+          </>
+        )}
 
       {/* Hero Section */}
       <section 
@@ -1742,17 +2019,21 @@ export default function Landing() {
             )}
           </h1>
 
-          {/* Section Label Badge */}
-          <div className="flex justify-center mb-4">
+          {/* Professional Credibility Badge */}
+          <div 
+            className="flex flex-wrap justify-center gap-3 mb-6 animate-fade-up opacity-0"
+            style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
+          >
             <span 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium"
               style={{ 
-                backgroundColor: `${theme.gold}15`,
-                color: theme.gold,
-                border: `1px solid ${theme.gold}30`
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+                color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)',
+                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              <BarChart3 className="w-3 h-3" />
+              <BarChart3 className="w-3.5 h-3.5" style={{ color: theme.gold }} />
               {isEn ? 'FP&A Intelligence' : 'Intelligence FP&A'}
             </span>
           </div>
@@ -1779,22 +2060,21 @@ export default function Landing() {
           >
             <button 
               onClick={() => register()}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 text-sm shadow-lg"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition-all hover:scale-[1.02] text-sm shadow-md"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 color: 'white',
-                boxShadow: `0 8px 24px ${theme.green}40`
+                boxShadow: `0 4px 16px ${theme.green}30`
               }}
-              aria-label={isEn ? 'Start free trial - See what you\'re missing' : 'Essai gratuit - Voyez ce que vous manquez'}
             >
               {isEn ? 'See what you\'re missing' : 'Voyez ce que vous manquez'}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button 
               onClick={handleScheduleCall}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 text-sm"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold transition-all hover:scale-[1.02] text-sm"
               style={{ 
-                border: `2px solid ${theme.green}`,
+                border: `1.5px solid ${theme.green}`,
                 color: isDark ? theme.green : theme.greenDark,
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)'
               }}
@@ -1893,17 +2173,113 @@ export default function Landing() {
               className="text-sm font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
-              {isEn ? 'Trusted by Canadian business owners' : 'Utilisé par des entrepreneurs canadiens'}
+              {isEn ? 'Trusted by Canadian entrepreneurs' : 'Utilisé par des entrepreneurs canadiens'}
             </motion.p>
           </motion.div>
           
-          {/* Interactive Dashboard Preview */}
-          <div 
-            className="mt-10 sm:mt-14 animate-fade-up opacity-0"
-            style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}
+        </div>
+      </section>
+      
+      {/* Industry Dashboards Section - With background separation */}
+      <section 
+        className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 relative"
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%)'
+            : 'linear-gradient(180deg, rgba(254, 252, 232, 0.3) 0%, rgba(255, 251, 235, 0.5) 50%, rgba(254, 249, 195, 0.2) 100%)'
+        }}
+      >
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <motion.div 
+            className="text-center mb-8 sm:mb-10"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <HeroDashboardPreview isDark={isDark} theme={theme} isEn={isEn} isVisible={true} />
-          </div>
+            {/* Badge */}
+            <div className="flex justify-center mb-4">
+              <SectionBadge variant="gold" icon={Sparkles} theme={theme} isDark={isDark}>
+                {isEn ? 'Industry Dashboards' : 'Tableaux de bord sectoriels'}
+              </SectionBadge>
+            </div>
+            
+            {/* Title */}
+            <h2 
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
+              {isEn ? (
+                <>Outperform your <span style={{ color: theme.gold }}>industry benchmarks</span></>
+              ) : (
+                <>Dépassez les <span style={{ color: theme.gold }}>références de votre secteur</span></>
+              )}
+            </h2>
+            
+            {/* Subtitle */}
+            <p 
+              className="text-base sm:text-lg max-w-2xl mx-auto mb-6"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
+              {isEn 
+                ? 'Track the most important KPIs for your industry with preset formulas validated by experts.'
+                : 'Suivez les KPIs les plus importants pour votre secteur avec des formules préétablies validées par des experts.'}
+            </p>
+            
+            {/* Industry Selector Pills */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+              {industryOptions.map((industry, index) => {
+                const isActive = selectedIndustry === index;
+                const Icon = industry.icon;
+                return (
+                  <button
+                    key={industry.id}
+                    onClick={() => setSelectedIndustry(index)}
+                    className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                      isActive 
+                        ? 'shadow-lg scale-[1.02]' 
+                        : 'hover:scale-[1.02]'
+                    }`}
+                    style={{
+                      backgroundColor: isActive 
+                        ? theme.gold 
+                        : isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.9)',
+                      color: isActive 
+                        ? '#ffffff' 
+                        : isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)',
+                      border: isActive 
+                        ? 'none' 
+                        : `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.6)'}`,
+                      boxShadow: isActive 
+                        ? `0 4px 14px ${theme.gold}40` 
+                        : 'none'
+                    }}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{industry.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+          
+          {/* Interactive Dashboard Preview */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <HeroDashboardPreview 
+              isDark={isDark} 
+              theme={theme} 
+              isEn={isEn} 
+              isVisible={true}
+              selectedIndustry={selectedIndustry}
+              onIndustryChange={setSelectedIndustry}
+            />
+          </motion.div>
         </div>
       </section>
 
@@ -1963,17 +2339,9 @@ export default function Landing() {
           <div className="text-center mb-16">
             {/* Section Label Badge */}
             <div className="flex justify-center mb-4">
-              <span 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-                style={{ 
-                  backgroundColor: `${theme.gold}15`,
-                  color: theme.gold,
-                  border: `1px solid ${theme.gold}30`
-                }}
-              >
-                <Sparkles className="w-3 h-3" />
+              <SectionBadge variant="gold" icon={Sparkles} theme={theme} isDark={isDark}>
                 {isEn ? 'Smart Analytics' : 'Analytique intelligente'}
-              </span>
+              </SectionBadge>
             </div>
             {/* Main heading with gradient - H2 for SEO (H1 is in hero section) */}
             <h2 
@@ -1998,77 +2366,48 @@ export default function Landing() {
 
           {/* Bottom CTA */}
           <div className="mt-16 text-center">
-            {/* Stats highlight with animations */}
+            {/* FP&A Metrics - Compact horizontal layout with background */}
             <motion.div 
-              className="inline-flex items-center gap-6 sm:gap-8 mb-8 px-6 py-4 rounded-2xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`
+              className="inline-flex justify-center items-center rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2.5 sm:py-3 mb-8"
+              style={{
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(248, 250, 252, 0.8)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
+                backdropFilter: 'blur(8px)',
               }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <motion.div 
-                className="text-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <motion.div 
-                  className="text-2xl sm:text-3xl font-bold"
-                  style={{ color: theme.green }}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
+              {/* Metric 1: Time Savings */}
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 border-r" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }}>
+                <span className="text-lg sm:text-2xl font-bold" style={{ color: theme.green }}>
                   <AnimatedCounter end={40} suffix="%" duration={2000} delay={100} />
-                </motion.div>
-                <div className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Faster reporting' : 'Plus rapide'}
-                </div>
-              </motion.div>
-              <div className="w-px h-10 bg-gray-300 dark:bg-gray-600" />
-              <motion.div 
-                className="text-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <motion.div 
-                  className="text-2xl sm:text-3xl font-bold"
-                  style={{ color: theme.gold }}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
+                </span>
+                <span className="text-[9px] sm:text-[11px] font-medium leading-tight" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'faster close' : 'plus vite'}
+                </span>
+              </div>
+              
+              {/* Metric 2: Visibility */}
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 border-r" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)' }}>
+                <span className="text-lg sm:text-2xl font-bold" style={{ color: theme.gold }}>
                   <AnimatedCounter end={25} suffix="%" duration={2000} delay={200} />
-                </motion.div>
-                <div className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Better visibility' : 'Meilleure visibilité'}
-                </div>
-              </motion.div>
-              <div className="w-px h-10 bg-gray-300 dark:bg-gray-600" />
-              <motion.div 
-                className="text-center"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <motion.div 
-                  className="text-2xl sm:text-3xl font-bold"
-                  style={{ color: theme.green }}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  <AnimatedCounter end={10} suffix="+" duration={1500} delay={300} />
-                </motion.div>
-                <div className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Hours saved/week' : 'Heures/semaine'}
-                </div>
-              </motion.div>
+                </span>
+                <span className="text-[9px] sm:text-[11px] font-medium leading-tight" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'visibility' : 'visibilité'}
+                </span>
+              </div>
+              
+              {/* Metric 3: Time Recovered */}
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4">
+                <span className="text-lg sm:text-2xl font-bold" style={{ color: theme.green }}>
+                  <AnimatedCounter end={10} suffix="h" duration={1500} delay={300} />
+                </span>
+                <span className="text-[9px] sm:text-[11px] font-medium leading-tight" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  {isEn ? 'saved/wk' : 'épargnées'}
+                </span>
+              </div>
             </motion.div>
 
             {/* Social proof & trust indicators */}
@@ -2130,12 +2469,12 @@ export default function Landing() {
             {/* CTA Button with pulse effect */}
             <motion.button 
               onClick={() => register()}
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-white text-base relative overflow-hidden"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white text-sm relative overflow-hidden"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 8px 30px ${theme.green}40`
+                boxShadow: `0 4px 16px ${theme.green}30`
               }}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -2182,17 +2521,9 @@ export default function Landing() {
           >
             {/* Section Label Badge */}
             <div className="flex justify-center mb-4">
-              <span 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-                style={{ 
-                  backgroundColor: `${theme.gold}15`,
-                  color: theme.gold,
-                  border: `1px solid ${theme.gold}30`
-                }}
-              >
-                <Bell className="w-3 h-3" />
+              <SectionBadge variant="gold" icon={Bell} theme={theme} isDark={isDark}>
                 {isEn ? 'Smart Alerts' : 'Alertes intelligentes'}
-              </span>
+              </SectionBadge>
             </div>
             
             {/* Main heading - H2 for SEO (H1 is in hero section) */}
@@ -2454,7 +2785,7 @@ export default function Landing() {
       {/* Connected Intelligence - Orbital System */}
       <section 
         id="ecosystem" 
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        className="py-10 sm:py-16 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
         aria-label={isEn ? 'Connected intelligence' : 'Intelligence connectée'}
         style={{ 
           background: isDark 
@@ -2462,105 +2793,272 @@ export default function Landing() {
             : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)'
         }}
       >
+        {/* Animated Background Elements */}
+        {!prefersReducedMotion && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Floating gradient orbs */}
+            <motion.div
+              className="absolute w-[400px] h-[400px] rounded-full opacity-30"
+              style={{
+                background: `radial-gradient(circle, ${theme.green}20 0%, transparent 70%)`,
+                top: '10%',
+                left: '-10%',
+              }}
+              animate={{
+                x: [0, 50, 0],
+                y: [0, 30, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 15,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            <motion.div
+              className="absolute w-[300px] h-[300px] rounded-full opacity-20"
+              style={{
+                background: `radial-gradient(circle, ${theme.gold}25 0%, transparent 70%)`,
+                top: '60%',
+                right: '-5%',
+              }}
+              animate={{
+                x: [0, -40, 0],
+                y: [0, -20, 0],
+                scale: [1, 1.15, 1],
+              }}
+              transition={{
+                duration: 12,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: 2,
+              }}
+            />
+            <motion.div
+              className="absolute w-[250px] h-[250px] rounded-full opacity-15"
+              style={{
+                background: `radial-gradient(circle, ${theme.green}15 0%, transparent 70%)`,
+                bottom: '5%',
+                left: '20%',
+              }}
+              animate={{
+                x: [0, 30, 0],
+                y: [0, -25, 0],
+              }}
+              transition={{
+                duration: 18,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: 4,
+              }}
+            />
+            
+            {/* Floating particles */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1.5 h-1.5 rounded-full"
+                style={{
+                  backgroundColor: i % 2 === 0 ? theme.green : theme.gold,
+                  left: `${10 + (i * 7)}%`,
+                  top: `${15 + (i * 6) % 70}%`,
+                  opacity: 0.4,
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  opacity: [0.2, 0.5, 0.2],
+                }}
+                transition={{
+                  duration: 4 + (i % 3),
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: i * 0.5,
+                }}
+              />
+            ))}
+            
+            {/* Pulse rings */}
+            <motion.div
+              className="absolute w-[600px] h-[600px] rounded-full border opacity-10"
+              style={{
+                borderColor: theme.green,
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+              animate={{
+                scale: [0.8, 1.2, 0.8],
+                opacity: [0.05, 0.15, 0.05],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            <motion.div
+              className="absolute w-[800px] h-[800px] rounded-full border opacity-5"
+              style={{
+                borderColor: theme.gold,
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.03, 0.1, 0.03],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: 2,
+              }}
+            />
+          </div>
+        )}
+        
         <div className="max-w-5xl mx-auto relative z-10">
-          {/* Section Header */}
+          {/* Section Header - Compact on mobile */}
           <motion.div 
-            className="text-center mb-12"
+            className="text-center mb-6 sm:mb-10 lg:mb-12"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             {/* Section Label Badge */}
-            <div className="flex justify-center mb-4">
-              <span 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-                style={{ 
-                  backgroundColor: `${theme.green}15`,
-                  color: theme.green,
-                  border: `1px solid ${theme.green}30`
-                }}
-              >
-                <Cpu className="w-3 h-3" />
-                {isEn ? 'Connected Intelligence' : 'Intelligence connectée'}
-              </span>
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <SectionBadge variant="green" icon={Database} theme={theme} isDark={isDark}>
+                {isEn ? 'Data-Driven Insights' : 'Données en action'}
+              </SectionBadge>
             </div>
             
             <h2 
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+              className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 sm:mb-4"
               style={{ color: 'rgb(var(--color-text))' }}
             >
               {isEn ? (
-                <>Everything Around <span style={{ color: theme.green }}>You</span></>
+                <><span style={{ color: theme.green }}>Data-Centric</span> Decisions</>
               ) : (
-                <>Tout gravite autour de <span style={{ color: theme.green }}>Vous</span></>
+                <>Décisions <span style={{ color: theme.green }}>centrées sur les données</span></>
               )}
             </h2>
             <p 
-              className="text-lg max-w-xl mx-auto"
+              className="text-sm sm:text-base lg:text-lg max-w-xl mx-auto px-4 sm:px-0"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Your financial data, insights and decisions in one place.'
-                : 'Vos données, analyses et décisions en un seul endroit.'}
+                ? 'Transform raw financial data into actionable insights across every business domain.'
+                : 'Transformez vos données financières brutes en informations exploitables dans tous les domaines d\'affaires.'}
             </p>
           </motion.div>
 
-          {/* Desktop & Tablet - Enterprise Orbital System */}
-          <div className="hidden md:flex items-center justify-center relative" style={{ height: '480px' }}>
+          {/* Desktop - Full Enterprise Orbital System */}
+          <div className="hidden lg:flex items-center justify-center relative" style={{ height: '480px' }}>
             
             {/* Cosmic background - solar system atmosphere */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: `radial-gradient(circle at center, ${theme.gold}12 0%, ${theme.green}08 20%, transparent 60%)`,
+                background: `radial-gradient(circle at center, ${theme.gold}10 0%, ${theme.green}06 25%, transparent 55%)`,
               }}
             />
-            {/* Background dots scattered all around */}
-            {[
-              // Top edge
-              { x: 5, y: 2 }, { x: 15, y: 5 }, { x: 28, y: 3 }, { x: 42, y: 6 }, { x: 55, y: 2 }, { x: 68, y: 5 }, { x: 82, y: 3 }, { x: 95, y: 6 },
-              // Top-left corner area
-              { x: 2, y: 12 }, { x: 8, y: 18 }, { x: 3, y: 28 }, { x: 10, y: 35 },
-              // Top-right corner area  
-              { x: 92, y: 12 }, { x: 88, y: 20 }, { x: 95, y: 30 }, { x: 90, y: 38 },
-              // Left edge
-              { x: 2, y: 45 }, { x: 5, y: 55 }, { x: 3, y: 65 }, { x: 6, y: 75 }, { x: 2, y: 85 },
-              // Right edge
-              { x: 95, y: 48 }, { x: 92, y: 58 }, { x: 97, y: 68 }, { x: 93, y: 78 }, { x: 96, y: 88 },
-              // Bottom-left corner area
-              { x: 3, y: 92 }, { x: 12, y: 95 }, { x: 8, y: 88 }, { x: 18, y: 92 },
-              // Bottom-right corner area
-              { x: 88, y: 92 }, { x: 95, y: 88 }, { x: 92, y: 95 }, { x: 85, y: 90 },
-              // Bottom edge
-              { x: 25, y: 95 }, { x: 38, y: 92 }, { x: 50, y: 96 }, { x: 62, y: 93 }, { x: 75, y: 95 },
-              // Extra scattered
-              { x: 15, y: 42 }, { x: 85, y: 45 }, { x: 12, y: 60 }, { x: 88, y: 62 },
-              { x: 20, y: 15 }, { x: 80, y: 18 }, { x: 22, y: 82 }, { x: 78, y: 85 },
-            ].map((pos, i) => (
-              <motion.div
-                key={`dot-${i}`}
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  left: `${pos.x}%`,
-                  top: `${pos.y}%`,
-                  width: 3 + (i % 3),
-                  height: 3 + (i % 3),
-                  background: i % 2 === 0 ? theme.green : theme.gold,
-                  opacity: 0.5,
-                }}
-                animate={{
-                  opacity: [0.3, 0.7, 0.3],
-                  scale: [1, 1.4, 1],
-                }}
-                transition={{
-                  duration: 2 + (i % 3),
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: (i * 0.1) % 2,
-                }}
-              />
-            ))}
+            
+            {/* Animated floating particles */}
+            {!prefersReducedMotion && (
+              <>
+                {/* Floating dots - scattered organically */}
+                {[
+                  { x: '8%', y: '15%', size: 3, color: theme.green, delay: 0, duration: 4 },
+                  { x: '92%', y: '12%', size: 2, color: theme.gold, delay: 0.5, duration: 5 },
+                  { x: '5%', y: '45%', size: 4, color: theme.green, delay: 1, duration: 4.5 },
+                  { x: '95%', y: '50%', size: 3, color: theme.gold, delay: 1.5, duration: 5.5 },
+                  { x: '10%', y: '80%', size: 2, color: theme.greenLight, delay: 2, duration: 4 },
+                  { x: '90%', y: '85%', size: 3, color: theme.goldDark, delay: 0.8, duration: 5 },
+                  { x: '15%', y: '25%', size: 2, color: theme.gold, delay: 1.2, duration: 4.8 },
+                  { x: '85%', y: '30%', size: 2, color: theme.green, delay: 0.3, duration: 5.2 },
+                  { x: '3%', y: '65%', size: 3, color: theme.greenDark, delay: 1.8, duration: 4.2 },
+                  { x: '97%', y: '70%', size: 2, color: theme.gold, delay: 0.7, duration: 5.3 },
+                ].map((dot, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute rounded-full"
+                    style={{
+                      left: dot.x,
+                      top: dot.y,
+                      width: dot.size,
+                      height: dot.size,
+                      backgroundColor: dot.color,
+                    }}
+                    animate={{
+                      y: [-8, 8, -8],
+                      opacity: [0.3, 0.7, 0.3],
+                    }}
+                    transition={{
+                      duration: dot.duration,
+                      delay: dot.delay,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                ))}
+                
+                {/* Subtle ellipse shapes */}
+                <motion.div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    left: '5%',
+                    top: '20%',
+                    width: 60,
+                    height: 30,
+                    border: `1px solid ${theme.green}15`,
+                    transform: 'rotate(-15deg)',
+                  }}
+                  animate={{ opacity: [0.2, 0.4, 0.2], scale: [1, 1.05, 1] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    right: '8%',
+                    top: '25%',
+                    width: 40,
+                    height: 20,
+                    border: `1px solid ${theme.gold}15`,
+                    transform: 'rotate(20deg)',
+                  }}
+                  animate={{ opacity: [0.15, 0.35, 0.15], scale: [1, 1.08, 1] }}
+                  transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                />
+                <motion.div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    left: '10%',
+                    bottom: '15%',
+                    width: 50,
+                    height: 25,
+                    border: `1px solid ${theme.gold}12`,
+                    transform: 'rotate(10deg)',
+                  }}
+                  animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.06, 1] }}
+                  transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                />
+                <motion.div
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    right: '5%',
+                    bottom: '20%',
+                    width: 45,
+                    height: 22,
+                    border: `1px solid ${theme.green}12`,
+                    transform: 'rotate(-25deg)',
+                  }}
+                  animate={{ opacity: [0.15, 0.35, 0.15], scale: [1, 1.07, 1] }}
+                  transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                />
+              </>
+            )}
 
             {/* Thin orbital path lines - subtle circles showing orbit paths */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -2587,72 +3085,43 @@ export default function Landing() {
 
             {/* Center Hub - The Sun (Customer) */}
             <div className="relative z-30">
-              {/* Sun's outer radiance glow - multiple layers */}
-              <motion.div
-                className="absolute -inset-12 rounded-full"
-                style={{ 
-                  background: `radial-gradient(circle, ${theme.gold}20 0%, ${theme.green}15 30%, transparent 70%)`,
-                }}
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.6, 0.8, 0.6]
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute -inset-8 rounded-full"
-                style={{ 
-                  background: `radial-gradient(circle, ${theme.gold}30 0%, ${theme.green}20 40%, transparent 70%)`,
-                }}
-                animate={{ 
-                  scale: [1, 1.15, 1],
-                  opacity: [0.5, 0.7, 0.5]
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              />
+              {/* Subtle glow */}
+              {!prefersReducedMotion && (
+                <motion.div
+                  className="absolute -inset-6 rounded-full"
+                  style={{ 
+                    background: `radial-gradient(circle, ${theme.green}20 0%, transparent 70%)`,
+                  }}
+                  animate={{ 
+                    scale: [1, 1.15, 1],
+                    opacity: [0.4, 0.6, 0.4]
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
               
-              {/* Sun's outer pulse ring */}
-              <motion.div
-                className="absolute -inset-6 rounded-full"
+              {/* Clean gradient ring */}
+              <div
+                className="absolute -inset-1.5 rounded-full"
                 style={{ 
-                  border: `2px solid ${theme.gold}40`,
-                  boxShadow: `0 0 30px ${theme.gold}30, 0 0 60px ${theme.green}20`,
-                }}
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  opacity: [0.6, 0, 0.6]
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              />
-              
-              {/* Sun's rotating ring */}
-              <motion.div
-                className="absolute -inset-2 rounded-full"
-                style={{ 
-                  background: `conic-gradient(from 0deg, ${theme.gold}, ${theme.green}, ${theme.gold}, ${theme.green}, ${theme.gold})`,
+                  background: `conic-gradient(from 0deg, ${theme.green}, ${theme.greenDark}, ${theme.green})`,
                   padding: 2,
-                  boxShadow: `0 0 20px ${theme.gold}40`,
                 }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               >
                 <div 
                   className="w-full h-full rounded-full"
-                  style={{ 
-                    background: `radial-gradient(circle, ${theme.gold}10 0%, ${isDark ? '#0f172a' : '#ffffff'} 100%)`
-                  }}
+                  style={{ background: isDark ? '#0f172a' : '#ffffff' }}
                 />
-              </motion.div>
+              </div>
               
-              {/* Sun - Avatar with enhanced glow */}
+              {/* Sun - Avatar */}
               <motion.div 
                 className="relative w-20 h-20 rounded-full overflow-hidden"
                 style={{ 
-                  border: `3px solid ${theme.gold}60`,
-                  boxShadow: `0 0 40px ${theme.gold}50, 0 0 80px ${theme.green}30, 0 4px 20px rgba(0,0,0,0.2)`,
-                  background: `radial-gradient(circle, ${theme.gold}20 0%, transparent 70%)`,
+                  border: `2px solid ${theme.green}50`,
+                  boxShadow: `0 0 24px ${theme.green}25, 0 4px 16px rgba(0,0,0,0.15)`,
                 }}
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <img 
@@ -2662,18 +3131,17 @@ export default function Landing() {
                 />
               </motion.div>
 
-              {/* Sun's status badge */}
+              {/* Sun's status badge - simple pulse, no rotation */}
               <motion.div
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
                 style={{ 
-                  background: `radial-gradient(circle, ${theme.gold}, ${theme.green})`,
+                  background: `linear-gradient(135deg, ${theme.green}, ${theme.greenDark})`,
                   border: `2px solid ${isDark ? '#0f172a' : '#ffffff'}`,
-                  boxShadow: `0 0 15px ${theme.gold}60, 0 2px 8px ${theme.green}50`
+                  boxShadow: `0 0 12px ${theme.green}50`
                 }}
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 360] }}
-                transition={{ 
-                  scale: { duration: 2, repeat: Infinity },
-                  rotate: { duration: 4, repeat: Infinity, ease: "linear" }
+                animate={prefersReducedMotion ? {} : { scale: [1, 1.1, 1] }}
+                transition={prefersReducedMotion ? {} : { 
+                  duration: 2, repeat: Infinity, ease: "easeInOut"
                 }}
               >
                 <Check className="w-3 h-3 text-white" strokeWidth={3} />
@@ -2688,18 +3156,24 @@ export default function Landing() {
               - Golden angle spacing (~137.5°) creates natural spiral flow
             */}
             
-            {/* ROI Keywords with connection lines to center */}
-            {[
+            {/* Data Domain Keywords with connection lines to center - Reduced elements for reduced motion */}
+            {(prefersReducedMotion ? [
+              // Reduced set for reduced motion preference
+              { icon: Calculator, label: { en: 'Accounting', fr: 'Comptabilité' }, color: theme.green, radius: 110, duration: 0, start: 0, direction: 1, labelOffset: 28 },
+              { icon: Wallet, label: { en: 'Finance', fr: 'Finances' }, color: theme.greenDark, radius: 110, duration: 0, start: 180, direction: 1, labelOffset: 28 },
+              { icon: Percent, label: { en: 'Credits', fr: 'Crédits' }, color: theme.gold, radius: 165, duration: 0, start: 90, direction: -1, labelOffset: 24 },
+              { icon: Receipt, label: { en: 'Taxes', fr: 'Impôts' }, color: theme.goldDark, radius: 165, duration: 0, start: 270, direction: -1, labelOffset: 24 },
+            ] : [
               // Orbit 1 - innermost (r=110) - 2 keywords, 180° apart
-              { icon: Wallet, label: { en: 'Savings', fr: 'Économies' }, color: theme.green, radius: 110, duration: 38, start: 0, direction: 1, labelOffset: 25 },
-              { icon: Clock, label: { en: 'Time', fr: 'Temps' }, color: theme.gold, radius: 110, duration: 53, start: 180, direction: 1, labelOffset: 25 },
+              { icon: Calculator, label: { en: 'Accounting', fr: 'Comptabilité' }, color: theme.green, radius: 110, duration: 42, start: 0, direction: 1, labelOffset: 28 },
+              { icon: Wallet, label: { en: 'Finance', fr: 'Finances' }, color: theme.greenDark, radius: 110, duration: 48, start: 180, direction: 1, labelOffset: 28 },
               // Orbit 2 - middle (r=165) - 2 keywords, 180° apart
-              { icon: TrendingUp, label: { en: 'Revenue', fr: 'Revenus' }, color: theme.greenDark, radius: 165, duration: 45, start: 90, direction: -1, labelOffset: 20 },
-              { icon: Percent, label: { en: 'Credit', fr: 'Crédit' }, color: theme.green, radius: 165, duration: 68, start: 270, direction: -1, labelOffset: 20 },
+              { icon: Percent, label: { en: 'Credits', fr: 'Crédits' }, color: theme.gold, radius: 165, duration: 52, start: 90, direction: -1, labelOffset: 24 },
+              { icon: Receipt, label: { en: 'Taxes', fr: 'Impôts' }, color: theme.goldDark, radius: 165, duration: 58, start: 270, direction: -1, labelOffset: 24 },
               // Orbit 3 - outer (r=220) - 2 keywords, 180° apart
-              { icon: DollarSign, label: { en: 'Profit', fr: 'Bénéfices' }, color: theme.gold, radius: 220, duration: 58, start: 45, direction: 1, labelOffset: 18 },
-              { icon: Zap, label: { en: 'Efficiency', fr: 'Efficacité' }, color: theme.greenLight, radius: 220, duration: 80, start: 225, direction: 1, labelOffset: 18 },
-            ].map((item, idx) => {
+              { icon: LineChart, label: { en: 'Market', fr: 'Marché' }, color: theme.greenLight, radius: 220, duration: 65, start: 45, direction: 1, labelOffset: 20 },
+              { icon: Briefcase, label: { en: 'Investors', fr: 'Investisseurs' }, color: theme.green, radius: 220, duration: 72, start: 225, direction: 1, labelOffset: 20 },
+            ]).map((item, idx) => {
               const points = 72;
               const xPos = Array.from({ length: points + 1 }, (_, i) => 
                 Math.cos(((item.start + item.direction * i * (360 / points)) * Math.PI) / 180) * item.radius
@@ -2717,36 +3191,16 @@ export default function Landing() {
               
               return (
                 <React.Fragment key={idx}>
-                  {/* Connection line from center to icon - one path per element */}
+                  {/* Planet - Icon with clean styling */}
                   <motion.div
-                    className="absolute z-10 pointer-events-none"
+                    className="absolute z-20"
                     style={{ 
                       left: '50%', 
                       top: '50%',
-                      width: `${item.radius}px`,
-                      height: '1px',
-                      background: `linear-gradient(to right, ${item.color}00 0%, ${item.color}25 30%, ${item.color}25 70%, ${item.color}00 100%)`,
-                      transformOrigin: 'left center',
+                      willChange: prefersReducedMotion ? 'auto' : 'transform',
                     }}
-                    animate={{
-                      rotate: Array.from({ length: points + 1 }, (_, i) => 
-                        (item.start + item.direction * i * (360 / points))
-                      ),
-                    }}
-                    transition={{
-                      duration: item.duration,
-                      repeat: Infinity,
-                      ease: "linear",
-                      times: Array.from({ length: points + 1 }, (_, i) => i / points),
-                    }}
-                  />
-
-                  {/* Planet - Icon with planet-like styling */}
-                  <motion.div
-                    className="absolute z-20"
-                    style={{ left: '50%', top: '50%' }}
-                    animate={{ x: xPos, y: yPos }}
-                    transition={{
+                    animate={prefersReducedMotion ? {} : { x: xPos, y: yPos }}
+                    transition={prefersReducedMotion ? {} : {
                       duration: item.duration,
                       repeat: Infinity,
                       ease: "linear",
@@ -2755,42 +3209,26 @@ export default function Landing() {
                   >
                     <motion.div 
                       className="relative"
-                      style={{ marginLeft: -22, marginTop: -22 }}
+                      style={{ marginLeft: -20, marginTop: -20 }}
                       initial={{ opacity: 0, scale: 0 }}
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: idx * 0.1 + 0.3, type: "spring", stiffness: 200, damping: 15 }}
                     >
-                      {/* Planet glow */}
-                      <motion.div
-                        className="absolute -inset-2 rounded-full"
-                        style={{
-                          background: `radial-gradient(circle, ${item.color}30 0%, transparent 70%)`,
-                        }}
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.3, 0.5, 0.3],
-                        }}
-                        transition={{ duration: 2 + idx * 0.3, repeat: Infinity, ease: "easeInOut" }}
-                      />
-                      {/* Planet body */}
+                      {/* Simple planet body - cleaner design */}
                       <div 
-                        className="relative flex items-center justify-center rounded-full overflow-hidden"
+                        className="relative flex items-center justify-center rounded-full"
                         style={{ 
-                          width: 44,
-                          height: 44,
+                          width: 40,
+                          height: 40,
                           background: isDark 
-                            ? `radial-gradient(circle at 30% 30%, ${item.color}40, rgba(15, 23, 42, 0.95) 60%, rgba(30, 41, 59, 0.95) 100%)`
-                            : `radial-gradient(circle at 30% 30%, ${item.color}30, #ffffff 60%, #fafafa 100%)`,
-                          border: `2px solid ${item.color}50`,
-                          boxShadow: `0 0 20px ${item.color}30, 0 4px 15px rgba(0,0,0,0.15), inset 0 2px 10px ${item.color}10`
+                            ? `linear-gradient(135deg, ${item.color}25, rgba(15, 23, 42, 0.9))`
+                            : `linear-gradient(135deg, ${item.color}15, #ffffff)`,
+                          border: `1.5px solid ${item.color}40`,
+                          boxShadow: `0 0 16px ${item.color}20, 0 2px 8px rgba(0,0,0,0.1)`
                         }}
                       >
-                        <div 
-                          className="absolute inset-0 opacity-20"
-                          style={{ background: `radial-gradient(circle at 30% 30%, ${item.color} 0%, transparent 70%)` }}
-                        />
-                        <item.icon style={{ color: item.color, width: 18, height: 18 }} className="relative z-10" />
+                        <item.icon style={{ color: item.color, width: 16, height: 16 }} />
                       </div>
                     </motion.div>
                   </motion.div>
@@ -2798,33 +3236,34 @@ export default function Landing() {
                   {/* Label on same orbit, offset by labelOffset degrees */}
                   <motion.div
                     className="absolute z-30 pointer-events-none"
-                    style={{ left: '50%', top: '50%' }}
-                    animate={{ x: labelXPos, y: labelYPos }}
-                    transition={{
+                    style={{ 
+                      left: '50%', 
+                      top: '50%',
+                      willChange: prefersReducedMotion ? 'auto' : 'transform',
+                    }}
+                    animate={prefersReducedMotion ? {} : { x: labelXPos, y: labelYPos }}
+                    transition={prefersReducedMotion ? {} : {
                       duration: item.duration,
                       repeat: Infinity,
                       ease: "linear",
                       times: Array.from({ length: points + 1 }, (_, i) => i / points),
                     }}
                   >
-                    <motion.div
-                      className="px-2 py-0.5 rounded-full whitespace-nowrap"
+                    <motion.span
+                      className="whitespace-nowrap text-[10px] font-medium"
                       style={{ 
-                        marginLeft: -30,
-                        marginTop: -8,
-                        background: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255,255,255,0.98)',
-                        border: `1px solid ${item.color}35`,
-                        boxShadow: `0 2px 8px ${item.color}15, 0 1px 3px rgba(0,0,0,0.08)`,
+                        marginLeft: -28,
+                        marginTop: -6,
+                        color: item.color,
+                        display: 'block',
                       }}
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: idx * 0.1 + 0.5 }}
                     >
-                      <span className="text-[9px] font-medium" style={{ color: item.color }}>
-                        {isEn ? item.label.en : item.label.fr}
-                      </span>
-                    </motion.div>
+                      {isEn ? item.label.en : item.label.fr}
+                    </motion.span>
                   </motion.div>
                 </React.Fragment>
               );
@@ -2834,121 +3273,148 @@ export default function Landing() {
             {/* Floating ROI badges around perimeter - removed to emphasize spiral */}
           </div>
 
-          {/* Mobile - Refined Hub View */}
-          <div className="md:hidden relative flex flex-col items-center py-4">
-            {/* Center Avatar Hub */}
+          {/* Mobile - Clean Card Layout */}
+          <div className="md:hidden relative px-4">
             <motion.div 
-              className="relative mb-8"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              className="rounded-xl p-5 relative overflow-hidden"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.15)' : '0 4px 20px rgba(0,0,0,0.04)'
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
             >
-              {/* Animated ring */}
-              <motion.div 
-                className="absolute -inset-3 rounded-full"
-                style={{ 
-                  background: `conic-gradient(from 0deg, ${theme.green}, ${theme.gold}, ${theme.green})`,
-                  padding: 2,
+              {/* Subtle gradient background */}
+              <div 
+                className="absolute inset-0 opacity-30 pointer-events-none"
+                style={{
+                  background: `radial-gradient(circle at 15% 50%, ${theme.green}20 0%, transparent 50%)`
                 }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-              >
-                <div 
-                  className="w-full h-full rounded-full"
-                  style={{ background: isDark ? '#0f172a' : '#ffffff' }}
-                />
-              </motion.div>
+              />
               
-              <motion.div 
-                className="relative w-16 h-16 rounded-full overflow-hidden"
-                style={{ 
-                  border: `3px solid ${isDark ? '#0f172a' : '#ffffff'}`,
-                  boxShadow: `0 0 25px ${theme.green}30`
-                }}
-              >
-                <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=128&h=128&fit=crop&crop=face"
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </motion.div>
+              {/* Content */}
+              <div className="relative flex items-center gap-5">
+                {/* Human photo - centered circle */}
+                <div className="relative flex-shrink-0">
+                  <div 
+                    className="rounded-full overflow-hidden"
+                    style={{ 
+                      width: 64,
+                      height: 64,
+                      border: `2.5px solid ${theme.green}50`,
+                      boxShadow: `0 4px 16px ${theme.green}20`
+                    }}
+                  >
+                    <img 
+                      src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=face"
+                      alt={isEn ? 'Business professional' : 'Professionnel'}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  {/* Checkmark */}
+                  <div
+                    className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ 
+                      background: theme.green,
+                      border: `2px solid ${isDark ? '#0f172a' : '#ffffff'}`,
+                    }}
+                  >
+                    <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                  </div>
+                </div>
 
-              {/* Status badge */}
-              <motion.div
-                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                style={{ 
-                  background: theme.green,
-                  border: `2px solid ${isDark ? '#0f172a' : '#ffffff'}`,
-                }}
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-              </motion.div>
+                {/* Data Domains - 2 rows of 3 - shifted right with more space */}
+                <div className="flex-1 grid grid-cols-3 gap-x-3 gap-y-2.5 pl-1">
+                  {[
+                    { icon: Calculator, label: { en: 'Accounting', fr: 'Compta' }, color: theme.green },
+                    { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.greenDark },
+                    { icon: Percent, label: { en: 'Credits', fr: 'Crédits' }, color: theme.gold },
+                    { icon: Receipt, label: { en: 'Taxes', fr: 'Impôts' }, color: theme.goldDark },
+                    { icon: LineChart, label: { en: 'Market', fr: 'Marché' }, color: theme.greenLight },
+                    { icon: Briefcase, label: { en: 'Invest', fr: 'Invest.' }, color: theme.green },
+                  ].map((d, i) => (
+                    <motion.div 
+                      key={i}
+                      className="flex items-center gap-1.5"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.05 + 0.2, duration: 0.3 }}
+                    >
+                      <d.icon className="w-4 h-4 flex-shrink-0" style={{ color: d.color }} />
+                      <span 
+                        className="text-[11px] font-semibold"
+                        style={{ color: d.color }}
+                      >
+                        {isEn ? d.label.en : d.label.fr}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             </motion.div>
+          </div>
 
-            {/* Connection lines with flowing dots */}
-            <div className="flex justify-center gap-2 mb-6">
-              {[theme.green, theme.gold, theme.greenLight, theme.greenDark, theme.goldDark, theme.green, theme.gold].map((color, i) => (
-                <motion.div
-                  key={i}
-                  className="relative w-0.5 h-10"
-                  style={{ background: `linear-gradient(to bottom, ${color}40, ${color}10)` }}
-                  initial={{ scaleY: 0 }}
-                  whileInView={{ scaleY: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05, duration: 0.4 }}
-                >
-                  <motion.div
-                    className="absolute w-1.5 h-1.5 rounded-full -left-[2px]"
-                    style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }}
-                    animate={{ y: [0, 36, 0], opacity: [0, 1, 0] }}
-                    transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.15 }}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* ROI Keywords Grid - 2 rows, 3 columns */}
-            <div className="grid grid-cols-3 gap-3 px-2 w-full max-w-sm">
+          {/* LEGACY: Original mobile grid - hidden, replaced by compact layout above */}
+          <div className="hidden">
+            <div className="grid grid-cols-3 gap-4 px-4 w-full max-w-sm">
               {[
-                { icon: Wallet, label: { en: 'Savings', fr: 'Économies' }, color: theme.green },
-                { icon: Clock, label: { en: 'Time', fr: 'Temps' }, color: theme.gold },
-                { icon: TrendingUp, label: { en: 'Revenue', fr: 'Revenus' }, color: theme.greenDark },
-                { icon: Percent, label: { en: 'Credit', fr: 'Crédit' }, color: theme.green },
-                { icon: DollarSign, label: { en: 'Profit', fr: 'Bénéfices' }, color: theme.gold },
-                { icon: Zap, label: { en: 'Efficiency', fr: 'Efficacité' }, color: theme.greenLight },
+                { icon: Calculator, label: { en: 'Accounting', fr: 'Comptabilité' }, color: theme.green },
+                { icon: Wallet, label: { en: 'Finance', fr: 'Finances' }, color: theme.greenDark },
+                { icon: Percent, label: { en: 'Credits', fr: 'Crédits' }, color: theme.gold },
+                { icon: Receipt, label: { en: 'Taxes', fr: 'Impôts' }, color: theme.goldDark },
+                { icon: LineChart, label: { en: 'Market', fr: 'Marché' }, color: theme.greenLight },
+                { icon: Briefcase, label: { en: 'Investors', fr: 'Investisseurs' }, color: theme.green },
               ].map((d, i) => (
                 <motion.div 
                   key={i}
                   className="flex flex-col items-center"
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.06 + 0.3 }}
+                  transition={{ delay: i * 0.08 + 0.4, duration: 0.5, ease: "easeOut" }}
                 >
                   <motion.div 
-                    className="relative w-12 h-12 rounded-xl flex items-center justify-center mb-1.5"
+                    className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-2 min-h-[44px]"
                     style={{ 
                       background: isDark 
-                        ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%)'
-                        : 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
-                      border: `1.5px solid ${d.color}30`,
-                      boxShadow: `0 4px 15px ${d.color}15`
+                        ? `linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)`
+                        : `linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)`,
+                      border: `2px solid ${d.color}35`,
+                      boxShadow: `0 4px 20px ${d.color}20, 0 2px 8px rgba(0,0,0,0.06)`
                     }}
+                    whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   >
-                    {/* Pulse dot */}
-                    <motion.div
-                      className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: d.color }}
-                      animate={{ opacity: [1, 0.4, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
-                    />
-                    <d.icon className="w-5 h-5" style={{ color: d.color }} />
+                    {/* Animated corner accent */}
+                    {!prefersReducedMotion && (
+                      <motion.div
+                        className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                        style={{ backgroundColor: d.color, boxShadow: `0 0 6px ${d.color}` }}
+                        animate={{ 
+                          scale: [1, 1.3, 1],
+                          opacity: [0.7, 1, 0.7]
+                        }}
+                        transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.3 }}
+                      />
+                    )}
+                    {prefersReducedMotion && (
+                      <div
+                        className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                        style={{ backgroundColor: d.color, boxShadow: `0 0 6px ${d.color}` }}
+                      />
+                    )}
+                    <d.icon className="w-6 h-6" style={{ color: d.color }} />
                   </motion.div>
-                  <span className="text-[9px] font-medium text-center leading-tight" style={{ color: d.color }}>
+                  <span 
+                    className="text-[10px] font-semibold text-center leading-tight"
+                    style={{ color: d.color }}
+                  >
                     {isEn ? d.label.en : d.label.fr}
                   </span>
                 </motion.div>
@@ -2990,17 +3456,9 @@ export default function Landing() {
           >
             {/* Section Label Badge */}
             <div className="flex justify-center mb-4">
-              <span 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-                style={{ 
-                  backgroundColor: `${theme.green}15`,
-                  color: theme.green,
-                  border: `1px solid ${theme.green}30`
-                }}
-              >
-                <Layers className="w-3 h-3" />
+              <SectionBadge variant="green" icon={Layers} theme={theme} isDark={isDark}>
                 {isEn ? 'How It Works' : 'Comment ça fonctionne'}
-              </span>
+              </SectionBadge>
             </div>
             <motion.h2
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
@@ -3026,7 +3484,7 @@ export default function Landing() {
             </motion.p>
           </motion.div>
 
-          {/* Pipeline Steps - Horizontal on Desktop */}
+          {/* Pipeline Steps - Responsive Grid */}
           <div className="relative mt-8 sm:mt-12">
             {/* Enhanced Animated Connection Line - Desktop */}
             <div className="hidden lg:block absolute top-[120px] left-[14%] right-[14%] h-[3px] z-0 rounded-full overflow-hidden">
@@ -3057,8 +3515,8 @@ export default function Landing() {
                   ease: "linear"
                 }}
               />
-              {/* Multiple animated data particles */}
-              {[0, 1, 2].map((i) => (
+              {/* Multiple animated data particles - Disabled for reduced motion */}
+              {!prefersReducedMotion && [0, 1, 2].map((i) => (
                 <motion.div 
                   key={i}
                   className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full"
@@ -3080,9 +3538,24 @@ export default function Landing() {
                 />
               ))}
             </div>
+
+            {/* Simplified Connection Line - Tablet (vertical dotted line) */}
+            {isTablet && (
+              <div className="hidden md:block lg:hidden absolute left-1/2 top-[120px] bottom-[120px] w-[2px] z-0 -translate-x-1/2">
+                <div 
+                  className="h-full"
+                  style={{ 
+                    background: `repeating-linear-gradient(to bottom, ${theme.green} 0%, ${theme.green} 8px, transparent 8px, transparent 16px)`,
+                    opacity: 0.4
+                  }}
+                />
+              </div>
+            )}
             
-            {/* Steps Grid - Enhanced & Animated */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 items-stretch">
+            {/* Steps Grid - Responsive: 1-col mobile, 2x2 tablet, 4-col desktop */}
+            <div className={`grid gap-4 lg:gap-6 items-stretch ${
+              isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-4'
+            }`}>
               {[
                 { 
                   num: 1, 
@@ -3141,7 +3614,8 @@ export default function Landing() {
                   <motion.div 
                     className="relative p-3 sm:p-4 lg:p-5 rounded-xl cursor-pointer overflow-hidden h-full flex flex-col"
                     style={{ 
-                      minHeight: 'clamp(300px, 40vw, 360px)',
+                      minHeight: 'min-content',
+                      maxHeight: isMobile ? 'none' : isTablet ? '450px' : '480px',
                       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                       border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
                       backdropFilter: 'blur(12px)',
@@ -3149,14 +3623,14 @@ export default function Landing() {
                         ? `0 4px 24px -4px rgba(0,0,0,0.3), inset 0 1px 0 0 rgba(255,255,255,0.05)`
                         : `0 4px 24px -4px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.8)`,
                     }}
-                    whileHover={{ 
+                    whileHover={!isMobile ? { 
                       y: -12,
                       scale: 1.02,
                       boxShadow: isDark 
                         ? `0 32px 64px -16px ${step.color}40, 0 16px 32px -8px rgba(0,0,0,0.4)`
                         : `0 32px 64px -16px ${step.color}30, 0 16px 32px -8px rgba(0,0,0,0.1)`,
                       transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
-                    }}
+                    } : {}}
                     whileTap={{ scale: 0.98 }}
                   >
                     {/* Gradient top accent */}
@@ -3190,51 +3664,29 @@ export default function Landing() {
                       transition={{ duration: 0.3 }}
                     />
                     
-                    {/* Step Number Badge & Icon */}
-                    <div className="flex items-center justify-between mb-3">
+                    {/* Icon only - no step number */}
+                    <div className="flex items-center justify-end mb-2">
                       <motion.div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold relative overflow-hidden"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden"
                         style={{ 
-                          backgroundColor: `${step.color}15`,
-                          color: step.color,
-                          border: `1px solid ${step.color}25`
+                          backgroundColor: `${step.color}12`,
+                          border: `1px solid ${step.color}20`
+                        }}
+                        animate={prefersReducedMotion ? {} : { 
+                          rotate: step.visual === 'clean' ? [0, 360] : 0,
+                          scale: [1, 1.05, 1],
+                        }}
+                        transition={prefersReducedMotion ? {} : { 
+                          rotate: { duration: 10, repeat: Infinity, ease: "linear" },
+                          scale: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: idx * 0.3 }
                         }}
                         whileHover={{ 
-                          scale: 1.1,
+                          scale: 1.15,
                           backgroundColor: `${step.color}25`,
                           transition: { duration: 0.3 }
                         }}
                       >
-                        <motion.div
-                          className="absolute inset-0"
-                          style={{ background: `linear-gradient(135deg, ${step.color}20 0%, transparent 60%)` }}
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                        <span className="relative z-10">{step.num}</span>
-                      </motion.div>
-                      <motion.div 
-                        className="w-9 h-9 rounded-lg flex items-center justify-center"
-                        style={{ 
-                          backgroundColor: `${step.color}10`,
-                          border: `1px solid ${step.color}15`
-                        }}
-                        animate={{ 
-                          rotate: step.visual === 'clean' ? [0, 360] : [0, 5, -5, 0],
-                        }}
-                        transition={{ 
-                          duration: step.visual === 'clean' ? 8 : 4,
-                          repeat: Infinity,
-                          ease: step.visual === 'clean' ? "linear" : "easeInOut",
-                          delay: idx * 0.5
-                        }}
-                        whileHover={{ 
-                          scale: 1.15,
-                          backgroundColor: `${step.color}20`,
-                          transition: { duration: 0.3 }
-                        }}
-                      >
-                        <step.icon className="w-4 h-4" style={{ color: step.color }} />
+                        <step.icon className="w-5 h-5" style={{ color: step.color }} />
                       </motion.div>
                     </div>
                     
@@ -3246,122 +3698,167 @@ export default function Landing() {
                       {step.title}
                     </h4>
                     
-                    {/* Description - Responsive min height for alignment */}
+                    {/* Description - Compact for more visualization space */}
                     <p 
-                      className="text-xs sm:text-sm mb-2 sm:mb-3 leading-relaxed"
+                      className="text-xs sm:text-sm mb-2 leading-relaxed"
                       style={{ 
                         color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
-                        minHeight: 'clamp(2.5rem, 6vw, 3.5rem)'
                       }}
                     >
                       {step.desc}
                     </p>
                     
-                    {/* Mini Visualization Area - Responsive heights */}
+                    {/* Mini Visualization Area - Maximized responsive heights */}
                     <div 
-                      className="relative flex-1 min-h-[80px] sm:min-h-[90px] lg:min-h-[100px] mb-3 rounded-lg overflow-hidden"
+                      className="relative flex-1 min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] mb-3 rounded-lg overflow-hidden"
                       style={{ 
                         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
                         border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.5)'}`
                       }}
                     >
                       {step.visual === 'connect' && (
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-4 lg:px-5">
-                          {/* Source icons - responsive sizing */}
-                          <div className="flex flex-col gap-1 sm:gap-1.5 lg:gap-2">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4">
+                          {/* Source icons with pulse */}
+                          <div className="flex flex-col gap-1.5">
                             {['QB', 'XE', 'SA'].map((src, i) => (
                               <motion.div
                                 key={src}
-                                className="w-6 h-4 sm:w-8 sm:h-5 lg:w-9 lg:h-6 rounded text-[8px] sm:text-[9px] lg:text-[10px] font-bold flex items-center justify-center"
+                                className="w-9 h-6 rounded-md text-[10px] font-bold flex items-center justify-center relative overflow-hidden"
                                 style={{ 
-                                  backgroundColor: `${step.color}20`,
+                                  backgroundColor: `${step.color}15`,
                                   color: step.color,
-                                  border: `1px solid ${step.color}30`
+                                  border: `1px solid ${step.color}25`
                                 }}
-                                initial={{ x: -20, opacity: 0 }}
+                                initial={{ x: -30, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: i * 0.2 + 1, duration: 0.5 }}
+                                transition={{ delay: i * 0.15 + 0.3, duration: 0.4, ease: "easeOut" }}
                               >
-                                {src}
+                                <motion.div
+                                  className="absolute inset-0"
+                                  style={{ background: `linear-gradient(90deg, transparent, ${step.color}30, transparent)` }}
+                                  animate={{ x: ['-100%', '100%'] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 + 1 }}
+                                />
+                                <span className="relative z-10">{src}</span>
                               </motion.div>
                             ))}
                           </div>
-                          {/* Animated connection lines - responsive viewBox */}
-                          <svg className="flex-1 h-full max-h-[60px] sm:max-h-[70px] lg:max-h-[80px]" viewBox="0 0 80 60" preserveAspectRatio="xMidYMid meet">
+                          {/* Animated flowing lines */}
+                          <svg className="flex-1 h-[70px]" viewBox="0 0 80 60" preserveAspectRatio="xMidYMid meet">
                             {[0, 1, 2].map((i) => (
-                              <motion.path
-                                key={i}
-                                d={`M0,${15 + i * 15} Q40,30 80,30`}
-                                fill="none"
-                                stroke={step.color}
-                                strokeWidth="2"
-                                strokeDasharray="5,5"
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                animate={{ pathLength: 1, opacity: 0.6 }}
-                                transition={{ delay: i * 0.3 + 1.5, duration: 1 }}
-                              />
+                              <React.Fragment key={i}>
+                                <motion.path
+                                  d={`M0,${15 + i * 15} Q40,30 80,30`}
+                                  fill="none"
+                                  stroke={step.color}
+                                  strokeWidth="2"
+                                  strokeOpacity="0.3"
+                                  initial={{ pathLength: 0 }}
+                                  animate={{ pathLength: 1 }}
+                                  transition={{ delay: i * 0.2 + 0.8, duration: 0.8 }}
+                                />
+                                {/* Flowing dot */}
+                                <motion.circle
+                                  r="4"
+                                  fill={step.color}
+                                  initial={{ opacity: 0 }}
+                                  animate={{
+                                    opacity: [0, 1, 1, 0],
+                                    offsetDistance: ['0%', '100%'],
+                                  }}
+                                  style={{ offsetPath: `path("M0,${15 + i * 15} Q40,30 80,30")` }}
+                                  transition={{ duration: 1.2, delay: i * 0.3 + 1.5, repeat: Infinity, repeatDelay: 1 }}
+                                />
+                              </React.Fragment>
                             ))}
                             <motion.circle
                               cx="80" cy="30" r="6"
                               fill={step.color}
                               initial={{ scale: 0 }}
-                              animate={{ scale: [0, 1.2, 1] }}
-                              transition={{ delay: 2.5, duration: 0.5 }}
+                              animate={{ scale: [0, 1.3, 1] }}
+                              transition={{ delay: 2, duration: 0.4, ease: "backOut" }}
                             />
                           </svg>
-                          {/* Target - responsive sizing */}
+                          {/* Target with glow */}
                           <motion.div 
-                            className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: `${step.color}25`, border: `1px solid ${step.color}40` }}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 2.5, duration: 0.3 }}
+                            className="w-12 h-12 rounded-xl flex items-center justify-center relative"
+                            style={{ backgroundColor: `${step.color}20`, border: `2px solid ${step.color}40` }}
+                            initial={{ scale: 0, rotate: -45 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ delay: 2, duration: 0.5, type: "spring" }}
                           >
-                            <Database className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" style={{ color: step.color }} />
+                            <motion.div 
+                              className="absolute inset-0 rounded-xl"
+                              style={{ boxShadow: `0 0 20px ${step.color}40` }}
+                              animate={{ opacity: [0.3, 0.7, 0.3] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                            <Database className="w-6 h-6" style={{ color: step.color }} />
                           </motion.div>
                         </div>
                       )}
                       
                       {step.visual === 'clean' && (
-                        <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 lg:px-5">
-                          {/* Data cleaning visualization - responsive */}
-                          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full">
-                            {/* Messy data - responsive bars */}
-                            <div className="flex flex-col gap-1 sm:gap-1.5">
-                              {[1, 2, 3, 4].map((i) => (
+                        <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4">
+                          <div className="flex items-center gap-2 sm:gap-3 w-full">
+                            {/* Raw data blocks */}
+                            <div className="flex flex-col gap-1.5">
+                              {[1, 2, 3].map((i) => (
                                 <motion.div
                                   key={i}
-                                  className="h-2 sm:h-2.5 lg:h-3 rounded-full"
+                                  className="h-3 rounded"
                                   style={{ 
-                                    width: `${Math.random() * 16 + 10}px`,
-                                    backgroundColor: isDark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(100, 116, 139, 0.3)'
+                                    width: `${20 + i * 8}px`,
+                                    backgroundColor: isDark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(100, 116, 139, 0.25)'
                                   }}
-                                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: [0.3, 0.6, 0.3], x: 0 }}
+                                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
                                 />
                               ))}
                             </div>
-                            {/* Processing arrow - responsive */}
+                            {/* Animated sync icon */}
                             <motion.div 
                               className="flex-1 flex items-center justify-center"
-                              animate={{ x: [0, 5, 0] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
                             >
-                              <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
-                                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5" style={{ color: step.color }} />
-                              </div>
+                              <motion.div 
+                                className="w-10 h-10 rounded-full flex items-center justify-center relative"
+                                style={{ backgroundColor: `${step.color}15`, border: `1px solid ${step.color}25` }}
+                              >
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                >
+                                  <RefreshCw className="w-5 h-5" style={{ color: step.color }} />
+                                </motion.div>
+                                {/* Pulse ring */}
+                                <motion.div
+                                  className="absolute inset-0 rounded-full"
+                                  style={{ border: `2px solid ${step.color}` }}
+                                  animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                />
+                              </motion.div>
                             </motion.div>
-                            {/* Clean data bars - responsive */}
-                            <div className="flex items-end gap-1 sm:gap-1.5 lg:gap-2 h-10 sm:h-12 lg:h-14">
-                              {[60, 80, 45, 90, 70].map((h, i) => (
+                            {/* Clean animated bars */}
+                            <div className="flex items-end gap-1.5 h-14">
+                              {[50, 75, 40, 90, 65].map((h, i) => (
                                 <motion.div
                                   key={i}
-                                  className="w-2 sm:w-2.5 lg:w-3 rounded-t"
-                                  style={{ backgroundColor: step.color }}
+                                  className="w-3 rounded-sm relative overflow-hidden"
+                                  style={{ backgroundColor: `${step.color}30` }}
                                   initial={{ height: 0 }}
                                   animate={{ height: `${h}%` }}
-                                  transition={{ delay: i * 0.1 + 1.5, duration: 0.5 }}
-                                />
+                                  transition={{ delay: i * 0.12 + 0.8, duration: 0.6, ease: "easeOut" }}
+                                >
+                                  <motion.div
+                                    className="absolute inset-0"
+                                    style={{ backgroundColor: step.color }}
+                                    initial={{ y: '100%' }}
+                                    animate={{ y: '0%' }}
+                                    transition={{ delay: i * 0.12 + 1.2, duration: 0.5 }}
+                                  />
+                                </motion.div>
                               ))}
                             </div>
                           </div>
@@ -3369,76 +3866,175 @@ export default function Landing() {
                       )}
                       
                       {step.visual === 'ai' && (
-                        <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-3 lg:p-4">
-                          {/* AI neural network visualization - responsive */}
-                          <svg className="w-full h-full" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet">
-                            {/* Neural network nodes - responsive radius via CSS */}
-                            {[[15, 12], [15, 30], [15, 48], [50, 20], [50, 40], [85, 30]].map(([cx, cy], i) => (
-                              <motion.circle
-                                key={i}
-                                cx={cx} cy={cy} r="6"
-                                fill={step.color}
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: [0.5, 1, 0.5] }}
-                                transition={{ 
-                                  delay: i * 0.1 + 1,
-                                  opacity: { duration: 2, repeat: Infinity, delay: i * 0.2 }
-                                }}
-                              />
-                            ))}
-                            {/* Connection lines - thicker for visibility */}
+                        <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4 lg:p-4">
+                          {/* AI neural network visualization - significantly improved for all screens */}
+                          <svg className="w-full h-full max-w-[200px] sm:max-w-none" viewBox="0 0 120 70" preserveAspectRatio="xMidYMid meet">
+                            {/* Background glow for output node */}
+                            <motion.circle
+                              cx="100" cy="35" r="18"
+                              style={{ fill: step.color }}
+                              fillOpacity={0.1}
+                              animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                              transition={prefersReducedMotion ? {} : { duration: 3, repeat: Infinity }}
+                            />
+                            
+                            {/* Connection lines - drawn first so nodes appear on top */}
                             {[
-                              [15, 12, 50, 20], [15, 12, 50, 40],
-                              [15, 30, 50, 20], [15, 30, 50, 40],
-                              [15, 48, 50, 20], [15, 48, 50, 40],
-                              [50, 20, 85, 30], [50, 40, 85, 30]
+                              // Input to hidden layer 1
+                              [20, 14, 55, 22], [20, 14, 55, 48],
+                              [20, 35, 55, 22], [20, 35, 55, 48],
+                              [20, 56, 55, 22], [20, 56, 55, 48],
+                              // Hidden layer 1 to output
+                              [55, 22, 100, 35], [55, 48, 100, 35]
                             ].map(([x1, y1, x2, y2], i) => (
                               <motion.line
                                 key={i}
                                 x1={x1} y1={y1} x2={x2} y2={y2}
-                                stroke={step.color}
+                                style={{ stroke: step.color }}
                                 strokeWidth="2"
-                                strokeOpacity="0.5"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: 1 }}
-                                transition={{ delay: i * 0.05 + 1.3, duration: 0.5 }}
+                                strokeOpacity="0.4"
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                animate={{ pathLength: 1, opacity: 0.4 }}
+                                transition={{ delay: i * 0.06 + 1.2, duration: 0.6 }}
                               />
                             ))}
-                            {/* Animated pulse - larger */}
+                            
+                            {/* Animated data flow particles - Disabled for reduced motion */}
+                            {!prefersReducedMotion && [0, 1, 2].map((i) => (
+                              <motion.circle
+                                key={`particle-${i}`}
+                                r="3"
+                                style={{ fill: step.color }}
+                                initial={{ opacity: 0 }}
+                                animate={{ 
+                                  cx: [20, 55, 100],
+                                  cy: [14 + i * 21, 35, 35],
+                                  opacity: [0, 1, 0]
+                                }}
+                                transition={{ 
+                                  duration: 2.5,
+                                  delay: i * 0.8 + 2,
+                                  repeat: Infinity,
+                                  repeatDelay: 1
+                                }}
+                              />
+                            ))}
+                            
+                            {/* Input layer nodes (3 nodes) */}
+                            {[[20, 14], [20, 35], [20, 56]].map(([cx, cy], i) => (
+                              <motion.g key={`input-${i}`}>
+                                <motion.circle
+                                  cx={cx} cy={cy} r="8"
+                                  style={{ fill: step.color, stroke: step.color }}
+                                  fillOpacity={0.25}
+                                  strokeWidth="2"
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{ delay: i * 0.1 + 1, duration: 0.4 }}
+                                />
+                                <motion.circle
+                                  cx={cx} cy={cy} r="4"
+                                  style={{ fill: step.color }}
+                                  initial={{ scale: 0 }}
+                                  animate={prefersReducedMotion ? {} : { scale: [0.8, 1, 0.8], opacity: [0.6, 1, 0.6] }}
+                                  transition={prefersReducedMotion ? {} : { 
+                                    delay: i * 0.1 + 1.2,
+                                    duration: 2,
+                                    repeat: Infinity
+                                  }}
+                                />
+                              </motion.g>
+                            ))}
+                            
+                            {/* Hidden layer nodes (2 nodes) */}
+                            {[[55, 22], [55, 48]].map(([cx, cy], i) => (
+                              <motion.g key={`hidden-${i}`}>
+                                <motion.circle
+                                  cx={cx} cy={cy} r="9"
+                                  style={{ fill: step.color, stroke: step.color }}
+                                  fillOpacity={0.3}
+                                  strokeWidth="2"
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{ delay: i * 0.15 + 1.3, duration: 0.4 }}
+                                />
+                                <motion.circle
+                                  cx={cx} cy={cy} r="5"
+                                  style={{ fill: step.color }}
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: [0.8, 1.1, 0.8], opacity: [0.7, 1, 0.7] }}
+                                  transition={{ 
+                                    delay: i * 0.15 + 1.5,
+                                    duration: 1.8,
+                                    repeat: Infinity
+                                  }}
+                                />
+                              </motion.g>
+                            ))}
+                            
+                            {/* Output node (larger, emphasized) */}
+                            <motion.g>
+                              <motion.circle
+                                cx="100" cy="35" r="12"
+                                style={{ fill: step.color, stroke: step.color }}
+                                fillOpacity={0.35}
+                                strokeWidth="2.5"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 1.6, duration: 0.5 }}
+                              />
+                              <motion.circle
+                                cx="100" cy="35" r="6"
+                                style={{ fill: step.color }}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: [0.9, 1.2, 0.9], opacity: [0.8, 1, 0.8] }}
+                                transition={{ 
+                                  delay: 1.8,
+                                  duration: 1.5,
+                                  repeat: Infinity
+                                }}
+                              />
+                            </motion.g>
+                            
+                            {/* Animated pulse ring around output */}
                             <motion.circle
-                              cx="85" cy="30" r="10"
+                              cx="100" cy="35" r="16"
                               fill="none"
-                              stroke={step.color}
-                              strokeWidth="2.5"
-                              animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                              transition={{ duration: 2, repeat: Infinity }}
+                              style={{ stroke: step.color }}
+                              strokeWidth="2"
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 2 }}
                             />
                           </svg>
                         </div>
                       )}
                       
                       {step.visual === 'dashboard' && (
-                        <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 lg:px-5 gap-2 sm:gap-3 lg:gap-4">
-                          {/* Mini dashboard preview - responsive */}
-                          <div className="flex flex-col gap-1.5 sm:gap-2 flex-1">
-                            {/* KPI card - responsive height */}
+                        <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 lg:px-4 py-2 gap-4 sm:gap-5 lg:gap-5">
+                          {/* Mini dashboard preview - expanded layout */}
+                          <div className="flex flex-col gap-2 sm:gap-2.5 flex-1 h-full justify-center">
+                            {/* KPI card - taller */}
                             <motion.div 
-                              className="h-5 sm:h-6 lg:h-7 rounded flex items-center px-2 gap-1 sm:gap-1.5"
-                              style={{ backgroundColor: `${step.color}15`, border: `1px solid ${step.color}25` }}
+                              className="h-7 sm:h-8 lg:h-8 rounded-md flex items-center px-3 gap-2"
+                              style={{ 
+                                backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(217, 119, 6, 0.12)', 
+                                border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.25)' : 'rgba(217, 119, 6, 0.2)'}` 
+                              }}
                               initial={{ width: 0 }}
                               animate={{ width: '100%' }}
                               transition={{ delay: 1.2, duration: 0.5 }}
                             >
-                              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3.5 lg:h-3.5" style={{ color: step.color }} />
-                              <span className="text-[8px] sm:text-[9px] lg:text-[10px] font-bold" style={{ color: step.color }}>+24%</span>
+                              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-4 lg:h-4" style={{ color: step.color }} />
+                              <span className="text-[10px] sm:text-[11px] lg:text-[11px] font-bold" style={{ color: step.color }}>+24%</span>
                             </motion.div>
-                            {/* Chart bars - responsive */}
-                            <div className="flex items-end gap-0.5 sm:gap-1 lg:gap-1.5 h-7 sm:h-9 lg:h-11">
-                              {[40, 65, 45, 80, 55, 70, 90].map((h, i) => (
+                            {/* Chart bars - taller with more bars */}
+                            <div className="flex items-end gap-1.5 sm:gap-2 lg:gap-2 h-14 sm:h-16 lg:h-16 flex-1">
+                              {[35, 55, 40, 70, 50, 65, 85].map((h, i) => (
                                 <motion.div
                                   key={i}
                                   className="flex-1 rounded-t"
-                                  style={{ backgroundColor: i === 6 ? step.color : `${step.color}50` }}
+                                  style={{ backgroundColor: step.color, opacity: i === 6 ? 1 : 0.5 }}
                                   initial={{ height: 0 }}
                                   animate={{ height: `${h}%` }}
                                   transition={{ delay: i * 0.08 + 1.5, duration: 0.4 }}
@@ -3446,27 +4042,27 @@ export default function Landing() {
                               ))}
                             </div>
                           </div>
-                          {/* Gauge - responsive sizing */}
+                          {/* Gauge - larger */}
                           <motion.div 
-                            className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 relative"
+                            className="w-14 h-14 sm:w-16 sm:h-16 lg:w-16 lg:h-16 relative flex-shrink-0"
                             initial={{ opacity: 0, scale: 0 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 2, duration: 0.4 }}
                           >
                             <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                              <circle cx="18" cy="18" r="14" fill="none" stroke={isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'} strokeWidth="3.5" />
+                              <circle cx="18" cy="18" r="14" fill="none" stroke={isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'} strokeWidth="4" />
                               <motion.circle 
                                 cx="18" cy="18" r="14" 
                                 fill="none" 
-                                stroke={step.color} 
-                                strokeWidth="3.5"
+                                style={{ stroke: step.color }}
+                                strokeWidth="4"
                                 strokeDasharray="88"
                                 initial={{ strokeDashoffset: 88 }}
                                 animate={{ strokeDashoffset: 22 }}
                                 transition={{ delay: 2.2, duration: 1 }}
                               />
                             </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] lg:text-[11px] font-bold" style={{ color: step.color }}>75%</span>
+                            <span className="absolute inset-0 flex items-center justify-center text-[11px] sm:text-[12px] lg:text-[12px] font-bold" style={{ color: step.color }}>75%</span>
                           </motion.div>
                         </div>
                       )}
@@ -3555,10 +4151,10 @@ export default function Landing() {
             </p>
             <button 
               onClick={() => register()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white transition-all hover:scale-105 hover:shadow-lg text-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white transition-all hover:scale-[1.02] text-sm"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 4px 16px ${theme.green}35`
+                boxShadow: `0 4px 16px ${theme.green}30`
               }}
               aria-label={isEn ? 'Connect your accounting software and start free trial' : 'Connectez votre logiciel comptable et commencez votre essai gratuit'}
             >
@@ -3592,17 +4188,9 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-              style={{ 
-                backgroundColor: `${theme.gold}15`,
-                color: theme.gold,
-                border: `1px solid ${theme.gold}30`
-              }}
-            >
-              <Target className="w-3 h-3" />
+            <SectionBadge variant="gold" icon={Target} theme={theme} isDark={isDark}>
               {isEn ? 'Are you ready?' : 'Vous êtes prêts?'}
-            </span>
+            </SectionBadge>
           </motion.div>
           
           {/* Heading */}
@@ -3614,7 +4202,7 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
-            {isEn ? 'Ready to Grow Smarter?' : 'Prêt à grandir plus intelligemment?'}
+            {isEn ? 'Join the Intelligence Network' : 'Rejoignez le réseau d\'intelligence'}
           </motion.h2>
           
           {/* Subheading */}
@@ -3627,8 +4215,8 @@ export default function Landing() {
             transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
             {isEn 
-              ? 'Join thousands of Canadian businesses making better financial decisions with real industry data.'
-              : 'Rejoignez des milliers d\'entreprises canadiennes qui prennent de meilleures décisions financières avec des données réelles de l\'industrie.'}
+              ? 'Every data point captured helps you make better decisions across accounting, taxes, and investments. Leverage the full picture.'
+              : 'Chaque donnée capturée vous aide à prendre de meilleures décisions en comptabilité, fiscalité et investissements. Exploitez le portrait complet.'}
           </motion.p>
           
           {/* CTA Buttons */}
@@ -3641,24 +4229,24 @@ export default function Landing() {
           >
             <motion.button 
               onClick={() => register()}
-              whileHover={{ scale: 1.03, transition: { duration: 0.3 } }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base text-white"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm text-white"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 4px 20px ${theme.green}30`
+                boxShadow: `0 4px 16px ${theme.green}30`
               }}
               aria-label={isEn ? 'Start free trial today' : 'Commencez votre essai gratuit aujourd\'hui'}
             >
               {isEn ? 'Start free today' : 'Commencez gratuitement'}
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </motion.button>
             
             <motion.button 
               onClick={handleScheduleCall}
-              whileHover={{ scale: 1.03, transition: { duration: 0.3 } }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
               whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors"
               style={{ 
                 backgroundColor: 'rgb(var(--color-surface))',
                 color: 'rgb(var(--color-text))',
@@ -3666,7 +4254,7 @@ export default function Landing() {
               }}
               aria-label={isEn ? 'Schedule a personalized demo' : 'Planifier une démo personnalisée'}
             >
-              <Calendar className="w-5 h-5" />
+              <Calendar className="w-4 h-4" />
               {isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée'}
             </motion.button>
           </motion.div>
@@ -3726,17 +4314,9 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span 
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-              style={{ 
-                backgroundColor: `${theme.gold}15`,
-                color: theme.gold,
-                border: `1px solid ${theme.gold}30`
-              }}
-            >
-              <DollarSign className="w-3 h-3" />
+            <SectionBadge variant="gold" icon={DollarSign} theme={theme} isDark={isDark}>
               {isEn ? 'Financial Clarity' : 'Clarté financière'}
-            </span>
+            </SectionBadge>
           </motion.div>
           
           {/* Main Headline */}
@@ -3801,10 +4381,10 @@ export default function Landing() {
           {/* CTA Button */}
           <motion.button
             onClick={() => register()}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm transition-all hover:scale-105"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-white text-sm transition-all"
             style={{ 
               background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-              boxShadow: `0 6px 20px ${theme.green}35`,
+              boxShadow: `0 4px 16px ${theme.green}30`,
             }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -3812,7 +4392,8 @@ export default function Landing() {
             transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
             aria-label={isEn ? 'See your tax credit eligibility' : 'Voir votre éligibilité aux crédits d\'impôt'}
             whileHover={{ 
-              boxShadow: `0 10px 28px ${theme.green}45`,
+              scale: 1.02,
+              boxShadow: `0 6px 20px ${theme.green}40`,
             }}
             whileTap={{ scale: 0.98 }}
           >
@@ -3856,17 +4437,9 @@ export default function Landing() {
           >
             {/* Section Label Badge */}
             <div className="flex justify-center mb-4">
-              <span 
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
-                style={{ 
-                  backgroundColor: `${theme.green}15`,
-                  color: theme.green,
-                  border: `1px solid ${theme.green}30`
-                }}
-              >
-                <MessageSquare className="w-3 h-3" />
+              <SectionBadge variant="green" icon={MessageSquare} theme={theme} isDark={isDark}>
                 {isEn ? 'We\'re here to help' : 'Nous sommes là pour vous aider'}
-              </span>
+              </SectionBadge>
             </div>
             
             <h2 
@@ -3939,70 +4512,45 @@ export default function Landing() {
             </div>
           </motion.div>
 
-          {/* Quick Contact Options */}
+          {/* Quick Contact Options - Left/Right thin layout */}
           <motion.div 
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mt-8"
+            className="flex items-center justify-center gap-6 sm:gap-10 mt-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
+            {/* Email - Left */}
             <a 
               href="mailto:info@plainledger.ca" 
-              className="flex items-center justify-center gap-3 px-6 py-4 rounded-xl transition-all hover:scale-[1.02] group"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: `1px solid ${theme.green}25`,
-                boxShadow: `0 2px 12px ${theme.green}10`,
-              }}
+              className="group flex items-center gap-1.5 text-xs sm:text-sm transition-colors duration-200"
               aria-label={isEn ? 'Send email to info@plainledger.ca' : 'Envoyer un courriel à info@plainledger.ca'}
             >
-              <div 
-                className="p-2 rounded-lg flex-shrink-0"
-                style={{ backgroundColor: `${theme.green}15` }}
-              >
-                <Mail className="w-4 h-4" style={{ color: theme.green }} />
-              </div>
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Email Us' : 'Courriel'}
-                </p>
-                <p 
-                  className="text-sm group-hover:underline font-medium"
-                  style={{ color: theme.green }}
-                >
-                  info@plainledger.ca
-                </p>
-              </div>
+              <Mail className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              <span className="group-hover:underline" style={{ color: theme.green }}>
+                info@plainledger.ca
+              </span>
             </a>
             
+            {/* Separator */}
+            <span 
+              className="w-px h-3.5"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' }}
+            />
+            
+            {/* Schedule call - Right */}
             <button
               onClick={handleScheduleCall}
-              className="flex items-center justify-center gap-3 px-6 py-4 rounded-xl transition-all hover:scale-[1.02] group"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: `1px solid ${theme.green}25`,
-                boxShadow: `0 2px 12px ${theme.green}10`,
-              }}
+              className="group flex items-center gap-1.5 text-xs sm:text-sm transition-colors duration-200"
               aria-label={isEn ? 'Schedule a call' : 'Planifier un appel'}
             >
-              <div 
-                className="p-2 rounded-lg flex-shrink-0"
-                style={{ backgroundColor: `${theme.green}15` }}
-              >
-                <Calendar className="w-4 h-4" style={{ color: theme.green }} />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Schedule a Call' : 'Planifier un appel'}
-                </p>
-                <p 
-                  className="text-sm group-hover:underline font-medium"
-                  style={{ color: theme.green }}
-                >
-                  {isEn ? 'Book a 15-min demo' : 'Réservez une démo de 15 min'}
-                </p>
-              </div>
+              <Calendar className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              <span className="group-hover:underline" style={{ color: theme.green }}>
+                {isEn ? 'Schedule a call' : 'Planifier un appel'}
+              </span>
+              <span className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                (15 min)
+              </span>
             </button>
           </motion.div>
         </div>
@@ -4012,30 +4560,22 @@ export default function Landing() {
       <GetTheApp />
 
       {/* Footer */}
-      <footer className="py-6 sm:py-8 px-4 sm:px-6 border-t border-gray-200 dark:border-gray-800" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md flex items-center justify-center bg-emerald-600">
-              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              </svg>
-            </div>
+      <footer className="py-3 sm:py-4 px-3 sm:px-4 border-t border-gray-200 dark:border-gray-800" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
+          <div className="flex items-center gap-1 sm:gap-1.5 justify-center sm:justify-start">
+            <img 
+              src="/app-icon.svg" 
+              alt="PlainLedger" 
+              className="w-4 h-4 sm:w-5 sm:h-5 rounded"
+            />
             <span className="font-medium text-[10px] sm:text-xs text-gray-900 dark:text-white">PlainLedger</span>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
             <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
             <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
             <a href="#contact" className="transition-colors hover:underline">Contact</a>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 text-center sm:text-right">
             © 2026 PlainLedger 🇨🇦
           </p>
         </div>
@@ -4057,6 +4597,7 @@ export default function Landing() {
         isOpen={showInstallModal} 
         onClose={() => setShowInstallModal(false)} 
       />
-    </div>
+      </div>
+    </>
   );
 }

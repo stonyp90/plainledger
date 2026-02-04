@@ -25,12 +25,12 @@ const BASE_DOMAIN = 'https://plainledger.ca';
 // Default SEO content
 const DEFAULT_SEO = {
   title: {
-    en: 'PlainLedger | FP&A Intelligence for Canadian Entrepreneurs | Tax Credits & KPIs',
-    fr: 'PlainLedger | Intelligence FP&A pour entrepreneurs canadiens | Crédits d\'impôt & KPIs',
+    en: 'PlainLedger | Industry Intelligence for Canadian Entrepreneurs | AI-Powered Insights',
+    fr: 'PlainLedger | Intelligence sectorielle pour entrepreneurs canadiens | Insights propulsés par l\'IA',
   },
   description: {
-    en: 'Bridge the gap between accounting and business decisions. Discover tax credits you\'re missing (SR&ED, CDAE, CRIC). IBCS-compliant reports. 75,000+ Canadian business benchmarks.',
-    fr: 'Comblez l\'écart entre comptabilité et décisions d\'affaires. Découvrez les crédits d\'impôt que vous manquez (RSDE, CDAE, CRIC). Rapports certifiés IBCS. Benchmarks de 75 000+ entreprises.',
+    en: 'The Context Intelligence Platform for Canadian SMBs. AI recommendations that compound in accuracy from 75,000+ business decisions. Industry-specific KPIs, tax credits, and benchmarks.',
+    fr: 'La plateforme d\'intelligence contextuelle pour PME canadiennes. Recommandations IA qui s\'améliorent grâce à 75 000+ décisions d\'affaires. KPIs sectoriels, crédits d\'impôt et benchmarks.',
   },
 };
 
@@ -183,8 +183,8 @@ function injectJSONLDSchemas(currentPath: string, isEn: boolean) {
           'acceptedAnswer': {
             '@type': 'Answer',
             'text': isEn 
-              ? 'PlainLedger is FP&A software that bridges the gap between accounting data and business decisions. It transforms raw financial data into industry-specific KPIs, discovers tax credits (SR&ED, CDAE, CRIC), and provides IBCS-compliant reports for Canadian entrepreneurs.'
-              : 'PlainLedger est un logiciel FP&A qui comble l\'écart entre les données comptables et les décisions d\'affaires. Il transforme les données financières brutes en KPIs sectoriels, découvre les crédits d\'impôt (RSDE, CDAE, CRIC) et fournit des rapports certifiés IBCS pour les entrepreneurs canadiens.'
+              ? 'PlainLedger is the Context Intelligence Platform for Canadian entrepreneurs. It combines real-time financial data with AI that learns from actual business decisions to deliver industry-specific recommendations that compound in accuracy over time. Backed by 75,000+ Canadian business benchmarks.'
+              : 'PlainLedger est la plateforme d\'intelligence contextuelle pour les entrepreneurs canadiens. Elle combine des données financières en temps réel avec une IA qui apprend des décisions d\'affaires réelles pour fournir des recommandations sectorielles qui s\'améliorent avec le temps. Basée sur 75 000+ benchmarks d\'entreprises canadiennes.'
           }
         },
         {
@@ -199,12 +199,12 @@ function injectJSONLDSchemas(currentPath: string, isEn: boolean) {
         },
         {
           '@type': 'Question',
-          'name': isEn ? 'How does PlainLedger bridge the gap between accounting and business decisions?' : 'Comment PlainLedger comble-t-il l\'écart entre comptabilité et décisions d\'affaires?',
+          'name': isEn ? 'How does PlainLedger\'s compounding intelligence work?' : 'Comment fonctionne l\'intelligence cumulative de PlainLedger?',
           'acceptedAnswer': {
             '@type': 'Answer',
             'text': isEn
-              ? 'PlainLedger transforms accounting jargon (balance sheets, EBITDA, working capital) into plain business language (Can I hire? Am I profitable? When will I run out of money?). It uses FP&A methodology and IBCS-compliant reporting to translate financial data into actionable insights with clear ROI.'
-              : 'PlainLedger transforme le jargon comptable (bilans, EBITDA, fonds de roulement) en langage d\'affaires simple (Puis-je embaucher? Suis-je rentable? Quand vais-je manquer d\'argent?). Il utilise la méthodologie FP&A et des rapports certifiés IBCS pour traduire les données financières en insights actionnables avec un ROI clair.'
+              ? 'Every business decision captured on PlainLedger makes our AI smarter for everyone in that industry. When you make a decision and see results, we track the outcome. This creates a feedback loop where recommendations become more accurate over time. Our accuracy has grown from 72% to 92% through this compounding effect.'
+              : 'Chaque décision d\'affaires capturée sur PlainLedger rend notre IA plus intelligente pour tous dans cette industrie. Quand vous prenez une décision et voyez les résultats, nous suivons l\'issue. Cela crée une boucle de rétroaction où les recommandations deviennent plus précises au fil du temps. Notre précision est passée de 72% à 92% grâce à cet effet cumulatif.'
           }
         }
       ]
@@ -236,8 +236,8 @@ function injectJSONLDSchemas(currentPath: string, isEn: boolean) {
     ],
     'availableLanguage': ['en-CA', 'fr-CA'],
     'description': isEn
-      ? 'FP&A software that bridges the gap between accounting and business decisions. Transform financial data into industry KPIs with clear ROI. Discover tax credits. IBCS-compliant reports.'
-      : 'Logiciel FP&A qui comble l\'écart entre comptabilité et décisions d\'affaires. Transformez les données financières en KPIs sectoriels avec ROI clair. Découvrez les crédits d\'impôt. Rapports certifiés IBCS.'
+      ? 'Context Intelligence Platform for Canadian entrepreneurs. AI recommendations that compound in accuracy from 75,000+ business decisions. Industry-specific KPIs, tax credits, and benchmarks.'
+      : 'Plateforme d\'intelligence contextuelle pour entrepreneurs canadiens. Recommandations IA qui s\'améliorent grâce à 75 000+ décisions d\'affaires. KPIs sectoriels, crédits d\'impôt et benchmarks.'
   };
   
   const softwareScript = document.createElement('script');

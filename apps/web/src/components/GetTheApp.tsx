@@ -13,11 +13,9 @@ interface FeatureItemProps {
 
 function FeatureItem({ icon: Icon, title }: FeatureItemProps) {
   return (
-    <div className="flex items-center gap-2 sm:gap-3 w-full lg:w-auto justify-center lg:justify-start">
-      <div className="p-1.5 sm:p-2 rounded-lg flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>
-        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-      </div>
-      <span className="text-sm sm:text-base text-center lg:text-left" style={{ color: 'rgb(var(--color-text))' }}>{title}</span>
+    <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
+      <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgb(var(--color-primary-500))' }} />
+      <span>{title}</span>
     </div>
   );
 }
@@ -39,44 +37,84 @@ export function GetTheApp() {
 
   return (
     <>
-      <section id="mobile-app" className="py-8 sm:py-12 lg:py-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          {/* Header Badge */}
-          <div className="flex justify-center mb-6 sm:mb-8">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>
-              <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-              <span className="text-white font-medium text-xs sm:text-sm">
-                {isEn ? 'Mobile App Available' : 'Application mobile disponible'}
-              </span>
+      <section id="mobile-app" className="py-10 sm:py-14 lg:py-16">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          {/* Balanced two-column layout */}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 lg:gap-16">
+            {/* Left: Text content */}
+            <div className="flex-1 text-center md:text-left max-w-lg">
+              {/* Badge */}
+              <div className="flex justify-center md:justify-start mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>
+                  <Smartphone className="w-3.5 h-3.5 text-white" />
+                  <span className="text-white font-medium text-xs">
+                    {isEn ? 'Mobile App' : 'Application mobile'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Title */}
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 leading-tight" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'PlainLedger on the go' : 'PlainLedger partout'}
+              </h2>
+              
+              {/* Subtitle */}
+              <p className="text-sm sm:text-base mb-5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn 
+                  ? 'Access your dashboards anywhere. Scan to install.'
+                  : 'Accédez à vos tableaux de bord partout. Scannez pour installer.'}
+              </p>
+              
+              {/* Features */}
+              <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-5">
+                <FeatureItem icon={WifiOff} title={isEn ? 'Offline' : 'Hors ligne'} />
+                <FeatureItem icon={Zap} title={isEn ? 'Fast' : 'Rapide'} />
+                <FeatureItem icon={Bell} title={isEn ? 'Notifications' : 'Notifications'} />
+              </div>
+              
+              {/* App Store Buttons */}
+              <div className="flex justify-center md:justify-start gap-2">
+                <button 
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:opacity-90"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    color: 'rgb(var(--color-text))',
+                    border: '1px solid rgb(var(--color-border))'
+                  }}
+                  aria-label={isEn ? 'Install on iOS' : 'Installer sur iOS'}
+                >
+                  <Apple className="w-4 h-4" />
+                  <span>iOS</span>
+                </button>
+                <button 
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors hover:opacity-90"
+                  style={{ 
+                    backgroundColor: 'rgb(var(--color-surface))',
+                    color: 'rgb(var(--color-text))',
+                    border: '1px solid rgb(var(--color-border))'
+                  }}
+                  aria-label={isEn ? 'Install on Android' : 'Installer sur Android'}
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Android</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* Content - Always visible */}
-          <div className="text-center mb-8 sm:mb-10 md:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 leading-tight" style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Take PlainLedger Anywhere' : 'PlainLedger partout avec vous'}
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn 
-                ? 'Access your financial dashboards on the go. Scan the QR code to install the app on your phone.'
-                : 'Accédez à vos tableaux de bord financiers en déplacement. Scannez le code QR pour installer l\'app.'}
-            </p>
-          </div>
-          
-          {/* Balanced Grid Layout - Better for mobile and desktop */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 items-center max-w-4xl mx-auto">
-            {/* QR Code - Centered on mobile, right-aligned on desktop */}
-            <div className="flex justify-center lg:justify-end order-1 lg:order-1">
-              <div className="bg-white p-4 sm:p-5 rounded-xl shadow-lg max-w-fit">
+            
+            {/* Right: QR Code */}
+            <div className="flex-shrink-0">
+              <div className="bg-white p-4 rounded-xl shadow-md">
                 <ClientOnly
                   fallback={
-                    <div className="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] bg-gray-100 animate-pulse rounded" />
+                    <div className="w-[140px] h-[140px] bg-gray-100 animate-pulse rounded" />
                   }
                 >
-                  <div className="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] flex items-center justify-center">
+                  <div className="w-[140px] h-[140px] flex items-center justify-center">
                     <QRCode 
                       value={appUrl} 
-                      size={320}
+                      size={280}
                       level="H"
                       style={{ 
                         height: 'auto', 
@@ -87,46 +125,9 @@ export function GetTheApp() {
                     />
                   </div>
                 </ClientOnly>
-                <p className="text-slate-600 text-xs sm:text-sm text-center mt-3">
+                <p className="text-slate-500 text-[10px] text-center mt-2">
                   {isEn ? 'Scan to install' : 'Scannez pour installer'}
                 </p>
-              </div>
-            </div>
-            
-            {/* Features & Instructions - Centered on mobile, left-aligned on desktop */}
-            <div className="flex flex-col justify-center items-center lg:items-start space-y-4 sm:space-y-5 order-2 lg:order-2">
-              <FeatureItem icon={WifiOff} title={isEn ? 'Works Offline' : 'Fonctionne hors ligne'} />
-              <FeatureItem icon={Zap} title={isEn ? 'Lightning Fast' : 'Ultra rapide'} />
-              <FeatureItem icon={Bell} title={isEn ? 'Push Notifications' : 'Notifications push'} />
-              
-              {/* App Store Buttons - Centered on mobile */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4 w-full sm:w-auto">
-                <button 
-                  onClick={() => setShowModal(true)}
-                  className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-colors hover:opacity-90"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-surface))',
-                    color: 'rgb(var(--color-text))',
-                    border: '1px solid rgb(var(--color-border))'
-                  }}
-                  aria-label={isEn ? 'Install on iOS' : 'Installer sur iOS'}
-                >
-                  <Apple className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>iOS</span>
-                </button>
-                <button 
-                  onClick={() => setShowModal(true)}
-                  className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium text-sm sm:text-base transition-colors hover:opacity-90"
-                  style={{ 
-                    backgroundColor: 'rgb(var(--color-surface))',
-                    color: 'rgb(var(--color-text))',
-                    border: '1px solid rgb(var(--color-border))'
-                  }}
-                  aria-label={isEn ? 'Install on Android' : 'Installer sur Android'}
-                >
-                  <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>Android</span>
-                </button>
               </div>
             </div>
           </div>
