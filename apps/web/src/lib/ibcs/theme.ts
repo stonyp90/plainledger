@@ -28,7 +28,7 @@ export const IBCSColors = {
   
   // Variance semantics (context-aware)
   variance: {
-    favorable: '#059669',      // Green (emerald-600) - good news
+    favorable: 'rgb(var(--color-primary-600))', // emerald-600 - good news
     favorableLight: '#d1fae5', // Light green background
     unfavorable: '#dc2626',    // Red (red-600) - needs attention
     unfavorableLight: '#fee2e2', // Light red background

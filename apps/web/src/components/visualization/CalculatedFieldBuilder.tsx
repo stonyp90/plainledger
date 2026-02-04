@@ -316,7 +316,7 @@ const FORMULA_FUNCTIONS: FormulaFunction[] = [
 ];
 
 const CATEGORY_INFO: Record<string, { icon: React.ComponentType<{ className?: string }>; labelEn: string; labelFr: string; color: string }> = {
-  aggregate: { icon: Sigma, labelEn: 'Aggregate', labelFr: 'Agrégation', color: '#10B981' },
+  aggregate: { icon: Sigma, labelEn: 'Aggregate', labelFr: 'Agrégation', color: 'rgb(var(--color-primary-500))' },
   math: { icon: Calculator, labelEn: 'Math', labelFr: 'Math', color: '#3B82F6' },
   string: { icon: Type, labelEn: 'Text', labelFr: 'Texte', color: '#8B5CF6' },
   date: { icon: Calendar, labelEn: 'Date', labelFr: 'Date', color: '#F59E0B' },

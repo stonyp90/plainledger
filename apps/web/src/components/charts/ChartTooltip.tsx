@@ -441,7 +441,7 @@ export function StatCard({
   // Determine if trend is positive based on context
   const isTrendPositive = trend === 'up' ? trendIsGood : trend === 'down' ? !trendIsGood : null;
   const trendColor = isTrendPositive === true 
-    ? 'text-green-500 dark:text-green-400' 
+    ? 'text-primary-500 dark:text-primary-400' 
     : isTrendPositive === false 
       ? 'text-red-500 dark:text-red-400' 
       : 'text-gray-400';

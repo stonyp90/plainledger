@@ -94,21 +94,23 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
         <div 
           className={`text-center mb-10 sm:mb-12 transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
-          <span 
-            className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1.5 rounded-full"
-            style={{ 
-              background: isDark 
-                ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)'
-                : 'linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%)',
-              color: isDark ? '#fbbf24' : '#b45309',
-              border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.3)' : 'rgba(245, 158, 11, 0.25)'}`,
-            }}
-          >
-            <Sparkles className="w-3 h-3" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
-            {isEn ? 'Industry Benchmarks' : 'Références sectorielles'}
-          </span>
+          {/* Section Label Badge */}
+          <div className="flex justify-center mb-4">
+            <span 
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+              style={{ 
+                backgroundColor: `rgb(var(--color-accent-400) / ${isDark ? '0.15' : '0.12'})`,
+                color: `rgb(var(--color-accent-${isDark ? '400' : '600'}))`,
+                border: `1px solid rgb(var(--color-accent-${isDark ? '400' : '500'}) / ${isDark ? '0.3' : '0.25'})`
+              }}
+            >
+              <Sparkles className="w-3 h-3" />
+              {isEn ? 'Industry Benchmarks' : 'Références sectorielles'}
+            </span>
+          </div>
           
-          <h2 
+          {/* Main heading - H1 for SEO */}
+          <h1 
             className="text-2xl sm:text-3xl lg:text-[2.5rem] font-semibold tracking-tight mb-4"
             style={{ 
               color: isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)',
@@ -116,7 +118,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             }}
           >
             {isEn ? 'Beat your industry benchmarks' : 'Dépassez les références de votre secteur'}
-          </h2>
+          </h1>
           
           <p 
             className="text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
@@ -414,7 +416,7 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
             onClick={onScheduleCall}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-200 hover:gap-3 group"
             style={{ 
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-600)) 100%)',
               color: 'rgb(255, 255, 255)',
               boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
             }}

@@ -47,10 +47,10 @@ export const FPA_COLOR_PRESETS: ChartColorPreset[] = [
     id: 'default',
     name: 'PlainLedger Standard',
     nameEn: 'PlainLedger Standard',
-    primary: '#10B981',     // Emerald green (primary brand)
+    primary: 'rgb(var(--color-primary-500))', // emerald-500 (primary brand)
     secondary: '#3B82F6',   // Blue
-    accent: '#D4AF37',      // Gold
-    positive: '#059669',    // Green - favorable
+    accent: 'rgb(var(--color-accent-500))', // amber-500 (UI consistency)
+    positive: 'rgb(var(--color-primary-600))', // emerald-600 - favorable
     negative: '#DC2626',    // Red - unfavorable
     neutral: '#6B7280',     // Gray - neutral
     plan: '#64748B',        // Slate for plan (outline)
@@ -64,7 +64,7 @@ export const FPA_COLOR_PRESETS: ChartColorPreset[] = [
     primary: '#1E40AF',     // Navy blue
     secondary: '#4338CA',   // Indigo
     accent: '#B45309',      // Amber
-    positive: '#047857',    // Emerald
+    positive: 'rgb(var(--color-primary-700))', // emerald-700
     negative: '#B91C1C',    // Red
     neutral: '#4B5563',     // Gray
     plan: '#6B7280',
@@ -77,8 +77,8 @@ export const FPA_COLOR_PRESETS: ChartColorPreset[] = [
     nameEn: 'High Contrast',
     primary: '#000000',     // Black
     secondary: '#4B5563',   // Dark gray
-    accent: '#F59E0B',      // Amber
-    positive: '#047857',    // Green
+    accent: 'rgb(var(--color-accent-500))', // amber-500
+    positive: 'rgb(var(--color-primary-700))', // emerald-700
     negative: '#DC2626',    // Red
     neutral: '#6B7280',     // Gray
     plan: '#9CA3AF',

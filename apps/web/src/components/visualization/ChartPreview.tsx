@@ -118,7 +118,7 @@ function SimpleLineChart({ data, isEn }: ChartProps) {
 
       {/* Lines */}
       {datasets.map((dataset, di) => {
-        const color = dataset.field.color || '#10B981';
+        const color = dataset.field.color || '#10B981'; // emerald-500 (matches --color-primary-500)
         const points = dataset.values.map((v, i) => ({
           x: padding.left + (i / (labels.length - 1)) * chartWidth,
           y: padding.top + chartHeight - ((v - minValue) / range) * chartHeight,
@@ -200,7 +200,7 @@ function SimpleBarChart({ data, isEn }: ChartProps) {
 
       {/* Bars */}
       {datasets.map((dataset, di) => {
-        const color = dataset.field.color || '#10B981';
+        const color = dataset.field.color || '#10B981'; // emerald-500 (matches --color-primary-500)
         return dataset.values.map((v, i) => {
           const barHeight = (v / maxValue) * chartHeight;
           return (
@@ -227,7 +227,7 @@ function SimplePieChart({ data, isEn }: ChartProps) {
   // Use first dataset
   const values = datasets[0].values;
   const total = values.reduce((a, b) => a + b, 0);
-  const colors = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899'];
+  const colors = ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899']; // emerald-500, amber-500
 
   let currentAngle = -90;
   const segments = values.map((v, i) => {
@@ -479,7 +479,7 @@ export function ChartPreview({
           {config.fields?.filter(f => f.enabled).map(field => {
             const source = getDataSource(field.sourceId);
             const fieldDef = source?.fields.find(f => f.id === field.fieldId);
-            const color = field.color || '#10B981';
+            const color = field.color || '#10B981'; // emerald-500 (matches --color-primary-500)
             const name = field.alias || field.aliasEn || 
               (fieldDef ? (isEn ? fieldDef.nameEn : fieldDef.name) : field.fieldId);
 

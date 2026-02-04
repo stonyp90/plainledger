@@ -35,7 +35,7 @@ interface SparklineProps {
 function MiniSparkline({ 
   data, 
   benchmarkData,
-  color = '#059669',
+  color = 'rgb(var(--color-primary-600))',
   benchmarkColor = 'rgba(148, 163, 184, 0.6)',
   height = 32,
   isVisible = true,
@@ -443,7 +443,7 @@ export default function KPICard({
             <MiniSparkline 
               data={chartData} 
               benchmarkData={benchmarkData}
-              color="#059669"
+              color="rgb(var(--color-primary-600))"
               benchmarkColor="rgba(148, 163, 184, 0.6)"
               height={48}
               isVisible={isVisible}
@@ -454,7 +454,7 @@ export default function KPICard({
           {/* Chart Legend */}
           <div className="flex items-center gap-3 mb-2">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-0.5 rounded" style={{ backgroundColor: '#059669' }} />
+              <div className="w-3 h-0.5 rounded" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }} />
               <span className="text-[8px] font-medium" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {isEn ? 'You' : 'Vous'}
               </span>

@@ -50,6 +50,7 @@ if (!fs.existsSync(logoPath)) {
 const iconSizes = [
   { size: 192, name: 'icon-192.png' },
   { size: 512, name: 'icon-512.png' },
+  { size: 192, name: 'icon-192-maskable.png', maskable: true },
   { size: 512, name: 'icon-512-maskable.png', maskable: true },
 ];
 

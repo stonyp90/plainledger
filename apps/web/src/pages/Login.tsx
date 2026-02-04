@@ -20,8 +20,8 @@ import {
   X,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useI18n, LanguageToggle } from '../lib/i18n';
-import ThemeToggle from '../components/ThemeToggle';
+import { useI18n } from '../lib/i18n';
+import PublicHeader from '../components/PublicHeader';
 import { analytics } from '../lib/analytics';
 import { useKeycloak } from '../lib/keycloak';
 
@@ -106,8 +106,20 @@ export default function Login() {
         }),
       });
 
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      const isJsonResponse = contentType && contentType.includes('application/json');
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        // Try to parse error response, but handle non-JSON gracefully
+        let errorData: any = {};
+        if (isJsonResponse) {
+          try {
+            errorData = await response.json();
+          } catch {
+            // JSON parse failed, use empty object
+          }
+        }
         
         // Handle EMAIL_NOT_VERIFIED error - redirect to verify-email page
         if (errorData.error === 'EMAIL_NOT_VERIFIED') {
@@ -116,11 +128,31 @@ export default function Login() {
           return;
         }
         
-        const errorMsg = errorData.message || errorData.error || 'Invalid email or password';
+        // Handle server errors (502, 503, etc.) with user-friendly message
+        if (response.status >= 500 || !isJsonResponse) {
+          throw new Error(isEn 
+            ? 'Server error. Please try again later.' 
+            : 'Erreur du serveur. Veuillez réessayer plus tard.');
+        }
+        
+        const errorMsg = errorData.message || errorData.error || (isEn ? 'Invalid email or password' : 'Courriel ou mot de passe invalide');
         throw new Error(errorMsg);
       }
 
-      const data = await response.json();
+      // Safely parse success response
+      let data;
+      if (!isJsonResponse) {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
 
       if (data.accessToken && data.user) {
         analytics.track('login_success', { userId: data.user.id });
@@ -157,9 +189,14 @@ export default function Login() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex flex-col"
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
+      {/* Header - Using shared PublicHeader component */}
+      <PublicHeader fullMenu={false} />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center p-4">
       {/* Back to Website Confirmation Popup */}
       {showBackPopup && (
         <motion.div
@@ -488,6 +525,7 @@ export default function Login() {
         >
           By CPAs for entrepreneurs · Bank-level encryption · Data in Canada
         </p>
+      </div>
       </div>
     </div>
   );

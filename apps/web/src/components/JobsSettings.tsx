@@ -30,7 +30,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   sync: 'bg-blue-100 text-blue-800',
   cleanup: 'bg-purple-100 text-purple-800',
-  reporting: 'bg-green-100 text-green-800',
+  reporting: 'bg-primary-100 text-primary-800',
   ai: 'bg-amber-100 text-amber-800',
   notifications: 'bg-pink-100 text-pink-800',
 };
@@ -269,7 +269,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                     }}
                     className={`px-2 py-1 text-xs rounded ${
                       job.isEnabled
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-primary-100 text-primary-700'
                         : 'bg-gray-100 text-gray-500'
                     }`}
                   >
@@ -290,7 +290,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                   <span
                     className={`px-1.5 py-0.5 rounded text-xs ${
                       job.lastRunStatus === 'success'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-primary-100 text-primary-700'
                         : job.lastRunStatus === 'failed'
                         ? 'bg-red-100 text-red-700'
                         : 'bg-gray-100 text-gray-600'
@@ -338,7 +338,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                     <button
                       onClick={handleSaveJob}
                       disabled={saving}
-                      className="px-3 py-1.5 text-sm bg-green-600 text-white hover:bg-green-700 rounded-md disabled:opacity-50"
+                      className="px-3 py-1.5 text-sm bg-primary-600 text-white hover:bg-primary-700 rounded-md disabled:opacity-50"
                     >
                       {saving ? '...' : isEn ? 'Save' : 'Sauvegarder'}
                     </button>
@@ -506,7 +506,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                       </span>
                     )}
                     {selectedJob.alertOnSuccess && (
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
+                      <span className="px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded">
                         {isEn ? 'On Success' : 'Succès'}
                       </span>
                     )}
@@ -546,7 +546,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                         <span
                           className={`w-2 h-2 rounded-full ${
                             exec.status === 'completed'
-                              ? 'bg-green-500'
+                              ? 'bg-primary-500'
                               : exec.status === 'failed'
                               ? 'bg-red-500'
                               : exec.status === 'running'
@@ -568,7 +568,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                         <span
                           className={`px-1.5 py-0.5 text-xs rounded ${
                             exec.status === 'completed'
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-primary-100 text-primary-700'
                               : exec.status === 'failed'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-gray-100 text-gray-600'

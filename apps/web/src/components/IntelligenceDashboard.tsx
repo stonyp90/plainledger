@@ -62,7 +62,7 @@ const DEFAULT_METRICS: IntelligenceMetrics = {
 
 export default function IntelligenceDashboard({
   metrics: initialMetrics,
-  theme = { green: '#16a34a', gold: '#d4af37' },
+  theme = { green: 'rgb(var(--color-primary-500))', gold: '#d4af37' }, // Keep classic gold for branding
   isDark = false,
 }: IntelligenceDashboardProps) {
   const { language } = useI18n();

@@ -47,13 +47,13 @@ import {
   getIndustryName,
 } from '../lib/decisionContext';
 
-// Theme colors - Corporate green palette
+// Theme colors - Corporate green palette (using CSS variables)
 const colors = {
-  green: '#059669',
-  greenDark: '#047857',
-  greenLight: '#10b981',
-  gold: '#d4af37',
-  goldDark: '#b8860b',
+  green: 'rgb(var(--color-primary-600))',      // emerald-600
+  greenDark: 'rgb(var(--color-primary-700))',  // emerald-700
+  greenLight: 'rgb(var(--color-primary-500))', // emerald-500
+  gold: 'rgb(var(--color-accent-500))',        // amber-500 (for UI)
+  goldDark: 'rgb(var(--color-accent-600))',    // amber-600
 };
 
 // =====================================================

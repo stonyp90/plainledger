@@ -71,7 +71,7 @@ const FIELD_TYPE_ICONS: Record<FieldType, React.ComponentType<{ className?: stri
 const FIELD_TYPE_COLORS: Record<FieldType, string> = {
   STRING: '#60A5FA',   // Blue
   NUMBER: '#34D399',   // Green
-  CURRENCY: '#FBBF24', // Gold
+  CURRENCY: 'rgb(var(--color-accent-400))', // amber-400 (matches CSS vars)
   DATE: '#A78BFA',     // Purple
   DATETIME: '#A78BFA', // Purple
   BOOLEAN: '#F472B6',  // Pink

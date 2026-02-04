@@ -5,7 +5,7 @@
  */
 
 import { X, AlertTriangle, ArrowRight, Calendar, Sparkles, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDemoMode } from '../contexts/DemoModeContext';
 import { useAuth } from '../lib/keycloak';
 import { useI18n } from '../lib/i18n';
@@ -13,12 +13,28 @@ import { useI18n } from '../lib/i18n';
 // Calendly link for upgrade consultations
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 
+// Stats for the carousel
+const STATS = [
+  { value: '40%', labelEn: 'Faster', labelFr: 'Plus rapide' },
+  { value: '25%', labelEn: 'Better visibility', labelFr: 'Meilleure visibilité' },
+  { value: '10+', labelEn: 'Hours/week', labelFr: 'Heures/semaine' },
+];
+
 export default function DemoBanner() {
   const { isDemoMode } = useDemoMode();
   const { user } = useAuth();
   const { language } = useI18n();
   const [isDismissed, setIsDismissed] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const isEn = language === 'en';
+
+  // Auto-rotate carousel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % STATS.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
   
   // Don't show this banner for demo-signup users (they see DemoSignupWelcome instead)
   const isDemoSignupUser = user?.organization === 'demo-signup';
@@ -187,6 +203,33 @@ export default function DemoBanner() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Stats Carousel */}
+        <div className="mt-4 flex items-center justify-center gap-6">
+          {STATS.map((stat, index) => (
+            <div
+              key={index}
+              className={`text-center transition-all duration-500 ${
+                index === activeIndex 
+                  ? 'opacity-100 scale-110' 
+                  : 'opacity-40 scale-100'
+              }`}
+            >
+              <div 
+                className="text-xl sm:text-2xl font-bold"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              >
+                {stat.value}
+              </div>
+              <div 
+                className="text-[10px] sm:text-xs font-medium"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn ? stat.labelEn : stat.labelFr}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* CTA Section */}

@@ -24,13 +24,12 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Menu,
   CheckCircle,
   PartyPopper,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useI18n, LanguageToggle } from '../lib/i18n';
-import ThemeToggle from '../components/ThemeToggle';
+import { useI18n } from '../lib/i18n';
+import PublicHeader from '../components/PublicHeader';
 import Checkbox from '../components/Checkbox';
 import TermsModal from '../components/TermsModal';
 import { analytics } from '../lib/analytics';
@@ -150,7 +149,6 @@ export default function Signup() {
 
   // Step management
   const [currentStep, setCurrentStep] = useState<SignupStep>(1);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Form state
@@ -270,13 +268,29 @@ export default function Signup() {
         }),
       });
 
-      const data = await response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
+
+      // Safely parse JSON (some gateways may return HTML with wrong content-type)
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
 
       if (!response.ok) {
         if (data.errors && Array.isArray(data.errors)) {
           throw new Error(data.errors.join('. '));
         }
-        throw new Error(data.message || 'Registration failed');
+        throw new Error(data.message || (isEn ? 'Registration failed' : 'Échec de l\'inscription'));
       }
 
       analytics.track('signup_account_created', { userId: data.userId });
@@ -342,8 +356,13 @@ export default function Signup() {
         }),
       });
 
+      // Only warn if response is not ok - don't block signup completion
       if (!response.ok) {
-        console.warn('Failed to save onboarding data');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          console.warn('Failed to save onboarding data');
+        }
+        // Non-JSON response (server error) - continue silently
       }
 
       analytics.track('signup_completed');
@@ -412,132 +431,15 @@ export default function Signup() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
-      {/* Header - Matching Landing page style */}
-      <header 
-        className="sticky top-0 z-50 border-b backdrop-blur-md"
-        style={{ 
-          backgroundColor: 'rgb(var(--color-bg) / 0.95)',
-          borderColor: 'rgb(var(--color-border))'
+      {/* Header - Using shared PublicHeader component */}
+      <PublicHeader 
+        fullMenu={false}
+        showProgress={{
+          currentStep,
+          totalSteps: 3,
+          progress
         }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-                style={{ 
-                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                  boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
-                }}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                  <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                  <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-                PlainLedger
-              </span>
-            </Link>
-
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-6">
-              <a href="/#industries" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Industries' : 'Industries'}
-              </a>
-              <a href="/#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Pricing' : 'Tarifs'}
-              </a>
-            </div>
-
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-3">
-              {/* Progress indicator */}
-              <div className="flex items-center gap-3 mr-2">
-                <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? `Step ${currentStep} of 3` : `Étape ${currentStep} sur 3`}
-                </span>
-                <div className="w-24 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                  <div 
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${progress}%`,
-                      backgroundColor: 'rgb(var(--color-primary-500))'
-                    }}
-                  />
-                </div>
-              </div>
-              
-              <ThemeToggle />
-              <LanguageToggle />
-              
-              <Link 
-                to="/login" 
-                className="text-sm font-medium"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                {isEn ? 'Sign in' : 'Connexion'}
-              </Link>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center gap-2">
-              <ThemeToggle />
-              <button 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden py-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-              <nav className="flex flex-col gap-3">
-                <a href="/#industries" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Industries' : 'Industries'}
-                </a>
-                <a href="/#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Pricing' : 'Tarifs'}
-                </a>
-                <Link 
-                  to="/login"
-                  className="text-sm font-medium py-2"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn ? 'Sign in' : 'Connexion'}
-                </Link>
-                <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                  <LanguageToggle />
-                </div>
-                {/* Progress indicator (mobile) */}
-                <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                  <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? `Step ${currentStep} of 3` : `Étape ${currentStep} sur 3`}
-                  </span>
-                  <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                    <div 
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${progress}%`,
-                        backgroundColor: 'rgb(var(--color-primary-500))'
-                      }}
-                    />
-                  </div>
-                </div>
-              </nav>
-            </div>
-          )}
-        </div>
-      </header>
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-6">

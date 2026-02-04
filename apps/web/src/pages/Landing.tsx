@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
-import ThemeToggle from '../components/ThemeToggle';
-import { LanguageToggle, useI18n } from '../lib/i18n';
+import { useI18n } from '../lib/i18n';
+import PublicHeader from '../components/PublicHeader';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
 import ContactForm from '../components/ContactForm';
@@ -14,8 +14,6 @@ import {
   ArrowDown,
   Check,
   Shield,
-  Menu,
-  X,
   Database,
   Sparkles,
   FileCheck,
@@ -263,7 +261,7 @@ function AnimatedGauge({
   maxValue = 100, 
   size = 120, 
   strokeWidth = 10,
-  color = '#10b981',
+  color = 'rgb(var(--color-primary-600))',
   showLabel = true,
   delay = 400,
   trigger = true
@@ -432,15 +430,15 @@ function AnimatedBarChart({
                 >
                   <div className="font-semibold mb-1">{labels[i]}</div>
                   <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: isAboveBudget ? '#10b981' : '#94a3b8' }} />
+                    <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: isAboveBudget ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))' }} />
                     <span>Actual: ${d.actual}K</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#cbd5e1' }} />
+                    <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
                     <span>Budget: ${d.budget}K</span>
                   </div>
                   {isAboveBudget && (
-                    <div className="text-[8px] mt-1 font-medium" style={{ color: '#10b981' }}>
+                    <div className="text-[8px] mt-1 font-medium" style={{ color: 'rgb(var(--color-primary-600))' }}>
                       +{Math.round((d.actual - d.budget) / d.budget * 100)}% above target
                     </div>
                   )}
@@ -452,7 +450,7 @@ function AnimatedBarChart({
                   className={`w-[45%] rounded-t transition-all duration-500 ${isHovered ? 'scale-110' : ''}`}
                   style={{ 
                     height: actualHeight,
-                    backgroundColor: isAboveBudget ? '#10b981' : '#94a3b8',
+                    backgroundColor: isAboveBudget ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
                     boxShadow: isAboveBudget && isHovered ? '0 0 12px rgba(16, 185, 129, 0.5)' : 'none',
                   }}
                 />
@@ -460,7 +458,7 @@ function AnimatedBarChart({
                   className={`w-[45%] rounded-t transition-all duration-500 ${isHovered ? 'scale-110' : ''}`}
                   style={{ 
                     height: budgetHeight,
-                    backgroundColor: '#cbd5e1',
+                    backgroundColor: 'rgb(var(--color-border))',
                     opacity: 0.6,
                   }}
                 />
@@ -1021,7 +1019,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary-400" />
         </div>
         
         {/* Industry Tabs - Switchable */}
@@ -1085,7 +1083,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               className="w-7 h-7"
             />
             <span className="text-xs font-bold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
-              <span style={{ color: isDark ? '#f1f5f9' : '#0f172a' }}>Plain</span>
+              <span style={{ color: 'rgb(var(--color-text))' }}>Plain</span>
               <span style={{ color: theme.green }}>Ledger</span>
             </span>
           </div>
@@ -1440,7 +1438,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               {current.benchmarks.map((row, i) => {
                 const isExcellent = row.status === 'excellent';
                 const isGood = row.status === 'good';
-                const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
+                const statusColor = isExcellent ? theme.green : isGood ? theme.gold : 'rgb(var(--color-error))';
                 
                 return (
                   <div 
@@ -1516,11 +1514,12 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
                     >
                       <span className="font-medium flex items-center gap-1.5 text-left truncate pr-2" style={{ color: 'rgb(var(--color-text))' }}>
                         <span className="truncate">{row.metric}</span>
-                        <Info 
-                          className="w-3.5 h-3.5 lg:w-4 lg:h-4 opacity-40 group-hover:opacity-100 transition-opacity cursor-help flex-shrink-0" 
-                          style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-                          title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}
-                        />
+                        <span title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}>
+                          <Info 
+                            className="w-3.5 h-3.5 lg:w-4 lg:h-4 opacity-40 group-hover:opacity-100 transition-opacity cursor-help flex-shrink-0" 
+                            style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                          />
+                        </span>
                       </span>
                       <span className="font-bold text-left" style={{ color: theme.green }}>{row.yours}</span>
                       <span 
@@ -1567,32 +1566,31 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
 // Supported integrations - used inline in JSX
 
 // =====================================================
-// Theme colors - Corporate green palette (emerald-based, professional)
+// Theme colors - Corporate green palette (using CSS variables for consistency)
 const colors = {
   light: {
-    green: '#059669',      // emerald-600 - primary corporate green
-    greenDark: '#047857',  // emerald-700 - darker for depth
-    greenLight: '#10b981', // emerald-500 - lighter accents
-    gold: '#d4af37',
-    goldDark: '#b8860b',
-    goldText: '#8b7355',
+    green: 'rgb(var(--color-primary-600))',      // emerald-600 - primary corporate green
+    greenDark: 'rgb(var(--color-primary-700))',  // emerald-700 - darker for depth
+    greenLight: 'rgb(var(--color-primary-500))', // emerald-500 - lighter accents
+    gold: 'rgb(var(--color-accent-500))',        // amber-500 (for UI consistency)
+    goldDark: 'rgb(var(--color-accent-600))',    // amber-600
+    goldText: 'rgb(var(--color-accent-700))',
     navBg: 'rgba(254, 253, 251, 0.92)',
   },
   dark: {
-    green: '#10b981',      // emerald-500 - visible on dark bg
-    greenDark: '#059669',  // emerald-600 - darker shade
-    greenLight: '#34d399', // emerald-400 - highlights
-    gold: '#fbbf24',
-    goldDark: '#f59e0b',
-    goldText: '#fcd34d',
+    green: 'rgb(var(--color-primary-500))',      // emerald-500 - visible on dark bg
+    greenDark: 'rgb(var(--color-primary-600))',  // emerald-600 - darker shade
+    greenLight: 'rgb(var(--color-primary-400))', // emerald-400 - highlights
+    gold: 'rgb(var(--color-accent-400))',        // amber-400
+    goldDark: 'rgb(var(--color-accent-500))',   // amber-500
+    goldText: 'rgb(var(--color-accent-400))',
     navBg: 'rgba(15, 23, 42, 0.92)',
   }
 };
 
 export default function Landing() {
-  const { login, register, authenticated } = useAuth();
   const { language } = useI18n();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { register } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -1685,146 +1683,8 @@ export default function Landing() {
         </>
       )}
       
-      {/* Navigation */}
-      <nav 
-        className="fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-md"
-        style={{ 
-          backgroundColor: theme.navBg,
-          borderColor: `${theme.green}15`
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
-              <img 
-                src="/logo-mark.svg" 
-                alt="PlainLedger" 
-                className="w-8 h-8 transition-transform group-hover:scale-105"
-              />
-              <span className="font-bold text-lg tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
-                <span style={{ color: isDark ? '#f1f5f9' : '#0f172a' }}>Plain</span>
-                <span style={{ color: theme.green }}>Ledger</span>
-              </span>
-            </Link>
-
-            {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-4 xl:gap-5" aria-label={isEn ? 'Main navigation' : 'Navigation principale'}>
-              <a href="#features" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View features' : 'Voir les fonctionnalités'}>
-                {isEn ? 'Features' : 'Fonctionnalités'}
-              </a>
-              <a href="#industries" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View industry KPIs' : 'Voir les KPIs par industrie'}>
-                {isEn ? 'Industries' : 'Industries'}
-              </a>
-              <a href="#ecosystem" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View connected intelligence' : 'Voir l\'intelligence connectée'}>
-                {isEn ? 'Intelligence' : 'Intelligence'}
-              </a>
-              <a href="#pipeline" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Learn how it works' : 'Apprendre comment ça marche'}>
-                {isEn ? 'How it Works' : 'Comment ça marche'}
-              </a>
-              <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View pricing' : 'Voir les tarifs'}>
-                {isEn ? 'Pricing' : 'Tarifs'}
-              </a>
-              <a href="#contact" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Contact us' : 'Nous contacter'}>
-                Contact
-              </a>
-            </nav>
-
-            {/* Desktop Actions */}
-            <div className="hidden lg:flex items-center gap-2 xl:gap-3">
-              <ThemeToggle />
-              <LanguageToggle />
-              {authenticated ? (
-                <Link 
-                  to="/app" 
-                  className="px-5 py-2.5 rounded-lg font-medium transition-all btn-primary btn-sm whitespace-nowrap"
-                >
-                  {isEn ? 'Go to Dashboard' : 'Accéder au dashboard'}
-                </Link>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => login()}
-                    className="text-sm font-medium whitespace-nowrap"
-                    style={{ color: 'rgb(var(--color-text-secondary))' }}
-                  >
-                    {isEn ? 'Sign in' : 'Connexion'}
-                  </button>
-                  <button 
-                    onClick={() => register()}
-                    className="btn-primary btn-sm whitespace-nowrap"
-                  >
-                    {isEn ? 'Start free' : 'Essai gratuit'}
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden flex items-center gap-2">
-              <ThemeToggle />
-              <button 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Dropdown */}
-          {isMobileMenuOpen && (
-            <div 
-              className="lg:hidden py-4 border-t"
-              style={{ borderColor: 'rgb(var(--color-border))' }}
-            >
-              <nav className="flex flex-col gap-1" aria-label={isEn ? 'Mobile navigation' : 'Navigation mobile'}>
-                <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View features' : 'Voir les fonctionnalités'}>
-                  {isEn ? 'Features' : 'Fonctionnalités'}
-                </a>
-                <a href="#industries" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View industry KPIs' : 'Voir les KPIs par industrie'}>
-                  {isEn ? 'Industries' : 'Industries'}
-                </a>
-                <a href="#ecosystem" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View connected intelligence' : 'Voir l\'intelligence connectée'}>
-                  {isEn ? 'Intelligence' : 'Intelligence'}
-                </a>
-                <a href="#pipeline" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Learn how it works' : 'Apprendre comment ça marche'}>
-                  {isEn ? 'How it Works' : 'Comment ça marche'}
-                </a>
-                <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View pricing' : 'Voir les tarifs'}>
-                  {isEn ? 'Pricing' : 'Tarifs'}
-                </a>
-                <a href="#contact" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Contact us' : 'Nous contacter'}>
-                  Contact
-                </a>
-                
-                {/* Mobile Auth Actions */}
-                <div className="flex flex-col gap-3 pt-4 mt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                  <button 
-                    onClick={() => { login(); setIsMobileMenuOpen(false); }}
-                    className="text-sm font-medium py-2.5 px-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgb(var(--color-text-secondary))' }}
-                  >
-                    {isEn ? 'Sign in' : 'Connexion'}
-                  </button>
-                  <button 
-                    onClick={() => { register(); setIsMobileMenuOpen(false); }}
-                    className="btn-primary w-full py-2.5 text-sm"
-                  >
-                    {isEn ? 'Start free' : 'Essai gratuit'}
-                  </button>
-                </div>
-                
-                {/* Language selector */}
-                <div className="flex items-center gap-3 pt-3 mt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                  <LanguageToggle />
-                </div>
-              </nav>
-            </div>
-          )}
-        </div>
-      </nav>
+      {/* Navigation - Using shared PublicHeader component */}
+      <PublicHeader fullMenu={true} />
 
       {/* Hero Section */}
       <section 
@@ -1868,21 +1728,17 @@ export default function Landing() {
             )}
           </h1>
 
-          {/* Professional Credibility Badge */}
-          <div 
-            className="flex flex-wrap justify-center gap-3 mb-6 animate-fade-up opacity-0"
-            style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
-          >
+          {/* Section Label Badge */}
+          <div className="flex justify-center mb-4">
             <span 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
               style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
-                color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)',
-                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
+                backgroundColor: `${theme.gold}15`,
+                color: theme.gold,
+                border: `1px solid ${theme.gold}30`
               }}
             >
-              <BarChart3 className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+              <BarChart3 className="w-3 h-3" />
               {isEn ? 'FP&A Intelligence' : 'Intelligence FP&A'}
             </span>
           </div>
@@ -1915,6 +1771,7 @@ export default function Landing() {
                 color: 'white',
                 boxShadow: `0 8px 24px ${theme.green}40`
               }}
+              aria-label={isEn ? 'Start free trial - See what you\'re missing' : 'Essai gratuit - Voyez ce que vous manquez'}
             >
               {isEn ? 'See what you\'re missing' : 'Voyez ce que vous manquez'}
               <ArrowRight className="w-4 h-4" />
@@ -1927,6 +1784,7 @@ export default function Landing() {
                 color: isDark ? theme.green : theme.greenDark,
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.9)'
               }}
+              aria-label={isEn ? 'Schedule a call with our team' : 'Planifier un appel avec notre équipe'}
             >
               <Calendar className="w-4 h-4" />
               {isEn ? 'Talk to a real person' : 'Parlez à une vraie personne'}
@@ -2089,7 +1947,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto relative z-10">
           {/* Section Header */}
           <div className="text-center mb-16">
-            {/* Gold Badge */}
+            {/* Section Label Badge */}
             <div className="flex justify-center mb-4">
               <span 
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
@@ -2103,7 +1961,7 @@ export default function Landing() {
                 {isEn ? 'Smart Analytics' : 'Analytique intelligente'}
               </span>
             </div>
-            {/* Main heading with gradient */}
+            {/* Main heading with gradient - H2 for SEO (H1 is in hero section) */}
             <h2 
               className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6"
               style={{ color: 'rgb(var(--color-text))' }}
@@ -2269,6 +2127,7 @@ export default function Landing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.6 }}
+              aria-label={isEn ? 'Start understanding your numbers - Free trial' : 'Commencez à comprendre vos chiffres - Essai gratuit'}
             >
               {/* Subtle shine effect */}
               <motion.div
@@ -2291,6 +2150,7 @@ export default function Landing() {
       {/* Stay Informed Section */}
       <section 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        aria-label={isEn ? 'Stay informed with smart alerts and notifications' : 'Restez informé avec des alertes et notifications intelligentes'}
         style={{ 
           background: isDark 
             ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' 
@@ -2306,25 +2166,22 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-6"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
-                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
-              }}
-            >
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+            {/* Section Label Badge */}
+            <div className="flex justify-center mb-4">
+              <span 
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+                style={{ 
+                  backgroundColor: `${theme.gold}15`,
+                  color: theme.gold,
+                  border: `1px solid ${theme.gold}30`
+                }}
               >
-                <Bell className="w-3.5 h-3.5" style={{ color: theme.green }} />
-              </motion.div>
-              <span className="text-xs font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
+                <Bell className="w-3 h-3" />
                 {isEn ? 'Smart Alerts' : 'Alertes intelligentes'}
               </span>
-            </motion.div>
+            </div>
             
+            {/* Main heading - H2 for SEO (H1 is in hero section) */}
             <h2 
               className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
               style={{ color: 'rgb(var(--color-text))' }}
@@ -2600,24 +2457,20 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-6"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
-                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
-              }}
-            >
-              <motion.div 
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: theme.green }}
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <span className="text-xs font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
+            {/* Section Label Badge */}
+            <div className="flex justify-center mb-4">
+              <span 
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+                style={{ 
+                  backgroundColor: `${theme.green}15`,
+                  color: theme.green,
+                  border: `1px solid ${theme.green}30`
+                }}
+              >
+                <Cpu className="w-3 h-3" />
                 {isEn ? 'Connected Intelligence' : 'Intelligence connectée'}
               </span>
-            </motion.div>
+            </div>
             
             <h2 
               className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
@@ -2642,111 +2495,148 @@ export default function Landing() {
           {/* Desktop & Tablet - Enterprise Orbital System */}
           <div className="hidden md:flex items-center justify-center relative" style={{ height: '480px' }}>
             
-            {/* Background gradient glow */}
+            {/* Cosmic background - solar system atmosphere */}
             <div 
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: `radial-gradient(circle at center, ${theme.green}08 0%, transparent 50%)`,
+                background: `radial-gradient(circle at center, ${theme.gold}12 0%, ${theme.green}08 20%, transparent 60%)`,
               }}
             />
+            {/* Background dots scattered all around */}
+            {[
+              // Top edge
+              { x: 5, y: 2 }, { x: 15, y: 5 }, { x: 28, y: 3 }, { x: 42, y: 6 }, { x: 55, y: 2 }, { x: 68, y: 5 }, { x: 82, y: 3 }, { x: 95, y: 6 },
+              // Top-left corner area
+              { x: 2, y: 12 }, { x: 8, y: 18 }, { x: 3, y: 28 }, { x: 10, y: 35 },
+              // Top-right corner area  
+              { x: 92, y: 12 }, { x: 88, y: 20 }, { x: 95, y: 30 }, { x: 90, y: 38 },
+              // Left edge
+              { x: 2, y: 45 }, { x: 5, y: 55 }, { x: 3, y: 65 }, { x: 6, y: 75 }, { x: 2, y: 85 },
+              // Right edge
+              { x: 95, y: 48 }, { x: 92, y: 58 }, { x: 97, y: 68 }, { x: 93, y: 78 }, { x: 96, y: 88 },
+              // Bottom-left corner area
+              { x: 3, y: 92 }, { x: 12, y: 95 }, { x: 8, y: 88 }, { x: 18, y: 92 },
+              // Bottom-right corner area
+              { x: 88, y: 92 }, { x: 95, y: 88 }, { x: 92, y: 95 }, { x: 85, y: 90 },
+              // Bottom edge
+              { x: 25, y: 95 }, { x: 38, y: 92 }, { x: 50, y: 96 }, { x: 62, y: 93 }, { x: 75, y: 95 },
+              // Extra scattered
+              { x: 15, y: 42 }, { x: 85, y: 45 }, { x: 12, y: 60 }, { x: 88, y: 62 },
+              { x: 20, y: 15 }, { x: 80, y: 18 }, { x: 22, y: 82 }, { x: 78, y: 85 },
+            ].map((pos, i) => (
+              <motion.div
+                key={`dot-${i}`}
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  left: `${pos.x}%`,
+                  top: `${pos.y}%`,
+                  width: 3 + (i % 3),
+                  height: 3 + (i % 3),
+                  background: i % 2 === 0 ? theme.green : theme.gold,
+                  opacity: 0.5,
+                }}
+                animate={{
+                  opacity: [0.3, 0.7, 0.3],
+                  scale: [1, 1.4, 1],
+                }}
+                transition={{
+                  duration: 2 + (i % 3),
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: (i * 0.1) % 2,
+                }}
+              />
+            ))}
 
-            {/* Orbital rings with gradient */}
+            {/* Thin orbital path lines - subtle circles showing orbit paths */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              {[200, 145, 90].map((radius, idx) => (
+              {[220, 165, 110].map((radius, idx) => (
                 <motion.div
                   key={idx}
                   className="absolute rounded-full"
                   style={{
                     width: radius * 2,
                     height: radius * 2,
-                    background: `conic-gradient(from ${idx * 60}deg, ${theme.green}${idx === 0 ? '08' : '05'}, transparent 25%, ${theme.green}${idx === 0 ? '08' : '05'} 50%, transparent 75%, ${theme.green}${idx === 0 ? '08' : '05'})`,
-                    border: `1px solid ${theme.green}${15 - idx * 3}`,
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
                   }}
-                  initial={{ opacity: 0, scale: 0.8, rotate: 0 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  animate={{ rotate: idx % 2 === 0 ? 360 : -360 }}
                   transition={{ 
-                    opacity: { delay: idx * 0.15, duration: 0.6 },
-                    scale: { delay: idx * 0.15, duration: 0.6 },
-                    rotate: { duration: 60 + idx * 20, repeat: Infinity, ease: "linear" }
+                    delay: idx * 0.1,
+                    duration: 0.5,
                   }}
                 />
               ))}
             </div>
 
-            {/* Data flow particles on orbital paths */}
-            {[200, 145, 90].map((radius, ringIdx) => (
-              Array.from({ length: ringIdx === 0 ? 3 : 2 }).map((_, particleIdx) => {
-                const startAngle = (particleIdx * (360 / (ringIdx === 0 ? 3 : 2))) + ringIdx * 30;
-                return (
-                  <motion.div
-                    key={`particle-${ringIdx}-${particleIdx}`}
-                    className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
-                    style={{
-                      left: '50%',
-                      top: '50%',
-                      marginLeft: -3,
-                      marginTop: -3,
-                      background: `radial-gradient(circle, ${theme.green} 0%, ${theme.green}00 70%)`,
-                      boxShadow: `0 0 6px ${theme.green}80`,
-                    }}
-                    animate={{
-                      x: Array.from({ length: 37 }, (_, i) => 
-                        Math.cos(((startAngle + i * 10) * Math.PI) / 180) * radius
-                      ),
-                      y: Array.from({ length: 37 }, (_, i) => 
-                        Math.sin(((startAngle + i * 10) * Math.PI) / 180) * radius
-                      ),
-                      opacity: [0.3, 0.8, 0.3],
-                    }}
-                    transition={{
-                      x: { duration: 8 + ringIdx * 2, repeat: Infinity, ease: "linear" },
-                      y: { duration: 8 + ringIdx * 2, repeat: Infinity, ease: "linear" },
-                      opacity: { duration: 2, repeat: Infinity },
-                    }}
-                  />
-                );
-              })
-            ))}
 
-            {/* Center Hub - User Avatar with status ring */}
+            {/* Center Hub - The Sun (Customer) */}
             <div className="relative z-30">
-              {/* Outer pulse ring */}
+              {/* Sun's outer radiance glow - multiple layers */}
               <motion.div
-                className="absolute -inset-6 rounded-full"
+                className="absolute -inset-12 rounded-full"
                 style={{ 
-                  border: `1px solid ${theme.green}20`,
+                  background: `radial-gradient(circle, ${theme.gold}20 0%, ${theme.green}15 30%, transparent 70%)`,
+                }}
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.6, 0.8, 0.6]
+                }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute -inset-8 rounded-full"
+                style={{ 
+                  background: `radial-gradient(circle, ${theme.gold}30 0%, ${theme.green}20 40%, transparent 70%)`,
                 }}
                 animate={{ 
                   scale: [1, 1.15, 1],
-                  opacity: [0.5, 0, 0.5]
+                  opacity: [0.5, 0.7, 0.5]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              />
+              
+              {/* Sun's outer pulse ring */}
+              <motion.div
+                className="absolute -inset-6 rounded-full"
+                style={{ 
+                  border: `2px solid ${theme.gold}40`,
+                  boxShadow: `0 0 30px ${theme.gold}30, 0 0 60px ${theme.green}20`,
+                }}
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.6, 0, 0.6]
                 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               />
               
-              {/* Status ring */}
+              {/* Sun's rotating ring */}
               <motion.div
                 className="absolute -inset-2 rounded-full"
                 style={{ 
-                  background: `conic-gradient(from 0deg, ${theme.green}, ${theme.gold}, ${theme.green})`,
+                  background: `conic-gradient(from 0deg, ${theme.gold}, ${theme.green}, ${theme.gold}, ${theme.green}, ${theme.gold})`,
                   padding: 2,
+                  boxShadow: `0 0 20px ${theme.gold}40`,
                 }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               >
                 <div 
                   className="w-full h-full rounded-full"
-                  style={{ background: isDark ? '#0f172a' : '#ffffff' }}
+                  style={{ 
+                    background: `radial-gradient(circle, ${theme.gold}10 0%, ${isDark ? '#0f172a' : '#ffffff'} 100%)`
+                  }}
                 />
               </motion.div>
               
-              {/* Avatar */}
+              {/* Sun - Avatar with enhanced glow */}
               <motion.div 
-                className="relative w-16 h-16 rounded-full overflow-hidden"
+                className="relative w-20 h-20 rounded-full overflow-hidden"
                 style={{ 
-                  border: `3px solid ${isDark ? '#0f172a' : '#ffffff'}`,
-                  boxShadow: `0 0 30px ${theme.green}30, 0 4px 20px rgba(0,0,0,0.1)`
+                  border: `3px solid ${theme.gold}60`,
+                  boxShadow: `0 0 40px ${theme.gold}50, 0 0 80px ${theme.green}30, 0 4px 20px rgba(0,0,0,0.2)`,
+                  background: `radial-gradient(circle, ${theme.gold}20 0%, transparent 70%)`,
                 }}
                 whileHover={{ scale: 1.1 }}
                 transition={{ type: "spring", stiffness: 300 }}
@@ -2758,18 +2648,21 @@ export default function Landing() {
                 />
               </motion.div>
 
-              {/* Connected status badge */}
+              {/* Sun's status badge */}
               <motion.div
-                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
                 style={{ 
-                  background: theme.green,
+                  background: `radial-gradient(circle, ${theme.gold}, ${theme.green})`,
                   border: `2px solid ${isDark ? '#0f172a' : '#ffffff'}`,
-                  boxShadow: `0 2px 8px ${theme.green}50`
+                  boxShadow: `0 0 15px ${theme.gold}60, 0 2px 8px ${theme.green}50`
                 }}
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 360] }}
+                transition={{ 
+                  scale: { duration: 2, repeat: Infinity },
+                  rotate: { duration: 4, repeat: Infinity, ease: "linear" }
+                }}
               >
-                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                <Check className="w-3 h-3 text-white" strokeWidth={3} />
               </motion.div>
             </div>
 
@@ -2781,17 +2674,17 @@ export default function Landing() {
               - Golden angle spacing (~137.5°) creates natural spiral flow
             */}
             
-            {/* ROI Keywords with their labels on same orbit - Spiral Layout */}
+            {/* ROI Keywords with connection lines to center */}
             {[
-              // Orbit 1 - innermost (r=95) - 2 keywords, 180° apart (varied speeds for organic feel)
-              { icon: Wallet, label: { en: 'Savings', fr: 'Économies' }, color: theme.green, radius: 95, duration: 28, start: 0, direction: 1, labelOffset: 25 },
-              { icon: Clock, label: { en: 'Time', fr: 'Temps' }, color: theme.gold, radius: 95, duration: 42, start: 180, direction: 1, labelOffset: 25 },
-              // Orbit 2 - middle (r=150) - 2 keywords, 180° apart (offset 90° from orbit 1)
-              { icon: TrendingUp, label: { en: 'Revenue', fr: 'Revenus' }, color: theme.greenDark, radius: 150, duration: 36, start: 90, direction: -1, labelOffset: 20 },
-              { icon: Percent, label: { en: 'Credit', fr: 'Crédit' }, color: theme.green, radius: 150, duration: 54, start: 270, direction: -1, labelOffset: 20 },
-              // Orbit 3 - outer (r=210) - 2 keywords, 180° apart (offset 45° from orbit 2)
-              { icon: DollarSign, label: { en: 'Profit', fr: 'Bénéfices' }, color: theme.gold, radius: 210, duration: 46, start: 45, direction: 1, labelOffset: 18 },
-              { icon: Zap, label: { en: 'Efficiency', fr: 'Efficacité' }, color: theme.greenLight, radius: 210, duration: 64, start: 225, direction: 1, labelOffset: 18 },
+              // Orbit 1 - innermost (r=110) - 2 keywords, 180° apart
+              { icon: Wallet, label: { en: 'Savings', fr: 'Économies' }, color: theme.green, radius: 110, duration: 38, start: 0, direction: 1, labelOffset: 25 },
+              { icon: Clock, label: { en: 'Time', fr: 'Temps' }, color: theme.gold, radius: 110, duration: 53, start: 180, direction: 1, labelOffset: 25 },
+              // Orbit 2 - middle (r=165) - 2 keywords, 180° apart
+              { icon: TrendingUp, label: { en: 'Revenue', fr: 'Revenus' }, color: theme.greenDark, radius: 165, duration: 45, start: 90, direction: -1, labelOffset: 20 },
+              { icon: Percent, label: { en: 'Credit', fr: 'Crédit' }, color: theme.green, radius: 165, duration: 68, start: 270, direction: -1, labelOffset: 20 },
+              // Orbit 3 - outer (r=220) - 2 keywords, 180° apart
+              { icon: DollarSign, label: { en: 'Profit', fr: 'Bénéfices' }, color: theme.gold, radius: 220, duration: 58, start: 45, direction: 1, labelOffset: 18 },
+              { icon: Zap, label: { en: 'Efficiency', fr: 'Efficacité' }, color: theme.greenLight, radius: 220, duration: 80, start: 225, direction: 1, labelOffset: 18 },
             ].map((item, idx) => {
               const points = 72;
               const xPos = Array.from({ length: points + 1 }, (_, i) => 
@@ -2810,7 +2703,31 @@ export default function Landing() {
               
               return (
                 <React.Fragment key={idx}>
-                  {/* Icon */}
+                  {/* Connection line from center to icon - one path per element */}
+                  <motion.div
+                    className="absolute z-10 pointer-events-none"
+                    style={{ 
+                      left: '50%', 
+                      top: '50%',
+                      width: `${item.radius}px`,
+                      height: '1px',
+                      background: `linear-gradient(to right, ${item.color}00 0%, ${item.color}25 30%, ${item.color}25 70%, ${item.color}00 100%)`,
+                      transformOrigin: 'left center',
+                    }}
+                    animate={{
+                      rotate: Array.from({ length: points + 1 }, (_, i) => 
+                        (item.start + item.direction * i * (360 / points))
+                      ),
+                    }}
+                    transition={{
+                      duration: item.duration,
+                      repeat: Infinity,
+                      ease: "linear",
+                      times: Array.from({ length: points + 1 }, (_, i) => i / points),
+                    }}
+                  />
+
+                  {/* Planet - Icon with planet-like styling */}
                   <motion.div
                     className="absolute z-20"
                     style={{ left: '50%', top: '50%' }}
@@ -2824,29 +2741,42 @@ export default function Landing() {
                   >
                     <motion.div 
                       className="relative"
-                      style={{ marginLeft: -18, marginTop: -18 }}
+                      style={{ marginLeft: -22, marginTop: -22 }}
                       initial={{ opacity: 0, scale: 0 }}
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: idx * 0.1 + 0.3, type: "spring", stiffness: 200, damping: 15 }}
                     >
+                      {/* Planet glow */}
+                      <motion.div
+                        className="absolute -inset-2 rounded-full"
+                        style={{
+                          background: `radial-gradient(circle, ${item.color}30 0%, transparent 70%)`,
+                        }}
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.3, 0.5, 0.3],
+                        }}
+                        transition={{ duration: 2 + idx * 0.3, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                      {/* Planet body */}
                       <div 
-                        className="relative flex items-center justify-center rounded-xl overflow-hidden"
+                        className="relative flex items-center justify-center rounded-full overflow-hidden"
                         style={{ 
-                          width: 36,
-                          height: 36,
+                          width: 44,
+                          height: 44,
                           background: isDark 
-                            ? `linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.95) 100%)`
-                            : `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`,
-                          border: `1px solid ${item.color}30`,
-                          boxShadow: `0 3px 12px ${item.color}12, 0 2px 6px rgba(0,0,0,0.06)`
+                            ? `radial-gradient(circle at 30% 30%, ${item.color}40, rgba(15, 23, 42, 0.95) 60%, rgba(30, 41, 59, 0.95) 100%)`
+                            : `radial-gradient(circle at 30% 30%, ${item.color}30, #ffffff 60%, #fafafa 100%)`,
+                          border: `2px solid ${item.color}50`,
+                          boxShadow: `0 0 20px ${item.color}30, 0 4px 15px rgba(0,0,0,0.15), inset 0 2px 10px ${item.color}10`
                         }}
                       >
                         <div 
-                          className="absolute inset-0 opacity-10"
-                          style={{ background: `linear-gradient(135deg, ${item.color} 0%, transparent 100%)` }}
+                          className="absolute inset-0 opacity-20"
+                          style={{ background: `radial-gradient(circle at 30% 30%, ${item.color} 0%, transparent 70%)` }}
                         />
-                        <item.icon style={{ color: item.color, width: 16, height: 16 }} className="relative z-10" />
+                        <item.icon style={{ color: item.color, width: 18, height: 18 }} className="relative z-10" />
                       </div>
                     </motion.div>
                   </motion.div>
@@ -3044,24 +2974,21 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <motion.div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-3"
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
-                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
-              }}
-            >
-              <Layers className="w-3.5 h-3.5" style={{ color: theme.green }} />
-              <span className="text-xs font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
+            {/* Section Label Badge */}
+            <div className="flex justify-center mb-4">
+              <span 
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+                style={{ 
+                  backgroundColor: `${theme.green}15`,
+                  color: theme.green,
+                  border: `1px solid ${theme.green}30`
+                }}
+              >
+                <Layers className="w-3 h-3" />
                 {isEn ? 'How It Works' : 'Comment ça fonctionne'}
               </span>
-            </motion.div>
-            <motion.h2 
+            </div>
+            <motion.h2
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -3166,9 +3093,9 @@ export default function Landing() {
                 { 
                   num: 3, 
                   icon: Sparkles, 
-                  title: isEn ? 'AI Analyzes' : 'L\'IA analyse',
+                  title: isEn ? 'Analyze' : 'Analyser',
                   desc: isEn ? 'Detects anomalies, calculates KPIs, spots trends' : 'Détecte anomalies, calcule KPIs, repère tendances',
-                  tags: ['97%', isEn ? 'Accuracy' : 'Précision', 'ML'],
+                  tags: ['97%', isEn ? 'Accuracy' : 'Précision', 'Auto'],
                   time: isEn ? '1 min' : '1 min',
                   color: theme.gold,
                   visual: 'ai',
@@ -3619,6 +3546,7 @@ export default function Landing() {
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 16px ${theme.green}35`
               }}
+              aria-label={isEn ? 'Connect your accounting software and start free trial' : 'Connectez votre logiciel comptable et commencez votre essai gratuit'}
             >
               {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
               <ArrowRight className="w-4 h-4" />
@@ -3638,6 +3566,7 @@ export default function Landing() {
       {/* Final CTA - Clean Light Design */}
       <section 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6"
+        aria-label={isEn ? 'Ready to grow smarter - Start your free trial' : 'Prêt à grandir plus intelligemment - Commencez votre essai gratuit'}
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
         <div className="max-w-4xl mx-auto text-center">
@@ -3650,13 +3579,14 @@ export default function Landing() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <span 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
               style={{ 
                 backgroundColor: `${theme.gold}15`,
                 color: theme.gold,
-                border: `1px solid ${theme.gold}30`,
+                border: `1px solid ${theme.gold}30`
               }}
             >
+              <Target className="w-3 h-3" />
               {isEn ? 'Are you ready?' : 'Vous êtes prêts?'}
             </span>
           </motion.div>
@@ -3704,6 +3634,7 @@ export default function Landing() {
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 4px 20px ${theme.green}30`
               }}
+              aria-label={isEn ? 'Start free trial today' : 'Commencez votre essai gratuit aujourd\'hui'}
             >
               {isEn ? 'Start free today' : 'Commencez gratuitement'}
               <ArrowRight className="w-5 h-5" />
@@ -3719,6 +3650,7 @@ export default function Landing() {
                 color: 'rgb(var(--color-text))',
                 border: '1px solid rgb(var(--color-border))'
               }}
+              aria-label={isEn ? 'Schedule a personalized demo' : 'Planifier une démo personnalisée'}
             >
               <Calendar className="w-5 h-5" />
               {isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée'}
@@ -3781,15 +3713,14 @@ export default function Landing() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <span 
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
               style={{ 
                 backgroundColor: `${theme.gold}15`,
                 color: theme.gold,
-                border: `1px solid ${theme.gold}30`,
-                boxShadow: `0 4px 12px ${theme.gold}10`
+                border: `1px solid ${theme.gold}30`
               }}
             >
-              <DollarSign className="w-3.5 h-3.5" />
+              <DollarSign className="w-3 h-3" />
               {isEn ? 'Financial Clarity' : 'Clarté financière'}
             </span>
           </motion.div>
@@ -3865,6 +3796,7 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            aria-label={isEn ? 'See your tax credit eligibility' : 'Voir votre éligibilité aux crédits d\'impôt'}
             whileHover={{ 
               boxShadow: `0 10px 28px ${theme.green}45`,
             }}
@@ -3879,13 +3811,28 @@ export default function Landing() {
       {/* Contact Section */}
       <section 
         id="contact"
-        className="py-16 sm:py-24 px-4 sm:px-6"
+        className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden"
         style={{ 
           backgroundColor: 'rgb(var(--color-surface))',
           borderTop: `1px solid ${theme.green}15`,
         }}
       >
-        <div className="max-w-6xl mx-auto">
+        {/* Decorative background elements */}
+        <div 
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 20% 30%, ${theme.green} 0%, transparent 50%), radial-gradient(circle at 80% 70%, ${theme.gold} 0%, transparent 50%)`,
+          }}
+        />
+        <div 
+          className="absolute inset-0 opacity-[0.02] pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(${theme.green} 1px, transparent 1px), linear-gradient(90deg, ${theme.green} 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+        
+        <div className="max-w-6xl mx-auto relative z-10">
           <motion.div 
             className="text-center mb-10 sm:mb-14"
             initial={{ opacity: 0, y: 30 }}
@@ -3893,6 +3840,21 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           >
+            {/* Section Label Badge */}
+            <div className="flex justify-center mb-4">
+              <span 
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+                style={{ 
+                  backgroundColor: `${theme.green}15`,
+                  color: theme.green,
+                  border: `1px solid ${theme.green}30`
+                }}
+              >
+                <MessageSquare className="w-3 h-3" />
+                {isEn ? 'We\'re here to help' : 'Nous sommes là pour vous aider'}
+              </span>
+            </div>
+            
             <h2 
               className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
               style={{ color: 'rgb(var(--color-text))' }}
@@ -3910,235 +3872,270 @@ export default function Landing() {
           </motion.div>
           
           <motion.div
-            className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 items-start"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7 lg:gap-8 items-stretch"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Contact Info - Left Column */}
-            <div className="lg:col-span-2 space-y-5">
-              {/* Contact Information Card */}
-              <div 
-                className="p-6 rounded-2xl"
-                style={{ 
-                  backgroundColor: `${theme.green}05`,
-                  border: `1px solid ${theme.green}15`,
-                }}
-              >
-                <h3 
-                  className="text-lg font-semibold mb-5"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? 'Contact Information' : 'Coordonnées'}
-                </h3>
-                <div className="space-y-4">
-                  <a 
-                    href="mailto:info@plainledger.ca" 
-                    className="flex items-center gap-4 p-3 rounded-xl transition-all hover:scale-[1.02] group"
-                    style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-                  >
-                    <div 
-                      className="p-3 rounded-xl flex-shrink-0"
-                      style={{ backgroundColor: `${theme.green}12` }}
-                    >
-                      <Mail className="w-5 h-5" style={{ color: theme.green }} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                        {isEn ? 'Email Us' : 'Courriel'}
-                      </p>
-                      <p 
-                        className="text-sm group-hover:underline"
-                        style={{ color: theme.green }}
-                      >
-                        info@plainledger.ca
-                      </p>
-                    </div>
-                  </a>
-                  
-                  <button
-                    onClick={handleScheduleCall}
-                    className="flex items-center gap-4 p-3 rounded-xl transition-all hover:scale-[1.02] group w-full text-left"
-                    style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-                  >
-                    <div 
-                      className="p-3 rounded-xl flex-shrink-0"
-                      style={{ backgroundColor: `${theme.green}12` }}
-                    >
-                      <Calendar className="w-5 h-5" style={{ color: theme.green }} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-                        {isEn ? 'Schedule a Call' : 'Planifier un appel'}
-                      </p>
-                      <p 
-                        className="text-sm group-hover:underline"
-                        style={{ color: theme.green }}
-                      >
-                        {isEn ? 'Book a 15-min demo' : 'Réservez une démo de 15 min'}
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-              
-              {/* Response Time Badge */}
-              <div 
-                className="flex items-center gap-4 p-5 rounded-2xl"
-                style={{ 
-                  backgroundColor: `${theme.green}05`,
-                  border: `1px solid ${theme.green}15`,
-                }}
-              >
-                <div className="flex-shrink-0">
-                  <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${theme.green}12` }}
-                  >
-                    <Check className="w-6 h-6" style={{ color: theme.green }} />
-                  </div>
-                </div>
-                <div>
-                  <p className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                    {isEn ? 'Quick Response' : 'Réponse rapide'}
-                  </p>
-                  <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn 
-                      ? 'We typically respond within 24 hours'
-                      : 'Nous répondons généralement dans les 24 heures'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Why Contact Us */}
-              <div 
-                className="p-6 rounded-2xl"
-                style={{ 
-                  backgroundColor: `${theme.green}05`,
-                  border: `1px solid ${theme.green}15`,
-                }}
-              >
-                <h3 
-                  className="text-lg font-semibold mb-4"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? 'Why Connect?' : 'Pourquoi nous contacter?'}
-                </h3>
-                <ul className="space-y-3">
-                  {[
-                    isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée',
-                    isEn ? 'Discuss your specific needs' : 'Discutez de vos besoins spécifiques',
-                    isEn ? 'Learn about enterprise features' : 'Découvrez les fonctionnalités entreprise',
-                    isEn ? 'Technical support questions' : 'Questions de support technique',
-                  ].map((item, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <div 
-                        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${theme.green}15` }}
-                      >
-                        <Check className="w-3 h-3" style={{ color: theme.green }} />
-                      </div>
-                      <span className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                        {item}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Data Security Section */}
-              <div 
-                className="p-6 rounded-2xl"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.green}08 0%, ${theme.greenDark}05 100%)`,
-                  border: `1px solid ${theme.green}20`,
-                }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div 
-                    className="p-2.5 rounded-xl"
-                    style={{ backgroundColor: `${theme.green}15` }}
-                  >
-                    <ShieldCheck className="w-5 h-5" style={{ color: theme.green }} />
-                  </div>
-                  <h3 
-                    className="text-lg font-semibold"
-                    style={{ color: 'rgb(var(--color-text))' }}
-                  >
-                    {isEn ? 'Your Data is Secure' : 'Vos données sont sécurisées'}
-                  </h3>
-                </div>
-                <p 
-                  className="text-sm mb-4"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
-                  {isEn 
-                    ? 'Enterprise-grade security. SOC 2 Type II and ISO 27001 certifications in progress.'
-                    : 'Sécurité de niveau entreprise. Certifications SOC 2 Type II et ISO 27001 en cours.'}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { 
-                      icon: <Lock className="w-4 h-4" />, 
-                      text: isEn ? 'End-to-end encryption' : 'Chiffrement bout en bout' 
-                    },
-                    { 
-                      icon: <Server className="w-4 h-4" />, 
-                      text: isEn ? 'Canadian servers' : 'Serveurs canadiens' 
-                    },
-                    { 
-                      icon: <ShieldCheck className="w-4 h-4" />, 
-                      text: isEn ? 'SOC 2 Type II (in progress)' : 'SOC 2 Type II (en cours)' 
-                    },
-                    { 
-                      icon: <KeyRound className="w-4 h-4" />, 
-                      text: isEn ? 'ISO 27001 (in progress)' : 'ISO 27001 (en cours)' 
-                    },
-                  ].map((item, index) => (
-                    <div 
-                      key={index}
-                      className="flex items-center gap-2 p-2.5 rounded-lg"
-                      style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-                    >
-                      <span style={{ color: theme.green }}>{item.icon}</span>
-                      <span 
-                        className="text-xs font-medium"
-                        style={{ color: 'rgb(var(--color-text-secondary))' }}
-                      >
-                        {item.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            {/* Contact Form - Right Column */}
-            <div 
-              className="lg:col-span-3 p-6 sm:p-8 rounded-2xl"
+            {/* Contact Info - Left Column - Optimized and balanced */}
+            <motion.div 
+              className="p-6 sm:p-7 md:p-8 rounded-2xl relative overflow-hidden flex flex-col h-full min-h-[600px] sm:min-h-[650px]"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
               style={{ 
                 backgroundColor: 'rgb(var(--color-surface))',
                 border: `1px solid ${theme.green}20`,
                 boxShadow: `0 8px 40px ${theme.green}08`,
               }}
             >
-              <h3 
-                className="text-lg font-semibold mb-6"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {isEn ? 'Send Us a Message' : 'Envoyez-nous un message'}
-              </h3>
-              <ContactForm 
-                source="website" 
-                landingStyle={true}
-                theme={{
-                  green: theme.green,
-                  greenDark: theme.greenDark,
-                  greenLight: theme.greenLight,
+              {/* Decorative elements */}
+              <div 
+                className="absolute top-0 right-0 w-32 h-32 opacity-5"
+                style={{
+                  background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
                 }}
               />
-            </div>
+              <div 
+                className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
+                style={{
+                  background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
+                }}
+              />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6 sm:mb-7">
+                  <div 
+                    className="p-2.5 rounded-xl flex-shrink-0"
+                    style={{ backgroundColor: `${theme.green}12` }}
+                  >
+                    <Mail className="w-5 h-5" style={{ color: theme.green }} />
+                  </div>
+                  <h3 
+                    className="text-base sm:text-lg font-semibold"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
+                    {isEn ? 'Get in Touch' : 'Contactez-nous'}
+                  </h3>
+                </div>
+
+                {/* Subsection 1: Contact Methods */}
+                <section className="mb-6 sm:mb-7">
+                  <div className="space-y-3 sm:space-y-3.5">
+                    <a 
+                      href="mailto:info@plainledger.ca" 
+                      className="flex items-center gap-3 sm:gap-4 p-4 sm:p-4.5 rounded-xl transition-all hover:scale-[1.01] group"
+                      style={{ backgroundColor: `${theme.green}05` }}
+                      aria-label={isEn ? 'Send email to info@plainledger.ca' : 'Envoyer un courriel à info@plainledger.ca'}
+                    >
+                      <div 
+                        className="p-2.5 sm:p-3 rounded-xl flex-shrink-0 transition-transform group-hover:scale-110"
+                        style={{ backgroundColor: `${theme.green}12` }}
+                      >
+                        <Mail className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.green }} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
+                          {isEn ? 'Email Us' : 'Courriel'}
+                        </p>
+                        <p 
+                          className="text-xs sm:text-sm group-hover:underline font-medium truncate"
+                          style={{ color: theme.green }}
+                        >
+                          info@plainledger.ca
+                        </p>
+                      </div>
+                    </a>
+                    
+                    <button
+                      onClick={handleScheduleCall}
+                      className="flex items-center gap-3 sm:gap-4 p-4 sm:p-4.5 rounded-xl transition-all hover:scale-[1.01] group w-full text-left"
+                      style={{ backgroundColor: `${theme.green}05` }}
+                      aria-label={isEn ? 'Schedule a call' : 'Planifier un appel'}
+                    >
+                      <div 
+                        className="p-2.5 sm:p-3 rounded-xl flex-shrink-0 transition-transform group-hover:scale-110"
+                        style={{ backgroundColor: `${theme.green}12` }}
+                      >
+                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.green }} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-medium mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
+                          {isEn ? 'Schedule a Call' : 'Planifier un appel'}
+                        </p>
+                        <p 
+                          className="text-xs sm:text-sm group-hover:underline font-medium"
+                          style={{ color: theme.green }}
+                        >
+                          {isEn ? 'Book a 15-min demo' : 'Réservez une démo de 15 min'}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </section>
+
+                {/* Subsection 2: Why Connect */}
+                <section className="mb-6 sm:mb-7 pb-6 sm:pb-7 border-b" style={{ borderColor: `${theme.green}15` }}>
+                  <h4 
+                    className="text-sm sm:text-base font-semibold mb-4 sm:mb-5 flex items-center gap-2"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
+                    <Users className="w-4 h-4 flex-shrink-0" style={{ color: theme.green }} />
+                    {isEn ? 'Why Connect?' : 'Pourquoi nous contacter?'}
+                  </h4>
+                  <ul className="space-y-2.5 sm:space-y-3">
+                    {[
+                      isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée',
+                      isEn ? 'Discuss your specific needs' : 'Discutez de vos besoins spécifiques',
+                      isEn ? 'Learn about enterprise features' : 'Découvrez les fonctionnalités entreprise',
+                      isEn ? 'Technical support questions' : 'Questions de support technique',
+                    ].map((item, index) => (
+                      <li 
+                        key={index} 
+                        className="flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm leading-relaxed"
+                        style={{ color: 'rgb(var(--color-text-secondary))' }}
+                      >
+                        <div 
+                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ backgroundColor: `${theme.green}15` }}
+                        >
+                          <Check className="w-3 h-3" style={{ color: theme.green }} />
+                        </div>
+                        <span className="flex-1">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                {/* Subsection 3: Testimonial */}
+                <section className="mt-auto mb-6 sm:mb-7">
+                  <div 
+                    className="p-5 sm:p-6 rounded-xl relative"
+                    style={{ backgroundColor: `${theme.green}05` }}
+                  >
+                    <div 
+                      className="absolute top-3 left-4 text-4xl font-serif opacity-15 leading-none"
+                      style={{ color: theme.green }}
+                    >
+                      "
+                    </div>
+                    <p 
+                      className="text-xs sm:text-sm italic mb-4 sm:mb-5 leading-relaxed pl-5 sm:pl-6 pr-2"
+                      style={{ color: 'rgb(var(--color-text-secondary))' }}
+                    >
+                      {isEn 
+                        ? 'The team responded within hours and the demo was incredibly helpful.'
+                        : 'L\'équipe a répondu en quelques heures et la démo était très utile.'}
+                    </p>
+                    <div className="flex items-center gap-3 pl-5 sm:pl-6">
+                      <div 
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0"
+                        style={{ backgroundColor: theme.green }}
+                      >
+                        MR
+                      </div>
+                      <div className="min-w-0">
+                        <p 
+                          className="text-xs sm:text-sm font-semibold truncate"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                        >
+                          Marc R.
+                        </p>
+                        <p 
+                          className="text-[10px] sm:text-xs truncate"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
+                        >
+                          {isEn ? 'CFO, Tech Startup' : 'CFO, Startup Tech'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Subsection 4: Security badges */}
+                <section className="mt-auto">
+                  <div 
+                    className="pt-4 sm:pt-5 border-t flex flex-wrap gap-3 sm:gap-4 justify-center items-center"
+                    style={{ borderColor: `${theme.green}15` }}
+                  >
+                    {[
+                      { icon: <Lock className="w-3.5 h-3.5" />, text: isEn ? 'Encrypted' : 'Chiffré' },
+                      { icon: <Server className="w-3.5 h-3.5" />, text: isEn ? 'Canadian' : 'Canadien' },
+                      { icon: <ShieldCheck className="w-3.5 h-3.5" />, text: 'SOC 2' },
+                    ].map((item, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md"
+                        style={{ 
+                          color: 'rgb(var(--color-text-muted))',
+                          backgroundColor: `${theme.green}05`
+                        }}
+                      >
+                        <span style={{ color: theme.green }}>{item.icon}</span>
+                        {item.text}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </motion.div>
+            
+            {/* Contact Form - Right Column */}
+            <motion.div 
+              className="p-6 sm:p-7 md:p-8 rounded-2xl relative overflow-hidden flex flex-col h-full min-h-[600px] sm:min-h-[650px]"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: `1px solid ${theme.green}20`,
+                boxShadow: `0 8px 40px ${theme.green}08`,
+              }}
+            >
+              {/* Decorative elements */}
+              <div 
+                className="absolute top-0 right-0 w-32 h-32 opacity-5"
+                style={{
+                  background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
+                }}
+              />
+              <div 
+                className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
+                style={{
+                  background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
+                }}
+              />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="flex items-center gap-3 mb-6 sm:mb-7">
+                  <div 
+                    className="p-2.5 rounded-xl flex-shrink-0"
+                    style={{ backgroundColor: `${theme.green}12` }}
+                  >
+                    <MessageSquare className="w-5 h-5" style={{ color: theme.green }} />
+                  </div>
+                  <h3 
+                    className="text-base sm:text-lg font-semibold"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
+                    {isEn ? 'Send Us a Message' : 'Envoyez-nous un message'}
+                  </h3>
+                </div>
+                <ContactForm 
+                  source="website" 
+                  landingStyle={true}
+                  theme={{
+                    green: theme.green,
+                    greenDark: theme.greenDark,
+                    greenLight: theme.greenLight,
+                  }}
+                />
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -4147,32 +4144,24 @@ export default function Landing() {
       <GetTheApp />
 
       {/* Footer */}
-      <footer 
-        className="py-6 sm:py-8 px-4 sm:px-6 border-t"
-        style={{ borderColor: `${theme.green}1a` }}
-      >
+      <footer className="py-6 sm:py-8 px-4 sm:px-6 border-t border-gray-200 dark:border-gray-800" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <div 
-              className="w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`
-              }}
-            >
-              <svg className="w-3 h-3 sm:w-4 sm:h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md flex items-center justify-center bg-emerald-600">
+              <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
                 <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M17 21 L20 24 L26 17" stroke="rgb(var(--color-primary-600))" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span className="font-medium text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
+            <span className="font-medium text-[10px] sm:text-xs text-gray-900 dark:text-white">PlainLedger</span>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
             <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
             <a href="#contact" className="transition-colors hover:underline">Contact</a>
           </div>
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             © 2026 PlainLedger 🇨🇦
           </p>
         </div>

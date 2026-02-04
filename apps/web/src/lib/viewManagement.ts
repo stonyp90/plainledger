@@ -313,7 +313,7 @@ export const VIEW_TEMPLATES: ViewTemplate[] = [
     description: 'Vue d\'ensemble pour les dirigeants avec KPIs clés',
     descriptionEn: 'Executive overview with key KPIs and trends',
     icon: '👔',
-    color: '#059669',
+    color: 'rgb(var(--color-primary-600))', // emerald-600
     category: 'executive',
     roles: ['cfo', 'ceo', 'executive'],
     charts: [
@@ -421,7 +421,7 @@ export const VIEW_TEMPLATES: ViewTemplate[] = [
     description: 'Analyse détaillée des flux de trésorerie',
     descriptionEn: 'Detailed cash flow analysis with forecasting',
     icon: '💰',
-    color: '#047857',
+    color: 'rgb(var(--color-primary-700))', // emerald-700
     category: 'cash-flow',
     roles: ['cfo', 'controller', 'treasurer'],
     charts: [
@@ -530,7 +530,7 @@ export const VIEW_TEMPLATES: ViewTemplate[] = [
     description: 'Analyse approfondie des revenus avec drill-down',
     descriptionEn: 'In-depth revenue analysis with drill-down capabilities',
     icon: '📈',
-    color: '#10B981',
+    color: 'rgb(var(--color-primary-500))', // emerald-500
     category: 'revenue-analysis',
     roles: ['cfo', 'controller', 'sales-manager'],
     charts: [

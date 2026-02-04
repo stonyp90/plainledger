@@ -8,6 +8,26 @@ import config from './config';
 const API_BASE = `/api/v1`;
 
 /**
+ * Safely parse JSON response, handling non-JSON responses (e.g., 502 HTML error pages)
+ */
+async function safeJsonParse(response: Response): Promise<any> {
+  const contentType = response.headers.get('content-type');
+  
+  // If content-type doesn't indicate JSON, throw a friendly error
+  if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('Server error. Please try again later.');
+  }
+  
+  // Try to parse as JSON, catch any parsing errors
+  try {
+    return await response.json();
+  } catch (parseError) {
+    // JSON parsing failed (e.g., gateway returned HTML with wrong content-type)
+    throw new Error('Server error. Please try again later.');
+  }
+}
+
+/**
  * Get authentication headers
  * Gets token from Keycloak instance (exposed on window.keycloak)
  */
@@ -64,7 +84,7 @@ export const organizationSettingsApi = {
       throw new Error(`Failed to fetch organization settings: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 
   /**
@@ -81,7 +101,7 @@ export const organizationSettingsApi = {
       throw new Error(`Failed to update organization settings: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 
   /**
@@ -98,7 +118,7 @@ export const organizationSettingsApi = {
       throw new Error(`Failed to update thresholds: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 
   /**
@@ -115,7 +135,7 @@ export const organizationSettingsApi = {
       throw new Error(`Failed to update branding: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 
   /**
@@ -132,7 +152,7 @@ export const organizationSettingsApi = {
       throw new Error(`Failed to update notification integrations: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 };
 
@@ -161,9 +181,9 @@ export const userSettingsApi = {
         throw new Error(`Failed to fetch user settings: ${response.statusText}`);
       }
 
-      return response.json();
+      return safeJsonParse(response);
     } catch (error) {
-      // Network errors or other issues - return empty object
+      // Network errors, JSON parse errors, or other issues - return empty object
       console.warn('Failed to fetch user settings, using defaults:', error);
       return {
         notificationPreferences: undefined,
@@ -186,7 +206,7 @@ export const userSettingsApi = {
       throw new Error(`Failed to update user settings: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 
   /**
@@ -203,7 +223,7 @@ export const userSettingsApi = {
       throw new Error(`Failed to update notification preferences: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 
   /**
@@ -220,6 +240,6 @@ export const userSettingsApi = {
       throw new Error(`Failed to update UI preferences: ${response.statusText}`);
     }
 
-    return response.json();
+    return safeJsonParse(response);
   },
 };

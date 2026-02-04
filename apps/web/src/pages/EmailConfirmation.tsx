@@ -54,10 +54,25 @@ export default function EmailConfirmation() {
         body: JSON.stringify({ token: verificationToken }),
       });
       
-      const data = await response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
+      
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
       
       if (!response.ok) {
-        throw new Error(data.message || 'Verification failed');
+        throw new Error(data.message || (isEn ? 'Verification failed' : 'Échec de la vérification'));
       }
       
       if (data.alreadyVerified) {
@@ -93,7 +108,9 @@ export default function EmailConfirmation() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to resend verification email');
+        throw new Error(isEn 
+          ? 'Failed to resend verification email' 
+          : 'Échec de l\'envoi du courriel de vérification');
       }
       
       setResendSuccess(true);

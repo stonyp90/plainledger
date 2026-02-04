@@ -17,8 +17,6 @@ import {
   Users,
   Star,
   Play,
-  Menu,
-  X,
   MapPin,
   Calculator,
   ChevronDown,
@@ -28,7 +26,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import ThemeToggle from '../components/ThemeToggle';
+import PublicHeader from '../components/PublicHeader';
 import { analytics } from '../lib/analytics';
 import DemoModal from '../components/DemoModal';
 import IndustryKPISection from '../components/IndustryKPISection';
@@ -191,114 +189,7 @@ const TESTIMONIALS = [
 // COMPONENTS
 // =====================================================
 
-function Header({ isEn, onLanguageToggle }: { isEn: boolean; onLanguageToggle: () => void }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  return (
-    <header 
-      className="sticky top-0 z-50 border-b backdrop-blur-md"
-      style={{ 
-        backgroundColor: 'rgb(var(--color-bg) / 0.95)',
-        borderColor: 'rgb(var(--color-border))'
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div 
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
-              }}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <line x1="11" y1="20" x2="20" y2="20" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-              PlainLedger
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Features' : 'Fonctionnalités'}
-            </a>
-            <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Pricing' : 'Tarifs'}
-            </a>
-            <a href="#cpa" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'For CPAs' : 'Pour CPA'}
-            </a>
-            <a href="#testimonials" className="text-sm font-medium hover:text-primary transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Testimonials' : 'Témoignages'}
-            </a>
-          </nav>
-
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <button
-              onClick={onLanguageToggle}
-              className="px-2 py-1 text-sm font-medium rounded hover:bg-muted transition-colors"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {isEn ? 'FR' : 'EN'}
-            </button>
-            <Link to="/login" className="hidden sm:block text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn ? 'Sign in' : 'Connexion'}
-            </Link>
-            <Link to="/signup" className="btn-primary btn-sm">
-              {isEn ? 'Start free' : 'Essai gratuit'}
-            </Link>
-            
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <nav className="flex flex-col gap-3">
-              <a href="#features" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Features' : 'Fonctionnalités'}
-              </a>
-              <a href="#pricing" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Pricing' : 'Tarifs'}
-              </a>
-              <a href="#cpa" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'For CPAs' : 'Pour CPA'}
-              </a>
-              <Link to="/login" className="text-sm font-medium py-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Sign in' : 'Connexion'}
-              </Link>
-              <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-                <ThemeToggle />
-                <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn ? 'Theme' : 'Thème'}
-                </span>
-              </div>
-            </nav>
-          </div>
-        )}
-      </div>
-    </header>
-  );
-}
+// Header removed - using PublicHeader component instead
 
 function HeroSection({ isEn, onWatchDemo }: { isEn: boolean; onWatchDemo: () => void }) {
   const { register } = useKeycloak();
@@ -1112,7 +1003,7 @@ export default function Store() {
 
   return (
     <div style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
-      <Header isEn={isEn} onLanguageToggle={toggleLanguage} />
+      <PublicHeader fullMenu={false} />
       <main>
         <HeroSection isEn={isEn} onWatchDemo={() => setShowDemoModal(true)} />
         <FeaturesSection isEn={isEn} />

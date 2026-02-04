@@ -977,9 +977,9 @@ function StatusBadge({ status, isEn }: { status: Provider['status']; isEn: boole
       icon: CheckCircle2, 
       textEn: 'Connected',
       textFr: 'Connecté', 
-      bgClass: 'bg-green-50 dark:bg-green-900/20',
-      textClass: 'text-green-600 dark:text-green-400',
-      dotClass: 'bg-green-500',
+      bgClass: 'bg-primary-50 dark:bg-primary-900/20',
+      textClass: 'text-primary-600 dark:text-primary-400',
+      dotClass: 'bg-primary-500',
       pulse: true,
     },
     disconnected: { 
@@ -2076,7 +2076,7 @@ function ConnectionModal({ provider, onClose, onConfirm, isEn }: {
                   {/* PlainLedger Admin Setup */}
                   <div className="space-y-2">
                     <h5 className="font-semibold text-xs uppercase tracking-wide flex items-center gap-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      <span className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 text-xs font-bold">1</span>
+                      <span className="w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 text-xs font-bold">1</span>
                       {isEn ? 'PlainLedger Configuration (Done by PlainLedger team)' : 'Configuration PlainLedger (Fait par l\'équipe PlainLedger)'}
                     </h5>
                     <div className="pl-7 space-y-1.5 text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
@@ -2725,7 +2725,7 @@ function ConnectionModal({ provider, onClose, onConfirm, isEn }: {
               </p>
               
               {/* Next Steps Instructions */}
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mb-4 border" style={{ borderColor: 'rgb(var(--color-success) / 0.2)' }}>
+              <div className="bg-primary-50 dark:bg-primary-900/20 rounded-lg p-4 mb-4 border" style={{ borderColor: 'rgb(var(--color-success) / 0.2)' }}>
                 <h5 className="font-semibold text-sm mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-success))' }}>
                   <ArrowRight className="w-4 h-4" />
                   {isEn ? 'What happens next:' : 'Prochaines étapes:'}

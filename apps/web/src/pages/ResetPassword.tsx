@@ -100,6 +100,13 @@ export default function ResetPassword() {
           body: JSON.stringify({ token }),
         });
 
+        // Check if response is JSON before parsing
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          setTokenValid(false);
+          return;
+        }
+
         const data = await response.json();
         setTokenValid(data.valid === true);
       } catch {
@@ -140,10 +147,25 @@ export default function ResetPassword() {
         }),
       });
 
-      const data = await response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to reset password');
+        throw new Error(data.message || (isEn ? 'Failed to reset password' : 'Échec de la réinitialisation'));
       }
 
       analytics.track('password_reset_success');

@@ -65,10 +65,25 @@ export default function MFAVerify() {
         }),
       });
 
-      const data = await response.json();
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(isEn 
+          ? 'Server error. Please try again later.' 
+          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Invalid code. Please try again.');
+        throw new Error(data.message || (isEn ? 'Invalid code. Please try again.' : 'Code invalide. Veuillez réessayer.'));
       }
 
       analytics.track('mfa_verify_success');

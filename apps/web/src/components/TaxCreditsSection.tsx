@@ -417,7 +417,7 @@ export default function TaxCreditsSection({
                           {eligibility.criteriaMet.map((criterionId) => (
                             <div
                               key={criterionId}
-                              className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400"
+                              className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-400"
                             >
                               <CheckCircle className="w-4 h-4" />
                               <span>
@@ -509,7 +509,7 @@ interface SummaryCardProps {
 
 function SummaryCard({ title, count, amount, color, icon: Icon }: SummaryCardProps) {
   const colorClasses = {
-    green: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    green: 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400',
     yellow: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
     blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
     purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',

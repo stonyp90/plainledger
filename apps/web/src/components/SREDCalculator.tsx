@@ -26,8 +26,8 @@ import {
   FileText,
 } from 'lucide-react';
 
-// Theme colors
-const primaryColor = '#059669'; // Green
+// Theme colors - use CSS variables for consistency
+const primaryColor = 'rgb(var(--color-primary-600))'; // emerald-600
 
 // Provincial SR&ED rates
 const PROVINCIAL_RATES: Record<string, { name: string; rate: number; refundable: boolean }> = {
