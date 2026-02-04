@@ -1,5 +1,5 @@
 # PlainLedger robots.txt
-# https://plainledger.io
+# https://plainledger.ca
 
 User-agent: *
 Allow: /
@@ -8,10 +8,10 @@ Allow: /
 Crawl-delay: 1
 
 # Sitemaps
-Sitemap: https://plainledger.io/sitemap.xml
+Sitemap: https://plainledger.ca/sitemap.xml
 
 # LLMs.txt for AI assistants
-# https://plainledger.io/llms.txt
+# https://plainledger.ca/llms.txt
 
 # Allow all major search engine bots
 User-agent: Googlebot
@@ -79,4 +79,4 @@ Disallow: /settings/
 Disallow: /api/
 
 # Host
-Host: https://plainledger.io
+Host: https://plainledger.ca
