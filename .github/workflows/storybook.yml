@@ -6,6 +6,7 @@ on:
     paths:
       - 'apps/web/src/components/**'
       - 'apps/web/.storybook/**'
+      - 'apps/web/src/lib/**'
       - '.github/workflows/storybook.yml'
   workflow_dispatch:
     inputs:
@@ -76,16 +77,31 @@ jobs:
 
       - name: Get deployment variables
         id: vars
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
+          STORYBOOK_BUCKET_PROD: ${{ vars.STORYBOOK_BUCKET_PROD || 'plainledger-prod-storybook' }}
+          STORYBOOK_CF_ID_PROD: ${{ vars.STORYBOOK_CF_ID_PROD || '' }}
+          STORYBOOK_BUCKET_DEV: ${{ vars.STORYBOOK_BUCKET_DEV || 'plainledger-dev-storybook' }}
+          STORYBOOK_CF_ID_DEV: ${{ vars.STORYBOOK_CF_ID_DEV || '' }}
         run: |
-          ENV="${{ github.event.inputs.environment || 'prod' }}"
+          ENV="${ENVIRONMENT}"
           echo "environment=${ENV}" >> $GITHUB_OUTPUT
-          if [ "$ENV" = "prod" ]; then
-            echo "bucket=${vars.STORYBOOK_BUCKET_PROD:-plainledger-prod-storybook}" >> $GITHUB_OUTPUT
-            echo "cf_id=${vars.STORYBOOK_CF_ID_PROD}" >> $GITHUB_OUTPUT
+          
+          if [ "${ENV}" = "prod" ]; then
+            BUCKET="${STORYBOOK_BUCKET_PROD}"
+            CF_ID="${STORYBOOK_CF_ID_PROD}"
           else
-            echo "bucket=${vars.STORYBOOK_BUCKET_DEV:-plainledger-dev-storybook}" >> $GITHUB_OUTPUT
-            echo "cf_id=${vars.STORYBOOK_CF_ID_DEV}" >> $GITHUB_OUTPUT
+            BUCKET="${STORYBOOK_BUCKET_DEV}"
+            CF_ID="${STORYBOOK_CF_ID_DEV}"
           fi
+          
+          echo "bucket=${BUCKET}" >> $GITHUB_OUTPUT
+          echo "cf_id=${CF_ID}" >> $GITHUB_OUTPUT
+          
+          echo "📦 Deployment Configuration:"
+          echo "   Environment: ${ENV}"
+          echo "   S3 Bucket: ${BUCKET}"
+          echo "   CloudFront ID: ${CF_ID:-'Not set (will skip invalidation)'}"
 
       - name: Deploy to S3
         run: |
