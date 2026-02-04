@@ -4,6 +4,7 @@ import { useAuth } from '../../lib/keycloak';
 import { useI18n, LanguageToggle } from '../../lib/i18n';
 import { useTheme } from '../../contexts/ThemeContext';
 import ThemeToggle from '../../components/ThemeToggle';
+import NotificationPanel from '../../components/NotificationPanel';
 import {
   LayoutDashboard,
   Users,
@@ -86,7 +87,13 @@ function AdminThemeSelector() {
   ] as const;
   
   return (
-    <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+    <div 
+      className="flex items-center gap-1 p-1 rounded-lg border"
+      style={{ 
+        backgroundColor: 'rgb(var(--color-bg-muted))',
+        borderColor: 'rgb(var(--color-border-subtle))',
+      }}
+    >
       {themes.map((t) => {
         const Icon = t.icon;
         const isActive = theme === t.value;
@@ -100,6 +107,7 @@ function AdminThemeSelector() {
             style={{
               backgroundColor: isActive ? 'rgb(var(--color-surface))' : 'transparent',
               color: isActive ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-secondary))',
+              border: isActive ? '1px solid rgb(var(--color-border))' : '1px solid transparent',
             }}
             title={t.label[language as 'en' | 'fr']}
           >
@@ -180,6 +188,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationPanel />
           <ThemeToggle />
           <LanguageToggle />
         </div>
@@ -501,6 +510,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           
           <div className="flex items-center gap-3">
             <AdminThemeSelector />
+            <NotificationPanel />
             <LanguageToggle />
           </div>
         </header>

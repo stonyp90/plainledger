@@ -52,14 +52,16 @@ export class TaxCreditSyncJob implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
+    this.logger.log("[onModuleInit] TaxCreditSyncJob starting initialization...");
     try {
       const dbUrl =
         this.configService.get<string>("DATABASE_URL") ||
         "postgresql://plainledger:plainledger@localhost:5432/plainledger";
+      this.logger.log(`[onModuleInit] Initializing with database: ${dbUrl.includes('localhost') ? 'localhost (fallback)' : 'configured'}`);
       await this.syncService.initialize(dbUrl);
-      this.logger.log("TaxCreditSyncJob initialized");
+      this.logger.log("[onModuleInit] TaxCreditSyncJob initialized successfully");
     } catch (error) {
-      this.logger.error(`Failed to initialize sync service: ${error}`);
+      this.logger.error(`[onModuleInit] Failed to initialize sync service: ${error}`);
     }
   }
 

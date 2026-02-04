@@ -79,9 +79,9 @@
   /* === LIGHT MODE (Default) === */
   /* Backgrounds */
   --color-bg: var(--color-white);
-  --color-bg-subtle: var(--color-white);
-  --color-bg-muted: var(--color-white);
-  --color-bg-emphasis: var(--color-gray-50);
+  --color-bg-subtle: var(--color-gray-25);
+  --color-bg-muted: var(--color-gray-50);
+  --color-bg-emphasis: var(--color-gray-100);
   
   /* Surfaces */
   --color-surface: var(--color-white);

@@ -9,8 +9,11 @@ import { createSwaggerConfig } from "@infrastructure/http/swagger.config";
 
 async function bootstrap() {
   console.log("[Bootstrap] Starting NestJS application...");
+  console.log("[Bootstrap] Creating NestJS app with AppModule...");
+  const startTime = Date.now();
   const app = await NestFactory.create(AppModule);
-  console.log("[Bootstrap] NestJS app created successfully");
+  const createTime = Date.now() - startTime;
+  console.log(`[Bootstrap] NestJS app created successfully in ${createTime}ms`);
 
   // Trust proxy headers when behind ALB/reverse proxy
   // This ensures correct protocol/host detection for Swagger UI and redirects

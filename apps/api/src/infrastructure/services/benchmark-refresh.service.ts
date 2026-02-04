@@ -42,11 +42,19 @@ export class BenchmarkRefreshService implements OnModuleInit {
    * Initialize benchmark data on module startup if empty
    */
   async onModuleInit() {
-    const count = await this.benchmarkRepo.count();
-    if (count === 0) {
-      this.logger.log("No benchmark data found, triggering initial load...");
-      // Delay initial load to let the application fully start
-      setTimeout(() => this.refreshAllBenchmarks(), 5000);
+    this.logger.log("[onModuleInit] BenchmarkRefreshService starting initialization...");
+    try {
+      this.logger.log("[onModuleInit] Executing benchmark count query...");
+      const count = await this.benchmarkRepo.count();
+      this.logger.log(`[onModuleInit] Benchmark count: ${count}`);
+      if (count === 0) {
+        this.logger.log("No benchmark data found, triggering initial load...");
+        // Delay initial load to let the application fully start
+        setTimeout(() => this.refreshAllBenchmarks(), 5000);
+      }
+      this.logger.log("[onModuleInit] BenchmarkRefreshService initialization complete");
+    } catch (error) {
+      this.logger.error(`[onModuleInit] BenchmarkRefreshService failed: ${error.message}`);
     }
   }
 
