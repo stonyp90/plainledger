@@ -512,11 +512,15 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
                 background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
               }}>
               <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <line x1="11" y1="10" x2="25" y2="10" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="11" y1="15" x2="25" y2="15" stroke="#cbd5e1" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M17 21 L20 24 L26 17" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
               </svg>
             </div>
             <span className="hidden lg:block text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>

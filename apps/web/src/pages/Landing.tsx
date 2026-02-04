@@ -1077,11 +1077,25 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
         >
           {/* Logo Header - Matches App */}
           <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
-            <img 
-              src="/logo-mark.svg" 
-              alt="PlainLedger" 
-              className="w-7 h-7"
-            />
+            <div 
+              className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 2px 6px ${theme.green}40`
+              }}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+              </svg>
+            </div>
             <span className="text-xs font-bold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
               <span style={{ color: 'rgb(var(--color-text))' }}>Plain</span>
               <span style={{ color: theme.green }}>Ledger</span>
@@ -3871,271 +3885,125 @@ export default function Landing() {
             </p>
           </motion.div>
           
-          <motion.div
-            className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-7 lg:gap-8 items-stretch"
+          {/* Contact Form - Full Width */}
+          <motion.div 
+            className="max-w-3xl mx-auto p-6 sm:p-8 md:p-10 rounded-2xl relative overflow-hidden"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            style={{ 
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: `1px solid ${theme.green}20`,
+              boxShadow: `0 8px 40px ${theme.green}08`,
+            }}
           >
-            {/* Contact Info - Left Column - Optimized and balanced */}
-            <motion.div 
-              className="p-6 sm:p-7 md:p-8 rounded-2xl relative overflow-hidden flex flex-col h-full min-h-[600px] sm:min-h-[650px]"
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))',
-                border: `1px solid ${theme.green}20`,
-                boxShadow: `0 8px 40px ${theme.green}08`,
+            {/* Decorative elements */}
+            <div 
+              className="absolute top-0 right-0 w-32 h-32 opacity-5"
+              style={{
+                background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
               }}
-            >
-              {/* Decorative elements */}
-              <div 
-                className="absolute top-0 right-0 w-32 h-32 opacity-5"
-                style={{
-                  background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
-                }}
-              />
-              <div 
-                className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
-                style={{
-                  background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
-                }}
-              />
-              
-              <div className="relative z-10 flex flex-col h-full">
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-6 sm:mb-7">
-                  <div 
-                    className="p-2.5 rounded-xl flex-shrink-0"
-                    style={{ backgroundColor: `${theme.green}12` }}
-                  >
-                    <Mail className="w-5 h-5" style={{ color: theme.green }} />
-                  </div>
-                  <h3 
-                    className="text-base sm:text-lg font-semibold"
-                    style={{ color: 'rgb(var(--color-text))' }}
-                  >
-                    {isEn ? 'Get in Touch' : 'Contactez-nous'}
-                  </h3>
-                </div>
-
-                {/* Subsection 1: Contact Methods */}
-                <section className="mb-6 sm:mb-7">
-                  <div className="space-y-3 sm:space-y-3.5">
-                    <a 
-                      href="mailto:info@plainledger.ca" 
-                      className="flex items-center gap-3 sm:gap-4 p-4 sm:p-4.5 rounded-xl transition-all hover:scale-[1.01] group"
-                      style={{ backgroundColor: `${theme.green}05` }}
-                      aria-label={isEn ? 'Send email to info@plainledger.ca' : 'Envoyer un courriel à info@plainledger.ca'}
-                    >
-                      <div 
-                        className="p-2.5 sm:p-3 rounded-xl flex-shrink-0 transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: `${theme.green}12` }}
-                      >
-                        <Mail className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.green }} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-medium mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
-                          {isEn ? 'Email Us' : 'Courriel'}
-                        </p>
-                        <p 
-                          className="text-xs sm:text-sm group-hover:underline font-medium truncate"
-                          style={{ color: theme.green }}
-                        >
-                          info@plainledger.ca
-                        </p>
-                      </div>
-                    </a>
-                    
-                    <button
-                      onClick={handleScheduleCall}
-                      className="flex items-center gap-3 sm:gap-4 p-4 sm:p-4.5 rounded-xl transition-all hover:scale-[1.01] group w-full text-left"
-                      style={{ backgroundColor: `${theme.green}05` }}
-                      aria-label={isEn ? 'Schedule a call' : 'Planifier un appel'}
-                    >
-                      <div 
-                        className="p-2.5 sm:p-3 rounded-xl flex-shrink-0 transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: `${theme.green}12` }}
-                      >
-                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.green }} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-medium mb-0.5" style={{ color: 'rgb(var(--color-text))' }}>
-                          {isEn ? 'Schedule a Call' : 'Planifier un appel'}
-                        </p>
-                        <p 
-                          className="text-xs sm:text-sm group-hover:underline font-medium"
-                          style={{ color: theme.green }}
-                        >
-                          {isEn ? 'Book a 15-min demo' : 'Réservez une démo de 15 min'}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </section>
-
-                {/* Subsection 2: Why Connect */}
-                <section className="mb-6 sm:mb-7 pb-6 sm:pb-7 border-b" style={{ borderColor: `${theme.green}15` }}>
-                  <h4 
-                    className="text-sm sm:text-base font-semibold mb-4 sm:mb-5 flex items-center gap-2"
-                    style={{ color: 'rgb(var(--color-text))' }}
-                  >
-                    <Users className="w-4 h-4 flex-shrink-0" style={{ color: theme.green }} />
-                    {isEn ? 'Why Connect?' : 'Pourquoi nous contacter?'}
-                  </h4>
-                  <ul className="space-y-2.5 sm:space-y-3">
-                    {[
-                      isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée',
-                      isEn ? 'Discuss your specific needs' : 'Discutez de vos besoins spécifiques',
-                      isEn ? 'Learn about enterprise features' : 'Découvrez les fonctionnalités entreprise',
-                      isEn ? 'Technical support questions' : 'Questions de support technique',
-                    ].map((item, index) => (
-                      <li 
-                        key={index} 
-                        className="flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm leading-relaxed"
-                        style={{ color: 'rgb(var(--color-text-secondary))' }}
-                      >
-                        <div 
-                          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                          style={{ backgroundColor: `${theme.green}15` }}
-                        >
-                          <Check className="w-3 h-3" style={{ color: theme.green }} />
-                        </div>
-                        <span className="flex-1">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                {/* Subsection 3: Testimonial */}
-                <section className="mt-auto mb-6 sm:mb-7">
-                  <div 
-                    className="p-5 sm:p-6 rounded-xl relative"
-                    style={{ backgroundColor: `${theme.green}05` }}
-                  >
-                    <div 
-                      className="absolute top-3 left-4 text-4xl font-serif opacity-15 leading-none"
-                      style={{ color: theme.green }}
-                    >
-                      "
-                    </div>
-                    <p 
-                      className="text-xs sm:text-sm italic mb-4 sm:mb-5 leading-relaxed pl-5 sm:pl-6 pr-2"
-                      style={{ color: 'rgb(var(--color-text-secondary))' }}
-                    >
-                      {isEn 
-                        ? 'The team responded within hours and the demo was incredibly helpful.'
-                        : 'L\'équipe a répondu en quelques heures et la démo était très utile.'}
-                    </p>
-                    <div className="flex items-center gap-3 pl-5 sm:pl-6">
-                      <div 
-                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm flex-shrink-0"
-                        style={{ backgroundColor: theme.green }}
-                      >
-                        MR
-                      </div>
-                      <div className="min-w-0">
-                        <p 
-                          className="text-xs sm:text-sm font-semibold truncate"
-                          style={{ color: 'rgb(var(--color-text))' }}
-                        >
-                          Marc R.
-                        </p>
-                        <p 
-                          className="text-[10px] sm:text-xs truncate"
-                          style={{ color: 'rgb(var(--color-text-muted))' }}
-                        >
-                          {isEn ? 'CFO, Tech Startup' : 'CFO, Startup Tech'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Subsection 4: Security badges */}
-                <section className="mt-auto">
-                  <div 
-                    className="pt-4 sm:pt-5 border-t flex flex-wrap gap-3 sm:gap-4 justify-center items-center"
-                    style={{ borderColor: `${theme.green}15` }}
-                  >
-                    {[
-                      { icon: <Lock className="w-3.5 h-3.5" />, text: isEn ? 'Encrypted' : 'Chiffré' },
-                      { icon: <Server className="w-3.5 h-3.5" />, text: isEn ? 'Canadian' : 'Canadien' },
-                      { icon: <ShieldCheck className="w-3.5 h-3.5" />, text: 'SOC 2' },
-                    ].map((item, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium px-2 py-1 rounded-md"
-                        style={{ 
-                          color: 'rgb(var(--color-text-muted))',
-                          backgroundColor: `${theme.green}05`
-                        }}
-                      >
-                        <span style={{ color: theme.green }}>{item.icon}</span>
-                        {item.text}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </div>
-            </motion.div>
+            />
+            <div 
+              className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
+              style={{
+                background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
+              }}
+            />
             
-            {/* Contact Form - Right Column */}
-            <motion.div 
-              className="p-6 sm:p-7 md:p-8 rounded-2xl relative overflow-hidden flex flex-col h-full min-h-[600px] sm:min-h-[650px]"
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                <div 
+                  className="p-2.5 rounded-xl flex-shrink-0"
+                  style={{ backgroundColor: `${theme.green}12` }}
+                >
+                  <MessageSquare className="w-5 h-5" style={{ color: theme.green }} />
+                </div>
+                <h3 
+                  className="text-base sm:text-lg font-semibold"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn ? 'Send Us a Message' : 'Envoyez-nous un message'}
+                </h3>
+              </div>
+              <ContactForm 
+                source="website" 
+                landingStyle={true}
+                theme={{
+                  green: theme.green,
+                  greenDark: theme.greenDark,
+                  greenLight: theme.greenLight,
+                }}
+              />
+            </div>
+          </motion.div>
+
+          {/* Quick Contact Options */}
+          <motion.div 
+            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <a 
+              href="mailto:info@plainledger.ca" 
+              className="flex items-center justify-center gap-3 px-6 py-4 rounded-xl transition-all hover:scale-[1.02] group"
               style={{ 
                 backgroundColor: 'rgb(var(--color-surface))',
-                border: `1px solid ${theme.green}20`,
-                boxShadow: `0 8px 40px ${theme.green}08`,
+                border: `1px solid ${theme.green}25`,
+                boxShadow: `0 2px 12px ${theme.green}10`,
               }}
+              aria-label={isEn ? 'Send email to info@plainledger.ca' : 'Envoyer un courriel à info@plainledger.ca'}
             >
-              {/* Decorative elements */}
               <div 
-                className="absolute top-0 right-0 w-32 h-32 opacity-5"
-                style={{
-                  background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
-                }}
-              />
-              <div 
-                className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
-                style={{
-                  background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
-                }}
-              />
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-6 sm:mb-7">
-                  <div 
-                    className="p-2.5 rounded-xl flex-shrink-0"
-                    style={{ backgroundColor: `${theme.green}12` }}
-                  >
-                    <MessageSquare className="w-5 h-5" style={{ color: theme.green }} />
-                  </div>
-                  <h3 
-                    className="text-base sm:text-lg font-semibold"
-                    style={{ color: 'rgb(var(--color-text))' }}
-                  >
-                    {isEn ? 'Send Us a Message' : 'Envoyez-nous un message'}
-                  </h3>
-                </div>
-                <ContactForm 
-                  source="website" 
-                  landingStyle={true}
-                  theme={{
-                    green: theme.green,
-                    greenDark: theme.greenDark,
-                    greenLight: theme.greenLight,
-                  }}
-                />
+                className="p-2 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: `${theme.green}15` }}
+              >
+                <Mail className="w-4 h-4" style={{ color: theme.green }} />
               </div>
-            </motion.div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Email Us' : 'Courriel'}
+                </p>
+                <p 
+                  className="text-sm group-hover:underline font-medium"
+                  style={{ color: theme.green }}
+                >
+                  info@plainledger.ca
+                </p>
+              </div>
+            </a>
+            
+            <button
+              onClick={handleScheduleCall}
+              className="flex items-center justify-center gap-3 px-6 py-4 rounded-xl transition-all hover:scale-[1.02] group"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: `1px solid ${theme.green}25`,
+                boxShadow: `0 2px 12px ${theme.green}10`,
+              }}
+              aria-label={isEn ? 'Schedule a call' : 'Planifier un appel'}
+            >
+              <div 
+                className="p-2 rounded-lg flex-shrink-0"
+                style={{ backgroundColor: `${theme.green}15` }}
+              >
+                <Calendar className="w-4 h-4" style={{ color: theme.green }} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Schedule a Call' : 'Planifier un appel'}
+                </p>
+                <p 
+                  className="text-sm group-hover:underline font-medium"
+                  style={{ color: theme.green }}
+                >
+                  {isEn ? 'Book a 15-min demo' : 'Réservez une démo de 15 min'}
+                </p>
+              </div>
+            </button>
           </motion.div>
         </div>
       </section>
@@ -4149,9 +4017,15 @@ export default function Landing() {
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md flex items-center justify-center bg-emerald-600">
               <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="5" width="3" height="22" rx="1" fill="rgba(255,255,255,0.5)"/>
-                <rect x="8" y="5" width="20" height="22" rx="2" fill="white"/>
-                <path d="M17 21 L20 24 L26 17" stroke="rgb(var(--color-primary-600))" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
+                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
               </svg>
             </div>
             <span className="font-medium text-[10px] sm:text-xs text-gray-900 dark:text-white">PlainLedger</span>
