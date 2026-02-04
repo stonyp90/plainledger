@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
@@ -6,7 +6,6 @@ import ThemeToggle from '../components/ThemeToggle';
 import { LanguageToggle, useI18n } from '../lib/i18n';
 import IndustryKPISection from '../components/IndustryKPISection';
 import DemoModal from '../components/DemoModal';
-import AITechnologyStack from '../components/AITechnologyStack';
 import ContactForm from '../components/ContactForm';
 import { GetTheApp } from '../components/GetTheApp';
 import { InstallAppModal } from '../components/InstallAppModal';
@@ -562,7 +561,9 @@ function AnimatedAreaChart({
     if (!showHoverValues || !svgRef.current) return;
     
     const rect = svgRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
+    // Scale mouse position to viewBox coordinates
+    const scaleX = width / rect.width;
+    const mouseX = (e.clientX - rect.left) * scaleX;
     
     // Find closest point
     let closestIndex = 0;
@@ -576,6 +577,7 @@ function AnimatedAreaChart({
       }
     });
     
+    // Scale threshold to viewBox coordinates
     if (closestDistance < 15) {
       setHoveredPoint(closestIndex);
     } else {
@@ -597,8 +599,10 @@ function AnimatedAreaChart({
   return (
     <svg 
       ref={svgRef}
-      width={width} 
+      width="100%"
       height={height} 
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
       className="overflow-visible cursor-crosshair"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -1413,97 +1417,101 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               </button>
             </div>
             
-            {/* Table Header */}
-            <div 
-              className="grid text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr 60px'
-              }}
-            >
-              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
-              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current' : 'Actuel'}</span>
-              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
-              <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
-              <span style={{ color: 'rgb(var(--color-text-muted))' }}></span>
-            </div>
-            
-            {/* Table Rows */}
-            {current.benchmarks.map((row, i) => {
-              const isExcellent = row.status === 'excellent';
-              const isGood = row.status === 'good';
-              // Status icon determined by condition below
-              const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
-              
-              return (
+            {/* Scrollable Table Container for mobile */}
+            <div className="overflow-x-auto">
+              <div className="min-w-[340px]">
+                {/* Table Header */}
                 <div 
-                  key={i}
-                  className={`grid text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all group ${
-                    hoveredRow === i ? 'bg-opacity-50' : ''
-                  }`}
+                  className="grid text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
                   style={{ 
-                    borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
-                    backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent',
-                    gridTemplateColumns: '2fr 1fr 1fr 1fr 60px'
+                    backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
+                    gridTemplateColumns: 'minmax(90px, 2fr) minmax(50px, 1fr) minmax(55px, 1fr) minmax(70px, 1fr) 36px'
                   }}
-                  onMouseEnter={() => setHoveredRow(i)}
-                  onMouseLeave={() => setHoveredRow(null)}
                 >
-                  <span className="font-medium flex items-center gap-1.5 text-left" style={{ color: 'rgb(var(--color-text))' }}>
-                    {row.metric}
-                    <Info 
-                      className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity cursor-help" 
-                      style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-                      title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}
-                    />
-                  </span>
-                  <span className="font-bold text-left" style={{ color: theme.green }}>{row.yours}</span>
-                  <span 
-                    className="px-2 py-0.5 rounded-full font-medium w-fit text-left"
-                    style={{ 
-                      backgroundColor: `${theme.gold}12`,
-                      color: theme.goldDark,
-                      fontSize: '9px'
-                    }}
-                  >
-                    {row.target}
-                  </span>
-                  <div className="flex items-center gap-1 justify-start">
-                    {isExcellent ? (
-                      <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
-                    ) : isGood ? (
-                      <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
-                    ) : (
-                      <AlertCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
-                    )}
-                    <span 
-                      className="px-1.5 py-0.5 rounded text-[8px] font-medium"
-                      style={{ 
-                        backgroundColor: `${statusColor}15`,
-                        color: statusColor,
-                      }}
-                    >
-                      {isExcellent ? (isEn ? 'Excellent' : 'Excellent') : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                      className="opacity-60 group-hover:opacity-100 transition-opacity p-1 rounded"
-                      style={{ 
-                        backgroundColor: `${theme.gold}12`,
-                        color: theme.gold
-                      }}
-                      title={isEn ? 'AI Analysis' : 'Analyse IA'}
-                    >
-                      <Sparkles className="w-3 h-3" />
-                    </button>
-                  </div>
+                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
+                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current' : 'Actuel'}</span>
+                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
+                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
+                  <span style={{ color: 'rgb(var(--color-text-muted))' }}></span>
                 </div>
-              );
-            })}
+                
+                {/* Table Rows */}
+                {current.benchmarks.map((row, i) => {
+                  const isExcellent = row.status === 'excellent';
+                  const isGood = row.status === 'good';
+                  // Status icon determined by condition below
+                  const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
+                  
+                  return (
+                    <div 
+                      key={i}
+                      className={`grid text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all group ${
+                        hoveredRow === i ? 'bg-opacity-50' : ''
+                      }`}
+                      style={{ 
+                        borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
+                        backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent',
+                        gridTemplateColumns: 'minmax(90px, 2fr) minmax(50px, 1fr) minmax(55px, 1fr) minmax(70px, 1fr) 36px'
+                      }}
+                      onMouseEnter={() => setHoveredRow(i)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <span className="font-medium flex items-center gap-1 text-left truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                        <span className="truncate">{row.metric}</span>
+                        <Info 
+                          className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity cursor-help flex-shrink-0" 
+                          style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                          title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}
+                        />
+                      </span>
+                      <span className="font-bold text-left" style={{ color: theme.green }}>{row.yours}</span>
+                      <span 
+                        className="px-1.5 py-0.5 rounded-full font-medium w-fit text-left text-[8px]"
+                        style={{ 
+                          backgroundColor: `${theme.gold}12`,
+                          color: theme.goldDark,
+                        }}
+                      >
+                        {row.target}
+                      </span>
+                      <div className="flex items-center gap-1 justify-start">
+                        {isExcellent ? (
+                          <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: statusColor }} />
+                        ) : isGood ? (
+                          <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: statusColor }} />
+                        ) : (
+                          <AlertCircle className="w-3 h-3 flex-shrink-0" style={{ color: statusColor }} />
+                        )}
+                        <span 
+                          className="px-1 py-0.5 rounded text-[7px] sm:text-[8px] font-medium whitespace-nowrap"
+                          style={{ 
+                            backgroundColor: `${statusColor}15`,
+                            color: statusColor,
+                          }}
+                        >
+                          {isExcellent ? (isEn ? 'Excellent' : 'Excellent') : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                          className="opacity-60 group-hover:opacity-100 transition-opacity p-1 rounded"
+                          style={{ 
+                            backgroundColor: `${theme.gold}12`,
+                            color: theme.gold
+                          }}
+                          title={isEn ? 'AI Analysis' : 'Analyse IA'}
+                        >
+                          <Sparkles className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1513,6 +1521,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
 
 // Supported integrations - used inline in JSX
 
+// =====================================================
 // Theme colors - Corporate green palette (emerald-based, professional)
 const colors = {
   light: {
@@ -1662,6 +1671,9 @@ export default function Landing() {
               <a href="#industries" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View industry KPIs' : 'Voir les KPIs par industrie'}>
                 {isEn ? 'Industries' : 'Industries'}
               </a>
+              <a href="#ecosystem" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View connected intelligence' : 'Voir l\'intelligence connectée'}>
+                {isEn ? 'Intelligence' : 'Intelligence'}
+              </a>
               <a href="#pipeline" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Learn how it works' : 'Apprendre comment ça marche'}>
                 {isEn ? 'How it Works' : 'Comment ça marche'}
               </a>
@@ -1728,6 +1740,9 @@ export default function Landing() {
                 </a>
                 <a href="#industries" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View industry KPIs' : 'Voir les KPIs par industrie'}>
                   {isEn ? 'Industries' : 'Industries'}
+                </a>
+                <a href="#ecosystem" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'View connected intelligence' : 'Voir l\'intelligence connectée'}>
+                  {isEn ? 'Intelligence' : 'Intelligence'}
                 </a>
                 <a href="#pipeline" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }} aria-label={isEn ? 'Learn how it works' : 'Apprendre comment ça marche'}>
                   {isEn ? 'How it Works' : 'Comment ça marche'}
@@ -1808,32 +1823,22 @@ export default function Landing() {
             )}
           </h1>
 
-          {/* Professional Credibility Badges */}
+          {/* Professional Credibility Badge */}
           <div 
             className="flex flex-wrap justify-center gap-3 mb-6 animate-fade-up opacity-0"
             style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}
           >
             <span 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium"
               style={{ 
-                backgroundColor: `${theme.gold}15`,
-                border: `1px solid ${theme.gold}25`,
-                color: theme.gold
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+                color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)',
+                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              <Shield className="w-3.5 h-3.5" />
-              {isEn ? 'Data stays in Canada' : 'Données au Canada'} 🇨🇦
-            </span>
-            <span 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ 
-                backgroundColor: `${theme.green}15`,
-                border: `1px solid ${theme.green}25`,
-                color: theme.green
-              }}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              {isEn ? 'FP&A Intelligence, IBCS Certified' : 'Intelligence FP&A, Certifié IBCS'}
+              <BarChart3 className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+              {isEn ? 'FP&A Intelligence' : 'Intelligence FP&A'}
             </span>
           </div>
 
@@ -1847,8 +1852,8 @@ export default function Landing() {
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'We transform your raw financial data into industry KPIs with clear ROI. See exactly where to act and what it\'s worth. Tax credits you\'re missing. Costs you can cut. Opportunities you didn\'t know existed.'
-                : 'Nous transformons vos données brutes en KPIs sectoriels avec un ROI clair. Voyez exactement où agir et combien ça vaut. Crédits d\'impôt manqués. Coûts à réduire. Opportunités cachées.'}
+                ? 'Know your margins. Beat your industry. Find money you\'re missing.'
+                : 'Connaissez vos marges. Dépassez votre industrie. Trouvez l\'argent qui vous échappe.'}
             </p>
           </div>
 
@@ -1985,336 +1990,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Bridge the Gap Section - Dynamic Orbit */}
-      <section 
-        id="bridge-section"
-        className="py-24 sm:py-32 lg:py-40 px-4 sm:px-6 relative overflow-hidden"
-        style={{ 
-          background: isDark 
-            ? 'linear-gradient(180deg, rgba(15, 23, 42, 1) 0%, rgba(10, 15, 28, 1) 50%, rgba(15, 23, 42, 1) 100%)' 
-            : 'linear-gradient(180deg, #ffffff 0%, #f8fdf5 50%, #ffffff 100%)'
-        }}
-      >
-        {/* Animated Background Particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(100)].map((_, i) => {
-            const size = i % 5 === 0 ? 'w-1.5 h-1.5' : i % 3 === 0 ? 'w-1 h-1' : 'w-0.5 h-0.5';
-            const colors = [theme.green, theme.gold, theme.greenDark, '#8b5cf6', '#059669'];
-            return (
-              <motion.div
-                key={i}
-                className={`absolute ${size} rounded-full`}
-                style={{ 
-                  backgroundColor: colors[i % colors.length],
-                  left: `${(i * 17) % 100}%`,
-                  top: `${(i * 23) % 100}%`,
-                  opacity: 0.3
-                }}
-                animate={{ 
-                  y: [0, -20 - (i % 4) * 10, 0],
-                  x: [0, (i % 2 === 0 ? 10 : -10), 0],
-                  opacity: [0.15, 0.4 + (i % 3) * 0.1, 0.15],
-                  scale: [1, 1.3 + (i % 3) * 0.2, 1]
-                }}
-                transition={{ 
-                  duration: 2.5 + (i % 5) * 0.8, 
-                  repeat: Infinity, 
-                  delay: (i % 10) * 0.3,
-                  ease: "easeInOut"
-                }}
-              />
-            );
-          })}
-        </div>
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          {/* Section Header */}
-          <motion.div 
-            className="text-center mb-12 lg:mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <motion.div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
-              style={{ 
-                background: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-                border: `1px solid ${theme.green}25`,
-                boxShadow: `0 4px 20px ${theme.green}10`
-              }}
-            >
-              <motion.div 
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: theme.green }}
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <span className="text-sm font-medium" style={{ color: theme.green }}>
-                {isEn ? 'Connected Intelligence' : 'Intelligence connectée'}
-              </span>
-            </motion.div>
-            
-            <h2 
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isEn ? (
-                <>Everything Around <span style={{ color: theme.green }}>You</span></>
-              ) : (
-                <>Tout gravite autour de <span style={{ color: theme.green }}>Vous</span></>
-              )}
-            </h2>
-            <p 
-              className="text-lg max-w-xl mx-auto"
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
-            >
-              {isEn 
-                ? 'Your financial data, insights and decisions in one place.'
-                : 'Vos données, analyses et décisions en un seul endroit.'}
-            </p>
-          </motion.div>
-
-          {/* Desktop & Tablet - Clean Orbital System */}
-          <div className="hidden md:flex items-center justify-center relative" style={{ height: '420px' }}>
-            
-            {/* Simple orbital rings */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              {[180, 130, 80].map((radius, idx) => (
-                <motion.div
-                  key={idx}
-                  className="absolute rounded-full"
-                  style={{
-                    width: radius * 2,
-                    height: radius * 2,
-                    border: `1px solid ${theme.green}`,
-                    opacity: 0.15 - idx * 0.03,
-                  }}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 0.15 - idx * 0.03, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1, duration: 0.5 }}
-                />
-              ))}
-            </div>
-
-            {/* Center User Avatar */}
-            <div className="relative z-30">
-              <motion.div
-                className="absolute -inset-3 rounded-full opacity-30"
-                style={{ background: `radial-gradient(circle, ${theme.green}30 0%, transparent 70%)` }}
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <div 
-                className="relative w-14 h-14 rounded-full overflow-hidden"
-                style={{ 
-                  border: `2px solid ${theme.green}`,
-                  boxShadow: `0 0 20px ${theme.green}25`
-                }}
-              >
-                <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=112&h=112&fit=crop&crop=face"
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Orbiting Icons - Simple with hover tooltip */}
-            {[
-              { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold, radius: 180, duration: 45, start: -30 },
-              { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6', radius: 130, duration: 35, start: 60 },
-              { icon: Percent, label: { en: 'Tax', fr: 'Fiscalité' }, color: theme.greenDark, radius: 80, duration: 25, start: 180 },
-              { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green, radius: 180, duration: 50, start: 150 },
-              { icon: Calculator, label: { en: 'Accounting', fr: 'Comptabilité' }, color: '#059669', radius: 130, duration: 40, start: 240 },
-            ].map((item, idx) => {
-              const points = 36;
-              const xPos = Array.from({ length: points + 1 }, (_, i) => 
-                Math.cos(((item.start + i * (360 / points)) * Math.PI) / 180) * item.radius
-              );
-              const yPos = Array.from({ length: points + 1 }, (_, i) => 
-                Math.sin(((item.start + i * (360 / points)) * Math.PI) / 180) * item.radius
-              );
-              
-              return (
-                <motion.div
-                  key={idx}
-                  className="absolute z-20 group"
-                  style={{ left: '50%', top: '50%' }}
-                  animate={{ x: xPos, y: yPos }}
-                  transition={{
-                    duration: item.duration,
-                    repeat: Infinity,
-                    ease: "linear",
-                    times: Array.from({ length: points + 1 }, (_, i) => i / points),
-                  }}
-                >
-                  <motion.div 
-                    className="relative"
-                    style={{ marginLeft: -18, marginTop: -18 }}
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.08 + 0.2, type: "spring", stiffness: 300 }}
-                  >
-                    {/* Icon */}
-                    <motion.div 
-                      className="flex items-center justify-center rounded-xl cursor-pointer"
-                      style={{ 
-                        width: 36,
-                        height: 36,
-                        background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
-                        border: `1.5px solid ${item.color}50`,
-                        boxShadow: `0 2px 10px ${item.color}15`
-                      }}
-                      whileHover={{ 
-                        scale: 1.2,
-                        borderColor: item.color,
-                        boxShadow: `0 4px 20px ${item.color}35`
-                      }}
-                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                    >
-                      <item.icon style={{ color: item.color, width: 16, height: 16 }} />
-                    </motion.div>
-                    
-                    {/* Tooltip on hover */}
-                    <div 
-                      className="absolute left-1/2 -translate-x-1/2 -bottom-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-                    >
-                      <span 
-                        className="text-[11px] font-semibold whitespace-nowrap px-2 py-1 rounded-md"
-                        style={{ 
-                          color: '#fff',
-                          background: item.color,
-                          boxShadow: `0 2px 8px ${item.color}40`
-                        }}
-                      >
-                        {isEn ? item.label.en : item.label.fr}
-                      </span>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Mobile - Minimal Orbital */}
-          <div className="md:hidden relative flex flex-col items-center">
-            {/* Tiny Center Photo */}
-            <motion.div 
-              className="relative mb-6"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-            >
-              <motion.div 
-                className="absolute -inset-1 rounded-full"
-                style={{ border: `1px dashed ${theme.green}20` }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              />
-              <motion.div 
-                className="relative w-14 h-14 rounded-full overflow-hidden"
-                style={{ 
-                  border: `2px solid ${theme.green}`,
-                  boxShadow: `0 0 15px ${theme.green}25`
-                }}
-              >
-                <img 
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=112&h=112&fit=crop&crop=face"
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </motion.div>
-            </motion.div>
-
-            {/* Connection Dots */}
-            <div className="flex justify-center gap-3 mb-5">
-              {[theme.green, theme.gold, '#8b5cf6', theme.greenDark, '#059669'].map((color, i) => (
-                <motion.div
-                  key={i}
-                  className="w-1 h-8 relative"
-                  style={{ background: `linear-gradient(to bottom, ${color}30, transparent)` }}
-                >
-                  <motion.div
-                    className="absolute w-1.5 h-1.5 rounded-full -left-[1px]"
-                    style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}` }}
-                    animate={{ y: [0, 28, 0], opacity: [0, 1, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.12 }}
-                  />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Domain Icons Row */}
-            <div className="flex justify-center gap-4">
-              {[
-                { icon: Wallet, label: { en: 'Finance', fr: 'Finance' }, color: theme.green },
-                { icon: PieChart, label: { en: 'Data', fr: 'Données' }, color: theme.gold },
-                { icon: Cpu, label: { en: 'AI', fr: 'IA' }, color: '#8b5cf6' },
-                { icon: Percent, label: { en: 'Tax', fr: 'Fiscalité' }, color: theme.greenDark },
-                { icon: Calculator, label: { en: 'Acct', fr: 'Compta' }, color: '#059669' },
-              ].map((d, i) => (
-                <motion.div 
-                  key={i}
-                  className="flex flex-col items-center"
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center mb-0.5"
-                    style={{ 
-                      background: isDark ? 'rgba(30, 41, 59, 0.95)' : '#fff',
-                      border: `1.5px solid ${d.color}40`,
-                      boxShadow: `0 0 8px ${d.color}15`
-                    }}
-                  >
-                    <d.icon className="w-4 h-4" style={{ color: d.color }} />
-                  </div>
-                  <span className="text-[8px] font-medium" style={{ color: d.color }}>
-                    {isEn ? d.label.en : d.label.fr}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom CTA */}
-          <motion.div 
-            className="flex justify-center mt-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-          >
-            <motion.div 
-              className="inline-flex items-center gap-3 px-6 py-3 rounded-full cursor-pointer"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 10px 40px ${theme.green}40`
-              }}
-              whileHover={{ scale: 1.05, boxShadow: `0 15px 50px ${theme.green}50` }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="w-5 h-5 text-white" />
-              </motion.div>
-              <span className="text-white font-bold">
-                {isEn ? 'PlainLedger connects it all' : 'PlainLedger connecte le tout'}
-              </span>
-              <ArrowRight className="w-4 h-4 text-white" />
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* Exec Dashboard Features Section - Enhanced */}
       <span id="features" className="absolute" style={{ top: '-100px' }} />
       <section 
@@ -2367,37 +2042,22 @@ export default function Landing() {
         </div>
 
         <div className="max-w-6xl mx-auto relative z-10">
-          {/* Section Header - Enhanced */}
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {/* Badge */}
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green}15 0%, ${theme.gold}10 100%)`,
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`
-              }}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <motion.div
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            {/* Gold Badge */}
+            <div className="flex justify-center mb-4">
+              <span 
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider"
+                style={{ 
+                  backgroundColor: `${theme.gold}15`,
+                  color: theme.gold,
+                  border: `1px solid ${theme.gold}30`
+                }}
               >
-                <Clock className="w-4 h-4" style={{ color: theme.green }} />
-              </motion.div>
-              <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? 'Save 10+ hours weekly' : 'Économisez 10+ heures par semaine'}
+                <Sparkles className="w-3 h-3" />
+                {isEn ? 'AI-Powered Analytics' : 'Analytique propulsée par l\'IA'}
               </span>
-            </motion.div>
-            
+            </div>
             {/* Main heading with gradient */}
             <h2 
               className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6"
@@ -2417,262 +2077,174 @@ export default function Landing() {
                 ? 'Replace spreadsheets with automated dashboards. Get insights that drive confident decisions.'
                 : 'Remplacez les feuilles de calcul par des tableaux de bord automatisés. Obtenez les insights pour des décisions éclairées.'}
             </p>
-          </motion.div>
-
-          {/* Features Grid - Enhanced with staggered animations */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {[
-              {
-                icon: Eye,
-                title: isEn ? 'Real-Time Visibility' : 'Visibilité en temps réel',
-                desc: isEn 
-                  ? 'See cash position, revenue trends, and margins the moment they change.'
-                  : 'Consultez votre trésorerie, revenus et marges dès qu\'ils changent.',
-                highlight: isEn ? 'Updates every 15 min' : 'Mise à jour aux 15 min',
-                stat: isEn ? '5hrs saved' : '5h économisées',
-                color: theme.green,
-                delay: 0,
-              },
-              {
-                icon: Brain,
-                title: isEn ? 'AI Error Detection' : 'Détection d\'erreurs IA',
-                desc: isEn 
-                  ? 'Duplicate payments. Billing errors. Unusual charges. Caught before they hurt.'
-                  : 'Paiements en double. Erreurs de facturation. Détectés avant qu\'ils ne coûtent.',
-                highlight: isEn ? '97% accuracy' : '97% précision',
-                stat: isEn ? '$28K saved' : '28K$ récup.',
-                color: theme.gold,
-                delay: 0.1,
-              },
-              {
-                icon: Target,
-                title: isEn ? 'Goal Tracking' : 'Suivi des objectifs',
-                desc: isEn 
-                  ? 'Track progress against industry KPIs tailored to your sector.'
-                  : 'Suivez la progression vs KPIs sectoriels adaptés à votre industrie.',
-                highlight: isEn ? 'Industry KPIs' : 'KPIs sectoriels',
-                stat: isEn ? '15+ industries' : '15+ industries',
-                color: theme.green,
-                delay: 0.2,
-              },
-              {
-                icon: TrendingUp,
-                title: isEn ? '12-Month Forecasts' : 'Prévisions 12 mois',
-                desc: isEn 
-                  ? 'Model scenarios and see financial impact before deciding.'
-                  : 'Modélisez différents scénarios et voyez l\'impact avant de décider.',
-                highlight: isEn ? 'What-if analysis' : 'Analyse "what-if"',
-                stat: isEn ? 'Smart planning' : 'Planification',
-                color: theme.gold,
-                delay: 0.3,
-              },
-              {
-                icon: FileCheck,
-                title: isEn ? 'Board-Ready Reports' : 'Rapports prêts pour le CA',
-                desc: isEn 
-                  ? 'Get presentations that make sense, without calling your accountant.'
-                  : 'Obtenez des présentations claires, sans appeler votre comptable.',
-                highlight: isEn ? 'Interactive dashboards' : 'Tableaux interactifs',
-                stat: isEn ? '3hrs saved' : '3h économisées',
-                color: theme.green,
-                delay: 0.4,
-              },
-              {
-                icon: BarChart3,
-                title: isEn ? 'Industry Benchmarks' : 'Benchmarks sectoriels',
-                desc: isEn 
-                  ? 'Know if your margins are good for your size and location.'
-                  : 'Sachez si vos marges sont bonnes pour votre taille et localisation.',
-                highlight: isEn ? '15+ industries' : '15+ industries',
-                stat: isEn ? 'Competitive edge' : 'Avantage compétitif',
-                color: theme.green,
-                delay: 0.5,
-              },
-            ].map((feature, idx) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ 
-                  duration: 0.6, 
-                  delay: feature.delay,
-                  ease: [0.16, 1, 0.3, 1]
-                }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group p-6 rounded-2xl relative overflow-hidden cursor-pointer"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.98)',
-                  border: `2px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
-                  boxShadow: isDark 
-                    ? '0 4px 20px rgba(0,0,0,0.2)' 
-                    : '0 4px 20px rgba(0,0,0,0.05)',
-                }}
-              >
-                {/* Hover gradient overlay */}
-                <motion.div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${feature.color}08 0%, transparent 60%)` 
-                  }}
-                />
-                
-                {/* Icon with animated background */}
-                <motion.div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 relative overflow-hidden"
-                  style={{ backgroundColor: `${feature.color}12` }}
-                >
-                  {/* Pulse animation */}
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl"
-                    style={{ backgroundColor: feature.color }}
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0, 0.2] }}
-                    transition={{ duration: 2.5, repeat: Infinity, delay: idx * 0.3 }}
-                  />
-                  <motion.div
-                    whileHover={{ rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <feature.icon className="w-7 h-7 relative z-10" style={{ color: feature.color }} />
-                  </motion.div>
-                </motion.div>
-                
-                {/* Title */}
-                <h3 
-                  className="text-lg font-bold mb-3"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {feature.title}
-                </h3>
-                
-                {/* Description */}
-                <p 
-                  className="text-sm leading-relaxed mb-4"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {feature.desc}
-                </p>
-                
-                {/* Stats row */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <motion.div 
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
-                    style={{ 
-                      backgroundColor: `${feature.color}15`,
-                      color: feature.color
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    {feature.highlight}
-                  </motion.div>
-                  <motion.div 
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.green}15 0%, ${theme.greenDark}15 100%)`,
-                      color: theme.green
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    {feature.stat}
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
           </div>
 
-          {/* Bottom CTA - Enhanced */}
-          <motion.div 
-            className="mt-16 text-center"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            {/* Stats highlight */}
+          {/* Bottom CTA */}
+          <div className="mt-16 text-center">
+            {/* Stats highlight with animations */}
             <motion.div 
               className="inline-flex items-center gap-6 sm:gap-8 mb-8 px-6 py-4 rounded-2xl"
               style={{ 
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
                 border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`
               }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
             >
-              <div className="text-center">
+              <motion.div 
+                className="text-center"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <motion.div 
                   className="text-2xl sm:text-3xl font-bold"
                   style={{ color: theme.green }}
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.5, type: "spring" }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
                 >
-                  40%
+                  <AnimatedCounter end={40} suffix="%" duration={2000} delay={100} />
                 </motion.div>
                 <div className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Faster reporting' : 'Plus rapide'}
                 </div>
-              </div>
+              </motion.div>
               <div className="w-px h-10 bg-gray-300 dark:bg-gray-600" />
-              <div className="text-center">
+              <motion.div 
+                className="text-center"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <motion.div 
                   className="text-2xl sm:text-3xl font-bold"
                   style={{ color: theme.gold }}
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.6, type: "spring" }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  25%
+                  <AnimatedCounter end={25} suffix="%" duration={2000} delay={200} />
                 </motion.div>
                 <div className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Better visibility' : 'Meilleure visibilité'}
                 </div>
-              </div>
+              </motion.div>
               <div className="w-px h-10 bg-gray-300 dark:bg-gray-600" />
-              <div className="text-center">
+              <motion.div 
+                className="text-center"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <motion.div 
                   className="text-2xl sm:text-3xl font-bold"
                   style={{ color: theme.green }}
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.7, type: "spring" }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  10+
+                  <AnimatedCounter end={10} suffix="+" duration={1500} delay={300} />
                 </motion.div>
                 <div className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Hours saved/week' : 'Heures/semaine'}
                 </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Social proof & trust indicators */}
+            <motion.div 
+              className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-6 text-sm"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <span>
+                {isEn 
+                  ? 'Trusted by business owners across Quebec' 
+                  : 'La confiance des entrepreneurs du Québec'}
+              </span>
+              <span className="hidden sm:inline" style={{ color: 'rgb(var(--color-text-tertiary))' }}>•</span>
+              <span>
+                {isEn 
+                  ? '20+ industries served' 
+                  : '20+ industries desservies'}
+              </span>
+            </motion.div>
+
+            {/* Trust badges */}
+            <motion.div 
+              className="flex flex-wrap items-center justify-center gap-4 mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <div 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`
+                }}
+              >
+                <Shield className="w-3.5 h-3.5" style={{ color: theme.green }} />
+                <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'Data hosted in Canada' : 'Données hébergées au Canada'}
+                </span>
+              </div>
+              <div 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`
+                }}
+              >
+                <Check className="w-3.5 h-3.5" style={{ color: theme.green }} />
+                <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'No credit card required' : 'Aucune carte de crédit requise'}
+                </span>
               </div>
             </motion.div>
 
-            {/* CTA Button */}
+            {/* CTA Button with pulse effect */}
             <motion.button 
               onClick={() => register()}
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-white text-base"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-white text-base relative overflow-hidden"
               style={{ 
                 background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
                 boxShadow: `0 8px 30px ${theme.green}40`
               }}
-              whileHover={{ scale: 1.05, boxShadow: `0 12px 40px ${theme.green}50` }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.6 }}
             >
-              {isEn ? 'Start understanding your numbers' : 'Commencez à comprendre vos chiffres'}
+              {/* Subtle shine effect */}
               <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                <ArrowRight className="w-5 h-5" />
-              </motion.div>
+                className="absolute inset-0 opacity-30"
+                style={{
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                }}
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              />
+              <span className="relative z-10">
+                {isEn ? 'Start understanding your numbers' : 'Commencez à comprendre vos chiffres'}
+              </span>
+              <ArrowRight className="w-5 h-5 relative z-10" />
             </motion.button>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* AI-Powered Anomaly Detection Section */}
+      {/* Stay Informed Section */}
       <section 
-        id="ai-anomalies" 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
         style={{ 
           background: isDark 
@@ -2680,16 +2252,7 @@ export default function Landing() {
             : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, #f0fdf4 100%)'
         }}
       >
-        {/* Background pattern */}
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `radial-gradient(${theme.gold}15 1px, transparent 1px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-
-        <div className="max-w-6xl mx-auto relative z-10">
+        <div className="max-w-5xl mx-auto relative z-10">
           {/* Section Header */}
           <motion.div 
             className="text-center mb-12"
@@ -2698,305 +2261,270 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+            <motion.div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-6"
               style={{ 
-                background: `${theme.gold}15`,
-                border: `1px solid ${theme.gold}25`,
-                color: theme.gold
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              <Brain className="w-3.5 h-3.5" />
-              <Sparkles className="w-3 h-3" />
-              {isEn ? 'AI-Powered' : 'Propulsé par l\'IA'}
-            </div>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Bell className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              </motion.div>
+              <span className="text-xs font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
+                {isEn ? 'Smart Alerts' : 'Alertes intelligentes'}
+              </span>
+            </motion.div>
+            
             <h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
-              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+              style={{ color: 'rgb(var(--color-text))' }}
             >
-              {isEn ? 'Expensive Mistakes, Caught Before They Hurt' : 'Erreurs coûteuses, détectées avant qu\'elles ne fassent mal'}
+              {isEn ? (
+                <>Never Miss What <span style={{ color: theme.green }}>Matters</span></>
+              ) : (
+                <>Ne manquez jamais ce qui <span style={{ color: theme.green }}>compte</span></>
+              )}
             </h2>
             <p 
-              className="text-sm sm:text-base max-w-2xl mx-auto mb-4"
-              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Duplicate payments. Billing errors. Unusual charges. The stuff that slips through when you\'re busy running your business.'
-                : 'Paiements en double. Erreurs de facturation. Frais inhabituels. Ce qui passe entre les mailles quand vous gérez votre entreprise.'}
+                ? 'Get notified the way you prefer. We meet you where you already work.'
+                : 'Recevez vos alertes comme vous le souhaitez. On vous rejoint là où vous travaillez déjà.'}
             </p>
-            {/* Learning Badge */}
-            <div className="flex items-center justify-center gap-2 mt-4">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span 
-                className="text-xs font-medium"
-                style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-              >
-                {isEn 
-                  ? 'Trained on 847K+ real business decisions' 
-                  : 'Entraîné sur 847K+ vraies décisions d\'affaires'}
-              </span>
-            </div>
           </motion.div>
 
-          {/* Two-column layout: AI Features & Notification Platforms */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+          {/* Main Content - Channel notifications */}
+          <div className="flex flex-col items-center justify-center gap-8">
             
-            {/* Left Column - AI Detection Capabilities */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="p-6 rounded-2xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
-                boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(0,0,0,0.06)',
-              }}
-            >
-              <div className="flex items-center gap-3 mb-5">
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+            {/* Channel Cards Grid - Two rows */}
+            <div className="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl">
+              {/* Top Row */}
+              {[
+                { 
+                  icon: Mail, 
+                  name: 'Email', 
+                  avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+                  message: isEn ? 'Cash flow alert!' : 'Alerte trésorerie!',
+                  delay: 0
+                },
+                { 
+                  icon: Hash, 
+                  name: 'Slack', 
+                  avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
+                  message: isEn ? 'Revenue up 12%' : 'Revenus +12%',
+                  delay: 0.8
+                },
+                { 
+                  icon: Smartphone, 
+                  name: 'Push', 
+                  avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face',
+                  message: isEn ? 'Goal reached!' : 'Objectif atteint!',
+                  delay: 1.6
+                },
+              ].map((item, idx) => (
+                <motion.div
+                  key={`top-${idx}`}
+                  className="relative flex flex-col items-center gap-2 px-3 py-4 sm:px-4 sm:py-5 rounded-xl"
                   style={{ 
-                    background: `linear-gradient(135deg, ${theme.gold}20 0%, ${theme.gold}10 100%)`,
-                    border: `1px solid ${theme.gold}30`
+                    background: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.95)',
+                    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 20px rgba(0,0,0,0.06)',
                   }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 + idx * 0.1 }}
+                  whileHover={{ scale: 1.03, y: -2 }}
                 >
-                  <Brain className="w-6 h-6" style={{ color: theme.gold }} />
-                </div>
-                <div>
-                  <h3 
-                    className="text-lg font-bold"
-                    style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-                  >
-                    {isEn ? 'Learning Detection Engine' : 'Moteur de détection apprenant'}
-                  </h3>
-                  <p className="text-xs" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                    {isEn 
-                      ? 'Gets smarter with every business that joins. Currently trained on patterns from 75,000+ Canadian businesses.' 
-                      : 'S\'améliore avec chaque entreprise qui rejoint. Actuellement entraîné sur les modèles de 75 000+ entreprises canadiennes.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  {
-                    title: isEn ? 'Duplicate Payment Detection' : 'Détection paiements en double',
-                    desc: isEn ? 'Catches duplicate invoices and payments before you lose money. Avg savings: $4,200/year.' : 'Détecte les factures et paiements en double avant qu\'ils ne coûtent. Économies moy.: 4 200$/an.',
-                  },
-                  {
-                    title: isEn ? 'Cash Flow Warnings' : 'Alertes de trésorerie',
-                    desc: isEn ? 'Get 30-day advance warning on potential cash shortfalls. Never be caught off guard.' : 'Recevez des alertes 30 jours à l\'avance sur les manques de trésorerie. Ne soyez plus pris au dépourvu.',
-                  },
-                  {
-                    title: isEn ? 'Cost Overrun Alerts' : 'Alertes dépassements coûts',
-                    desc: isEn ? 'Know instantly when expenses exceed budget or historical patterns.' : 'Sachez immédiatement quand les dépenses dépassent le budget ou les tendances historiques.',
-                  },
-                  {
-                    title: isEn ? 'AI Market Intelligence' : 'Intelligence de marché IA',
-                    desc: isEn ? 'Our AI analyzes 75,000+ businesses to show your competitive position. Identify opportunities faster.' : 'Notre IA analyse 75 000+ entreprises pour montrer votre position concurrentielle. Identifiez les opportunités plus vite.',
-                  },
-                ].map((item, idx) => (
-                  <motion.div 
-                    key={idx}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.2 + idx * 0.1 }}
-                    className="flex items-start gap-3 p-3 rounded-lg transition-colors"
+                  {/* Animated message bubble */}
+                  <motion.div
+                    className="absolute -top-2 left-1/2 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                     style={{ 
-                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
+                      background: theme.green,
+                      color: 'white',
+                      transform: 'translateX(-50%)',
+                      boxShadow: `0 2px 8px ${theme.green}40`
+                    }}
+                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                    animate={{ 
+                      opacity: [0, 1, 1, 0],
+                      y: [10, 0, 0, -10],
+                      scale: [0.8, 1, 1, 0.8]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      delay: item.delay,
+                      repeat: Infinity,
+                      repeatDelay: 4
                     }}
                   >
+                    {item.message}
+                  </motion.div>
+                  
+                  {/* Mini avatar */}
+                  <div className="relative">
+                    <img 
+                      src={item.avatar}
+                      alt=""
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                      style={{ border: `2px solid ${theme.green}30` }}
+                    />
+                    {/* Online indicator */}
+                    <motion.div
+                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
+                      style={{ 
+                        backgroundColor: theme.green,
+                        border: `2px solid ${isDark ? '#1e293b' : 'white'}`
+                      }}
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: idx * 0.3 }}
+                    />
+                  </div>
+                  
+                  {/* Icon and label */}
+                  <div className="flex items-center gap-2">
                     <div 
-                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center"
+                      style={{ backgroundColor: `${theme.green}15` }}
+                    >
+                      <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.green }} />
+                    </div>
+                    <span className="font-medium text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {item.name}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Bottom Row */}
+              {[
+                { 
+                  icon: Users, 
+                  name: 'Teams', 
+                  avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+                  message: isEn ? 'New insight' : 'Nouvel aperçu',
+                  delay: 2.4
+                },
+                { 
+                  icon: MessageSquare, 
+                  name: 'SMS', 
+                  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+                  message: isEn ? 'Action needed' : 'Action requise',
+                  delay: 3.2
+                },
+                { 
+                  icon: Bell, 
+                  name: 'In-App', 
+                  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
+                  message: isEn ? 'Weekly report' : 'Rapport hebdo',
+                  delay: 4
+                },
+              ].map((item, idx) => (
+                <motion.div
+                  key={`bottom-${idx}`}
+                  className="relative flex flex-col items-center gap-2 px-3 py-4 sm:px-4 sm:py-5 rounded-xl"
+                  style={{ 
+                    background: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.95)',
+                    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 20px rgba(0,0,0,0.06)',
+                  }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 + idx * 0.1 }}
+                  whileHover={{ scale: 1.03, y: -2 }}
+                >
+                  {/* Animated message bubble */}
+                  <motion.div
+                    className="absolute -top-2 left-1/2 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                    style={{ 
+                      background: theme.gold,
+                      color: 'white',
+                      transform: 'translateX(-50%)',
+                      boxShadow: `0 2px 8px ${theme.gold}40`
+                    }}
+                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                    animate={{ 
+                      opacity: [0, 1, 1, 0],
+                      y: [10, 0, 0, -10],
+                      scale: [0.8, 1, 1, 0.8]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      delay: item.delay,
+                      repeat: Infinity,
+                      repeatDelay: 4
+                    }}
+                  >
+                    {item.message}
+                  </motion.div>
+                  
+                  {/* Mini avatar */}
+                  <div className="relative">
+                    <img 
+                      src={item.avatar}
+                      alt=""
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                      style={{ border: `2px solid ${theme.gold}30` }}
+                    />
+                    {/* Online indicator */}
+                    <motion.div
+                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
+                      style={{ 
+                        backgroundColor: theme.gold,
+                        border: `2px solid ${isDark ? '#1e293b' : 'white'}`
+                      }}
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: idx * 0.3 }}
+                    />
+                  </div>
+                  
+                  {/* Icon and label */}
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-md flex items-center justify-center"
                       style={{ backgroundColor: `${theme.gold}15` }}
                     >
-                      <Check className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+                      <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.gold }} />
                     </div>
-                    <div>
-                      <p 
-                        className="text-sm font-medium"
-                        style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-                      >
-                        {item.title}
-                      </p>
-                      <p 
-                        className="text-xs mt-0.5"
-                        style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-                      >
-                        {item.desc}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Accuracy badge */}
-              <div 
-                className="mt-5 flex items-center justify-center gap-2 py-2.5 rounded-lg"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.gold}10 0%, ${theme.green}10 100%)`,
-                  border: `1px solid ${theme.gold}20`
-                }}
-              >
-                <Sparkles className="w-4 h-4" style={{ color: theme.gold }} />
-                <span 
-                  className="text-sm font-semibold"
-                  style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-                >
-                  97% {isEn ? 'detection accuracy' : 'précision de détection'}
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Right Column - Notification Platforms */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="p-6 rounded-2xl"
-              style={{ 
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
-                boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.2)' : '0 4px 24px rgba(0,0,0,0.06)',
-              }}
-            >
-              <div className="flex items-center gap-3 mb-5">
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${theme.green}20 0%, ${theme.green}10 100%)`,
-                    border: `1px solid ${theme.green}30`
-                  }}
-                >
-                  <Bell className="w-6 h-6" style={{ color: theme.green }} />
-                </div>
-                <div>
-                  <h3 
-                    className="text-lg font-bold"
-                    style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-                  >
-                    {isEn ? 'Alerts Where You Work' : 'Alertes là où vous travaillez'}
-                  </h3>
-                  <p className="text-xs" style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}>
-                    {isEn ? 'Multi-platform notification support' : 'Support de notifications multi-plateformes'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Notification platforms grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                {[
-                  { icon: Mail, name: 'Email', color: theme.green, desc: isEn ? 'Detailed reports' : 'Rapports détaillés' },
-                  { icon: Smartphone, name: isEn ? 'Push' : 'Push', color: theme.green, desc: isEn ? 'Mobile alerts' : 'Alertes mobiles' },
-                  { icon: MessageSquare, name: 'SMS', color: theme.gold, desc: isEn ? 'Critical alerts' : 'Alertes critiques' },
-                  { icon: Hash, name: 'Slack', color: theme.green, desc: isEn ? 'Team channels' : 'Canaux d\'équipe' },
-                  { icon: Users, name: 'Teams', color: theme.gold, desc: isEn ? 'Microsoft 365' : 'Microsoft 365' },
-                  { icon: Bell, name: isEn ? 'In-App' : 'In-App', color: theme.green, desc: isEn ? 'Dashboard alerts' : 'Alertes tableau de bord' },
-                ].map((platform, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.3 + idx * 0.08 }}
-                    className="group p-3 rounded-xl text-center transition-all duration-300 cursor-default"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.9)',
-                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
-                    }}
-                  >
-                    <div 
-                      className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center mb-2 transition-transform group-hover:scale-110"
-                      style={{ backgroundColor: `${platform.color}15` }}
-                    >
-                      <platform.icon className="w-5 h-5" style={{ color: platform.color }} />
-                    </div>
-                    <p 
-                      className="text-sm font-semibold"
-                      style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-                    >
-                      {platform.name}
-                    </p>
-                    <p 
-                      className="text-[10px] mt-0.5"
-                      style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-                    >
-                      {platform.desc}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Features list */}
-              <div 
-                className="p-4 rounded-xl"
-                style={{ 
-                  backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
-                }}
-              >
-                <p 
-                  className="text-xs font-semibold mb-3"
-                  style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-                >
-                  {isEn ? 'NOTIFICATION FEATURES' : 'FONCTIONNALITÉS'}
-                </p>
-                <div className="space-y-2">
-                  {[
-                    isEn ? 'Customizable alert thresholds' : 'Seuils d\'alerte personnalisables',
-                    isEn ? 'Priority-based routing' : 'Routage par priorité',
-                    isEn ? 'Scheduled digest summaries' : 'Résumés planifiés',
-                    isEn ? 'Role-based notifications' : 'Notifications par rôle',
-                  ].map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.green }} />
-                      <span 
-                        className="text-xs"
-                        style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)' }}
-                      >
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+                    <span className="font-medium text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      {item.name}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          {/* Bottom CTA */}
+          {/* Features - Simple inline list */}
           <motion.div 
-            className="text-center mt-10"
+            className="flex flex-wrap justify-center gap-x-8 gap-y-3 mt-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ delay: 0.5 }}
           >
-            <p 
-              className="text-sm mb-4 text-center max-w-xl mx-auto"
-              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-            >
-              {isEn 
-                ? 'The average PlainLedger user recovers ' 
-                : 'L\'utilisateur moyen de PlainLedger récupère '}
-              <span style={{ color: theme.gold, fontWeight: 600 }}>$28K</span>
-              {isEn 
-                ? ' in their first year from prevented errors.'
-                : ' la première année grâce aux erreurs évitées.'}
-            </p>
-            <button 
-              onClick={() => register()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white text-sm hover:scale-105 transition-all"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 4px 16px ${theme.green}40`
-              }}
-            >
-              {isEn ? 'See what AI finds in your data' : 'Voyez ce que l\'IA trouve dans vos données'}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {[
+              isEn ? 'Custom thresholds' : 'Seuils personnalisés',
+              isEn ? 'Priority routing' : 'Routage prioritaire',
+              isEn ? 'Scheduled digests' : 'Résumés planifiés',
+              isEn ? 'Role-based alerts' : 'Alertes par rôle',
+            ].map((feature, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Check className="w-4 h-4" style={{ color: theme.green }} />
+                <span 
+                  className="text-sm"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {feature}
+                </span>
+              </div>
+            ))}
           </motion.div>
         </div>
       </section>
@@ -3007,18 +2535,18 @@ export default function Landing() {
         <IndustryKPISection onScheduleCall={handleScheduleCall} />
       </section>
 
-      {/* AI Technology Stack Section */}
+      {/* Connected Intelligence - Orbital System */}
       <section 
-        id="ai-technology" 
-        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative"
-        aria-label={isEn ? 'AI Technology Stack' : 'Stack technologique IA'}
+        id="ecosystem" 
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden"
+        aria-label={isEn ? 'Connected intelligence' : 'Intelligence connectée'}
         style={{ 
           background: isDark 
-            ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)' 
-            : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, #f8fafc 100%)'
+            ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
+            : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)'
         }}
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto relative z-10">
           {/* Section Header */}
           <motion.div 
             className="text-center mb-12"
@@ -3027,335 +2555,418 @@ export default function Landing() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
-              style={{ 
-                background: `${theme.green}15`,
-                border: `1px solid ${theme.green}25`,
-                color: theme.greenDark
-              }}
-            >
-              <Brain className="w-3.5 h-3.5" />
-              {isEn ? 'Enterprise AI' : 'IA Entreprise'}
-            </div>
-            <h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4"
-              style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-            >
-              {isEn ? 'Powered by World-Class AI' : 'Propulsé par une IA de classe mondiale'}
-            </h2>
-            <p 
-              className="text-sm sm:text-base max-w-2xl mx-auto"
-              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-            >
-              {isEn 
-                ? 'We combine the best commercial AI with proprietary technology trained on real Canadian business decisions.'
-                : 'Nous combinons les meilleures technologies IA commerciales avec une technologie propriétaire entraînée sur de vraies décisions d\'entreprises canadiennes.'}
-            </p>
-          </motion.div>
-
-          {/* AI Technology Stack Component */}
-          <AITechnologyStack theme={theme} isDark={isDark} />
-        </div>
-      </section>
-
-      {/* Tax Credits Section */}
-      <section 
-        id="tax-credits" 
-        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative overflow-hidden"
-        aria-label={isEn ? 'Tax credits and subventions' : 'Crédits d\'impôt et subventions'}
-        style={{ 
-          background: isDark 
-            ? 'transparent' 
-            : 'linear-gradient(180deg, rgba(240, 253, 244, 0.3) 0%, rgba(255, 255, 255, 0.9) 100%)'
-        }}
-      >
-        {/* Animated background elements */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.5 }}
-        >
-          {/* Floating dollar signs */}
-          {[...Array(6)].map((_, i) => (
             <motion.div
-              key={i}
-              className="absolute text-2xl sm:text-3xl"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-6"
               style={{ 
-                color: `${theme.gold}15`,
-                left: `${10 + i * 15}%`,
-                top: `${20 + (i % 3) * 25}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                rotate: [0, 10, -10, 0],
-                opacity: [0.3, 0.6, 0.3],
-              }}
-              transition={{
-                duration: 4 + i * 0.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: i * 0.3,
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              $
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <div className="max-w-6xl mx-auto relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center mb-8 sm:mb-12"
-          >
-            {/* Animated badge with shimmer effect */}
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 relative overflow-hidden"
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.2, type: "spring", stiffness: 100 }}
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.gold}15 0%, ${theme.green}10 100%)`,
-                border: `1px solid ${theme.gold}30`
-              }}
-            >
-              {/* Shimmer effect */}
-              <motion.div
-                className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, ${theme.gold}20 50%, transparent 100%)`,
-                }}
-                animate={{
-                  x: ['-100%', '200%'],
-                }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  repeatDelay: 3,
-                  ease: "easeInOut",
-                }}
+              <motion.div 
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: theme.green }}
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
               />
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
-              >
-                <DollarSign className="w-4 h-4" style={{ color: theme.gold }} />
-              </motion.div>
-              <span className="text-sm font-semibold relative z-10" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
-                {isEn ? 'Average unclaimed credits: ' : 'Crédits non réclamés moyens: '}
-                <span style={{ color: theme.gold }}>
-                  <AnimatedCounter end={47000} prefix="$" separator="," duration={2000} delay={500} />
-                </span>
+              <span className="text-xs font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
+                {isEn ? 'Connected Intelligence' : 'Intelligence connectée'}
               </span>
             </motion.div>
             
-            <motion.h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            <h2 
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
               style={{ color: 'rgb(var(--color-text))' }}
             >
-              {isEn ? 'Money You\'re Leaving on the Table' : 'L\'argent que vous laissez sur la table'}
-            </motion.h2>
-            <motion.p 
-              className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-2xl mx-auto px-2 text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              {isEn ? (
+                <>Everything Around <span style={{ color: theme.green }}>You</span></>
+              ) : (
+                <>Tout gravite autour de <span style={{ color: theme.green }}>Vous</span></>
+              )}
+            </h2>
+            <p 
+              className="text-lg max-w-xl mx-auto"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'Most business owners miss $15K-50K in tax credits every year. Not because they don\'t qualify. Because nobody told them in plain language.'
-                : 'La plupart des entrepreneurs manquent 15K-50K$ en crédits d\'impôt chaque année. Pas parce qu\'ils ne se qualifient pas. Parce que personne ne leur a expliqué clairement.'}
-            </motion.p>
+                ? 'Your financial data, insights and decisions in one place.'
+                : 'Vos données, analyses et décisions en un seul endroit.'}
+            </p>
           </motion.div>
 
-          {/* Tax Credits Grid with staggered animations */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[
-              {
-                id: 'sred',
-                name: { en: 'SR&ED', fr: 'RSDE' },
-                description: { en: 'Up to 35% refundable credit on R&D expenditures', fr: 'Jusqu\'à 35% de crédit remboursable sur les dépenses R-D' },
-                industries: { en: 'Technology, Manufacturing', fr: 'Technologie, Manufacturier' },
-                highlight: '35%',
-              },
-              {
-                id: 'cric',
-                name: { en: 'CRIC', fr: 'CRIC' },
-                description: { en: 'Quebec R&D credit: 20-30% on innovation', fr: 'Crédit R-D Québec: 20-30% sur l\'innovation' },
-                industries: { en: 'Quebec businesses', fr: 'Entreprises québécoises' },
-                highlight: '30%',
-              },
-              {
-                id: 'cdae',
-                name: { en: 'CDAE', fr: 'CDAE' },
-                description: { en: '30% credit on IT salaries, max $25K/employee', fr: '30% crédit sur salaires TI, max 25K$/employé' },
-                industries: { en: 'Quebec IT companies', fr: 'Entreprises TI québécoises' },
-                highlight: '$25K',
-              },
-              {
-                id: 'oidmtc',
-                name: { en: 'OIDMTC', fr: 'OIDMTC' },
-                description: { en: '40% credit on digital media development', fr: '40% crédit sur développement médias numériques' },
-                industries: { en: 'Ontario digital media', fr: 'Médias numériques Ontario' },
-                highlight: '40%',
-              },
-              {
-                id: 'ommitc',
-                name: { en: 'OMMITC', fr: 'OMMITC' },
-                description: { en: '15% credit on manufacturing investments', fr: '15% crédit sur investissements manufacturiers' },
-                industries: { en: 'Ontario manufacturing', fr: 'Manufacturier Ontario' },
-                highlight: '15%',
-              },
-              {
-                id: 'apprenticeship',
-                name: { en: 'Apprenticeship', fr: 'Apprentissage' },
-                description: { en: '$2,000 per eligible apprentice per year', fr: '2 000 $ par apprenti admissible par année' },
-                industries: { en: 'Construction, Manufacturing', fr: 'Construction, Manufacturier' },
-                highlight: '$2K',
-              },
-            ].map((credit, idx) => (
-              <motion.div
-                key={credit.id}
-                className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 sm:p-6 cursor-pointer"
-                initial={{ opacity: 0, y: 40, scale: 0.95 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-30px" }}
-                transition={{ 
-                  duration: 0.5, 
-                  delay: idx * 0.1 + 0.3,
-                  ease: [0.25, 0.46, 0.45, 0.94]
-                }}
-                whileHover={{ 
-                  y: -8, 
-                  scale: 1.03,
-                  boxShadow: `0 20px 40px ${theme.gold}15`,
-                  transition: { duration: 0.3 }
-                }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {/* Animated border gradient on hover */}
+          {/* Desktop & Tablet - Enterprise Orbital System */}
+          <div className="hidden md:flex items-center justify-center relative" style={{ height: '480px' }}>
+            
+            {/* Background gradient glow */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(circle at center, ${theme.green}08 0%, transparent 50%)`,
+              }}
+            />
+
+            {/* Orbital rings with gradient */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {[200, 145, 90].map((radius, idx) => (
                 <motion.div
-                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  key={idx}
+                  className="absolute rounded-full"
                   style={{
-                    background: `linear-gradient(135deg, ${theme.gold}20 0%, ${theme.green}20 100%)`,
-                    padding: '1px',
+                    width: radius * 2,
+                    height: radius * 2,
+                    background: `conic-gradient(from ${idx * 60}deg, ${theme.green}${idx === 0 ? '08' : '05'}, transparent 25%, ${theme.green}${idx === 0 ? '08' : '05'} 50%, transparent 75%, ${theme.green}${idx === 0 ? '08' : '05'})`,
+                    border: `1px solid ${theme.green}${15 - idx * 3}`,
+                  }}
+                  initial={{ opacity: 0, scale: 0.8, rotate: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  animate={{ rotate: idx % 2 === 0 ? 360 : -360 }}
+                  transition={{ 
+                    opacity: { delay: idx * 0.15, duration: 0.6 },
+                    scale: { delay: idx * 0.15, duration: 0.6 },
+                    rotate: { duration: 60 + idx * 20, repeat: Infinity, ease: "linear" }
                   }}
                 />
-                
-                {/* Highlight badge */}
-                <motion.div
-                  className="absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-bold"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.gold}dd 100%)`,
-                    color: 'white',
-                    boxShadow: `0 4px 12px ${theme.gold}40`
-                  }}
-                  initial={{ scale: 0, rotate: -20 }}
-                  whileInView={{ scale: 1, rotate: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 200, 
-                    delay: idx * 0.1 + 0.6 
-                  }}
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                >
-                  {credit.highlight}
-                </motion.div>
+              ))}
+            </div>
 
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-3">
-                    <motion.h3 
-                      className="text-lg font-bold text-gray-900 dark:text-white"
-                      whileHover={{ x: 3 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {credit.name[language]}
-                    </motion.h3>
-                    <motion.div
-                      whileHover={{ scale: 1.2, rotate: 45 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
-                    </motion.div>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
-                    {credit.description[language]}
-                  </p>
-                  <motion.div 
-                    className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.1 + 0.7 }}
-                  >
-                    <Building2 className="w-3 h-3" />
-                    <span>{credit.industries[language]}</span>
-                  </motion.div>
-                </div>
-              </motion.div>
+            {/* Data flow particles on orbital paths */}
+            {[200, 145, 90].map((radius, ringIdx) => (
+              Array.from({ length: ringIdx === 0 ? 3 : 2 }).map((_, particleIdx) => {
+                const startAngle = (particleIdx * (360 / (ringIdx === 0 ? 3 : 2))) + ringIdx * 30;
+                return (
+                  <motion.div
+                    key={`particle-${ringIdx}-${particleIdx}`}
+                    className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+                    style={{
+                      left: '50%',
+                      top: '50%',
+                      marginLeft: -3,
+                      marginTop: -3,
+                      background: `radial-gradient(circle, ${theme.green} 0%, ${theme.green}00 70%)`,
+                      boxShadow: `0 0 6px ${theme.green}80`,
+                    }}
+                    animate={{
+                      x: Array.from({ length: 37 }, (_, i) => 
+                        Math.cos(((startAngle + i * 10) * Math.PI) / 180) * radius
+                      ),
+                      y: Array.from({ length: 37 }, (_, i) => 
+                        Math.sin(((startAngle + i * 10) * Math.PI) / 180) * radius
+                      ),
+                      opacity: [0.3, 0.8, 0.3],
+                    }}
+                    transition={{
+                      x: { duration: 8 + ringIdx * 2, repeat: Infinity, ease: "linear" },
+                      y: { duration: 8 + ringIdx * 2, repeat: Infinity, ease: "linear" },
+                      opacity: { duration: 2, repeat: Infinity },
+                    }}
+                  />
+                );
+              })
             ))}
+
+            {/* Center Hub - User Avatar with status ring */}
+            <div className="relative z-30">
+              {/* Outer pulse ring */}
+              <motion.div
+                className="absolute -inset-6 rounded-full"
+                style={{ 
+                  border: `1px solid ${theme.green}20`,
+                }}
+                animate={{ 
+                  scale: [1, 1.15, 1],
+                  opacity: [0.5, 0, 0.5]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              />
+              
+              {/* Status ring */}
+              <motion.div
+                className="absolute -inset-2 rounded-full"
+                style={{ 
+                  background: `conic-gradient(from 0deg, ${theme.green}, ${theme.gold}, ${theme.green})`,
+                  padding: 2,
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              >
+                <div 
+                  className="w-full h-full rounded-full"
+                  style={{ background: isDark ? '#0f172a' : '#ffffff' }}
+                />
+              </motion.div>
+              
+              {/* Avatar */}
+              <motion.div 
+                className="relative w-16 h-16 rounded-full overflow-hidden"
+                style={{ 
+                  border: `3px solid ${isDark ? '#0f172a' : '#ffffff'}`,
+                  boxShadow: `0 0 30px ${theme.green}30, 0 4px 20px rgba(0,0,0,0.1)`
+                }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=128&h=128&fit=crop&crop=face"
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+
+              {/* Connected status badge */}
+              <motion.div
+                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: theme.green,
+                  border: `2px solid ${isDark ? '#0f172a' : '#ffffff'}`,
+                  boxShadow: `0 2px 8px ${theme.green}50`
+                }}
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+              </motion.div>
+            </div>
+
+            {/* 
+              ROI Spiral Structure - Balanced spiral effect:
+              - Orbit 1 (r=95): 2 ROI keywords - Savings, Time Saved - clockwise
+              - Orbit 2 (r=150): 2 ROI keywords - Revenue, Tax Credits - counter-clockwise  
+              - Orbit 3 (r=210): 2 ROI keywords - Profit, Efficiency - clockwise
+              - Golden angle spacing (~137.5°) creates natural spiral flow
+            */}
+            
+            {/* ROI Keywords with their labels on same orbit - Spiral Layout */}
+            {[
+              // Orbit 1 - innermost (r=95) - 2 keywords, 180° apart (varied speeds for organic feel)
+              { icon: Wallet, label: { en: 'Savings', fr: 'Économies' }, color: theme.green, radius: 95, duration: 28, start: 0, direction: 1, labelOffset: 25 },
+              { icon: Clock, label: { en: 'Time', fr: 'Temps' }, color: theme.gold, radius: 95, duration: 42, start: 180, direction: 1, labelOffset: 25 },
+              // Orbit 2 - middle (r=150) - 2 keywords, 180° apart (offset 90° from orbit 1)
+              { icon: TrendingUp, label: { en: 'Revenue', fr: 'Revenus' }, color: theme.greenDark, radius: 150, duration: 36, start: 90, direction: -1, labelOffset: 20 },
+              { icon: Percent, label: { en: 'Credit', fr: 'Crédit' }, color: theme.green, radius: 150, duration: 54, start: 270, direction: -1, labelOffset: 20 },
+              // Orbit 3 - outer (r=210) - 2 keywords, 180° apart (offset 45° from orbit 2)
+              { icon: DollarSign, label: { en: 'Profit', fr: 'Bénéfices' }, color: theme.gold, radius: 210, duration: 46, start: 45, direction: 1, labelOffset: 18 },
+              { icon: Zap, label: { en: 'Efficiency', fr: 'Efficacité' }, color: theme.greenLight, radius: 210, duration: 64, start: 225, direction: 1, labelOffset: 18 },
+            ].map((item, idx) => {
+              const points = 72;
+              const xPos = Array.from({ length: points + 1 }, (_, i) => 
+                Math.cos(((item.start + item.direction * i * (360 / points)) * Math.PI) / 180) * item.radius
+              );
+              const yPos = Array.from({ length: points + 1 }, (_, i) => 
+                Math.sin(((item.start + item.direction * i * (360 / points)) * Math.PI) / 180) * item.radius
+              );
+              // Label follows same orbit but offset by labelOffset degrees
+              const labelXPos = Array.from({ length: points + 1 }, (_, i) => 
+                Math.cos(((item.start + item.labelOffset + item.direction * i * (360 / points)) * Math.PI) / 180) * item.radius
+              );
+              const labelYPos = Array.from({ length: points + 1 }, (_, i) => 
+                Math.sin(((item.start + item.labelOffset + item.direction * i * (360 / points)) * Math.PI) / 180) * item.radius
+              );
+              
+              return (
+                <React.Fragment key={idx}>
+                  {/* Icon */}
+                  <motion.div
+                    className="absolute z-20"
+                    style={{ left: '50%', top: '50%' }}
+                    animate={{ x: xPos, y: yPos }}
+                    transition={{
+                      duration: item.duration,
+                      repeat: Infinity,
+                      ease: "linear",
+                      times: Array.from({ length: points + 1 }, (_, i) => i / points),
+                    }}
+                  >
+                    <motion.div 
+                      className="relative"
+                      style={{ marginLeft: -18, marginTop: -18 }}
+                      initial={{ opacity: 0, scale: 0 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.1 + 0.3, type: "spring", stiffness: 200, damping: 15 }}
+                    >
+                      <div 
+                        className="relative flex items-center justify-center rounded-xl overflow-hidden"
+                        style={{ 
+                          width: 36,
+                          height: 36,
+                          background: isDark 
+                            ? `linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.95) 100%)`
+                            : `linear-gradient(135deg, #ffffff 0%, #fafafa 100%)`,
+                          border: `1px solid ${item.color}30`,
+                          boxShadow: `0 3px 12px ${item.color}12, 0 2px 6px rgba(0,0,0,0.06)`
+                        }}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-10"
+                          style={{ background: `linear-gradient(135deg, ${item.color} 0%, transparent 100%)` }}
+                        />
+                        <item.icon style={{ color: item.color, width: 16, height: 16 }} className="relative z-10" />
+                      </div>
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Label on same orbit, offset by labelOffset degrees */}
+                  <motion.div
+                    className="absolute z-30 pointer-events-none"
+                    style={{ left: '50%', top: '50%' }}
+                    animate={{ x: labelXPos, y: labelYPos }}
+                    transition={{
+                      duration: item.duration,
+                      repeat: Infinity,
+                      ease: "linear",
+                      times: Array.from({ length: points + 1 }, (_, i) => i / points),
+                    }}
+                  >
+                    <motion.div
+                      className="px-3 py-1.5 rounded-full whitespace-nowrap"
+                      style={{ 
+                        marginLeft: -30,
+                        marginTop: -10,
+                        background: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255,255,255,0.98)',
+                        border: `1.5px solid ${item.color}40`,
+                        boxShadow: `0 3px 12px ${item.color}20, 0 1px 4px rgba(0,0,0,0.1)`,
+                      }}
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.1 + 0.5 }}
+                    >
+                      <span className="text-[10px] font-semibold" style={{ color: item.color }}>
+                        {isEn ? item.label.en : item.label.fr}
+                      </span>
+                    </motion.div>
+                  </motion.div>
+                </React.Fragment>
+              );
+            })}
+
+
+            {/* Floating ROI badges around perimeter - removed to emphasize spiral */}
           </div>
 
-          {/* CTA with enhanced animation */}
-          <motion.div 
-            className="text-center mt-10 sm:mt-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 1 }}
-          >
-            <motion.button 
-              onClick={() => register()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm relative overflow-hidden"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 4px 16px ${theme.green}35`
-              }}
-              whileHover={{ 
-                scale: 1.05,
-                boxShadow: `0 8px 30px ${theme.green}50`
-              }}
-              whileTap={{ scale: 0.98 }}
+          {/* Mobile - Refined Hub View */}
+          <div className="md:hidden relative flex flex-col items-center py-4">
+            {/* Center Avatar Hub */}
+            <motion.div 
+              className="relative mb-8"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
             >
-              {/* Button shimmer effect */}
-              <motion.div
-                className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)`,
+              {/* Animated ring */}
+              <motion.div 
+                className="absolute -inset-3 rounded-full"
+                style={{ 
+                  background: `conic-gradient(from 0deg, ${theme.green}, ${theme.gold}, ${theme.green})`,
+                  padding: 2,
                 }}
-                animate={{
-                  x: ['-100%', '200%'],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatDelay: 4,
-                  ease: "easeInOut",
-                }}
-              />
-              <span className="relative z-10">
-                {isEn ? 'Connect Your Data to See Your Eligibility' : 'Connectez vos données pour voir votre éligibilité'}
-              </span>
-              <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
               >
-                <ArrowRight className="w-4 h-4 relative z-10" />
+                <div 
+                  className="w-full h-full rounded-full"
+                  style={{ background: isDark ? '#0f172a' : '#ffffff' }}
+                />
               </motion.div>
-            </motion.button>
-          </motion.div>
+              
+              <motion.div 
+                className="relative w-16 h-16 rounded-full overflow-hidden"
+                style={{ 
+                  border: `3px solid ${isDark ? '#0f172a' : '#ffffff'}`,
+                  boxShadow: `0 0 25px ${theme.green}30`
+                }}
+              >
+                <img 
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=128&h=128&fit=crop&crop=face"
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </motion.div>
+
+              {/* Status badge */}
+              <motion.div
+                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ 
+                  background: theme.green,
+                  border: `2px solid ${isDark ? '#0f172a' : '#ffffff'}`,
+                }}
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+              </motion.div>
+            </motion.div>
+
+            {/* Connection lines with flowing dots */}
+            <div className="flex justify-center gap-2 mb-6">
+              {[theme.green, theme.gold, theme.greenLight, theme.greenDark, theme.goldDark, theme.green, theme.gold].map((color, i) => (
+                <motion.div
+                  key={i}
+                  className="relative w-0.5 h-10"
+                  style={{ background: `linear-gradient(to bottom, ${color}40, ${color}10)` }}
+                  initial={{ scaleY: 0 }}
+                  whileInView={{ scaleY: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05, duration: 0.4 }}
+                >
+                  <motion.div
+                    className="absolute w-1.5 h-1.5 rounded-full -left-[2px]"
+                    style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }}
+                    animate={{ y: [0, 36, 0], opacity: [0, 1, 0] }}
+                    transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.15 }}
+                  />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* ROI Keywords Grid - 2 rows, 3 columns */}
+            <div className="grid grid-cols-3 gap-3 px-2 w-full max-w-sm">
+              {[
+                { icon: Wallet, label: { en: 'Savings', fr: 'Économies' }, color: theme.green },
+                { icon: Clock, label: { en: 'Time', fr: 'Temps' }, color: theme.gold },
+                { icon: TrendingUp, label: { en: 'Revenue', fr: 'Revenus' }, color: theme.greenDark },
+                { icon: Percent, label: { en: 'Credit', fr: 'Crédit' }, color: theme.green },
+                { icon: DollarSign, label: { en: 'Profit', fr: 'Bénéfices' }, color: theme.gold },
+                { icon: Zap, label: { en: 'Efficiency', fr: 'Efficacité' }, color: theme.greenLight },
+              ].map((d, i) => (
+                <motion.div 
+                  key={i}
+                  className="flex flex-col items-center"
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.06 + 0.3 }}
+                >
+                  <motion.div 
+                    className="relative w-12 h-12 rounded-xl flex items-center justify-center mb-1.5"
+                    style={{ 
+                      background: isDark 
+                        ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                        : 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
+                      border: `1.5px solid ${d.color}30`,
+                      boxShadow: `0 4px 15px ${d.color}15`
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {/* Pulse dot */}
+                    <motion.div
+                      className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: d.color }}
+                      animate={{ opacity: [1, 0.4, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                    <d.icon className="w-5 h-5" style={{ color: d.color }} />
+                  </motion.div>
+                  <span className="text-[9px] font-medium text-center leading-tight" style={{ color: d.color }}>
+                    {isEn ? d.label.en : d.label.fr}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -3389,19 +3000,21 @@ export default function Landing() {
             transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.div 
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md mb-3"
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 1.1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ 
-                background: `${theme.green}15`,
-                border: `1px solid ${theme.green}25`,
-                color: theme.greenDark
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.8)'}`,
+                boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              <Layers className="w-3.5 h-3.5" />
-              {isEn ? 'How It Works' : 'Comment ça fonctionne'}
+              <Layers className="w-3.5 h-3.5" style={{ color: theme.green }} />
+              <span className="text-xs font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
+                {isEn ? 'How It Works' : 'Comment ça fonctionne'}
+              </span>
             </motion.div>
             <motion.h2 
               className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
@@ -3538,11 +3151,11 @@ export default function Landing() {
                     ease: [0.16, 1, 0.3, 1]
                   }}
                 >
-                  {/* Step Card - Enhanced Design */}
+                  {/* Step Card - Enhanced Design with responsive heights */}
                   <motion.div 
-                    className="relative p-4 sm:p-5 rounded-xl cursor-pointer overflow-hidden h-full flex flex-col"
+                    className="relative p-3 sm:p-4 lg:p-5 rounded-xl cursor-pointer overflow-hidden h-full flex flex-col"
                     style={{ 
-                      minHeight: '320px',
+                      minHeight: 'clamp(300px, 40vw, 360px)',
                       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                       border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
                       backdropFilter: 'blur(12px)',
@@ -3647,33 +3260,33 @@ export default function Landing() {
                       {step.title}
                     </h4>
                     
-                    {/* Description - Min height for alignment, allows full text */}
+                    {/* Description - Responsive min height for alignment */}
                     <p 
-                      className="text-xs sm:text-sm mb-3 leading-relaxed"
+                      className="text-xs sm:text-sm mb-2 sm:mb-3 leading-relaxed"
                       style={{ 
                         color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)',
-                        minHeight: '3.5rem'
+                        minHeight: 'clamp(2.5rem, 6vw, 3.5rem)'
                       }}
                     >
                       {step.desc}
                     </p>
                     
-                    {/* Mini Visualization Area - Flex grow to fill space */}
+                    {/* Mini Visualization Area - Responsive heights */}
                     <div 
-                      className="relative flex-1 min-h-[64px] mb-3 rounded-lg overflow-hidden"
+                      className="relative flex-1 min-h-[80px] sm:min-h-[90px] lg:min-h-[100px] mb-3 rounded-lg overflow-hidden"
                       style={{ 
                         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(248, 250, 252, 0.8)',
                         border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.5)'}`
                       }}
                     >
                       {step.visual === 'connect' && (
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 px-3">
-                          {/* Source icons */}
-                          <div className="flex flex-col gap-1.5">
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3 lg:gap-4 px-3 sm:px-4 lg:px-5">
+                          {/* Source icons - responsive sizing */}
+                          <div className="flex flex-col gap-1 sm:gap-1.5 lg:gap-2">
                             {['QB', 'XE', 'SA'].map((src, i) => (
                               <motion.div
                                 key={src}
-                                className="w-7 h-5 rounded text-[9px] font-bold flex items-center justify-center"
+                                className="w-6 h-4 sm:w-8 sm:h-5 lg:w-9 lg:h-6 rounded text-[8px] sm:text-[9px] lg:text-[10px] font-bold flex items-center justify-center"
                                 style={{ 
                                   backgroundColor: `${step.color}20`,
                                   color: step.color,
@@ -3687,54 +3300,54 @@ export default function Landing() {
                               </motion.div>
                             ))}
                           </div>
-                          {/* Animated connection lines */}
-                          <svg className="flex-1 h-full" viewBox="0 0 60 60">
+                          {/* Animated connection lines - responsive viewBox */}
+                          <svg className="flex-1 h-full max-h-[60px] sm:max-h-[70px] lg:max-h-[80px]" viewBox="0 0 80 60" preserveAspectRatio="xMidYMid meet">
                             {[0, 1, 2].map((i) => (
                               <motion.path
                                 key={i}
-                                d={`M0,${15 + i * 15} Q30,30 60,30`}
+                                d={`M0,${15 + i * 15} Q40,30 80,30`}
                                 fill="none"
                                 stroke={step.color}
-                                strokeWidth="1.5"
-                                strokeDasharray="4,4"
+                                strokeWidth="2"
+                                strokeDasharray="5,5"
                                 initial={{ pathLength: 0, opacity: 0 }}
                                 animate={{ pathLength: 1, opacity: 0.6 }}
                                 transition={{ delay: i * 0.3 + 1.5, duration: 1 }}
                               />
                             ))}
                             <motion.circle
-                              cx="60" cy="30" r="5"
+                              cx="80" cy="30" r="6"
                               fill={step.color}
                               initial={{ scale: 0 }}
                               animate={{ scale: [0, 1.2, 1] }}
                               transition={{ delay: 2.5, duration: 0.5 }}
                             />
                           </svg>
-                          {/* Target */}
+                          {/* Target - responsive sizing */}
                           <motion.div 
-                            className="w-10 h-10 rounded-lg flex items-center justify-center"
+                            className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center"
                             style={{ backgroundColor: `${step.color}25`, border: `1px solid ${step.color}40` }}
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ delay: 2.5, duration: 0.3 }}
                           >
-                            <Database className="w-5 h-5" style={{ color: step.color }} />
+                            <Database className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" style={{ color: step.color }} />
                           </motion.div>
                         </div>
                       )}
                       
                       {step.visual === 'clean' && (
-                        <div className="absolute inset-0 flex items-center justify-center px-3">
-                          {/* Data cleaning visualization */}
-                          <div className="flex items-center gap-3 w-full">
-                            {/* Messy data */}
-                            <div className="flex flex-col gap-1">
+                        <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 lg:px-5">
+                          {/* Data cleaning visualization - responsive */}
+                          <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 w-full">
+                            {/* Messy data - responsive bars */}
+                            <div className="flex flex-col gap-1 sm:gap-1.5">
                               {[1, 2, 3, 4].map((i) => (
                                 <motion.div
                                   key={i}
-                                  className="h-2.5 rounded-full"
+                                  className="h-2 sm:h-2.5 lg:h-3 rounded-full"
                                   style={{ 
-                                    width: `${Math.random() * 20 + 12}px`,
+                                    width: `${Math.random() * 16 + 10}px`,
                                     backgroundColor: isDark ? 'rgba(148, 163, 184, 0.3)' : 'rgba(100, 116, 139, 0.3)'
                                   }}
                                   animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -3742,22 +3355,22 @@ export default function Landing() {
                                 />
                               ))}
                             </div>
-                            {/* Processing arrow */}
+                            {/* Processing arrow - responsive */}
                             <motion.div 
                               className="flex-1 flex items-center justify-center"
                               animate={{ x: [0, 5, 0] }}
                               transition={{ duration: 1.5, repeat: Infinity }}
                             >
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
-                                <RefreshCw className="w-4 h-4" style={{ color: step.color }} />
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${step.color}15` }}>
+                                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5" style={{ color: step.color }} />
                               </div>
                             </motion.div>
-                            {/* Clean data bars */}
-                            <div className="flex items-end gap-1.5 h-12">
+                            {/* Clean data bars - responsive */}
+                            <div className="flex items-end gap-1 sm:gap-1.5 lg:gap-2 h-10 sm:h-12 lg:h-14">
                               {[60, 80, 45, 90, 70].map((h, i) => (
                                 <motion.div
                                   key={i}
-                                  className="w-2.5 rounded-t"
+                                  className="w-2 sm:w-2.5 lg:w-3 rounded-t"
                                   style={{ backgroundColor: step.color }}
                                   initial={{ height: 0 }}
                                   animate={{ height: `${h}%` }}
@@ -3770,14 +3383,14 @@ export default function Landing() {
                       )}
                       
                       {step.visual === 'ai' && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          {/* AI neural network visualization */}
-                          <svg className="w-full h-full" viewBox="0 0 100 60">
-                            {/* Neural network nodes */}
+                        <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-3 lg:p-4">
+                          {/* AI neural network visualization - responsive */}
+                          <svg className="w-full h-full" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid meet">
+                            {/* Neural network nodes - responsive radius via CSS */}
                             {[[15, 12], [15, 30], [15, 48], [50, 20], [50, 40], [85, 30]].map(([cx, cy], i) => (
                               <motion.circle
                                 key={i}
-                                cx={cx} cy={cy} r="5"
+                                cx={cx} cy={cy} r="6"
                                 fill={step.color}
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: [0.5, 1, 0.5] }}
@@ -3787,7 +3400,7 @@ export default function Landing() {
                                 }}
                               />
                             ))}
-                            {/* Connection lines */}
+                            {/* Connection lines - thicker for visibility */}
                             {[
                               [15, 12, 50, 20], [15, 12, 50, 40],
                               [15, 30, 50, 20], [15, 30, 50, 40],
@@ -3798,19 +3411,19 @@ export default function Landing() {
                                 key={i}
                                 x1={x1} y1={y1} x2={x2} y2={y2}
                                 stroke={step.color}
-                                strokeWidth="1.5"
-                                strokeOpacity="0.4"
+                                strokeWidth="2"
+                                strokeOpacity="0.5"
                                 initial={{ pathLength: 0 }}
                                 animate={{ pathLength: 1 }}
                                 transition={{ delay: i * 0.05 + 1.3, duration: 0.5 }}
                               />
                             ))}
-                            {/* Animated pulse */}
+                            {/* Animated pulse - larger */}
                             <motion.circle
-                              cx="85" cy="30" r="8"
+                              cx="85" cy="30" r="10"
                               fill="none"
                               stroke={step.color}
-                              strokeWidth="2"
+                              strokeWidth="2.5"
                               animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
                               transition={{ duration: 2, repeat: Infinity }}
                             />
@@ -3819,22 +3432,22 @@ export default function Landing() {
                       )}
                       
                       {step.visual === 'dashboard' && (
-                        <div className="absolute inset-0 flex items-center justify-center px-3 gap-3">
-                          {/* Mini dashboard preview */}
-                          <div className="flex flex-col gap-1.5 flex-1">
-                            {/* KPI card */}
+                        <div className="absolute inset-0 flex items-center justify-center px-3 sm:px-4 lg:px-5 gap-2 sm:gap-3 lg:gap-4">
+                          {/* Mini dashboard preview - responsive */}
+                          <div className="flex flex-col gap-1.5 sm:gap-2 flex-1">
+                            {/* KPI card - responsive height */}
                             <motion.div 
-                              className="h-6 rounded flex items-center px-2 gap-1.5"
+                              className="h-5 sm:h-6 lg:h-7 rounded flex items-center px-2 gap-1 sm:gap-1.5"
                               style={{ backgroundColor: `${step.color}15`, border: `1px solid ${step.color}25` }}
                               initial={{ width: 0 }}
                               animate={{ width: '100%' }}
                               transition={{ delay: 1.2, duration: 0.5 }}
                             >
-                              <TrendingUp className="w-3 h-3" style={{ color: step.color }} />
-                              <span className="text-[9px] font-bold" style={{ color: step.color }}>+24%</span>
+                              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-3.5 lg:h-3.5" style={{ color: step.color }} />
+                              <span className="text-[8px] sm:text-[9px] lg:text-[10px] font-bold" style={{ color: step.color }}>+24%</span>
                             </motion.div>
-                            {/* Chart bars */}
-                            <div className="flex items-end gap-1 h-8">
+                            {/* Chart bars - responsive */}
+                            <div className="flex items-end gap-0.5 sm:gap-1 lg:gap-1.5 h-7 sm:h-9 lg:h-11">
                               {[40, 65, 45, 80, 55, 70, 90].map((h, i) => (
                                 <motion.div
                                   key={i}
@@ -3847,27 +3460,27 @@ export default function Landing() {
                               ))}
                             </div>
                           </div>
-                          {/* Gauge */}
+                          {/* Gauge - responsive sizing */}
                           <motion.div 
-                            className="w-12 h-12 relative"
+                            className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 relative"
                             initial={{ opacity: 0, scale: 0 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 2, duration: 0.4 }}
                           >
                             <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                              <circle cx="18" cy="18" r="14" fill="none" stroke={isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'} strokeWidth="3" />
+                              <circle cx="18" cy="18" r="14" fill="none" stroke={isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.8)'} strokeWidth="3.5" />
                               <motion.circle 
                                 cx="18" cy="18" r="14" 
                                 fill="none" 
                                 stroke={step.color} 
-                                strokeWidth="3"
+                                strokeWidth="3.5"
                                 strokeDasharray="88"
                                 initial={{ strokeDashoffset: 88 }}
                                 animate={{ strokeDashoffset: 22 }}
                                 transition={{ delay: 2.2, duration: 1 }}
                               />
                             </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: step.color }}>75%</span>
+                            <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] lg:text-[11px] font-bold" style={{ color: step.color }}>75%</span>
                           </motion.div>
                         </div>
                       )}
@@ -3977,352 +3590,260 @@ export default function Landing() {
         `}</style>
       </section>
 
-      {/* Pricing Section */}
+      {/* Final CTA - Clean Light Design */}
       <section 
-        id="pricing" 
-        className="py-10 sm:py-14 lg:py-16 px-4 sm:px-6 relative"
-        aria-label={isEn ? 'Pricing and features included' : 'Tarifs et fonctionnalités incluses'}
-        style={{ 
-          background: isDark 
-            ? 'transparent' 
-            : 'linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, rgba(240, 253, 244, 0.3) 50%, rgba(255, 255, 255, 0.9) 100%)'
-        }}
+        className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6"
+        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
+          {/* Heading */}
+          <motion.h2 
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight"
+            style={{ color: 'rgb(var(--color-text))' }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Compounding Intelligence Badge */}
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1, delay: 0.2 }}
-              style={{ 
-                background: `${theme.gold}15`,
-                border: `1px solid ${theme.gold}25`
-              }}
-            >
-              <RefreshCw className="w-4 h-4" style={{ color: theme.gold }} />
-              <span className="text-sm font-semibold" style={{ color: theme.gold }}>
-                {isEn 
-                  ? 'Gets smarter every day. Same price.' 
-                  : 'Plus intelligent chaque jour. Même prix.'}
-              </span>
-            </motion.div>
-            
-            {/* ROI Highlight */}
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1, delay: 0.3 }}
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.gold}15 0%, ${theme.green}10 100%)`,
-                border: `1px solid ${theme.gold}30`
-              }}
-            >
-              <TrendingUp className="w-4 h-4" style={{ color: theme.gold }} />
-              <span className="text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
-                {isEn ? 'Average ROI: ' : 'ROI moyen: '}
-                <span style={{ color: theme.gold }}>8x</span>
-                {isEn ? ' in the first year' : ' la première année'}
-              </span>
-            </motion.div>
-            
-            <motion.h2 
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4"
-              initial={{ opacity: 0, scale: 0.92 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
-              {isEn ? 'Costs Less Than the Errors It Prevents' : 'Coûte moins que les erreurs qu\'il prévient'}
-            </motion.h2>
-            <motion.p 
-              className="text-sm sm:text-base lg:text-lg mb-8 sm:mb-10 lg:mb-12 max-w-xl mx-auto px-2 text-center"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              style={{ color: 'rgb(var(--color-text-secondary))' }}
-            >
-              {isEn 
-                ? 'Unlike static software, PlainLedger\'s recommendations improve monthly as our AI learns from more decisions. Today\'s price locks in tomorrow\'s intelligence.'
-                : 'Contrairement aux logiciels statiques, les recommandations de PlainLedger s\'améliorent mensuellement à mesure que notre IA apprend. Le prix d\'aujourd\'hui garantit l\'intelligence de demain.'}
-            </motion.p>
-          </motion.div>
-
-          {/* Features Grid */}
+            {isEn ? 'Ready to Grow Smarter?' : 'Prêt à grandir plus intelligemment?'}
+          </motion.h2>
+          
+          {/* Subheading */}
+          <motion.p 
+            className="text-base sm:text-lg lg:text-xl mb-8 max-w-2xl mx-auto"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {isEn 
+              ? 'Join thousands of Canadian businesses making better financial decisions with real industry data.'
+              : 'Rejoignez des milliers d\'entreprises canadiennes qui prennent de meilleures décisions financières avec des données réelles de l\'industrie.'}
+          </motion.p>
+          
+          {/* CTA Buttons */}
           <motion.div 
-            initial={{ opacity: 0, y: 50 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="p-6 sm:p-8 lg:p-10 rounded-2xl"
-            style={{ 
-              background: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255,255,255,0.95)',
-              border: isDark ? '1px solid rgba(71, 85, 105, 0.5)' : '1px solid rgba(203, 213, 225, 0.5)',
-              boxShadow: isDark ? 'none' : '0 4px 30px rgba(0,0,0,0.06)'
-            }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {[
-                { en: 'AI anomaly detection', fr: 'Détection d\'anomalies IA', highlight: true },
-                { en: '75K+ business benchmarks', fr: 'Benchmarks 75K+ entreprises', highlight: true },
-                { en: '15+ industry KPIs', fr: '15+ KPIs sectoriels', highlight: true },
-                { en: 'Cash flow forecasting', fr: 'Prévisions de trésorerie', highlight: true },
-                { en: 'Real-time dashboards', fr: 'Tableaux de bord temps réel' },
-                { en: 'Board-ready reports', fr: 'Rapports prêts pour le CA' },
-                { en: 'Budget vs Actual', fr: 'Budget vs Réel' },
-                { en: 'Multi-entity support', fr: 'Support multi-entités' },
-                { en: 'Slack & Teams alerts', fr: 'Alertes Slack & Teams' },
-                { en: 'Multi-format exports', fr: 'Exports multi-formats' },
-                { en: 'Priority CPA support', fr: 'Support CPA prioritaire' },
-                { en: 'Data stored in Canada 🇨🇦', fr: 'Données au Canada 🇨🇦' },
-              ].map((feature, idx) => (
-                <motion.div 
-                  key={feature.en}
-                  initial={{ opacity: 0, x: -15 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.05 * idx, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-start gap-3 text-left p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                >
-                  <div 
-                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ backgroundColor: (feature as any).highlight ? `${theme.gold}18` : `${theme.green}15` }}
-                  >
-                    <Check className="w-4 h-4" style={{ color: (feature as any).highlight ? theme.gold : theme.green }} />
-                  </div>
-                  <span 
-                    className="text-sm sm:text-base leading-relaxed" 
-                    style={{ 
-                      color: 'rgb(var(--color-text-secondary))',
-                      fontWeight: (feature as any).highlight ? 600 : 400
-                    }}
-                  >
-                    {isEn ? feature.en : feature.fr}
-                    {(feature as any).pro && (
-                      <span 
-                        className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide"
-                        style={{ 
-                          backgroundColor: `${theme.gold}25`,
-                          color: theme.gold
-                        }}
-                      >
-                        PRO
-                      </span>
-                    )}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
+            <motion.button 
+              onClick={() => register()}
+              whileHover={{ scale: 1.03, transition: { duration: 0.3 } }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base text-white"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+                boxShadow: `0 4px 20px ${theme.green}30`
+              }}
+            >
+              {isEn ? 'Start free today' : 'Commencez gratuitement'}
+              <ArrowRight className="w-5 h-5" />
+            </motion.button>
             
-            {/* CTA Button */}
-            <div className="mt-8 flex flex-col items-center justify-center">
-              <button 
-                onClick={() => register()}
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white text-base hover:opacity-90 transition-all hover:scale-105"
-                style={{ 
-                  background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                  boxShadow: `0 4px 20px ${theme.green}40`
-                }}
+            <motion.button 
+              onClick={handleScheduleCall}
+              whileHover={{ scale: 1.03, transition: { duration: 0.3 } }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base transition-colors"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-surface))',
+                color: 'rgb(var(--color-text))',
+                border: '1px solid rgb(var(--color-border))'
+              }}
+            >
+              <Calendar className="w-5 h-5" />
+              {isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée'}
+            </motion.button>
+          </motion.div>
+          
+          {/* Trust Badges */}
+          <motion.div 
+            className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-sm"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {[
+              { text: isEn ? '8x average ROI' : 'ROI moyen de 8x' },
+              { text: isEn ? '5 min setup' : 'Config. en 5 min' },
+              { text: isEn ? 'Data in Canada' : 'Données au Canada', flag: true },
+            ].map((badge, idx) => (
+              <span 
+                key={idx}
+                className="flex items-center gap-2"
               >
-                {isEn ? 'Start free, see your ROI in minutes' : 'Commencez gratuitement, voyez votre ROI en minutes'}
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              <p 
-                className="text-xs mt-4 text-center"
-                style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
-              >
-                {isEn ? 'No credit card required. Cancel anytime.' : 'Sans carte de crédit. Annulez à tout moment.'}
-              </p>
-            </div>
+                <Check className="w-4 h-4" style={{ color: theme.green }} />
+                {badge.text} {badge.flag && '🇨🇦'}
+              </span>
+            ))}
           </motion.div>
         </div>
       </section>
 
-      {/* Final CTA - Enhanced with Image */}
-      <section className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 relative overflow-hidden">
-        {/* Background Image with Overlay */}
+      {/* Tax Credits / Unclaimed Money Section */}
+      <span id="pricing" className="absolute" style={{ top: '-100px' }} />
+      <section 
+        className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden"
+        aria-label={isEn ? 'Unclaimed tax credits for Canadian SMBs' : 'Crédits d\'impôt non réclamés pour PME canadiennes'}
+        style={{ 
+          background: isDark 
+            ? 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 1) 100%)' 
+            : 'linear-gradient(180deg, #ffffff 0%, #fefce8 50%, #ffffff 100%)'
+        }}
+      >
+        {/* Background Pattern */}
         <div 
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1553484771-371a605b060b?auto=format&fit=crop&w=2000&q=80)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundImage: `radial-gradient(circle at 30% 50%, ${theme.gold} 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
           }}
-        >
-          <div 
-            className="absolute inset-0"
-            style={{ 
-              background: isDark 
-                ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)'
-                : `linear-gradient(135deg, ${theme.green}f2 0%, ${theme.greenDark}f5 100%)`
-            }}
-          />
-        </div>
+        />
         
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="text-center">
-            {/* Avatar Stack with Badge */}
-            <motion.div 
-              className="flex flex-col items-center gap-4 mb-6"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          {/* Gold Badge - Clarté financière */}
+          <motion.div 
+            className="flex justify-center mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+              style={{ 
+                backgroundColor: `${theme.gold}20`,
+                color: theme.gold,
+                border: `1px solid ${theme.gold}40`,
+                boxShadow: `0 4px 12px ${theme.gold}15`
+              }}
             >
-              <div className="flex items-center -space-x-2.5">
-                {[
-                  { src: 'https://randomuser.me/api/portraits/women/65.jpg', name: 'Émilie' },
-                  { src: 'https://randomuser.me/api/portraits/men/41.jpg', name: 'François' },
-                  { src: 'https://randomuser.me/api/portraits/women/33.jpg', name: 'Catherine' },
-                  { src: 'https://randomuser.me/api/portraits/men/22.jpg', name: 'Antoine' },
-                ].map((person, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.2, x: -35 }}
-                    whileInView={{ opacity: 1, scale: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ 
-                      duration: 1, 
-                      delay: 0.3 + idx * 0.2, 
-                      ease: [0.16, 1, 0.3, 1]
-                    }}
-                    whileHover={{ scale: 1.2, zIndex: 20, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
-                    className="w-10 h-10 rounded-full border-2 border-white/40 overflow-hidden cursor-pointer"
-                    style={{ 
-                      zIndex: 10 - idx,
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
-                    }}
-                  >
-                    <img 
-                      src={person.src} 
-                      alt={person.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </motion.div>
-                ))}
-              </div>
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 15 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: 1, ease: [0.16, 1, 0.3, 1] }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold"
+              <DollarSign className="w-4 h-4" />
+              {isEn ? 'Financial Clarity' : 'Clarté financière'}
+            </span>
+          </motion.div>
+          
+          {/* Main Headline */}
+          <motion.h2 
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6"
+            style={{ color: 'rgb(var(--color-text))' }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {isEn ? (
+              <>The Money You're <span style={{ color: theme.gold }}>Leaving on the Table</span></>
+            ) : (
+              <>L'argent que vous <span style={{ color: theme.gold }}>laissez sur la table</span></>
+            )}
+          </motion.h2>
+          
+          {/* Big Number */}
+          <motion.div 
+            className="mb-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span 
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold"
+              style={{ 
+                background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              $49,000
+            </span>
+          </motion.div>
+          
+          {/* Subtitle */}
+          <motion.p 
+            className="text-base sm:text-lg md:text-xl mb-8 max-w-2xl mx-auto"
+            style={{ color: 'rgb(var(--color-text-secondary))' }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {isEn 
+              ? 'Average unclaimed credits for a typical Canadian SMB. SR&ED, CDAE, apprenticeship credits, and more.'
+              : 'Crédits non réclamés moyens pour une PME canadienne typique. RS&DE, CDAE, crédits d\'apprentissage, et plus.'}
+          </motion.p>
+          
+          {/* Credit Types */}
+          <motion.div 
+            className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {[
+              { en: 'SR&ED', fr: 'RS&DE' },
+              { en: 'CDAE', fr: 'CDAE' },
+              { en: 'Apprenticeship', fr: 'Apprentissage' },
+              { en: 'Digital Adoption', fr: 'Adoption numérique' },
+              { en: 'Green Energy', fr: 'Énergie verte' },
+            ].map((credit, idx) => (
+              <span 
+                key={idx}
+                className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium"
                 style={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(8px)',
-                  color: 'white',
-                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                  color: 'rgb(var(--color-text-secondary))',
+                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
                 }}
               >
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                {isEn ? '75,000+ businesses contributing to intelligence' : '75 000+ entreprises contribuant à l\'intelligence'}
-              </motion.div>
-            </motion.div>
-            
-            {/* Heading */}
-            <motion.h2 
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-white leading-tight"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.3, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {isEn ? 'Join the Intelligence Network' : 'Rejoignez le réseau d\'intelligence'}
-            </motion.h2>
-            
-            {/* Subheading */}
-            <motion.p 
-              className="text-base sm:text-lg lg:text-xl mb-8 text-white/85 max-w-2xl mx-auto text-center"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.3, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {isEn 
-                ? 'Every business that joins makes our AI smarter. Early adopters get the best ROI as our recommendations compound in accuracy.'
-                : 'Chaque entreprise qui rejoint rend notre IA plus intelligente. Les premiers adopteurs obtiennent le meilleur ROI à mesure que nos recommandations s\'améliorent.'}
-            </motion.p>
-            
-            {/* CTA Buttons */}
-            <motion.div 
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 1, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <motion.button 
-                onClick={() => register()}
-                whileHover={{ scale: 1.05, boxShadow: '0 12px 40px rgba(0,0,0,0.3)', transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base"
-                style={{ 
-                  background: 'white',
-                  color: theme.greenDark,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-                }}
-              >
-                {isEn ? 'Start free today' : 'Commencez gratuitement'}
-                <ArrowRight className="w-5 h-5" />
-              </motion.button>
-              
-              <motion.button 
-                onClick={handleScheduleCall}
-                whileHover={{ scale: 1.05, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-semibold text-base"
-                style={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(8px)',
-                  color: 'white',
-                  border: '1px solid rgba(255, 255, 255, 0.25)'
-                }}
-              >
-                <Calendar className="w-5 h-5" />
-                {isEn ? 'Get a personalized demo' : 'Obtenez une démo personnalisée'}
-              </motion.button>
-            </motion.div>
-            
-            {/* Trust Badges */}
-            <motion.div 
-              className="w-full flex justify-center"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.2, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <div className="inline-flex flex-wrap justify-center items-center gap-4 sm:gap-8 text-white/70 text-sm">
-                {[
-                  { text: isEn ? '8x average ROI' : 'ROI moyen de 8x' },
-                  { text: isEn ? '5 min setup' : 'Config. en 5 min' },
-                  { text: isEn ? 'Data in Canada' : 'Données au Canada', flag: true },
-                ].map((badge, idx) => (
-                  <motion.span 
-                    key={idx}
-                    className="flex items-center gap-2"
-                    initial={{ opacity: 0, x: -30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1, delay: 0.8 + idx * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <Check className="w-4 h-4 text-green-400" />
-                    {badge.text} {badge.flag && '🇨🇦'}
-                  </motion.span>
-                ))}
-              </div>
-            </motion.div>
-          </div>
+                {isEn ? credit.en : credit.fr}
+              </span>
+            ))}
+          </motion.div>
+          
+          {/* CTA Button */}
+          <motion.button
+            onClick={() => register()}
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-white text-base transition-all hover:scale-105"
+            style={{ 
+              background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
+              boxShadow: `0 8px 24px ${theme.gold}40`,
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={{ 
+              boxShadow: `0 12px 32px ${theme.gold}50`,
+            }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {isEn ? 'See Your Eligibility' : 'Voir votre éligibilité'}
+            <ArrowRight className="w-5 h-5" />
+          </motion.button>
+          
+          {/* Trust Note */}
+          <motion.p 
+            className="mt-6 text-xs sm:text-sm"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Shield className="w-4 h-4 inline mr-1.5" style={{ color: theme.green }} />
+            {isEn 
+              ? 'Free eligibility check. No commitment required. Data stored in Canada 🇨🇦'
+              : 'Vérification d\'éligibilité gratuite. Sans engagement. Données stockées au Canada 🇨🇦'}
+          </motion.p>
         </div>
       </section>
 
@@ -4524,8 +4045,8 @@ export default function Landing() {
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 >
                   {isEn 
-                    ? 'We take data security seriously. Your financial information is protected with enterprise-grade security.'
-                    : 'Nous prenons la sécurité des données au sérieux. Vos informations financières sont protégées avec une sécurité de niveau entreprise.'}
+                    ? 'Enterprise-grade security. SOC 2 Type II and ISO 27001 certifications in progress.'
+                    : 'Sécurité de niveau entreprise. Certifications SOC 2 Type II et ISO 27001 en cours.'}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -4539,11 +4060,11 @@ export default function Landing() {
                     },
                     { 
                       icon: <ShieldCheck className="w-4 h-4" />, 
-                      text: isEn ? 'PIPEDA compliant' : 'Conforme PIPEDA' 
+                      text: isEn ? 'SOC 2 Type II (in progress)' : 'SOC 2 Type II (en cours)' 
                     },
                     { 
                       icon: <KeyRound className="w-4 h-4" />, 
-                      text: isEn ? 'Bank-level security' : 'Sécurité bancaire' 
+                      text: isEn ? 'ISO 27001 (in progress)' : 'ISO 27001 (en cours)' 
                     },
                   ].map((item, index) => (
                     <div 
