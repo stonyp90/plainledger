@@ -23,6 +23,18 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Build arguments for Next.js public env vars (baked at build time)
+ARG NEXT_PUBLIC_API_URL=https://plainledger.ca
+ARG NEXT_PUBLIC_KEYCLOAK_URL=https://auth.plainledger.ca
+ARG NEXT_PUBLIC_KEYCLOAK_REALM=plainledger
+ARG NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=plainledger-admin
+
+# Set them as ENV so Next.js can use them during build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_KEYCLOAK_URL=$NEXT_PUBLIC_KEYCLOAK_URL
+ENV NEXT_PUBLIC_KEYCLOAK_REALM=$NEXT_PUBLIC_KEYCLOAK_REALM
+ENV NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=$NEXT_PUBLIC_KEYCLOAK_CLIENT_ID
+
 # Build the application
 RUN npm run build
 

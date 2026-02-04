@@ -361,6 +361,11 @@ jobs:
             ecr_repo: plainledger-prod-admin
             dockerfile: apps/admin/Dockerfile
             context: apps/admin
+            build_args: |
+              NEXT_PUBLIC_API_URL=https://plainledger.ca
+              NEXT_PUBLIC_KEYCLOAK_URL=https://auth.plainledger.ca
+              NEXT_PUBLIC_KEYCLOAK_REALM=plainledger
+              NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=plainledger-admin
     outputs:
       image_tag: ${{ github.sha }}
     steps:
@@ -402,6 +407,7 @@ jobs:
             VITE_KEYCLOAK_CLIENT_ID=plainledger-web
             VITE_MOCK_AUTH=false
             CACHE_BUST=${{ github.sha }}
+            ${{ matrix.app.build_args || '' }}
 
   # ==========================================================================
   # Stage 5: Deploy to ECS
