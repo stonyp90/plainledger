@@ -734,7 +734,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "KEYCLOAK_REALM", value = "plainledger" },
         { name = "KEYCLOAK_CLIENT_ID", value = "plainledger-api" },
         { name = "KEYCLOAK_ADMIN_CLIENT_ID", value = "plainledger-api" },
-        { name = "CORS_ORIGIN", value = "https://${var.domain_name},https://www.${var.domain_name}" },
+        { name = "CORS_ORIGIN", value = "https://${var.domain_name},https://www.${var.domain_name},https://admin.${var.domain_name}" },
         { name = "APP_URL", value = "https://${var.domain_name}" },
         # S3 File Uploads (logos, avatars, documents)
         { name = "S3_BUCKET_UPLOADS", value = "${var.project}-uploads" },

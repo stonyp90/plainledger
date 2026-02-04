@@ -22,8 +22,47 @@ import {
   Plug,
   UserCheck,
   Mail,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useTheme } from '@/hooks/useTheme';
+
+// Theme Selector Component
+function ThemeSelector() {
+  const { theme, setTheme } = useTheme();
+  
+  const themes = [
+    { value: 'light' as const, icon: Sun, label: 'Light' },
+    { value: 'dark' as const, icon: Moon, label: 'Dark' },
+    { value: 'system' as const, icon: Monitor, label: 'System' },
+  ];
+  
+  return (
+    <div className="flex items-center gap-1 p-1 rounded-lg bg-admin-700">
+      {themes.map((t) => {
+        const Icon = t.icon;
+        const isActive = theme === t.value;
+        return (
+          <button
+            key={t.value}
+            onClick={() => setTheme(t.value)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              isActive 
+                ? 'bg-admin-600 text-white shadow-sm' 
+                : 'text-admin-400 hover:text-white hover:bg-admin-600/50'
+            }`}
+            title={t.label}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -143,6 +182,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Theme Selector */}
+            <ThemeSelector />
+            
             {/* Notifications */}
             <button className="relative text-admin-400 hover:text-white">
               <Bell className="w-5 h-5" />

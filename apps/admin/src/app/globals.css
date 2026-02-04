@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Admin Console Styles */
-:root {
+/* Admin Console Styles - Dark Theme (Default) */
+:root,
+:root.dark,
+[data-theme="dark"] {
   --admin-bg: #102a43;
   --admin-surface: #243b53;
   --admin-border: #334e68;
@@ -13,11 +15,69 @@
   --admin-success: #10b981;
   --admin-warning: #f59e0b;
   --admin-error: #ef4444;
+  
+  /* Card and surface colors */
+  --admin-card: #1e3a5f;
+  --admin-card-hover: #243b53;
+  --admin-input-bg: #1e3a5f;
+}
+
+/* Admin Console Styles - Light Theme */
+:root.light,
+[data-theme="light"] {
+  --admin-bg: #f8fafc;
+  --admin-surface: #ffffff;
+  --admin-border: #e2e8f0;
+  --admin-text: #1e293b;
+  --admin-text-muted: #64748b;
+  --admin-primary: #2563eb;
+  --admin-success: #10b981;
+  --admin-warning: #f59e0b;
+  --admin-error: #ef4444;
+  
+  /* Card and surface colors */
+  --admin-card: #ffffff;
+  --admin-card-hover: #f1f5f9;
+  --admin-input-bg: #f1f5f9;
+}
+
+/* Light theme specific overrides for Tailwind classes */
+[data-theme="light"] .bg-admin-900 {
+  background-color: var(--admin-bg);
+}
+
+[data-theme="light"] .bg-admin-800 {
+  background-color: var(--admin-surface);
+}
+
+[data-theme="light"] .bg-admin-700 {
+  background-color: var(--admin-input-bg);
+}
+
+[data-theme="light"] .border-admin-700 {
+  border-color: var(--admin-border);
+}
+
+[data-theme="light"] .text-admin-400 {
+  color: var(--admin-text-muted);
+}
+
+[data-theme="light"] .text-white {
+  color: var(--admin-text);
+}
+
+[data-theme="light"] .hover\:text-white:hover {
+  color: var(--admin-text);
+}
+
+[data-theme="light"] .hover\:bg-admin-700:hover {
+  background-color: var(--admin-card-hover);
 }
 
 body {
   background-color: var(--admin-bg);
   color: var(--admin-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom scrollbar */
