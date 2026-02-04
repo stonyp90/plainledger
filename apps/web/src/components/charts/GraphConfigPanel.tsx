@@ -11,8 +11,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Settings2, TrendingUp, FileText, Target, X, Globe, RotateCcw, Info, Check, Calendar, Lock, Unlock, Loader2 } from 'lucide-react';
-import { useGraphConfig, saveUserPreferences, saveChartSettings, clearChartSettings, useChartLock } from '../../hooks/useGraphConfig';
+import { Settings2, TrendingUp, FileText, Target, X, Globe, RotateCcw, Info, Check, Calendar } from 'lucide-react';
+import { useGraphConfig, saveUserPreferences, saveChartSettings, clearChartSettings } from '../../hooks/useGraphConfig';
 import type { GraphConfig, PartialGraphConfig, IBCSConfig, PeriodConfig } from '../../lib/graphConfig';
 import { useI18n } from '../../lib/i18n';
 
@@ -44,9 +44,6 @@ export default function GraphConfigPanel({
   const [saveMode, setSaveMode] = useState<'chart' | 'global'>(chartId ? 'chart' : 'global');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   
-  // Chart lock state
-  const { locked, lockedAt, isLocking, toggle: toggleLock } = useChartLock(chartId || '');
-  
   // Sync config state when currentConfig prop changes
   useEffect(() => {
     if (currentConfig) {
@@ -55,12 +52,6 @@ export default function GraphConfigPanel({
   }, [currentConfig]);
   
   const handleConfigUpdate = (updates: Partial<GraphConfig>) => {
-    // Don't allow updates if chart is locked
-    if (chartId && locked) {
-      console.warn('Chart is locked. Cannot update settings.');
-      return;
-    }
-    
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
     onConfigChange?.(newConfig);
@@ -139,40 +130,10 @@ export default function GraphConfigPanel({
                   <Check className="w-3 h-3" />
                   IBCS {isEn ? 'enforced' : 'appliqué'}
                 </span>
-                {chartId && locked && (
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning">
-                    <Lock className="w-3 h-3" />
-                    {isEn ? 'Locked' : 'Verrouillé'}
-                  </span>
-                )}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Lock/Unlock Button */}
-            {chartId && (
-              <button
-                onClick={toggleLock}
-                disabled={isLocking}
-                className={`p-2 rounded-lg transition-colors ${
-                  locked 
-                    ? 'bg-warning/10 text-warning hover:bg-warning/20' 
-                    : 'hover:bg-surface-hover text-muted hover:text-text'
-                }`}
-                title={locked 
-                  ? (isEn ? 'Unlock chart (allow modifications)' : 'Déverrouiller le graphique')
-                  : (isEn ? 'Lock chart (prevent modifications)' : 'Verrouiller le graphique')
-                }
-              >
-                {isLocking ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : locked ? (
-                  <Lock className="w-5 h-5" />
-                ) : (
-                  <Unlock className="w-5 h-5" />
-                )}
-              </button>
-            )}
             {onClose && (
               <button
                 onClick={onClose}
@@ -245,45 +206,8 @@ export default function GraphConfigPanel({
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {/* Locked Warning Banner */}
-          {chartId && locked && (
-            <div className="flex items-start gap-3 p-4 mb-4 rounded-lg bg-warning/10 border border-warning/30">
-              <div className="p-2 rounded-full bg-warning/20">
-                <Lock className="w-5 h-5 text-warning" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-warning">
-                  {isEn ? 'Chart is Locked' : 'Graphique verrouillé'}
-                </h3>
-                <p className="text-sm text-muted mt-1">
-                  {isEn 
-                    ? 'This chart is locked and cannot be modified. Unlock it to make changes to settings, position, or size.'
-                    : 'Ce graphique est verrouillé et ne peut pas être modifié. Déverrouillez-le pour modifier les paramètres, la position ou la taille.'}
-                </p>
-                {lockedAt && (
-                  <p className="text-xs text-muted mt-2">
-                    {isEn ? 'Locked on: ' : 'Verrouillé le: '}
-                    {new Date(lockedAt).toLocaleString(isEn ? 'en-CA' : 'fr-CA')}
-                  </p>
-                )}
-                <button
-                  onClick={toggleLock}
-                  disabled={isLocking}
-                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-warning text-warning-foreground rounded-lg hover:bg-warning/90 transition-colors"
-                >
-                  {isLocking ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Unlock className="w-4 h-4" />
-                  )}
-                  {isEn ? 'Unlock Chart' : 'Déverrouiller'}
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* Content wrapper - disabled when locked */}
-          <div className={chartId && locked ? 'opacity-50 pointer-events-none' : ''}>
+          {/* Content wrapper */}
+          <div>
             {activeTab === 'period' && (
               <PeriodConfigTab
                 config={effectiveConfig}

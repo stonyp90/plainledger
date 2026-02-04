@@ -10,14 +10,14 @@ WORKDIR /app
 # Install dependencies needed for node-gyp
 RUN apk add --no-cache libc6-compat
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files from apps/admin (context is project root)
+COPY apps/admin/package.json apps/admin/package-lock.json* ./
 
 # Install ALL dependencies (including devDependencies for build tools like tailwindcss)
 RUN npm ci
 
-# Copy source files
-COPY . .
+# Copy source files from apps/admin
+COPY apps/admin/. .
 
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1

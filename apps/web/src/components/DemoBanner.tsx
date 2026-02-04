@@ -70,22 +70,23 @@ export default function DemoBanner() {
                 {isEn ? 'Demo Mode - Test Data Only' : 'Mode Démo - Données de test uniquement'}
               </h4>
               <span 
-                className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                className="px-2.5 py-1 rounded-md text-[11px] font-medium"
                 style={{ 
-                  backgroundColor: 'rgb(var(--color-warning) / 0.15)',
-                  color: 'rgb(var(--color-warning))',
+                  backgroundColor: 'rgb(var(--color-warning) / 0.12)',
+                  color: 'rgb(var(--color-warning-dark, var(--color-warning)))',
+                  border: '1px solid rgb(var(--color-warning) / 0.2)',
                 }}
               >
-                {isEn ? 'DEMO' : 'DÉMO'}
+                {isEn ? 'Demo' : 'Démo'}
               </span>
             </div>
             <p 
-              className="text-sm leading-relaxed"
+              className="text-sm leading-relaxed font-medium"
               style={{ color: 'rgb(var(--color-text-secondary))' }}
             >
               {isEn 
-                ? 'You\'re viewing sample data for demonstration purposes. All data shown is fictional and for preview only.'
-                : 'Vous visualisez des données d\'exemple pour démonstration. Toutes les données affichées sont fictives et uniquement pour aperçu.'
+                ? 'Everything revolves around You. Your data, analyses, and decisions in one place.'
+                : 'Tout gravite autour de Vous. Vos données, analyses et décisions en un seul endroit.'
               }
             </p>
           </div>
@@ -102,8 +103,8 @@ export default function DemoBanner() {
         </div>
 
         {/* Key Points */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-          {/* Demo Data */}
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          {/* Accounting & Finance */}
           <div 
             className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
             style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
@@ -116,15 +117,15 @@ export default function DemoBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Demo Data Only' : 'Données de démo uniquement'}
+                {isEn ? 'Accounting & Finance' : 'Comptabilité et Finance'}
               </p>
               <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Sample financial data' : 'Données financières d\'exemple'}
+                {isEn ? 'Complete visibility' : 'Visibilité complète'}
               </p>
             </div>
           </div>
 
-          {/* Free Plan */}
+          {/* Banking & Cashflow */}
           <div 
             className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
             style={{ backgroundColor: 'rgb(var(--color-surface) / 0.7)' }}
@@ -137,15 +138,36 @@ export default function DemoBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Free Plan' : 'Plan Gratuit'}
+                {isEn ? 'Banking & Cashflow' : 'Banque et Cashflow'}
               </p>
               <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Explore features risk-free' : 'Explorez les fonctionnalités'}
+                {isEn ? 'Real-time tracking' : 'Suivi en temps réel'}
               </p>
             </div>
           </div>
 
-          {/* Upgrade for Real Data */}
+          {/* Tax Credits */}
+          <div 
+            className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-success) / 0.08)' }}
+          >
+            <div 
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'rgb(var(--color-success) / 0.15)' }}
+            >
+              <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Tax Credits' : 'Crédits d\'impôt'}
+              </p>
+              <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                {isEn ? 'Maximize your ROI' : 'Maximisez votre ROI'}
+              </p>
+            </div>
+          </div>
+
+          {/* Time & ROI */}
           <div 
             className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-lg"
             style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.08)' }}
@@ -154,14 +176,14 @@ export default function DemoBanner() {
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.15)' }}
             >
-              <Sparkles className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Calendar className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {isEn ? 'Upgrade for Real Data' : 'Passez à l\'abonnement supérieur'}
+                {isEn ? 'Time & ROI' : 'Temps et ROI'}
               </p>
               <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Connect your software' : 'Connectez votre logiciel'}
+                {isEn ? 'Save 10+ hours/month' : 'Économisez 10+ heures/mois'}
               </p>
             </div>
           </div>
@@ -172,12 +194,20 @@ export default function DemoBanner() {
           className="mt-4 pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
           style={{ borderTop: '1px solid rgb(var(--color-border))' }}
         >
-          <p className="text-xs sm:text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            {isEn 
-              ? 'Upgrade to Professional to connect your accounting software and see real data.'
-              : 'Passez à Professional pour connecter votre logiciel comptable et voir vos vraies données.'
-            }
-          </p>
+          <div className="flex-1">
+            <p className="text-xs sm:text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+              {isEn 
+                ? 'Connect your accounting data. Get instant insights on cashflow, credits, and ROI.'
+                : 'Connectez vos données comptables. Obtenez des insights instantanés sur cashflow, crédits et ROI.'
+              }
+            </p>
+            <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn 
+                ? 'RS&DE, CDAE, apprenticeship credits. All your financial decisions in one place.'
+                : 'RS&DE, CDAE, crédits d\'apprentissage. Toutes vos décisions financières en un seul endroit.'
+              }
+            </p>
+          </div>
           <button
             onClick={handleContactClick}
             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-white transition-all hover:scale-105 hover:shadow-lg flex-shrink-0"
@@ -187,7 +217,7 @@ export default function DemoBanner() {
             }}
           >
             <Calendar className="w-4 h-4" />
-            <span className="text-sm">{isEn ? 'Upgrade Now' : 'Passer à l\'abonnement supérieur'}</span>
+            <span className="text-sm">{isEn ? 'Get Started' : 'Commencer'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

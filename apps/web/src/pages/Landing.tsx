@@ -1393,7 +1393,7 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
             ))}
           </div>
           
-          {/* Industry Benchmarks Table */}
+          {/* Industry Benchmarks Table - Responsive Optimized */}
           <div 
             className={`rounded-xl overflow-hidden transition-all duration-700 ${
               showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -1404,113 +1404,158 @@ function HeroDashboardPreview({ isDark, theme, isEn, isVisible }: { isDark: bool
               transitionDelay: '700ms'
             }}
           >
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2 border-b" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
-              <h4 className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 border-b" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+              <h4 className="text-xs sm:text-sm lg:text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Industry Benchmarks' : 'Références sectorielles'} {current.name}
               </h4>
               <button 
-                className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors hover:opacity-90"
                 style={{ backgroundColor: `${theme.gold}15`, color: theme.goldDark }}
               >
-                <Brain className="w-3 h-3" />
-                {isEn ? 'AI Analyze' : 'Analyser IA'}
+                <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">{isEn ? 'AI Analyze' : 'Analyser IA'}</span>
+                <span className="xs:hidden">IA</span>
               </button>
             </div>
             
-            {/* Scrollable Table Container for mobile */}
-            <div className="overflow-x-auto">
-              <div className="min-w-[340px]">
-                {/* Table Header */}
-                <div 
-                  className="grid text-[8px] sm:text-[9px] font-semibold uppercase tracking-wider px-3 sm:px-4 py-2"
-                  style={{ 
-                    backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
-                    gridTemplateColumns: 'minmax(90px, 2fr) minmax(50px, 1fr) minmax(55px, 1fr) minmax(70px, 1fr) 36px'
-                  }}
-                >
-                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
-                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current' : 'Actuel'}</span>
-                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
-                  <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
-                  <span style={{ color: 'rgb(var(--color-text-muted))' }}></span>
-                </div>
+            {/* Table Container - No horizontal scroll, fully responsive */}
+            <div>
+              {/* Table Header - Desktop/Tablet */}
+              <div 
+                className="hidden sm:grid text-[10px] sm:text-[11px] lg:text-xs font-semibold uppercase tracking-wider px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(248, 250, 252, 0.9)',
+                  gridTemplateColumns: '2fr 1fr 1fr 1.2fr 40px'
+                }}
+              >
+                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>KPI</span>
+                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Current' : 'Actuel'}</span>
+                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Target' : 'Cible'}</span>
+                <span className="text-left" style={{ color: 'rgb(var(--color-text-muted))' }}>Status</span>
+                <span></span>
+              </div>
+              
+              {/* Table Rows */}
+              {current.benchmarks.map((row, i) => {
+                const isExcellent = row.status === 'excellent';
+                const isGood = row.status === 'good';
+                const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
                 
-                {/* Table Rows */}
-                {current.benchmarks.map((row, i) => {
-                  const isExcellent = row.status === 'excellent';
-                  const isGood = row.status === 'good';
-                  // Status icon determined by condition below
-                  const statusColor = isExcellent ? theme.green : isGood ? theme.gold : '#ef4444';
-                  
-                  return (
+                return (
+                  <div 
+                    key={i}
+                    className="border-b last:border-b-0 cursor-pointer transition-all group"
+                    style={{ 
+                      borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
+                      backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent',
+                    }}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
+                    {/* Mobile Layout - Stacked card style */}
+                    <div className="sm:hidden px-3 py-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-[11px] font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                            {row.metric}
+                          </span>
+                          <Info 
+                            className="w-3 h-3 opacity-50 flex-shrink-0" 
+                            style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                          />
+                        </div>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg flex-shrink-0"
+                          style={{ backgroundColor: `${theme.gold}12`, color: theme.gold }}
+                        >
+                          <Sparkles className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wide block mb-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                              {isEn ? 'Current' : 'Actuel'}
+                            </span>
+                            <span className="text-sm font-bold" style={{ color: theme.green }}>{row.yours}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] uppercase tracking-wide block mb-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                              {isEn ? 'Target' : 'Cible'}
+                            </span>
+                            <span 
+                              className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium"
+                              style={{ backgroundColor: `${theme.gold}12`, color: theme.goldDark }}
+                            >
+                              {row.target}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {isExcellent || isGood ? (
+                            <CheckCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
+                          ) : (
+                            <AlertCircle className="w-3.5 h-3.5" style={{ color: statusColor }} />
+                          )}
+                          <span 
+                            className="px-2 py-1 rounded text-[10px] font-medium"
+                            style={{ backgroundColor: `${statusColor}15`, color: statusColor }}
+                          >
+                            {isExcellent ? 'Excellent' : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Tablet/Desktop Layout - Grid row */}
                     <div 
-                      key={i}
-                      className={`grid text-[9px] sm:text-[10px] px-3 sm:px-4 py-2.5 border-b last:border-b-0 cursor-pointer transition-all group ${
-                        hoveredRow === i ? 'bg-opacity-50' : ''
-                      }`}
-                      style={{ 
-                        borderColor: isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(229, 231, 235, 0.4)',
-                        backgroundColor: hoveredRow === i ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 0.9)') : 'transparent',
-                        gridTemplateColumns: 'minmax(90px, 2fr) minmax(50px, 1fr) minmax(55px, 1fr) minmax(70px, 1fr) 36px'
-                      }}
-                      onMouseEnter={() => setHoveredRow(i)}
-                      onMouseLeave={() => setHoveredRow(null)}
+                      className="hidden sm:grid text-[11px] sm:text-xs lg:text-sm px-3 sm:px-4 lg:px-5 py-3 sm:py-3.5 lg:py-4 items-center"
+                      style={{ gridTemplateColumns: '2fr 1fr 1fr 1.2fr 40px' }}
                     >
-                      <span className="font-medium flex items-center gap-1 text-left truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                      <span className="font-medium flex items-center gap-1.5 text-left truncate pr-2" style={{ color: 'rgb(var(--color-text))' }}>
                         <span className="truncate">{row.metric}</span>
                         <Info 
-                          className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity cursor-help flex-shrink-0" 
+                          className="w-3.5 h-3.5 lg:w-4 lg:h-4 opacity-40 group-hover:opacity-100 transition-opacity cursor-help flex-shrink-0" 
                           style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
                           title={isEn ? `Learn more about ${row.metric}` : `En savoir plus sur ${row.metric}`}
                         />
                       </span>
                       <span className="font-bold text-left" style={{ color: theme.green }}>{row.yours}</span>
                       <span 
-                        className="px-1.5 py-0.5 rounded-full font-medium w-fit text-left text-[8px]"
-                        style={{ 
-                          backgroundColor: `${theme.gold}12`,
-                          color: theme.goldDark,
-                        }}
+                        className="px-2 py-1 rounded-full font-medium w-fit text-left text-[10px] sm:text-[11px] lg:text-xs"
+                        style={{ backgroundColor: `${theme.gold}12`, color: theme.goldDark }}
                       >
                         {row.target}
                       </span>
-                      <div className="flex items-center gap-1 justify-start">
-                        {isExcellent ? (
-                          <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: statusColor }} />
-                        ) : isGood ? (
-                          <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: statusColor }} />
+                      <div className="flex items-center gap-1.5 justify-start">
+                        {isExcellent || isGood ? (
+                          <CheckCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0" style={{ color: statusColor }} />
                         ) : (
-                          <AlertCircle className="w-3 h-3 flex-shrink-0" style={{ color: statusColor }} />
+                          <AlertCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0" style={{ color: statusColor }} />
                         )}
                         <span 
-                          className="px-1 py-0.5 rounded text-[7px] sm:text-[8px] font-medium whitespace-nowrap"
-                          style={{ 
-                            backgroundColor: `${statusColor}15`,
-                            color: statusColor,
-                          }}
+                          className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] lg:text-[11px] font-medium whitespace-nowrap"
+                          style={{ backgroundColor: `${statusColor}15`, color: statusColor }}
                         >
-                          {isExcellent ? (isEn ? 'Excellent' : 'Excellent') : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
+                          {isExcellent ? 'Excellent' : isGood ? (isEn ? 'Good' : 'Bon') : (isEn ? 'Alert' : 'Alerte')}
                         </span>
                       </div>
                       <div className="flex items-center justify-center">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="opacity-60 group-hover:opacity-100 transition-opacity p-1 rounded"
-                          style={{ 
-                            backgroundColor: `${theme.gold}12`,
-                            color: theme.gold
-                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="opacity-60 group-hover:opacity-100 transition-opacity p-1.5 sm:p-2 rounded-lg"
+                          style={{ backgroundColor: `${theme.gold}12`, color: theme.gold }}
                           title={isEn ? 'AI Analysis' : 'Analyse IA'}
                         >
-                          <Sparkles className="w-3 h-3" />
+                          <Sparkles className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                         </button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -2055,7 +2100,7 @@ export default function Landing() {
                 }}
               >
                 <Sparkles className="w-3 h-3" />
-                {isEn ? 'AI-Powered Analytics' : 'Analytique propulsée par l\'IA'}
+                {isEn ? 'Smart Analytics' : 'Analytique intelligente'}
               </span>
             </div>
             {/* Main heading with gradient */}
@@ -2303,8 +2348,8 @@ export default function Landing() {
           {/* Main Content - Channel notifications */}
           <div className="flex flex-col items-center justify-center gap-8">
             
-            {/* Channel Cards Grid - Two rows */}
-            <div className="grid grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl">
+            {/* Channel Cards Grid - 2 cols mobile, 3 cols tablet+ */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl">
               {/* Top Row */}
               {[
                 { 
@@ -2819,20 +2864,20 @@ export default function Landing() {
                     }}
                   >
                     <motion.div
-                      className="px-3 py-1.5 rounded-full whitespace-nowrap"
+                      className="px-2 py-0.5 rounded-full whitespace-nowrap"
                       style={{ 
                         marginLeft: -30,
-                        marginTop: -10,
+                        marginTop: -8,
                         background: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255,255,255,0.98)',
-                        border: `1.5px solid ${item.color}40`,
-                        boxShadow: `0 3px 12px ${item.color}20, 0 1px 4px rgba(0,0,0,0.1)`,
+                        border: `1px solid ${item.color}35`,
+                        boxShadow: `0 2px 8px ${item.color}15, 0 1px 3px rgba(0,0,0,0.08)`,
                       }}
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
                       viewport={{ once: true }}
                       transition={{ delay: idx * 0.1 + 0.5 }}
                     >
-                      <span className="text-[10px] font-semibold" style={{ color: item.color }}>
+                      <span className="text-[9px] font-medium" style={{ color: item.color }}>
                         {isEn ? item.label.en : item.label.fr}
                       </span>
                     </motion.div>
@@ -3096,7 +3141,7 @@ export default function Landing() {
             </div>
             
             {/* Steps Grid - Enhanced & Animated */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 items-stretch">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 items-stretch">
               {[
                 { 
                   num: 1, 
@@ -3596,6 +3641,26 @@ export default function Landing() {
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
         <div className="max-w-4xl mx-auto text-center">
+          {/* Gold Badge */}
+          <motion.div 
+            className="flex justify-center mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span 
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ 
+                backgroundColor: `${theme.gold}15`,
+                color: theme.gold,
+                border: `1px solid ${theme.gold}30`,
+              }}
+            >
+              {isEn ? 'Are you ready?' : 'Vous êtes prêts?'}
+            </span>
+          </motion.div>
+          
           {/* Heading */}
           <motion.h2 
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight"
@@ -3603,7 +3668,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
             {isEn ? 'Ready to Grow Smarter?' : 'Prêt à grandir plus intelligemment?'}
           </motion.h2>
@@ -3689,7 +3754,7 @@ export default function Landing() {
       {/* Tax Credits / Unclaimed Money Section */}
       <span id="pricing" className="absolute" style={{ top: '-100px' }} />
       <section 
-        className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden"
+        className="py-12 sm:py-16 px-4 sm:px-6 relative overflow-hidden"
         aria-label={isEn ? 'Unclaimed tax credits for Canadian SMBs' : 'Crédits d\'impôt non réclamés pour PME canadiennes'}
         style={{ 
           background: isDark 
@@ -3706,32 +3771,32 @@ export default function Landing() {
           }}
         />
         
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+        <div className="max-w-3xl mx-auto text-center relative z-10">
           {/* Gold Badge - Clarté financière */}
           <motion.div 
-            className="flex justify-center mb-6"
+            className="flex justify-center mb-4"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <span 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
               style={{ 
-                backgroundColor: `${theme.gold}20`,
+                backgroundColor: `${theme.gold}15`,
                 color: theme.gold,
-                border: `1px solid ${theme.gold}40`,
-                boxShadow: `0 4px 12px ${theme.gold}15`
+                border: `1px solid ${theme.gold}30`,
+                boxShadow: `0 4px 12px ${theme.gold}10`
               }}
             >
-              <DollarSign className="w-4 h-4" />
+              <DollarSign className="w-3.5 h-3.5" />
               {isEn ? 'Financial Clarity' : 'Clarté financière'}
             </span>
           </motion.div>
           
           {/* Main Headline */}
           <motion.h2 
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6"
+            className="text-xl sm:text-2xl md:text-3xl font-bold mb-3"
             style={{ color: 'rgb(var(--color-text))' }}
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -3745,44 +3810,23 @@ export default function Landing() {
             )}
           </motion.h2>
           
-          {/* Big Number */}
-          <motion.div 
-            className="mb-4"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <span 
-              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              $49,000
-            </span>
-          </motion.div>
-          
           {/* Subtitle */}
           <motion.p 
-            className="text-base sm:text-lg md:text-xl mb-8 max-w-2xl mx-auto"
+            className="text-sm sm:text-base mb-5 max-w-xl mx-auto"
             style={{ color: 'rgb(var(--color-text-secondary))' }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
             {isEn 
-              ? 'Average unclaimed credits for a typical Canadian SMB. SR&ED, CDAE, apprenticeship credits, and more.'
-              : 'Crédits non réclamés moyens pour une PME canadienne typique. RS&DE, CDAE, crédits d\'apprentissage, et plus.'}
+              ? 'Canadian SMBs miss out on tax credits every year. SR&ED, CDAE, apprenticeship credits, and more.'
+              : 'Les PME canadiennes passent à côté de crédits d\'impôt chaque année. RS&DE, CDAE, crédits d\'apprentissage, et plus.'}
           </motion.p>
           
           {/* Credit Types */}
           <motion.div 
-            className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10"
+            className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -3797,11 +3841,11 @@ export default function Landing() {
             ].map((credit, idx) => (
               <span 
                 key={idx}
-                className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium"
+                className="px-2.5 py-1 rounded-md text-xs font-medium"
                 style={{ 
                   backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-                  color: 'rgb(var(--color-text-secondary))',
-                  border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'}`,
+                  color: theme.green,
+                  border: `1px solid ${theme.green}25`,
                 }}
               >
                 {isEn ? credit.en : credit.fr}
@@ -3812,38 +3856,23 @@ export default function Landing() {
           {/* CTA Button */}
           <motion.button
             onClick={() => register()}
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-white text-base transition-all hover:scale-105"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white text-sm transition-all hover:scale-105"
             style={{ 
-              background: `linear-gradient(135deg, ${theme.gold} 0%, ${theme.goldDark} 100%)`,
-              boxShadow: `0 8px 24px ${theme.gold}40`,
+              background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
+              boxShadow: `0 6px 20px ${theme.green}35`,
             }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
             whileHover={{ 
-              boxShadow: `0 12px 32px ${theme.gold}50`,
+              boxShadow: `0 10px 28px ${theme.green}45`,
             }}
             whileTap={{ scale: 0.98 }}
           >
             {isEn ? 'See Your Eligibility' : 'Voir votre éligibilité'}
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4" />
           </motion.button>
-          
-          {/* Trust Note */}
-          <motion.p 
-            className="mt-6 text-xs sm:text-sm"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <Shield className="w-4 h-4 inline mr-1.5" style={{ color: theme.green }} />
-            {isEn 
-              ? 'Free eligibility check. No commitment required. Data stored in Canada 🇨🇦'
-              : 'Vérification d\'éligibilité gratuite. Sans engagement. Données stockées au Canada 🇨🇦'}
-          </motion.p>
         </div>
       </section>
 
@@ -4142,14 +4171,6 @@ export default function Landing() {
             <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
             <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
             <a href="#contact" className="transition-colors hover:underline">Contact</a>
-            <button 
-              onClick={() => setShowInstallModal(true)}
-              className="flex items-center gap-1.5 transition-colors hover:underline"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              <Smartphone className="w-4 h-4" />
-              <span>{isEn ? 'Get the app' : 'Obtenir l\'app'}</span>
-            </button>
           </div>
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             © 2026 PlainLedger 🇨🇦

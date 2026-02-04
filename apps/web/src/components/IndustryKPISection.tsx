@@ -1,32 +1,24 @@
 /**
- * Industry KPI Section Component - Runway-Style Dashboard
- * Interactive showcase with animated charts and clear ROI for executives
+ * Industry KPI Section Component - Linear/Notion-Style Design
+ * Clean, minimal interface with refined interactions
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles,
-  ArrowRight,
-  DollarSign,
-  BarChart3,
+  Check,
+  Plus,
+  ChevronRight,
 } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../contexts/ThemeContext';
-import KPICard from './KPICard';
-import { useHasRealData } from '../hooks/useHasRealData';
 import { INDUSTRY_KPIS, type IndustryData, type KPIDefinition } from '../lib/industryBenchmarkDisplay';
 
-// Theme colors - Corporate green palette (consistent with Landing page)
-const colors = {
-  green: '#059669',      // emerald-600 - primary corporate green
-  greenDark: '#047857',  // emerald-700 - darker for depth
-  greenLight: '#10b981', // emerald-500 - lighter accents
-  gold: '#d4af37',       // classic gold
-  goldDark: '#b8860b',   // darker gold
-};
+// Re-export INDUSTRY_KPIS for backward compatibility
+export { INDUSTRY_KPIS };
 
 // =====================================================
-// ANIMATED HOOKS & COMPONENTS
+// HOOKS
 // =====================================================
 
 function useInView(threshold = 0.2) {
@@ -53,8 +45,8 @@ function useInView(threshold = 0.2) {
   return { ref, isInView };
 }
 
-// Re-export INDUSTRY_KPIS for backward compatibility
-export { INDUSTRY_KPIS };
+// =====================================================
+// MAIN COMPONENT
 // =====================================================
 
 interface IndustryKPISectionProps {
@@ -66,107 +58,103 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
   const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
-  const { hasRealData, shouldShowSandboxData } = useHasRealData();
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('real_estate');
+  
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('hospitality');
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
   const { ref: sectionRef, isInView } = useInView(0.1);
   
-  // Only show industry KPIs if we have real data or should show sandbox data (free users only)
-  if (!hasRealData && !shouldShowSandboxData) {
-    return null;
-  }
+  // Filter to only show 5 target industries
+  const TARGET_INDUSTRIES = ['hospitality', 'real_estate', 'restaurant', 'construction', 'retail'];
+  const filteredIndustries = INDUSTRY_KPIS.filter(ind => TARGET_INDUSTRIES.includes(ind.id))
+    .sort((a, b) => TARGET_INDUSTRIES.indexOf(a.id) - TARGET_INDUSTRIES.indexOf(b.id));
   
-  const currentIndustry = INDUSTRY_KPIS.find(ind => ind.id === selectedIndustry) || INDUSTRY_KPIS[0];
+  const defaultIndustry = filteredIndustries[0]?.id || 'hospitality';
+  const validSelectedIndustry = TARGET_INDUSTRIES.includes(selectedIndustry) ? selectedIndustry : defaultIndustry;
+  const currentIndustry = filteredIndustries.find(ind => ind.id === validSelectedIndustry) || filteredIndustries[0];
   
-  // Safety check - if no industry data found, don't render
   if (!currentIndustry) {
     return null;
   }
   
   const Icon = currentIndustry.icon;
   
-  // Format value for display
-  const formatValue = (value: number | null | undefined, name: string): string => {
-    const numValue = value ?? 0;
-    if (isNaN(numValue) || !isFinite(numValue)) return '—';
-    
-    if (name.includes('Revenue') || name.includes('NOI') || name.includes('Revenus')) {
-      return `$${(numValue / 1000).toFixed(0)}K`;
-    }
-    if (name.includes('Rate') || name.includes('Taux') || name.includes('%') || name.includes('Margin') || name.includes('Marge')) {
-      return `${numValue}%`;
-    }
-    if (name.includes('ADR') || name.includes('TJM') || name.includes('Effective') || name.includes('effectif')) {
-      return `$${numValue}`;
-    }
-    return `${numValue}`;
-  };
-  
   return (
     <section 
       ref={sectionRef}
       id="industry-kpis" 
-      className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8"
+      className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8"
       style={{ 
         background: isDark 
-          ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.8) 100%)' 
-          : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)'
+          ? 'linear-gradient(180deg, rgb(15, 23, 42) 0%, rgb(23, 30, 48) 100%)' 
+          : 'linear-gradient(180deg, #fafafa 0%, #ffffff 100%)'
       }}
     >
-      <div className="max-w-6xl mx-auto">
-        {/* Section Header */}
-        <div className="text-center mb-8 sm:mb-10">
-          <div 
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold mb-3"
+      <div className="max-w-4xl mx-auto">
+        {/* Section Header - Clean & Minimal */}
+        <div 
+          className={`text-center mb-10 sm:mb-12 transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        >
+          <span 
+            className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold tracking-widest uppercase mb-4 px-3 py-1.5 rounded-full"
             style={{ 
-              background: `${colors.gold}${isDark ? '25' : '15'}`,
-              border: `1px solid ${colors.gold}${isDark ? '40' : '25'}`,
-              color: isDark ? colors.gold : colors.goldDark
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)'
+                : 'linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%)',
+              color: isDark ? '#fbbf24' : '#b45309',
+              border: `1px solid ${isDark ? 'rgba(251, 191, 36, 0.3)' : 'rgba(245, 158, 11, 0.25)'}`,
             }}
           >
-            <BarChart3 className="w-3.5 h-3.5" />
+            <Sparkles className="w-3 h-3" style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
             {isEn ? 'Industry Benchmarks' : 'Références sectorielles'}
-          </div>
+          </span>
           
           <h2 
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3"
-            style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
+            className="text-2xl sm:text-3xl lg:text-[2.5rem] font-semibold tracking-tight mb-4"
+            style={{ 
+              color: isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)',
+              lineHeight: 1.2
+            }}
           >
-            {isEn ? 'Beat Your Industry Benchmarks' : 'Dépassez les références de votre secteur'}
+            {isEn ? 'Beat your industry benchmarks' : 'Dépassez les références de votre secteur'}
           </h2>
           
           <p 
-            className="text-sm sm:text-base max-w-2xl mx-auto"
+            className="text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
             style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
           >
             {isEn 
-              ? 'See exactly where you stand vs. industry leaders. Identify the KPIs dragging down your margins and fix them.'
-              : 'Voyez exactement où vous vous situez vs les leaders du secteur. Identifiez les KPIs qui réduisent vos marges et corrigez-les.'}
+              ? 'Track the KPIs that matter most for your industry with pre-built formulas validated by experts.'
+              : 'Suivez les KPIs les plus importants pour votre secteur avec des formules préétablies validées par des experts.'}
           </p>
         </div>
         
-        {/* Industry Selector */}
-        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 px-2">
-          {INDUSTRY_KPIS.map((industry) => {
+        {/* Industry Tabs - Minimal Pills */}
+        <div 
+          className={`flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-8 sm:mb-10 transition-all duration-700 delay-100 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        >
+          {filteredIndustries.map((industry) => {
             const TabIcon = industry.icon;
-            const isSelected = selectedIndustry === industry.id;
+            const isSelected = validSelectedIndustry === industry.id;
             
             return (
               <button
                 key={industry.id}
                 onClick={() => setSelectedIndustry(industry.id)}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-semibold transition-all duration-200"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-xs font-medium transition-all duration-200"
                 style={{
-                  backgroundColor: isSelected ? colors.green : (isDark ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.95)'),
-                  color: isSelected ? 'white' : (isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)'),
-                  border: `1px solid ${isSelected ? colors.green : (isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)')}`,
-                  boxShadow: isSelected 
-                    ? `0 4px 12px ${colors.green}40` 
-                    : (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)'),
+                  backgroundColor: isSelected 
+                    ? (isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)') 
+                    : 'transparent',
+                  color: isSelected 
+                    ? (isDark ? 'rgb(15, 23, 42)' : 'rgb(255, 255, 255)') 
+                    : (isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'),
+                  border: `1px solid ${isSelected 
+                    ? 'transparent' 
+                    : (isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(226, 232, 240, 1)')}`,
                 }}
               >
-                <TabIcon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" color={isSelected ? 'white' : colors.green} />
-                <span className="hidden min-[375px]:inline">
+                <TabIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden min-[400px]:inline">
                   {isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim()}
                 </span>
               </button>
@@ -174,325 +162,265 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           })}
         </div>
         
-        {/* Dashboard Container */}
+        {/* Main Card Container */}
         <div 
-          className="rounded-2xl overflow-hidden shadow-2xl"
+          className={`rounded-2xl overflow-hidden transition-all duration-700 delay-200 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           style={{ 
-            backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(255, 255, 255, 0.98)',
-            border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)'}`,
+            backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgb(255, 255, 255)',
+            border: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(226, 232, 240, 1)'}`,
+            borderTop: `2px solid ${isDark ? '#fbbf24' : '#d97706'}`,
             boxShadow: isDark 
-              ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
-              : '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+              ? '0 0 0 1px rgba(51, 65, 85, 0.5), 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 -1px 12px rgba(251, 191, 36, 0.1)' 
+              : '0 0 0 1px rgba(226, 232, 240, 0.5), 0 24px 48px -12px rgba(0, 0, 0, 0.08), 0 -1px 12px rgba(217, 119, 6, 0.08)',
           }}
         >
-          {/* Browser Chrome */}
+          {/* Card Header - Clean Status Bar */}
           <div 
-            className="h-10 flex items-center px-4 gap-3 border-b"
+            className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4"
             style={{ 
-              backgroundColor: isDark ? 'rgb(15, 23, 42)' : 'rgba(248, 250, 252, 0.98)',
-              borderColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(229, 231, 235, 0.6)'
+              borderBottom: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(226, 232, 240, 1)'}`,
             }}
           >
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.gold }} />
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.green }} />
-            </div>
-            
-            {/* Industry Name */}
-            <div className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 min-w-0">
-              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" color={colors.green} />
-              <span className="text-[10px] sm:text-[11px] font-semibold truncate" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)' }}>
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <Icon 
+                className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" 
+                style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }} 
+              />
+              <span 
+                className="text-xs sm:text-sm font-medium truncate"
+                style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(51, 65, 85)' }}
+              >
                 {isEn ? currentIndustry.name.en : currentIndustry.name.fr}
               </span>
             </div>
             
             {/* Live indicator */}
-            <div 
-              className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 rounded text-[8px] sm:text-[9px] font-medium flex-shrink-0"
-              style={{ backgroundColor: `${colors.green}15`, color: colors.green }}
-            >
-              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: colors.green }} />
-              <span className="hidden min-[375px]:inline">{isEn ? 'Live Data' : 'Données en direct'}</span>
+            <div className="flex items-center gap-1.5">
+              <span 
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: '#10b981' }}
+              />
+              <span 
+                className="text-[10px] sm:text-[11px] font-medium"
+                style={{ color: '#10b981' }}
+              >
+                {isEn ? 'Live' : 'Direct'}
+              </span>
             </div>
           </div>
           
-          {/* Main Content */}
+          {/* Formula Header */}
           <div 
-            className="p-4 sm:p-6"
-            style={{
-              backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(255, 255, 255, 0.98)',
+            className="px-4 sm:px-5 py-4 sm:py-5"
+            style={{ 
+              borderBottom: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'}`,
             }}
           >
-            {/* ROI Highlight Banner */}
-            <div 
-              className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4"
-              style={{ 
-                background: isDark 
-                  ? `linear-gradient(135deg, ${colors.gold}35 0%, ${colors.green}25 100%)`
-                  : `linear-gradient(135deg, ${colors.gold}20 0%, ${colors.green}12 100%)`,
-                border: `1px solid ${isDark ? `${colors.gold}70` : `${colors.gold}40`}`,
-                boxShadow: isDark 
-                  ? `0 4px 20px ${colors.gold}20` 
-                  : `0 4px 20px ${colors.gold}10`
-              }}
-            >
-              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div 
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ 
-                      backgroundColor: `${colors.gold}30`,
-                      boxShadow: `0 2px 8px ${colors.gold}20`
-                    }}
-                  >
-                    <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: colors.gold }} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider" style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}>
-                      {isEn ? 'ROI Highlight' : 'Point ROI'}
-                    </p>
-                    <p className="text-sm sm:text-base font-bold truncate" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
-                      {isEn ? currentIndustry.roiHighlight.en : currentIndustry.roiHighlight.fr}
-                    </p>
-                  </div>
-                </div>
-                <div 
-                  className="text-xl sm:text-2xl lg:text-3xl font-bold flex-shrink-0"
-                  style={{ color: colors.gold }}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 
+                  className="text-sm sm:text-base font-semibold mb-1"
+                  style={{ color: isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)' }}
                 >
-                  {currentIndustry.roiValue}
-                </div>
-              </div>
-            </div>
-            
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
-              {currentIndustry.kpis.map((kpi, idx) => {
-                const isOnTarget = kpi.currentValue >= kpi.targetValue * 0.95 || 
-                  (kpi.name.includes('Cost') && kpi.currentValue <= kpi.targetValue * 1.05) ||
-                  (kpi.name.includes('Days') && kpi.currentValue <= kpi.targetValue);
-                
-                const isGoodWhenDown = kpi.name.includes('Cost') || kpi.name.includes('Days') || 
-                  kpi.name.includes('Coût') || kpi.name.includes('Jours');
-                
-                return (
-                  <KPICard
-                    key={idx}
-                    id={`kpi-${idx}`}
-                    label={isEn ? kpi.name : kpi.nameFr}
-                    value={formatValue(kpi.currentValue, kpi.name)}
-                    target={`${isEn ? 'Target:' : 'Cible:'} ${kpi.target}`}
-                    change={kpi.trendValue}
-                    trend={kpi.trend}
-                    isGoodWhenDown={isGoodWhenDown}
-                    chartData={kpi.chartData}
-                    benchmarkData={kpi.industryBenchmark}
-                    impact={isEn ? kpi.impact : kpi.impactFr}
-                    isOnTarget={isOnTarget}
-                    isEn={isEn}
-                    isHovered={hoveredKpi === idx}
-                    onHoverChange={(hovered) => setHoveredKpi(hovered ? idx : null)}
-                    isVisible={isInView}
-                    animateChart={true}
-                  />
-                );
-              })}
-            </div>
-            
-            {/* Formula Builder - Spreadsheet Style */}
-            <div 
-              className="rounded-xl overflow-hidden shadow-lg"
-              style={{ 
-                backgroundColor: isDark ? 'rgb(51, 65, 85)' : 'rgba(255, 255, 255, 0.98)',
-                border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.7)' : 'rgba(229, 231, 235, 0.8)'}`,
-                boxShadow: isDark 
-                  ? '0 4px 20px rgba(0, 0, 0, 0.4)' 
-                  : '0 4px 20px rgba(0, 0, 0, 0.08)'
-              }}
-            >
-              {/* Header with tabs */}
-              <div 
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 px-3 sm:px-4 py-2.5 sm:py-3 border-b"
-                style={{ 
-                  borderColor: isDark ? 'rgba(71, 85, 105, 0.6)' : 'rgba(229, 231, 235, 0.8)',
-                  backgroundColor: isDark ? 'rgb(30, 41, 59)' : 'rgba(248, 250, 252, 0.95)'
-                }}
-              >
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <div 
-                    className="p-1 sm:p-1.5 rounded-lg flex-shrink-0"
-                    style={{ backgroundColor: `${colors.green}20` }}
-                  >
-                    <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: colors.green }} />
-                  </div>
-                  <span className="text-xs sm:text-sm font-semibold" style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}>
-                    {isEn ? 'Formula Builder' : 'Constructeur de formules'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                  <span 
-                    className="text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md font-medium"
-                    style={{ backgroundColor: `${colors.green}20`, color: colors.green }}
-                  >
-                    {isEn ? 'Pre-built' : 'Pré-définies'}
-                  </span>
-                  <span 
-                    className="text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md font-medium"
-                    style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
-                  >
-                    {isEn ? 'Custom' : 'Personnalisées'}
-                  </span>
-                </div>
+                  {isEn ? 'Industry-optimized formulas' : 'Formules optimisées par secteur'}
+                </h3>
+                <p 
+                  className="text-[11px] sm:text-xs"
+                  style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+                >
+                  {isEn ? 'Maintained and validated by industry experts' : 'Maintenues et validées par des experts du secteur'}
+                </p>
               </div>
               
-              {/* Spreadsheet-like grid */}
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <div className="min-w-[320px] sm:min-w-[500px]">
-                  {/* Column headers */}
-                  <div 
-                    className="grid text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-3 sm:px-4 py-2 sm:py-2.5"
+              <div className="flex items-center gap-2">
+                <span 
+                  className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] px-2.5 py-1.5 rounded-md font-medium"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 1)',
+                    color: isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)',
+                  }}
+                >
+                  <kbd 
+                    className="px-1 py-0.5 rounded text-[9px] font-mono"
                     style={{ 
-                      gridTemplateColumns: 'minmax(100px, 1.5fr) minmax(120px, 2fr) minmax(60px, 80px) minmax(40px, 60px)',
-                      backgroundColor: isDark ? 'rgb(71, 85, 105)' : 'rgba(241, 245, 249, 1)',
-                      color: isDark ? 'rgb(248, 250, 252)' : 'rgb(71, 85, 105)',
-                      borderBottom: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)'}`
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(255, 255, 255, 1)',
+                      border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 1)'}`,
                     }}
                   >
-                    <span className="text-left truncate">{isEn ? 'Metric' : 'Métrique'}</span>
-                    <span className="text-left truncate">{isEn ? 'Formula' : 'Formule'}</span>
-                    <span className="text-left truncate">{isEn ? 'Target' : 'Cible'}</span>
-                    <span></span>
-                  </div>
-                  
-                  {/* Formula rows */}
-                  {currentIndustry.kpis.map((kpi, idx) => (
-                    <div 
-                      key={idx}
-                      className="grid items-center px-3 sm:px-4 py-2 sm:py-3 border-b transition-all duration-200 cursor-pointer group"
-                      style={{ 
-                        gridTemplateColumns: 'minmax(100px, 1.5fr) minmax(120px, 2fr) minmax(60px, 80px) minmax(40px, 60px)',
-                        borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
-                        backgroundColor: hoveredKpi === idx 
-                          ? (isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(241, 245, 249, 1)')
-                          : (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(255, 255, 255, 0.5)')
-                      }}
-                      onMouseEnter={() => setHoveredKpi(idx)}
-                      onMouseLeave={() => setHoveredKpi(null)}
-                    >
+                    Tab
+                  </kbd>
+                  {isEn ? 'Autocomplete' : 'Autocomplétion'}
+                </span>
+                <span 
+                  className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2.5 py-1.5 rounded-md font-medium"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(245, 158, 11, 0.1)',
+                    color: isDark ? '#fbbf24' : '#b45309',
+                  }}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {isEn ? '50+ Prebuilt' : '50+ Préétablies'}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* KPI List - Clean Rows */}
+          <div className="divide-y" style={{ borderColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(226, 232, 240, 0.6)' }}>
+            {currentIndustry.kpis.map((kpi, idx) => (
+              <div 
+                key={idx}
+                className="group relative px-4 sm:px-5 py-4 sm:py-5 transition-colors duration-150"
+                style={{ 
+                  backgroundColor: hoveredKpi === idx 
+                    ? (isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(248, 250, 252, 1)')
+                    : 'transparent',
+                }}
+                onMouseEnter={() => setHoveredKpi(idx)}
+                onMouseLeave={() => setHoveredKpi(null)}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  {/* Left: Name + Formula */}
+                  <div className="flex-1 min-w-0">
+                    {/* Metric Name with Check */}
+                    <div className="flex items-center gap-2 mb-2.5">
                       <span 
-                        className="text-[9px] sm:text-[10px] font-semibold text-left leading-tight line-clamp-2"
-                        style={{ color: isDark ? 'rgb(241, 245, 249)' : 'rgb(30, 41, 59)' }}
-                        title={isEn ? kpi.name : kpi.nameFr}
+                        className="text-sm font-medium"
+                        style={{ color: isDark ? 'rgb(248, 250, 252)' : 'rgb(15, 23, 42)' }}
                       >
                         {isEn ? kpi.name : kpi.nameFr}
                       </span>
-                      <div className="flex items-center gap-1 sm:gap-1.5 justify-start min-w-0">
-                        <code 
-                          className="text-[8px] sm:text-[9px] px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md font-mono font-medium leading-tight"
-                          title={kpi.formula}
-                          style={{ 
-                            backgroundColor: isDark ? 'rgba(30, 41, 59, 1)' : 'rgba(241, 245, 249, 1)',
-                            color: isDark ? colors.greenLight : colors.green,
-                            border: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.8)' : 'rgba(203, 213, 225, 0.8)'}`,
-                            boxShadow: isDark ? 'inset 0 1px 2px rgba(0,0,0,0.2)' : 'inset 0 1px 2px rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          {kpi.formula}
-                        </code>
+                      <div 
+                        className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}
+                      >
+                        <Check className="w-2.5 h-2.5" style={{ color: '#10b981' }} strokeWidth={3} />
                       </div>
+                    </div>
+                    
+                    {/* Formula Display */}
+                    <div 
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg"
+                      style={{ 
+                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 1)',
+                        border: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 1)'}`,
+                      }}
+                    >
                       <span 
-                        className="text-[8px] sm:text-[9px] px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold text-left inline-block whitespace-nowrap"
+                        className="text-xs font-medium"
+                        style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                      >
+                        =
+                      </span>
+                      <code 
+                        className="text-xs sm:text-sm font-mono font-medium"
+                        style={{ color: '#10b981' }}
+                      >
+                        {kpi.formula}
+                      </code>
+                    </div>
+                  </div>
+                  
+                  {/* Right: Target */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right">
+                      <p 
+                        className="text-[10px] font-medium uppercase tracking-wide mb-1.5"
+                        style={{ color: isDark ? 'rgb(100, 116, 139)' : 'rgb(148, 163, 184)' }}
+                      >
+                        {isEn ? 'Target' : 'Cible'}
+                      </p>
+                      <span 
+                        className="inline-block text-xs sm:text-sm px-3 py-1.5 rounded-lg font-semibold"
                         style={{ 
-                          backgroundColor: isDark ? `${colors.green}30` : `${colors.green}18`,
-                          color: isDark ? colors.greenLight : colors.green
+                          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+                          color: '#10b981',
                         }}
-                        title={kpi.target}
                       >
                         {kpi.target}
                       </span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          className="p-1 sm:p-1.5 rounded-md transition-colors"
-                          style={{ backgroundColor: `${colors.gold}20`, color: colors.gold }}
-                          title={isEn ? 'Edit formula' : 'Modifier'}
-                        >
-                          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        </button>
-                      </div>
                     </div>
-                  ))}
-                  
-                  {/* Add custom formula row */}
-                  <div 
-                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3.5 cursor-pointer transition-all duration-200 hover:bg-opacity-80"
-                    style={{ 
-                      backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(248, 250, 252, 0.8)',
-                    }}
-                  >
-                    <div 
-                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center transition-colors flex-shrink-0"
-                      style={{ 
-                        border: `2px dashed ${isDark ? 'rgba(148, 163, 184, 0.6)' : 'rgba(148, 163, 184, 0.8)'}`,
-                        color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)'
-                      }}
-                    >
-                      <span className="text-xs sm:text-sm font-bold">+</span>
-                    </div>
-                    <span 
-                      className="text-[10px] sm:text-[11px] font-medium truncate"
-                      style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}
-                    >
-                      {isEn ? 'Add custom formula...' : 'Ajouter une formule personnalisée...'}
-                    </span>
                   </div>
                 </div>
               </div>
-              
-              {/* Benchmark Note */}
-              {(currentIndustry.profitNote || currentIndustry.benchmarkNote) && (
-                <div 
-                  className="px-4 py-3.5 flex items-start gap-2.5"
-                  style={{ 
-                    borderTop: `1px solid ${isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(229, 231, 235, 0.8)'}`,
-                    backgroundColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(248, 250, 252, 0.9)'
-                  }}
-                >
-                  <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: isDark ? '#fbbf24' : colors.gold }} />
-                  <p className="text-[11px] font-medium" style={{ color: isDark ? 'rgb(226, 232, 240)' : 'rgb(71, 85, 105)' }}>
-                    {isEn 
-                      ? (currentIndustry.profitNote?.en || currentIndustry.benchmarkNote?.en)
-                      : (currentIndustry.profitNote?.fr || currentIndustry.benchmarkNote?.fr)
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
+            ))}
+            
+            {/* Add Custom Formula Row */}
+            <button 
+              className="w-full px-4 sm:px-5 py-4 flex items-center justify-center gap-2 transition-colors duration-150 group/add"
+              style={{ 
+                backgroundColor: isDark ? 'rgba(51, 65, 85, 0.15)' : 'rgba(248, 250, 252, 0.5)',
+              }}
+            >
+              <div 
+                className="w-5 h-5 rounded-md flex items-center justify-center transition-colors"
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(226, 232, 240, 1)',
+                  border: `1px dashed ${isDark ? 'rgba(100, 116, 139, 0.5)' : 'rgba(148, 163, 184, 0.6)'}`,
+                }}
+              >
+                <Plus 
+                  className="w-3 h-3" 
+                  style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }} 
+                />
+              </div>
+              <span 
+                className="text-xs font-medium"
+                style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+              >
+                {isEn ? 'Add custom formula' : 'Ajouter une formule personnalisée'}
+              </span>
+            </button>
+          </div>
+          
+          {/* Footer Note */}
+          <div 
+            className="px-4 sm:px-5 py-3.5 flex items-center gap-2.5"
+            style={{ 
+              backgroundColor: isDark ? 'rgba(51, 65, 85, 0.25)' : 'rgba(248, 250, 252, 0.8)',
+              borderTop: `1px solid ${isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)'}`,
+            }}
+          >
+            <Sparkles 
+              className="w-3.5 h-3.5 flex-shrink-0" 
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }} 
+            />
+            <p 
+              className="text-[11px] sm:text-xs"
+              style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
+            >
+              {isEn 
+                ? (currentIndustry.benchmarkNote?.en || currentIndustry.profitNote?.en || `Optimized for ${currentIndustry.name.en} industry standards`)
+                : (currentIndustry.benchmarkNote?.fr || currentIndustry.profitNote?.fr || `Optimisé pour les standards de l'industrie ${currentIndustry.name.fr}`)
+              }
+            </p>
           </div>
         </div>
         
-        {/* Industry Note + CTA */}
-        <div className="mt-8 text-center">
+        {/* Bottom CTA */}
+        <div 
+          className={`mt-10 sm:mt-12 text-center transition-all duration-700 delay-300 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        >
           <p 
-            className="text-xs sm:text-sm mb-5 max-w-2xl mx-auto"
-            style={{ color: isDark ? 'rgb(203, 213, 225)' : 'rgb(100, 116, 139)' }}
+            className="text-xs sm:text-sm mb-5 max-w-lg mx-auto"
+            style={{ color: isDark ? 'rgb(148, 163, 184)' : 'rgb(100, 116, 139)' }}
           >
-            <Sparkles className="w-3.5 h-3.5 inline mr-1.5" style={{ color: isDark ? colors.greenLight : colors.green }} />
             {isEn 
-              ? 'AI-optimized for 15+ Canadian industries: Real Estate, Restaurant, Hospitality, Construction, Retail, Professional Services, Manufacturing, Transport, Agriculture, and more.'
-              : 'IA optimisée pour plus de 15 industries canadiennes: Immobilier, Restauration, Hôtellerie, Construction, Commerce de détail, Services professionnels, Fabrication, Transport, Agriculture, et plus.'}
+              ? 'AI-optimized for 15+ Canadian industries including Real Estate, Restaurant, Hospitality, Construction, and more.'
+              : 'IA optimisée pour plus de 15 industries canadiennes incluant Immobilier, Restauration, Hôtellerie, Construction, et plus.'}
           </p>
           
           <button 
             onClick={onScheduleCall}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105 text-sm group"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-200 hover:gap-3 group"
             style={{ 
-              background: `linear-gradient(135deg, ${colors.green} 0%, ${colors.greenDark} 100%)`,
-              boxShadow: `0 4px 16px ${colors.green}35`
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'rgb(255, 255, 255)',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
             }}
           >
-            {isEn ? 'See your industry benchmarks free' : 'Voyez vos benchmarks sectoriels gratuitement'}
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {isEn ? 'See your industry benchmarks' : 'Voyez vos benchmarks sectoriels'}
+            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
       </div>

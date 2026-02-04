@@ -12,10 +12,9 @@
  */
 
 import { useState, useRef, useCallback, ReactNode } from 'react';
-import { GripHorizontal, GripVertical, Lock, Unlock, Trash2, AlertTriangle, X, Loader2 } from 'lucide-react';
+import { GripHorizontal, GripVertical, Lock, Trash2, AlertTriangle, X } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useSingleChartSize } from '../hooks/useChartSize';
-import { useChartLock } from '../hooks/useGraphConfig';
 
 // =====================================================
 // CONFIRMATION DIALOG
@@ -193,11 +192,8 @@ export default function DashboardWidgetWrapper({
   const [localDropPosition, setLocalDropPosition] = useState<'before' | 'after' | null>(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   
-  // Chart-level lock (individual chart lock)
-  const { locked: isChartLocked, isLocking, toggle: toggleChartLock } = useChartLock(chartId || '');
-  
-  // Effective lock state: dashboard locked OR chart locked
-  const isEffectivelyLocked = isDashboardLocked || (chartId && isChartLocked);
+  // Effective lock state: only dashboard lock (no chart-level lock)
+  const isEffectivelyLocked = isDashboardLocked;
   
   // Show controls if user has permission (even if locked)
   const showControls = hasCustomizePermission || canCustomize;
@@ -373,7 +369,7 @@ export default function DashboardWidgetWrapper({
           </>
         )}
         
-        {/* Locked indicator - Shows when dashboard or chart is locked */}
+        {/* Locked indicator - Shows when dashboard is locked */}
         {showControls && isEffectivelyLocked && isHovered && !isDragging && id !== 'add-widget' && (
           <div
             className="absolute left-1.5 top-10 z-20 flex items-center gap-1.5 px-2 py-1 rounded-md transition-opacity"
@@ -381,53 +377,13 @@ export default function DashboardWidgetWrapper({
               backgroundColor: 'rgb(var(--color-warning) / 0.1)',
               border: '1px solid rgb(var(--color-warning) / 0.3)',
             }}
-            title={
-              isChartLocked 
-                ? (isEn ? 'Chart is locked. Click to unlock.' : 'Graphique verrouillé. Cliquez pour déverrouiller.')
-                : (isEn ? 'Dashboard is locked. Click "Verrouiller" to unlock.' : 'Tableau verrouillé. Cliquez sur "Verrouiller" pour déverrouiller.')
-            }
+            title={isEn ? 'Dashboard is locked. Click "Verrouiller" to unlock.' : 'Tableau verrouillé. Cliquez sur "Verrouiller" pour déverrouiller.'}
           >
             <Lock className="w-3 h-3" style={{ color: 'rgb(var(--color-warning))' }} />
             <span className="text-[10px] font-medium" style={{ color: 'rgb(var(--color-warning))' }}>
-              {isChartLocked 
-                ? (isEn ? 'Chart Locked' : 'Graphique verrouillé')
-                : (isEn ? 'Locked' : 'Verrouillé')
-              }
+              {isEn ? 'Locked' : 'Verrouillé'}
             </span>
           </div>
-        )}
-        
-        {/* Chart lock toggle button - Shows for chart widgets when not dashboard locked */}
-        {showControls && chartId && isHovered && !isDragging && id !== 'add-widget' && !isDashboardLocked && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleChartLock();
-            }}
-            disabled={isLocking}
-            className="absolute right-10 top-10 z-20 p-1 rounded-md transition-colors"
-            style={{
-              backgroundColor: isChartLocked 
-                ? 'rgb(var(--color-warning) / 0.1)' 
-                : 'rgb(var(--color-surface))',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
-              color: isChartLocked 
-                ? 'rgb(var(--color-warning))' 
-                : 'rgb(var(--color-text-muted))',
-            }}
-            title={isChartLocked 
-              ? (isEn ? 'Unlock chart' : 'Déverrouiller le graphique')
-              : (isEn ? 'Lock chart' : 'Verrouiller le graphique')
-            }
-          >
-            {isLocking ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : isChartLocked ? (
-              <Lock className="w-3.5 h-3.5" />
-            ) : (
-              <Unlock className="w-3.5 h-3.5" />
-            )}
-          </button>
         )}
 
         {/* Dragging overlay - shows when this widget is being dragged */}

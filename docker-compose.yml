@@ -36,7 +36,7 @@ services:
     volumes:
       - keycloak-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      test: ['CMD-SHELL', 'pg_isready -U keycloak']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -58,14 +58,14 @@ services:
       KC_DB_PASSWORD: keycloak
       KC_HOSTNAME: localhost
       KC_HOSTNAME_PORT: 8080
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HTTP_ENABLED: "true"
-      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HOSTNAME_STRICT_HTTPS: 'false'
+      KC_HTTP_ENABLED: 'true'
+      KC_HEALTH_ENABLED: 'true'
       KC_PROXY: edge
     command: start-dev --import-realm
     ports:
-      - "8080:8080"
+      - '8080:8080'
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import
       - ./keycloak/themes/plainledger:/opt/keycloak/themes/plainledger
@@ -73,7 +73,7 @@ services:
       keycloak-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 || exit 1"]
+      test: ['CMD-SHELL', 'exec 3<>/dev/tcp/localhost/8080 || exit 1']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -92,7 +92,7 @@ services:
       POSTGRES_USER: plainledger
       POSTGRES_PASSWORD: plainledger_secret
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - app-db-data:/var/lib/postgresql/data
       - ./local-dev/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -102,7 +102,7 @@ services:
       - ./local-dev/init-jobs.sql:/docker-entrypoint-initdb.d/05-jobs.sql
       - ./local-dev/init-platform.sql:/docker-entrypoint-initdb.d/06-platform.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U plainledger"]
+      test: ['CMD-SHELL', 'pg_isready -U plainledger']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -116,12 +116,12 @@ services:
     image: redis:7-alpine
     container_name: plainledger-redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 3s
       retries: 5
@@ -139,11 +139,11 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: plainledger_secret
       MONGO_INITDB_DATABASE: plainledger_analytics
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -167,12 +167,12 @@ services:
       SKIP_INFRA_DOWNLOADS: 1
       SKIP_SSL_CERT_DOWNLOAD: 1
     ports:
-      - "4566:4566"  # LocalStack Edge
+      - '4566:4566' # LocalStack Edge
     volumes:
       - localstack-data:/var/lib/localstack
       - ./local-dev/localstack-init:/etc/localstack/init/ready.d
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:4566/_localstack/health']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -190,13 +190,13 @@ services:
       MINIO_ROOT_USER: plainledger
       MINIO_ROOT_PASSWORD: plainledger_secret
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -215,7 +215,7 @@ services:
       NODE_ENV: development
       # LOCAL DEV ONLY: Skip Keycloak auth for easier local testing
       # This is IGNORED in production (app.module.ts checks NODE_ENV !== "production")
-      SKIP_AUTH: "true"
+      SKIP_AUTH: 'true'
       PORT: 3000
       # Database
       DATABASE_HOST: app-db
@@ -261,7 +261,7 @@ services:
       # Google Analytics
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-G-85LVG81DY5}
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       app-db:
         condition: service_healthy
@@ -274,7 +274,8 @@ services:
       mongodb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test:
+        ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -298,14 +299,14 @@ services:
       NEXT_PUBLIC_KEYCLOAK_REALM: plainledger
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: plainledger-admin
     ports:
-      - "3001:3001"
+      - '3001:3001'
     depends_on:
       api:
         condition: service_healthy
       keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001 || exit 1"]
+      test: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3001 || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -320,10 +321,10 @@ services:
     image: mailhog/mailhog:latest
     container_name: plainledger-mailhog
     ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8025"]
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:8025']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -345,7 +346,7 @@ services:
       VITE_KEYCLOAK_REALM: plainledger
       VITE_KEYCLOAK_CLIENT_ID: plainledger-web
     ports:
-      - "5173:80"
+      - '5173:80'
     depends_on:
       api:
         condition: service_healthy
@@ -397,7 +398,7 @@ services:
     networks:
       - plainledger-network
     # Keep container running for manual testing
-    command: ["tail", "-f", "/dev/null"]
+    command: ['tail', '-f', '/dev/null']
     profiles:
       - etl
 
@@ -424,7 +425,7 @@ services:
         condition: service_healthy
     networks:
       - plainledger-network
-    command: ["python", "-m", "pipelines.tests.seed_test_data"]
+    command: ['python', '-m', 'pipelines.tests.seed_test_data']
     profiles:
       - seed
 
