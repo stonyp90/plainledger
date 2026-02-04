@@ -156,12 +156,24 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   console.log(`[Bootstrap] Starting HTTP server on port ${port}...`);
   
-  // Simple listen - let NestJS handle all the details
-  // Previous complex setup with event listeners was not needed
-  // and the "0.0.0.0" host binding might cause issues in ECS Fargate
-  await app.listen(port);
-  
-  console.log(`[Bootstrap] HTTP server started successfully on port ${port}`);
+  // Add timeout to detect if listen() hangs
+  const listenTimeout = setTimeout(() => {
+    console.error(`[Bootstrap] FATAL: app.listen() timed out after 60 seconds`);
+    console.error(`[Bootstrap] The server is not binding to port ${port}`);
+    console.error(`[Bootstrap] This indicates a hang in NestJS listen lifecycle`);
+    process.exit(1);
+  }, 60000);
+
+  try {
+    console.log(`[Bootstrap] Calling app.listen(${port})...`);
+    await app.listen(port);
+    clearTimeout(listenTimeout);
+    console.log(`[Bootstrap] HTTP server started successfully on port ${port}`);
+  } catch (error) {
+    clearTimeout(listenTimeout);
+    console.error(`[Bootstrap] FATAL: app.listen() failed:`, error);
+    process.exit(1);
+  }
 
   console.log(`
   ╔═══════════════════════════════════════════════════╗
