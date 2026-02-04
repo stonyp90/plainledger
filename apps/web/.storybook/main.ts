@@ -18,6 +18,11 @@ const config: StorybookConfig = {
   },
   async viteFinal(config) {
     return mergeConfig(config, {
+      define: {
+        // Enable mock auth by default in Storybook
+        'import.meta.env.VITE_MOCK_AUTH': JSON.stringify('true'),
+        'import.meta.env.STORYBOOK': JSON.stringify('true'),
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '../src'),

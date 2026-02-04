@@ -3,8 +3,11 @@ import Keycloak from 'keycloak-js';
 
 // Check if mock auth is enabled (for development/testing without Keycloak)
 // Defaults to true in development mode when VITE_MOCK_AUTH is not explicitly set
+// Also check for Storybook-specific flag
+const isStorybook = typeof window !== 'undefined' && (window as any).__STORYBOOK_MOCK_AUTH__;
 const MOCK_AUTH_ENABLED = import.meta.env.VITE_MOCK_AUTH === 'true' || 
-  (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false');
+  (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false') ||
+  isStorybook;
 
 // Export for use in other modules that need to skip API calls in mock mode
 export const isMockAuthEnabled = () => MOCK_AUTH_ENABLED;
@@ -132,6 +135,10 @@ interface KeycloakProviderProps {
 }
 
 export function KeycloakProvider({ children }: KeycloakProviderProps) {
+  // Check for Storybook environment
+  const isStorybookEnv = typeof window !== 'undefined' && 
+    (window.location.href.includes('storybook') || (window as any).__STORYBOOK_MOCK_AUTH__);
+  
   const [initialized, setInitialized] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<KeycloakContextType['user']>(null);
@@ -142,6 +149,34 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     // Prevent double initialization in React StrictMode
     if (initCalled.current) return;
     initCalled.current = true;
+    
+    // In Storybook, initialize mock auth immediately
+    if (isStorybookEnv) {
+      const mockTokenPayload = {
+        sub: MOCK_USER.id,
+        email: MOCK_USER.email,
+        name: MOCK_USER.name,
+        given_name: MOCK_USER.firstName,
+        family_name: MOCK_USER.lastName,
+        organization: MOCK_USER.organization,
+        realm_access: { roles: MOCK_USER.roles },
+        exp: Math.floor(Date.now() / 1000) + 86400,
+        iat: Math.floor(Date.now() / 1000),
+      };
+      const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify(mockTokenPayload));
+      const mockToken = `${header}.${payload}.mock-signature`;
+      (keycloak as any).token = mockToken;
+      (keycloak as any).authenticated = true;
+      (keycloak as any).subject = MOCK_USER.id;
+      (keycloak as any).tokenParsed = mockTokenPayload;
+      (keycloak as any).realmAccess = mockTokenPayload.realm_access;
+      (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
+      setAuthenticated(true);
+      setUser(MOCK_USER);
+      setInitialized(true);
+      return;
+    }
 
     // FIRST: Check for stored tokens from custom login BEFORE any other initialization
     // This ensures we use real tokens even if mock auth is enabled
@@ -236,7 +271,8 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     }
 
     // Mock authentication mode for development/testing (only if no stored tokens)
-    if (MOCK_AUTH_ENABLED) {
+    // Also enable in Storybook environment
+    if (MOCK_AUTH_ENABLED || isStorybookEnv) {
       // Clear any logged out state - always auto-login in mock mode for development
       localStorage.removeItem(MOCK_AUTH_LOGGED_OUT_KEY);
       console.log('🔓 Mock authentication enabled - auto-login with free tier user');

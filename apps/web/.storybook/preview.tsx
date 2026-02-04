@@ -5,6 +5,12 @@ import { I18nProvider } from '../src/lib/i18n';
 import { StorybookAuthWrapper } from './StorybookAuthWrapper';
 import '../src/styles/globals.css';
 
+// Enable mock auth for Storybook by default
+if (typeof window !== 'undefined') {
+  // Set flag to identify Storybook environment
+  (window as any).__STORYBOOK_MOCK_AUTH__ = true;
+}
+
 const preview: Preview = {
   parameters: {
     actions: { argTypesRegex: '^on[A-Z].*' },
@@ -31,15 +37,15 @@ const preview: Preview = {
   },
   decorators: [
     (Story) => (
-      <StorybookAuthWrapper>
-        <KeycloakProvider>
+      <KeycloakProvider>
+        <StorybookAuthWrapper>
           <I18nProvider defaultLanguage="en">
             <div style={{ padding: '2rem', minHeight: '100vh' }}>
               <Story />
             </div>
           </I18nProvider>
-        </KeycloakProvider>
-      </StorybookAuthWrapper>
+        </StorybookAuthWrapper>
+      </KeycloakProvider>
     ),
   ],
 };

@@ -16,14 +16,35 @@ interface StorybookAuthWrapperProps {
  * 5. Shows login prompt if not authenticated
  */
 export function StorybookAuthWrapper({ children }: StorybookAuthWrapperProps) {
+  // In Storybook, always allow access (skip auth checks)
+  const isStorybook = typeof window !== 'undefined' && 
+    (window.location.href.includes('storybook') || (window as any).__STORYBOOK_MOCK_AUTH__);
+  
+  if (isStorybook) {
+    // Skip all auth checks in Storybook - just render children
+    return <>{children}</>;
+  }
+
   const { authenticated, initialized, user, login } = useKeycloak();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+
+  // Check if mock auth is enabled (for Storybook development)
+  // In Storybook, default to mock auth unless explicitly disabled
+  const isMockAuth = import.meta.env.VITE_MOCK_AUTH === 'true' || 
+    (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false');
 
   useEffect(() => {
     const checkAccess = async () => {
       // Wait for Keycloak to initialize
       if (!initialized) {
+        return;
+      }
+
+      // In mock auth mode, automatically grant access
+      if (isMockAuth && authenticated) {
+        setHasAccess(true);
+        setIsChecking(false);
         return;
       }
 
@@ -63,7 +84,8 @@ export function StorybookAuthWrapper({ children }: StorybookAuthWrapperProps) {
       } catch (error) {
         console.error('Error checking storybook access:', error);
         // In development with mock auth, allow access
-        if (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true') {
+        if (isMockAuth) {
+          console.log('Storybook: Mock auth enabled, granting access');
           setHasAccess(true);
         } else {
           setHasAccess(false);
@@ -74,7 +96,7 @@ export function StorybookAuthWrapper({ children }: StorybookAuthWrapperProps) {
     };
 
     checkAccess();
-  }, [authenticated, initialized, user]);
+  }, [authenticated, initialized, user, isMockAuth]);
 
   // Show loading state
   if (isChecking || !initialized) {
