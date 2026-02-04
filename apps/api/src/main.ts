@@ -155,14 +155,49 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   console.log(`[Bootstrap] Starting HTTP server on port ${port}...`);
-  await app.listen(port);
+  
+  // Get underlying HTTP server to add event listeners
+  const httpAdapter = app.getHttpAdapter();
+  const httpServer = httpAdapter.getHttpServer();
+  
+  httpServer.on('listening', () => {
+    console.log(`[Bootstrap] HTTP server 'listening' event fired`);
+  });
+  
+  httpServer.on('error', (err: Error) => {
+    console.error(`[Bootstrap] HTTP server error:`, err);
+  });
+  
+  // Log right before calling listen
+  console.log(`[Bootstrap] Calling app.listen(${port}, "0.0.0.0")...`);
+  const listenStart = Date.now();
+  
+  // Start the listen - this triggers onApplicationBootstrap hooks
+  const listenPromise = app.listen(port, "0.0.0.0");
+  console.log(`[Bootstrap] app.listen() called, awaiting promise...`);
+  
+  // Log progress every 3 seconds if listen takes too long
+  const progressInterval = setInterval(() => {
+    console.log(`[Bootstrap] Waiting for app.listen()... (${Math.round((Date.now() - listenStart) / 1000)}s elapsed)`);
+  }, 3000);
+  
+  try {
+    await listenPromise;
+    clearInterval(progressInterval);
+    const listenTime = Date.now() - listenStart;
+    console.log(`[Bootstrap] HTTP server started successfully in ${listenTime}ms`);
+  } catch (err) {
+    clearInterval(progressInterval);
+    console.error(`[Bootstrap] app.listen() failed:`, err);
+    throw err;
+  }
 
   console.log(`
   ╔═══════════════════════════════════════════════════╗
   ║                                                   ║
   ║   PlainLedger API - Financial Reporting Platform  ║
   ║                                                   ║
-  ║   Server running on: http://localhost:${port}        ║
+  ║   Server running on: http://0.0.0.0:${port}          ║
   ║   API Docs: http://localhost:${port}/api/docs        ║
   ║   Health: http://localhost:${port}/health            ║
   ║                                                   ║

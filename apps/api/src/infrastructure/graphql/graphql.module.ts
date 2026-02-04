@@ -72,23 +72,29 @@ import { join } from "path";
           path: "/graphql",
 
           // Subscriptions configuration (WebSocket)
-          subscriptions: {
-            "graphql-ws": {
-              path: "/graphql",
-              onConnect: (context: any) => {
-                // Extract auth token from connection params
-                const token = context.connectionParams?.authorization?.replace(
-                  "Bearer ",
-                  "",
-                );
-                return { token };
+          // DISABLED in production - WebSocket causes app.listen() to hang in ECS/Fargate
+          // See: https://github.com/apollographql/apollo-server/issues/6855
+          // TODO: Re-enable after investigating ECS networking/ALB WebSocket configuration
+          subscriptions: isProduction
+            ? undefined
+            : {
+                "graphql-ws": {
+                  path: "/graphql",
+                  onConnect: (context: any) => {
+                    // Extract auth token from connection params
+                    const token =
+                      context.connectionParams?.authorization?.replace(
+                        "Bearer ",
+                        "",
+                      );
+                    return { token };
+                  },
+                  onDisconnect: () => {
+                    // Cleanup on disconnect
+                  },
+                },
+                "subscriptions-transport-ws": false, // Legacy protocol, disabled
               },
-              onDisconnect: () => {
-                // Cleanup on disconnect
-              },
-            },
-            "subscriptions-transport-ws": false, // Legacy protocol, disabled
-          },
 
           // Performance & Security
           cache: "bounded",
