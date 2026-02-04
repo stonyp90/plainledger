@@ -315,6 +315,9 @@ class Analytics {
       sessionId: this.sessionId,
     };
 
+    // Use fallback name if not provided
+    const pageName = name || document.title || window.location.pathname || 'Unknown Page';
+
     this.execute(() => {
       // PostHog (primary - free)
       if (ANALYTICS_CONFIG.posthog.enabled) {
@@ -323,19 +326,19 @@ class Analytics {
 
       // Segment (optional)
       if ((window as any).analytics?.page) {
-        (window as any).analytics.page(name, pageProperties);
+        (window as any).analytics.page(pageName, pageProperties);
       }
 
       // Google Analytics
       if ((window as any).gtag) {
         (window as any).gtag('event', 'page_view', {
-          page_title: name || document.title,
+          page_title: pageName,
           page_location: window.location.href,
           page_path: window.location.pathname,
         });
       }
 
-      this.log('page', { name, properties: pageProperties });
+      this.log('page', { name: pageName, properties: pageProperties });
     });
   }
 

@@ -120,10 +120,18 @@ export default function LiveCashChart({
   };
 
   const getPointPosition = (index: number) => {
-    const x = (index / (animatedData.length - 1 || 1)) * 800;
-    const cash = animatedData[index]?.cash || 0;
-    const y = 200 - ((cash - minCash) / range) * 180;
-    return { x, y };
+    if (animatedData.length === 0) {
+      return { x: 0, y: 200 };
+    }
+    const x = (index / Math.max(animatedData.length - 1, 1)) * 800;
+    const cash = animatedData[index]?.cash ?? 0;
+    const safeRange = range || 1; // Prevent division by zero
+    const y = 200 - ((cash - minCash) / safeRange) * 180;
+    // Ensure values are valid numbers
+    return { 
+      x: isNaN(x) ? 0 : x, 
+      y: isNaN(y) ? 200 : Math.max(0, Math.min(400, y)) // Clamp between 0 and 400
+    };
   };
 
   // Find zero date
@@ -239,10 +247,15 @@ export default function LiveCashChart({
           })()}
 
           {/* Data points */}
-          {animatedData.map((point, i) => {
+          {animatedData.length > 0 && animatedData.map((point, i) => {
             const { x, y } = getPointPosition(i);
             const isHovered = hoveredIndex === i;
             const isZero = point.cash <= 0;
+            
+            // Skip rendering if position is invalid
+            if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
+              return null;
+            }
 
             return (
               <g key={i}>
