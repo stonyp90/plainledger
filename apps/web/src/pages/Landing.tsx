@@ -4562,14 +4562,6 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-3 sm:py-4 px-3 sm:px-4 border-t border-gray-200 dark:border-gray-800" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-1 sm:gap-1.5 justify-center sm:justify-start">
-            <img 
-              src="/app-icon.svg" 
-              alt="PlainLedger" 
-              className="w-4 h-4 sm:w-5 sm:h-5 rounded"
-            />
-            <span className="font-medium text-[10px] sm:text-xs text-gray-900 dark:text-white">PlainLedger</span>
-          </div>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
             <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
             <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
