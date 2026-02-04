@@ -43,8 +43,8 @@ export default function PublicHeader({
     <header 
       className={`sticky top-0 z-50 border-b backdrop-blur-md ${className}`}
       style={{ 
-        backgroundColor: 'rgb(var(--color-bg) / 0.95)',
-        borderColor: 'rgb(var(--color-border))'
+        backgroundColor: 'rgb(var(--color-bg) / 0.85)',
+        borderColor: 'rgb(var(--color-border) / 0.5)'
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -20,8 +20,9 @@ import {
   X,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useI18n } from '../lib/i18n';
+import { useI18n, LanguageToggle } from '../lib/i18n';
 import PublicHeader from '../components/PublicHeader';
+import ThemeToggle from '../components/ThemeToggle';
 import { analytics } from '../lib/analytics';
 import { useKeycloak } from '../lib/keycloak';
 

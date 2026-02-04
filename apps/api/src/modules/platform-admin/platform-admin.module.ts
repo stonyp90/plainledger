@@ -14,6 +14,10 @@ import { OnboardingProgressEntity } from './entities/onboarding-progress.entity'
 import { CommunicationLogEntity } from './entities/communication-log.entity';
 import { OrganizationEntity } from '@infrastructure/persistence/postgres/entities/organization.entity';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
+import { DataSourceConnectionEntity } from '@infrastructure/persistence/postgres/entities/data-source-connection.entity';
+import { PushNotificationEntity } from '@infrastructure/persistence/postgres/entities/push-notification.entity';
+import { AdminChatSessionEntity } from '@infrastructure/persistence/postgres/entities/admin-chat-session.entity';
+import { AdminChatMessageEntity } from '@infrastructure/persistence/postgres/entities/admin-chat-message.entity';
 
 // Guards
 import { PlatformAdminGuard } from './guards/platform-admin.guard';
@@ -26,6 +30,8 @@ import { AdminUserService } from './services/admin-user.service';
 import { AdminHealthService } from './services/admin-health.service';
 import { AdminOnboardingService } from './services/admin-onboarding.service';
 import { AdminCommunicationService } from './services/admin-communication.service';
+import { AdminNotificationService } from './services/admin-notification.service';
+import { AdminChatService } from './services/admin-chat.service';
 import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
 import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
 import { EmailTemplatesService } from '@infrastructure/templates/email-templates.service';
@@ -41,6 +47,8 @@ import { AdminDashboardController } from './controllers/admin-dashboard.controll
 import { AdminIntegrationController } from './controllers/admin-integration.controller';
 import { AdminOnboardingController } from './controllers/admin-onboarding.controller';
 import { AdminCommunicationController } from './controllers/admin-communication.controller';
+import { AdminNotificationsController } from './controllers/admin-notifications.controller';
+import { AdminChatController } from './controllers/admin-chat.controller';
 
 @Module({
   imports: [
@@ -57,6 +65,11 @@ import { AdminCommunicationController } from './controllers/admin-communication.
       // Existing entities we need access to
       OrganizationEntity,
       UserProfileEntity,
+      // New entities for notifications and chat
+      DataSourceConnectionEntity,
+      PushNotificationEntity,
+      AdminChatSessionEntity,
+      AdminChatMessageEntity,
     ]),
   ],
   controllers: [
@@ -68,6 +81,8 @@ import { AdminCommunicationController } from './controllers/admin-communication.
     AdminIntegrationController,
     AdminOnboardingController,
     AdminCommunicationController,
+    AdminNotificationsController,
+    AdminChatController,
   ],
   providers: [
     // Guards
@@ -80,6 +95,8 @@ import { AdminCommunicationController } from './controllers/admin-communication.
     AdminHealthService,
     AdminOnboardingService,
     AdminCommunicationService,
+    AdminNotificationService,
+    AdminChatService,
     // External services
     KeycloakAdminService,
     SESAdapter,
@@ -96,6 +113,8 @@ import { AdminCommunicationController } from './controllers/admin-communication.
     AdminHealthService,
     AdminOnboardingService,
     AdminCommunicationService,
+    AdminNotificationService,
+    AdminChatService,
   ],
 })
 export class PlatformAdminModule {}

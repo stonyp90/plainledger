@@ -39,6 +39,23 @@ export interface AuditLogEntry {
   errorMessage?: string;
 }
 
+// Simple audit log entry that doesn't require AdminUserEntity
+export interface SimpleAuditLogEntry {
+  adminId: string;
+  adminEmail: string;
+  action: string;
+  resourceType: string;
+  resourceId?: string;
+  resourceName?: string;
+  targetOrgId?: string;
+  targetOrgName?: string;
+  targetUserId?: string;
+  targetUserEmail?: string;
+  metadata?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 @Injectable()
 export class AdminAuditService {
   private readonly logger = new Logger(AdminAuditService.name);
@@ -72,6 +89,30 @@ export class AdminAuditService {
       durationMs: entry.durationMs,
       success: entry.success ?? true,
       errorMessage: entry.errorMessage,
+    });
+
+    return this.auditLogRepository.save(log);
+  }
+
+  /**
+   * Log an admin action using simple ID/email (without full AdminUserEntity)
+   */
+  async logSimple(entry: SimpleAuditLogEntry): Promise<AdminAuditLogEntity> {
+    const log = this.auditLogRepository.create({
+      adminUserId: entry.adminId,
+      adminEmail: entry.adminEmail,
+      action: entry.action,
+      resourceType: entry.resourceType,
+      resourceId: entry.resourceId,
+      resourceName: entry.resourceName,
+      targetOrgId: entry.targetOrgId,
+      targetOrgName: entry.targetOrgName,
+      targetUserId: entry.targetUserId,
+      targetUserEmail: entry.targetUserEmail,
+      metadata: entry.metadata,
+      ipAddress: entry.ipAddress,
+      userAgent: entry.userAgent,
+      success: true,
     });
 
     return this.auditLogRepository.save(log);

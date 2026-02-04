@@ -2,6 +2,9 @@ import type { Preview } from '@storybook/react';
 import React from 'react';
 import { KeycloakProvider } from '../src/lib/keycloak';
 import { I18nProvider } from '../src/lib/i18n';
+import { TenantProvider } from '../src/contexts/TenantContext';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
+import { ToastProvider } from '../src/contexts/ToastContext';
 import { StorybookAuthWrapper } from './StorybookAuthWrapper';
 import '../src/styles/globals.css';
 
@@ -39,11 +42,17 @@ const preview: Preview = {
     (Story) => (
       <KeycloakProvider>
         <StorybookAuthWrapper>
-          <I18nProvider defaultLanguage="en">
-            <div style={{ padding: '2rem', minHeight: '100vh' }}>
-              <Story />
-            </div>
-          </I18nProvider>
+          <TenantProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <I18nProvider defaultLanguage="en">
+                  <div style={{ padding: '2rem', minHeight: '100vh' }}>
+                    <Story />
+                  </div>
+                </I18nProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </TenantProvider>
         </StorybookAuthWrapper>
       </KeycloakProvider>
     ),

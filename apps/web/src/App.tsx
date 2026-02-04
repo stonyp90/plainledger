@@ -44,6 +44,18 @@ import SREDCalculatorPage from './pages/SREDCalculator';
 import Montreal from './pages/cities/Montreal';
 import Security from './pages/Security';
 import CrispChat from './components/CrispChat';
+// Admin pages
+import {
+  AdminLayout,
+  AdminDashboard,
+  AdminUsers,
+  AdminOrganizations,
+  AdminNotifications,
+  AdminChat,
+  AdminAudit,
+  AdminConnections,
+  AdminHealth,
+} from './pages/admin';
 import CookieConsent from './components/CookieConsent';
 import { SmartInstallBanner } from './components/SmartInstallBanner';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -635,6 +647,88 @@ function App() {
             <AppLayout>
               <DocumentShares />
             </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminUsers />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/organizations"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminOrganizations />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/notifications"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminNotifications />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/chat"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminChat />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/audit"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminAudit />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/connections"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminConnections />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/health"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminHealth />
+            </AdminLayout>
           </ProtectedRoute>
         }
       />
