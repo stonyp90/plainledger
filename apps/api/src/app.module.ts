@@ -448,16 +448,34 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     MarketAnalysisResolver,
     TaxCreditResolver,
     VisualizationResolver,
-    ETLSubscriptionResolver,
-    AccountBalanceSubscriptionResolver,
-    TransactionSubscriptionResolver,
     UserSettingsResolver,
     GqlAuthGuard,
 
+    // GraphQL Subscription Resolvers
+    // DISABLED in production - WebSocket subscriptions cause app.listen() to hang in ECS/Fargate
+    // Subscription resolvers use @Subscription decorators which trigger Apollo's WS setup
+    ...(process.env.NODE_ENV === "production"
+      ? []
+      : [
+          ETLSubscriptionResolver,
+          AccountBalanceSubscriptionResolver,
+          TransactionSubscriptionResolver,
+        ]),
+
     // GraphQL PubSub for subscriptions
+    // In production: provide a no-op mock since subscriptions are disabled
+    // Publisher services still need this injected but won't actually publish
     {
       provide: "PUB_SUB",
-      useValue: new PubSub(),
+      useValue:
+        process.env.NODE_ENV === "production"
+          ? {
+              // No-op mock PubSub - publish does nothing, subscribe returns empty iterator
+              publish: () => Promise.resolve(),
+              subscribe: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
+              asyncIterator: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
+            }
+          : new PubSub(),
     },
 
     // Repositories (Adapters)
