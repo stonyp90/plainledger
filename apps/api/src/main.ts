@@ -153,25 +153,45 @@ async function bootstrap() {
     console.log("[Storage] S3_BUCKET_UPLOADS not configured - skipping file storage init");
   }
 
-  const port = process.env.PORT || 3000;
+  const port = Number(process.env.PORT) || 3000;
   console.log(`[Bootstrap] Starting HTTP server on port ${port}...`);
+  
+  // Get the underlying HTTP adapter (Express) and server
+  const httpAdapter = app.getHttpAdapter();
+  const server = httpAdapter.getHttpServer();
   
   // Add timeout to detect if listen() hangs
   const listenTimeout = setTimeout(() => {
-    console.error(`[Bootstrap] FATAL: app.listen() timed out after 60 seconds`);
-    console.error(`[Bootstrap] The server is not binding to port ${port}`);
-    console.error(`[Bootstrap] This indicates a hang in NestJS listen lifecycle`);
+    console.error(`[Bootstrap] FATAL: Server did not start within 60 seconds`);
+    console.error(`[Bootstrap] Forcing process exit`);
     process.exit(1);
   }, 60000);
 
-  try {
-    console.log(`[Bootstrap] Calling app.listen(${port})...`);
-    await app.listen(port);
+  // Listen for server events before calling listen
+  server.on('listening', () => {
+    console.log(`[Bootstrap] HTTP server 'listening' event fired`);
+  });
+  
+  server.on('error', (err: Error) => {
+    console.error(`[Bootstrap] HTTP server error:`, err);
     clearTimeout(listenTimeout);
-    console.log(`[Bootstrap] HTTP server started successfully on port ${port}`);
+    process.exit(1);
+  });
+
+  try {
+    console.log(`[Bootstrap] Calling app.listen(${port}, "0.0.0.0")...`);
+    console.log(`[Bootstrap] Current server listening state: ${server.listening}`);
+    
+    // Bind explicitly to 0.0.0.0 for container environments
+    await app.listen(port, "0.0.0.0");
+    
+    clearTimeout(listenTimeout);
+    console.log(`[Bootstrap] app.listen() completed`);
+    console.log(`[Bootstrap] Server listening state after: ${server.listening}`);
+    console.log(`[Bootstrap] Server address:`, server.address());
   } catch (error) {
     clearTimeout(listenTimeout);
-    console.error(`[Bootstrap] FATAL: app.listen() failed:`, error);
+    console.error(`[Bootstrap] FATAL: app.listen() threw error:`, error);
     process.exit(1);
   }
 
