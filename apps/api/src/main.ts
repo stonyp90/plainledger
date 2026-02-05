@@ -153,59 +153,15 @@ async function bootstrap() {
     console.log("[Storage] S3_BUCKET_UPLOADS not configured - skipping file storage init");
   }
 
-  const port = Number(process.env.PORT) || 3000;
-  console.log(`[Bootstrap] Starting HTTP server on port ${port}...`);
-  
-  // Get the underlying HTTP adapter (Express) and server
-  const httpAdapter = app.getHttpAdapter();
-  const server = httpAdapter.getHttpServer();
-  
-  console.log(`[Bootstrap] Got HTTP adapter and server`);
-  console.log(`[Bootstrap] Server type: ${server?.constructor?.name}`);
-  
-  // Add timeout to detect if listen() hangs
-  const listenTimeout = setTimeout(() => {
-    console.error(`[Bootstrap] FATAL: Server did not start within 60 seconds`);
-    console.error(`[Bootstrap] Forcing process exit`);
-    process.exit(1);
-  }, 60000);
-
-  // Listen for server events before calling listen
-  server.on('listening', () => {
-    console.log(`[Bootstrap] HTTP server 'listening' event fired`);
-    clearTimeout(listenTimeout);
-  });
-  
-  server.on('error', (err: Error) => {
-    console.error(`[Bootstrap] HTTP server error:`, err);
-    clearTimeout(listenTimeout);
-    process.exit(1);
-  });
-
-  // Initialize the app (this calls onApplicationBootstrap hooks)
-  console.log(`[Bootstrap] Calling app.init()...`);
-  await app.init();
-  console.log(`[Bootstrap] app.init() completed`);
-
-  // Now manually bind the server
-  console.log(`[Bootstrap] Manually binding server to 0.0.0.0:${port}...`);
-  await new Promise<void>((resolve, reject) => {
-    server.listen(port, "0.0.0.0", () => {
-      console.log(`[Bootstrap] Server.listen callback fired!`);
-      resolve();
-    });
-    server.once('error', reject);
-  });
-  
-  console.log(`[Bootstrap] Server is now listening`);
-  console.log(`[Bootstrap] Server address:`, server.address());
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
 
   console.log(`
   ╔═══════════════════════════════════════════════════╗
   ║                                                   ║
   ║   PlainLedger API - Financial Reporting Platform  ║
   ║                                                   ║
-  ║   Server running on: http://0.0.0.0:${port}          ║
+  ║   Server running on: http://localhost:${port}        ║
   ║   API Docs: http://localhost:${port}/api/docs        ║
   ║   Health: http://localhost:${port}/health            ║
   ║                                                   ║
