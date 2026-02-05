@@ -17,7 +17,7 @@ export class DatabaseInitializerService implements OnModuleInit {
   }
 
   private async createSchemas() {
-    const schemas = ["accounting", "reporting", "integration"];
+    const schemas = ["accounting", "reporting", "integration", "tenant", "intelligence", "platform"];
 
     try {
       for (const schema of schemas) {
