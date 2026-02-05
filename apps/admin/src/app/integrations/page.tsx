@@ -92,12 +92,12 @@ export default function IntegrationsPage() {
                       <td className="px-4 py-3 text-admin-400 capitalize">{conn.provider || 'N/A'}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs ${
+                          className={`px-2 py-1 rounded text-xs font-medium ${
                             conn.status === 'connected'
-                              ? 'bg-green-600 text-green-100'
+                              ? 'bg-green-600 text-white'
                               : conn.status === 'error'
-                              ? 'bg-red-600 text-red-100'
-                              : 'bg-yellow-600 text-yellow-100'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-yellow-600 text-white'
                           }`}
                         >
                           {conn.status || 'unknown'}
@@ -155,12 +155,12 @@ export default function IntegrationsPage() {
                       <td className="px-4 py-3 text-admin-400">{log.eventType}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs ${
+                          className={`px-2 py-1 rounded text-xs font-medium ${
                             log.status === 'processed'
-                              ? 'bg-green-600 text-green-100'
+                              ? 'bg-green-600 text-white'
                               : log.status === 'failed'
-                              ? 'bg-red-600 text-red-100'
-                              : 'bg-yellow-600 text-yellow-100'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-yellow-600 text-white'
                           }`}
                         >
                           {log.status}
