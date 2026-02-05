@@ -234,36 +234,36 @@ import { PlatformAdminModule } from "./modules/platform-admin";
       // Create schemas before TypeORM synchronize
       async dataSourceFactory(options) {
         const { DataSource } = await import("typeorm");
-        const dataSource = new DataSource(options!);
-
-        // Create schemas before initializing (which runs synchronize)
-        const tempDs = new DataSource({
-          ...options!,
-          synchronize: false,
-          logging: false,
+        const { Client } = await import("pg");
+        
+        // Create schemas using raw PostgreSQL client before TypeORM initializes
+        const client = new Client({
+          host: options!.host,
+          port: options!.port,
+          database: options!.database,
+          user: options!.username,
+          password: options!.password,
+          ssl: options!.ssl as any,
         });
 
         try {
-          await tempDs.initialize();
-          await tempDs.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-          await tempDs.query("CREATE SCHEMA IF NOT EXISTS accounting");
-          await tempDs.query("CREATE SCHEMA IF NOT EXISTS reporting");
-          await tempDs.query("CREATE SCHEMA IF NOT EXISTS integration");
-          await tempDs.query("CREATE SCHEMA IF NOT EXISTS intelligence");
-          await tempDs.query("CREATE SCHEMA IF NOT EXISTS platform");
-          await tempDs.query("CREATE SCHEMA IF NOT EXISTS tenant");
+          await client.connect();
+          await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+          await client.query("CREATE SCHEMA IF NOT EXISTS accounting");
+          await client.query("CREATE SCHEMA IF NOT EXISTS reporting");
+          await client.query("CREATE SCHEMA IF NOT EXISTS integration");
+          await client.query("CREATE SCHEMA IF NOT EXISTS intelligence");
+          await client.query("CREATE SCHEMA IF NOT EXISTS platform");
+          await client.query("CREATE SCHEMA IF NOT EXISTS tenant");
           console.log("[Database] Schemas created successfully");
-          await tempDs.destroy();
         } catch (error) {
           console.error("[Database] Schema creation error:", error.message);
-          try {
-            await tempDs.destroy();
-          } catch {
-            // ignore
-          }
+        } finally {
+          await client.end();
         }
 
-        return dataSource;
+        // Return DataSource - schemas are now created
+        return new DataSource(options!);
       },
     }),
     TypeOrmModule.forFeature([
