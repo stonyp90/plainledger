@@ -1746,7 +1746,7 @@ function HeroDashboardPreview({
         )}
         
         {/* Main Content */}
-        <div className="flex-1 p-3 sm:p-4 min-h-[400px]">
+        <div className="flex-1 p-3 sm:p-4 pb-3 sm:pb-4">
           {/* KPI Cards Row - Responsive: 2-col mobile, 2-col tablet, 4-col desktop */}
           <div className={`grid gap-2 mb-3 relative ${
             isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-2' : 'grid-cols-4'
@@ -1754,14 +1754,15 @@ function HeroDashboardPreview({
             {(isMobile && !showAllKpis ? current.kpis.slice(0, 2) : current.kpis).map((kpi, i) => (
               <div 
                 key={i}
-                className={`p-2 rounded-lg transition-all duration-300 cursor-pointer relative group min-h-[44px] ${
-                  showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                className={`p-2 rounded-lg cursor-pointer relative group min-h-[44px] ${
+                  showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
                 }`}
                 style={{ 
                   backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(255, 255, 255, 0.9)',
                   border: `1px solid ${hoveredKpi === i ? theme.green : (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)')}`,
                   boxShadow: hoveredKpi === i ? `0 8px 24px ${theme.green}30` : 'none',
-                  transitionDelay: `${i * 100 + 200}ms`,
+                  transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)',
+                  transitionDelay: `${i * 100}ms`,
                   zIndex: hoveredKpi === i ? 10 : 1,
                 }}
                 onMouseEnter={() => !isMobile && setHoveredKpi(i)}
@@ -1820,13 +1821,14 @@ function HeroDashboardPreview({
           
           {/* Strategic Roadmap - Improved UX for M, T, A */}
           <div 
-            className={`p-3 sm:p-4 lg:p-5 rounded-xl mb-4 transition-all duration-700 ${
-              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            className={`p-3 sm:p-4 lg:p-5 rounded-xl mb-4 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ 
               backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(250, 250, 250, 0.9)',
               border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
-              transitionDelay: '500ms'
+              transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              transitionDelay: '300ms'
             }}
           >
             {/* Header - Left aligned */}
@@ -1872,22 +1874,50 @@ function HeroDashboardPreview({
                 {roadmapItems.map((item, i) => (
                   <div 
                     key={i} 
-                    className={`${isMobile ? 'flex-col' : 'flex items-center'} mb-3 sm:mb-2 lg:mb-3 relative gap-2 group cursor-pointer`}
+                    className={`${isMobile ? 'flex-col' : 'flex items-center'} mb-3 sm:mb-2 lg:mb-3 relative gap-2 group cursor-pointer p-2 -mx-2 rounded-lg`}
+                    style={{
+                      backgroundColor: hoveredRoadmapItem === i ? (isDark ? 'rgba(71, 85, 105, 0.2)' : 'rgba(16, 185, 129, 0.05)') : 'transparent',
+                      transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
                     onMouseEnter={() => !isMobile && setHoveredRoadmapItem(i)}
                     onMouseLeave={() => !isMobile && setHoveredRoadmapItem(null)}
                   >
                     {/* Label - Left aligned */}
-                    <div className={`${isMobile ? 'w-full text-[10px] font-medium mb-1 text-left' : 'w-24 sm:w-32 lg:w-40 text-[10px] sm:text-[11px] font-medium pr-2 text-left truncate'}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    <div 
+                      className={`${isMobile ? 'w-full text-[10px] font-medium mb-1 text-left' : 'w-24 sm:w-32 lg:w-40 text-[10px] sm:text-[11px] font-medium pr-2 text-left truncate'}`} 
+                      style={{ 
+                        color: hoveredRoadmapItem === i ? item.color : 'rgb(var(--color-text-secondary))',
+                        transition: 'color 0.4s ease-out',
+                      }}
+                    >
                       {item.plan}
                     </div>
                     {/* Progress Bar */}
                     <div className={`relative ${isMobile ? 'w-full' : 'flex-1'}`} style={{ minWidth: isMobile ? 'auto' : '200px' }}>
+                      {/* Hover Tooltip */}
                       <div 
-                        className={`${isMobile ? 'h-5' : 'h-4 sm:h-5 lg:h-6'} w-full relative rounded-md overflow-hidden transition-all duration-200`}
+                        className={`absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg text-[9px] max-w-[280px] text-center pointer-events-none z-10 ${
+                          hoveredRoadmapItem === i ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        style={{ 
+                          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                          border: `1px solid ${item.color}50`,
+                          boxShadow: `0 4px 12px ${item.color}25`,
+                          transition: 'opacity 0.3s ease-out',
+                        }}
+                      >
+                        <span style={{ color: item.color, fontWeight: 600 }}>{isEn ? 'AI Insight' : 'Aperçu IA'}:</span>{' '}
+                        <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                          {item.aiRecommendation?.split('.').slice(0, 2).join('.') || item.plan}
+                        </span>
+                      </div>
+                      <div 
+                        className={`${isMobile ? 'h-5' : 'h-4 sm:h-5 lg:h-6'} w-full relative rounded-md overflow-hidden`}
                         style={{ 
                           backgroundColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
-                          boxShadow: hoveredRoadmapItem === i ? `0 4px 12px ${item.color}30` : 'none',
-                          transform: hoveredRoadmapItem === i ? 'scale(1.02)' : 'scale(1)',
+                          boxShadow: hoveredRoadmapItem === i ? `0 6px 20px ${item.color}35` : 'none',
+                          transform: hoveredRoadmapItem === i ? 'scale(1.03)' : 'scale(1)',
+                          transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
                         }}
                       >
                         {/* Grid lines inside bar */}
@@ -1924,51 +1954,19 @@ function HeroDashboardPreview({
                   </div>
                 ))}
               </div>
-              
-              {/* AI Insight Panel - Shows when hovering roadmap items */}
-              {hoveredRoadmapItem !== null && roadmapItems[hoveredRoadmapItem] && (
-                <div 
-                  className="mt-3 p-2.5 rounded-lg"
-                  style={{ 
-                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.95)',
-                    border: `1px solid ${roadmapItems[hoveredRoadmapItem].color}40`,
-                  }}
-                >
-                  <div className="flex items-start gap-2">
-                    <div 
-                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${roadmapItems[hoveredRoadmapItem].color}20` }}
-                    >
-                      <Sparkles className="w-3 h-3" style={{ color: roadmapItems[hoveredRoadmapItem].color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[10px] font-semibold" style={{ color: roadmapItems[hoveredRoadmapItem].color }}>
-                          {isEn ? 'AI Insight' : 'Aperçu IA'}
-                        </span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${roadmapItems[hoveredRoadmapItem].color}15`, color: roadmapItems[hoveredRoadmapItem].color }}>
-                          {roadmapItems[hoveredRoadmapItem].plan}
-                        </span>
-                      </div>
-                      <p className="text-[10px] leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                        {roadmapItems[hoveredRoadmapItem].aiRecommendation}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
           
           {/* Industry Benchmarks - Grid Cards Layout */}
           <div 
-            className={`rounded-xl transition-all duration-700 ${
-              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            className={`rounded-xl ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ 
               backgroundColor: isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(255, 255, 255, 0.95)',
               border: `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)'}`,
-              transitionDelay: '700ms'
+              transition: 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              transitionDelay: '500ms'
             }}
           >
             {/* Header - Left aligned */}
@@ -1979,7 +1977,7 @@ function HeroDashboardPreview({
             </div>
             
             {/* Benchmark Cards - Matching KPI cards style */}
-            <div className={`grid gap-3 p-2 sm:p-3 pt-2 sm:pt-14 overflow-visible ${
+            <div className={`grid gap-3 p-2 sm:p-3 overflow-visible ${
               isMobile ? 'grid-cols-1' : 'grid-cols-3'
             }`}>
               {current.benchmarks.map((row, i) => {
@@ -1996,7 +1994,7 @@ function HeroDashboardPreview({
                 return (
                   <div 
                     key={i}
-                    className="p-2 rounded-lg transition-all duration-300 cursor-pointer relative group"
+                    className="p-2 rounded-lg transition-all duration-500 ease-out cursor-pointer relative group"
                     style={{ 
                       backgroundColor: isDark ? 'rgba(51, 65, 85, 0.4)' : 'rgba(255, 255, 255, 0.9)',
                       border: `1px solid ${hoveredRow === i ? statusColor : (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)')}`,
