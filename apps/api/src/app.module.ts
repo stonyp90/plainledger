@@ -285,6 +285,22 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             ON CONFLICT (id) DO NOTHING
           `);
           
+          // Update existing organizations to use 'free' plan if they have invalid subscription_plan_id
+          // This prevents foreign key constraint violations
+          await client.query(`
+            UPDATE accounting.organizations 
+            SET subscription_plan_id = 'free' 
+            WHERE subscription_plan_id IS NOT NULL 
+            AND subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
+          `);
+          
+          // Set NULL subscription_plan_id to 'free' as well
+          await client.query(`
+            UPDATE accounting.organizations 
+            SET subscription_plan_id = 'free' 
+            WHERE subscription_plan_id IS NULL
+          `);
+          
           console.log("[Database] Schemas created successfully");
         } catch (error) {
           console.error("[Database] Schema creation error:", error.message);
