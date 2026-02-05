@@ -22,7 +22,13 @@ export class DatabaseInitializerService implements OnModuleInit, OnApplicationBo
    * This seeds default roles and permissions
    */
   async onApplicationBootstrap() {
-    await this.seedRolesAndPermissions();
+    this.logger.log("onApplicationBootstrap starting...");
+    try {
+      await this.seedRolesAndPermissions();
+      this.logger.log("onApplicationBootstrap completed");
+    } catch (error) {
+      this.logger.error(`onApplicationBootstrap failed: ${error.message}`);
+    }
   }
 
   private async createSchemas() {
@@ -48,9 +54,20 @@ export class DatabaseInitializerService implements OnModuleInit, OnApplicationBo
    * Uses INSERT ... ON CONFLICT DO NOTHING to be idempotent
    */
   private async seedRolesAndPermissions() {
+    this.logger.log("seedRolesAndPermissions starting...");
+    
+    // Add timeout wrapper for queries
+    const queryWithTimeout = async <T>(query: string, timeout = 10000): Promise<T> => {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Query timed out after ${timeout}ms`)), timeout)
+      );
+      return Promise.race([this.dataSource.query(query), timeoutPromise]);
+    };
+
     try {
       // Check if roles exist
-      const existingRoles = await this.dataSource.query(
+      this.logger.log("Checking if roles table has data...");
+      const existingRoles = await queryWithTimeout<{ count: string }[]>(
         `SELECT COUNT(*) as count FROM tenant.roles`
       );
 
@@ -62,7 +79,7 @@ export class DatabaseInitializerService implements OnModuleInit, OnApplicationBo
       this.logger.log("Seeding default roles and permissions...");
 
       // Seed default roles
-      await this.dataSource.query(`
+      await queryWithTimeout(`
         INSERT INTO tenant.roles (id, name, description, tier_level, is_system) VALUES
           ('owner', 'Owner', 'Full organization owner access', 100, true),
           ('admin', 'Administrator', 'Administrative access', 50, true),
@@ -73,7 +90,7 @@ export class DatabaseInitializerService implements OnModuleInit, OnApplicationBo
       this.logger.log("Default roles seeded");
 
       // Seed default permissions
-      await this.dataSource.query(`
+      await queryWithTimeout(`
         INSERT INTO tenant.permissions (id, name, description, category) VALUES
           ('manage:organization', 'Manage Organization', 'Full organization management', 'organization'),
           ('manage:members', 'Manage Members', 'Invite/remove team members', 'organization'),
@@ -92,7 +109,7 @@ export class DatabaseInitializerService implements OnModuleInit, OnApplicationBo
       this.logger.log("Default permissions seeded");
 
       // Assign permissions to roles
-      await this.dataSource.query(`
+      await queryWithTimeout(`
         INSERT INTO tenant.role_permissions (role_id, permission_id) VALUES
           -- Owner: all permissions
           ('owner', 'manage:organization'),
