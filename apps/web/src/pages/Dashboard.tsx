@@ -635,6 +635,7 @@ export default function Dashboard() {
 
     // Legacy anomalies section - kept for backwards compatibility when KPIs are hidden
     // This is now handled in the combined row above, but keeping the Slack/Teams buttons logic
+    // eslint-disable-next-line no-constant-condition, no-constant-binary-expression
     if (false && shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies')) {
       sections.push({
         id: 'anomalies-legacy',

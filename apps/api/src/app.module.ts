@@ -34,6 +34,10 @@ import { CustomEntityEntity } from "@infrastructure/persistence/postgres/entitie
 import { SavedReportEntity } from "@infrastructure/persistence/postgres/entities/saved-report.entity";
 import { BoardMeetingEntity } from "@infrastructure/persistence/postgres/entities/board-meeting.entity";
 import { ScenarioEntity } from "@infrastructure/persistence/postgres/entities/scenario.entity";
+import { EntitlementEntity } from "@infrastructure/persistence/postgres/entities/entitlement.entity";
+import { SubscriptionPlanEntity } from "@infrastructure/persistence/postgres/entities/subscription-plan.entity";
+import { PermissionEntity } from "@infrastructure/persistence/postgres/entities/permission.entity";
+import { RoleEntity } from "@infrastructure/persistence/postgres/entities/role.entity";
 
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
@@ -64,6 +68,7 @@ import { ETLProgressController } from "@infrastructure/http/controllers/etl-prog
 import { DataSourceSyncController } from "@infrastructure/http/controllers/datasource-sync.controller";
 import { ETLTriggerController } from "@infrastructure/http/controllers/etl-trigger.controller";
 import { PermissionsController } from "@infrastructure/http/controllers/permissions.controller";
+import { UserPermissionsController } from "@infrastructure/http/controllers/user-permissions.controller";
 
 // Infrastructure - Auth
 import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
@@ -82,6 +87,7 @@ import { CacheService } from "@infrastructure/cache/cache.service";
 import { EmbeddingService } from "@infrastructure/ai/embedding.service";
 import { SimilaritySearchService } from "@application/services/similarity-search.service";
 import { CustomEntityService } from "@application/services/custom-entity.service";
+import { UserPermissionsService } from "@application/services/user-permissions.service";
 import { ProviderFactory } from "@application/services/provider-factory.service";
 import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
 import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
@@ -205,6 +211,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           SavedReportEntity,
           BoardMeetingEntity,
           ScenarioEntity,
+          EntitlementEntity,
+          SubscriptionPlanEntity,
+          PermissionEntity,
+          RoleEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:
@@ -270,6 +280,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
       SavedReportEntity,
       BoardMeetingEntity,
       ScenarioEntity,
+      EntitlementEntity,
+      SubscriptionPlanEntity,
+      PermissionEntity,
+      RoleEntity,
     ]),
 
     // Keycloak Authentication
@@ -351,6 +365,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     ETLTriggerController,
     JobsController,
     PermissionsController,
+    UserPermissionsController,
   ],
   providers: [
     // Guards - conditionally register Keycloak guards based on SKIP_AUTH
@@ -399,6 +414,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     CacheService,
     EmbeddingService,
     SimilaritySearchService,
+    UserPermissionsService,
     ProviderFactory,
     QuickBooksService,
     QuickBooksProvider,

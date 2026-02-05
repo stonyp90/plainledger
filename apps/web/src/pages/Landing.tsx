@@ -2591,7 +2591,7 @@ export default function Landing() {
                 >
                   {/* Animated message bubble */}
                   <motion.div
-                    className="absolute -top-2 left-1/2 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                    className="absolute -top-2 left-1/2 z-10 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                     style={{ 
                       background: theme.green,
                       color: 'white',
@@ -2688,7 +2688,7 @@ export default function Landing() {
                 >
                   {/* Animated message bubble */}
                   <motion.div
-                    className="absolute -top-2 left-1/2 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                    className="absolute -top-2 left-1/2 z-10 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
                     style={{ 
                       background: theme.gold,
                       color: 'white',

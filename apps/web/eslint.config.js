@@ -8,7 +8,7 @@ import globals from 'globals';
 export default [
   js.configs.recommended,
   {
-    ignores: ['dist/**', 'node_modules/**', 'storybook-static/**', '.eslintrc.cjs', 'vite.config.ts', 'vitest.config.ts'],
+    ignores: ['dist/**', 'node_modules/**', 'storybook-static/**', '.eslintrc.cjs', 'vite.config.ts', 'vitest.config.ts', 'scripts/**'],
   },
   {
     files: ['**/*.{ts,tsx}'],

@@ -9,6 +9,7 @@ import {
   JoinColumn,
 } from "typeorm";
 import { OrganizationEntity } from "./organization.entity";
+import { RoleEntity } from "./role.entity";
 
 /**
  * Customer Journey Stages for GTM tracking
@@ -184,6 +185,9 @@ export class UserProfileEntity {
   @Column({ name: "email_verified", type: "boolean", default: false })
   emailVerified: boolean;
 
+  @Column({ type: "varchar", length: 50, default: "viewer", nullable: true })
+  role?: string;
+
   @Column({ name: "last_login_at", type: "timestamptz", nullable: true })
   lastLoginAt?: Date;
 
@@ -200,4 +204,8 @@ export class UserProfileEntity {
   @ManyToOne(() => OrganizationEntity, { nullable: true })
   @JoinColumn({ name: "organization_id" })
   organization?: OrganizationEntity;
+
+  @ManyToOne(() => RoleEntity, { nullable: true })
+  @JoinColumn({ name: "role" })
+  roleEntity?: RoleEntity;
 }

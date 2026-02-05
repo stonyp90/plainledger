@@ -79,17 +79,13 @@ import { ContentLoader } from '../components/PageLoader';
 const CALENDLY_URL = 'https://calendly.com/anthonypaquet1508';
 
 export default function CustomDashboard() {
+  // All hooks MUST be called before any early returns (Rules of Hooks)
   const { language } = useI18n();
   const isEn = language === 'en';
   const location = useLocation();
   
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
-  
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="dashboard" />;
-  }
   
   const { data: financialData, isLoading, refresh } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasTrends, hasAccounts } = useHasRealData();
@@ -156,6 +152,11 @@ export default function CustomDashboard() {
       }
     };
   }, [tooltipTimeout]);
+  
+  // CRITICAL: Block paid users without connection - show connection gate (after all hooks)
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="dashboard" />;
+  }
   
   // Delayed hover handlers for suggested charts (prevents blocking clicks)
   const handleSuggestionMouseEnter = (chartId: string, e: React.MouseEvent) => {

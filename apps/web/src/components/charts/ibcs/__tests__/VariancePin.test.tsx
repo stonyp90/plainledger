@@ -32,11 +32,12 @@ describe('VariancePin', () => {
       
       expect(circle).toBeTruthy();
       expect(line).toBeTruthy();
-      // Colors are in hex format, check for green color (emerald-600: #059669 or similar)
+      // Colors can be hex format or CSS variable format
       const fillColor = circle?.getAttribute('fill') || '';
       const strokeColor = line?.getAttribute('stroke') || '';
-      expect(fillColor).toMatch(/^#(059669|22c55e|10b981|16a34a|34c759)/i);
-      expect(strokeColor).toMatch(/^#(059669|22c55e|10b981|16a34a|34c759)/i);
+      // Accept green hex colors or CSS variable format for theming
+      expect(fillColor).toMatch(/^(#(059669|22c55e|10b981|16a34a|34c759)|rgb\(var\(--color-primary-600\)\))/i);
+      expect(strokeColor).toMatch(/^(#(059669|22c55e|10b981|16a34a|34c759)|rgb\(var\(--color-primary-600\)\))/i);
     });
 
     it('renders unfavorable variance in red', () => {

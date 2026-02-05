@@ -39,7 +39,6 @@ import SubscriptionManagement from '../components/SubscriptionManagement';
 import SecretsManagement from '../components/SecretsManagement';
 import DemoModeBanner from '../components/DemoModeBanner';
 import ChartGlobalSettings from '../components/ChartGlobalSettings';
-import JobsSettings from '../components/JobsSettings';
 import { 
   uploadLogo, 
   deleteLogo, 
@@ -364,14 +363,6 @@ export default function Settings() {
       description: isEn ? 'Manage API credentials' : 'Gérer identifiants API',
       icon: Lock, 
       show: isAdmin 
-    },
-    // Technical config tabs - internal PlainLedger staff only (we configure this for customers)
-    { 
-      id: 'jobs', 
-      name: isEn ? 'Scheduled Jobs' : 'Tâches planifiées', 
-      description: isEn ? 'Configure automated tasks' : 'Configurer les tâches automatisées',
-      icon: Clock, 
-      show: isInternalStaff 
     },
   ];
 
@@ -994,10 +985,6 @@ export default function Settings() {
           )}
 
           {activeTab === 'subscription' && <SubscriptionManagement />}
-
-          {activeTab === 'jobs' && isInternalStaff && (
-            <JobsSettings userRole={isInternalStaff ? 'super_admin' : undefined} />
-          )}
 
           {activeTab === 'charts' && <ChartGlobalSettings />}
 

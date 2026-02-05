@@ -32,6 +32,7 @@ vi.mock('../../../hooks/useGraphConfig', () => ({
     waterfall: { varianceThreshold: 20 },
     budgetVsActual: { varianceThreshold: 10, showPriorYear: true },
     cpa: { thresholds: {} },
+    period: { defaultPeriod: 'month', quarters: ['Q1', 'Q2', 'Q3', 'Q4'] },
   })),
   saveUserPreferences: vi.fn(),
 }));

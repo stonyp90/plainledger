@@ -90,17 +90,13 @@ const aiTypeLabels: Record<AIAnomalyType, { label: string; labelEn: string; icon
 };
 
 export default function AnomalyDashboard() {
+  // All hooks MUST be called before any early returns (Rules of Hooks)
   const { language } = useI18n();
   const isEn = language === 'en';
   const { currentTenant } = useTenant();
   
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
-  
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="analysis" />;
-  }
   
   // Get industry from tenant, default to real_estate
   const selectedIndustry = (currentTenant?.industry || 'real_estate') as IndustryType;
@@ -311,6 +307,11 @@ export default function AnomalyDashboard() {
     if (selectedCategory === 'all') return combinedAnalysis.anomalies;
     return combinedAnalysis.anomalies.filter(a => a.category === selectedCategory);
   }, [combinedAnalysis.anomalies, selectedCategory]);
+
+  // CRITICAL: Block paid users without connection - show connection gate (after all hooks)
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="analysis" />;
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

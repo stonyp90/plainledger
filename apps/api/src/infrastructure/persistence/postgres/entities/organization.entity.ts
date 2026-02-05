@@ -7,8 +7,11 @@ import {
   DeleteDateColumn,
   Index,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from "typeorm";
 import { AccountEntity } from "./account.entity";
+import { SubscriptionPlanEntity } from "./subscription-plan.entity";
 
 @Entity({ name: "organizations", schema: "accounting" })
 export class OrganizationEntity {
@@ -50,6 +53,16 @@ export class OrganizationEntity {
   @Column({ name: "converted_at", type: "timestamptz", nullable: true })
   convertedAt?: Date;
 
+  @Column({ name: "subscription_plan_id", type: "varchar", length: 50, default: "free" })
+  @Index()
+  subscriptionPlanId: string;
+
+  @Column({ name: "stripe_subscription_id", type: "varchar", length: 100, nullable: true })
+  stripeSubscriptionId?: string;
+
+  @Column({ name: "stripe_customer_id", type: "varchar", length: 100, nullable: true })
+  stripeCustomerId?: string;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt: Date;
 
@@ -61,4 +74,8 @@ export class OrganizationEntity {
 
   @OneToMany(() => AccountEntity, (account) => account.organization)
   accounts: AccountEntity[];
+
+  @ManyToOne(() => SubscriptionPlanEntity, { nullable: true })
+  @JoinColumn({ name: "subscription_plan_id" })
+  subscriptionPlan?: SubscriptionPlanEntity;
 }

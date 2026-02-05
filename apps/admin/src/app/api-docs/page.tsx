@@ -113,7 +113,7 @@ export default function APIDocsPage() {
               </div>
 
               <p className="text-sm text-admin-400 mb-4">
-                The API uses Bearer token authentication. Use the "Authorize" button in Swagger UI to authenticate with your access token.
+                The API uses Bearer token authentication. Use the &quot;Authorize&quot; button in Swagger UI to authenticate with your access token.
               </p>
 
               <div className="p-3 bg-admin-900 rounded-lg border border-admin-700 font-mono text-sm text-admin-300">
@@ -154,7 +154,7 @@ export default function APIDocsPage() {
               <ul className="space-y-3 text-sm text-admin-400">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-400">•</span>
-                  <span>Use "Try it out" in Swagger UI to test endpoints directly</span>
+                  <span>Use &quot;Try it out&quot; in Swagger UI to test endpoints directly</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-400">•</span>

@@ -1029,12 +1029,11 @@ function StatusBadge({ status, isEn }: { status: Provider['status']; isEn: boole
 }
 
 // Provider Card Component - Clean Airbyte-style design
-function ProviderCard({ provider, onConnect, onDisconnect, onSync, isInternalStaff, isEn, readOnly = false, isDisconnecting = false }: {
+function ProviderCard({ provider, onConnect, onDisconnect, onSync, isEn, readOnly = false, isDisconnecting = false }: {
   provider: Provider;
   onConnect: (id: string) => void;
   onDisconnect: (id: string) => void;
   onSync: (id: string) => void;
-  isInternalStaff: boolean;
   isEn: boolean;
   readOnly?: boolean;
   isDisconnecting?: boolean;
@@ -2823,7 +2822,7 @@ function ConnectionModal({ provider, onClose, onConfirm, isEn }: {
 }
 
 export default function Connections() {
-  const { isInternalStaff, currentTenant, isAdmin } = useTenant();
+  const { currentTenant, isAdmin } = useTenant();
   const { canManageConnections, canViewConnections } = useCanPerform();
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -3035,8 +3034,8 @@ export default function Connections() {
     }
   };
   
-  // Show subscription gate for free users (not internal staff)
-  if (isFreePlan && !isInternalStaff) {
+  // Show subscription gate for free users
+  if (isFreePlan) {
     return <FreeUserSubscriptionGate isEn={isEn} />;
   }
 
@@ -3104,39 +3103,6 @@ export default function Connections() {
         </div>
       )}
 
-      {/* Internal Staff Banner */}
-      {isInternalStaff && (
-        <div 
-          className="p-3 rounded-lg flex flex-col sm:flex-row sm:items-center gap-3"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-error) / 0.05)',
-            border: '1px solid rgb(var(--color-error) / 0.2)'
-          }}
-        >
-          <Wrench className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-error))' }} />
-          <div className="flex-1">
-            <p className="text-sm font-medium" style={{ color: 'rgb(var(--color-error))' }}>
-              {isEn ? 'Internal mode enabled' : 'Mode interne activé'}
-            </p>
-            <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              {isEn 
-                ? 'You see this page as PlainLedger staff. Clients only see their active connections.'
-                : 'Vous voyez cette page en tant que staff PlainLedger. Les clients ne voient que leurs connexions actives.'}
-            </p>
-          </div>
-          <a 
-            href="/app/settings" 
-            className="text-xs font-medium px-3 py-1.5 rounded whitespace-nowrap"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-error) / 0.1)',
-              color: 'rgb(var(--color-error))'
-            }}
-          >
-            {isEn ? 'Advanced config →' : 'Config avancée →'}
-          </a>
-        </div>
-      )}
-
       {/* Read-only Permission Notice for non-admin users */}
       {showReadOnlyNotice && (
         <div 
@@ -3193,7 +3159,7 @@ export default function Connections() {
       )}
 
       {/* Interactive Onboarding Steps */}
-      {connectedCount === 0 && !isInternalStaff && (
+      {connectedCount === 0 && (
         <OnboardingSteps 
           isEn={isEn} 
           onSelectProvider={() => {
@@ -3235,7 +3201,6 @@ export default function Connections() {
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
             onSync={handleSync}
-            isInternalStaff={isInternalStaff}
             isEn={isEn}
             readOnly={!canManageConnections}
             isDisconnecting={isDisconnecting === provider.id}

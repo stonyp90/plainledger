@@ -18,6 +18,10 @@ import { DataSourceConnectionEntity } from '@infrastructure/persistence/postgres
 import { PushNotificationEntity } from '@infrastructure/persistence/postgres/entities/push-notification.entity';
 import { AdminChatSessionEntity } from '@infrastructure/persistence/postgres/entities/admin-chat-session.entity';
 import { AdminChatMessageEntity } from '@infrastructure/persistence/postgres/entities/admin-chat-message.entity';
+import { EntitlementEntity } from '@infrastructure/persistence/postgres/entities/entitlement.entity';
+import { SubscriptionPlanEntity } from '@infrastructure/persistence/postgres/entities/subscription-plan.entity';
+import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/permission.entity';
+import { RoleEntity } from '@infrastructure/persistence/postgres/entities/role.entity';
 
 // Guards
 import { PlatformAdminGuard } from './guards/platform-admin.guard';
@@ -49,6 +53,10 @@ import { AdminOnboardingController } from './controllers/admin-onboarding.contro
 import { AdminCommunicationController } from './controllers/admin-communication.controller';
 import { AdminNotificationsController } from './controllers/admin-notifications.controller';
 import { AdminChatController } from './controllers/admin-chat.controller';
+import { AdminSubscriptionPlansController } from './controllers/admin-subscription-plans.controller';
+import { AdminEntitlementsController } from './controllers/admin-entitlements.controller';
+import { AdminRolesController } from './controllers/admin-roles.controller';
+import { AdminPermissionsController } from './controllers/admin-permissions.controller';
 
 @Module({
   imports: [
@@ -70,6 +78,11 @@ import { AdminChatController } from './controllers/admin-chat.controller';
       PushNotificationEntity,
       AdminChatSessionEntity,
       AdminChatMessageEntity,
+      // Tenant permission entities
+      EntitlementEntity,
+      SubscriptionPlanEntity,
+      PermissionEntity,
+      RoleEntity,
     ]),
   ],
   controllers: [
@@ -83,6 +96,10 @@ import { AdminChatController } from './controllers/admin-chat.controller';
     AdminCommunicationController,
     AdminNotificationsController,
     AdminChatController,
+    AdminSubscriptionPlansController,
+    AdminEntitlementsController,
+    AdminRolesController,
+    AdminPermissionsController,
   ],
   providers: [
     // Guards

@@ -4,7 +4,22 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
 import FlywheelVisualization from '../FlywheelVisualization';
+
+// Mock lottie-react to avoid canvas context errors in tests
+vi.mock('lottie-react', () => ({
+  default: function MockLottie(props: Record<string, unknown>) {
+    return React.createElement('div', { 'data-testid': 'lottie-mock', ...props });
+  },
+}));
+
+// Mock LottieAnimations component that uses lottie-react
+vi.mock('../LottieAnimations', () => ({
+  DataCycleAnimation: function MockDataCycleAnimation({ className }: { className?: string }) {
+    return React.createElement('div', { 'data-testid': 'data-cycle-animation-mock', className });
+  },
+}));
 
 // Mock the i18n hook
 vi.mock('../../lib/i18n', () => ({

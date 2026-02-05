@@ -620,6 +620,14 @@ export default function TrendChart({
     };
   }, [data, baseline, budget, thresholds, title, movingAveragePeriod]);
 
+  // Combine refs for capture and responsive sizing - MUST be before early return (hooks rules)
+  const setRefs = useCallback((node: HTMLDivElement | null) => {
+    // Set chart capture ref
+    (chartRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    // Set responsive sizing ref
+    (responsiveRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+  }, [chartRef, responsiveRef]);
+
   // Early return - hide chart completely if no data
   if (!data || data.length === 0) {
     return null;
@@ -724,14 +732,6 @@ export default function TrendChart({
         return `${actualPoints} ${planPointsReverse} Z`;
       })()
     : '';
-
-  // Combine refs for capture and responsive sizing
-  const setRefs = useCallback((node: HTMLDivElement | null) => {
-    // Set chart capture ref
-    (chartRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-    // Set responsive sizing ref
-    (responsiveRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-  }, [chartRef, responsiveRef]);
 
   return (
     <div 

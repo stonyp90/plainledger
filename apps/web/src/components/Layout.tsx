@@ -176,13 +176,6 @@ const settingsCategories: SettingsCategory[] = [
         href: '/app/document-shares' 
       },
       { 
-        id: 'integrations', 
-        name: { en: 'Integrations', fr: 'Intégrations' }, 
-        description: { en: 'Data source connections', fr: 'Connexions sources de données' },
-        icon: Database, 
-        show: (p) => p.isInternalStaff 
-      },
-      { 
         id: 'secrets', 
         name: { en: 'API Keys', fr: 'Clés API' }, 
         description: { en: 'Manage API credentials', fr: 'Gérer identifiants API' },
@@ -1046,18 +1039,6 @@ export default function Layout({ children }: LayoutProps) {
               }} 
             />
           </button>
-          {isInternalStaff && (
-            <span 
-              className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-error) / 0.15)',
-                color: 'rgb(var(--color-error))'
-              }}
-              title={language === 'en' ? 'Internal mode - Advanced features visible' : 'Mode interne - Fonctionnalités avancées visibles'}
-            >
-              Staff
-            </span>
-          )}
         </div>
 
         {/* Organization Selector */}

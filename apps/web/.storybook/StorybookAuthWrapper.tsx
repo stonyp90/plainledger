@@ -20,11 +20,7 @@ export function StorybookAuthWrapper({ children }: StorybookAuthWrapperProps) {
   const isStorybook = typeof window !== 'undefined' && 
     (window.location.href.includes('storybook') || (window as any).__STORYBOOK_MOCK_AUTH__);
   
-  if (isStorybook) {
-    // Skip all auth checks in Storybook - just render children
-    return <>{children}</>;
-  }
-
+  // All hooks must be called before any early returns (Rules of Hooks)
   const { authenticated, initialized, user, login } = useKeycloak();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
@@ -97,6 +93,11 @@ export function StorybookAuthWrapper({ children }: StorybookAuthWrapperProps) {
 
     checkAccess();
   }, [authenticated, initialized, user, isMockAuth]);
+
+  // Early return for Storybook - skip all auth checks (after all hooks)
+  if (isStorybook) {
+    return <>{children}</>;
+  }
 
   // Show loading state
   if (isChecking || !initialized) {

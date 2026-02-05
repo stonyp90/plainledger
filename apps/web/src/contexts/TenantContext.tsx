@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from '../lib/keycloak';
+import api from '../lib/api';
 
 // Types
 export interface Tenant {
@@ -118,6 +119,8 @@ interface TenantContextType {
   
   // Permission checks
   hasPermission: (permission: Permission) => boolean;
+  hasEntitlement: (entitlement: string) => boolean;
+  isWithinLimit: (limitKey: string, currentUsage: number) => boolean;
   canManageMembers: boolean;
   canManageSettings: boolean;
   canManageBilling: boolean;
@@ -151,7 +154,7 @@ export type Permission =
   | 'use:api'
   | 'customize:dashboard';
 
-// Role-based permissions
+// Fallback role-based permissions (used if API fails)
 const ROLE_PERMISSIONS: Record<TenantMember['role'], Permission[]> = {
   owner: [
     'view:dashboard', 'view:reports', 'create:reports', 'delete:reports',
@@ -349,23 +352,61 @@ interface TenantProviderProps {
   children: ReactNode;
 }
 
+interface UserPermissionsData {
+  entitlements: string[];
+  permissions: string[];
+  limits: Record<string, number>;
+  overrides: string[];
+  role: {
+    id: string;
+    name: string;
+    tierLevel: number;
+  };
+  plan: {
+    id: string;
+    name: string;
+  };
+}
+
 export function TenantProvider({ children }: TenantProviderProps) {
   const { authenticated, user } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [currentTenant, setCurrentTenantState] = useState<Tenant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userPermissions, setUserPermissions] = useState<UserPermissionsData | null>(null);
 
   // Load tenants on auth
   useEffect(() => {
     if (authenticated) {
       loadTenants();
+      loadUserPermissions();
     } else {
       setTenants([]);
       setCurrentTenantState(null);
+      setUserPermissions(null);
       setIsLoading(false);
     }
   }, [authenticated]);
+
+  // Reload permissions when tenant changes
+  useEffect(() => {
+    if (authenticated && currentTenant) {
+      loadUserPermissions();
+    }
+  }, [authenticated, currentTenant?.id]);
+
+  // Load user permissions from API
+  const loadUserPermissions = async () => {
+    try {
+      const response = await api.get<UserPermissionsData>('/users/me/permissions');
+      setUserPermissions(response.data);
+    } catch (err) {
+      console.error('Failed to load user permissions:', err);
+      // Fallback to null - will use ROLE_PERMISSIONS
+      setUserPermissions(null);
+    }
+  };
 
   // Load tenants from API
   const loadTenants = async () => {
@@ -596,8 +637,31 @@ export function TenantProvider({ children }: TenantProviderProps) {
   // Check permission
   const hasPermission = useCallback((permission: Permission): boolean => {
     if (!currentTenant) return false;
+    // Use fetched permissions if available, otherwise fallback to ROLE_PERMISSIONS
+    if (userPermissions) {
+      return userPermissions.permissions.includes(permission);
+    }
     return ROLE_PERMISSIONS[currentTenant.role].includes(permission);
-  }, [currentTenant]);
+  }, [currentTenant, userPermissions]);
+
+  // Check entitlement
+  const hasEntitlement = useCallback((entitlement: string): boolean => {
+    if (!userPermissions) return false;
+    return (
+      userPermissions.entitlements.includes(entitlement) ||
+      userPermissions.overrides.includes(entitlement)
+    );
+  }, [userPermissions]);
+
+  // Check if usage is within limit
+  const isWithinLimit = useCallback((limitKey: string, currentUsage: number): boolean => {
+    if (!userPermissions) return false;
+    const limit = userPermissions.limits[limitKey];
+    if (limit === undefined) return false;
+    // -1 means unlimited
+    if (limit === -1) return true;
+    return currentUsage < limit;
+  }, [userPermissions]);
 
   // Computed permissions
   const canManageMembers = currentTenant ? hasPermission('manage:members') : false;
@@ -636,6 +700,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
     revokeInvitation,
     resendInvitation,
     hasPermission,
+    hasEntitlement,
+    isWithinLimit,
     canManageMembers,
     canManageSettings,
     canManageBilling,

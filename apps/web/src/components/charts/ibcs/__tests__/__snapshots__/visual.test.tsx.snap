@@ -240,7 +240,7 @@ exports[`IBCS Visual Snapshot Tests > IBCSLegend > matches snapshot for full leg
       viewBox="0 0 16 16"
     >
       <line
-        stroke="#059669"
+        stroke="rgb(var(--color-primary-600))"
         stroke-width="2"
         x1="8"
         x2="8"
@@ -250,7 +250,7 @@ exports[`IBCS Visual Snapshot Tests > IBCSLegend > matches snapshot for full leg
       <circle
         cx="8"
         cy="2"
-        fill="#059669"
+        fill="rgb(var(--color-primary-600))"
         r="3"
       />
     </svg>
@@ -368,7 +368,7 @@ exports[`IBCS Visual Snapshot Tests > IBCSLegend > matches snapshot for standard
       viewBox="0 0 16 16"
     >
       <line
-        stroke="#059669"
+        stroke="rgb(var(--color-primary-600))"
         stroke-width="2"
         x1="8"
         x2="8"
@@ -378,7 +378,7 @@ exports[`IBCS Visual Snapshot Tests > IBCSLegend > matches snapshot for standard
       <circle
         cx="8"
         cy="2"
-        fill="#059669"
+        fill="rgb(var(--color-primary-600))"
         r="3"
       />
     </svg>
@@ -531,7 +531,7 @@ exports[`IBCS Visual Snapshot Tests > VariancePin > matches snapshot for favorab
       Variance of +15% from plan
     </desc>
     <line
-      stroke="#059669"
+      stroke="rgb(var(--color-primary-600))"
       stroke-linecap="round"
       stroke-width="2"
       x1="100"
@@ -542,12 +542,12 @@ exports[`IBCS Visual Snapshot Tests > VariancePin > matches snapshot for favorab
     <circle
       cx="100"
       cy="50"
-      fill="#059669"
+      fill="rgb(var(--color-primary-600))"
       r="4"
     />
     <text
       dominant-baseline="middle"
-      fill="#059669"
+      fill="rgb(var(--color-primary-600))"
       font-family="ui-monospace, monospace"
       font-size="9"
       font-weight="600"

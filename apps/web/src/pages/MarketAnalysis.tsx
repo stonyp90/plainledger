@@ -104,17 +104,13 @@ const INDUSTRY_LUCIDE_ICONS: Record<string, typeof Building2> = {
 };
 
 export default function MarketAnalysis() {
+  // All hooks MUST be called before any early returns (Rules of Hooks)
   const { currentTenant } = useTenant();
   const { language } = useI18n();
   const isEn = language === 'en';
   
   // Account data access rules - check if paid user needs to connect
   const { shouldBlockUI, isLoading: accessLoading } = useAccountDataAccess();
-  
-  // CRITICAL: Block paid users without connection - show connection gate
-  if (shouldBlockUI && !accessLoading) {
-    return <PaidNoConnectionGate context="analysis" />;
-  }
   
   const { data: financialData, isLoading } = useFinancialData();
   const { hasRealData, hasQuickBooksConnection, hasSandboxData, shouldShowSandboxData, hasSummaryMetrics, hasRevenueTrends } = useHasRealData();
@@ -222,6 +218,11 @@ export default function MarketAnalysis() {
     const total = aiInsights.reduce((sum, insight) => sum + statusScores[insight.status], 0);
     return Math.round(total / aiInsights.length);
   }, [aiInsights]);
+
+  // CRITICAL: Block paid users without connection - show connection gate (after all hooks)
+  if (shouldBlockUI && !accessLoading) {
+    return <PaidNoConnectionGate context="analysis" />;
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

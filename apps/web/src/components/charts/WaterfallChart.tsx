@@ -465,6 +465,12 @@ export default function WaterfallChart({
     };
   }, [data, showVarianceThreshold]);
 
+  // Combine refs for capture and responsive sizing - MUST be before early return (hooks rules)
+  const setRefs = useCallback((node: HTMLDivElement | null) => {
+    (chartRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    (responsiveRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+  }, [chartRef, responsiveRef]);
+
   // Early return - hide chart completely if no data (after all hooks)
   if (!data || data.length === 0) {
     return null;
@@ -491,12 +497,6 @@ export default function WaterfallChart({
 
   // Dynamic height for fullscreen mode
   const chartHeight = isFullscreen ? Math.min(window.innerHeight - 300, 500) : height;
-
-  // Combine refs for capture and responsive sizing
-  const setRefs = useCallback((node: HTMLDivElement | null) => {
-    (chartRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-    (responsiveRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-  }, [chartRef, responsiveRef]);
 
   return (
     <div 
