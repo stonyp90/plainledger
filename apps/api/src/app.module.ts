@@ -258,6 +258,23 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           await client.query("CREATE SCHEMA IF NOT EXISTS platform");
           await client.query("CREATE SCHEMA IF NOT EXISTS tenant");
           
+          // Create subscription_plans table if it doesn't exist (TypeORM will create it later, but we need it now)
+          await client.query(`
+            CREATE TABLE IF NOT EXISTS tenant.subscription_plans (
+              id VARCHAR(50) PRIMARY KEY,
+              name VARCHAR(100) NOT NULL,
+              description TEXT,
+              stripe_product_id VARCHAR(100),
+              stripe_price_id VARCHAR(100),
+              stripe_price_id_annual VARCHAR(100),
+              limits JSONB NOT NULL DEFAULT '{}',
+              is_active BOOLEAN DEFAULT true,
+              display_order INTEGER DEFAULT 0,
+              created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+              updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+            )
+          `);
+          
           // Seed default subscription plan before TypeORM synchronizes
           // This ensures foreign key constraints can be created successfully
           await client.query(`
