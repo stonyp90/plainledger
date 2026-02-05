@@ -22,8 +22,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  FileText,
-  Copy,
   Target,
   ChevronLeft,
   ChevronRight,
@@ -368,13 +366,6 @@ export default function Settings() {
       show: isAdmin 
     },
     // Technical config tabs - internal PlainLedger staff only (we configure this for customers)
-    { 
-      id: 'api-docs', 
-      name: 'API Documentation', 
-      description: 'Swagger/OpenAPI docs',
-      icon: FileText, 
-      show: isInternalStaff 
-    },
     { 
       id: 'jobs', 
       name: isEn ? 'Scheduled Jobs' : 'Tâches planifiées', 
@@ -1004,10 +995,6 @@ export default function Settings() {
 
           {activeTab === 'subscription' && <SubscriptionManagement />}
 
-          {activeTab === 'api-docs' && isInternalStaff && (
-            <APIDocumentationSection />
-          )}
-
           {activeTab === 'jobs' && isInternalStaff && (
             <JobsSettings userRole={isInternalStaff ? 'super_admin' : undefined} />
           )}
@@ -1021,146 +1008,6 @@ export default function Settings() {
           {activeTab === 'security' && <SecuritySettings />}
 
           {activeTab === 'secrets' && <SecretsManagement />}
-      </div>
-    </div>
-  );
-}
-
-// API Documentation Section - Super Admin Only
-function APIDocumentationSection() {
-  const { language } = useI18n();
-  const isEn = language === 'en';
-  const swaggerUrl = `/api/docs`;
-
-  return (
-    <div className="space-y-6">
-      <div className="card">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="section-title flex items-center gap-2">
-              <FileText className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              {isEn ? 'API Documentation' : 'Documentation API'}
-            </h3>
-            <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn 
-                ? 'Interactive API documentation powered by Swagger/OpenAPI'
-                : 'Documentation API interactive alimentée par Swagger/OpenAPI'}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div 
-            className="p-4 rounded-xl border"
-            style={{ 
-              borderColor: 'rgb(var(--color-border))',
-              backgroundColor: 'rgb(var(--color-bg-muted) / 0.3)'
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h4 className="font-medium mb-1" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn ? 'Swagger UI' : 'Interface Swagger'}
-                </h4>
-                <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn 
-                    ? 'Explore and test all available API endpoints'
-                    : 'Explorez et testez tous les points de terminaison API disponibles'}
-                </p>
-                <div className="flex items-center gap-2 text-xs font-mono" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  <Link2 className="w-3 h-3" />
-                  <span className="break-all">{swaggerUrl}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex gap-2">
-              <a
-                href={swaggerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-primary-500))',
-                  color: 'white',
-                }}
-              >
-                <ExternalLink className="w-4 h-4" />
-                {isEn ? 'Open Swagger UI' : 'Ouvrir Swagger UI'}
-              </a>
-              
-              <button
-                onClick={async (e) => {
-                  try {
-                    await navigator.clipboard.writeText(swaggerUrl);
-                    // Show brief feedback
-                    const btn = e.currentTarget;
-                    const originalText = btn.textContent;
-                    btn.textContent = isEn ? 'Copied!' : 'Copié!';
-                    setTimeout(() => {
-                      btn.textContent = originalText;
-                    }, 2000);
-                  } catch (err) {
-                    console.error('Failed to copy URL:', err);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                style={{ 
-                  backgroundColor: 'rgb(var(--color-bg-muted))',
-                  color: 'rgb(var(--color-text))',
-                  border: '1px solid rgb(var(--color-border))',
-                }}
-              >
-                <Copy className="w-4 h-4" />
-                {isEn ? 'Copy URL' : 'Copier l\'URL'}
-              </button>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl border" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <h4 className="font-medium mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
-              <Shield className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              {isEn ? 'Authentication' : 'Authentification'}
-            </h4>
-            <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn 
-                ? 'The API uses Bearer token authentication. Use the "Authorize" button in Swagger UI to authenticate.'
-                : 'L\'API utilise l\'authentification par jeton Bearer. Utilisez le bouton "Authorize" dans Swagger UI pour vous authentifier.'}
-            </p>
-            <div className="text-xs font-mono p-2 rounded bg-black/5" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              Authorization: Bearer {'<token>'}
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl border" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <h4 className="font-medium mb-2 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
-              <Database className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              {isEn ? 'API Endpoints' : 'Points de terminaison API'}
-            </h4>
-            <ul className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}></span>
-                {isEn ? 'Organizations' : 'Organisations'}
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}></span>
-                {isEn ? 'Financial Reports' : 'Rapports financiers'}
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}></span>
-                {isEn ? 'Data Sources' : 'Sources de données'}
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}></span>
-                {isEn ? 'Analytics' : 'Analytique'}
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}></span>
-                {isEn ? 'Settings' : 'Paramètres'}
-              </li>
-            </ul>
-          </div>
-        </div>
       </div>
     </div>
   );

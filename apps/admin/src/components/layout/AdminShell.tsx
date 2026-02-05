@@ -25,6 +25,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Code2,
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useTheme } from '@/hooks/useTheme';
@@ -76,6 +77,7 @@ const navigation = [
   { name: 'Sync Jobs', href: '/sync-jobs', icon: RefreshCw },
   { name: 'Audit Logs', href: '/audit', icon: FileText },
   { name: 'Admin Users', href: '/admin-users', icon: Shield },
+  { name: 'API Docs', href: '/api-docs', icon: Code2 },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
