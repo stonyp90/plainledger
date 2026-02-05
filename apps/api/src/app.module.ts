@@ -301,25 +301,51 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             END $$;
           `);
           
-          // Update existing organizations to use 'free' plan if they have invalid subscription_plan_id
-          // This prevents foreign key constraint violations
+          // Update ALL organizations to use 'free' plan to ensure FK constraint can be created
+          // This prevents foreign key constraint violations during TypeORM synchronize
           // Use a transaction to ensure atomicity
           await client.query('BEGIN');
           try {
-            const updateResult = await client.query(`
-              UPDATE accounting.organizations 
-              SET subscription_plan_id = 'free' 
-              WHERE subscription_plan_id IS NOT NULL 
-              AND subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
-            `);
-            console.log(`[Database] Updated ${updateResult.rowCount} organizations with invalid subscription_plan_id`);
-            
+            // First, update NULL values
             const nullUpdateResult = await client.query(`
               UPDATE accounting.organizations 
               SET subscription_plan_id = 'free' 
               WHERE subscription_plan_id IS NULL
             `);
             console.log(`[Database] Updated ${nullUpdateResult.rowCount} organizations with NULL subscription_plan_id`);
+            
+            // Then, update any invalid values (not in subscription_plans table)
+            const invalidUpdateResult = await client.query(`
+              UPDATE accounting.organizations 
+              SET subscription_plan_id = 'free' 
+              WHERE subscription_plan_id IS NOT NULL 
+              AND subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
+            `);
+            console.log(`[Database] Updated ${invalidUpdateResult.rowCount} organizations with invalid subscription_plan_id`);
+            
+            // Finally, ensure ALL organizations have a valid subscription_plan_id
+            // This is a safety check - set any remaining invalid values to 'free'
+            const finalUpdateResult = await client.query(`
+              UPDATE accounting.organizations 
+              SET subscription_plan_id = 'free' 
+              WHERE subscription_plan_id IS NOT NULL 
+              AND NOT EXISTS (SELECT 1 FROM tenant.subscription_plans WHERE id = accounting.organizations.subscription_plan_id)
+            `);
+            console.log(`[Database] Final safety update: ${finalUpdateResult.rowCount} organizations`);
+            
+            // Verify all organizations now have valid subscription_plan_id
+            const invalidCount = await client.query(`
+              SELECT COUNT(*) as count 
+              FROM accounting.organizations 
+              WHERE subscription_plan_id IS NULL 
+              OR subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
+            `);
+            const invalidCountNum = parseInt(invalidCount.rows[0]?.count || '0');
+            if (invalidCountNum > 0) {
+              console.warn(`[Database] WARNING: ${invalidCountNum} organizations still have invalid subscription_plan_id`);
+            } else {
+              console.log(`[Database] ✅ All organizations have valid subscription_plan_id`);
+            }
             
             await client.query('COMMIT');
           } catch (error) {
