@@ -303,19 +303,30 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           
           // Update existing organizations to use 'free' plan if they have invalid subscription_plan_id
           // This prevents foreign key constraint violations
-          await client.query(`
-            UPDATE accounting.organizations 
-            SET subscription_plan_id = 'free' 
-            WHERE subscription_plan_id IS NOT NULL 
-            AND subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
-          `);
-          
-          // Set NULL subscription_plan_id to 'free' as well
-          await client.query(`
-            UPDATE accounting.organizations 
-            SET subscription_plan_id = 'free' 
-            WHERE subscription_plan_id IS NULL
-          `);
+          // Use a transaction to ensure atomicity
+          await client.query('BEGIN');
+          try {
+            const updateResult = await client.query(`
+              UPDATE accounting.organizations 
+              SET subscription_plan_id = 'free' 
+              WHERE subscription_plan_id IS NOT NULL 
+              AND subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
+            `);
+            console.log(`[Database] Updated ${updateResult.rowCount} organizations with invalid subscription_plan_id`);
+            
+            const nullUpdateResult = await client.query(`
+              UPDATE accounting.organizations 
+              SET subscription_plan_id = 'free' 
+              WHERE subscription_plan_id IS NULL
+            `);
+            console.log(`[Database] Updated ${nullUpdateResult.rowCount} organizations with NULL subscription_plan_id`);
+            
+            await client.query('COMMIT');
+          } catch (error) {
+            await client.query('ROLLBACK');
+            console.error("[Database] Error updating organizations:", error.message);
+            throw error;
+          }
           
           console.log("[Database] Schemas created successfully");
         } catch (error) {
