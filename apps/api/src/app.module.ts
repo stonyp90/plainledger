@@ -347,6 +347,16 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               console.log(`[Database] ✅ All organizations have valid subscription_plan_id`);
             }
             
+            // Fix user_profiles with invalid organization_id references
+            // This prevents FK constraint violations when TypeORM synchronizes
+            const userProfilesUpdateResult = await client.query(`
+              UPDATE accounting.user_profiles 
+              SET organization_id = NULL 
+              WHERE organization_id IS NOT NULL 
+              AND organization_id NOT IN (SELECT id FROM accounting.organizations)
+            `);
+            console.log(`[Database] Updated ${userProfilesUpdateResult.rowCount} user_profiles with invalid organization_id`);
+            
             await client.query('COMMIT');
           } catch (error) {
             await client.query('ROLLBACK');
