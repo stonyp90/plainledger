@@ -813,10 +813,90 @@ function HeroDashboardPreview({
     }
   }, [isVisible]);
 
-  // Industry-specific configurations - Real Estate first as primary focus
+  // Industry-specific configurations - Order matches industryOptions in Landing component
+  // 0: hospitality, 1: real_estate, 2: restaurant, 3: construction, 4: retail
   const industries = [
+    // 0: Hospitality (Hotel)
     { 
-      id: 'realestate',
+      id: 'hospitality',
+      name: isEn ? 'Hospitality' : 'Hôtellerie',
+      icon: Hotel,
+      iconColor: theme.gold,
+      kpis: [
+        { 
+          label: 'RevPAR', 
+          labelFull: isEn ? 'Revenue per Available Room' : 'Revenu par chambre disponible',
+          value: '$142', 
+          data: [115, 118, 122, 125, 128, 132, 135, 138, 140, 141, 142, 145], 
+          projection: true,
+          threshold: isEn ? 'Target: $130+' : 'Cible: 130$+',
+          target: '$130',
+          previous: '$138',
+          insight: isEn ? '+2.9% vs last month' : '+2,9% vs mois dernier'
+        },
+        { 
+          label: isEn ? 'Occupancy' : 'Occupation', 
+          labelFull: isEn ? 'Occupancy Rate' : 'Taux d\'occupation',
+          value: '78.5%', 
+          data: [68, 70, 72, 73, 74, 75, 76, 77, 77.5, 78, 78.5, 80], 
+          projection: true,
+          threshold: isEn ? 'Target: 70-85%' : 'Cible: 70-85%',
+          target: '75%',
+          previous: '76.2%',
+          insight: isEn ? 'Above target' : 'Au-dessus de la cible'
+        },
+        { 
+          label: 'ADR', 
+          labelFull: isEn ? 'Average Daily Rate' : 'Tarif journalier moyen',
+          value: '$181', 
+          data: [165, 168, 170, 172, 174, 176, 177, 178, 179, 180, 181, 183], 
+          projection: true,
+          threshold: isEn ? 'Target: $170+' : 'Cible: 170$+',
+          target: '$170',
+          previous: '$175',
+          insight: isEn ? 'Strong pricing power' : 'Bon pouvoir de prix'
+        },
+        { 
+          label: 'GOP', 
+          labelFull: isEn ? 'Gross Operating Profit %' : 'Profit brut d\'exploitation %',
+          value: '38.2%', 
+          data: [32, 33, 34, 35, 35.5, 36, 36.5, 37, 37.5, 38, 38.2, 39], 
+          projection: true,
+          threshold: isEn ? 'Target: 35-45%' : 'Cible: 35-45%',
+          target: '35%',
+          previous: '36.8%',
+          insight: isEn ? 'Healthy margins' : 'Marges saines'
+        },
+      ],
+      benchmarks: [
+        { metric: isEn ? 'CPOR' : 'Coût par chambre', yours: '$52', target: '<$60', status: 'excellent' },
+        { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '32%', target: '30-35%', status: 'good' },
+        { metric: isEn ? 'Guest Satisfaction' : 'Satisfaction client', yours: '4.6', target: '>4.5', status: 'excellent' },
+      ],
+      roadmapItems: [
+        { 
+          plan: isEn ? 'Room Renovation' : 'Rénovation chambres', 
+          start: 0, 
+          end: 30, 
+          color: theme.green,
+        },
+        { 
+          plan: isEn ? 'Revenue Management' : 'Gestion des revenus', 
+          start: 15, 
+          end: 55, 
+          color: theme.gold,
+        },
+        { 
+          plan: isEn ? 'Guest Experience' : 'Expérience client', 
+          start: 45, 
+          end: 100, 
+          color: theme.green,
+        },
+      ]
+    },
+    // 1: Real Estate
+    { 
+      id: 'real_estate',
       name: isEn ? 'Real Estate' : 'Immobilier',
       icon: Building2,
       iconColor: theme.green,
@@ -1046,9 +1126,88 @@ function HeroDashboardPreview({
         },
       ]
     },
+    // 4: Retail
+    { 
+      id: 'retail',
+      name: isEn ? 'Retail' : 'Commerce',
+      icon: ShoppingBag,
+      iconColor: theme.green,
+      kpis: [
+        { 
+          label: isEn ? 'Revenue' : 'Revenus', 
+          labelFull: isEn ? 'Total Revenue' : 'Revenus totaux',
+          value: '$1.8M', 
+          data: [1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.72, 1.75, 1.77, 1.8, 1.85], 
+          projection: true,
+          threshold: isEn ? 'Target: $1.5M+' : 'Cible: 1,5M$+',
+          target: '$1.5M',
+          previous: '$1.72M',
+          insight: isEn ? '+4.7% vs last month' : '+4,7% vs mois dernier'
+        },
+        { 
+          label: isEn ? 'Gross Margin' : 'Marge brute', 
+          labelFull: isEn ? 'Gross Margin %' : 'Marge brute %',
+          value: '42.5%', 
+          data: [38, 39, 39.5, 40, 40.5, 41, 41.5, 41.8, 42, 42.2, 42.5, 43], 
+          projection: true,
+          threshold: isEn ? 'Target: 35-50%' : 'Cible: 35-50%',
+          target: '40%',
+          previous: '41.2%',
+          insight: isEn ? 'Strong margins' : 'Marges solides'
+        },
+        { 
+          label: isEn ? 'Inventory Turn' : 'Rotation stock', 
+          labelFull: isEn ? 'Inventory Turnover' : 'Rotation des stocks',
+          value: '8.2x', 
+          data: [6.5, 6.8, 7.0, 7.2, 7.4, 7.6, 7.8, 7.9, 8.0, 8.1, 8.2, 8.4], 
+          projection: true,
+          threshold: isEn ? 'Target: 6-12x' : 'Cible: 6-12x',
+          target: '8x',
+          previous: '7.8x',
+          insight: isEn ? 'Efficient inventory' : 'Stock efficace'
+        },
+        { 
+          label: isEn ? 'Sales/SqFt' : 'Ventes/pi²', 
+          labelFull: isEn ? 'Sales per Square Foot' : 'Ventes par pied carré',
+          value: '$485', 
+          data: [420, 430, 440, 450, 455, 460, 465, 470, 475, 480, 485, 495], 
+          projection: true,
+          threshold: isEn ? 'Target: $400+' : 'Cible: 400$+',
+          target: '$400',
+          previous: '$465',
+          insight: isEn ? 'High productivity' : 'Haute productivité'
+        },
+      ],
+      benchmarks: [
+        { metric: isEn ? 'Shrinkage Rate' : 'Taux de démarque', yours: '1.2%', target: '<2%', status: 'excellent' },
+        { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '12.5%', target: '10-15%', status: 'good' },
+        { metric: isEn ? 'Conversion Rate' : 'Taux conversion', yours: '28%', target: '20-35%', status: 'good' },
+      ],
+      roadmapItems: [
+        { 
+          plan: isEn ? 'Store Expansion' : 'Expansion magasins', 
+          start: 0, 
+          end: 30, 
+          color: theme.green,
+        },
+        { 
+          plan: isEn ? 'E-commerce Growth' : 'Croissance e-commerce', 
+          start: 20, 
+          end: 65, 
+          color: theme.gold,
+        },
+        { 
+          plan: isEn ? 'Omnichannel Strategy' : 'Stratégie omnicanal', 
+          start: 50, 
+          end: 100, 
+          color: theme.green,
+        },
+      ]
+    },
   ];
 
-  const current = industries[selectedIndustry];
+  // Safely get current industry with fallback
+  const current = industries[selectedIndustry] || industries[0];
 
   // Get roadmap items from current industry
   const roadmapItems = current.roadmapItems;
