@@ -70,7 +70,7 @@ export default function IntegrationsPage() {
           <h2 className="text-xl font-semibold text-white mb-4">Connections</h2>
           <div className="bg-admin-800 rounded-lg border border-admin-700 overflow-hidden">
             <table className="w-full">
-              <thead className="bg-admin-700">
+              <thead className="bg-admin-800/50 border-b border-admin-700/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Organization</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Provider</th>
@@ -123,7 +123,7 @@ export default function IntegrationsPage() {
             <select
               value={webhookFilter}
               onChange={(e) => setWebhookFilter(e.target.value)}
-              className="bg-admin-700 border border-admin-600 rounded px-3 py-2 text-white text-sm"
+              className="bg-admin-800/50 border border-admin-700/50 rounded px-3 py-2 text-white text-sm"
             >
               <option value="all">All Status</option>
               <option value="received">Received</option>
@@ -133,7 +133,7 @@ export default function IntegrationsPage() {
           </div>
           <div className="bg-admin-800 rounded-lg border border-admin-700 overflow-hidden">
             <table className="w-full">
-              <thead className="bg-admin-700">
+              <thead className="bg-admin-800/50 border-b border-admin-700/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Provider</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Event Type</th>

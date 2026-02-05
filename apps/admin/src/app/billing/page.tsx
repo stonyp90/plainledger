@@ -88,11 +88,11 @@ export default function BillingPage() {
                     <span className="text-admin-300">{plan.plan}</span>
                     <span className="text-white font-medium">{plan.count} orgs ({plan.percentage}%)</span>
                   </div>
-                  <div className="w-full bg-admin-700 rounded-full h-2">
+                  <div className="w-full bg-admin-800/50 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
                         plan.plan === 'Enterprise' ? 'bg-accent-500' :
-                        plan.plan === 'Professional' ? 'bg-primary-500' : 'bg-gray-500'
+                        plan.plan === 'Professional' ? 'bg-primary-500' : plan.plan === 'Free' ? 'bg-admin-500' : 'bg-accent-500'
                       }`}
                       style={{ width: `${plan.percentage}%` }}
                     />

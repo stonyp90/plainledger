@@ -90,10 +90,10 @@ export default function SubscriptionPlansPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-admin-700 rounded">
+                  <button className="p-2 hover:bg-primary-600/20 rounded">
                     <Edit className="w-4 h-4 text-admin-400" />
                   </button>
-                  <button className="p-2 hover:bg-admin-700 rounded">
+                  <button className="p-2 hover:bg-primary-600/20 rounded">
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
                 </div>

@@ -257,7 +257,7 @@ function IntegrationSettings() {
             </div>
             <button className={`px-3 py-1.5 rounded text-sm ${
               integration.status === 'connected'
-                ? 'bg-admin-700 text-admin-300 hover:bg-admin-600'
+                ? 'bg-primary-600/20 border border-primary-600/30 text-primary-400 hover:bg-primary-600/30'
                 : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}>
               {integration.status === 'connected' ? 'Configure' : 'Connect'}

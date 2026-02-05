@@ -82,7 +82,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -96,27 +96,27 @@ export default function DashboardPage() {
             value={statsLoading ? '...' : formatNumber(stats?.organizations || 0)}
             change="+12%"
             icon={Building2}
-            color="blue"
+            color="primary"
           />
           <StatCard
             title="Total Users"
             value={statsLoading ? '...' : formatNumber(stats?.users || 0)}
             change="+8%"
             icon={Users}
-            color="green"
+            color="primary"
           />
           <StatCard
             title="MRR"
             value={statsLoading ? '...' : `$${formatNumber(stats?.mrr || 0)}`}
             change="+15%"
             icon={CreditCard}
-            color="purple"
+            color="accent"
           />
           <StatCard
             title="Active Today"
             value={statsLoading ? '...' : formatNumber(stats?.activeToday || 0)}
             icon={Activity}
-            color="orange"
+            color="primary"
           />
           {stats?.health && (
             <StatCard
@@ -131,7 +131,7 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
+          <div className="bg-admin-800 rounded-xl p-6 border border-admin-700/50">
             <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
             <div className="space-y-3">
               <QuickAction
@@ -152,7 +152,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
+          <div className="bg-admin-800 rounded-xl p-6 border border-admin-700/50">
             <h2 className="text-lg font-semibold text-white mb-4">Sync Jobs (Last 24h)</h2>
             {stats?.syncJobs ? (
               <div className="grid grid-cols-4 gap-4">
@@ -229,16 +229,15 @@ function StatCard({
   color: string;
 }) {
   const colorClasses = {
-    blue: 'bg-primary-500/10 text-primary-400',
+    primary: 'bg-primary-500/10 text-primary-400',
+    accent: 'bg-accent-500/10 text-accent-400',
     green: 'bg-green-500/10 text-green-400',
-    purple: 'bg-purple-500/10 text-purple-400',
-    orange: 'bg-orange-500/10 text-orange-400',
     yellow: 'bg-yellow-500/10 text-yellow-400',
     red: 'bg-red-500/10 text-red-400',
   };
 
   return (
-    <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
+    <div className="bg-admin-800 rounded-xl p-6 border border-admin-700/50">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-admin-400 text-sm">{title}</p>
@@ -262,7 +261,7 @@ function QuickAction({ href, title, description }: { href: string; title: string
   return (
     <a
       href={href}
-      className="block p-4 rounded-lg bg-admin-700/50 hover:bg-admin-700 transition-colors border border-admin-600/50"
+      className="block p-4 rounded-lg bg-primary-600/10 hover:bg-primary-600/20 transition-colors border border-primary-600/20 hover:border-primary-600/40"
     >
       <h3 className="font-medium text-white">{title}</h3>
       <p className="text-sm text-admin-400 mt-1">{description}</p>

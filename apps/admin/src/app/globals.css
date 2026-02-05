@@ -66,8 +66,20 @@
   background-color: var(--admin-surface);
 }
 
+[data-theme="light"] .bg-admin-800\/50 {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
 [data-theme="light"] .bg-admin-700 {
   background-color: var(--admin-input-bg);
+}
+
+[data-theme="light"] .bg-admin-700\/50 {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+[data-theme="light"] .border-admin-700\/50 {
+  border-color: rgba(226, 232, 240, 0.5);
 }
 
 [data-theme="light"] .border-admin-700 {

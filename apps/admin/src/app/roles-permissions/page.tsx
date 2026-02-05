@@ -132,7 +132,7 @@ export default function RolesPermissionsPage() {
                           Permissions: {item.permissions?.length || 0}
                         </span>
                         {item.isSystem && (
-                          <span className="px-2 py-1 bg-admin-700 text-admin-300 text-xs rounded">
+                          <span className="px-2 py-1 bg-primary-600/20 border border-primary-600/30 text-primary-400 text-xs rounded">
                             System
                           </span>
                         )}
@@ -146,11 +146,11 @@ export default function RolesPermissionsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-admin-700 rounded">
+                  <button className="p-2 hover:bg-primary-600/20 rounded">
                     <Edit className="w-4 h-4 text-admin-400" />
                   </button>
                   {(!item.isSystem || activeTab === 'permissions') && (
-                    <button className="p-2 hover:bg-admin-700 rounded">
+                    <button className="p-2 hover:bg-primary-600/20 rounded">
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   )}

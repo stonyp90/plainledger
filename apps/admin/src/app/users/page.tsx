@@ -69,13 +69,13 @@ export default function UsersPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-white placeholder-admin-400 focus:outline-none focus:border-primary-500"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 hover:bg-admin-700 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-admin-700/50 transition-colors">
             <Filter className="w-4 h-4" />
             Filters
           </button>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 hover:bg-admin-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-admin-700/50 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -113,7 +113,7 @@ export default function UsersPage() {
                   <tr key={user.id} className="hover:bg-admin-700/50">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-admin-600 flex items-center justify-center text-sm font-medium text-white">
+                        <div className="w-8 h-8 rounded-full bg-primary-600/20 border border-primary-600/30 flex items-center justify-center text-sm font-medium text-primary-400">
                           {user.firstName?.[0] || user.email?.[0]?.toUpperCase()}
                         </div>
                         <div>
@@ -128,7 +128,7 @@ export default function UsersPage() {
                       {user.organizationName || '-'}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="px-2 py-1 text-xs rounded-full bg-admin-700 text-admin-300">
+                      <span className="px-2 py-1 text-xs rounded-full bg-primary-600/20 text-primary-400 border border-primary-600/30">
                         {user.role || 'User'}
                       </span>
                     </td>

@@ -41,7 +41,7 @@ function ThemeSelector() {
   ];
   
   return (
-    <div className="flex items-center gap-1 p-1 rounded-lg bg-admin-700">
+    <div className="flex items-center gap-1 p-1 rounded-lg bg-admin-800/50 border border-admin-700/50">
       {themes.map((t) => {
         const Icon = t.icon;
         const isActive = theme === t.value;
@@ -148,7 +148,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {/* User info at bottom */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-admin-700">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-admin-700 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary-600/20 border border-primary-600/30 rounded-full flex items-center justify-center">
               <span className="text-white font-medium">
                 {admin?.user?.displayName?.charAt(0) || 'A'}
               </span>
@@ -178,7 +178,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </button>
 
             {/* Search */}
-            <div className="hidden md:flex items-center gap-2 bg-admin-700 rounded-lg px-3 py-2">
+            <div className="hidden md:flex items-center gap-2 bg-admin-800/50 border border-admin-700/50 rounded-lg px-3 py-2">
               <Search className="w-4 h-4 text-admin-400" />
               <input
                 type="text"
@@ -206,7 +206,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-2 text-admin-400 hover:text-white"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="w-8 h-8 bg-admin-700 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary-600/20 border border-primary-600/30 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
                     {admin?.user?.displayName?.charAt(0) || 'A'}
                   </span>
@@ -222,7 +222,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     </p>
                     <p className="text-xs text-admin-400">{admin?.user?.email}</p>
                   </div>
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-admin-400 hover:bg-admin-700 hover:text-white">
+                  <button className="w-full flex items-center gap-2 px-4 py-2 text-admin-400 hover:bg-primary-600/20 hover:text-primary-400">
                     <LogOut className="w-4 h-4" />
                     <span>Sign out</span>
                   </button>

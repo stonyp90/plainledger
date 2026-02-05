@@ -50,7 +50,7 @@ export default function CommunicationsPage() {
                 {templatesData?.templates?.map((template: any) => (
                   <div
                     key={template.name}
-                    className="p-4 hover:bg-admin-700 cursor-pointer transition-colors"
+                    className="p-4 hover:bg-primary-600/10 cursor-pointer transition-colors"
                     onClick={() => {
                       setSelectedTemplate(template.name);
                       previewMutation.mutate(template.name);
@@ -96,7 +96,7 @@ export default function CommunicationsPage() {
           <h2 className="text-xl font-semibold text-white mb-4">Recent Campaigns</h2>
           <div className="bg-admin-800 rounded-lg border border-admin-700 overflow-hidden">
             <table className="w-full">
-              <thead className="bg-admin-700">
+              <thead className="bg-admin-800/50 border-b border-admin-700/50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Campaign</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Recipients</th>

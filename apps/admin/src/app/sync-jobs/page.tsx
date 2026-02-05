@@ -80,7 +80,7 @@ export default function SyncJobsPage() {
       case 'pending':
         return 'bg-yellow-500/10 text-yellow-400';
       default:
-        return 'bg-admin-700 text-admin-400';
+            return 'bg-primary-600/20 border border-primary-600/30 text-primary-400';
     }
   };
 
@@ -111,7 +111,7 @@ export default function SyncJobsPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -206,7 +206,7 @@ export default function SyncJobsPage() {
                       {job.organizationName || job.organizationId}
                     </td>
                     <td className="px-4 py-4">
-                      <span className="px-2 py-1 text-xs rounded bg-admin-700 text-admin-300 capitalize">
+                      <span className="px-2 py-1 text-xs rounded bg-primary-600/20 border border-primary-600/30 text-primary-400 capitalize">
                         {job.provider}
                       </span>
                     </td>

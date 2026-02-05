@@ -91,7 +91,7 @@ export default function OrganizationsPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2 bg-admin-800 border border-admin-700 rounded-lg text-admin-400 hover:text-white hover:bg-admin-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-400 hover:text-white hover:bg-primary-600/20 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -138,8 +138,8 @@ export default function OrganizationsPage() {
                   <tr key={org.id} className="hover:bg-admin-700/30">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-admin-700 rounded-lg flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-admin-400" />
+                        <div className="w-10 h-10 bg-primary-600/10 border border-primary-600/20 rounded-lg flex items-center justify-center">
+                          <Building2 className="w-5 h-5 text-primary-400" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{org.name}</p>
@@ -209,14 +209,14 @@ export default function OrganizationsPage() {
                 <button
                   onClick={() => setPage(page - 1)}
                   disabled={page === 0}
-                  className="px-3 py-1 bg-admin-700 text-admin-400 rounded hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-primary-600/20 border border-primary-600/30 text-primary-400 rounded hover:bg-primary-600/30 hover:text-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPage(page + 1)}
                   disabled={(page + 1) * limit >= data.total}
-                  className="px-3 py-1 bg-admin-700 text-admin-400 rounded hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 bg-primary-600/20 border border-primary-600/30 text-primary-400 rounded hover:bg-primary-600/30 hover:text-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>

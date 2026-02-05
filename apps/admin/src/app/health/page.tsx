@@ -61,7 +61,7 @@ export default function HealthPage() {
         {/* Overall Status */}
         {overallHealth && (
           <div className="mb-6">
-            <div className="bg-admin-800 rounded-lg p-6 border border-admin-700">
+            <div className="bg-admin-800 rounded-lg p-6 border border-admin-700/50">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-white">Overall Status</h2>
                 {getStatusIcon(overallHealth.status)}
@@ -122,7 +122,7 @@ export default function HealthPage() {
         {syncStats && (
           <div>
             <h2 className="text-xl font-semibold text-white mb-4">Sync Jobs (Last 24h)</h2>
-            <div className="bg-admin-800 rounded-lg p-6 border border-admin-700">
+            <div className="bg-admin-800 rounded-lg p-6 border border-admin-700/50">
               <div className="grid grid-cols-4 gap-4">
                 <div>
                   <p className="text-admin-400 text-sm">Total</p>

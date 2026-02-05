@@ -69,7 +69,7 @@ export default function AuditLogsPage() {
     if (action.includes('delete')) return 'text-red-400 bg-red-500/10';
     if (action.includes('edit') || action.includes('update')) return 'text-primary-400 bg-primary-500/10';
     if (action.includes('disable')) return 'text-yellow-400 bg-yellow-500/10';
-    return 'text-admin-400 bg-admin-700';
+    return 'text-primary-400 bg-primary-600/20 border border-primary-600/30';
   };
 
   const formatAction = (action: string) => {
@@ -89,7 +89,7 @@ export default function AuditLogsPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh

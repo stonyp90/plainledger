@@ -99,7 +99,7 @@ export default function OnboardingPage() {
             </h2>
             <div className="bg-admin-800 rounded-lg border border-admin-700 overflow-hidden">
               <table className="w-full">
-                <thead className="bg-admin-700">
+                <thead className="bg-admin-800/50 border-b border-admin-700/50">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">Organization</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-white">Days Remaining</th>

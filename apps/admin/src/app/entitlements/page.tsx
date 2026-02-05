@@ -97,16 +97,16 @@ export default function EntitlementsPage() {
                     {entitlement.description && (
                       <p className="text-admin-400 text-sm mt-1">{entitlement.description}</p>
                     )}
-                    <span className="inline-block mt-2 px-2 py-1 bg-admin-700 text-admin-300 text-xs rounded">
+                    <span className="inline-block mt-2 px-2 py-1 bg-primary-600/20 border border-primary-600/30 text-primary-400 text-xs rounded">
                       {entitlement.category}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-admin-700 rounded">
+                  <button className="p-2 hover:bg-primary-600/20 rounded">
                     <Edit className="w-4 h-4 text-admin-400" />
                   </button>
-                  <button className="p-2 hover:bg-admin-700 rounded">
+                  <button className="p-2 hover:bg-primary-600/20 rounded">
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
                 </div>

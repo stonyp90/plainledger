@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 hover:bg-admin-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-primary-600/20 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
                       {admin.groups?.map((group) => (
                         <span
                           key={group}
-                          className="px-2 py-0.5 text-xs rounded bg-admin-700 text-admin-300"
+                          className="px-2 py-0.5 text-xs rounded bg-primary-600/20 border border-primary-600/30 text-primary-400"
                         >
                           {group}
                         </span>
