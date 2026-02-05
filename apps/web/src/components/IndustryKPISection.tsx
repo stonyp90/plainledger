@@ -13,6 +13,7 @@ import {
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../contexts/ThemeContext';
 import { INDUSTRY_KPIS, type IndustryData, type KPIDefinition } from '../lib/industryBenchmarkDisplay';
+import IndustryPillSelector, { type IndustryOption } from './IndustryPillSelector';
 
 // Re-export INDUSTRY_KPIS for backward compatibility
 export { INDUSTRY_KPIS };
@@ -51,20 +52,31 @@ function useInView(threshold = 0.2) {
 
 interface IndustryKPISectionProps {
   onScheduleCall?: () => void;
+  selectedIndustry?: string;
+  onIndustryChange?: (id: string | number) => void;
 }
 
-export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectionProps) {
+export default function IndustryKPISection({ 
+  onScheduleCall,
+  selectedIndustry: externalSelectedIndustry,
+  onIndustryChange: externalOnIndustryChange,
+}: IndustryKPISectionProps) {
   const { language } = useI18n();
   const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
   
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('hospitality');
+  const [internalSelectedIndustry, setInternalSelectedIndustry] = useState<string>('hospitality');
+  
+  // Use external state if provided, otherwise use internal state
+  const selectedIndustry = externalSelectedIndustry ?? internalSelectedIndustry;
+  const handleIndustryChange = externalOnIndustryChange ?? ((id: string | number) => {
+    if (typeof id === 'string') {
+      setInternalSelectedIndustry(id);
+    }
+  });
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const tabsScrollRef = useRef<HTMLDivElement>(null);
-  const [showLeftFade, setShowLeftFade] = useState(false);
-  const [showRightFade, setShowRightFade] = useState(true);
   const { ref: sectionRef, isInView } = useInView(0.1);
 
   // Detect screen size
@@ -78,23 +90,6 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
     window.addEventListener('resize', checkSize);
     return () => window.removeEventListener('resize', checkSize);
   }, []);
-
-  // Check scroll position for fade indicators
-  useEffect(() => {
-    const checkScroll = () => {
-      if (!tabsScrollRef.current) return;
-      const { scrollLeft, scrollWidth, clientWidth } = tabsScrollRef.current;
-      setShowLeftFade(scrollLeft > 10);
-      setShowRightFade(scrollLeft < scrollWidth - clientWidth - 10);
-    };
-    
-    const scrollEl = tabsScrollRef.current;
-    if (scrollEl) {
-      scrollEl.addEventListener('scroll', checkScroll);
-      checkScroll();
-      return () => scrollEl.removeEventListener('scroll', checkScroll);
-    }
-  }, [selectedIndustry]);
   
   // Filter to only show 5 target industries
   const TARGET_INDUSTRIES = ['hospitality', 'real_estate', 'restaurant', 'construction', 'retail'];
@@ -164,70 +159,20 @@ export default function IndustryKPISection({ onScheduleCall }: IndustryKPISectio
           </p>
         </div>
         
-        {/* Industry Tabs - Horizontal scroll with fade indicators */}
+        {/* Industry Tabs - Pyramid layout with shared component */}
         <div 
-          className={`relative mb-8 sm:mb-10 transition-all duration-700 delay-100 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          className={`mb-8 sm:mb-10 transition-all duration-700 delay-100 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
         >
-          {/* Left fade indicator */}
-          {showLeftFade && (
-            <div 
-              className="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
-              style={{
-                background: `linear-gradient(to right, ${isDark ? 'rgb(15, 23, 42)' : '#fafafa'} 0%, transparent 100%)`
-              }}
-            />
-          )}
-          {/* Right fade indicator */}
-          {showRightFade && (
-            <div 
-              className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
-              style={{
-                background: `linear-gradient(to left, ${isDark ? 'rgb(15, 23, 42)' : '#fafafa'} 0%, transparent 100%)`
-              }}
-            />
-          )}
-          <div 
-            ref={tabsScrollRef}
-            className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-2"
-            style={{ scrollSnapType: 'x proximity' }}
-          >
-            {filteredIndustries.map((industry) => {
-              const TabIcon = industry.icon;
-              const isSelected = validSelectedIndustry === industry.id;
-              
-              return (
-                <button
-                  key={industry.id}
-                  onClick={() => setSelectedIndustry(industry.id)}
-                  className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 flex-shrink-0 ${
-                    isSelected 
-                      ? 'shadow-lg scale-[1.02]' 
-                      : 'hover:scale-[1.02]'
-                  }`}
-                  style={{
-                    backgroundColor: isSelected 
-                      ? `rgb(var(--color-accent-${isDark ? '500' : '600'}))` 
-                      : (isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.9)'),
-                    color: isSelected 
-                      ? 'rgb(255, 255, 255)' 
-                      : (isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)'),
-                    border: isSelected 
-                      ? 'none' 
-                      : `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.6)'}`,
-                    boxShadow: isSelected 
-                      ? `0 4px 14px rgba(var(--color-accent-500), 0.4)` 
-                      : 'none',
-                    scrollSnapAlign: 'start',
-                  }}
-                >
-                  <TabIcon className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden min-[400px]:inline whitespace-nowrap">
-                    {isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim()}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <IndustryPillSelector
+            industries={filteredIndustries.map((industry): IndustryOption => ({
+              id: industry.id,
+              name: isEn ? industry.name.en.split('/')[0].trim() : industry.name.fr.split('/')[0].trim(),
+              icon: industry.icon,
+            }))}
+            selected={validSelectedIndustry}
+            onSelect={handleIndustryChange}
+            isEn={isEn}
+          />
         </div>
         
         {/* Main Card Container */}

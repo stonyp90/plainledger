@@ -6,6 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import PublicHeader from '../components/PublicHeader';
 import IndustryKPISection from '../components/IndustryKPISection';
+import IndustryPillSelector from '../components/IndustryPillSelector';
 import DemoModal from '../components/DemoModal';
 import ContactForm from '../components/ContactForm';
 import { GetTheApp } from '../components/GetTheApp';
@@ -56,6 +57,8 @@ import {
   Receipt,
   Briefcase,
   LineChart,
+  Hotel,
+  ShoppingBag,
 } from 'lucide-react';
 
 // =====================================================
@@ -1854,15 +1857,31 @@ export default function Landing() {
   const isEn = language === 'en';
   const theme = isDark ? colors.dark : colors.light;
   
-  // Industry selection state for dashboard preview
+  // Industry selection state for dashboard preview (synchronized across sections)
   const [selectedIndustry, setSelectedIndustry] = useState(0);
   
-  // Industries for the selector pills (matches HeroDashboardPreview order)
+  // Industries for the selector pills (5 industries matching IndustryKPISection)
   const industryOptions = [
-    { id: 'realestate', name: isEn ? 'Real Estate' : 'Immobilier', icon: Building2 },
+    { id: 'hospitality', name: isEn ? 'Hospitality' : 'Hôtellerie', icon: Hotel },
+    { id: 'real_estate', name: isEn ? 'Real Estate' : 'Immobilier', icon: Building2 },
     { id: 'restaurant', name: isEn ? 'Restaurant' : 'Restauration', icon: UtensilsCrossed },
     { id: 'construction', name: 'Construction', icon: Hammer },
+    { id: 'retail', name: isEn ? 'Retail' : 'Commerce', icon: ShoppingBag },
   ];
+  
+  // Convert numeric index to industry ID for IndustryKPISection
+  const selectedIndustryId = industryOptions[selectedIndustry]?.id || 'hospitality';
+  
+  const handleIndustryChange = (newSelection: string | number) => {
+    if (typeof newSelection === 'number') {
+      setSelectedIndustry(newSelection);
+    } else {
+      const index = industryOptions.findIndex(opt => opt.id === newSelection);
+      if (index !== -1) {
+        setSelectedIndustry(index);
+      }
+    }
+  };
 
   const handleScheduleCall = () => {
     window.open('https://calendly.com/anthonypaquet1508', '_blank');
@@ -2228,40 +2247,12 @@ export default function Landing() {
             </p>
             
             {/* Industry Selector Pills */}
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-              {industryOptions.map((industry, index) => {
-                const isActive = selectedIndustry === index;
-                const Icon = industry.icon;
-                return (
-                  <button
-                    key={industry.id}
-                    onClick={() => setSelectedIndustry(index)}
-                    className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                      isActive 
-                        ? 'shadow-lg scale-[1.02]' 
-                        : 'hover:scale-[1.02]'
-                    }`}
-                    style={{
-                      backgroundColor: isActive 
-                        ? theme.gold 
-                        : isDark ? 'rgba(51, 65, 85, 0.5)' : 'rgba(241, 245, 249, 0.9)',
-                      color: isActive 
-                        ? '#ffffff' 
-                        : isDark ? 'rgb(203, 213, 225)' : 'rgb(71, 85, 105)',
-                      border: isActive 
-                        ? 'none' 
-                        : `1px solid ${isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.6)'}`,
-                      boxShadow: isActive 
-                        ? `0 4px 14px ${theme.gold}40` 
-                        : 'none'
-                    }}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{industry.name}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <IndustryPillSelector
+              industries={industryOptions}
+              selected={selectedIndustry}
+              onSelect={handleIndustryChange}
+              isEn={isEn}
+            />
           </motion.div>
           
           {/* Interactive Dashboard Preview */}
@@ -2779,7 +2770,11 @@ export default function Landing() {
       {/* Industry KPIs Section - Formulas & Benchmarks */}
       <span id="industry-kpis" className="absolute" style={{ top: '-100px' }} />
       <section id="industries" className="relative" aria-label={isEn ? 'Industry-specific KPIs and benchmarks' : 'KPIs et références par industrie'}>
-        <IndustryKPISection onScheduleCall={handleScheduleCall} />
+        <IndustryKPISection 
+          onScheduleCall={handleScheduleCall}
+          selectedIndustry={selectedIndustryId}
+          onIndustryChange={handleIndustryChange}
+        />
       </section>
 
       {/* Connected Intelligence - Orbital System */}
@@ -3569,11 +3564,11 @@ export default function Landing() {
                 },
                 { 
                   num: 2, 
-                  icon: RefreshCw, 
-                  title: isEn ? 'Sync & Secure' : 'Sync. & Sécurisé',
-                  desc: isEn ? 'Data stored in Canada. Bank-level encryption.' : 'Données stockées au Canada. Chiffrement bancaire.',
-                  tags: [isEn ? 'Encrypted' : 'Chiffré', isEn ? 'Canadian' : 'Canadien'],
-                  time: isEn ? 'Auto' : 'Auto',
+                  icon: Shield, 
+                  title: isEn ? 'Secure & Private' : 'Sécurisé et privé',
+                  desc: isEn ? 'Read-only access. Data in Canada. AI optional and anonymized.' : 'Accès lecture seule. Données au Canada. IA optionnelle et anonymisée.',
+                  tags: [isEn ? 'Read-only' : 'Lecture seule', isEn ? 'SOC 2 in progress' : 'SOC 2 en cours', 'AES-256'],
+                  time: isEn ? 'Always' : 'Toujours',
                   color: theme.green,
                   visual: 'clean',
                 },
@@ -4560,16 +4555,103 @@ export default function Landing() {
       <GetTheApp />
 
       {/* Footer */}
-      <footer className="py-3 sm:py-4 px-3 sm:px-4 border-t border-gray-200 dark:border-gray-800" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
-            <Link to="/privacy" className="transition-colors hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
-            <Link to="/terms" className="transition-colors hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
-            <a href="#contact" className="transition-colors hover:underline">Contact</a>
+      <footer className="py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8 border-t border-gray-200 dark:border-gray-800" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+        <div className="max-w-6xl mx-auto">
+          {/* Compliance Badges - Grouped by status for better visual hierarchy */}
+          <div className="flex flex-col items-center gap-3 sm:gap-4 mb-5 sm:mb-6 md:mb-8">
+            {/* Completed Certifications - Grouped together */}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              {[
+                { label: 'PIPEDA', status: 'done' },
+                { label: isEn ? 'Law 25' : 'Loi 25', status: 'done' },
+                { label: isEn ? 'Data in Canada' : 'Données au Canada', status: 'done', flag: true },
+              ].map((badge, idx) => (
+                <span 
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 md:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105"
+                  style={{ 
+                    backgroundColor: `${theme.green}15`,
+                    color: theme.green,
+                  }}
+                >
+                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">
+                    {badge.label} {badge.flag && '🇨🇦'}
+                  </span>
+                </span>
+              ))}
+            </div>
+            
+            {/* In Progress & Planned - Grouped together */}
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+              {[
+                { label: 'SOC 2', status: 'progress', eta: 'Q2\'26' },
+                { label: 'ISO 27001', status: 'planned', eta: '2027' },
+              ].map((badge, idx) => (
+                <span 
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 md:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 hover:scale-105"
+                  style={{ 
+                    backgroundColor: badge.status === 'progress' 
+                      ? 'rgba(251, 191, 36, 0.25)' 
+                      : 'rgba(148, 163, 184, 0.25)',
+                    color: badge.status === 'progress' 
+                      ? '#d97706' 
+                      : 'rgb(100, 116, 139)',
+                  }}
+                >
+                  {badge.status === 'progress' && <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />}
+                  {badge.status === 'planned' && <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />}
+                  <span className="whitespace-nowrap">
+                    {badge.label} <span className="opacity-80 ml-1">{badge.eta}</span>
+                  </span>
+                </span>
+              ))}
+            </div>
           </div>
-          <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 text-center sm:text-right">
-            © 2026 PlainLedger 🇨🇦
-          </p>
+          
+          {/* Links and Copyright - Centered layout */}
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
+            {/* Navigation Links - Centered */}
+            <nav className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm md:text-base" aria-label={isEn ? 'Footer navigation' : 'Navigation du pied de page'}>
+              <Link 
+                to="/privacy" 
+                className="px-2 sm:px-3 py-1.5 rounded transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+              >
+                {isEn ? 'Privacy' : 'Confidentialité'}
+              </Link>
+              <span className="hidden sm:inline text-gray-400 dark:text-gray-500" aria-hidden="true">•</span>
+              <Link 
+                to="/terms" 
+                className="px-2 sm:px-3 py-1.5 rounded transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+              >
+                {isEn ? 'Terms' : 'Conditions'}
+              </Link>
+              <span className="hidden sm:inline text-gray-400 dark:text-gray-500" aria-hidden="true">•</span>
+              <Link 
+                to="/security" 
+                className="px-2 sm:px-3 py-1.5 rounded transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+              >
+                {isEn ? 'Security' : 'Sécurité'}
+              </Link>
+              <span className="hidden sm:inline text-gray-400 dark:text-gray-500" aria-hidden="true">•</span>
+              <a 
+                href="#contact" 
+                className="px-2 sm:px-3 py-1.5 rounded transition-colors hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                style={{ color: 'rgb(var(--color-text-secondary))' }}
+              >
+                Contact
+              </a>
+            </nav>
+            
+            {/* Copyright - Centered */}
+            <p className="text-xs sm:text-sm md:text-base text-center whitespace-nowrap" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              © 2026 PlainLedger 🇨🇦
+            </p>
+          </div>
         </div>
       </footer>
 
