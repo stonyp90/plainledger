@@ -257,6 +257,17 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           await client.query("CREATE SCHEMA IF NOT EXISTS intelligence");
           await client.query("CREATE SCHEMA IF NOT EXISTS platform");
           await client.query("CREATE SCHEMA IF NOT EXISTS tenant");
+          
+          // Seed default subscription plan before TypeORM synchronizes
+          // This ensures foreign key constraints can be created successfully
+          await client.query(`
+            INSERT INTO tenant.subscription_plans (id, name, description, limits, display_order, is_active)
+            VALUES ('free', 'Free', 'Basic access with limited features', 
+                    '{"users": 1, "connections": 0, "reports": 5, "storage": 100, "apiCalls": 100, "powerBiDashboards": 0}'::jsonb, 
+                    1, true)
+            ON CONFLICT (id) DO NOTHING
+          `);
+          
           console.log("[Database] Schemas created successfully");
         } catch (error) {
           console.error("[Database] Schema creation error:", error.message);
