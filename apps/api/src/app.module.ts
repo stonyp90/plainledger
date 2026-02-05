@@ -235,15 +235,17 @@ import { PlatformAdminModule } from "./modules/platform-admin";
       async dataSourceFactory(options) {
         const { DataSource } = await import("typeorm");
         const { Client } = await import("pg");
+        const { PostgresConnectionOptions } = await import("typeorm/driver/postgres/PostgresConnectionOptions");
         
         // Create schemas using raw PostgreSQL client before TypeORM initializes
+        const pgOptions = options as PostgresConnectionOptions;
         const client = new Client({
-          host: options!.host,
-          port: options!.port,
-          database: options!.database,
-          user: options!.username,
-          password: options!.password,
-          ssl: options!.ssl as any,
+          host: pgOptions.host,
+          port: pgOptions.port,
+          database: pgOptions.database,
+          user: pgOptions.username,
+          password: pgOptions.password,
+          ssl: pgOptions.ssl as any,
         });
 
         try {
