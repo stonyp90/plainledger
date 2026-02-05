@@ -41,9 +41,9 @@ export default function PublicHeader({
 
   return (
     <header 
-      className={`sticky top-0 z-50 border-b backdrop-blur-md ${className}`}
+      className={`sticky top-0 z-50 border-b ${className}`}
       style={{ 
-        backgroundColor: 'rgb(var(--color-bg) / 0.85)',
+        backgroundColor: 'rgb(var(--color-bg))',
         borderColor: 'rgb(var(--color-border) / 0.5)'
       }}
     >

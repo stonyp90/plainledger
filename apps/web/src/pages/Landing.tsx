@@ -4614,7 +4614,7 @@ export default function Landing() {
           
           {/* Contact Form - Full Width */}
           <motion.div 
-            className="max-w-3xl mx-auto p-6 sm:p-8 md:p-10 rounded-2xl relative overflow-hidden"
+            className="max-w-3xl mx-auto p-6 sm:p-8 md:p-10 rounded-2xl relative"
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -4625,19 +4625,21 @@ export default function Landing() {
               boxShadow: `0 8px 40px ${theme.green}08`,
             }}
           >
-            {/* Decorative elements */}
-            <div 
-              className="absolute top-0 right-0 w-32 h-32 opacity-5"
-              style={{
-                background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
-              }}
-            />
-            <div 
-              className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
-              style={{
-                background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
-              }}
-            />
+            {/* Decorative elements - contained in overflow-hidden wrapper */}
+            <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+              <div 
+                className="absolute top-0 right-0 w-32 h-32 opacity-5"
+                style={{
+                  background: `radial-gradient(circle, ${theme.green} 0%, transparent 70%)`,
+                }}
+              />
+              <div 
+                className="absolute bottom-0 left-0 w-24 h-24 opacity-5"
+                style={{
+                  background: `radial-gradient(circle, ${theme.gold} 0%, transparent 70%)`,
+                }}
+              />
+            </div>
             
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6 sm:mb-8">

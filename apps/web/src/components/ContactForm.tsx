@@ -672,12 +672,19 @@ export function ContactForm({
               id="contact-industry"
               options={industries}
               value={formData.industry}
-              onChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, industry: value }));
+                // Clear error when a valid value is selected
+                if (value) {
+                  setErrors(prev => ({ ...prev, industry: '' }));
+                  setTouched(prev => ({ ...prev, industry: true }));
+                }
+              }}
               onBlur={() => handleLandingBlur('industry')}
               placeholder={isEn ? 'Select your industry' : 'Sélectionnez votre industrie'}
               icon={<Briefcase className="w-4 h-4" />}
               hasError={!!(touched.industry && errors.industry)}
-              isValid={touched.industry && !errors.industry}
+              isValid={!!formData.industry && !errors.industry}
               theme={theme}
               required
             />
@@ -707,12 +714,19 @@ export function ContactForm({
               id="contact-subject"
               options={subjects}
               value={formData.subject}
-              onChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, subject: value }));
+                // Clear error when a valid value is selected
+                if (value) {
+                  setErrors(prev => ({ ...prev, subject: '' }));
+                  setTouched(prev => ({ ...prev, subject: true }));
+                }
+              }}
               onBlur={() => handleLandingBlur('subject')}
               placeholder={isEn ? 'Select a subject' : 'Sélectionnez un sujet'}
               icon={<Tag className="w-4 h-4" />}
               hasError={!!(touched.subject && errors.subject)}
-              isValid={touched.subject && !errors.subject}
+              isValid={!!formData.subject && !errors.subject}
               theme={theme}
               required
             />

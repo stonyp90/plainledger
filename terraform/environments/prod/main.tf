@@ -576,6 +576,45 @@ resource "aws_iam_role_policy" "github_actions" {
           "cloudfront:ListInvalidations"
         ]
         Resource = module.storybook.cloudfront_distribution_arn
+      },
+      # ETL Pipeline: Access QuickBooks credentials from Secrets Manager
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.quickbooks.arn
+        ]
+      },
+      # ETL Pipeline: Write extracted data to Bronze S3 bucket
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          module.datalake.bronze_bucket_arn,
+          "${module.datalake.bronze_bucket_arn}/*",
+          module.datalake.silver_bucket_arn,
+          "${module.datalake.silver_bucket_arn}/*",
+          module.datalake.gold_bucket_arn,
+          "${module.datalake.gold_bucket_arn}/*"
+        ]
+      },
+      # ETL Pipeline: KMS decrypt for secrets and S3 encryption
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = [
+          module.database.kms_key_arn
+        ]
       }
     ]
   })
