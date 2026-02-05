@@ -295,7 +295,8 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     MongoDBModule,
 
     // GraphQL API
-    GraphQLModule,
+    // TEMPORARILY DISABLED to test if it's causing the startup hang
+    // GraphQLModule,
 
     // Intelligence Platform
     IntelligenceModule,
@@ -441,41 +442,24 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     },
     // INotificationService removed - use SESAdapter directly
 
-    // GraphQL Resolvers
-    FinancialResolver,
-    OrganizationResolver,
-    DataSourceResolver,
-    MarketAnalysisResolver,
-    TaxCreditResolver,
-    VisualizationResolver,
-    UserSettingsResolver,
-    GqlAuthGuard,
+    // GraphQL Resolvers - TEMPORARILY DISABLED to test startup hang
+    // FinancialResolver,
+    // OrganizationResolver,
+    // DataSourceResolver,
+    // MarketAnalysisResolver,
+    // TaxCreditResolver,
+    // VisualizationResolver,
+    // UserSettingsResolver,
+    // GqlAuthGuard,
 
-    // GraphQL Subscription Resolvers
-    // DISABLED in production - WebSocket subscriptions cause app.listen() to hang in ECS/Fargate
-    // Subscription resolvers use @Subscription decorators which trigger Apollo's WS setup
-    ...(process.env.NODE_ENV === "production"
-      ? []
-      : [
-          ETLSubscriptionResolver,
-          AccountBalanceSubscriptionResolver,
-          TransactionSubscriptionResolver,
-        ]),
-
-    // GraphQL PubSub for subscriptions
-    // In production: provide a no-op mock since subscriptions are disabled
-    // Publisher services still need this injected but won't actually publish
+    // GraphQL PubSub for subscriptions - keep mock for services that inject it
     {
       provide: "PUB_SUB",
-      useValue:
-        process.env.NODE_ENV === "production"
-          ? {
-              // No-op mock PubSub - publish does nothing, subscribe returns empty iterator
-              publish: () => Promise.resolve(),
-              subscribe: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
-              asyncIterator: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
-            }
-          : new PubSub(),
+      useValue: {
+        publish: () => Promise.resolve(),
+        subscribe: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
+        asyncIterator: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
+      },
     },
 
     // Repositories (Adapters)
