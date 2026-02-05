@@ -138,7 +138,7 @@ export default function HealthPage() {
                 </div>
                 <div>
                   <p className="text-admin-400 text-sm">Running</p>
-                  <p className="text-2xl font-bold text-blue-400">{syncStats.running || 0}</p>
+                  <p className="text-2xl font-bold text-primary-400">{syncStats.running || 0}</p>
                 </div>
               </div>
             </div>

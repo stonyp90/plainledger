@@ -51,8 +51,8 @@ function ThemeSelector() {
             onClick={() => setTheme(t.value)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
               isActive 
-                ? 'bg-admin-600 text-white shadow-sm' 
-                : 'text-admin-400 hover:text-white hover:bg-admin-600/50'
+                ? 'bg-primary-600 text-white shadow-sm' 
+                : 'text-admin-400 hover:text-white hover:bg-primary-600/50'
             }`}
             title={t.label}
           >
@@ -105,11 +105,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-admin-700">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">P</span>
-            </div>
-            <span className="text-white font-semibold">Admin</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <img 
+              src="/logo-mark.svg" 
+              alt="PlainLedger" 
+              className="w-8 h-8"
+            />
+            <span className="text-lg font-extrabold tracking-tight">
+              <span className="text-white">Plain</span>
+              <span className="text-emerald-500">Ledger</span>
+            </span>
           </Link>
           <button
             className="lg:hidden text-admin-400 hover:text-white"
@@ -129,7 +134,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-600 text-white'
                     : 'text-admin-400 hover:bg-admin-700 hover:text-white'
                 }`}
               >

@@ -52,8 +52,8 @@ export default function APIDocsPage() {
             <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center">
-                    <Code2 className="w-6 h-6 text-blue-400" />
+                  <div className="w-12 h-12 bg-primary-600/20 rounded-xl flex items-center justify-center">
+                    <Code2 className="w-6 h-6 text-primary-400" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-white">Swagger UI</h2>
@@ -76,7 +76,7 @@ export default function APIDocsPage() {
                   href={swaggerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm font-medium transition-colors"
                 >
                   <ExternalLink className="w-4 h-4" />
                   Open Swagger UI
@@ -138,7 +138,7 @@ export default function APIDocsPage() {
               <ul className="space-y-3">
                 {endpoints.map((endpoint) => (
                   <li key={endpoint.name} className="flex items-start gap-3">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></span>
+                    <span className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 flex-shrink-0"></span>
                     <div>
                       <p className="text-sm font-medium text-white">{endpoint.name}</p>
                       <p className="text-xs text-admin-500">{endpoint.description}</p>
@@ -153,19 +153,19 @@ export default function APIDocsPage() {
               <h3 className="font-semibold text-white mb-4">Quick Tips</h3>
               <ul className="space-y-3 text-sm text-admin-400">
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
+                  <span className="text-primary-400">•</span>
                   <span>Use &quot;Try it out&quot; in Swagger UI to test endpoints directly</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
+                  <span className="text-primary-400">•</span>
                   <span>All requests require a valid JWT token in the Authorization header</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
+                  <span className="text-primary-400">•</span>
                   <span>Response schemas are documented for each endpoint</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-400">•</span>
+                  <span className="text-primary-400">•</span>
                   <span>Download the OpenAPI spec from /api/docs-json</span>
                 </li>
               </ul>

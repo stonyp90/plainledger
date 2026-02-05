@@ -91,8 +91,8 @@ export default function BillingPage() {
                   <div className="w-full bg-admin-700 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        plan.plan === 'Enterprise' ? 'bg-purple-500' :
-                        plan.plan === 'Professional' ? 'bg-blue-500' : 'bg-gray-500'
+                        plan.plan === 'Enterprise' ? 'bg-accent-500' :
+                        plan.plan === 'Professional' ? 'bg-primary-500' : 'bg-gray-500'
                       }`}
                       style={{ width: `${plan.percentage}%` }}
                     />
@@ -125,12 +125,12 @@ export default function BillingPage() {
         </div>
 
         {/* Info Banner */}
-        <div className="mt-6 bg-blue-900/20 border border-blue-700/50 rounded-xl p-4">
+        <div className="mt-6 bg-primary-900/20 border border-primary-700/50 rounded-xl p-4">
           <div className="flex items-start gap-3">
-            <CreditCard className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <CreditCard className="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-medium text-blue-300">Stripe Integration</h3>
-              <p className="text-sm text-blue-400/80 mt-1">
+              <h3 className="font-medium text-primary-300">Stripe Integration</h3>
+              <p className="text-sm text-primary-400/80 mt-1">
                 Billing data is synced from Stripe. View detailed reports in the Stripe Dashboard.
               </p>
             </div>
@@ -173,8 +173,8 @@ function StatCard({
             </div>
           )}
         </div>
-        <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-          <Icon className="w-6 h-6 text-blue-400" />
+        <div className="w-12 h-12 rounded-lg bg-primary-500/10 flex items-center justify-center">
+          <Icon className="w-6 h-6 text-primary-400" />
         </div>
       </div>
     </div>

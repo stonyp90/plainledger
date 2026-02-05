@@ -68,7 +68,7 @@ export default function OnboardingPage() {
                   <div key={step.label} className="flex-1 flex flex-col items-center">
                     <div className="flex-1 w-full flex items-end justify-center">
                       <div
-                        className="w-full bg-blue-600 rounded-t transition-all"
+                        className="w-full bg-primary-600 rounded-t transition-all"
                         style={{ height: `${height}%` }}
                       />
                     </div>
@@ -123,7 +123,7 @@ export default function OnboardingPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => extendTrialMutation.mutate({ orgId: trial.id, days: 7 })}
-                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm text-white"
+                            className="px-3 py-1 bg-primary-600 hover:bg-primary-700 rounded text-sm text-white"
                           >
                             Extend 7d
                           </button>

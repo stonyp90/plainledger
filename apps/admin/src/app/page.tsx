@@ -58,7 +58,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-admin-400 text-sm">Running</p>
-                  <p className="text-xl font-bold text-blue-400">{stats.syncJobs.running || 0}</p>
+                  <p className="text-xl font-bold text-primary-400">{stats.syncJobs.running || 0}</p>
                 </div>
               </div>
             ) : (
@@ -196,18 +196,20 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Alerts */}
-        <div className="mt-6 bg-yellow-900/20 border border-yellow-700/50 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-yellow-400">Admin Console in Development</h3>
-              <p className="text-sm text-yellow-500/80 mt-1">
-                This admin console is under active development. Some features may not be fully functional yet.
-              </p>
+        {/* Development Notice - only show in non-production */}
+        {process.env.NODE_ENV !== 'production' && (
+          <div className="mt-6 bg-yellow-900/20 border border-yellow-700/50 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-yellow-400">Development Mode</h3>
+                <p className="text-sm text-yellow-500/80 mt-1">
+                  You are running in development mode. Some features may behave differently.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </AdminShell>
   );
@@ -227,7 +229,7 @@ function StatCard({
   color: string;
 }) {
   const colorClasses = {
-    blue: 'bg-blue-500/10 text-blue-400',
+    blue: 'bg-primary-500/10 text-primary-400',
     green: 'bg-green-500/10 text-green-400',
     purple: 'bg-purple-500/10 text-purple-400',
     orange: 'bg-orange-500/10 text-orange-400',

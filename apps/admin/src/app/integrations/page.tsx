@@ -43,7 +43,7 @@ export default function IntegrationsPage() {
             {providersData?.providers?.map((provider: any) => (
               <div
                 key={provider.id}
-                className="bg-admin-800 rounded-lg p-4 border border-admin-700 hover:border-blue-600 cursor-pointer transition-colors"
+                className="bg-admin-800 rounded-lg p-4 border border-admin-700 hover:border-primary-600 cursor-pointer transition-colors"
                 onClick={() => setSelectedProvider(provider.id)}
               >
                 <div className="flex items-center justify-between mb-2">

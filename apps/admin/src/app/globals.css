@@ -6,34 +6,50 @@
 :root,
 :root.dark,
 [data-theme="dark"] {
-  --admin-bg: #102a43;
-  --admin-surface: #243b53;
-  --admin-border: #334e68;
-  --admin-text: #f0f4f8;
-  --admin-text-muted: #9fb3c8;
-  --admin-primary: #2563eb;
-  --admin-success: #10b981;
-  --admin-warning: #f59e0b;
-  --admin-error: #ef4444;
+  --admin-bg: #0f172a;       /* slate-900 */
+  --admin-surface: #1e293b;  /* slate-800 */
+  --admin-border: #334155;   /* slate-700 */
+  --admin-text: #f8fafc;     /* slate-50 */
+  --admin-text-muted: #94a3b8; /* slate-400 */
+  
+  /* Brand colors - Emerald primary, Gold accent */
+  --admin-primary: #10b981;  /* emerald-500 */
+  --admin-primary-hover: #059669; /* emerald-600 */
+  --admin-accent: #f59e0b;   /* amber-500 */
+  --admin-accent-hover: #d97706; /* amber-600 */
+  
+  /* Semantic colors */
+  --admin-success: #10b981;  /* emerald-500 */
+  --admin-warning: #f59e0b;  /* amber-500 */
+  --admin-error: #ef4444;    /* red-500 */
+  --admin-info: #3b82f6;     /* blue-500 - keep for informational */
   
   /* Card and surface colors */
-  --admin-card: #1e3a5f;
-  --admin-card-hover: #243b53;
-  --admin-input-bg: #1e3a5f;
+  --admin-card: #1e293b;
+  --admin-card-hover: #334155;
+  --admin-input-bg: #1e293b;
 }
 
 /* Admin Console Styles - Light Theme */
 :root.light,
 [data-theme="light"] {
-  --admin-bg: #f8fafc;
+  --admin-bg: #f8fafc;       /* slate-50 */
   --admin-surface: #ffffff;
-  --admin-border: #e2e8f0;
-  --admin-text: #1e293b;
-  --admin-text-muted: #64748b;
-  --admin-primary: #2563eb;
-  --admin-success: #10b981;
-  --admin-warning: #f59e0b;
-  --admin-error: #ef4444;
+  --admin-border: #e2e8f0;   /* slate-200 */
+  --admin-text: #1e293b;     /* slate-800 */
+  --admin-text-muted: #64748b; /* slate-500 */
+  
+  /* Brand colors - slightly darker for light mode */
+  --admin-primary: #059669;  /* emerald-600 */
+  --admin-primary-hover: #047857; /* emerald-700 */
+  --admin-accent: #d97706;   /* amber-600 */
+  --admin-accent-hover: #b45309; /* amber-700 */
+  
+  /* Semantic colors */
+  --admin-success: #059669;  /* emerald-600 */
+  --admin-warning: #d97706;  /* amber-600 */
+  --admin-error: #dc2626;    /* red-600 */
+  --admin-info: #2563eb;     /* blue-600 */
   
   /* Card and surface colors */
   --admin-card: #ffffff;
@@ -72,6 +88,67 @@
 
 [data-theme="light"] .hover\:bg-admin-700:hover {
   background-color: var(--admin-card-hover);
+}
+
+/* Primary color overrides for light theme */
+[data-theme="light"] .bg-primary-600 {
+  background-color: var(--admin-primary);
+}
+
+[data-theme="light"] .hover\:bg-primary-700:hover {
+  background-color: var(--admin-primary-hover);
+}
+
+[data-theme="light"] .text-primary-400 {
+  color: #059669; /* emerald-600 for light */
+}
+
+[data-theme="light"] .border-primary-500 {
+  border-color: var(--admin-primary);
+}
+
+/* ============================================
+   Button Utility Classes
+   ============================================ */
+
+/* Primary button - Emerald (main actions) */
+.btn-primary {
+  @apply px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors;
+}
+
+.btn-primary:disabled {
+  @apply bg-primary-600/50 cursor-not-allowed;
+}
+
+/* Accent button - Gold (premium/important CTAs) */
+.btn-accent {
+  @apply px-4 py-2 bg-accent-500 hover:bg-accent-600 text-white rounded-lg font-medium transition-colors;
+}
+
+/* Secondary button */
+.btn-secondary {
+  @apply px-4 py-2 bg-admin-700 hover:bg-admin-600 text-admin-300 rounded-lg font-medium transition-colors;
+}
+
+/* Ghost button */
+.btn-ghost {
+  @apply px-4 py-2 text-admin-400 hover:text-white hover:bg-admin-700 rounded-lg font-medium transition-colors;
+}
+
+/* Danger button */
+.btn-danger {
+  @apply px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors;
+}
+
+/* Icon button */
+.btn-icon {
+  @apply p-2 text-admin-400 hover:text-white hover:bg-admin-700 rounded-lg transition-colors;
+}
+
+/* Form input focus states - use primary color */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--admin-primary) !important;
+  outline: none;
 }
 
 body {

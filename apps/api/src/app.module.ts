@@ -251,6 +251,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS integration");
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS intelligence");
           await tempDs.query("CREATE SCHEMA IF NOT EXISTS platform");
+          await tempDs.query("CREATE SCHEMA IF NOT EXISTS tenant");
           console.log("[Database] Schemas created successfully");
           await tempDs.destroy();
         } catch (error) {

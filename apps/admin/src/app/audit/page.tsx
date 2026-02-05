@@ -67,7 +67,7 @@ export default function AuditLogsPage() {
   const getActionColor = (action: string) => {
     if (action.includes('create')) return 'text-green-400 bg-green-500/10';
     if (action.includes('delete')) return 'text-red-400 bg-red-500/10';
-    if (action.includes('edit') || action.includes('update')) return 'text-blue-400 bg-blue-500/10';
+    if (action.includes('edit') || action.includes('update')) return 'text-primary-400 bg-primary-500/10';
     if (action.includes('disable')) return 'text-yellow-400 bg-yellow-500/10';
     return 'text-admin-400 bg-admin-700';
   };
@@ -105,13 +105,13 @@ export default function AuditLogsPage() {
               placeholder="Search by admin, organization, user..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-white placeholder-admin-400 focus:outline-none focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-white placeholder-admin-400 focus:outline-none focus:border-primary-500"
             />
           </div>
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 focus:outline-none focus:border-blue-500"
+            className="px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 focus:outline-none focus:border-primary-500"
           >
             <option value="all">All Actions</option>
             <option value="org:create">Org: Create</option>

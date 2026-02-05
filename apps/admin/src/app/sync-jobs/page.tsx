@@ -61,7 +61,7 @@ export default function SyncJobsPage() {
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-400" />;
       case 'running':
-        return <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />;
+        return <RefreshCw className="w-5 h-5 text-primary-400 animate-spin" />;
       case 'pending':
         return <Clock className="w-5 h-5 text-yellow-400" />;
       default:
@@ -76,7 +76,7 @@ export default function SyncJobsPage() {
       case 'failed':
         return 'bg-red-500/10 text-red-400';
       case 'running':
-        return 'bg-blue-500/10 text-blue-400';
+        return 'bg-primary-500/10 text-primary-400';
       case 'pending':
         return 'bg-yellow-500/10 text-yellow-400';
       default:
@@ -134,7 +134,7 @@ export default function SyncJobsPage() {
           </div>
           <div className="bg-admin-800 rounded-xl p-4 border border-admin-700">
             <p className="text-admin-400 text-sm">Running</p>
-            <p className="text-2xl font-bold text-blue-400 mt-1">{stats.running}</p>
+            <p className="text-2xl font-bold text-primary-400 mt-1">{stats.running}</p>
           </div>
         </div>
 
@@ -147,13 +147,13 @@ export default function SyncJobsPage() {
               placeholder="Search by organization..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-white placeholder-admin-400 focus:outline-none focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-white placeholder-admin-400 focus:outline-none focus:border-primary-500"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 focus:outline-none focus:border-blue-500"
+            className="px-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-admin-300 focus:outline-none focus:border-primary-500"
           >
             <option value="all">All Status</option>
             <option value="completed">Completed</option>

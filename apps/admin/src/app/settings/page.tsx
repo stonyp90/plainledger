@@ -46,7 +46,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 rounded-lg text-white text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 rounded-lg text-white text-sm transition-colors"
           >
             {saving ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -104,7 +104,7 @@ function GeneralSettings() {
           <input
             type="text"
             defaultValue="PlainLedger"
-            className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
           />
         </div>
 
@@ -115,7 +115,7 @@ function GeneralSettings() {
           <input
             type="email"
             defaultValue="support@plainledger.ca"
-            className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
           />
         </div>
 
@@ -123,7 +123,7 @@ function GeneralSettings() {
           <label className="block text-sm font-medium text-admin-300 mb-2">
             Default Timezone
           </label>
-          <select className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+          <select className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500">
             <option value="America/Toronto">America/Toronto (EST)</option>
             <option value="America/Vancouver">America/Vancouver (PST)</option>
             <option value="UTC">UTC</option>
@@ -134,7 +134,7 @@ function GeneralSettings() {
           <label className="block text-sm font-medium text-admin-300 mb-2">
             Default Currency
           </label>
-          <select className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+          <select className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500">
             <option value="CAD">CAD - Canadian Dollar</option>
             <option value="USD">USD - US Dollar</option>
             <option value="EUR">EUR - Euro</option>
@@ -194,7 +194,7 @@ function SecuritySettings() {
           <input
             type="number"
             defaultValue={30}
-            className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
           />
         </div>
 
@@ -214,7 +214,7 @@ function SecuritySettings() {
           <label className="block text-sm font-medium text-admin-300 mb-2">
             Password Policy
           </label>
-          <select className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+          <select className="w-full px-4 py-2.5 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500">
             <option value="strong">Strong (12+ chars, mixed case, numbers, symbols)</option>
             <option value="medium">Medium (8+ chars, mixed case, numbers)</option>
             <option value="basic">Basic (8+ chars)</option>
@@ -258,7 +258,7 @@ function IntegrationSettings() {
             <button className={`px-3 py-1.5 rounded text-sm ${
               integration.status === 'connected'
                 ? 'bg-admin-700 text-admin-300 hover:bg-admin-600'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}>
               {integration.status === 'connected' ? 'Configure' : 'Connect'}
             </button>
@@ -289,7 +289,7 @@ function ToggleSetting({
       <button
         onClick={() => setChecked(!checked)}
         className={`relative w-11 h-6 rounded-full transition-colors ${
-          checked ? 'bg-blue-600' : 'bg-admin-700'
+          checked ? 'bg-primary-600' : 'bg-admin-700'
         }`}
       >
         <span
