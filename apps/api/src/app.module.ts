@@ -285,6 +285,22 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             ON CONFLICT (id) DO NOTHING
           `);
           
+          // Add subscription_plan_id column to organizations if it doesn't exist
+          await client.query(`
+            DO $$ 
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_schema = 'accounting' 
+                AND table_name = 'organizations' 
+                AND column_name = 'subscription_plan_id'
+              ) THEN
+                ALTER TABLE accounting.organizations 
+                ADD COLUMN subscription_plan_id VARCHAR(50) DEFAULT 'free';
+              END IF;
+            END $$;
+          `);
+          
           // Update existing organizations to use 'free' plan if they have invalid subscription_plan_id
           // This prevents foreign key constraint violations
           await client.query(`
