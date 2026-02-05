@@ -3,9 +3,9 @@ import {
   PrimaryColumn,
   Column,
   CreateDateColumn,
-  ManyToMany,
+  OneToMany,
 } from 'typeorm';
-import { SubscriptionPlanEntity } from './subscription-plan.entity';
+import { PlanEntitlementEntity } from './plan-entitlement.entity';
 
 @Entity({ name: 'entitlements', schema: 'tenant' })
 export class EntitlementEntity {
@@ -24,7 +24,7 @@ export class EntitlementEntity {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  // Many-to-many relationship with subscription plans
-  @ManyToMany(() => SubscriptionPlanEntity, (plan) => plan.entitlements)
-  plans: SubscriptionPlanEntity[];
+  // One-to-many relationship with plan entitlements junction table
+  @OneToMany(() => PlanEntitlementEntity, (pe) => pe.entitlement)
+  planEntitlements: PlanEntitlementEntity[];
 }

@@ -55,16 +55,26 @@ interface I18nProviderProps {
   defaultLanguage?: Language;
 }
 
-export function I18nProvider({ children, defaultLanguage = 'fr' }: I18nProviderProps) {
+export function I18nProvider({ children, defaultLanguage = 'en' }: I18nProviderProps) {
   const [language, setLanguageState] = useState<Language>(() => {
-    // Try to get from localStorage
     if (typeof window !== 'undefined') {
+      // 1. First check if user has explicitly set a language preference
       const stored = localStorage.getItem('plainledger-language') as Language;
       if (stored === 'en' || stored === 'fr') {
         return stored;
       }
-      // Try to detect from browser
-      const browserLang = navigator.language.split('-')[0];
+      
+      // 2. Detect from browser's preferred languages (in order of preference)
+      const browserLanguages = navigator.languages || [navigator.language];
+      for (const lang of browserLanguages) {
+        const primaryLang = lang.split('-')[0].toLowerCase();
+        if (primaryLang === 'fr') return 'fr';
+        if (primaryLang === 'en') return 'en';
+      }
+      
+      // 3. Fallback: check single navigator.language
+      const browserLang = navigator.language.split('-')[0].toLowerCase();
+      if (browserLang === 'fr') return 'fr';
       if (browserLang === 'en') return 'en';
     }
     return defaultLanguage;

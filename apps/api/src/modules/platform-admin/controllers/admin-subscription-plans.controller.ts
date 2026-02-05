@@ -17,6 +17,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { SubscriptionPlanEntity } from '@infrastructure/persistence/postgres/entities/subscription-plan.entity';
 import { EntitlementEntity } from '@infrastructure/persistence/postgres/entities/entitlement.entity';
+import { PlanEntitlementEntity } from '@infrastructure/persistence/postgres/entities/plan-entitlement.entity';
 
 @ApiTags('Platform Admin - Subscription Plans')
 @ApiBearerAuth()
@@ -28,6 +29,8 @@ export class AdminSubscriptionPlansController {
     private readonly planRepository: Repository<SubscriptionPlanEntity>,
     @InjectRepository(EntitlementEntity)
     private readonly entitlementRepository: Repository<EntitlementEntity>,
+    @InjectRepository(PlanEntitlementEntity)
+    private readonly planEntitlementRepository: Repository<PlanEntitlementEntity>,
   ) {}
 
   @Get()
@@ -36,10 +39,14 @@ export class AdminSubscriptionPlansController {
   @ApiResponse({ status: 200, description: 'List of subscription plans' })
   async listPlans() {
     const plans = await this.planRepository.find({
-      relations: ['entitlements'],
+      relations: ['planEntitlements', 'planEntitlements.entitlement'],
       order: { displayOrder: 'ASC' },
     });
-    return plans;
+    // Transform to include entitlements array for backwards compatibility
+    return plans.map((plan) => ({
+      ...plan,
+      entitlements: plan.planEntitlements?.map((pe) => pe.entitlement) || [],
+    }));
   }
 
   @Get(':id')
@@ -51,12 +58,16 @@ export class AdminSubscriptionPlansController {
   async getPlan(@Param('id') id: string) {
     const plan = await this.planRepository.findOne({
       where: { id },
-      relations: ['entitlements'],
+      relations: ['planEntitlements', 'planEntitlements.entitlement'],
     });
     if (!plan) {
       throw new Error(`Plan ${id} not found`);
     }
-    return plan;
+    // Transform to include entitlements array for backwards compatibility
+    return {
+      ...plan,
+      entitlements: plan.planEntitlements?.map((pe) => pe.entitlement) || [],
+    };
   }
 
   @Post()
@@ -86,15 +97,18 @@ export class AdminSubscriptionPlansController {
     const savedPlan = (await this.planRepository.save(plan)) as unknown as SubscriptionPlanEntity;
 
     if (entitlementIds && entitlementIds.length > 0) {
-      const entitlements = await this.entitlementRepository.findBy({ id: In(entitlementIds) });
-      (savedPlan as any).entitlements = entitlements;
-      await this.planRepository.save(savedPlan);
+      // Create plan entitlement associations
+      const planEntitlements = entitlementIds.map((entitlementId: string) =>
+        this.planEntitlementRepository.create({
+          planId: savedPlan.id,
+          entitlementId,
+          config: {},
+        }),
+      );
+      await this.planEntitlementRepository.save(planEntitlements);
     }
 
-    return this.planRepository.findOne({
-      where: { id: savedPlan.id },
-      relations: ['entitlements'],
-    });
+    return this.getPlan(savedPlan.id);
   }
 
   @Put(':id')
@@ -106,7 +120,6 @@ export class AdminSubscriptionPlansController {
     const { entitlementIds, ...planData } = data;
     const plan = await this.planRepository.findOne({
       where: { id },
-      relations: ['entitlements'],
     });
 
     if (!plan) {
@@ -114,17 +127,25 @@ export class AdminSubscriptionPlansController {
     }
 
     Object.assign(plan, planData);
+    await this.planRepository.save(plan);
 
     if (entitlementIds !== undefined) {
-      const entitlements = await this.entitlementRepository.findBy({ id: In(entitlementIds) });
-      (plan as any).entitlements = entitlements;
+      // Delete existing associations
+      await this.planEntitlementRepository.delete({ planId: id });
+      // Create new associations
+      if (entitlementIds.length > 0) {
+        const planEntitlements = entitlementIds.map((entitlementId: string) =>
+          this.planEntitlementRepository.create({
+            planId: id,
+            entitlementId,
+            config: {},
+          }),
+        );
+        await this.planEntitlementRepository.save(planEntitlements);
+      }
     }
 
-    await this.planRepository.save(plan);
-    return this.planRepository.findOne({
-      where: { id },
-      relations: ['entitlements'],
-    });
+    return this.getPlan(id);
   }
 
   @Delete(':id')

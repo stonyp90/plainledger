@@ -36,6 +36,7 @@ import { BoardMeetingEntity } from "@infrastructure/persistence/postgres/entitie
 import { ScenarioEntity } from "@infrastructure/persistence/postgres/entities/scenario.entity";
 import { EntitlementEntity } from "@infrastructure/persistence/postgres/entities/entitlement.entity";
 import { SubscriptionPlanEntity } from "@infrastructure/persistence/postgres/entities/subscription-plan.entity";
+import { PlanEntitlementEntity } from "@infrastructure/persistence/postgres/entities/plan-entitlement.entity";
 import { PermissionEntity } from "@infrastructure/persistence/postgres/entities/permission.entity";
 import { RoleEntity } from "@infrastructure/persistence/postgres/entities/role.entity";
 
@@ -213,6 +214,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           ScenarioEntity,
           EntitlementEntity,
           SubscriptionPlanEntity,
+          PlanEntitlementEntity,
           PermissionEntity,
           RoleEntity,
         ],

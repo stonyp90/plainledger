@@ -4,12 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToMany,
-  JoinTable,
   OneToMany,
 } from 'typeorm';
-import { EntitlementEntity } from './entitlement.entity';
 import { OrganizationEntity } from './organization.entity';
+import { PlanEntitlementEntity } from './plan-entitlement.entity';
 
 @Entity({ name: 'subscription_plans', schema: 'tenant' })
 export class SubscriptionPlanEntity {
@@ -46,15 +44,9 @@ export class SubscriptionPlanEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  // Many-to-many relationship with entitlements
-  @ManyToMany(() => EntitlementEntity, (entitlement) => entitlement.plans)
-  @JoinTable({
-    name: 'plan_entitlements',
-    schema: 'tenant',
-    joinColumn: { name: 'plan_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'entitlement_id', referencedColumnName: 'id' },
-  })
-  entitlements: EntitlementEntity[];
+  // One-to-many relationship with plan entitlements junction table
+  @OneToMany(() => PlanEntitlementEntity, (pe) => pe.plan)
+  planEntitlements: PlanEntitlementEntity[];
 
   // One-to-many relationship with organizations
   @OneToMany(() => OrganizationEntity, (org) => org.subscriptionPlan)

@@ -20,6 +20,7 @@ import { AdminChatSessionEntity } from '@infrastructure/persistence/postgres/ent
 import { AdminChatMessageEntity } from '@infrastructure/persistence/postgres/entities/admin-chat-message.entity';
 import { EntitlementEntity } from '@infrastructure/persistence/postgres/entities/entitlement.entity';
 import { SubscriptionPlanEntity } from '@infrastructure/persistence/postgres/entities/subscription-plan.entity';
+import { PlanEntitlementEntity } from '@infrastructure/persistence/postgres/entities/plan-entitlement.entity';
 import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/permission.entity';
 import { RoleEntity } from '@infrastructure/persistence/postgres/entities/role.entity';
 
@@ -81,6 +82,7 @@ import { AdminPermissionsController } from './controllers/admin-permissions.cont
       // Tenant permission entities
       EntitlementEntity,
       SubscriptionPlanEntity,
+      PlanEntitlementEntity,
       PermissionEntity,
       RoleEntity,
     ]),

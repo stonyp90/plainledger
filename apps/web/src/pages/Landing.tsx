@@ -788,17 +788,21 @@ function HeroDashboardPreview({
   const setSelectedIndustry = onIndustryChange ?? setInternalSelectedIndustry;
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [hoveredKpi, setHoveredKpi] = useState<number | null>(null);
+  const [hoveredRoadmapItem, setHoveredRoadmapItem] = useState<number | null>(null);
   const [showAllKpis, setShowAllKpis] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   
-  // Detect screen size
+  // Detect screen size and update sidebar state
   useEffect(() => {
     const checkSize = () => {
       const width = window.innerWidth;
-      setIsMobile(width < 640);
+      const mobile = width < 640;
+      setIsMobile(mobile);
       setIsTablet(width >= 640 && width < 1024);
+      // Sidebar open on web/tablet, closed on mobile
+      setSidebarExpanded(!mobile);
     };
     
     checkSize();
@@ -816,7 +820,7 @@ function HeroDashboardPreview({
   // Industry-specific configurations - Order matches industryOptions in Landing component
   // 0: hospitality, 1: real_estate, 2: restaurant, 3: construction, 4: retail
   const industries = [
-    // 0: Hospitality (Hotel)
+    // 0: Hospitality (Hotel) - HIGH-END PERFORMANCE
     { 
       id: 'hospitality',
       name: isEn ? 'Hospitality' : 'Hôtellerie',
@@ -826,52 +830,76 @@ function HeroDashboardPreview({
         { 
           label: 'RevPAR', 
           labelFull: isEn ? 'Revenue per Available Room' : 'Revenu par chambre disponible',
-          value: '$142', 
-          data: [115, 118, 122, 125, 128, 132, 135, 138, 140, 141, 142, 145], 
+          value: '$195', 
+          data: [165, 170, 175, 178, 182, 185, 188, 190, 192, 194, 195, 198], 
           projection: true,
-          threshold: isEn ? 'Target: $130+' : 'Cible: 130$+',
-          target: '$130',
-          previous: '$138',
-          insight: isEn ? '+2.9% vs last month' : '+2,9% vs mois dernier'
+          threshold: isEn ? 'Target: $150+' : 'Cible: 150$+',
+          target: '$150',
+          previous: '$188',
+          insight: isEn ? '+3.7% vs last month' : '+3,7% vs mois dernier'
         },
         { 
           label: isEn ? 'Occupancy' : 'Occupation', 
           labelFull: isEn ? 'Occupancy Rate' : 'Taux d\'occupation',
-          value: '78.5%', 
-          data: [68, 70, 72, 73, 74, 75, 76, 77, 77.5, 78, 78.5, 80], 
+          value: '87.5%', 
+          data: [78, 80, 82, 83, 84, 85, 86, 86.5, 87, 87.2, 87.5, 88], 
           projection: true,
-          threshold: isEn ? 'Target: 70-85%' : 'Cible: 70-85%',
-          target: '75%',
-          previous: '76.2%',
-          insight: isEn ? 'Above target' : 'Au-dessus de la cible'
+          threshold: isEn ? 'Target: 75-90%' : 'Cible: 75-90%',
+          target: '80%',
+          previous: '85.2%',
+          insight: isEn ? 'Industry leading' : 'Leader de l\'industrie'
         },
         { 
           label: 'ADR', 
           labelFull: isEn ? 'Average Daily Rate' : 'Tarif journalier moyen',
-          value: '$181', 
-          data: [165, 168, 170, 172, 174, 176, 177, 178, 179, 180, 181, 183], 
+          value: '$223', 
+          data: [195, 200, 205, 208, 212, 215, 217, 219, 220, 222, 223, 226], 
           projection: true,
-          threshold: isEn ? 'Target: $170+' : 'Cible: 170$+',
-          target: '$170',
-          previous: '$175',
-          insight: isEn ? 'Strong pricing power' : 'Bon pouvoir de prix'
+          threshold: isEn ? 'Target: $200+' : 'Cible: 200$+',
+          target: '$200',
+          previous: '$215',
+          insight: isEn ? 'Premium positioning' : 'Positionnement premium'
         },
         { 
           label: 'GOP', 
           labelFull: isEn ? 'Gross Operating Profit %' : 'Profit brut d\'exploitation %',
-          value: '38.2%', 
-          data: [32, 33, 34, 35, 35.5, 36, 36.5, 37, 37.5, 38, 38.2, 39], 
+          value: '44.8%', 
+          data: [38, 39, 40, 41, 42, 42.5, 43, 43.5, 44, 44.5, 44.8, 45.5], 
           projection: true,
-          threshold: isEn ? 'Target: 35-45%' : 'Cible: 35-45%',
-          target: '35%',
-          previous: '36.8%',
-          insight: isEn ? 'Healthy margins' : 'Marges saines'
+          threshold: isEn ? 'Target: 40-50%' : 'Cible: 40-50%',
+          target: '40%',
+          previous: '43.2%',
+          insight: isEn ? 'Best-in-class margins' : 'Marges de premier plan'
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'CPOR' : 'Coût par chambre', yours: '$52', target: '<$60', status: 'excellent' },
-        { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '32%', target: '30-35%', status: 'good' },
-        { metric: isEn ? 'Guest Satisfaction' : 'Satisfaction client', yours: '4.6', target: '>4.5', status: 'excellent' },
+        { 
+          metric: isEn ? 'CPOR' : 'Coût par chambre', 
+          yours: '$42', 
+          target: '<$55', 
+          status: 'excellent',
+          description: isEn 
+            ? 'Cost Per Occupied Room includes housekeeping, amenities, utilities and maintenance. Your $42 CPOR is 24% below the luxury hotel average of $55, generating $13 savings per room night.'
+            : 'Le coût par chambre occupée comprend l\'entretien, les commodités, les services publics et la maintenance. Votre CPOR de 42$ est 24% inférieur à la moyenne des hôtels de luxe de 55$, générant 13$ d\'économies par nuit.'
+        },
+        { 
+          metric: isEn ? 'Labor Cost %' : 'Coût M-O %', 
+          yours: '28%', 
+          target: '28-32%', 
+          status: 'excellent',
+          description: isEn
+            ? 'Labor costs as percentage of revenue. At 28%, you are at the optimal threshold for luxury properties. Industry average is 32%. Your efficiency saves approximately $4,200/month in payroll optimization.'
+            : 'Coûts de main-d\'œuvre en pourcentage des revenus. À 28%, vous êtes au seuil optimal pour les propriétés de luxe. La moyenne de l\'industrie est 32%. Votre efficacité économise environ 4 200$/mois en optimisation de la paie.'
+        },
+        { 
+          metric: isEn ? 'Guest Satisfaction' : 'Satisfaction client', 
+          yours: '4.8', 
+          target: '>4.5', 
+          status: 'excellent',
+          description: isEn
+            ? 'Average guest rating across all review platforms. Your 4.8 score places you in the top 5% of luxury hotels. High satisfaction correlates with 23% higher repeat booking rates and $12 higher ADR potential.'
+            : 'Note moyenne des clients sur toutes les plateformes d\'avis. Votre score de 4.8 vous place dans le top 5% des hôtels de luxe. Une satisfaction élevée corrèle avec 23% de réservations répétées et 12$ de potentiel ADR supplémentaire.'
+        },
       ],
       roadmapItems: [
         { 
@@ -879,18 +907,27 @@ function HeroDashboardPreview({
           start: 0, 
           end: 30, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Prioritize suites first for 18% higher ROI. Smart room tech investment shows 2.3x payback within 14 months based on your occupancy data.'
+            : 'Aperçu IA: Priorisez les suites d\'abord pour un ROI 18% plus élevé. L\'investissement en technologie intelligente montre un retour 2.3x en 14 mois selon vos données d\'occupation.'
         },
         { 
           plan: isEn ? 'Revenue Management' : 'Gestion des revenus', 
           start: 15, 
           end: 55, 
           color: theme.gold,
+          aiRecommendation: isEn
+            ? 'AI Insight: Dynamic pricing optimization can increase RevPAR by $28-35. Implement seasonal surge pricing during Q2-Q3 peak periods for maximum yield.'
+            : 'Aperçu IA: L\'optimisation dynamique des prix peut augmenter le RevPAR de 28-35$. Implémentez une tarification saisonnière pendant les périodes de pointe Q2-Q3 pour un rendement maximal.'
         },
         { 
           plan: isEn ? 'Guest Experience' : 'Expérience client', 
           start: 45, 
           end: 100, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Personalization drives 31% higher guest spend. Focus on pre-arrival engagement and loyalty program enhancement to boost ancillary revenue by $45/stay.'
+            : 'Aperçu IA: La personnalisation génère 31% de dépenses clients supplémentaires. Concentrez-vous sur l\'engagement pré-arrivée et l\'amélioration du programme de fidélité pour augmenter les revenus annexes de 45$/séjour.'
         },
       ]
     },
@@ -947,9 +984,33 @@ function HeroDashboardPreview({
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'DSC Ratio' : 'Ratio couverture dette', yours: '1.35', target: '>1.25', status: 'good' },
-        { metric: isEn ? 'Operating Expense Ratio' : 'Ratio dépenses exploitation', yours: '38%', target: '35-45%', status: 'good' },
-        { metric: isEn ? 'Rent per Sq Ft' : 'Loyer par pi²', yours: '$18.50', target: '$17-20', status: 'excellent' },
+        { 
+          metric: isEn ? 'DSC Ratio' : 'Ratio couverture dette', 
+          yours: '1.35', 
+          target: '>1.25', 
+          status: 'good',
+          description: isEn
+            ? 'Debt Service Coverage Ratio measures ability to cover debt payments. Your 1.35x ratio indicates $1.35 of NOI for every $1 of debt service, providing a healthy 35% buffer for lenders.'
+            : 'Le ratio de couverture de la dette mesure la capacité à couvrir les paiements. Votre ratio de 1.35x indique 1.35$ de RNE pour chaque 1$ de service de dette, offrant une marge saine de 35%.'
+        },
+        { 
+          metric: isEn ? 'Operating Expense Ratio' : 'Ratio dépenses exploitation', 
+          yours: '38%', 
+          target: '35-45%', 
+          status: 'good',
+          description: isEn
+            ? 'Operating expenses as percentage of gross income. At 38%, you are efficiently managing property costs while maintaining quality. Industry average is 42%.'
+            : 'Dépenses d\'exploitation en pourcentage du revenu brut. À 38%, vous gérez efficacement les coûts tout en maintenant la qualité. La moyenne de l\'industrie est 42%.'
+        },
+        { 
+          metric: isEn ? 'Rent per Sq Ft' : 'Loyer par pi²', 
+          yours: '$18.50', 
+          target: '$17-20', 
+          status: 'excellent',
+          description: isEn
+            ? 'Average rental rate per square foot. Your $18.50/sqft positions you competitively in the market while maximizing revenue potential per unit area.'
+            : 'Taux de location moyen par pied carré. Votre 18.50$/pi² vous positionne de manière compétitive sur le marché tout en maximisant le potentiel de revenus.'
+        },
       ],
       roadmapItems: [
         { 
@@ -957,18 +1018,27 @@ function HeroDashboardPreview({
           start: 0, 
           end: 25, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Market analysis shows 12% undervalued properties in emerging neighborhoods. Focus on mixed-use developments for 15% higher cap rates.'
+            : 'Aperçu IA: L\'analyse du marché montre 12% de propriétés sous-évaluées dans les quartiers émergents. Concentrez-vous sur les développements mixtes pour des taux de capitalisation 15% plus élevés.'
         },
         { 
           plan: isEn ? 'Renovation Phase' : 'Phase rénovation', 
           start: 20, 
           end: 55, 
           color: theme.gold,
+          aiRecommendation: isEn
+            ? 'AI Insight: Energy efficiency upgrades show 2.8x ROI. Smart building systems reduce operating costs by 18% and increase tenant retention by 23%.'
+            : 'Aperçu IA: Les améliorations énergétiques montrent un ROI de 2.8x. Les systèmes intelligents réduisent les coûts d\'exploitation de 18% et augmentent la rétention des locataires de 23%.'
         },
         { 
           plan: isEn ? 'Lease-up Strategy' : 'Stratégie location', 
           start: 45, 
           end: 100, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Virtual tours increase lease conversion by 34%. Implement flexible lease terms to capture the growing remote workforce segment.'
+            : 'Aperçu IA: Les visites virtuelles augmentent la conversion de 34%. Implémentez des baux flexibles pour capturer le segment croissant des travailleurs à distance.'
         },
       ]
     },
@@ -1024,9 +1094,33 @@ function HeroDashboardPreview({
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Net Margin' : 'Marge nette', yours: '8.2%', target: '6-9%', status: 'good' },
-        { metric: isEn ? 'Beverage Cost %' : 'Coût boissons %', yours: '18.4%', target: '18-24%', status: 'excellent' },
-        { metric: isEn ? 'Table Turnover' : 'Rotation tables', yours: '3.2', target: '2.5-4', status: 'good' },
+        { 
+          metric: isEn ? 'Net Margin' : 'Marge nette', 
+          yours: '8.2%', 
+          target: '6-9%', 
+          status: 'good',
+          description: isEn
+            ? 'Net profit as percentage of revenue after all expenses. Your 8.2% margin is strong for full-service dining, positioning you in the top 20% of comparable restaurants.'
+            : 'Profit net en pourcentage des revenus après toutes les dépenses. Votre marge de 8.2% est forte pour la restauration à service complet, vous plaçant dans le top 20%.'
+        },
+        { 
+          metric: isEn ? 'Beverage Cost %' : 'Coût boissons %', 
+          yours: '18.4%', 
+          target: '18-24%', 
+          status: 'excellent',
+          description: isEn
+            ? 'Beverage costs as percentage of beverage sales. At 18.4%, you are at the optimal threshold with strong pour controls and efficient inventory management.'
+            : 'Coûts des boissons en pourcentage des ventes de boissons. À 18.4%, vous êtes au seuil optimal avec un contrôle de service et une gestion d\'inventaire efficaces.'
+        },
+        { 
+          metric: isEn ? 'Table Turnover' : 'Rotation tables', 
+          yours: '3.2', 
+          target: '2.5-4', 
+          status: 'good',
+          description: isEn
+            ? 'Average number of times a table is used during service. Your 3.2 turns/night balances revenue optimization with guest experience and kitchen capacity.'
+            : 'Nombre moyen de fois qu\'une table est utilisée pendant le service. Vos 3.2 rotations/soir équilibrent l\'optimisation des revenus avec l\'expérience client.'
+        },
       ],
       roadmapItems: [
         { 
@@ -1034,18 +1128,27 @@ function HeroDashboardPreview({
           start: 0, 
           end: 30, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Ghost kitchen model can add $120K revenue with 45% lower startup costs. Consider delivery-focused expansion before physical locations.'
+            : 'Aperçu IA: Le modèle cuisine fantôme peut ajouter 120K$ de revenus avec 45% de coûts de démarrage en moins. Considérez l\'expansion axée sur la livraison.'
         },
         { 
           plan: isEn ? 'Cost Optimization' : 'Optimisation coûts', 
           start: 20, 
           end: 60, 
           color: theme.gold,
+          aiRecommendation: isEn
+            ? 'AI Insight: Menu engineering analysis shows 6 items below 15% contribution margin. Adjusting recipes and pricing could save $2,400/month.'
+            : 'Aperçu IA: L\'analyse du menu montre 6 articles sous 15% de marge de contribution. Ajuster les recettes et prix pourrait économiser 2 400$/mois.'
         },
         { 
           plan: isEn ? 'New Revenue Stream' : 'Nouveau revenu', 
           start: 50, 
           end: 100, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Catering and meal kits show 28% growth trend. Your brand strength supports $85K annual revenue from these channels.'
+            : 'Aperçu IA: La restauration et les kits repas montrent une tendance de croissance de 28%. Votre marque supporte 85K$ de revenus annuels de ces canaux.'
         },
       ]
     },
@@ -1101,9 +1204,33 @@ function HeroDashboardPreview({
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Job Margin Variance' : 'Écart marge projet', yours: '2.1%', target: '<5%', status: 'excellent' },
-        { metric: isEn ? 'Equipment Utilization' : 'Utilisation équipement', yours: '78%', target: '70-85%', status: 'good' },
-        { metric: isEn ? 'Safety Incidents' : 'Incidents sécurité', yours: '0.8', target: '<1.0', status: 'excellent' },
+        { 
+          metric: isEn ? 'Job Margin Variance' : 'Écart marge projet', 
+          yours: '2.1%', 
+          target: '<5%', 
+          status: 'excellent',
+          description: isEn
+            ? 'Difference between estimated and actual job margins. Your 2.1% variance shows excellent project estimation accuracy, minimizing profit erosion on bids.'
+            : 'Différence entre les marges estimées et réelles. Votre écart de 2.1% montre une excellente précision d\'estimation, minimisant l\'érosion des profits sur les soumissions.'
+        },
+        { 
+          metric: isEn ? 'Equipment Utilization' : 'Utilisation équipement', 
+          yours: '78%', 
+          target: '70-85%', 
+          status: 'good',
+          description: isEn
+            ? 'Percentage of available equipment hours actively generating revenue. At 78%, you are efficiently deploying assets while maintaining flexibility for peak demands.'
+            : 'Pourcentage des heures d\'équipement disponibles générant activement des revenus. À 78%, vous déployez efficacement les actifs tout en maintenant la flexibilité.'
+        },
+        { 
+          metric: isEn ? 'Safety Incidents' : 'Incidents sécurité', 
+          yours: '0.8', 
+          target: '<1.0', 
+          status: 'excellent',
+          description: isEn
+            ? 'Recordable incidents per 200,000 work hours (OSHA rate). Your 0.8 rate is 47% below industry average, reducing insurance costs and improving bid competitiveness.'
+            : 'Incidents enregistrables par 200 000 heures travaillées (taux OSHA). Votre taux de 0.8 est 47% sous la moyenne, réduisant les coûts d\'assurance et améliorant la compétitivité.'
+        },
       ],
       roadmapItems: [
         { 
@@ -1111,18 +1238,27 @@ function HeroDashboardPreview({
           start: 0, 
           end: 25, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Lease vs buy analysis favors purchasing for excavators (3.2yr payback). Consider telematics-enabled equipment for 12% fuel savings.'
+            : 'Aperçu IA: L\'analyse location vs achat favorise l\'achat pour les excavatrices (retour en 3.2 ans). Considérez l\'équipement télématique pour 12% d\'économies de carburant.'
         },
         { 
           plan: isEn ? 'Workforce Expansion' : 'Expansion main-d\'œuvre', 
           start: 20, 
           end: 60, 
           color: theme.gold,
+          aiRecommendation: isEn
+            ? 'AI Insight: Apprenticeship programs show 2.4x retention vs direct hires. Partner with trade schools to secure skilled labor pipeline.'
+            : 'Aperçu IA: Les programmes d\'apprentissage montrent 2.4x de rétention vs embauches directes. Partenariats avec écoles de métiers pour sécuriser la main-d\'œuvre qualifiée.'
         },
         { 
           plan: isEn ? 'New Market Entry' : 'Nouveau marché', 
           start: 50, 
           end: 100, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Infrastructure spending in adjacent counties shows 34% growth. Your reputation supports $1.2M expansion potential with existing relationships.'
+            : 'Aperçu IA: Les dépenses d\'infrastructure dans les comtés adjacents montrent 34% de croissance. Votre réputation supporte 1.2M$ de potentiel d\'expansion.'
         },
       ]
     },
@@ -1179,9 +1315,33 @@ function HeroDashboardPreview({
         },
       ],
       benchmarks: [
-        { metric: isEn ? 'Shrinkage Rate' : 'Taux de démarque', yours: '1.2%', target: '<2%', status: 'excellent' },
-        { metric: isEn ? 'Labor Cost %' : 'Coût M-O %', yours: '12.5%', target: '10-15%', status: 'good' },
-        { metric: isEn ? 'Conversion Rate' : 'Taux conversion', yours: '28%', target: '20-35%', status: 'good' },
+        { 
+          metric: isEn ? 'Shrinkage Rate' : 'Taux de démarque', 
+          yours: '1.2%', 
+          target: '<2%', 
+          status: 'excellent',
+          description: isEn
+            ? 'Inventory loss from theft, damage, or errors as % of sales. Your 1.2% rate saves $15,000/year vs industry average 1.8%. Strong loss prevention program.'
+            : 'Pertes d\'inventaire dues au vol, dommages ou erreurs en % des ventes. Votre taux de 1.2% économise 15 000$/an vs moyenne de 1.8%. Excellent programme de prévention.'
+        },
+        { 
+          metric: isEn ? 'Labor Cost %' : 'Coût M-O %', 
+          yours: '12.5%', 
+          target: '10-15%', 
+          status: 'good',
+          description: isEn
+            ? 'Staff wages and benefits as percentage of revenue. At 12.5%, you balance service quality with efficiency. Optimal scheduling saves ~$8,500/year.'
+            : 'Salaires et avantages du personnel en % des revenus. À 12.5%, vous équilibrez qualité de service et efficacité. La planification optimale économise ~8 500$/an.'
+        },
+        { 
+          metric: isEn ? 'Conversion Rate' : 'Taux conversion', 
+          yours: '28%', 
+          target: '20-35%', 
+          status: 'good',
+          description: isEn
+            ? 'Percentage of store visitors who make a purchase. Your 28% conversion with strong traffic indicates effective merchandising and sales engagement.'
+            : 'Pourcentage de visiteurs qui effectuent un achat. Votre conversion de 28% avec un fort trafic indique un merchandising efficace et un engagement commercial.'
+        },
       ],
       roadmapItems: [
         { 
@@ -1189,18 +1349,27 @@ function HeroDashboardPreview({
           start: 0, 
           end: 30, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Pop-up locations in high-traffic areas show 65% lower risk vs permanent stores. Test markets before committing to long-term leases.'
+            : 'Aperçu IA: Les emplacements éphémères dans les zones à fort trafic montrent 65% moins de risque. Testez les marchés avant de vous engager sur des baux long terme.'
         },
         { 
           plan: isEn ? 'E-commerce Growth' : 'Croissance e-commerce', 
           start: 20, 
           end: 65, 
           color: theme.gold,
+          aiRecommendation: isEn
+            ? 'AI Insight: Mobile-first checkout optimization can increase online conversion by 23%. Your customer base shows 68% mobile shopping preference.'
+            : 'Aperçu IA: L\'optimisation du paiement mobile-first peut augmenter la conversion en ligne de 23%. Votre clientèle montre 68% de préférence d\'achat mobile.'
         },
         { 
           plan: isEn ? 'Omnichannel Strategy' : 'Stratégie omnicanal', 
           start: 50, 
           end: 100, 
           color: theme.green,
+          aiRecommendation: isEn
+            ? 'AI Insight: Buy-online-pickup-in-store (BOPIS) customers spend 25% more per visit. Integration shows $180K additional annual revenue potential.'
+            : 'Aperçu IA: Les clients achat en ligne/retrait en magasin dépensent 25% de plus par visite. L\'intégration montre 180K$ de potentiel de revenus annuels supplémentaires.'
         },
       ]
     },
@@ -1278,27 +1447,14 @@ function HeroDashboardPreview({
             </button>
             {sidebarExpanded && (
               <>
-                {/* Logo Header */}
+                {/* Logo Header - Uses same logo as main header */}
                 <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
-                  <div 
-                    className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                      boxShadow: `0 2px 6px ${theme.green}40`
-                    }}
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                      <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                    </svg>
-                  </div>
+                  <img 
+                    src="/logo-mark.svg" 
+                    alt="" 
+                    className="w-7 h-7 rounded-lg"
+                    style={{ boxShadow: `0 2px 6px ${theme.green}40` }}
+                  />
                   <span className="text-xs font-bold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
                     <span style={{ color: 'rgb(var(--color-text))' }}>Plain</span>
                     <span style={{ color: theme.green }}>Ledger</span>
@@ -1444,27 +1600,14 @@ function HeroDashboardPreview({
               borderColor: isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
             }}
           >
-          {/* Logo Header - Matches App */}
+          {/* Logo Header - Uses same logo as main header */}
           <div className={`flex items-center gap-2 px-2 mb-4 transition-all duration-300 ${showElements ? 'opacity-100' : 'opacity-0'}`}>
-            <div 
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ 
-                background: `linear-gradient(135deg, ${theme.green} 0%, ${theme.greenDark} 100%)`,
-                boxShadow: `0 2px 6px ${theme.green}40`
-              }}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              </svg>
-            </div>
+            <img 
+              src="/logo-mark.svg" 
+              alt="" 
+              className="w-7 h-7 rounded-lg"
+              style={{ boxShadow: `0 2px 6px ${theme.green}40` }}
+            />
             <span className="text-xs font-bold tracking-tight" style={{ color: 'rgb(var(--color-text))' }}>
               <span style={{ color: 'rgb(var(--color-text))' }}>Plain</span>
               <span style={{ color: theme.green }}>Ledger</span>
@@ -1709,7 +1852,7 @@ function HeroDashboardPreview({
               </div>
               
               {/* Roadmap Items with Grid Lines - Improved mobile layout */}
-              <div className="relative">
+              <div className="relative overflow-visible">
                 {/* Vertical Grid Lines - Show on tablet+ */}
                 <div className="absolute inset-0 flex pointer-events-none" style={{ left: isMobile ? '0' : 'calc(6rem)', right: 0 }}>
                   <div className={`${isMobile ? 'hidden' : 'hidden sm:block'} absolute inset-0`} style={{ left: isMobile ? '0' : 'calc(8rem - 6rem)', right: 0 }}>
@@ -1729,7 +1872,9 @@ function HeroDashboardPreview({
                 {roadmapItems.map((item, i) => (
                   <div 
                     key={i} 
-                    className={`${isMobile ? 'flex-col' : 'flex items-center'} mb-2 sm:mb-1.5 lg:mb-2 relative gap-2`}
+                    className={`${isMobile ? 'flex-col' : 'flex items-center'} mb-3 sm:mb-2 lg:mb-3 relative gap-2 group cursor-pointer`}
+                    onMouseEnter={() => !isMobile && setHoveredRoadmapItem(i)}
+                    onMouseLeave={() => !isMobile && setHoveredRoadmapItem(null)}
                   >
                     {/* Label - Left aligned */}
                     <div className={`${isMobile ? 'w-full text-[10px] font-medium mb-1 text-left' : 'w-24 sm:w-32 lg:w-40 text-[10px] sm:text-[11px] font-medium pr-2 text-left truncate'}`} style={{ color: 'rgb(var(--color-text-secondary))' }}>
@@ -1738,8 +1883,12 @@ function HeroDashboardPreview({
                     {/* Progress Bar */}
                     <div className={`relative ${isMobile ? 'w-full' : 'flex-1'}`} style={{ minWidth: isMobile ? 'auto' : '200px' }}>
                       <div 
-                        className={`${isMobile ? 'h-5' : 'h-4 sm:h-5 lg:h-6'} w-full relative rounded-md overflow-hidden`}
-                        style={{ backgroundColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}
+                        className={`${isMobile ? 'h-5' : 'h-4 sm:h-5 lg:h-6'} w-full relative rounded-md overflow-hidden transition-all duration-200`}
+                        style={{ 
+                          backgroundColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)',
+                          boxShadow: hoveredRoadmapItem === i ? `0 4px 12px ${item.color}30` : 'none',
+                          transform: hoveredRoadmapItem === i ? 'scale(1.02)' : 'scale(1)',
+                        }}
                       >
                         {/* Grid lines inside bar */}
                         {[25, 50, 75].map((pos) => (
@@ -1770,16 +1919,50 @@ function HeroDashboardPreview({
                         <span>{item.start}%</span>
                         <span>{item.end}%</span>
                       </div>
+                      
                     </div>
                   </div>
                 ))}
               </div>
+              
+              {/* AI Insight Panel - Shows when hovering roadmap items */}
+              {hoveredRoadmapItem !== null && roadmapItems[hoveredRoadmapItem] && (
+                <div 
+                  className="mt-3 p-2.5 rounded-lg"
+                  style={{ 
+                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.95)',
+                    border: `1px solid ${roadmapItems[hoveredRoadmapItem].color}40`,
+                  }}
+                >
+                  <div className="flex items-start gap-2">
+                    <div 
+                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${roadmapItems[hoveredRoadmapItem].color}20` }}
+                    >
+                      <Sparkles className="w-3 h-3" style={{ color: roadmapItems[hoveredRoadmapItem].color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-[10px] font-semibold" style={{ color: roadmapItems[hoveredRoadmapItem].color }}>
+                          {isEn ? 'AI Insight' : 'Aperçu IA'}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${roadmapItems[hoveredRoadmapItem].color}15`, color: roadmapItems[hoveredRoadmapItem].color }}>
+                          {roadmapItems[hoveredRoadmapItem].plan}
+                        </span>
+                      </div>
+                      <p className="text-[10px] leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                        {roadmapItems[hoveredRoadmapItem].aiRecommendation}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
           {/* Industry Benchmarks - Grid Cards Layout */}
           <div 
-            className={`rounded-xl overflow-hidden transition-all duration-700 ${
+            className={`rounded-xl transition-all duration-700 ${
               showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{ 
@@ -1789,14 +1972,14 @@ function HeroDashboardPreview({
             }}
           >
             {/* Header - Left aligned */}
-            <div className="px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 lg:py-3.5 border-b text-left" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
+            <div className="px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 lg:py-3.5 border-b text-left rounded-t-xl" style={{ borderColor: isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(229, 231, 235, 0.6)' }}>
               <h4 className="text-xs sm:text-sm font-semibold text-left" style={{ color: 'rgb(var(--color-text))' }}>
                 {isEn ? 'Benchmarks' : 'Références'} {current.name}
               </h4>
             </div>
             
             {/* Benchmark Cards - Matching KPI cards style */}
-            <div className={`grid gap-2 p-2 sm:p-3 ${
+            <div className={`grid gap-3 p-2 sm:p-3 pt-14 overflow-visible ${
               isMobile ? 'grid-cols-1' : 'grid-cols-3'
             }`}>
               {current.benchmarks.map((row, i) => {
@@ -1909,9 +2092,31 @@ function HeroDashboardPreview({
                         </span>
                       </div>
                     </div>
+                    
+                    {/* Hover Tooltip - Above the card */}
+                    {row.description && (
+                      <div 
+                        className={`absolute left-0 right-0 bottom-full mb-2 p-2 rounded-lg shadow-lg transition-all duration-200 pointer-events-none z-50 ${
+                          hoveredRow === i ? 'opacity-100 visible' : 'opacity-0 invisible'
+                        }`}
+                        style={{ 
+                          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                          border: `1px solid ${statusColor}40`,
+                          boxShadow: `0 4px 12px ${statusColor}20`,
+                        }}
+                      >
+                        <div className="flex items-start gap-1.5">
+                          <Info className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: statusColor }} />
+                          <p className="text-[9px] leading-relaxed" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                            {row.description}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
+              
             </div>
           </div>
         </div>

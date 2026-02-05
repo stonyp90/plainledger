@@ -92,14 +92,14 @@ export class UserPermissionsService {
     const planId = organization.subscriptionPlanId || 'free';
     const plan = await this.subscriptionPlanRepository.findOne({
       where: { id: planId },
-      relations: ['entitlements'],
+      relations: ['planEntitlements', 'planEntitlements.entitlement'],
     });
 
     if (!plan) {
       this.logger.warn(`Plan ${planId} not found, defaulting to free`);
       const defaultPlan = await this.subscriptionPlanRepository.findOne({
         where: { id: 'free' },
-        relations: ['entitlements'],
+        relations: ['planEntitlements', 'planEntitlements.entitlement'],
       });
       if (!defaultPlan) {
         throw new Error('Default free plan not found');
@@ -121,8 +121,10 @@ export class UserPermissionsService {
     // Get permissions from role
     const permissions = (role.permissions || []).map((p) => p.id);
 
-    // Get entitlements from plan
-    const entitlements = (plan?.entitlements || []).map((e) => e.id);
+    // Get entitlements from plan (through junction table)
+    const entitlements = (plan?.planEntitlements || [])
+      .map((pe) => pe.entitlement?.id)
+      .filter((id): id is string => !!id);
 
     // Get limits from plan
     const limits = plan?.limits || {};
