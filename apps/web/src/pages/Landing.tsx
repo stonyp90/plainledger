@@ -1979,7 +1979,7 @@ function HeroDashboardPreview({
             </div>
             
             {/* Benchmark Cards - Matching KPI cards style */}
-            <div className={`grid gap-3 p-2 sm:p-3 pt-14 overflow-visible ${
+            <div className={`grid gap-3 p-2 sm:p-3 pt-2 sm:pt-14 overflow-visible ${
               isMobile ? 'grid-cols-1' : 'grid-cols-3'
             }`}>
               {current.benchmarks.map((row, i) => {
