@@ -57,20 +57,34 @@ async function bootstrap() {
   });
 
   // CORS
-  // Support multiple origins: main domain, www subdomain, and localhost for development
-  const corsOrigins = process.env.CORS_ORIGIN?.split(",") || [
+  // Support multiple origins: main domain, www subdomain, admin subdomain, and localhost for development
+  const corsOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [
     "http://localhost:5173",
   ];
-  // If production domain is set, also include www subdomain
+  // If production domain is set, also include www and admin subdomains
   if (
     process.env.CORS_ORIGIN &&
     !process.env.CORS_ORIGIN.includes("localhost")
   ) {
     const mainDomain = process.env.CORS_ORIGIN.split(",")[0].trim();
-    if (mainDomain && !mainDomain.includes("www.")) {
-      corsOrigins.push(mainDomain.replace("https://", "https://www."));
+    if (mainDomain) {
+      // Extract base domain (e.g., https://plainledger.ca)
+      const baseUrl = mainDomain.replace(/^https?:\/\//, "");
+      const protocol = mainDomain.startsWith("https") ? "https" : "http";
+      
+      // Add www subdomain if not already present
+      if (!mainDomain.includes("www.") && !corsOrigins.some(o => o.includes("www."))) {
+        corsOrigins.push(`${protocol}://www.${baseUrl}`);
+      }
+      
+      // Add admin subdomain if not already present
+      if (!mainDomain.includes("admin.") && !corsOrigins.some(o => o.includes("admin."))) {
+        corsOrigins.push(`${protocol}://admin.${baseUrl}`);
+      }
     }
   }
+  
+  console.log(`[CORS] Allowed origins: ${corsOrigins.join(", ")}`);
 
   app.enableCors({
     origin: corsOrigins,
