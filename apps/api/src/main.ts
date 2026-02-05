@@ -160,6 +160,9 @@ async function bootstrap() {
   const httpAdapter = app.getHttpAdapter();
   const server = httpAdapter.getHttpServer();
   
+  console.log(`[Bootstrap] Got HTTP adapter and server`);
+  console.log(`[Bootstrap] Server type: ${server?.constructor?.name}`);
+  
   // Add timeout to detect if listen() hangs
   const listenTimeout = setTimeout(() => {
     console.error(`[Bootstrap] FATAL: Server did not start within 60 seconds`);
@@ -170,6 +173,7 @@ async function bootstrap() {
   // Listen for server events before calling listen
   server.on('listening', () => {
     console.log(`[Bootstrap] HTTP server 'listening' event fired`);
+    clearTimeout(listenTimeout);
   });
   
   server.on('error', (err: Error) => {
@@ -178,22 +182,23 @@ async function bootstrap() {
     process.exit(1);
   });
 
-  try {
-    console.log(`[Bootstrap] Calling app.listen(${port}, "0.0.0.0")...`);
-    console.log(`[Bootstrap] Current server listening state: ${server.listening}`);
-    
-    // Bind explicitly to 0.0.0.0 for container environments
-    await app.listen(port, "0.0.0.0");
-    
-    clearTimeout(listenTimeout);
-    console.log(`[Bootstrap] app.listen() completed`);
-    console.log(`[Bootstrap] Server listening state after: ${server.listening}`);
-    console.log(`[Bootstrap] Server address:`, server.address());
-  } catch (error) {
-    clearTimeout(listenTimeout);
-    console.error(`[Bootstrap] FATAL: app.listen() threw error:`, error);
-    process.exit(1);
-  }
+  // Initialize the app (this calls onApplicationBootstrap hooks)
+  console.log(`[Bootstrap] Calling app.init()...`);
+  await app.init();
+  console.log(`[Bootstrap] app.init() completed`);
+
+  // Now manually bind the server
+  console.log(`[Bootstrap] Manually binding server to 0.0.0.0:${port}...`);
+  await new Promise<void>((resolve, reject) => {
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`[Bootstrap] Server.listen callback fired!`);
+      resolve();
+    });
+    server.once('error', reject);
+  });
+  
+  console.log(`[Bootstrap] Server is now listening`);
+  console.log(`[Bootstrap] Server address:`, server.address());
 
   console.log(`
   ╔═══════════════════════════════════════════════════╗
