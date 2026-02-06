@@ -39,24 +39,24 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           pip install -r pipelines/requirements.txt
           pip install boto3 httpx
-      
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Extract QuickBooks data to Bronze
         env:
           # Use sandbox or production credentials based on environment selection
@@ -68,7 +68,7 @@ jobs:
           QUICKBOOKS_ENVIRONMENT: ${{ env.QUICKBOOKS_ENVIRONMENT }}
           QUICKBOOKS_SECRET_NAME: plainledger/prod/quickbooks
           SECRETS_REGION: ${{ env.AWS_REGION }}
-          S3_BUCKET_BRONZE: plainledger-prod-bronze
+          S3_BUCKET_BRONZE: plainledger-prod-bronze-${{ secrets.AWS_ACCOUNT_ID }}
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
           echo "Running ETL with QuickBooks $QUICKBOOKS_ENVIRONMENT environment"
@@ -78,7 +78,7 @@ jobs:
             --organization-id "${{ github.event.inputs.organization_id || 'demo-org' }}" \
             ${QUICKBOOKS_REFRESH_TOKEN:+--refresh-token "$QUICKBOOKS_REFRESH_TOKEN"} \
             ${QUICKBOOKS_REALM_ID:+--realm-id "$QUICKBOOKS_REALM_ID"}
-      
+
       - name: Upload extraction logs
         if: always()
         uses: actions/upload-artifact@v6
@@ -96,35 +96,35 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           pip install -r pipelines/requirements.txt
           pip install boto3
-      
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Transform Bronze → Silver
         env:
-          S3_BUCKET_BRONZE: plainledger-prod-bronze
-          S3_BUCKET_SILVER: plainledger-prod-silver
-          S3_BUCKET_QUARANTINE: plainledger-prod-quarantine
+          S3_BUCKET_BRONZE: plainledger-prod-bronze-${{ secrets.AWS_ACCOUNT_ID }}
+          S3_BUCKET_SILVER: plainledger-prod-silver-${{ secrets.AWS_ACCOUNT_ID }}
+          S3_BUCKET_QUARANTINE: plainledger-prod-quarantine-${{ secrets.AWS_ACCOUNT_ID }}
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
           python3 pipelines/orchestration/github/etl_runner.py \
             --step bronze-to-silver \
             --organization-id "${{ github.event.inputs.organization_id || 'demo-org' }}"
-      
+
       - name: Upload transformation logs
         if: always()
         uses: actions/upload-artifact@v6
@@ -142,34 +142,34 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           pip install -r pipelines/requirements.txt
           pip install boto3
-      
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Transform Silver → Gold
         env:
-          S3_BUCKET_SILVER: plainledger-prod-silver
-          S3_BUCKET_GOLD: plainledger-prod-gold
+          S3_BUCKET_SILVER: plainledger-prod-silver-${{ secrets.AWS_ACCOUNT_ID }}
+          S3_BUCKET_GOLD: plainledger-prod-gold-${{ secrets.AWS_ACCOUNT_ID }}
           AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
           python3 pipelines/orchestration/github/etl_runner.py \
             --step silver-to-gold \
             --organization-id "${{ github.event.inputs.organization_id || 'demo-org' }}"
-      
+
       - name: Upload transformation logs
         if: always()
         uses: actions/upload-artifact@v6
@@ -187,13 +187,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Invalidate Redis cache
         env:
           REDIS_ENDPOINT: ${{ secrets.REDIS_ENDPOINT }}
@@ -219,7 +219,7 @@ jobs:
             print('No cache keys found')
           "
         continue-on-error: true
-      
+
       - name: Trigger GraphQL refresh (webhook)
         env:
           API_WEBHOOK_URL: ${{ secrets.API_ETL_WEBHOOK_URL }}
@@ -247,31 +247,31 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.extract.result }}" == "success" ]; then
             echo "| Extract (QuickBooks -> Bronze) | Passed |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Extract (QuickBooks -> Bronze) | Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.transform-bronze-silver.result }}" == "success" ]; then
             echo "| Transform (Bronze -> Silver) | Passed |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Transform (Bronze -> Silver) | Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.transform-silver-gold.result }}" == "success" ]; then
             echo "| Transform (Silver -> Gold) | Passed |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Transform (Silver -> Gold) | Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.invalidate-cache.result }}" == "success" ]; then
             echo "| Cache Invalidation | Passed |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Cache Invalidation | Skipped/Failed |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Organization:** \`${{ github.event.inputs.organization_id || 'demo-org' }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** \`${{ env.QUICKBOOKS_ENVIRONMENT }}\`" >> $GITHUB_STEP_SUMMARY
@@ -285,13 +285,13 @@ jobs:
     if: failure()
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Determine failed stages
         id: failures
         run: |
@@ -311,7 +311,7 @@ jobs:
           echo "failed_stages<<EOF" >> $GITHUB_OUTPUT
           echo -e "$FAILED_STAGES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      
+
       - name: Send failure notification email via SES
         continue-on-error: true
         env:
@@ -319,7 +319,7 @@ jobs:
         run: |
           SUBJECT="[ALERT] PlainLedger ETL Pipeline Failed - ${{ github.event.inputs.organization_id || 'demo-org' }}"
           BODY="PlainLedger ETL Pipeline Failure Alert - Organization: ${{ github.event.inputs.organization_id || 'demo-org' }} - Environment: ${{ env.QUICKBOOKS_ENVIRONMENT }} - Trigger: ${{ github.event_name }} - Run: ${{ github.run_id }} - Failed: ${{ steps.failures.outputs.failed_stages }} - Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          
+
           # Try to send via SES (requires ses:SendEmail permission in IAM role)
           # SES is configured in us-east-1
           aws ses send-email \
@@ -328,7 +328,7 @@ jobs:
             --destination "ToAddresses=pipelines@plainledger.ca" \
             --message "Subject={Data=\"$SUBJECT\",Charset=UTF-8},Body={Text={Data=\"$BODY\",Charset=UTF-8}}" \
             || echo "Warning: Failed to send email via SES. Check IAM permissions."
-      
+
       - name: Post failure to GitHub Summary
         run: |
           echo "## ETL Pipeline FAILED" >> $GITHUB_STEP_SUMMARY
