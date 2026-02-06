@@ -613,7 +613,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "kms:GenerateDataKey"
         ]
         Resource = [
-          module.database.kms_key_arn
+          module.database.kms_key_arn,
+          module.datalake.kms_key_arn
         ]
       }
     ]
