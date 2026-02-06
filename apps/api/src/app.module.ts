@@ -93,6 +93,7 @@ import { ProviderFactory } from "@application/services/provider-factory.service"
 import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
 import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
 import { S3CleanupAdapter } from "@infrastructure/adapters/storage/s3/s3-cleanup.adapter";
+import { NovuModule } from "@infrastructure/adapters/notifications/novu/novu.adapter";
 import { BenchmarkRefreshService } from "@infrastructure/services/benchmark-refresh.service";
 import { BenchmarkHealthService } from "@infrastructure/services/benchmark-health.service";
 import { ISEDBenchmarkService } from "@infrastructure/services/ised-benchmark.service";
@@ -419,6 +420,9 @@ import { PlatformAdminModule } from "./modules/platform-admin";
 
     // MongoDB (Analytics & Audit - optional, graceful degradation)
     MongoDBModule,
+
+    // Notifications (Novu)
+    NovuModule,
 
     // GraphQL API
     // TEMPORARILY DISABLED to test if it's causing the startup hang
