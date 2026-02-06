@@ -4531,6 +4531,7 @@ export default function Landing() {
       </section>
 
       {/* Final CTA - Clean Light Design */}
+      <span id="pricing" className="absolute" style={{ top: '-100px' }} />
       <section 
         className="py-16 sm:py-20 lg:py-24 px-4 sm:px-6"
         aria-label={isEn ? 'Ready to grow smarter - Start your free trial' : 'Prêt à grandir plus intelligemment - Commencez votre essai gratuit'}
@@ -4643,7 +4644,6 @@ export default function Landing() {
       </section>
 
       {/* Tax Credits / Unclaimed Money Section */}
-      <span id="pricing" className="absolute" style={{ top: '-100px' }} />
       <section 
         className="py-12 sm:py-16 px-4 sm:px-6 relative overflow-hidden"
         aria-label={isEn ? 'Unclaimed tax credits for Canadian SMBs' : 'Crédits d\'impôt non réclamés pour PME canadiennes'}

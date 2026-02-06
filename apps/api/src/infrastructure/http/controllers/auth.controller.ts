@@ -29,6 +29,7 @@ import { Inject } from "@nestjs/common";
 import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
 import { ConfigService } from "@nestjs/config";
 import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
+import { NovuService } from "@infrastructure/adapters/notifications/novu/novu.adapter";
 import * as crypto from "crypto";
 
 // =====================================================
@@ -155,6 +156,7 @@ export class AuthController {
     private readonly sesEmailService: SESAdapter,
     private readonly userProfileRepository: PostgresUserProfileRepository,
     private readonly configService: ConfigService,
+    private readonly novuService: NovuService,
   ) {}
 
   /**
@@ -326,6 +328,19 @@ export class AuthController {
 
       this.logger.log(`User logged in successfully: ${userInfo.email}`);
 
+      // Sync user to Novu for push notifications (ensures existing users have subscribers)
+      if (userInfo.id) {
+        this.novuService.upsertSubscriber({
+          subscriberId: userInfo.id,
+          email: userInfo.email,
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName,
+          locale: "fr",
+        }).catch(err => {
+          this.logger.warn(`Failed to sync Novu subscriber on login: ${err.message}`);
+        });
+      }
+
       return {
         success: true,
         accessToken: tokenData.access_token,
@@ -430,6 +445,29 @@ export class AuthController {
         // Log but don't fail - Keycloak user was created successfully
         this.logger.warn(
           `Failed to save user profile to database: ${dbError.message}`,
+        );
+      }
+
+      // Create/update Novu subscriber for push notifications
+      try {
+        await this.novuService.upsertSubscriber({
+          subscriberId: user.id,
+          email: dto.email.toLowerCase().trim(),
+          firstName: dto.firstName.trim(),
+          lastName: dto.lastName.trim(),
+          locale: "fr", // Default to French for Quebec users
+          data: {
+            province: dto.province,
+            organizationName: dto.organizationName?.trim(),
+            industry: dto.industry,
+            registrationSource: "web-signup",
+          },
+        });
+        this.logger.log(`Novu subscriber created: ${user.id}`);
+      } catch (novuError) {
+        // Log but don't fail - user was created successfully
+        this.logger.warn(
+          `Failed to create Novu subscriber: ${novuError.message}`,
         );
       }
 

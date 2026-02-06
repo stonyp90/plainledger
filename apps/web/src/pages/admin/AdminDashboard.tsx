@@ -293,14 +293,13 @@ export default function AdminDashboard() {
           <HealthBadge status={stats?.health.overallStatus || 'healthy'} />
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white"
             style={{ 
-              borderColor: 'rgb(var(--color-border))',
-              color: 'rgb(var(--color-text-secondary))',
+              backgroundColor: 'rgb(var(--color-primary-600))',
             }}
           >
             <RefreshCw className="w-4 h-4" />
-            <span className="text-sm">{isEn ? 'Refresh' : 'Actualiser'}</span>
+            {isEn ? 'Refresh' : 'Actualiser'}
           </button>
         </div>
       </div>

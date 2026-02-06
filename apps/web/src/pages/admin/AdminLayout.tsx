@@ -24,13 +24,20 @@ import {
   Sun,
   Moon,
   Monitor,
+  UserPlus,
+  Link2,
+  Heart,
+  CreditCard,
+  RefreshCw,
+  UserCog,
+  FileCode,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-// Admin navigation items
+// Admin navigation items - matching the admin portal layout
 const adminNavItems = [
   { 
     name: { en: 'Dashboard', fr: 'Tableau de bord' }, 
@@ -38,25 +45,44 @@ const adminNavItems = [
     icon: LayoutDashboard 
   },
   { 
-    name: { en: 'Users', fr: 'Utilisateurs' }, 
-    href: '/admin/users', 
-    icon: Users 
-  },
-  { 
     name: { en: 'Organizations', fr: 'Organisations' }, 
     href: '/admin/organizations', 
     icon: Building2 
   },
   { 
-    name: { en: 'Notifications', fr: 'Notifications' }, 
-    href: '/admin/notifications', 
+    name: { en: 'Users', fr: 'Utilisateurs' }, 
+    href: '/admin/users', 
+    icon: Users 
+  },
+  { 
+    name: { en: 'Onboarding', fr: 'Intégration' }, 
+    href: '/admin/onboarding', 
+    icon: UserPlus 
+  },
+  { 
+    name: { en: 'Integrations', fr: 'Intégrations' }, 
+    href: '/admin/integrations', 
+    icon: Link2 
+  },
+  { 
+    name: { en: 'System Health', fr: 'Santé système' }, 
+    href: '/admin/health', 
+    icon: Heart 
+  },
+  { 
+    name: { en: 'Communications', fr: 'Communications' }, 
+    href: '/admin/communications', 
     icon: Bell 
   },
   { 
-    name: { en: 'Live Chat', fr: 'Chat en direct' }, 
-    href: '/admin/chat', 
-    icon: MessageSquare,
-    badge: true,
+    name: { en: 'Billing', fr: 'Facturation' }, 
+    href: '/admin/billing', 
+    icon: CreditCard 
+  },
+  { 
+    name: { en: 'Sync Jobs', fr: 'Jobs de sync' }, 
+    href: '/admin/sync-jobs', 
+    icon: RefreshCw 
   },
   { 
     name: { en: 'Audit Logs', fr: 'Journaux d\'audit' }, 
@@ -64,14 +90,19 @@ const adminNavItems = [
     icon: ClipboardList 
   },
   { 
-    name: { en: 'Connections', fr: 'Connexions' }, 
-    href: '/admin/connections', 
-    icon: Database 
+    name: { en: 'Admin Users', fr: 'Utilisateurs admin' }, 
+    href: '/admin/admin-users', 
+    icon: UserCog 
   },
   { 
-    name: { en: 'System Health', fr: 'Santé système' }, 
-    href: '/admin/health', 
-    icon: Activity 
+    name: { en: 'API Docs', fr: 'Docs API' }, 
+    href: '/admin/api-docs', 
+    icon: FileCode 
+  },
+  { 
+    name: { en: 'Settings', fr: 'Paramètres' }, 
+    href: '/admin/settings', 
+    icon: Settings 
   },
 ];
 

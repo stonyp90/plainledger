@@ -561,6 +561,39 @@ function LocalNotificationProvider({ children }: { children: ReactNode }) {
 }
 
 // ============================================================================
+// Error Boundary for Novu Provider
+// ============================================================================
+
+interface NovuErrorBoundaryState {
+  hasError: boolean;
+}
+
+class NovuErrorBoundary extends React.Component<
+  { children: ReactNode; fallback: ReactNode },
+  NovuErrorBoundaryState
+> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): NovuErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Novu notification error, falling back to local:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+// ============================================================================
 // Main Provider (chooses between Novu and Local)
 // ============================================================================
 
@@ -574,25 +607,41 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   // Check if Novu is configured and user is authenticated
   const novuEnabled = Boolean(NOVU_APP_ID && authenticated && user?.id);
   
-  if (novuEnabled && user?.id) {
-    return (
-      <NovuProvider
-        subscriberId={user.id}
-        applicationIdentifier={NOVU_APP_ID}
-      >
-        <NovuNotificationInner>
-          {children}
-        </NovuNotificationInner>
-      </NovuProvider>
-    );
-  }
+  // Debug logging
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[Notifications] Config:', {
+        novuAppId: NOVU_APP_ID ? `${NOVU_APP_ID.substring(0, 6)}...` : 'not set',
+        authenticated,
+        userId: user?.id ? `${user.id.substring(0, 8)}...` : 'no user',
+        novuEnabled,
+      });
+    }
+  }, [authenticated, user?.id, novuEnabled]);
   
-  // Fallback to local notifications
-  return (
+  const localFallback = (
     <LocalNotificationProvider>
       {children}
     </LocalNotificationProvider>
   );
+  
+  if (novuEnabled && user?.id) {
+    return (
+      <NovuErrorBoundary fallback={localFallback}>
+        <NovuProvider
+          subscriberId={user.id}
+          applicationIdentifier={NOVU_APP_ID}
+        >
+          <NovuNotificationInner>
+            {children}
+          </NovuNotificationInner>
+        </NovuProvider>
+      </NovuErrorBoundary>
+    );
+  }
+  
+  // Fallback to local notifications
+  return localFallback;
 }
 
 // ============================================================================

@@ -4,6 +4,7 @@ import { SwaggerModule } from "@nestjs/swagger";
 import * as compression from "compression";
 import { AppModule } from "./app.module";
 import { DomainExceptionFilter } from "@infrastructure/http/filters/domain-exception.filter";
+import { CorsExceptionFilter } from "@infrastructure/http/filters/cors-exception.filter";
 import { FileStorageService } from "@infrastructure/storage/file-storage.service";
 import { createSwaggerConfig } from "@infrastructure/http/swagger.config";
 
@@ -47,8 +48,12 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter for domain errors
-  app.useGlobalFilters(new DomainExceptionFilter());
+  // Global exception filters
+  // CorsExceptionFilter must be last (catch-all) to handle CORS on all error responses
+  app.useGlobalFilters(
+    new DomainExceptionFilter(),
+    new CorsExceptionFilter(),
+  );
 
   // Set global prefix for all routes except health check
   // This aligns with ALB routing rules that route /api/* to API service
@@ -56,38 +61,59 @@ async function bootstrap() {
     exclude: ["health", "/health", "health/(.*)", { path: "health", method: RequestMethod.ALL }],
   });
 
-  // CORS
+  // CORS Configuration
   // Support multiple origins: main domain, www subdomain, admin subdomain, and localhost for development
-  const corsOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [
-    "http://localhost:5173",
-  ];
-  // If production domain is set, also include www and admin subdomains
-  if (
-    process.env.CORS_ORIGIN &&
-    !process.env.CORS_ORIGIN.includes("localhost")
-  ) {
-    const mainDomain = process.env.CORS_ORIGIN.split(",")[0].trim();
-    if (mainDomain) {
-      // Extract base domain (e.g., https://plainledger.ca)
-      const baseUrl = mainDomain.replace(/^https?:\/\//, "");
-      const protocol = mainDomain.startsWith("https") ? "https" : "http";
-      
-      // Add www subdomain if not already present
-      if (!mainDomain.includes("www.") && !corsOrigins.some(o => o.includes("www."))) {
-        corsOrigins.push(`${protocol}://www.${baseUrl}`);
-      }
-      
-      // Add admin subdomain if not already present
-      if (!mainDomain.includes("admin.") && !corsOrigins.some(o => o.includes("admin."))) {
-        corsOrigins.push(`${protocol}://admin.${baseUrl}`);
+  const corsOrigins: string[] = [];
+  
+  // Parse configured origins
+  const configuredOrigins = process.env.CORS_ORIGIN?.split(",").map(o => o.trim()) || [];
+  corsOrigins.push(...configuredOrigins);
+  
+  // Always allow localhost for development
+  if (!corsOrigins.some(o => o.includes("localhost"))) {
+    corsOrigins.push("http://localhost:5173");
+    corsOrigins.push("http://localhost:3000");
+  }
+  
+  // If production domain is set, auto-add common subdomains
+  const productionDomain = configuredOrigins.find(o => !o.includes("localhost"));
+  if (productionDomain) {
+    const baseUrl = productionDomain.replace(/^https?:\/\/(www\.|admin\.)?/, "");
+    const protocol = productionDomain.startsWith("https") ? "https" : "http";
+    
+    // Ensure all variants are included
+    const variants = [
+      `${protocol}://${baseUrl}`,
+      `${protocol}://www.${baseUrl}`,
+      `${protocol}://admin.${baseUrl}`,
+    ];
+    
+    for (const variant of variants) {
+      if (!corsOrigins.includes(variant)) {
+        corsOrigins.push(variant);
       }
     }
   }
   
   console.log(`[CORS] Allowed origins: ${corsOrigins.join(", ")}`);
 
+  // Use function-based origin check for better flexibility
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, Postman)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Check if origin is in allowed list
+      if (corsOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Log rejected origins for debugging
+      console.warn(`[CORS] Rejected origin: ${origin}`);
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -95,7 +121,12 @@ async function bootstrap() {
       "Authorization",
       "X-Tenant-ID",
       "X-Request-ID",
+      "Accept",
+      "Origin",
+      "Cache-Control",
     ],
+    exposedHeaders: ["X-Request-ID"],
+    maxAge: 86400, // Cache preflight for 24 hours
   });
 
   // Swagger API Documentation (dynamically generated from decorators)

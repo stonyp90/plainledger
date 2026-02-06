@@ -55,6 +55,14 @@ import {
   AdminAudit,
   AdminConnections,
   AdminHealth,
+  AdminOnboarding,
+  AdminIntegrations,
+  AdminCommunications,
+  AdminBilling,
+  AdminSyncJobs,
+  AdminAdminUsers,
+  AdminApiDocs,
+  AdminSettings,
 } from './pages/admin';
 import CookieConsent from './components/CookieConsent';
 import { SmartInstallBanner } from './components/SmartInstallBanner';
@@ -728,6 +736,86 @@ function App() {
           <ProtectedRoute>
             <AdminLayout>
               <AdminHealth />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/onboarding"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminOnboarding />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/integrations"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminIntegrations />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/communications"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminCommunications />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/billing"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminBilling />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/sync-jobs"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminSyncJobs />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/admin-users"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminAdminUsers />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/api-docs"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminApiDocs />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <AdminSettings />
             </AdminLayout>
           </ProtectedRoute>
         }

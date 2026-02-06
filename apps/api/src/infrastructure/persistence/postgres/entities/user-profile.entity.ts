@@ -205,9 +205,7 @@ export class UserProfileEntity {
   @JoinColumn({ name: "organization_id" })
   organization?: OrganizationEntity;
 
-  // TODO: Re-enable FK after seeding tenant.roles table on production
-  // The FK was disabled because the roles table was empty when the migration ran
-  @ManyToOne(() => RoleEntity, { nullable: true, createForeignKeyConstraints: false })
+  @ManyToOne(() => RoleEntity, { nullable: true })
   @JoinColumn({ name: "role" })
   roleEntity?: RoleEntity;
 }
