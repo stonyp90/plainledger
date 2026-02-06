@@ -181,16 +181,13 @@ export default function PublicHeader({
                 ))}
               </nav>
             ) : fullMenu ? (
-              /* Full menu mode - 4 main sections */
+              /* Full menu mode - 3 main sections */
               <nav className="hidden md:flex items-center gap-4 lg:gap-6" aria-label={isEn ? 'Main navigation' : 'Navigation principale'}>
-                <a href="/#features" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Features' : 'Fonctionnalités'}
+                <a href="/#pipeline" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                  {isEn ? 'How it works' : 'Comment ça marche'}
                 </a>
                 <a href="/#industries" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   {isEn ? 'Industries' : 'Industries'}
-                </a>
-                <a href="/#pricing" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {isEn ? 'Pricing' : 'Tarifs'}
                 </a>
                 <a href="/#contact" className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                   Contact
@@ -349,14 +346,11 @@ export default function PublicHeader({
                 </>
               ) : fullMenu ? (
                 <>
-                  <a href="/#features" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn ? 'Features' : 'Fonctionnalités'}
+                  <a href="/#pipeline" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                    {isEn ? 'How it works' : 'Comment ça marche'}
                   </a>
                   <a href="/#industries" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     {isEn ? 'Industries' : 'Industries'}
-                  </a>
-                  <a href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {isEn ? 'Pricing' : 'Tarifs'}
                   </a>
                   <a href="/#contact" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ color: 'rgb(var(--color-text-secondary))' }}>
                     Contact
