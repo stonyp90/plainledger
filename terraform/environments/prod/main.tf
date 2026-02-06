@@ -508,7 +508,14 @@ resource "aws_route53_record" "cloudfront_cert_validation" {
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  # Multiple thumbprints for GitHub OIDC - they rotate certificates periodically
+  # Note: AWS no longer validates thumbprints for GitHub but requires at least one
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1", # Legacy
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd", # 2023 intermediate CA
+    "2b18947a6a9fc7764fd8b5fb18a863b0c6dac24f", # 2024 intermediate CA
+    "7560d6f40fa55195f740ee2b1b7c0b4836cbe103", # 2025/2026 intermediate CA
+  ]
 }
 
 resource "aws_iam_role" "github_actions" {

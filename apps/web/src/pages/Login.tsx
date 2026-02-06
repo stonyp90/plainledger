@@ -193,8 +193,8 @@ export default function Login() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
-      {/* Header - Using shared PublicHeader component */}
-      <PublicHeader fullMenu={false} />
+      {/* Header - Minimal header with just logo and toggles */}
+      <PublicHeader minimal={true} />
       
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-4">

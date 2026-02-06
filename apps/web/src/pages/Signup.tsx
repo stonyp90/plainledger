@@ -431,9 +431,9 @@ export default function Signup() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
-      {/* Header - Using shared PublicHeader component */}
+      {/* Header - Minimal header with progress indicator */}
       <PublicHeader 
-        fullMenu={false}
+        minimal={true}
         showProgress={{
           currentStep,
           totalSteps: 3,
