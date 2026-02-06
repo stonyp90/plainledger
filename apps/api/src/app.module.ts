@@ -425,8 +425,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     NovuModule,
 
     // GraphQL API
-    // TEMPORARILY DISABLED to test if it's causing the startup hang
-    // GraphQLModule,
+    GraphQLModule,
 
     // Intelligence Platform
     IntelligenceModule,
@@ -574,15 +573,15 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     },
     // INotificationService removed - use SESAdapter directly
 
-    // GraphQL Resolvers - TEMPORARILY DISABLED to test startup hang
-    // FinancialResolver,
-    // OrganizationResolver,
-    // DataSourceResolver,
-    // MarketAnalysisResolver,
-    // TaxCreditResolver,
-    // VisualizationResolver,
-    // UserSettingsResolver,
-    // GqlAuthGuard,
+    // GraphQL Resolvers
+    FinancialResolver,
+    OrganizationResolver,
+    DataSourceResolver,
+    MarketAnalysisResolver,
+    TaxCreditResolver,
+    VisualizationResolver,
+    UserSettingsResolver,
+    GqlAuthGuard,
 
     // GraphQL PubSub for subscriptions - keep mock for services that inject it
     {
