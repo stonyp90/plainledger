@@ -7,8 +7,8 @@
 
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useI18n, LanguageToggle } from '../lib/i18n';
-import ThemeToggle from '../components/ThemeToggle';
+import { useI18n } from '../lib/i18n';
+import PublicHeader from '../components/PublicHeader';
 import ComplianceRoadmap from '../components/ComplianceRoadmap';
 import SEOHead from '../components/SEOHead';
 import {
@@ -104,36 +104,8 @@ export default function Security() {
         canonicalPath="/security"
       />
 
-      {/* Header */}
-      <header className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-            style={{ 
-              background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-            }}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-            </svg>
-          </div>
-          <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-            PlainLedger
-          </span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <LanguageToggle />
-        </div>
-      </header>
+      {/* Header - Using shared PublicHeader */}
+      <PublicHeader minimal />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

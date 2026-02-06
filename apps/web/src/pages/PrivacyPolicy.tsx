@@ -6,9 +6,8 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, Lock } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
-import { useI18n, LanguageToggle } from '../lib/i18n';
-import ThemeToggle from '../components/ThemeToggle';
+import { useI18n } from '../lib/i18n';
+import PublicHeader from '../components/PublicHeader';
 
 export default function PrivacyPolicy() {
   const { language } = useI18n();
@@ -19,37 +18,8 @@ export default function PrivacyPolicy() {
       className="min-h-screen"
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
-      {/* Header */}
-      <header className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between max-w-7xl mx-auto">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div 
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-            style={{ 
-              background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-              boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
-            }}
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-              <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-            </svg>
-          </div>
-          <span className="font-semibold text-base sm:text-lg" style={{ color: 'rgb(var(--color-text))' }}>
-            PlainLedger
-          </span>
-        </Link>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <ThemeToggle />
-          <LanguageToggle />
-        </div>
-      </header>
+      {/* Header - Using shared PublicHeader */}
+      <PublicHeader minimal />
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">

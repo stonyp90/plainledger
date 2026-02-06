@@ -12,16 +12,14 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
-import ThemeToggle from '../components/ThemeToggle';
-import { LanguageToggle, useI18n } from '../lib/i18n';
+import PublicHeader from '../components/PublicHeader';
+import { useI18n } from '../lib/i18n';
 import ContactForm from '../components/ContactForm';
 import SEOHead from '../components/SEOHead';
 import { 
   ArrowRight,
   Check,
   Shield,
-  Menu,
-  X,
   DollarSign,
   Building2,
   Calculator,
@@ -193,11 +191,18 @@ function useInView(options?: IntersectionObserverInit) {
   return { ref, isInView };
 }
 
+// Quebec-specific menu items
+const QUEBEC_MENU_ITEMS = [
+  { labelEn: 'Tax Credits', labelFr: 'Crédits d\'impôt', scrollTo: 'credits-impot' },
+  { labelEn: 'Programs', labelFr: 'Programmes', scrollTo: 'programmes' },
+  { labelEn: 'Industries', labelFr: 'Industries', scrollTo: 'industries' },
+  { labelEn: 'Contact', labelFr: 'Contact', scrollTo: 'contact' },
+];
+
 export default function Quebec() {
   const { language } = useI18n();
   const { register, authenticated } = useAuth();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isEn = language === 'en';
 
   // Scroll to section
@@ -206,7 +211,6 @@ export default function Quebec() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
-    setMobileMenuOpen(false);
   };
 
   // Handle CTA click
@@ -226,145 +230,20 @@ export default function Quebec() {
       {/* SEO */}
       <SEOHead canonicalPath="/quebec" />
       
-      {/* Navigation */}
-      <nav 
-        className="sticky top-0 z-50 backdrop-blur-md border-b"
-        style={{ 
-          backgroundColor: 'rgba(var(--color-bg), 0.9)',
-          borderColor: `${quebecTheme.blue}20`,
+      {/* Navigation - Using shared PublicHeader */}
+      <PublicHeader
+        badge="Québec"
+        badgeColor={quebecTheme.blue}
+        accentColor={quebecTheme.blue}
+        customMenuItems={QUEBEC_MENU_ITEMS}
+        onScrollToSection={scrollToSection}
+        customAction={{
+          labelEn: 'Get Started',
+          labelFr: 'Commencer',
+          onClick: handleGetStarted,
+          color: quebecTheme.blue,
         }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ 
-                  background: `linear-gradient(135deg, ${quebecTheme.blue} 0%, ${quebecTheme.blueDark} 100%)`
-                }}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                </svg>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg" style={{ color: 'rgb(var(--color-text))' }}>PlainLedger</span>
-                <span className="text-xs font-medium" style={{ color: quebecTheme.blue }}>Québec</span>
-              </div>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-6">
-              <button
-                onClick={() => scrollToSection('credits-impot')}
-                className="text-sm font-medium transition-colors"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                {isEn ? 'Tax Credits' : 'Crédits d\'impôt'}
-              </button>
-              <button
-                onClick={() => scrollToSection('programmes')}
-                className="text-sm font-medium transition-colors"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                {isEn ? 'Programs' : 'Programmes'}
-              </button>
-              <button
-                onClick={() => scrollToSection('industries')}
-                className="text-sm font-medium transition-colors"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                {isEn ? 'Industries' : 'Industries'}
-              </button>
-              <button
-                onClick={() => scrollToSection('contact')}
-                className="text-sm font-medium transition-colors"
-                style={{ color: 'rgb(var(--color-text-secondary))' }}
-              >
-                Contact
-              </button>
-            </div>
-
-            {/* Right side */}
-            <div className="flex items-center gap-3">
-              <LanguageToggle />
-              <ThemeToggle />
-              <button
-                onClick={handleGetStarted}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all"
-                style={{ 
-                  backgroundColor: quebecTheme.blue,
-                  color: 'white',
-                }}
-              >
-                {isEn ? 'Get Started' : 'Commencer'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-lg"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div 
-            className="md:hidden border-t"
-            style={{ borderColor: `${quebecTheme.blue}20` }}
-          >
-            <div className="px-4 py-4 space-y-3">
-              <button
-                onClick={() => scrollToSection('credits-impot')}
-                className="block w-full text-left py-2 text-sm font-medium"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {isEn ? 'Tax Credits' : 'Crédits d\'impôt'}
-              </button>
-              <button
-                onClick={() => scrollToSection('programmes')}
-                className="block w-full text-left py-2 text-sm font-medium"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {isEn ? 'Programs' : 'Programmes'}
-              </button>
-              <button
-                onClick={() => scrollToSection('industries')}
-                className="block w-full text-left py-2 text-sm font-medium"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
-                {isEn ? 'Industries' : 'Industries'}
-              </button>
-              <button
-                onClick={handleGetStarted}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm"
-                style={{ 
-                  backgroundColor: quebecTheme.blue,
-                  color: 'white',
-                }}
-              >
-                {isEn ? 'Get Started' : 'Commencer'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </nav>
+      />
 
       {/* Hero Section */}
       <section 
