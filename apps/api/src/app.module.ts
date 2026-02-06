@@ -569,7 +569,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     },
     {
       provide: "IKeycloakAdminService",
-      useClass: KeycloakAdminService,
+      useExisting: KeycloakAdminService, // Use existing instance instead of creating another
     },
     // INotificationService removed - use SESAdapter directly
 
