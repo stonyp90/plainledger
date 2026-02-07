@@ -49,9 +49,23 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         this.logger.error(`Redis error: ${error.message}`);
       });
 
-      // Test connection
-      await this.redis.ping();
-      this.logger.log("Redis cache service initialized");
+      // Test connection with timeout
+      this.logger.log("[onModuleInit] CacheService testing connection with ping...");
+      const pingPromise = this.redis.ping();
+      const timeoutPromise = new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error("Redis ping timed out after 10 seconds")), 10000)
+      );
+      
+      try {
+        const pingResult = await Promise.race([pingPromise, timeoutPromise]);
+        this.logger.log(`Redis cache service initialized (ping response: ${pingResult})`);
+      } catch (pingError) {
+        this.logger.warn(`Redis ping failed: ${pingError.message}. Cache will be disabled.`);
+        await this.redis.quit();
+        this.redis = null;
+        this.logger.log("[onModuleInit] CacheService completed (disabled due to ping failure)");
+        return;
+      }
     } catch (error) {
       this.logger.warn(
         `Failed to connect to Redis: ${error.message}. Caching will be disabled.`,
