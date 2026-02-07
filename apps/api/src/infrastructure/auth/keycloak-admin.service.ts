@@ -94,12 +94,14 @@ export class KeycloakAdminService
   }
 
   async onModuleInit() {
+    this.logger.log("[onModuleInit] KeycloakAdminService starting...");
     await this.initializeClient();
     // Auto-enable Direct Access Grants on plainledger-web client if not already enabled
     // This ensures the custom login UI works properly
     if (this.isConfigured) {
       await this.ensureDirectAccessGrantsEnabled();
     }
+    this.logger.log("[onModuleInit] KeycloakAdminService completed");
   }
 
   /**

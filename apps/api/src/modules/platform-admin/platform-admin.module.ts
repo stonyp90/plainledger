@@ -37,11 +37,8 @@ import { AdminOnboardingService } from './services/admin-onboarding.service';
 import { AdminCommunicationService } from './services/admin-communication.service';
 import { AdminNotificationService } from './services/admin-notification.service';
 import { AdminChatService } from './services/admin-chat.service';
-import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
-import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
-import { EmailTemplatesService } from '@infrastructure/templates/email-templates.service';
-import { HealthCheckService } from '@infrastructure/health/health-check.service';
-import { CacheService } from '@infrastructure/cache/cache.service';
+// Note: KeycloakAdminService, SESAdapter, CacheService, EmailTemplatesService, HealthCheckService
+// are imported from AppModule - do not re-import here to avoid duplicate instances
 
 // Controllers
 import { AdminOrganizationsController } from './controllers/admin-organizations.controller';
@@ -116,12 +113,8 @@ import { AdminPermissionsController } from './controllers/admin-permissions.cont
     AdminCommunicationService,
     AdminNotificationService,
     AdminChatService,
-    // External services
-    KeycloakAdminService,
-    SESAdapter,
-    EmailTemplatesService,
-    HealthCheckService,
-    CacheService,
+    // Note: KeycloakAdminService, SESAdapter, CacheService, EmailTemplatesService, HealthCheckService
+    // are already provided by AppModule and should NOT be re-registered here to avoid duplicate instances
   ],
   exports: [
     PlatformAdminGuard,

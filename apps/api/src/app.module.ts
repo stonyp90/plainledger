@@ -148,6 +148,8 @@ import { SESAdapter } from "./infrastructure/adapters/email/ses/ses.adapter";
 
 // Email Templates
 import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
+import { HealthCheckService } from "./infrastructure/health/health-check.service";
+import { SharedServicesModule } from "./modules/shared/shared-services.module";
 
 // Journey Tracking
 import { JourneyTrackingService } from "@application/services/journey-tracking.service";
@@ -176,6 +178,9 @@ import { PlatformAdminModule } from "./modules/platform-admin";
 
 @Module({
   imports: [
+    // Shared Services (must be imported first to ensure singleton instances)
+    SharedServicesModule,
+    
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
@@ -525,8 +530,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     PowerBIThemeAdapter,
     PowerBIDatalakeAdapter,
     DatalakeDataService,
-    KeycloakAdminService,
-    CacheService,
+    // Note: KeycloakAdminService, CacheService are provided by SharedServicesModule
     EmbeddingService,
     SimilaritySearchService,
     UserPermissionsService,
@@ -536,8 +540,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     ETLPublisherService,
     AccountBalancePublisherService,
     SettingsService,
-    SESAdapter,
-    EmailTemplatesService,
+    // Note: SESAdapter, EmailTemplatesService, HealthCheckService are provided by SharedServicesModule
     FileStorageService,
     DocumentShareService,
     JourneyTrackingService,
@@ -659,6 +662,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
       inject: [ConfigService],
     },
   ],
-  exports: [AppConfig],
+  exports: [
+    AppConfig,
+    // Note: KeycloakAdminService, SESAdapter, CacheService, EmailTemplatesService, HealthCheckService
+    // are exported by SharedServicesModule (which is @Global())
+  ],
 })
 export class AppModule {}

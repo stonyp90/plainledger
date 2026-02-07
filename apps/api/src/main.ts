@@ -10,9 +10,22 @@ import { createSwaggerConfig } from "@infrastructure/http/swagger.config";
 
 async function bootstrap() {
   console.log("[Bootstrap] Starting NestJS application...");
+  console.log(`[Bootstrap] NODE_ENV=${process.env.NODE_ENV}`);
+  console.log(`[Bootstrap] KEYCLOAK_URL=${process.env.KEYCLOAK_URL}`);
   console.log("[Bootstrap] Creating NestJS app with AppModule...");
   const startTime = Date.now();
-  const app = await NestFactory.create(AppModule);
+  
+  // Add timeout detection for module creation
+  const timeoutId = setTimeout(() => {
+    console.error("[Bootstrap] WARNING: NestFactory.create() is taking longer than 30 seconds!");
+    console.error("[Bootstrap] This suggests a blocking operation during module initialization.");
+  }, 30000);
+  
+  const app = await NestFactory.create(AppModule, {
+    logger: ["error", "warn", "log"],
+  });
+  
+  clearTimeout(timeoutId);
   const createTime = Date.now() - startTime;
   console.log(`[Bootstrap] NestJS app created successfully in ${createTime}ms`);
 
