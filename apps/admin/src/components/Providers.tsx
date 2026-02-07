@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AdminProvider } from '@/hooks/useAdmin';
 import { ThemeProvider } from '@/hooks/useTheme';
+import { KeycloakProvider } from '@/hooks/useKeycloak';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -19,12 +20,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AdminProvider>
-          {children}
-        </AdminProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <KeycloakProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AdminProvider>
+            {children}
+          </AdminProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </KeycloakProvider>
   );
 }

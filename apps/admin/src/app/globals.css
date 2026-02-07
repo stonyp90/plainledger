@@ -90,9 +90,11 @@
   color: var(--admin-text-muted);
 }
 
-[data-theme="light"] .text-white {
-  color: var(--admin-text);
-}
+/* 
+ * Note: text-white overrides removed - we now use inline styles for active nav items
+ * to ensure white text on colored backgrounds in both light and dark themes.
+ * See AdminShell.tsx navigation for implementation.
+ */
 
 [data-theme="light"] .hover\:text-white:hover {
   color: var(--admin-text);

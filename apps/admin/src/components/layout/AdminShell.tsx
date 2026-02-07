@@ -134,9 +134,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-primary-600 text-white'
+                    ? 'bg-primary-600'
                     : 'text-admin-400 hover:bg-admin-700 hover:text-white'
                 }`}
+                style={isActive ? { color: '#ffffff' } : undefined}
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.name}</span>

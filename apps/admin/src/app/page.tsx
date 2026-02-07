@@ -16,18 +16,27 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function DashboardPage() {
-  const { admin, isLoading } = useAdmin();
+  const { admin, isLoading, token } = useAdmin();
 
   // Fetch dashboard stats
   const { data: stats, isLoading: statsLoading, refetch } = useQuery({
-    queryKey: ['admin', 'dashboard-stats'],
+    queryKey: ['admin', 'dashboard-stats', token],
     queryFn: async () => {
       try {
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        
+        // Add auth token if available
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const res = await fetch(`${API_URL}/api/admin/dashboard/stats`, {
-          credentials: 'include',
+          headers,
         });
         if (!res.ok) {
-          throw new Error('Failed to fetch stats');
+          throw new Error(`Failed to fetch stats: ${res.status}`);
         }
         const data = await res.json();
         return {
@@ -52,6 +61,7 @@ export default function DashboardPage() {
         };
       }
     },
+    enabled: !!token,
     refetchInterval: 60000, // Refresh every minute
   });
 

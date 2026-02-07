@@ -143,6 +143,8 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<KeycloakContextType['user']>(null);
   const initCalled = useRef(false);
+  // Track if we used stored tokens (custom login) - Keycloak.init() not called
+  const usedStoredTokensRef = useRef(false);
   const keycloak = getKeycloakInstance();
 
   useEffect(() => {
@@ -218,6 +220,9 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
             (keycloak as any).realmAccess = tokenPayload.realm_access || {};
             (keycloak as any).resourceAccess = tokenPayload.resource_access || {};
             
+            // Mark that we used stored tokens (Keycloak.init() not called)
+            usedStoredTokensRef.current = true;
+            
             // Extract user profile
             const tokenParsed = tokenPayload as Record<string, unknown>;
             setAuthenticated(true);
@@ -227,22 +232,50 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
             // Expose keycloak to window for other modules to access token
             (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
             
-            // Set up token refresh
+            // Set up token refresh - since we didn't call init(), we need to refresh manually
             keycloak.onTokenExpired = async () => {
               try {
-                await keycloak.updateToken(30);
-                // Update stored tokens
-                sessionStorage.setItem('kc_token', keycloak.token || '');
-                sessionStorage.setItem('kc_refresh_token', keycloak.refreshToken || '');
-                if (keycloak.idToken) {
-                  sessionStorage.setItem('kc_id_token', keycloak.idToken);
+                // Refresh token by calling Keycloak token endpoint directly
+                const refreshToken = (keycloak as any).refreshToken;
+                if (!refreshToken) {
+                  throw new Error('No refresh token available');
                 }
+                
+                const tokenUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/token`;
+                const response = await fetch(tokenUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                  },
+                  body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    client_id: keycloakConfig.clientId,
+                    refresh_token: refreshToken,
+                  }),
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Token refresh failed');
+                }
+                
+                const tokens = await response.json();
+                
+                // Update keycloak instance with new tokens
+                (keycloak as any).token = tokens.access_token;
+                (keycloak as any).refreshToken = tokens.refresh_token;
+                if (tokens.id_token) {
+                  (keycloak as any).idToken = tokens.id_token;
+                }
+                
+                console.log('✅ Token refreshed successfully');
               } catch (error) {
-                console.warn('Failed to refresh token, logging out');
+                console.warn('Failed to refresh token, redirecting to login');
                 sessionStorage.removeItem('kc_token');
                 sessionStorage.removeItem('kc_refresh_token');
                 sessionStorage.removeItem('kc_id_token');
-                keycloak.logout();
+                // Redirect to logout endpoint to clear server session, then back to login
+                const logoutUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/logout?post_logout_redirect_uri=${encodeURIComponent(window.location.origin + '/login')}&client_id=${keycloakConfig.clientId}`;
+                window.location.href = logoutUrl;
               }
             };
             
@@ -416,6 +449,22 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
       setAuthenticated(false);
       setUser(null);
       window.location.replace(window.location.origin);
+      return;
+    }
+    
+    // If we used stored tokens (custom login), Keycloak.init() was never called
+    // so the adapter isn't available. Handle logout manually.
+    if (usedStoredTokensRef.current) {
+      setAuthenticated(false);
+      setUser(null);
+      // Clear any remaining tokens
+      sessionStorage.removeItem('kc_token');
+      sessionStorage.removeItem('kc_refresh_token');
+      sessionStorage.removeItem('kc_id_token');
+      sessionStorage.removeItem('kc_user');
+      // Build logout URL manually to end session on Keycloak server
+      const logoutUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/logout?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}&client_id=${keycloakConfig.clientId}`;
+      window.location.href = logoutUrl;
       return;
     }
     
