@@ -168,6 +168,20 @@ export const onboardingApi = {
   getAtRisk: () => fetchApi<{ atRisk: any[] }>('/api/admin/onboarding/at-risk'),
 };
 
+// Billing
+export const billingApi = {
+  getStats: () => fetchApi<any>('/api/admin/billing/stats'),
+  getTransactions: (params?: Record<string, string>) => {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    return fetchApi<{ transactions: any[]; total: number }>(`/api/admin/billing/transactions${query}`);
+  },
+  getPlanDistribution: () => fetchApi<{ plans: any[] }>('/api/admin/billing/plan-distribution'),
+  getRevenueTrend: (params?: Record<string, string>) => {
+    const query = params ? `?${new URLSearchParams(params)}` : '';
+    return fetchApi<{ trend: any[] }>(`/api/admin/billing/revenue-trend${query}`);
+  },
+};
+
 // Communications
 export const communicationsApi = {
   listTemplates: () => fetchApi<{ templates: any[] }>('/api/admin/communications/templates'),

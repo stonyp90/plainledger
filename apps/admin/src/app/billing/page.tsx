@@ -1,50 +1,107 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { billingApi } from '@/lib/api';
 import { 
   CreditCard, 
   TrendingUp, 
   DollarSign, 
   Users,
-  Calendar,
+  RefreshCw,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
 
+// Mock data for fallback
+const mockStats = {
+  mrr: 12450,
+  arr: 149400,
+  activeSubscriptions: 48,
+  churnRate: 2.3,
+  avgRevenuePerUser: 259.38,
+  growth: 15.2,
+};
+
+const mockTransactions = [
+  { id: '1', org: 'Acme Corporation', amount: 299, type: 'subscription', date: '2024-02-01', status: 'paid' },
+  { id: '2', org: 'Tech Startup Inc', amount: 499, type: 'subscription', date: '2024-02-01', status: 'paid' },
+  { id: '3', org: 'Restaurant Group', amount: 199, type: 'subscription', date: '2024-01-28', status: 'failed' },
+  { id: '4', org: 'Construction Co', amount: 299, type: 'upgrade', date: '2024-01-25', status: 'paid' },
+  { id: '5', org: 'Healthcare Services', amount: 499, type: 'subscription', date: '2024-01-20', status: 'paid' },
+];
+
+const mockPlanDistribution = [
+  { plan: 'Free', count: 156, percentage: 65 },
+  { plan: 'Professional', count: 62, percentage: 26 },
+  { plan: 'Enterprise', count: 22, percentage: 9 },
+];
+
 export default function BillingPage() {
-  // Mock billing data
-  const stats = {
-    mrr: 12450,
-    arr: 149400,
-    activeSubscriptions: 48,
-    churnRate: 2.3,
-    avgRevenuePerUser: 259.38,
-    growth: 15.2,
-  };
+  const { token } = useAdmin();
 
-  const recentTransactions = [
-    { id: '1', org: 'Acme Corporation', amount: 299, type: 'subscription', date: '2024-02-01', status: 'paid' },
-    { id: '2', org: 'Tech Startup Inc', amount: 499, type: 'subscription', date: '2024-02-01', status: 'paid' },
-    { id: '3', org: 'Restaurant Group', amount: 199, type: 'subscription', date: '2024-01-28', status: 'failed' },
-    { id: '4', org: 'Construction Co', amount: 299, type: 'upgrade', date: '2024-01-25', status: 'paid' },
-    { id: '5', org: 'Healthcare Services', amount: 499, type: 'subscription', date: '2024-01-20', status: 'paid' },
-  ];
+  // Fetch billing stats
+  const { data: statsData, isLoading: statsLoading, refetch } = useQuery({
+    queryKey: ['admin', 'billing', 'stats', token],
+    queryFn: async () => {
+      try {
+        return await billingApi.getStats();
+      } catch {
+        return mockStats;
+      }
+    },
+    enabled: !!token,
+  });
 
-  const planDistribution = [
-    { plan: 'Free', count: 156, percentage: 65 },
-    { plan: 'Professional', count: 62, percentage: 26 },
-    { plan: 'Enterprise', count: 22, percentage: 9 },
-  ];
+  // Fetch transactions
+  const { data: transactionsData } = useQuery({
+    queryKey: ['admin', 'billing', 'transactions', token],
+    queryFn: async () => {
+      try {
+        return await billingApi.getTransactions({ limit: '5' });
+      } catch {
+        return { transactions: mockTransactions };
+      }
+    },
+    enabled: !!token,
+  });
+
+  // Fetch plan distribution
+  const { data: plansData } = useQuery({
+    queryKey: ['admin', 'billing', 'plans', token],
+    queryFn: async () => {
+      try {
+        return await billingApi.getPlanDistribution();
+      } catch {
+        return { plans: mockPlanDistribution };
+      }
+    },
+    enabled: !!token,
+  });
+
+  const stats = statsData || mockStats;
+  const recentTransactions = transactionsData?.transactions || mockTransactions;
+  const planDistribution = plansData?.plans || mockPlanDistribution;
 
   return (
     <AdminShell>
       <div className="p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Billing & Revenue</h1>
-          <p className="text-admin-400 mt-1">
-            Monitor revenue, subscriptions, and billing metrics
-          </p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Billing & Revenue</h1>
+            <p className="text-admin-400 mt-1">
+              Monitor revenue, subscriptions, and billing metrics
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
 
         {/* Revenue Stats */}

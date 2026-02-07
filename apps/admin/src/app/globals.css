@@ -256,6 +256,123 @@ body {
   color: #059669; /* emerald-600 - works on light backgrounds */
 }
 
+/* ============================================
+   Light Theme - Comprehensive Text Overrides
+   ============================================ */
+
+/* Page headings and section titles should adapt to theme */
+[data-theme="light"] h1.text-white,
+[data-theme="light"] h2.text-white,
+[data-theme="light"] h3.text-white {
+  color: #1e293b; /* slate-800 */
+}
+
+/* Table cell text should adapt to theme */
+[data-theme="light"] td .text-white,
+[data-theme="light"] td.text-white {
+  color: #1e293b; /* slate-800 */
+}
+
+/* Card content text should adapt - but NOT text on colored backgrounds */
+[data-theme="light"] .bg-admin-800 .text-white:not(.bg-primary-600 *):not(.bg-accent-500 *):not(.bg-green-600 *):not(.bg-red-600 *):not(.bg-yellow-600 *),
+[data-theme="light"] .bg-admin-900 .text-white:not(.bg-primary-600 *):not(.bg-accent-500 *):not(.bg-green-600 *):not(.bg-red-600 *):not(.bg-yellow-600 *) {
+  color: #1e293b; /* slate-800 */
+}
+
+/* Stat card values */
+[data-theme="light"] .bg-admin-800 p.text-white,
+[data-theme="light"] .bg-admin-800 span.text-white:not([class*="bg-"]),
+[data-theme="light"] .bg-admin-800 div > p.text-white {
+  color: #1e293b; /* slate-800 */
+}
+
+/* Form labels and descriptions */
+[data-theme="light"] label.text-white,
+[data-theme="light"] .font-medium.text-white:not(.bg-primary-600 *):not(.bg-green-600 *):not(.bg-red-600 *) {
+  color: #1e293b; /* slate-800 */
+}
+
+/* List items text */
+[data-theme="light"] li .text-white:not([class*="bg-"]) {
+  color: #1e293b; /* slate-800 */
+}
+
+/* Input text should be dark in light mode */
+[data-theme="light"] input.text-white,
+[data-theme="light"] select.text-white,
+[data-theme="light"] textarea.text-white {
+  color: #1e293b; /* slate-800 */
+}
+
+/* Override for text on cards with admin-900 background */
+[data-theme="light"] .bg-admin-900 .text-white {
+  color: #1e293b;
+}
+
+/* Ensure buttons keep white text - these should NOT be overridden */
+[data-theme="light"] button.bg-primary-600 .text-white,
+[data-theme="light"] button.bg-primary-600.text-white,
+[data-theme="light"] a.bg-primary-600 .text-white,
+[data-theme="light"] a.bg-primary-600.text-white,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-accent,
+[data-theme="light"] .btn-danger {
+  color: #ffffff !important;
+}
+
+/* Badge/pill text should stay white on colored backgrounds */
+[data-theme="light"] .bg-green-600.text-white,
+[data-theme="light"] .bg-red-600.text-white,
+[data-theme="light"] .bg-yellow-600.text-white,
+[data-theme="light"] .bg-primary-600.text-white {
+  color: #ffffff !important;
+}
+
+/* Status badges */
+[data-theme="light"] span[class*="bg-green-"] .text-white,
+[data-theme="light"] span[class*="bg-red-"] .text-white,
+[data-theme="light"] span[class*="bg-yellow-"] .text-white {
+  color: #ffffff !important;
+}
+
+/* ============================================
+   Light Theme - Additional Component Overrides
+   ============================================ */
+
+/* Progress bars should keep their colors */
+[data-theme="light"] .bg-primary-500,
+[data-theme="light"] .bg-primary-600 {
+  background-color: var(--admin-primary);
+}
+
+/* Accent colors */
+[data-theme="light"] .bg-accent-500 {
+  background-color: var(--admin-accent);
+}
+
+/* Toggle switches */
+[data-theme="light"] .bg-admin-700 {
+  background-color: #e2e8f0;
+}
+
+/* Ensure proper contrast for disabled states */
+[data-theme="light"] .bg-primary-600\/50 {
+  background-color: rgba(5, 150, 105, 0.5);
+}
+
+/* Fix border colors in light mode */
+[data-theme="light"] .border-admin-600 {
+  border-color: #cbd5e1; /* slate-300 */
+}
+
+[data-theme="light"] .border-primary-600\/30 {
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+[data-theme="light"] .border-primary-600\/20 {
+  border-color: rgba(5, 150, 105, 0.2);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
