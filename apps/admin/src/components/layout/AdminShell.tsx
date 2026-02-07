@@ -112,7 +112,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               className="w-8 h-8"
             />
             <span className="text-lg font-extrabold tracking-tight">
-              <span className="text-white">Plain</span>
+              <span className="text-logo-primary">Plain</span>
               <span className="text-emerald-500">Ledger</span>
             </span>
           </Link>
@@ -150,12 +150,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-admin-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-600/20 border border-primary-600/30 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium">
+              <span className="text-primary-600 font-medium">
                 {admin?.user?.displayName?.charAt(0) || 'A'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium text-theme-heading truncate">
                 {admin?.user?.displayName || 'Admin User'}
               </p>
               <p className="text-xs text-admin-400 truncate">

@@ -233,6 +233,29 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Logo text - theme aware */
+.text-logo-primary {
+  color: #ffffff; /* white in dark mode */
+}
+
+[data-theme="light"] .text-logo-primary {
+  color: #1e293b; /* slate-800 in light mode */
+}
+
+/* Theme-aware heading/important text */
+.text-theme-heading {
+  color: #ffffff; /* white in dark mode */
+}
+
+[data-theme="light"] .text-theme-heading {
+  color: #1e293b; /* slate-800 in light mode */
+}
+
+/* Primary color text adjustments for light mode */
+[data-theme="light"] .text-primary-600 {
+  color: #059669; /* emerald-600 - works on light backgrounds */
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
