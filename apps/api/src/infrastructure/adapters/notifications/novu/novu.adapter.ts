@@ -158,6 +158,7 @@ export class NovuService implements OnModuleInit, INotificationService {
   ) {}
 
   async onModuleInit() {
+    this.logger.log("[onModuleInit] NovuService starting...");
     this.apiKey = this.configService.get<string>("NOVU_API_KEY") || "";
     this.appId = this.configService.get<string>("NOVU_APP_ID") || "";
 
@@ -169,6 +170,7 @@ export class NovuService implements OnModuleInit, INotificationService {
         "Novu API key or App ID not configured - notifications will be logged only",
       );
     }
+    this.logger.log("[onModuleInit] NovuService completed");
   }
 
   /**

@@ -85,10 +85,12 @@ export class HubSpotAdapter implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
+    this.logger.log("[onModuleInit] HubSpotAdapter starting...");
     const accessToken = this.configService.get<string>("HUBSPOT_ACCESS_TOKEN");
 
     if (!accessToken) {
       this.logger.warn("HubSpot not configured - CRM sync disabled");
+      this.logger.log("[onModuleInit] HubSpotAdapter completed (not configured)");
       return;
     }
 
@@ -99,6 +101,7 @@ export class HubSpotAdapter implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Failed to initialize HubSpot: ${error.message}`);
     }
+    this.logger.log("[onModuleInit] HubSpotAdapter completed");
   }
 
   // --------------------------------------------------------------------------

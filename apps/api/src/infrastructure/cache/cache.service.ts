@@ -20,6 +20,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
+    this.logger.log("[onModuleInit] CacheService starting...");
     const redisHost =
       this.configService.get<string>("REDIS_HOST") || "localhost";
     const redisPort = parseInt(
@@ -57,6 +58,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       );
       this.redis = null;
     }
+    this.logger.log("[onModuleInit] CacheService completed");
   }
 
   async onModuleDestroy() {

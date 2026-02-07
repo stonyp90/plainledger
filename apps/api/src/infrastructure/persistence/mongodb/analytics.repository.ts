@@ -91,6 +91,7 @@ export class AnalyticsRepository implements OnModuleInit {
   constructor(private readonly mongoService: MongoDBService) {}
 
   async onModuleInit(): Promise<void> {
+    this.logger.log("[onModuleInit] AnalyticsRepository starting...");
     // Start buffer flush interval
     if (this.mongoService.isConfigured()) {
       this.flushInterval = setInterval(
@@ -103,6 +104,7 @@ export class AnalyticsRepository implements OnModuleInit {
         "MongoDB not configured - using in-memory buffer only (events will not persist)",
       );
     }
+    this.logger.log("[onModuleInit] AnalyticsRepository completed");
   }
 
   // --------------------------------------------------------------------------

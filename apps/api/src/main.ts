@@ -212,7 +212,9 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3000;
+  console.log(`[Bootstrap] About to start listening on port ${port}...`);
   await app.listen(port);
+  console.log(`[Bootstrap] Server is now listening on port ${port}`);
 
   console.log(`
   ╔═══════════════════════════════════════════════════╗

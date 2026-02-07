@@ -73,6 +73,7 @@ export class SESAdapter implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    this.logger.log("[onModuleInit] SESAdapter starting...");
     this.fromAddress = this.configService.get<string>(
       "SES_FROM_ADDRESS",
       "noreply@plainledger.ca",
@@ -108,6 +109,7 @@ export class SESAdapter implements OnModuleInit {
       this.logger.error(`Failed to initialize SES client: ${error.message}`);
       this.isConfigured = false;
     }
+    this.logger.log("[onModuleInit] SESAdapter completed");
   }
 
   /**
