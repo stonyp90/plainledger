@@ -27,18 +27,29 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.configService.get<string>("REDIS_PORT") || "6379",
       10,
     );
-    const redisPassword = this.configService.get<string>("REDIS_PASSWORD");
+    // Support both REDIS_PASSWORD and REDIS_AUTH_TOKEN (ElastiCache uses AUTH_TOKEN)
+    const redisPassword = 
+      this.configService.get<string>("REDIS_PASSWORD") ||
+      this.configService.get<string>("REDIS_AUTH_TOKEN");
+    
+    // Enable TLS for production (ElastiCache with transit encryption)
+    const isProduction = process.env.NODE_ENV === "production";
+    const useTls = isProduction && !redisHost.includes("localhost");
+
+    this.logger.log(`[onModuleInit] CacheService connecting to ${redisHost}:${redisPort} (TLS: ${useTls}, auth: ${!!redisPassword})`);
 
     try {
       this.redis = new Redis({
         host: redisHost,
         port: redisPort,
         password: redisPassword || undefined,
+        tls: useTls ? {} : undefined, // Enable TLS for ElastiCache
         retryStrategy: (times) => {
           const delay = Math.min(times * 50, 2000);
           return delay;
         },
         maxRetriesPerRequest: 3,
+        connectTimeout: 10000, // 10 second connection timeout
       });
 
       this.redis.on("connect", () => {
