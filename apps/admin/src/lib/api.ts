@@ -4,22 +4,35 @@ interface FetchOptions extends RequestInit {
   token?: string;
 }
 
+// Singleton to hold the current auth token
+let _authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  _authToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return _authToken;
+}
+
 async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { token, ...fetchOptions } = options;
+  
+  // Use provided token, or fall back to singleton token
+  const authToken = token || _authToken;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(fetchOptions.headers as Record<string, string>),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...fetchOptions,
     headers,
-    credentials: 'include',
   });
 
   if (!response.ok) {

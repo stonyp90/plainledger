@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { adminsApi } from '@/lib/api';
 import { 
   Search, 
   UserPlus,
@@ -12,8 +14,6 @@ import {
   Ban,
   RefreshCw,
 } from 'lucide-react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 interface AdminUser {
   id: string;
@@ -26,23 +26,30 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
+  const { token } = useAdmin();
   const [search, setSearch] = useState('');
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'admins', search],
+    queryKey: ['admin', 'admins', search, token],
     queryFn: async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/admins`, {
-          credentials: 'include',
+        // The adminsApi doesn't have a list function, so we'll use direct fetch
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${apiUrl}/api/admin/admins`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
         });
-        if (!res.ok) {
+        if (!response.ok) {
           return { admins: getMockAdmins() };
         }
-        return res.json();
+        return response.json();
       } catch (error) {
         return { admins: getMockAdmins() };
       }
     },
+    enabled: !!token,
   });
 
   const filteredAdmins = data?.admins?.filter((admin: AdminUser) =>

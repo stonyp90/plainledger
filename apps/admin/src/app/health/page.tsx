@@ -2,26 +2,32 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { healthApi } from '@/lib/api';
+import { useAdmin } from '@/hooks/useAdmin';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { Activity, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 
 export default function HealthPage() {
+  const { token } = useAdmin();
+  
   const { data: overallHealth, isLoading: loadingOverall } = useQuery({
-    queryKey: ['admin', 'health', 'overall'],
+    queryKey: ['admin', 'health', 'overall', token],
     queryFn: () => healthApi.getOverall(),
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
+    enabled: !!token,
   });
 
   const { data: servicesData, isLoading: loadingServices } = useQuery({
-    queryKey: ['admin', 'health', 'services'],
+    queryKey: ['admin', 'health', 'services', token],
     queryFn: () => healthApi.getServices(),
     refetchInterval: 30000,
+    enabled: !!token,
   });
 
   const { data: syncStats } = useQuery({
-    queryKey: ['admin', 'health', 'sync-stats'],
+    queryKey: ['admin', 'health', 'sync-stats', token],
     queryFn: () => healthApi.getSyncStats(),
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
+    enabled: !!token,
   });
 
   const getStatusColor = (status: string) => {

@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useKeycloak } from './useKeycloak';
+import { setAuthToken } from '@/lib/api';
 
 interface AdminUser {
   id: string;
@@ -29,6 +30,11 @@ const AdminContext = createContext<AdminContextValue | undefined>(undefined);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const { token, authenticated, initialized } = useKeycloak();
+
+  // Sync token to API singleton for all API calls
+  useEffect(() => {
+    setAuthToken(token);
+  }, [token]);
 
   // Fetch admin info using the Keycloak token
   const { data: adminData, isLoading: queryLoading } = useQuery({

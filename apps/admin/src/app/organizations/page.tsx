@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
 import { organizationsApi } from '@/lib/api';
 import { 
   Plus, 
@@ -18,23 +19,26 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 
 export default function OrganizationsPage() {
+  const { token } = useAdmin();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const limit = 20;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['organizations', search, page],
+    queryKey: ['organizations', search, page, token],
     queryFn: () =>
       organizationsApi.list({
         search,
         limit: String(limit),
         offset: String(page * limit),
       }),
+    enabled: !!token,
   });
 
   const { data: stats } = useQuery({
-    queryKey: ['organizations', 'stats'],
+    queryKey: ['organizations', 'stats', token],
     queryFn: () => organizationsApi.getStats(),
+    enabled: !!token,
   });
 
   return (

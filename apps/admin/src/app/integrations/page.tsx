@@ -2,30 +2,35 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { integrationsApi } from '@/lib/api';
+import { useAdmin } from '@/hooks/useAdmin';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { Plug, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 export default function IntegrationsPage() {
+  const { token } = useAdmin();
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [webhookFilter, setWebhookFilter] = useState<string>('all');
 
   const { data: providersData } = useQuery({
-    queryKey: ['admin', 'integrations', 'providers'],
+    queryKey: ['admin', 'integrations', 'providers', token],
     queryFn: () => integrationsApi.listProviders(),
+    enabled: !!token,
   });
 
   const { data: connectionsData } = useQuery({
-    queryKey: ['admin', 'integrations', 'connections'],
+    queryKey: ['admin', 'integrations', 'connections', token],
     queryFn: () => integrationsApi.listConnections(),
+    enabled: !!token,
   });
 
   const { data: webhookLogs } = useQuery({
-    queryKey: ['admin', 'integrations', 'webhooks', webhookFilter],
+    queryKey: ['admin', 'integrations', 'webhooks', webhookFilter, token],
     queryFn: () =>
       integrationsApi.getWebhookLogs(
         webhookFilter !== 'all' ? { status: webhookFilter } : undefined,
       ),
+    enabled: !!token,
   });
 
   return (

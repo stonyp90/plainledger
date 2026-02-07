@@ -2,27 +2,32 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { onboardingApi } from '@/lib/api';
+import { useAdmin } from '@/hooks/useAdmin';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { UserCheck, TrendingUp, Clock, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
 export default function OnboardingPage() {
+  const { token } = useAdmin();
   const queryClient = useQueryClient();
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 
   const { data: funnel } = useQuery({
-    queryKey: ['admin', 'onboarding', 'funnel'],
+    queryKey: ['admin', 'onboarding', 'funnel', token],
     queryFn: () => onboardingApi.getFunnel(),
+    enabled: !!token,
   });
 
   const { data: trialsData } = useQuery({
-    queryKey: ['admin', 'onboarding', 'trials'],
+    queryKey: ['admin', 'onboarding', 'trials', token],
     queryFn: () => onboardingApi.getTrials(),
+    enabled: !!token,
   });
 
   const { data: atRiskData } = useQuery({
-    queryKey: ['admin', 'onboarding', 'at-risk'],
+    queryKey: ['admin', 'onboarding', 'at-risk', token],
     queryFn: () => onboardingApi.getAtRisk(),
+    enabled: !!token,
   });
 
   const extendTrialMutation = useMutation({

@@ -62,6 +62,10 @@
   background-color: var(--admin-bg);
 }
 
+[data-theme="light"] .bg-admin-900\/50 {
+  background-color: rgba(248, 250, 252, 0.5);
+}
+
 [data-theme="light"] .bg-admin-800 {
   background-color: var(--admin-surface);
 }
@@ -74,8 +78,21 @@
   background-color: var(--admin-input-bg);
 }
 
+[data-theme="light"] .bg-admin-700\/30 {
+  background-color: rgba(241, 245, 249, 0.3);
+}
+
 [data-theme="light"] .bg-admin-700\/50 {
   background-color: rgba(241, 245, 249, 0.5);
+}
+
+/* Table header styling - neutral gray in light mode */
+[data-theme="light"] thead {
+  background-color: #f1f5f9; /* slate-100 */
+}
+
+[data-theme="light"] thead th {
+  color: #475569; /* slate-600 */
 }
 
 [data-theme="light"] .border-admin-700\/50 {

@@ -3,26 +3,32 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { getAuthToken } from '@/lib/api';
 import { Plus, Search, CreditCard, Edit, Trash2 } from 'lucide-react';
 
 // API client function
 async function getSubscriptionPlans() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const response = await fetch(`${apiUrl}/admin/subscription-plans`, {
+  const token = getAuthToken();
+  const response = await fetch(`${apiUrl}/api/admin/subscription-plans`, {
     headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('kc_token')}`,
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
-  if (!response.ok) throw new Error('Failed to fetch plans');
+  if (!response.ok) return [];
   return response.json();
 }
 
 export default function SubscriptionPlansPage() {
+  const { token } = useAdmin();
   const [search, setSearch] = useState('');
 
   const { data: plans, isLoading, refetch } = useQuery({
-    queryKey: ['subscription-plans'],
+    queryKey: ['subscription-plans', token],
     queryFn: getSubscriptionPlans,
+    enabled: !!token,
   });
 
   const filteredPlans = plans?.filter((plan: any) =>

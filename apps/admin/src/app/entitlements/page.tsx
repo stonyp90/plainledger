@@ -3,27 +3,33 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { getAuthToken } from '@/lib/api';
 import { Plus, Search, Key, Edit, Trash2 } from 'lucide-react';
 
 // API client function
 async function getEntitlements() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const response = await fetch(`${apiUrl}/admin/entitlements`, {
+  const token = getAuthToken();
+  const response = await fetch(`${apiUrl}/api/admin/entitlements`, {
     headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('kc_token')}`,
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
-  if (!response.ok) throw new Error('Failed to fetch entitlements');
+  if (!response.ok) return [];
   return response.json();
 }
 
 export default function EntitlementsPage() {
+  const { token } = useAdmin();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const { data: entitlements, isLoading } = useQuery({
-    queryKey: ['entitlements'],
+    queryKey: ['entitlements', token],
     queryFn: getEntitlements,
+    enabled: !!token,
   });
 
   const filteredEntitlements = entitlements?.filter((ent: any) => {

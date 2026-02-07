@@ -2,28 +2,33 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communicationsApi } from '@/lib/api';
+import { useAdmin } from '@/hooks/useAdmin';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { Mail, Send, FileText, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CommunicationsPage() {
+  const { token } = useAdmin();
   const queryClient = useQueryClient();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
 
   const { data: templatesData } = useQuery({
-    queryKey: ['admin', 'communications', 'templates'],
+    queryKey: ['admin', 'communications', 'templates', token],
     queryFn: () => communicationsApi.listTemplates(),
+    enabled: !!token,
   });
 
   const { data: campaignsData } = useQuery({
-    queryKey: ['admin', 'communications', 'campaigns'],
+    queryKey: ['admin', 'communications', 'campaigns', token],
     queryFn: () => communicationsApi.listCampaigns(),
+    enabled: !!token,
   });
 
   const { data: logsData } = useQuery({
-    queryKey: ['admin', 'communications', 'logs'],
+    queryKey: ['admin', 'communications', 'logs', token],
     queryFn: () => communicationsApi.getLogs({ limit: '50' }),
+    enabled: !!token,
   });
 
   const previewMutation = useMutation({

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { auditApi } from '@/lib/api';
 import { 
   Search, 
   Filter, 
@@ -13,8 +15,6 @@ import {
   FileText,
   ChevronDown,
 } from 'lucide-react';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 interface AuditLog {
   id: string;
@@ -35,33 +35,29 @@ interface AuditLog {
 }
 
 export default function AuditLogsPage() {
+  const { token } = useAdmin();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
   const limit = 50;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'audit', search, actionFilter, page],
+    queryKey: ['admin', 'audit', search, actionFilter, page, token],
     queryFn: async () => {
       try {
-        const params = new URLSearchParams({
+        const params: Record<string, string> = {
           limit: limit.toString(),
           offset: (page * limit).toString(),
-        });
-        if (search) params.set('search', search);
-        if (actionFilter !== 'all') params.set('action', actionFilter);
+        };
+        if (search) params.search = search;
+        if (actionFilter !== 'all') params.action = actionFilter;
 
-        const res = await fetch(`${API_URL}/api/admin/audit?${params}`, {
-          credentials: 'include',
-        });
-        if (!res.ok) {
-          return { logs: getMockLogs(), total: 10 };
-        }
-        return res.json();
+        return await auditApi.list(params);
       } catch (error) {
         return { logs: getMockLogs(), total: 10 };
       }
     },
+    enabled: !!token,
   });
 
   const getActionColor = (action: string) => {
@@ -202,7 +198,7 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Pagination */}
-        {data?.total > limit && (
+        {data && data.total && data.total > limit && (
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-admin-400">
               Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of {data.total} logs

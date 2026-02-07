@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { usersApi } from '@/lib/api';
 import { 
   Search, 
   Filter, 
@@ -14,30 +16,26 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
 export default function UsersPage() {
+  const { token } = useAdmin();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const limit = 20;
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'users', search, page],
+    queryKey: ['admin', 'users', search, page, token],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: (page * limit).toString(),
-      });
-      if (search) params.set('search', search);
-
-      const res = await fetch(`${API_URL}/api/admin/users?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) {
+      try {
+        return await usersApi.list({
+          limit: limit.toString(),
+          offset: (page * limit).toString(),
+          ...(search ? { search } : {}),
+        });
+      } catch {
         return { users: [], total: 0 };
       }
-      return res.json();
     },
+    enabled: !!token,
   });
 
   return (
@@ -159,7 +157,7 @@ export default function UsersPage() {
         </div>
 
         {/* Pagination */}
-        {data?.total > limit && (
+        {data && data.total && data.total > limit && (
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-admin-400">
               Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of {data.total} users

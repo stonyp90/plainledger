@@ -3,43 +3,52 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
+import { getAuthToken } from '@/lib/api';
 import { Plus, Search, Shield, Edit, Trash2 } from 'lucide-react';
 
 // API client functions
 async function getRoles() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const response = await fetch(`${apiUrl}/admin/roles`, {
+  const token = getAuthToken();
+  const response = await fetch(`${apiUrl}/api/admin/roles`, {
     headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('kc_token')}`,
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
-  if (!response.ok) throw new Error('Failed to fetch roles');
+  if (!response.ok) return [];
   return response.json();
 }
 
 async function getPermissions() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const response = await fetch(`${apiUrl}/admin/permissions`, {
+  const token = getAuthToken();
+  const response = await fetch(`${apiUrl}/api/admin/permissions`, {
     headers: {
-      'Authorization': `Bearer ${sessionStorage.getItem('kc_token')}`,
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   });
-  if (!response.ok) throw new Error('Failed to fetch permissions');
+  if (!response.ok) return [];
   return response.json();
 }
 
 export default function RolesPermissionsPage() {
+  const { token } = useAdmin();
   const [activeTab, setActiveTab] = useState<'roles' | 'permissions'>('roles');
   const [search, setSearch] = useState('');
 
   const { data: roles, isLoading: rolesLoading } = useQuery({
-    queryKey: ['roles'],
+    queryKey: ['roles', token],
     queryFn: getRoles,
+    enabled: !!token,
   });
 
   const { data: permissions, isLoading: permissionsLoading } = useQuery({
-    queryKey: ['permissions'],
+    queryKey: ['permissions', token],
     queryFn: getPermissions,
+    enabled: !!token,
   });
 
   const isLoading = activeTab === 'roles' ? rolesLoading : permissionsLoading;

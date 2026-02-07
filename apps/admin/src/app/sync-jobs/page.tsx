@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { useAdmin } from '@/hooks/useAdmin';
 import { 
   RefreshCw, 
   CheckCircle, 
@@ -30,28 +31,30 @@ interface SyncJob {
 }
 
 export default function SyncJobsPage() {
+  const { token } = useAdmin();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'sync-jobs', statusFilter, search],
+    queryKey: ['admin', 'sync-jobs', statusFilter, search, token],
     queryFn: async () => {
       try {
-        // Try to fetch from sync jobs endpoint
         const res = await fetch(`${API_URL}/api/admin/sync-jobs?limit=50`, {
-          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
         });
         if (!res.ok) {
-          // Return mock data for demo
           return { jobs: getMockJobs(), total: 5 };
         }
         return res.json();
       } catch (error) {
-        // Return mock data for demo
         return { jobs: getMockJobs(), total: 5 };
       }
     },
-    refetchInterval: 10000, // Refresh every 10 seconds
+    enabled: !!token,
+    refetchInterval: 10000,
   });
 
   const getStatusIcon = (status: string) => {
