@@ -171,8 +171,9 @@ export const userSettingsApi = {
       });
 
       if (!response.ok) {
-        // 404 means no settings exist yet, return empty object with proper structure
-        if (response.status === 404) {
+        // 404 means no settings exist yet, 403 means user doesn't have permissions yet
+        // Both are expected states - silently return defaults
+        if (response.status === 404 || response.status === 403) {
           return {
             notificationPreferences: undefined,
             uiPreferences: undefined,
@@ -183,8 +184,8 @@ export const userSettingsApi = {
 
       return safeJsonParse(response);
     } catch (error) {
-      // Network errors, JSON parse errors, or other issues - return empty object
-      console.warn('Failed to fetch user settings, using defaults:', error);
+      // Network errors, JSON parse errors, or other issues - silently return empty object
+      // This is expected during initial load or for users without full permissions
       return {
         notificationPreferences: undefined,
         uiPreferences: undefined,

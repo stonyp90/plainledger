@@ -580,7 +580,7 @@ export default function MarketAnalysis() {
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
               aiEnabled 
                 ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md' 
-                : 'border hover:bg-gray-50 dark:hover:bg-gray-800'
+                : 'border hover:bg-[rgb(var(--color-bg-muted))]'
             }`}
             style={!aiEnabled ? { 
               borderColor: 'rgb(var(--color-border))',
@@ -591,14 +591,14 @@ export default function MarketAnalysis() {
             {isEn ? 'AI Insights' : 'Insights IA'}
             <div 
               className={`w-8 h-5 rounded-full relative transition-colors ${
-                aiEnabled ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-700'
+                aiEnabled ? 'bg-white/30' : 'bg-[rgb(var(--color-bg-muted))]'
               }`}
             >
               <div 
                 className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${
                   aiEnabled 
                     ? 'left-3.5 bg-white' 
-                    : 'left-0.5 bg-gray-400 dark:bg-gray-500'
+                    : 'left-0.5 bg-[rgb(var(--color-text-muted))]'
                 }`}
               />
             </div>

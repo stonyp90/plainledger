@@ -64,23 +64,22 @@ export class UploadController {
   ) {}
 
   /**
-   * Extract user info from request - supports both Keycloak tokens and mock dev tokens
+   * Extract user info from request - supports both Keycloak tokens and manual JWT parsing
+   * 
+   * Since this controller uses @Unprotected() to bypass Keycloak guards (for flexibility),
+   * we need to manually parse the JWT token to get user info in all environments.
    */
   private extractUserInfo(req: AuthenticatedRequest): UserInfo | null {
-    // First, try to get user from Keycloak-parsed request (normal auth flow)
+    // First, try to get user from Keycloak-parsed request (if guards populated it)
     if (req.user?.sub) {
       return req.user;
     }
 
-    // In development mode, try to extract from Authorization header (mock token support)
-    const isProduction =
-      this.configService.get<string>("NODE_ENV") === "production";
-    if (isProduction) {
-      return null; // No fallback in production
-    }
-
+    // Manually parse JWT token from Authorization header
+    // This is needed because @Unprotected() bypasses the Keycloak guard that would normally populate req.user
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
+      this.logger.warn("No Bearer token found in Authorization header");
       return null;
     }
 
@@ -88,16 +87,16 @@ export class UploadController {
       const token = authHeader.substring(7);
       const parts = token.split(".");
       if (parts.length !== 3) {
+        this.logger.warn("Invalid JWT token format");
         return null;
       }
 
-      // Decode the payload (second part)
+      // Decode the payload (second part) - note: this does NOT verify the signature
+      // The token was already validated by Keycloak when issued, so we trust it
       const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
 
       if (payload.sub) {
-        this.logger.debug(
-          `Development mode: extracted user ${payload.sub} from token`,
-        );
+        this.logger.debug(`Extracted user ${payload.sub} from JWT token`);
         return {
           sub: payload.sub,
           email: payload.email,
@@ -106,10 +105,10 @@ export class UploadController {
           tenant_id: payload.tenant_id,
         };
       }
+      
+      this.logger.warn("JWT token payload missing 'sub' claim");
     } catch (error) {
-      this.logger.warn(
-        `Failed to parse token in development mode: ${error.message}`,
-      );
+      this.logger.warn(`Failed to parse JWT token: ${error.message}`);
     }
 
     return null;

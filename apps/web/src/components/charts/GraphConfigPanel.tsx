@@ -150,57 +150,87 @@ export default function GraphConfigPanel({
         <div className="flex border-b overflow-x-auto">
           <button
             onClick={() => setActiveTab('period')}
-            className={`px-4 py-2 text-sm font-medium flex items-center gap-1 whitespace-nowrap ${
+            className={`px-4 py-3 text-sm font-medium flex items-center gap-1.5 whitespace-nowrap transition-all relative ${
               activeTab === 'period'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted hover:text-text'
+                ? 'text-primary'
+                : 'text-muted hover:text-text hover:bg-surface-hover'
             }`}
+            style={activeTab === 'period' ? {
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+            } : undefined}
           >
             <Calendar className="w-4 h-4" />
             {isEn ? 'Period' : 'Période'}
+            {activeTab === 'period' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('display')}
-            className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${
+            className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-all relative ${
               activeTab === 'display'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted hover:text-text'
+                ? 'text-primary'
+                : 'text-muted hover:text-text hover:bg-surface-hover'
             }`}
+            style={activeTab === 'display' ? {
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+            } : undefined}
           >
             {isEn ? 'Display' : 'Affichage'}
+            {activeTab === 'display' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('entrepreneur')}
-            className={`px-4 py-2 text-sm font-medium flex items-center gap-1 ${
+            className={`px-4 py-3 text-sm font-medium flex items-center gap-1.5 transition-all relative ${
               activeTab === 'entrepreneur'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted hover:text-text'
+                ? 'text-primary'
+                : 'text-muted hover:text-text hover:bg-surface-hover'
             }`}
+            style={activeTab === 'entrepreneur' ? {
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+            } : undefined}
           >
             <TrendingUp className="w-4 h-4" />
             {isEn ? 'Business View' : 'Vue entrepreneur'}
+            {activeTab === 'entrepreneur' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('cpa')}
-            className={`px-4 py-2 text-sm font-medium flex items-center gap-1 ${
+            className={`px-4 py-3 text-sm font-medium flex items-center gap-1.5 transition-all relative ${
               activeTab === 'cpa'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted hover:text-text'
+                ? 'text-primary'
+                : 'text-muted hover:text-text hover:bg-surface-hover'
             }`}
+            style={activeTab === 'cpa' ? {
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+            } : undefined}
           >
             <FileText className="w-4 h-4" />
             {isEn ? 'CPA View' : 'Vue CPA'}
+            {activeTab === 'cpa' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('ibcs')}
-            className={`px-4 py-2 text-sm font-medium flex items-center gap-1 ${
+            className={`px-4 py-3 text-sm font-medium flex items-center gap-1.5 transition-all relative ${
               activeTab === 'ibcs'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted hover:text-text'
+                ? 'text-primary'
+                : 'text-muted hover:text-text hover:bg-surface-hover'
             }`}
+            style={activeTab === 'ibcs' ? {
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+            } : undefined}
           >
             <Target className="w-4 h-4" />
             {isEn ? 'IBCS' : 'IBCS'}
+            {activeTab === 'ibcs' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
+            )}
           </button>
         </div>
         
@@ -385,25 +415,33 @@ function PeriodConfigTab({
         </h3>
         
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {periodPresets.map((preset) => (
-            <button
-              key={preset.id}
-              onClick={() => onUpdate({ defaultPeriod: preset.id as any })}
-              className={`px-3 py-2 text-sm rounded-lg border transition-all ${
-                config.period.defaultPeriod === preset.id
-                  ? 'bg-primary/10 border-primary text-primary font-medium'
-                  : 'hover:bg-surface-hover border-border'
-              }`}
-            >
-              {isEn ? preset.labelEn : preset.label}
-            </button>
-          ))}
+          {periodPresets.map((preset) => {
+            const isSelected = config.period.defaultPeriod === preset.id;
+            return (
+              <button
+                key={preset.id}
+                onClick={() => onUpdate({ defaultPeriod: preset.id as any })}
+                className={`px-3 py-2.5 text-sm rounded-lg border-2 transition-all font-medium ${
+                  isSelected
+                    ? 'border-primary shadow-sm'
+                    : 'border-border hover:border-primary/50 hover:bg-surface-hover'
+                }`}
+                style={isSelected ? {
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                  borderColor: 'rgb(var(--color-primary-500))',
+                } : undefined}
+              >
+                {isEn ? preset.labelEn : preset.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Custom Date Range (only shown when 'custom' is selected) */}
       {config.period.defaultPeriod === 'custom' && (
-        <div className="grid grid-cols-2 gap-4 p-4 rounded-lg border border-dashed">
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5">
           <div>
             <label className="block text-sm font-medium mb-2">
               {isEn ? 'Start Date' : 'Date de début'}
@@ -412,7 +450,7 @@ function PeriodConfigTab({
               type="date"
               value={config.period.customStartDate || ''}
               onChange={(e) => onUpdate({ customStartDate: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg bg-surface"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
           <div>
@@ -423,7 +461,7 @@ function PeriodConfigTab({
               type="date"
               value={config.period.customEndDate || ''}
               onChange={(e) => onUpdate({ customEndDate: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg bg-surface"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
         </div>
@@ -436,19 +474,27 @@ function PeriodConfigTab({
         </h3>
         
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {comparisonModes.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => onUpdate({ comparisonMode: mode.id as any })}
-              className={`px-3 py-2 text-sm rounded-lg border transition-all ${
-                config.period.comparisonMode === mode.id
-                  ? 'bg-primary/10 border-primary text-primary font-medium'
-                  : 'hover:bg-surface-hover border-border'
-              }`}
-            >
-              {isEn ? mode.labelEn : mode.label}
-            </button>
-          ))}
+          {comparisonModes.map((mode) => {
+            const isSelected = config.period.comparisonMode === mode.id;
+            return (
+              <button
+                key={mode.id}
+                onClick={() => onUpdate({ comparisonMode: mode.id as any })}
+                className={`px-3 py-2.5 text-sm rounded-lg border-2 transition-all font-medium ${
+                  isSelected
+                    ? 'border-primary shadow-sm'
+                    : 'border-border hover:border-primary/50 hover:bg-surface-hover'
+                }`}
+                style={isSelected ? {
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                  borderColor: 'rgb(var(--color-primary-500))',
+                } : undefined}
+              >
+                {isEn ? mode.labelEn : mode.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -459,19 +505,27 @@ function PeriodConfigTab({
         </h3>
         
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {aggregationLevels.map((level) => (
-            <button
-              key={level.id}
-              onClick={() => onUpdate({ aggregationLevel: level.id as any })}
-              className={`px-3 py-2 text-sm rounded-lg border transition-all ${
-                config.period.aggregationLevel === level.id
-                  ? 'bg-primary/10 border-primary text-primary font-medium'
-                  : 'hover:bg-surface-hover border-border'
-              }`}
-            >
-              {isEn ? level.labelEn : level.label}
-            </button>
-          ))}
+          {aggregationLevels.map((level) => {
+            const isSelected = config.period.aggregationLevel === level.id;
+            return (
+              <button
+                key={level.id}
+                onClick={() => onUpdate({ aggregationLevel: level.id as any })}
+                className={`px-3 py-2.5 text-sm rounded-lg border-2 transition-all font-medium ${
+                  isSelected
+                    ? 'border-primary shadow-sm'
+                    : 'border-border hover:border-primary/50 hover:bg-surface-hover'
+                }`}
+                style={isSelected ? {
+                  backgroundColor: 'rgb(var(--color-primary-500))',
+                  color: 'white',
+                  borderColor: 'rgb(var(--color-primary-500))',
+                } : undefined}
+              >
+                {isEn ? level.labelEn : level.label}
+              </button>
+            );
+          })}
         </div>
         <p className="text-xs text-muted">
           {isEn 
@@ -494,7 +548,7 @@ function PeriodConfigTab({
             <select
               value={config.period.fiscalYearStartMonth}
               onChange={(e) => onUpdate({ fiscalYearStartMonth: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border rounded-lg bg-surface"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
             >
               {[
                 { value: 1, label: isEn ? 'January' : 'Janvier' },
@@ -542,7 +596,7 @@ function DisplayConfigTab({
   isEn: boolean;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
         <label className="block text-sm font-medium mb-2">
           {isEn ? 'Currency' : 'Devise'}
@@ -550,7 +604,7 @@ function DisplayConfigTab({
         <select
           value={config.display.currency}
           onChange={(e) => onUpdate({ currency: e.target.value })}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
         >
           <option value="CAD">CAD - Canadian Dollar</option>
           <option value="USD">USD - US Dollar</option>
@@ -565,7 +619,7 @@ function DisplayConfigTab({
         <select
           value={config.display.numberFormat}
           onChange={(e) => onUpdate({ numberFormat: e.target.value as any })}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
         >
           <option value="actual">{isEn ? 'Actual Values' : 'Valeurs réelles'}</option>
           <option value="thousands">{isEn ? 'Thousands (K)' : 'Milliers (K)'}</option>
@@ -585,7 +639,7 @@ function DisplayConfigTab({
             max="4"
             value={config.display.currencyDecimals}
             onChange={(e) => onUpdate({ currencyDecimals: parseInt(e.target.value) })}
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
           />
         </div>
         <div>
@@ -598,29 +652,29 @@ function DisplayConfigTab({
             max="4"
             value={config.display.percentageDecimals}
             onChange={(e) => onUpdate({ percentageDecimals: parseInt(e.target.value) })}
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
           />
         </div>
       </div>
       
-      <div className="space-y-2">
-        <label className="flex items-center gap-2">
+      <div className="space-y-3">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.display.useAccountingFormat}
             onChange={(e) => onUpdate({ useAccountingFormat: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Use Accounting Format (negative in parentheses)' : 'Format comptable (négatif entre parenthèses)'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.display.showZeroValues}
             onChange={(e) => onUpdate({ showZeroValues: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Zero Values' : 'Afficher les valeurs zéro'}
@@ -641,47 +695,47 @@ function EntrepreneurConfigTab({
   isEn: boolean;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="flex items-center gap-2">
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.entrepreneur.showGrowthIndicators}
             onChange={(e) => onUpdate({ showGrowthIndicators: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Growth Indicators' : 'Afficher les indicateurs de croissance'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.entrepreneur.showBenchmarks}
             onChange={(e) => onUpdate({ showBenchmarks: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Industry Benchmarks' : 'Afficher les références sectorielles'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.entrepreneur.showCashRunway}
             onChange={(e) => onUpdate({ showCashRunway: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Cash Runway' : 'Afficher la piste de trésorerie'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.entrepreneur.showBurnRate}
             onChange={(e) => onUpdate({ showBurnRate: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Burn Rate' : 'Afficher le taux de consommation'}
@@ -699,15 +753,15 @@ function EntrepreneurConfigTab({
           max="100"
           value={config.entrepreneur.significantChangeThreshold}
           onChange={(e) => onUpdate({ significantChangeThreshold: parseFloat(e.target.value) })}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h3 className="font-medium">{isEn ? 'Alert Thresholds' : 'Seuils d\'alerte'}</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               {isEn ? 'Cash Runway (days)' : 'Piste de trésorerie (jours)'}
             </label>
             <input
@@ -720,11 +774,11 @@ function EntrepreneurConfigTab({
                   cashRunwayDays: parseInt(e.target.value),
                 },
               })}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               {isEn ? 'Revenue Decline (%)' : 'Baisse de revenus (%)'}
             </label>
             <input
@@ -738,7 +792,7 @@ function EntrepreneurConfigTab({
                   revenueDecline: parseFloat(e.target.value),
                 },
               })}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
         </div>
@@ -757,7 +811,7 @@ function CPAConfigTab({
   isEn: boolean;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
         <label className="block text-sm font-medium mb-2">
           {isEn ? 'Materiality Threshold (%)' : 'Seuil de matérialité (%)'}
@@ -769,9 +823,9 @@ function CPAConfigTab({
           step="0.1"
           value={config.cpa.materialityThreshold}
           onChange={(e) => onUpdate({ materialityThreshold: parseFloat(e.target.value) })}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
-        <p className="text-xs text-muted mt-1">
+        <p className="text-xs text-muted mt-1.5">
           {isEn 
             ? 'Items below this threshold may be considered immaterial'
             : 'Les éléments en dessous de ce seuil peuvent être considérés comme non matériels'}
@@ -788,50 +842,50 @@ function CPAConfigTab({
           max="100"
           value={config.cpa.varianceThreshold}
           onChange={(e) => onUpdate({ varianceThreshold: parseFloat(e.target.value) })}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
       </div>
       
-      <div className="space-y-2">
-        <label className="flex items-center gap-2">
+      <div className="space-y-3">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.cpa.showAccountCodes}
             onChange={(e) => onUpdate({ showAccountCodes: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Account Codes' : 'Afficher les codes de compte'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.cpa.showVarianceAnalysis}
             onChange={(e) => onUpdate({ showVarianceAnalysis: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Variance Analysis' : 'Afficher l\'analyse des écarts'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.cpa.showAgingAnalysis}
             onChange={(e) => onUpdate({ showAgingAnalysis: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Aging Analysis' : 'Afficher l\'analyse du vieillissement'}
           </span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <input
             type="checkbox"
             checked={config.cpa.showPriorYear}
             onChange={(e) => onUpdate({ showPriorYear: e.target.checked })}
-            className="rounded"
+            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
           />
           <span className="text-sm">
             {isEn ? 'Show Prior Year Comparison' : 'Afficher la comparaison année précédente'}
@@ -850,15 +904,15 @@ function CPAConfigTab({
           step="0.01"
           value={config.cpa.roundingTolerance}
           onChange={(e) => onUpdate({ roundingTolerance: parseFloat(e.target.value) })}
-          className="w-full px-3 py-2 border rounded"
+          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
         />
       </div>
       
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h3 className="font-medium">{isEn ? 'Aging Buckets (days)' : 'Seuils de vieillissement (jours)'}</h3>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               {isEn ? 'Current' : 'Courant'}
             </label>
             <input
@@ -871,11 +925,11 @@ function CPAConfigTab({
                   current: parseInt(e.target.value),
                 },
               })}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               {isEn ? 'Warning' : 'Avertissement'}
             </label>
             <input
@@ -888,11 +942,11 @@ function CPAConfigTab({
                   warning: parseInt(e.target.value),
                 },
               })}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm mb-1">
+            <label className="block text-sm mb-2">
               {isEn ? 'Critical' : 'Critique'}
             </label>
             <input
@@ -905,7 +959,7 @@ function CPAConfigTab({
                   critical: parseInt(e.target.value),
                 },
               })}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
         </div>
@@ -970,12 +1024,12 @@ function IBCSConfigTab({
         </h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <input
               type="checkbox"
               checked={ibcsConfig.showPlan}
               onChange={(e) => onUpdate({ showPlan: e.target.checked })}
-              className="rounded"
+              className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
             />
             <div>
               <span className="text-sm font-medium block">
@@ -987,12 +1041,12 @@ function IBCSConfigTab({
             </div>
           </label>
           
-          <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <input
               type="checkbox"
               checked={ibcsConfig.showForecast}
               onChange={(e) => onUpdate({ showForecast: e.target.checked })}
-              className="rounded"
+              className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
             />
             <div>
               <span className="text-sm font-medium block">
@@ -1004,12 +1058,12 @@ function IBCSConfigTab({
             </div>
           </label>
           
-          <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <input
               type="checkbox"
               checked={ibcsConfig.showPriorYear}
               onChange={(e) => onUpdate({ showPriorYear: e.target.checked })}
-              className="rounded"
+              className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
             />
             <div>
               <span className="text-sm font-medium block">
@@ -1031,13 +1085,13 @@ function IBCSConfigTab({
         </h3>
         
         <div className="space-y-3">
-          <label className="flex items-center justify-between p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={ibcsConfig.showVariancePins}
                 onChange={(e) => onUpdate({ showVariancePins: e.target.checked })}
-                className="rounded"
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
               />
               <div>
                 <span className="text-sm font-medium">
@@ -1050,13 +1104,13 @@ function IBCSConfigTab({
             </div>
           </label>
           
-          <label className="flex items-center justify-between p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={ibcsConfig.showVarianceShading}
                 onChange={(e) => onUpdate({ showVarianceShading: e.target.checked })}
-                className="rounded"
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
               />
               <div>
                 <span className="text-sm font-medium">
@@ -1069,13 +1123,13 @@ function IBCSConfigTab({
             </div>
           </label>
           
-          <label className="flex items-center justify-between p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={ibcsConfig.showLegend}
                 onChange={(e) => onUpdate({ showLegend: e.target.checked })}
-                className="rounded"
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
               />
               <div>
                 <span className="text-sm font-medium">
@@ -1088,13 +1142,13 @@ function IBCSConfigTab({
             </div>
           </label>
           
-          <label className="flex items-center justify-between p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={ibcsConfig.showBenchmark}
                 onChange={(e) => onUpdate({ showBenchmark: e.target.checked })}
-                className="rounded"
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
               />
               <div>
                 <span className="text-sm font-medium">
@@ -1116,13 +1170,13 @@ function IBCSConfigTab({
           {isEn ? 'Color Scheme' : 'Schéma de couleurs'}
         </h3>
         
-        <label className="flex items-center justify-between p-3 border rounded-lg hover:bg-surface-hover cursor-pointer">
+        <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
               checked={ibcsConfig.useSemanticColors}
               onChange={(e) => onUpdate({ useSemanticColors: e.target.checked })}
-              className="rounded"
+              className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
             />
             <div>
               <span className="text-sm font-medium">
@@ -1135,9 +1189,9 @@ function IBCSConfigTab({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-success"></span>
-            <span className="w-4 h-4 rounded bg-error"></span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-md bg-success shadow-sm"></span>
+            <span className="w-5 h-5 rounded-md bg-error shadow-sm"></span>
           </div>
         </label>
       </div>
@@ -1157,14 +1211,14 @@ function IBCSConfigTab({
             <select
               value={ibcsConfig.metricType}
               onChange={(e) => onUpdate({ metricType: e.target.value as 'revenue' | 'expense' | 'profit' | 'ratio' })}
-              className="w-full px-3 py-2 border rounded-lg bg-surface"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
             >
               <option value="revenue">{isEn ? 'Revenue (↑ favorable)' : 'Revenus (↑ favorable)'}</option>
               <option value="expense">{isEn ? 'Expense (↓ favorable)' : 'Dépenses (↓ favorable)'}</option>
               <option value="profit">{isEn ? 'Profit (↑ favorable)' : 'Profit (↑ favorable)'}</option>
               <option value="ratio">{isEn ? 'Ratio (depends)' : 'Ratio (dépend)'}</option>
             </select>
-            <p className="text-xs text-muted mt-1">
+            <p className="text-xs text-muted mt-1.5">
               {isEn 
                 ? 'Determines how +/- variance is colored'
                 : 'Détermine la couleur de la variance +/-'}
@@ -1181,9 +1235,9 @@ function IBCSConfigTab({
               max="100"
               value={ibcsConfig.varianceHighlightThreshold}
               onChange={(e) => onUpdate({ varianceHighlightThreshold: parseFloat(e.target.value) })}
-              className="w-full px-3 py-2 border rounded-lg bg-surface"
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
-            <p className="text-xs text-muted mt-1">
+            <p className="text-xs text-muted mt-1.5">
               {isEn 
                 ? 'Variances above this % are highlighted'
                 : 'Les variances au-dessus de ce % sont mises en évidence'}

@@ -11,6 +11,45 @@ import {
   Database,
 } from 'lucide-react';
 
+// Toggle Switch Component with CSS variables
+function ToggleSwitch({ 
+  defaultChecked = false,
+  onChange 
+}: { 
+  defaultChecked?: boolean;
+  onChange?: (checked: boolean) => void;
+}) {
+  const [checked, setChecked] = useState(defaultChecked);
+  
+  const handleChange = () => {
+    const newValue = !checked;
+    setChecked(newValue);
+    onChange?.(newValue);
+  };
+  
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={handleChange}
+      className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2"
+      style={{
+        backgroundColor: checked ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-bg-muted))',
+        boxShadow: checked ? undefined : 'inset 0 0 0 1px rgb(var(--color-border))',
+      }}
+    >
+      <span
+        className="pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out"
+        style={{
+          backgroundColor: 'white',
+          transform: checked ? 'translateX(1.25rem)' : 'translateX(0)',
+        }}
+      />
+    </button>
+  );
+}
+
 export default function AdminSettings() {
   const { language } = useI18n();
   const isEn = language === 'en';
@@ -147,10 +186,7 @@ export default function AdminSettings() {
                         {isEn ? 'All admin users must use multi-factor authentication' : 'Tous les admins doivent utiliser MFA'}
                       </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                    </label>
+                    <ToggleSwitch defaultChecked />
                   </div>
 
                   <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>

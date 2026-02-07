@@ -1141,7 +1141,7 @@ export const EDUCATION_MAPPING: IndustryMapping = {
       id: "student_retention_rate",
       name: { en: "Student Retention Rate", fr: "Taux de rétention étudiants" },
       formula: "(returning_students / total_students) * 100",
-      requiredCategories: [],
+      requiredCategories: ["returning_students", "total_students"],
       format: "percentage",
       benchmark: { min: 75, max: 95 },
     },

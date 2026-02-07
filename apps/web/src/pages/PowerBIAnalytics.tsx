@@ -141,7 +141,7 @@ export default function PowerBIAnalytics() {
           </div>
         </div>
       ) : reports.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+        <div className="rounded-lg p-8 text-center border" style={{ backgroundColor: 'rgb(var(--color-bg-muted))', borderColor: 'rgb(var(--color-border))' }}>
           <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Available</h3>
           <p className="text-gray-600">
@@ -161,9 +161,12 @@ export default function PowerBIAnalytics() {
                     onClick={() => setSelectedReportId(report.reportId)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                       selectedReportId === report.reportId
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'font-medium'
+                        : ''
                     }`}
+                    style={selectedReportId === report.reportId 
+                      ? { backgroundColor: 'rgb(var(--color-primary-50))', color: 'rgb(var(--color-primary-700))' }
+                      : { color: 'rgb(var(--color-text-secondary))' }}
                   >
                     {report.reportName}
                   </button>

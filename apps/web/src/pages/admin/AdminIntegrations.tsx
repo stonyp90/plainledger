@@ -151,7 +151,13 @@ export default function AdminIntegrations() {
         ) : (
           <div className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
             {integrations.map((integration) => (
-              <div key={integration.id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <div 
+              key={integration.id} 
+              className="p-4 flex items-center justify-between transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
                 <div className="flex items-center gap-4">
                   {getStatusIcon(integration.status)}
                   <div>
@@ -165,7 +171,10 @@ export default function AdminIntegrations() {
                 <div className="flex items-center gap-3">
                   {getStatusBadge(integration.status)}
                   <button
-                    className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     title={isEn ? 'Settings' : 'Paramètres'}
                   >
                     <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-text-secondary))' }} />

@@ -1,5 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '../../lib/i18n';
+import {
+  adminNotificationsApi,
+  type AdminNotification,
+  type AdminNotificationSegments,
+  type CreateAdminNotificationDto,
+} from '../../lib/api';
 import {
   Bell,
   Send,
@@ -16,36 +22,15 @@ import {
   Smartphone,
   MessageSquare,
   Search,
-  ChevronDown,
   MoreVertical,
+  RefreshCw,
+  XCircle,
 } from 'lucide-react';
 
 type TargetType = 'all' | 'organization' | 'user' | 'industry' | 'plan';
 type NotificationChannel = 'in_app' | 'email' | 'push' | 'sms';
 type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 type NotificationStatus = 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  channel: NotificationChannel;
-  priority: NotificationPriority;
-  status: NotificationStatus;
-  targetType: TargetType;
-  recipientsCount: number;
-  deliveredCount: number;
-  readCount: number;
-  createdAt: string;
-  sentAt?: string;
-  createdByAdminEmail: string;
-}
-
-interface TargetSegment {
-  organizations: { id: string; name: string }[];
-  industries: string[];
-  plans: string[];
-}
 
 // Status Badge Component
 function StatusBadge({ status }: { status: NotificationStatus }) {
@@ -90,46 +75,45 @@ function CreateNotificationModal({
   isOpen, 
   onClose,
   segments,
+  onSuccess,
 }: { 
   isOpen: boolean; 
   onClose: () => void;
-  segments: TargetSegment;
+  segments: AdminNotificationSegments;
+  onSuccess: () => void;
 }) {
   const { language } = useI18n();
   const isEn = language === 'en';
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateAdminNotificationDto>({
     title: '',
     titleFr: '',
     message: '',
     messageFr: '',
-    channel: 'in_app' as NotificationChannel,
-    priority: 'medium' as NotificationPriority,
-    targetType: 'all' as TargetType,
-    targetIds: [] as string[],
+    channel: 'in_app',
+    priority: 'medium',
+    targetType: 'all',
+    targetIds: [],
     actionUrl: '',
     actionLabel: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     
     try {
-      // TODO: API call to create notification
-      // await fetch('/api/admin/notifications', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
-      console.log('Creating notification:', formData);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      await adminNotificationsApi.create(formData);
+      onSuccess();
       onClose();
-    } catch (error) {
-      console.error('Failed to create notification:', error);
+    } catch (err) {
+      console.error('Failed to create notification:', err);
+      setError(isEn ? 'Failed to create notification. Please try again.' : 'Échec de la création de la notification. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);
     }
@@ -404,12 +388,25 @@ function CreateNotificationModal({
             </div>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div 
+              className="p-3 rounded-lg text-sm"
+              style={{ 
+                backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                color: 'rgb(var(--color-error))',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-lg border"
+              className="px-4 py-2 text-sm rounded-lg border transition-colors"
               style={{ 
                 borderColor: 'rgb(var(--color-border))',
                 color: 'rgb(var(--color-text))',
@@ -446,92 +443,72 @@ export default function AdminNotifications() {
   const { language } = useI18n();
   const isEn = language === 'en';
   
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [segments, setSegments] = useState<TargetSegment>({ organizations: [], industries: [], plans: [] });
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [segments, setSegments] = useState<AdminNotificationSegments>({ organizations: [], industries: [], plans: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<NotificationStatus | 'all'>('all');
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch notifications
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // TODO: Replace with actual API calls
-        // Mock data
-        setNotifications([
-          {
-            id: '1',
-            title: 'System Maintenance',
-            message: 'Scheduled maintenance on Sunday at 2 AM EST.',
-            channel: 'in_app',
-            priority: 'high',
-            status: 'delivered',
-            targetType: 'all',
-            recipientsCount: 523,
-            deliveredCount: 518,
-            readCount: 312,
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            sentAt: new Date(Date.now() - 86400000).toISOString(),
-            createdByAdminEmail: 'admin@example.com',
-          },
-          {
-            id: '2',
-            title: 'New Feature: Tax Credits',
-            message: 'We\'ve added a new tax credits calculator!',
-            channel: 'email',
-            priority: 'medium',
-            status: 'sent',
-            targetType: 'industry',
-            recipientsCount: 145,
-            deliveredCount: 142,
-            readCount: 89,
-            createdAt: new Date(Date.now() - 172800000).toISOString(),
-            sentAt: new Date(Date.now() - 172800000).toISOString(),
-            createdByAdminEmail: 'admin@example.com',
-          },
-          {
-            id: '3',
-            title: 'Welcome Promotion',
-            message: 'Special offer for new users!',
-            channel: 'in_app',
-            priority: 'low',
-            status: 'pending',
-            targetType: 'organization',
-            recipientsCount: 50,
-            deliveredCount: 0,
-            readCount: 0,
-            createdAt: new Date().toISOString(),
-            createdByAdminEmail: 'admin@example.com',
-          },
-        ]);
-        
-        setSegments({
-          organizations: [
-            { id: '1', name: 'Acme Corp' },
-            { id: '2', name: 'Tech Solutions' },
-            { id: '3', name: 'Restaurant Group' },
-          ],
-          industries: ['real_estate', 'restaurant', 'retail', 'construction', 'professional_services'],
-          plans: ['free', 'starter', 'professional', 'enterprise'],
-        });
-      } catch (error) {
-        console.error('Failed to fetch notifications:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchNotifications = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params: { status?: string; search?: string } = {};
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (searchQuery) params.search = searchQuery;
+      
+      const response = await adminNotificationsApi.list(params);
+      setNotifications(response.data?.notifications || []);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      setError(isEn ? 'Failed to load notifications' : 'Échec du chargement des notifications');
+      // Fall back to empty array
+      setNotifications([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter, searchQuery, isEn]);
 
-    fetchData();
+  // Fetch segments for targeting
+  const fetchSegments = useCallback(async () => {
+    try {
+      const response = await adminNotificationsApi.getSegments();
+      setSegments(response.data || { organizations: [], industries: [], plans: [] });
+    } catch (err) {
+      console.error('Failed to fetch segments:', err);
+      // Use default empty segments
+      setSegments({ organizations: [], industries: [], plans: [] });
+    }
   }, []);
 
-  // Filter notifications
-  const filteredNotifications = notifications.filter((n) => {
-    const matchesSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      n.message.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || n.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Initial load
+  useEffect(() => {
+    fetchNotifications();
+    fetchSegments();
+  }, [fetchNotifications, fetchSegments]);
+
+  // Cancel notification handler
+  const handleCancelNotification = async (id: string) => {
+    try {
+      await adminNotificationsApi.cancel(id);
+      fetchNotifications();
+    } catch (err) {
+      console.error('Failed to cancel notification:', err);
+    }
+  };
+
+  // Resend notification handler
+  const handleResendNotification = async (id: string) => {
+    try {
+      await adminNotificationsApi.resend(id);
+      fetchNotifications();
+    } catch (err) {
+      console.error('Failed to resend notification:', err);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -555,6 +532,22 @@ export default function AdminNotifications() {
         </button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div 
+          className="p-4 rounded-lg text-sm flex items-center justify-between"
+          style={{ 
+            backgroundColor: 'rgb(var(--color-error) / 0.1)',
+            color: 'rgb(var(--color-error))',
+          }}
+        >
+          <span>{error}</span>
+          <button onClick={fetchNotifications} className="underline">
+            {isEn ? 'Retry' : 'Réessayer'}
+          </button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -566,6 +559,7 @@ export default function AdminNotifications() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && fetchNotifications()}
             placeholder={isEn ? 'Search notifications...' : 'Rechercher des notifications...'}
             className="w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm"
             style={{ 
@@ -591,6 +585,17 @@ export default function AdminNotifications() {
           <option value="delivered">{isEn ? 'Delivered' : 'Livré'}</option>
           <option value="failed">{isEn ? 'Failed' : 'Échoué'}</option>
         </select>
+        <button
+          onClick={fetchNotifications}
+          className="p-2.5 rounded-lg border transition-colors"
+          style={{ 
+            borderColor: 'rgb(var(--color-border))',
+            color: 'rgb(var(--color-text-secondary))',
+          }}
+          title={isEn ? 'Refresh' : 'Actualiser'}
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {/* Notifications List */}
@@ -610,7 +615,7 @@ export default function AdminNotifications() {
               </span>
             </div>
           </div>
-        ) : filteredNotifications.length === 0 ? (
+        ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Bell className="w-12 h-12 mb-3" style={{ color: 'rgb(var(--color-text-muted))' }} />
             <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
@@ -619,10 +624,13 @@ export default function AdminNotifications() {
           </div>
         ) : (
           <div className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            {filteredNotifications.map((notification) => (
+            {notifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                className="p-4 transition-colors"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -658,9 +666,34 @@ export default function AdminNotifications() {
                       </div>
                     </div>
                   </div>
-                  <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <MoreVertical className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {notification.status === 'pending' && (
+                      <button 
+                        onClick={() => handleCancelNotification(notification.id)}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'rgb(var(--color-error))' }}
+                        title={isEn ? 'Cancel' : 'Annuler'}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    )}
+                    {(notification.status === 'failed' || notification.status === 'cancelled') && (
+                      <button 
+                        onClick={() => handleResendNotification(notification.id)}
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: 'rgb(var(--color-primary-500))' }}
+                        title={isEn ? 'Resend' : 'Renvoyer'}
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button 
+                      className="p-2 rounded-lg transition-colors"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -673,6 +706,7 @@ export default function AdminNotifications() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         segments={segments}
+        onSuccess={fetchNotifications}
       />
     </div>
   );

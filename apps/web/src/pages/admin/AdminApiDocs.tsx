@@ -67,7 +67,10 @@ export default function AdminApiDocs() {
               </span>
               <button
                 onClick={copyUrl}
-                className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded transition-colors"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 title={isEn ? 'Copy URL' : 'Copier l\'URL'}
               >
                 <Copy className="w-4 h-4" style={{ color: 'rgb(var(--color-text-secondary))' }} />

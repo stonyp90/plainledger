@@ -23,14 +23,40 @@ interface ConnectionWizardProps {
   onConnect?: () => void;
 }
 
-// Provider logos using SimpleIcons CDN
+// Provider logos using SimpleIcons CDN (where available)
+// Note: Wave and FreshBooks don't exist in SimpleIcons, so they use inline SVG fallbacks
 const PROVIDERS = [
-  { id: 'quickbooks', name: 'QuickBooks', logo: 'https://cdn.simpleicons.org/quickbooks/2CA01C' },
-  { id: 'xero', name: 'Xero', logo: 'https://cdn.simpleicons.org/xero/13B5EA' },
-  { id: 'sage', name: 'Sage', logo: 'https://cdn.simpleicons.org/sage/00D639' },
-  { id: 'freshbooks', name: 'FreshBooks', logo: 'https://cdn.simpleicons.org/freshbooks/0075DD' },
-  { id: 'wave', name: 'Wave', logo: 'https://cdn.simpleicons.org/wave/2E77BC' },
+  { id: 'quickbooks', name: 'QuickBooks', logo: 'https://cdn.simpleicons.org/quickbooks/2CA01C', color: '#2CA01C' },
+  { id: 'xero', name: 'Xero', logo: 'https://cdn.simpleicons.org/xero/13B5EA', color: '#13B5EA' },
+  { id: 'sage', name: 'Sage', logo: 'https://cdn.simpleicons.org/sage/00D639', color: '#00D639' },
+  { id: 'freshbooks', name: 'FreshBooks', logo: '', color: '#0075DD' }, // Uses SVG fallback
+  { id: 'wave', name: 'Wave', logo: '', color: '#003D79' }, // Uses SVG fallback
 ];
+
+// SVG fallback logos for providers not available in SimpleIcons
+const FallbackLogos: Record<string, JSX.Element> = {
+  freshbooks: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6">
+      <rect width="24" height="24" rx="5" fill="#0075DD"/>
+      <g transform="translate(7, 5)" fill="white">
+        <rect x="0" y="0" width="9" height="1.75" rx="0.5"/>
+        <rect x="0" y="3.5" width="7" height="1.75" rx="0.5"/>
+        <rect x="0" y="7" width="5" height="1.75" rx="0.5"/>
+        <rect x="0" y="10.5" width="1.75" height="3.5" rx="0.5"/>
+      </g>
+    </svg>
+  ),
+  wave: (
+    <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-6 sm:h-6">
+      <rect width="24" height="24" rx="5" fill="#003D79"/>
+      <g transform="translate(4, 5)">
+        <rect x="0" y="7" width="4" height="7" rx="2" fill="#6AB8F7"/>
+        <rect x="6" y="3" width="4" height="11" rx="2" fill="#2E77BC"/>
+        <rect x="12" y="5" width="4" height="9" rx="2" fill="white"/>
+      </g>
+    </svg>
+  ),
+};
 
 export default function ConnectionWizard({ onConnect }: ConnectionWizardProps) {
   const { language } = useI18n();
@@ -98,12 +124,23 @@ export default function ConnectionWizard({ onConnect }: ConnectionWizardProps) {
                       : '1px solid transparent',
                   }}
                 >
-                  <img 
-                    src={provider.logo} 
-                    alt={provider.name}
-                    className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
-                    loading="lazy"
-                  />
+                  {provider.logo ? (
+                    <img 
+                      src={provider.logo} 
+                      alt={provider.name}
+                      className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    FallbackLogos[provider.id] || (
+                      <div 
+                        className="w-5 h-5 sm:w-6 sm:h-6 rounded flex items-center justify-center text-white text-[10px] font-bold"
+                        style={{ backgroundColor: provider.color }}
+                      >
+                        {provider.name.charAt(0)}
+                      </div>
+                    )
+                  )}
                 </div>
                 {hoveredProvider === provider.id && (
                   <div 

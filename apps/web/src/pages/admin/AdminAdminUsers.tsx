@@ -124,7 +124,13 @@ export default function AdminAdminUsers() {
           </thead>
           <tbody className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr 
+              key={user.id} 
+              className="transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div
@@ -156,7 +162,12 @@ export default function AdminAdminUsers() {
                 </td>
                 <td className="px-6 py-4" style={{ color: 'rgb(var(--color-text-secondary))' }}>{user.lastAccess}</td>
                 <td className="px-6 py-4 text-right">
-                  <button className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <button 
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
                     <MoreVertical className="w-4 h-4" style={{ color: 'rgb(var(--color-text-secondary))' }} />
                   </button>
                 </td>

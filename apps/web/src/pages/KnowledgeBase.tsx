@@ -125,8 +125,8 @@ const HELP_TOPICS: HelpTopic[] = [
         id: 'quick-start', 
         title: { en: 'Quick Start Guide', fr: 'Guide de démarrage rapide' },
         content: {
-          en: 'Welcome to PlainLedger! This guide will help you get started quickly.\n\n1. Connect your first data source\n2. Review your dashboard\n3. Generate your first report\n\nFor detailed instructions, visit the Connections page.',
-          fr: 'Bienvenue sur PlainLedger! Ce guide vous aidera à démarrer rapidement.\n\n1. Connectez votre première source de données\n2. Consultez votre tableau de bord\n3. Générez votre premier rapport\n\nPour des instructions détaillées, visitez la page Connexions.'
+          en: 'Welcome to PlainLedger! This guide will help you get started quickly.\n\n1. Connect your first data source (QuickBooks, Xero, Sage, or CSV)\n2. Review your dashboard and financial health score\n3. Explore your visualizations and reports\n4. Set up anomaly detection thresholds\n\nFor detailed instructions, visit the Connections page.',
+          fr: 'Bienvenue sur PlainLedger! Ce guide vous aidera à démarrer rapidement.\n\n1. Connectez votre première source de données (QuickBooks, Xero, Sage ou CSV)\n2. Consultez votre tableau de bord et score de santé financière\n3. Explorez vos visualisations et rapports\n4. Configurez les seuils de détection d\'anomalies\n\nPour des instructions détaillées, visitez la page Connexions.'
         },
         url: '/app',
         tags: ['onboarding', 'setup', 'first steps', 'tutorial', 'beginner']
@@ -135,8 +135,8 @@ const HELP_TOPICS: HelpTopic[] = [
         id: 'first-connection', 
         title: { en: 'Connect Your First Data Source', fr: 'Connecter votre première source' },
         content: {
-          en: 'To connect your first data source:\n\n1. Navigate to Connections\n2. Select your accounting software\n3. Follow the OAuth authorization flow\n4. Wait for data synchronization\n\nYour data will be securely synced and ready for analysis.',
-          fr: 'Pour connecter votre première source de données:\n\n1. Accédez à Connexions\n2. Sélectionnez votre logiciel comptable\n3. Suivez le processus d\'autorisation OAuth\n4. Attendez la synchronisation des données\n\nVos données seront synchronisées en toute sécurité et prêtes pour l\'analyse.'
+          en: 'To connect your first data source:\n\n1. Navigate to Connections\n2. Select your accounting software (QuickBooks, Xero, Sage, FreshBooks, Wave)\n3. Follow the OAuth authorization flow\n4. Wait for data synchronization\n\nYour data will be securely synced and ready for analysis. Data syncs automatically every day.',
+          fr: 'Pour connecter votre première source de données:\n\n1. Accédez à Connexions\n2. Sélectionnez votre logiciel comptable (QuickBooks, Xero, Sage, FreshBooks, Wave)\n3. Suivez le processus d\'autorisation OAuth\n4. Attendez la synchronisation des données\n\nVos données seront synchronisées en toute sécurité et prêtes pour l\'analyse. La synchronisation se fait automatiquement chaque jour.'
         },
         url: '/app/connections',
         tags: ['connection', 'integration', 'sync', 'data', 'oauth']
@@ -145,11 +145,21 @@ const HELP_TOPICS: HelpTopic[] = [
         id: 'dashboard-overview', 
         title: { en: 'Dashboard Overview', fr: 'Aperçu du tableau de bord' },
         content: {
-          en: 'The PlainLedger dashboard provides a comprehensive view of your financial health.\n\nKey features:\n- Financial Health Score\n- Key Performance Indicators\n- Trend Analysis\n- Anomaly Detection\n\nNavigate through different sections to explore your data.',
-          fr: 'Le tableau de bord PlainLedger offre une vue complète de votre santé financière.\n\nFonctionnalités clés:\n- Score de santé financière\n- Indicateurs de performance clés\n- Analyse des tendances\n- Détection d\'anomalies\n\nNaviguez dans différentes sections pour explorer vos données.'
+          en: 'The PlainLedger dashboard provides a comprehensive view of your financial health.\n\nKey features:\n- Financial Health Score (0-100)\n- Key Performance Indicators (KPIs)\n- Cash Flow Analysis\n- Revenue and Expense Trends\n- Anomaly Alerts\n- Customizable Widgets\n\nYou can customize your dashboard by adding, removing, or reordering widgets. Lock the dashboard to prevent accidental changes.',
+          fr: 'Le tableau de bord PlainLedger offre une vue complète de votre santé financière.\n\nFonctionnalités clés:\n- Score de santé financière (0-100)\n- Indicateurs de performance clés (KPI)\n- Analyse des flux de trésorerie\n- Tendances des revenus et dépenses\n- Alertes d\'anomalies\n- Widgets personnalisables\n\nVous pouvez personnaliser votre tableau de bord en ajoutant, supprimant ou réorganisant les widgets. Verrouillez le tableau pour éviter les modifications accidentelles.'
         },
         url: '/app',
-        tags: ['dashboard', 'overview', 'metrics', 'kpi', 'health score']
+        tags: ['dashboard', 'overview', 'metrics', 'kpi', 'health score', 'widgets', 'customize']
+      },
+      { 
+        id: 'free-vs-paid', 
+        title: { en: 'Free vs Paid Plans', fr: 'Plans gratuit vs payant' },
+        content: {
+          en: 'PlainLedger offers both free and paid plans:\n\nFree Plan:\n- Dashboard with demo data\n- Basic financial reports\n- Anomaly detection\n- Single user\n\nPaid Plans (Professional, Enterprise):\n- Connect real accounting data\n- Market analysis & benchmarks\n- Tax credit eligibility\n- Board meeting presentations\n- Strategic planning tools\n- Multi-user access\n- Priority support\n\nUpgrade anytime from Settings > Subscription.',
+          fr: 'PlainLedger offre des plans gratuits et payants:\n\nPlan gratuit:\n- Tableau de bord avec données démo\n- Rapports financiers de base\n- Détection d\'anomalies\n- Utilisateur unique\n\nPlans payants (Professionnel, Entreprise):\n- Connexion aux données comptables réelles\n- Analyse de marché et benchmarks\n- Éligibilité aux crédits d\'impôt\n- Présentations pour réunions CA\n- Outils de planification stratégique\n- Accès multi-utilisateurs\n- Support prioritaire\n\nMettez à niveau à tout moment depuis Paramètres > Abonnement.'
+        },
+        url: '/app/settings?tab=subscription',
+        tags: ['pricing', 'plans', 'free', 'professional', 'enterprise', 'upgrade', 'subscription']
       },
     ],
   },
@@ -335,31 +345,279 @@ const HELP_TOPICS: HelpTopic[] = [
         id: 'team-management', 
         title: { en: 'Team Management', fr: 'Gestion d\'équipe' },
         content: {
-          en: 'Manage your team:\n\n1. Go to Settings > Organization\n2. Invite members by email\n3. Assign roles (Admin, Member, Viewer)\n4. Manage permissions\n5. Remove members if needed\n\nRoles determine access levels.',
-          fr: 'Gérez votre équipe:\n\n1. Allez dans Paramètres > Organisation\n2. Invitez des membres par courriel\n3. Attribuez des rôles (Admin, Membre, Observateur)\n4. Gérez les permissions\n5. Supprimez des membres si nécessaire\n\nLes rôles déterminent les niveaux d\'accès.'
+          en: 'Manage your team:\n\n1. Go to Settings > Team\n2. Invite members by email\n3. Assign roles (Admin, Member, Viewer)\n4. Manage permissions\n5. Remove members if needed\n\nRoles determine access levels. Admins can manage all settings, Members can view and edit data, Viewers have read-only access.',
+          fr: 'Gérez votre équipe:\n\n1. Allez dans Paramètres > Équipe\n2. Invitez des membres par courriel\n3. Attribuez des rôles (Admin, Membre, Observateur)\n4. Gérez les permissions\n5. Supprimez des membres si nécessaire\n\nLes rôles déterminent les niveaux d\'accès. Les admins peuvent gérer tous les paramètres, les membres peuvent voir et modifier les données, les observateurs ont un accès en lecture seule.'
         },
-        url: '/app/settings?tab=organization',
+        url: '/app/settings?tab=team',
         tags: ['team', 'users', 'invite', 'roles', 'permissions', 'organization']
       },
       { 
         id: 'billing', 
         title: { en: 'Billing & Subscriptions', fr: 'Facturation & Abonnements' },
         content: {
-          en: 'Manage your subscription:\n\n- View current plan\n- Update payment method\n- View billing history\n- Upgrade or downgrade\n- Cancel subscription\n\nAccess via Settings > Billing.',
-          fr: 'Gérez votre abonnement:\n\n- Voir le plan actuel\n- Mettre à jour le mode de paiement\n- Voir l\'historique de facturation\n- Mettre à niveau ou rétrograder\n- Annuler l\'abonnement\n\nAccès via Paramètres > Facturation.'
+          en: 'Manage your subscription:\n\n- View current plan (Free, Professional, Enterprise)\n- Update payment method (credit card via Stripe)\n- View billing history and invoices\n- Upgrade or downgrade plans\n- Cancel subscription\n\nAccess via Settings > Subscription.',
+          fr: 'Gérez votre abonnement:\n\n- Voir le plan actuel (Gratuit, Professionnel, Entreprise)\n- Mettre à jour le mode de paiement (carte de crédit via Stripe)\n- Voir l\'historique de facturation et les factures\n- Mettre à niveau ou rétrograder les plans\n- Annuler l\'abonnement\n\nAccès via Paramètres > Abonnement.'
         },
-        url: '/app/settings?tab=billing',
-        tags: ['billing', 'subscription', 'payment', 'plan', 'upgrade', 'invoice']
+        url: '/app/settings?tab=subscription',
+        tags: ['billing', 'subscription', 'payment', 'plan', 'upgrade', 'invoice', 'stripe']
       },
       { 
         id: 'security', 
         title: { en: 'Security Settings', fr: 'Paramètres de sécurité' },
         content: {
-          en: 'Security features:\n\n- Enable two-factor authentication\n- Manage API keys\n- View login history\n- Configure session timeout\n- Password policies\n\nKeep your account secure.',
-          fr: 'Fonctionnalités de sécurité:\n\n- Activer l\'authentification à deux facteurs\n- Gérer les clés API\n- Voir l\'historique de connexion\n- Configurer le délai d\'expiration de session\n- Politiques de mot de passe\n\nGardez votre compte sécurisé.'
+          en: 'Security features:\n\n- Enable two-factor authentication (2FA)\n- Manage API keys for integrations\n- View login history and active sessions\n- Password management\n- Social login (Google, Microsoft)\n\nKeep your account secure with industry-standard security practices.',
+          fr: 'Fonctionnalités de sécurité:\n\n- Activer l\'authentification à deux facteurs (2FA)\n- Gérer les clés API pour les intégrations\n- Voir l\'historique de connexion et les sessions actives\n- Gestion du mot de passe\n- Connexion sociale (Google, Microsoft)\n\nGardez votre compte sécurisé avec des pratiques de sécurité standard de l\'industrie.'
         },
         url: '/app/settings?tab=security',
-        tags: ['security', '2fa', 'mfa', 'password', 'authentication', 'api keys']
+        tags: ['security', '2fa', 'mfa', 'password', 'authentication', 'api keys', 'google', 'microsoft']
+      },
+      { 
+        id: 'profile', 
+        title: { en: 'Profile Settings', fr: 'Paramètres du profil' },
+        content: {
+          en: 'Manage your personal profile:\n\n- Update your name and email\n- Upload a profile picture\n- Set your language preference (English/French)\n- Configure notification preferences\n- Update your timezone\n\nYour profile picture appears across the app and in shared reports.',
+          fr: 'Gérez votre profil personnel:\n\n- Mettez à jour votre nom et courriel\n- Téléchargez une photo de profil\n- Définissez votre préférence de langue (Anglais/Français)\n- Configurez vos préférences de notification\n- Mettez à jour votre fuseau horaire\n\nVotre photo de profil apparaît dans toute l\'application et les rapports partagés.'
+        },
+        url: '/app/settings?tab=profile',
+        tags: ['profile', 'avatar', 'picture', 'name', 'email', 'language', 'preferences']
+      },
+      { 
+        id: 'notifications', 
+        title: { en: 'Notification Settings', fr: 'Paramètres de notification' },
+        content: {
+          en: 'Configure your notification preferences:\n\n- Email notifications for anomalies\n- Weekly digest summaries\n- Report generation alerts\n- Team activity notifications\n- System announcements\n\nCustomize what notifications you receive and how often.',
+          fr: 'Configurez vos préférences de notification:\n\n- Notifications par courriel pour les anomalies\n- Résumés hebdomadaires\n- Alertes de génération de rapports\n- Notifications d\'activité d\'équipe\n- Annonces système\n\nPersonnalisez les notifications que vous recevez et leur fréquence.'
+        },
+        url: '/app/settings?tab=notifications',
+        tags: ['notifications', 'email', 'alerts', 'digest', 'preferences']
+      },
+      { 
+        id: 'company-settings', 
+        title: { en: 'Company Settings', fr: 'Paramètres de l\'entreprise' },
+        content: {
+          en: 'Configure your company settings:\n\n- Company name and logo\n- Fiscal year end date\n- Industry classification\n- Currency settings\n- Address and contact information\n\nThese settings affect reports and industry comparisons.',
+          fr: 'Configurez les paramètres de votre entreprise:\n\n- Nom et logo de l\'entreprise\n- Date de fin d\'exercice fiscal\n- Classification de l\'industrie\n- Paramètres de devise\n- Adresse et coordonnées\n\nCes paramètres affectent les rapports et les comparaisons sectorielles.'
+        },
+        url: '/app/settings?tab=organization',
+        tags: ['company', 'organization', 'logo', 'fiscal year', 'industry', 'currency']
+      },
+    ],
+  },
+  {
+    id: 'visualizations',
+    icon: BarChart3,
+    title: { en: 'Visualizations & Charts', fr: 'Visualisations & Graphiques' },
+    description: { en: 'Create custom charts and dashboards', fr: 'Créer des graphiques et tableaux personnalisés' },
+    articles: [
+      { 
+        id: 'chart-types', 
+        title: { en: 'Available Chart Types', fr: 'Types de graphiques disponibles' },
+        content: {
+          en: 'PlainLedger supports various chart types:\n\n- Line Charts: Track trends over time\n- Bar Charts: Compare values across categories\n- Waterfall Charts: Show how values change step by step\n- Pie Charts: Show proportion breakdown\n- Area Charts: Visualize cumulative totals\n- Combo Charts: Combine multiple chart types\n\nEach chart can be customized with colors, labels, and thresholds.',
+          fr: 'PlainLedger prend en charge plusieurs types de graphiques:\n\n- Graphiques en ligne: Suivre les tendances dans le temps\n- Graphiques à barres: Comparer les valeurs entre catégories\n- Graphiques en cascade: Montrer comment les valeurs changent étape par étape\n- Graphiques circulaires: Montrer la répartition proportionnelle\n- Graphiques en aires: Visualiser les totaux cumulés\n- Graphiques combinés: Combiner plusieurs types\n\nChaque graphique peut être personnalisé avec des couleurs, étiquettes et seuils.'
+        },
+        url: '/app/visualizations',
+        tags: ['charts', 'graphs', 'line', 'bar', 'waterfall', 'pie', 'visualization']
+      },
+      { 
+        id: 'ibcs-standards', 
+        title: { en: 'IBCS Standards', fr: 'Normes IBCS' },
+        content: {
+          en: 'PlainLedger follows IBCS (International Business Communication Standards):\n\n- Consistent visual language\n- Actual vs Plan comparisons\n- Variance highlighting\n- Proper use of colors (green for positive, red for negative)\n- Clean, professional presentation\n\nIBCS standards ensure your charts communicate clearly and effectively.',
+          fr: 'PlainLedger suit les normes IBCS (International Business Communication Standards):\n\n- Langage visuel cohérent\n- Comparaisons Réel vs Plan\n- Mise en évidence des écarts\n- Utilisation appropriée des couleurs (vert pour positif, rouge pour négatif)\n- Présentation claire et professionnelle\n\nLes normes IBCS garantissent que vos graphiques communiquent clairement et efficacement.'
+        },
+        url: '/app/visualizations',
+        tags: ['ibcs', 'standards', 'business', 'communication', 'professional', 'variance']
+      },
+      { 
+        id: 'customize-charts', 
+        title: { en: 'Customizing Charts', fr: 'Personnaliser les graphiques' },
+        content: {
+          en: 'Customize your charts:\n\n1. Click on any chart to open settings\n2. Change chart type, colors, and labels\n3. Add thresholds and reference lines\n4. Configure moving averages\n5. Set date range and filters\n6. Save as template for reuse\n\nLock chart settings to prevent accidental changes.',
+          fr: 'Personnalisez vos graphiques:\n\n1. Cliquez sur n\'importe quel graphique pour ouvrir les paramètres\n2. Changez le type, les couleurs et les étiquettes\n3. Ajoutez des seuils et lignes de référence\n4. Configurez les moyennes mobiles\n5. Définissez la plage de dates et les filtres\n6. Enregistrez comme modèle pour réutilisation\n\nVerrouillez les paramètres pour éviter les modifications accidentelles.'
+        },
+        url: '/app/visualizations',
+        tags: ['customize', 'charts', 'colors', 'thresholds', 'templates', 'settings']
+      },
+      { 
+        id: 'add-chart-dashboard', 
+        title: { en: 'Adding Charts to Dashboard', fr: 'Ajouter des graphiques au tableau de bord' },
+        content: {
+          en: 'Add charts to your dashboard:\n\n1. Go to Dashboard\n2. Click "Charts" button in header\n3. Browse available charts by category\n4. Click to add to dashboard\n5. Drag to reorder\n6. Lock dashboard when done\n\nYou can also remove charts by clicking the X on hover.',
+          fr: 'Ajoutez des graphiques à votre tableau de bord:\n\n1. Allez au tableau de bord\n2. Cliquez sur le bouton "Graphiques" dans l\'en-tête\n3. Parcourez les graphiques disponibles par catégorie\n4. Cliquez pour ajouter au tableau de bord\n5. Glissez pour réorganiser\n6. Verrouillez le tableau de bord une fois terminé\n\nVous pouvez également supprimer des graphiques en cliquant sur le X au survol.'
+        },
+        url: '/app',
+        tags: ['dashboard', 'charts', 'add', 'customize', 'reorder', 'widgets']
+      },
+    ],
+  },
+  {
+    id: 'market-analysis',
+    icon: TrendingUp,
+    title: { en: 'Market Analysis', fr: 'Analyse de marché' },
+    description: { en: 'Industry benchmarks and comparisons', fr: 'Benchmarks et comparaisons sectorielles' },
+    articles: [
+      { 
+        id: 'industry-benchmarks', 
+        title: { en: 'Industry Benchmarks', fr: 'Benchmarks sectoriels' },
+        content: {
+          en: 'Compare your performance to industry benchmarks:\n\n- Revenue growth rates\n- Profit margins (gross, operating, net)\n- Liquidity ratios\n- Debt ratios\n- Operating efficiency metrics\n\nBenchmarks are based on industry averages and updated quarterly. Select your industry in Company Settings for accurate comparisons.',
+          fr: 'Comparez votre performance aux benchmarks sectoriels:\n\n- Taux de croissance des revenus\n- Marges bénéficiaires (brute, opérationnelle, nette)\n- Ratios de liquidité\n- Ratios d\'endettement\n- Métriques d\'efficacité opérationnelle\n\nLes benchmarks sont basés sur les moyennes sectorielles et mis à jour trimestriellement. Sélectionnez votre industrie dans les Paramètres de l\'entreprise pour des comparaisons précises.'
+        },
+        url: '/app/market-analysis',
+        tags: ['benchmarks', 'industry', 'comparison', 'ratios', 'performance', 'competitors']
+      },
+      { 
+        id: 'competitive-analysis', 
+        title: { en: 'Competitive Analysis', fr: 'Analyse concurrentielle' },
+        content: {
+          en: 'Understand your competitive position:\n\n- See where you rank in your industry\n- Identify areas of strength and weakness\n- Track your position over time\n- Set improvement targets\n\nUse insights to make strategic decisions and improve performance.',
+          fr: 'Comprenez votre position concurrentielle:\n\n- Voyez où vous vous situez dans votre industrie\n- Identifiez les forces et faiblesses\n- Suivez votre position dans le temps\n- Définissez des objectifs d\'amélioration\n\nUtilisez les insights pour prendre des décisions stratégiques et améliorer la performance.'
+        },
+        url: '/app/market-analysis',
+        tags: ['competitive', 'analysis', 'ranking', 'position', 'strategy', 'improvement']
+      },
+      { 
+        id: 'trend-analysis', 
+        title: { en: 'Market Trends', fr: 'Tendances du marché' },
+        content: {
+          en: 'Track industry trends:\n\n- Industry-wide growth patterns\n- Seasonal variations\n- Economic indicators impact\n- Future projections\n\nUnderstand how external factors affect your business and industry.',
+          fr: 'Suivez les tendances de l\'industrie:\n\n- Modèles de croissance à l\'échelle de l\'industrie\n- Variations saisonnières\n- Impact des indicateurs économiques\n- Projections futures\n\nComprenez comment les facteurs externes affectent votre entreprise et votre industrie.'
+        },
+        url: '/app/market-analysis',
+        tags: ['trends', 'market', 'industry', 'growth', 'economic', 'seasonal']
+      },
+    ],
+  },
+  {
+    id: 'tax-credits',
+    icon: FileText,
+    title: { en: 'Tax Credits', fr: 'Crédits d\'impôt' },
+    description: { en: 'Discover eligible tax credits', fr: 'Découvrir les crédits d\'impôt éligibles' },
+    articles: [
+      { 
+        id: 'eligibility', 
+        title: { en: 'Tax Credit Eligibility', fr: 'Éligibilité aux crédits d\'impôt' },
+        content: {
+          en: 'Discover tax credits you may be eligible for:\n\n- SR&ED (Scientific Research & Experimental Development)\n- Digital Media Tax Credit\n- Film & Television Production Credits\n- Manufacturing Investment Tax Credit\n- Clean Technology Credits\n\nPlainLedger analyzes your financial data to identify potential eligibility.',
+          fr: 'Découvrez les crédits d\'impôt auxquels vous pourriez être éligible:\n\n- RS&DE (Recherche scientifique et développement expérimental)\n- Crédit d\'impôt pour médias numériques\n- Crédits de production cinématographique et télévisuelle\n- Crédit d\'impôt pour investissement manufacturier\n- Crédits pour technologies propres\n\nPlainLedger analyse vos données financières pour identifier les éligibilités potentielles.'
+        },
+        url: '/app/tax-credits',
+        tags: ['tax credits', 'eligibility', 'SRED', 'incentives', 'savings', 'government']
+      },
+      { 
+        id: 'sred-guide', 
+        title: { en: 'SR&ED Tax Credit Guide', fr: 'Guide du crédit RS&DE' },
+        content: {
+          en: 'Understanding SR&ED:\n\n- Federal credit: 15-35% of eligible expenditures\n- Provincial credits vary by province\n- Eligible activities: Research, development, testing\n- Eligible expenditures: Salaries, materials, contractors\n\nPlainLedger helps identify qualifying R&D activities in your business.',
+          fr: 'Comprendre le RS&DE:\n\n- Crédit fédéral: 15-35% des dépenses éligibles\n- Crédits provinciaux varient selon la province\n- Activités éligibles: Recherche, développement, tests\n- Dépenses éligibles: Salaires, matériaux, sous-traitants\n\nPlainLedger aide à identifier les activités de R&D admissibles dans votre entreprise.'
+        },
+        url: '/app/tax-credits',
+        tags: ['sred', 'rs&de', 'research', 'development', 'federal', 'provincial']
+      },
+      { 
+        id: 'claim-process', 
+        title: { en: 'Claiming Tax Credits', fr: 'Réclamer les crédits d\'impôt' },
+        content: {
+          en: 'How to claim tax credits:\n\n1. Review eligibility in PlainLedger\n2. Gather supporting documentation\n3. Work with a tax professional or CPA\n4. File claims with your tax return\n5. Track claim status\n\nPlainLedger provides reports to support your claims but does not file on your behalf.',
+          fr: 'Comment réclamer les crédits d\'impôt:\n\n1. Examinez l\'éligibilité dans PlainLedger\n2. Rassemblez la documentation justificative\n3. Travaillez avec un professionnel fiscal ou CPA\n4. Déposez les réclamations avec votre déclaration\n5. Suivez l\'état des réclamations\n\nPlainLedger fournit des rapports pour soutenir vos réclamations mais ne dépose pas en votre nom.'
+        },
+        url: '/app/tax-credits',
+        tags: ['claim', 'filing', 'documentation', 'CPA', 'accountant', 'process']
+      },
+    ],
+  },
+  {
+    id: 'board-meeting',
+    icon: FileText,
+    title: { en: 'Board Meeting', fr: 'Réunion du CA' },
+    description: { en: 'Generate board presentation packages', fr: 'Générer des présentations pour le CA' },
+    articles: [
+      { 
+        id: 'presentation-package', 
+        title: { en: 'Board Presentation Package', fr: 'Dossier de présentation CA' },
+        content: {
+          en: 'Generate professional board presentation packages:\n\n- Executive summary with key metrics\n- Financial performance highlights\n- Year-over-year comparisons\n- Industry benchmark positioning\n- Strategic recommendations\n\nExport as PDF for distribution to board members.',
+          fr: 'Générez des dossiers de présentation professionnels pour le CA:\n\n- Résumé exécutif avec métriques clés\n- Points saillants de la performance financière\n- Comparaisons d\'une année à l\'autre\n- Positionnement par rapport aux benchmarks\n- Recommandations stratégiques\n\nExportez en PDF pour distribution aux membres du CA.'
+        },
+        url: '/app/board-meeting',
+        tags: ['board', 'presentation', 'executive', 'summary', 'pdf', 'directors']
+      },
+      { 
+        id: 'customize-presentation', 
+        title: { en: 'Customize Presentations', fr: 'Personnaliser les présentations' },
+        content: {
+          en: 'Customize your board presentation:\n\n- Select which sections to include\n- Choose date ranges and comparisons\n- Add custom commentary and notes\n- Include company branding\n- Select chart styles and colors\n\nSave templates for recurring board meetings.',
+          fr: 'Personnalisez votre présentation au CA:\n\n- Sélectionnez les sections à inclure\n- Choisissez les plages de dates et comparaisons\n- Ajoutez des commentaires et notes personnalisés\n- Incluez l\'image de marque de l\'entreprise\n- Sélectionnez les styles et couleurs des graphiques\n\nEnregistrez des modèles pour les réunions récurrentes.'
+        },
+        url: '/app/board-meeting',
+        tags: ['customize', 'template', 'sections', 'branding', 'commentary']
+      },
+    ],
+  },
+  {
+    id: 'strategic-planning',
+    icon: Sparkles,
+    title: { en: 'Strategic Planning', fr: 'Planification stratégique' },
+    description: { en: 'Plan and forecast your business', fr: 'Planifier et prévoir votre entreprise' },
+    articles: [
+      { 
+        id: 'expense-planning', 
+        title: { en: 'Expense Planning', fr: 'Planification des dépenses' },
+        content: {
+          en: 'Plan your expenses strategically:\n\n- Create OPEX (operating expenses) plans\n- Plan CAPEX (capital expenditures)\n- Set recurring vs one-time expenses\n- Drag and drop timeline planning\n- Set confidence levels for estimates\n\nVisualize your planned expenses on an interactive timeline.',
+          fr: 'Planifiez vos dépenses stratégiquement:\n\n- Créez des plans OPEX (dépenses opérationnelles)\n- Planifiez les CAPEX (dépenses en capital)\n- Définissez les dépenses récurrentes vs ponctuelles\n- Planification par glisser-déposer sur chronologie\n- Définissez les niveaux de confiance des estimations\n\nVisualisez vos dépenses prévues sur une chronologie interactive.'
+        },
+        url: '/app/strategic-planning',
+        tags: ['expenses', 'opex', 'capex', 'planning', 'budget', 'forecast', 'timeline']
+      },
+      { 
+        id: 'scenario-modeling', 
+        title: { en: 'Scenario Modeling', fr: 'Modélisation de scénarios' },
+        content: {
+          en: 'Model different business scenarios:\n\n- Create "what-if" scenarios\n- Compare optimistic vs pessimistic outcomes\n- Assess impact of strategic decisions\n- Plan for different growth rates\n- Stress test your finances\n\nMake informed decisions with data-driven scenario analysis.',
+          fr: 'Modélisez différents scénarios d\'affaires:\n\n- Créez des scénarios "et si"\n- Comparez les résultats optimistes vs pessimistes\n- Évaluez l\'impact des décisions stratégiques\n- Planifiez pour différents taux de croissance\n- Testez la résistance de vos finances\n\nPrenez des décisions éclairées avec une analyse de scénarios basée sur les données.'
+        },
+        url: '/app/strategic-planning',
+        tags: ['scenarios', 'modeling', 'what-if', 'forecast', 'simulation', 'planning']
+      },
+      { 
+        id: 'goals-tracking', 
+        title: { en: 'Goals & KPI Tracking', fr: 'Suivi des objectifs et KPI' },
+        content: {
+          en: 'Track progress towards your goals:\n\n- Set financial targets\n- Define key milestones\n- Monitor progress in real-time\n- Get alerts when off-track\n- Celebrate achievements\n\nAlign your team around shared objectives.',
+          fr: 'Suivez la progression vers vos objectifs:\n\n- Définissez des cibles financières\n- Définissez des jalons clés\n- Suivez la progression en temps réel\n- Recevez des alertes si hors trajectoire\n- Célébrez les réalisations\n\nAlignez votre équipe autour d\'objectifs partagés.'
+        },
+        url: '/app/strategic-planning',
+        tags: ['goals', 'kpi', 'targets', 'milestones', 'tracking', 'objectives']
+      },
+    ],
+  },
+  {
+    id: 'sharing',
+    icon: Link2,
+    title: { en: 'Sharing & Collaboration', fr: 'Partage & Collaboration' },
+    description: { en: 'Share reports and documents', fr: 'Partager rapports et documents' },
+    articles: [
+      { 
+        id: 'share-reports', 
+        title: { en: 'Share Reports', fr: 'Partager des rapports' },
+        content: {
+          en: 'Share reports with stakeholders:\n\n1. Generate any report\n2. Click the Share button\n3. Set expiration date\n4. Optionally add password protection\n5. Copy and send the link\n\nRecipients can view without logging in. Track who viewed your shared reports.',
+          fr: 'Partagez des rapports avec les parties prenantes:\n\n1. Générez n\'importe quel rapport\n2. Cliquez sur le bouton Partager\n3. Définissez une date d\'expiration\n4. Ajoutez optionnellement une protection par mot de passe\n5. Copiez et envoyez le lien\n\nLes destinataires peuvent voir sans se connecter. Suivez qui a consulté vos rapports partagés.'
+        },
+        url: '/app/reports',
+        tags: ['share', 'reports', 'link', 'password', 'expiration', 'stakeholders']
+      },
+      { 
+        id: 'document-shares', 
+        title: { en: 'Document Shares', fr: 'Partage de documents' },
+        content: {
+          en: 'Manage your shared documents:\n\n- View all active shares\n- See view counts and last accessed\n- Revoke access anytime\n- Update passwords\n- Extend expiration dates\n\nAccess via Settings > Document Shares.',
+          fr: 'Gérez vos documents partagés:\n\n- Voir tous les partages actifs\n- Voir le nombre de vues et dernier accès\n- Révoquez l\'accès à tout moment\n- Mettez à jour les mots de passe\n- Prolongez les dates d\'expiration\n\nAccès via Paramètres > Partage de documents.'
+        },
+        url: '/app/document-shares',
+        tags: ['documents', 'shares', 'manage', 'revoke', 'access', 'security']
       },
     ],
   },
@@ -369,8 +627,10 @@ const HELP_TOPICS: HelpTopic[] = [
 const POPULAR_ARTICLE_IDS = [
   { topicId: 'getting-started', articleId: 'quick-start' },
   { topicId: 'connections', articleId: 'connect-quickbooks' },
-  { topicId: 'reports', articleId: 'balance-sheet' },
-  { topicId: 'dashboard', articleId: 'kpi-explained' },
+  { topicId: 'visualizations', articleId: 'chart-types' },
+  { topicId: 'market-analysis', articleId: 'industry-benchmarks' },
+  { topicId: 'anomalies', articleId: 'threshold-config' },
+  { topicId: 'settings', articleId: 'profile' },
 ];
 
 // =====================================================

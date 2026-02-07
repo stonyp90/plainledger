@@ -219,7 +219,7 @@ export default function Login() {
             {/* Close button */}
             <button
               onClick={() => setShowBackPopup(false)}
-              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-[rgb(var(--color-bg-muted))] transition-colors"
               style={{ color: 'rgb(var(--color-text-muted))' }}
             >
               <X className="w-4 h-4" />

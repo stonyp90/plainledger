@@ -1560,10 +1560,11 @@ export default function Dashboard() {
                           : 'rgb(var(--color-text-muted))',
                       }}
                     >
-                      {isDashboardLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                      {/* Show action icon: Lock when unlocked (click to lock), Unlock when locked (click to unlock) */}
+                      {isDashboardLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                       <span className="hidden sm:inline">
                         {isDashboardLocked 
-                          ? (isEn ? 'Locked' : 'Verrouillé') 
+                          ? (isEn ? 'Unlock' : 'Déverrouiller') 
                           : (isEn ? 'Lock' : 'Verrouiller')
                         }
                       </span>

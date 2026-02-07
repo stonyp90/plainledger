@@ -149,7 +149,13 @@ export default function AdminBilling() {
           </thead>
           <tbody className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
             {recentTransactions.map((tx) => (
-              <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr 
+              key={tx.id} 
+              className="transition-colors"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
                 <td className="px-6 py-4 font-medium" style={{ color: 'rgb(var(--color-text))' }}>{tx.org}</td>
                 <td className="px-6 py-4" style={{ color: 'rgb(var(--color-text))' }}>${tx.amount}</td>
                 <td className="px-6 py-4">

@@ -363,7 +363,10 @@ export default function AdminConnections() {
                 return (
                   <div 
                     key={conn.id}
-                    className="grid grid-cols-1 md:grid-cols-7 gap-4 p-4 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="grid grid-cols-1 md:grid-cols-7 gap-4 p-4 items-center transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     {/* Organization */}
                     <div className="md:col-span-2 flex items-center gap-3">
@@ -436,10 +439,20 @@ export default function AdminConnections() {
 
                     {/* Actions */}
                     <div className="flex justify-end gap-1">
-                      <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <button 
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ backgroundColor: 'transparent' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
                         <Eye className="w-4 h-4" style={{ color: 'rgb(var(--color-text-secondary))' }} />
                       </button>
-                      <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <button 
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ backgroundColor: 'transparent' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
                         <Zap className="w-4 h-4" style={{ color: 'rgb(var(--color-text-secondary))' }} />
                       </button>
                     </div>

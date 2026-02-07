@@ -399,11 +399,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
   // Load user permissions from API
   const loadUserPermissions = async () => {
     try {
-      const response = await api.get<UserPermissionsData>('/users/me/permissions');
+      const response = await api.get<UserPermissionsData>('/api/users/me/permissions');
       setUserPermissions(response.data);
     } catch (err) {
-      console.error('Failed to load user permissions:', err);
-      // Fallback to null - will use ROLE_PERMISSIONS
+      // Silently fallback - this is expected for users without custom permissions
+      // Will use ROLE_PERMISSIONS based on their role
       setUserPermissions(null);
     }
   };

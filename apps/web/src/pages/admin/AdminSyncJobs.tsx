@@ -163,7 +163,13 @@ export default function AdminSyncJobs() {
           </thead>
           <tbody className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
             {jobs.map((job) => (
-              <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr 
+                key={job.id} 
+                className="transition-colors"
+                style={{ backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     {getStatusIcon(job.status)}
@@ -187,7 +193,10 @@ export default function AdminSyncJobs() {
                 </td>
                 <td className="px-6 py-4">
                   <button
-                    className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     title={isEn ? 'Run Now' : 'Exécuter'}
                     disabled={job.status === 'running'}
                   >

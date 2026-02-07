@@ -71,7 +71,10 @@ function UserActions({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="p-2 rounded-lg transition-colors"
+        style={{ backgroundColor: 'transparent' }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
       >
         <MoreVertical className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
       </button>
@@ -88,8 +91,10 @@ function UserActions({
           >
             <button
               onClick={() => { onResetPassword(); setIsOpen(false); }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-              style={{ color: 'rgb(var(--color-text))' }}
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm transition-colors"
+              style={{ color: 'rgb(var(--color-text))', backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <Key className="w-4 h-4" />
               {isEn ? 'Reset Password' : 'Réinitialiser le mot de passe'}
@@ -97,8 +102,10 @@ function UserActions({
             {user.status === 'active' ? (
               <button
                 onClick={() => { onDisable(); setIsOpen(false); }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                style={{ color: 'rgb(var(--color-error))' }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm transition-colors"
+                style={{ color: 'rgb(var(--color-error))', backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <UserX className="w-4 h-4" />
                 {isEn ? 'Disable User' : 'Désactiver l\'utilisateur'}
@@ -106,8 +113,10 @@ function UserActions({
             ) : (
               <button
                 onClick={() => { onEnable(); setIsOpen(false); }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                style={{ color: 'rgb(var(--color-success))' }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm transition-colors"
+                style={{ color: 'rgb(var(--color-success))', backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <UserCheck className="w-4 h-4" />
                 {isEn ? 'Enable User' : 'Activer l\'utilisateur'}
@@ -321,7 +330,10 @@ export default function AdminUsers() {
               {filteredUsers.map((user) => (
                 <div 
                   key={user.id}
-                  className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 items-center transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   {/* User */}
                   <div className="md:col-span-2 flex items-center gap-3">

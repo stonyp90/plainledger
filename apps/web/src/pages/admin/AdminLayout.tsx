@@ -258,9 +258,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                  isActive(item.href) ? 'bg-primary-50 dark:bg-primary-900/20' : ''
-                }`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all"
                 style={{
                   backgroundColor: isActive(item.href) ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
                   color: isActive(item.href) ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text))',

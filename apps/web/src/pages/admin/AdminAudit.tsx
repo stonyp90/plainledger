@@ -430,7 +430,10 @@ export default function AdminAudit() {
               {filteredLogs.map((log) => (
                 <div 
                   key={log.id}
-                  className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 items-center transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <div>
                     <ActionBadge action={log.action} />
@@ -451,7 +454,10 @@ export default function AdminAudit() {
                   <div className="flex justify-end">
                     <button
                       onClick={() => setSelectedLog(log)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="p-2 rounded-lg transition-colors"
+                      style={{ backgroundColor: 'transparent' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-muted))'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <Eye className="w-4 h-4" style={{ color: 'rgb(var(--color-text-secondary))' }} />
                     </button>

@@ -81,7 +81,7 @@ function SessionItem({
     <button
       onClick={onClick}
       className={`w-full flex items-start gap-3 p-3 text-left transition-all rounded-lg ${
-        isSelected ? 'ring-2' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+        isSelected ? 'ring-2' : ''
       }`}
       style={{
         backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.05)' : 'transparent',

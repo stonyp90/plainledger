@@ -268,7 +268,13 @@ export default function AdminOnboarding() {
                 </tr>
               ) : (
                 trials.map((trial) => (
-                  <tr key={trial.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <tr 
+                  key={trial.id} 
+                  className="transition-colors"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-bg-subtle))'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                     <td className="px-6 py-4">
                       <div className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                         {trial.organizationName}

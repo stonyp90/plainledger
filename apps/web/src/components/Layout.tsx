@@ -247,11 +247,11 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
       const itemHeight = 52;
       const totalCategories = visibleCategories.length;
       const totalItems = visibleCategories.reduce((acc, cat) => acc + cat.items.length, 0);
-      const estimatedContentHeight = (totalCategories * categoryHeaderHeight) + (totalItems * itemHeight) + 8; // 8px for padding
+      const estimatedContentHeight = (totalCategories * categoryHeaderHeight) + (totalItems * itemHeight) + 16; // 16px for padding
       const estimatedFlyoutHeight = headerHeight + estimatedContentHeight;
       
-      // Clamp flyout height to available space
-      const flyoutHeight = Math.min(estimatedFlyoutHeight, availableHeight, 600);
+      // Use available height (no arbitrary cap - let it use viewport space)
+      const flyoutHeight = Math.min(estimatedFlyoutHeight, availableHeight);
       
       // Position to the right of the button, trying to center vertically on button
       let top = rect.top - (flyoutHeight / 2) + (rect.height / 2);
@@ -380,30 +380,50 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
               <button
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className="w-full flex items-start gap-3 px-4 py-2 text-left transition-all"
+                className="w-full flex items-start gap-3 px-4 py-2 text-left transition-all rounded-lg mx-1"
                 style={{ 
-                  color: 'rgb(var(--color-text))'
+                  color: 'rgb(var(--color-text))',
+                  width: 'calc(100% - 8px)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.08)';
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+                  e.currentTarget.style.color = 'white';
+                  // Update icon container and description colors
+                  const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
+                  const description = e.currentTarget.querySelector('[data-description]') as HTMLElement;
+                  const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
+                  if (iconContainer) iconContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                  if (description) description.style.color = 'rgba(255, 255, 255, 0.8)';
+                  if (icon) icon.style.color = 'white';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'rgb(var(--color-text))';
+                  // Reset icon container and description colors
+                  const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
+                  const description = e.currentTarget.querySelector('[data-description]') as HTMLElement;
+                  const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
+                  if (iconContainer) iconContainer.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                  if (description) description.style.color = 'rgb(var(--color-text-muted))';
+                  if (icon) icon.style.color = 'rgb(var(--color-primary-600))';
                 }}
               >
                 <div 
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                  data-icon-container
+                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
                   style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                 >
                   <item.icon 
-                    className="w-3.5 h-3.5"
+                    data-icon
+                    className="w-3.5 h-3.5 transition-colors"
                     style={{ color: 'rgb(var(--color-primary-600))' }}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium leading-tight">{item.name[language]}</div>
                   <div 
-                    className="text-xs mt-0.5 leading-tight"
+                    data-description
+                    className="text-xs mt-0.5 leading-tight transition-colors"
                     style={{ color: 'rgb(var(--color-text-muted))' }}
                   >
                     {item.description[language]}

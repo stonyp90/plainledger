@@ -540,4 +540,102 @@ export const shareApi = {
   }) => api.post<{ success: boolean; messageId?: string }>('/share/visualization', data),
 };
 
+// Admin - Notifications Management (Platform Admin only)
+export interface AdminNotification {
+  id: string;
+  title: string;
+  titleFr?: string;
+  message: string;
+  messageFr?: string;
+  channel: 'in_app' | 'email' | 'push' | 'sms';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'cancelled';
+  targetType: 'all' | 'organization' | 'user' | 'industry' | 'plan';
+  targetIds?: string[];
+  recipientsCount: number;
+  deliveredCount: number;
+  readCount: number;
+  actionUrl?: string;
+  actionLabel?: string;
+  actionLabelFr?: string;
+  scheduledAt?: string;
+  expiresAt?: string;
+  createdAt: string;
+  sentAt?: string;
+  createdByAdminId: string;
+  createdByAdminEmail: string;
+}
+
+export interface AdminNotificationStats {
+  total: number;
+  pending: number;
+  sent: number;
+  delivered: number;
+  failed: number;
+  cancelled: number;
+  lastWeekSent: number;
+  lastWeekDeliveryRate: number;
+}
+
+export interface AdminNotificationSegments {
+  organizations: { id: string; name: string }[];
+  industries: string[];
+  plans: string[];
+}
+
+export interface CreateAdminNotificationDto {
+  title: string;
+  titleFr?: string;
+  message: string;
+  messageFr?: string;
+  channel?: 'in_app' | 'email' | 'push' | 'sms';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  targetType: 'all' | 'organization' | 'user' | 'industry' | 'plan';
+  targetIds?: string[];
+  actionUrl?: string;
+  actionLabel?: string;
+  actionLabelFr?: string;
+  scheduledAt?: string;
+  expiresAt?: string;
+}
+
+export const adminNotificationsApi = {
+  // Create and send a notification
+  create: (data: CreateAdminNotificationDto) =>
+    api.post<AdminNotification>('/api/admin/notifications', data),
+  
+  // List notifications with filters
+  list: (params?: {
+    status?: string;
+    targetType?: string;
+    channel?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => api.get<{ notifications: AdminNotification[]; total: number; page: number; limit: number }>(
+    '/api/admin/notifications',
+    { params }
+  ),
+  
+  // Get notification statistics
+  getStats: () =>
+    api.get<AdminNotificationStats>('/api/admin/notifications/stats'),
+  
+  // Get targetable segments (organizations, industries, plans)
+  getSegments: () =>
+    api.get<AdminNotificationSegments>('/api/admin/notifications/segments'),
+  
+  // Get single notification details
+  get: (id: string) =>
+    api.get<AdminNotification>(`/api/admin/notifications/${id}`),
+  
+  // Cancel a pending notification
+  cancel: (id: string) =>
+    api.post<{ success: boolean }>(`/api/admin/notifications/${id}/cancel`),
+  
+  // Resend a notification
+  resend: (id: string) =>
+    api.post<{ success: boolean }>(`/api/admin/notifications/${id}/resend`),
+};
+
 export default api;

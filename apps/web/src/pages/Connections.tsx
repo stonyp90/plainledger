@@ -879,12 +879,13 @@ function ProviderLogo({ provider, size = 'md' }: { provider: Provider; size?: 's
   
   // Official brand logos - using high-quality CDN images with SVG fallbacks
   // Using SimpleIcons CDN (cdn.simpleicons.org) for consistent, high-quality brand icons
+  // Note: Wave and FreshBooks don't exist in SimpleIcons, so they use SVG fallbacks directly
   const logoUrls: Record<string, string> = {
     quickbooks: 'https://cdn.simpleicons.org/quickbooks/2CA01C',
     xero: 'https://cdn.simpleicons.org/xero/13B5EA',
     sage: 'https://cdn.simpleicons.org/sage/00D639',
-    freshbooks: 'https://cdn.simpleicons.org/freshbooks/0075DD',
-    wave: 'https://cdn.simpleicons.org/wave/2E77BC',
+    freshbooks: '', // Uses SVG fallback - not available in SimpleIcons
+    wave: '', // Uses SVG fallback - not available in SimpleIcons
   };
   
   // Fallback SVG logos - accurate recreations of official brand marks
@@ -986,9 +987,9 @@ function StatusBadge({ status, isEn }: { status: Provider['status']; isEn: boole
       icon: XCircle, 
       textEn: 'Not connected',
       textFr: 'Non connecté', 
-      bgClass: 'bg-gray-100 dark:bg-gray-800',
-      textClass: 'text-gray-500 dark:text-gray-400',
-      dotClass: 'bg-gray-400',
+      bgClass: 'bg-[rgb(var(--color-bg-muted))]',
+      textClass: 'text-[rgb(var(--color-text-muted))]',
+      dotClass: 'bg-[rgb(var(--color-text-muted))]',
       pulse: false,
     },
     syncing: { 
@@ -1194,7 +1195,7 @@ function ProviderCard({ provider, onConnect, onDisconnect, onSync, isEn, readOnl
                           setSelectedSchedule(schedule.id);
                           setShowScheduleMenu(false);
                         }}
-                        className="w-full flex items-center justify-between px-4 py-3 active:bg-gray-100 dark:active:bg-gray-800/50 transition-all"
+                        className="w-full flex items-center justify-between px-4 py-3 active:bg-[rgb(var(--color-bg-muted))] transition-all"
                         style={{ 
                           backgroundColor: selectedSchedule === schedule.id ? 'rgb(var(--color-primary-50))' : 'transparent',
                         }}
@@ -1896,7 +1897,7 @@ function ConnectionModal({ provider, onClose, onConfirm, isEn }: {
                       </p>
                       
                       {/* Clear Instructions */}
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4" style={{ border: '1px solid rgb(var(--color-border))' }}>
+                      <div className="rounded-lg p-4 mb-4" style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}>
                         <h5 className="font-semibold text-sm mb-3 flex items-center gap-2" style={{ color: 'rgb(var(--color-text))' }}>
                           <HelpCircle className="w-4 h-4" style={{ color: 'rgb(var(--color-info))' }} />
                           {isEn ? 'How it works:' : 'Comment ça fonctionne:'}
@@ -2599,7 +2600,7 @@ function ConnectionModal({ provider, onClose, onConfirm, isEn }: {
               </p>
               
               {/* Progress Steps */}
-              <div className="space-y-3 text-sm text-left max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg p-4 border" style={{ borderColor: 'rgb(var(--color-border))' }}>
+              <div className="space-y-3 text-sm text-left max-w-md mx-auto rounded-lg p-4 border" style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
                     <CheckCircle2 className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
