@@ -23,7 +23,6 @@ import {
   Database,
   Sun,
   Moon,
-  Monitor,
   UserPlus,
   Link2,
   Heart,
@@ -114,7 +113,6 @@ function AdminThemeSelector() {
   const themes = [
     { value: 'light', icon: Sun, label: { en: 'Light', fr: 'Clair' } },
     { value: 'dark', icon: Moon, label: { en: 'Dark', fr: 'Sombre' } },
-    { value: 'system', icon: Monitor, label: { en: 'System', fr: 'Système' } },
   ] as const;
   
   return (

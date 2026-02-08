@@ -33,46 +33,65 @@ export class AdminDashboardController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getDashboardStats() {
-    const [orgStats, userStats, recentAuditLogs, syncStats, overallHealth] = await Promise.all([
-      this.orgService.getOrgStats(),
-      this.userService.getUserStats(),
-      this.auditService.getRecentLogs(10),
-      this.healthService.getSyncJobStats(),
-      this.healthService.getOverallHealth(),
-    ]);
+    try {
+      const [orgStats, userStats, recentAuditLogs, syncStats, overallHealth] = await Promise.allSettled([
+        this.orgService.getOrgStats(),
+        this.userService.getUserStats(),
+        this.auditService.getRecentLogs(10),
+        this.healthService.getSyncJobStats(),
+        this.healthService.getOverallHealth(),
+      ]);
 
-    return {
-      organizations: {
-        total: orgStats.totalOrganizations,
-        byIndustry: orgStats.byIndustry,
-        active: orgStats.activeOrganizations || orgStats.totalOrganizations,
-      },
-      users: {
-        total: userStats.totalUsers,
-        active: userStats.activeUsers,
-        activeToday: userStats.activeToday,
-        newThisMonth: userStats.newThisMonth || 0,
-      },
-      billing: {
-        mrr: 0, // Would come from billing service
-        arr: 0,
-        activeSubscriptions: 0,
-        churnRate: 0,
-      },
-      syncJobs: {
-        total24h: syncStats.total24h,
-        completed: syncStats.completed,
-        failed: syncStats.failed,
-        running: syncStats.running,
-        byProvider: syncStats.byProvider,
-      },
-      health: {
-        overallStatus: overallHealth.status,
-        degradedServices: overallHealth.degradedCount,
-        unhealthyServices: overallHealth.unhealthyCount,
-      },
-      recentActivity: recentAuditLogs,
-    };
+      // Extract values with defaults for failed promises
+      const orgData = orgStats.status === 'fulfilled' ? orgStats.value : { totalOrganizations: 0, byIndustry: {}, activeOrganizations: 0 };
+      const userData = userStats.status === 'fulfilled' ? userStats.value : { totalUsers: 0, activeUsers: 0, activeToday: 0, newThisMonth: 0 };
+      const auditData = recentAuditLogs.status === 'fulfilled' ? recentAuditLogs.value : [];
+      const syncData = syncStats.status === 'fulfilled' ? syncStats.value : { total24h: 0, completed: 0, failed: 0, running: 0, byProvider: {} };
+      const healthData = overallHealth.status === 'fulfilled' ? overallHealth.value : { status: 'unknown', degradedCount: 0, unhealthyCount: 0 };
+
+      return {
+        organizations: {
+          total: orgData.totalOrganizations || 0,
+          byIndustry: orgData.byIndustry || {},
+          active: orgData.activeOrganizations || orgData.totalOrganizations || 0,
+        },
+        users: {
+          total: userData.totalUsers || 0,
+          active: userData.activeUsers || 0,
+          activeToday: userData.activeToday || 0,
+          newThisMonth: userData.newThisMonth || 0,
+        },
+        billing: {
+          mrr: 0, // Would come from billing service
+          arr: 0,
+          activeSubscriptions: 0,
+          churnRate: 0,
+        },
+        syncJobs: {
+          total24h: syncData.total24h || 0,
+          completed: syncData.completed || 0,
+          failed: syncData.failed || 0,
+          running: syncData.running || 0,
+          byProvider: syncData.byProvider || {},
+        },
+        health: {
+          overallStatus: healthData.status || 'unknown',
+          degradedServices: healthData.degradedCount || 0,
+          unhealthyServices: healthData.unhealthyCount || 0,
+        },
+        recentActivity: Array.isArray(auditData) ? auditData : [],
+      };
+    } catch (error) {
+      // Return default stats on error
+      return {
+        organizations: { total: 0, byIndustry: {}, active: 0 },
+        users: { total: 0, active: 0, activeToday: 0, newThisMonth: 0 },
+        billing: { mrr: 0, arr: 0, activeSubscriptions: 0, churnRate: 0 },
+        syncJobs: { total24h: 0, completed: 0, failed: 0, running: 0, byProvider: {} },
+        health: { overallStatus: 'unknown', degradedServices: 0, unhealthyServices: 0 },
+        recentActivity: [],
+      };
+    }
   }
 
   @Get('health')

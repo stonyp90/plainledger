@@ -1,4 +1,4 @@
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface ThemeToggleProps {
@@ -44,12 +44,6 @@ export default function ThemeToggle({ showLabel = false, variant = 'icon' }: The
         onClick={() => setTheme('dark')}
         icon={<Moon className="w-4 h-4" />}
         label="Sombre"
-      />
-      <ThemeButton
-        active={theme === 'system'}
-        onClick={() => setTheme('system')}
-        icon={<Monitor className="w-4 h-4" />}
-        label="Système"
       />
     </div>
   );

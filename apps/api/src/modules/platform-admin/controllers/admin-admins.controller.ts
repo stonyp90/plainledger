@@ -59,7 +59,25 @@ export class AdminAdminsController {
   @ApiResponse({ status: 200, description: 'Current admin user with permissions', type: AdminUserResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMe(@Req() req: any) {
-    return this.authService.getAdminWithPermissions(req.user.sub);
+    const adminData = await this.authService.getAdminWithPermissions(req.user.sub);
+    
+    // If admin user doesn't exist, return basic info from token
+    if (!adminData) {
+      return {
+        user: {
+          id: req.user.sub,
+          email: req.user.email || req.user.preferred_username,
+          displayName: req.user.name || req.user.preferred_username || 'Admin User',
+          keycloakId: req.user.sub,
+          isActive: true,
+        },
+        permissions: [],
+        groups: [],
+        maxTierLevel: 0,
+      };
+    }
+    
+    return adminData;
   }
 
   @Post()

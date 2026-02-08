@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -17,43 +17,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
-    // Load saved theme from localStorage
-    const savedTheme = localStorage.getItem('admin-theme') as Theme | null;
+    // Load saved theme from localStorage, migrate 'system' to 'dark'
+    const savedTheme = localStorage.getItem('admin-theme');
     if (savedTheme) {
-      setThemeState(savedTheme);
+      // Migrate 'system' to 'dark' if found
+      const theme = savedTheme === 'system' ? 'dark' : (savedTheme as Theme);
+      if (theme === 'light' || theme === 'dark') {
+        setThemeState(theme);
+        // Update localStorage if migration occurred
+        if (savedTheme === 'system') {
+          localStorage.setItem('admin-theme', 'dark');
+        }
+      }
     }
   }, []);
 
   useEffect(() => {
-    // Determine resolved theme
-    let resolved: 'light' | 'dark' = 'dark';
-    
-    if (theme === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = theme;
-    }
-    
-    setResolvedTheme(resolved);
+    // Set resolved theme directly (no system detection needed)
+    setResolvedTheme(theme);
     
     // Apply theme to document
     document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(resolved);
-    document.documentElement.setAttribute('data-theme', resolved);
-    
-    // Listen for system theme changes if using system theme
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent) => {
-        const newResolved = e.matches ? 'dark' : 'light';
-        setResolvedTheme(newResolved);
-        document.documentElement.classList.remove('light', 'dark');
-        document.documentElement.classList.add(newResolved);
-        document.documentElement.setAttribute('data-theme', newResolved);
-      };
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
+    document.documentElement.classList.add(theme);
+    document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {

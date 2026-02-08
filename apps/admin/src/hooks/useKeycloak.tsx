@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import Keycloak from 'keycloak-js';
+import { setAuthToken } from '@/lib/api';
 
 interface KeycloakContextValue {
   keycloak: Keycloak | null;
@@ -31,92 +32,48 @@ export function KeycloakProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only initialize once
-    if (keycloakInstance) {
-      setKeycloak(keycloakInstance);
-      setInitialized(true);
-      setAuthenticated(keycloakInstance.authenticated || false);
-      setToken(keycloakInstance.token || null);
-      return;
-    }
-
-    const initKeycloak = async () => {
-      try {
-        const kc = new Keycloak(keycloakConfig);
-        
-        const auth = await kc.init({
-          onLoad: 'login-required',
-          checkLoginIframe: false,
-          pkceMethod: 'S256',
-        });
-
-        keycloakInstance = kc;
-        setKeycloak(kc);
+    const initAuth = () => {
+      // Check if we have a token from sessionStorage (from API login)
+      const storedToken = sessionStorage.getItem('admin_token');
+      
+      if (storedToken) {
+        // Set token and mark as authenticated
+        setToken(storedToken);
+        setAuthenticated(true);
         setInitialized(true);
-        setAuthenticated(auth);
-        setToken(kc.token || null);
-
-        // Set up token refresh
-        kc.onTokenExpired = () => {
-          console.log('Token expired, refreshing...');
-          kc.updateToken(30)
-            .then((refreshed) => {
-              if (refreshed) {
-                console.log('Token refreshed');
-                setToken(kc.token || null);
-              }
-            })
-            .catch(() => {
-              console.error('Failed to refresh token, logging out');
-              kc.logout();
-            });
-        };
-
-        // Refresh token every 60 seconds if needed
-        setInterval(() => {
-          kc.updateToken(70)
-            .then((refreshed) => {
-              if (refreshed) {
-                setToken(kc.token || null);
-              }
-            })
-            .catch(() => {
-              console.error('Failed to refresh token');
-            });
-        }, 60000);
-
-      } catch (error) {
-        console.error('Failed to initialize Keycloak:', error);
-        setInitialized(true);
-        setAuthenticated(false);
+        setAuthToken(storedToken);
+        return;
       }
+
+      // No stored token - user needs to login
+      setInitialized(true);
+      setAuthenticated(false);
+      setToken(null);
     };
 
-    initKeycloak();
+    initAuth();
   }, []);
 
   const login = useCallback(() => {
-    keycloak?.login();
-  }, [keycloak]);
+    // Redirect to login page instead of Keycloak
+    window.location.href = '/login';
+  }, []);
 
   const logout = useCallback(() => {
-    keycloak?.logout({ redirectUri: window.location.origin });
-  }, [keycloak]);
+    // Clear token and redirect to login
+    sessionStorage.removeItem('admin_token');
+    setAuthToken(null);
+    window.location.href = '/login';
+  }, []);
 
   const getToken = useCallback(async (): Promise<string | null> => {
-    if (!keycloak || !keycloak.authenticated) {
-      return null;
+    // Get token from sessionStorage
+    const storedToken = sessionStorage.getItem('admin_token');
+    if (storedToken) {
+      return storedToken;
     }
-
-    try {
-      // Refresh token if it expires in the next 30 seconds
-      await keycloak.updateToken(30);
-      return keycloak.token || null;
-    } catch (error) {
-      console.error('Failed to get token:', error);
-      return null;
-    }
-  }, [keycloak]);
+    return token;
+  }, [token]);
 
   return (
     <KeycloakContext.Provider

@@ -37,6 +37,10 @@ import {
   FileStorageService,
   UploadResult,
 } from "@infrastructure/storage/file-storage.service";
+import { SettingsService } from "@infrastructure/services/settings.service";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
 import { Request } from "express";
 
 interface UserInfo {
@@ -61,6 +65,9 @@ export class UploadController {
   constructor(
     private readonly fileStorageService: FileStorageService,
     private readonly configService: ConfigService,
+    private readonly settingsService: SettingsService,
+    @InjectRepository(OrganizationEntity)
+    private readonly organizationRepository: Repository<OrganizationEntity>,
   ) {}
 
   /**
@@ -186,6 +193,33 @@ export class UploadController {
       throw new BadRequestException(result.error || "Failed to upload logo");
     }
 
+    // Save logo URL to organization settings
+    try {
+      // Get organization ID from tenant ID
+      const org = await this.organizationRepository.findOne({
+        where: { tenantId },
+      });
+      
+      if (org?.id) {
+        // Get current branding settings
+        const currentSettings = await this.settingsService.getOrganizationSettings(org.id);
+        const currentBranding = currentSettings?.brandingSettings || {};
+        
+        // Update branding with new logo URL
+        await this.settingsService.updateOrganizationBranding(org.id, {
+          ...currentBranding,
+          logo: result.url,
+        });
+        
+        this.logger.log(`Logo URL saved to organization settings: ${org.id}`);
+      } else {
+        this.logger.warn(`Organization not found for tenantId: ${tenantId}`);
+      }
+    } catch (error) {
+      // Log but don't fail the upload if settings update fails
+      this.logger.warn(`Failed to save logo URL to settings: ${error.message}`);
+    }
+
     return result;
   }
 
@@ -210,6 +244,28 @@ export class UploadController {
       const key = `logos/${tenantId}/logo.${ext}`;
       const result = await this.fileStorageService.deleteFile(key);
       if (result) deleted = true;
+    }
+
+    // Clear logo URL from organization settings
+    try {
+      const org = await this.organizationRepository.findOne({
+        where: { tenantId },
+      });
+      
+      if (org?.id) {
+        const currentSettings = await this.settingsService.getOrganizationSettings(org.id);
+        const currentBranding = currentSettings?.brandingSettings || {};
+        
+        // Remove logo from branding settings
+        await this.settingsService.updateOrganizationBranding(org.id, {
+          ...currentBranding,
+          logo: undefined,
+        });
+        
+        this.logger.log(`Logo URL cleared from organization settings: ${org.id}`);
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to clear logo URL from settings: ${error.message}`);
     }
 
     return { success: deleted };
@@ -292,6 +348,11 @@ export class UploadController {
         result.error || "Failed to upload profile picture",
       );
     }
+
+    // Note: Profile picture URL is stored in S3 and can be retrieved via the URL
+    // The frontend can store it in user settings if needed, but we don't need to
+    // store it in the database since it's accessible via the S3 URL
+    this.logger.log(`Profile picture uploaded for user: ${userId}`);
 
     return result;
   }

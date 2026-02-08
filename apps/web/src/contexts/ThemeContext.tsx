@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -19,48 +19,29 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = 'dark',
   storageKey = 'plainledger-theme',
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+      const savedTheme = localStorage.getItem(storageKey);
+      // Migrate 'system' to 'dark' if found
+      if (savedTheme === 'system') {
+        localStorage.setItem(storageKey, 'dark');
+        return 'dark';
+      }
+      return (savedTheme as Theme) || defaultTheme;
     }
     return defaultTheme;
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
-
-  // Listen for system theme changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = () => {
-      if (theme === 'system') {
-        const systemTheme = mediaQuery.matches ? 'dark' : 'light';
-        setResolvedTheme(systemTheme);
-        updateDocumentClass(systemTheme);
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 
   // Update theme when changed
   useEffect(() => {
-    const root = window.document.documentElement;
-    
-    let resolved: 'light' | 'dark';
-    
-    if (theme === 'system') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = theme;
-    }
-    
-    setResolvedTheme(resolved);
-    updateDocumentClass(resolved);
+    // Set resolved theme directly (no system detection needed)
+    setResolvedTheme(theme);
+    updateDocumentClass(theme);
     
     localStorage.setItem(storageKey, theme);
   }, [theme, storageKey]);
@@ -77,10 +58,7 @@ export function ThemeProvider({
 
   const toggleTheme = () => {
     setThemeState(current => {
-      if (current === 'light') return 'dark';
-      if (current === 'dark') return 'light';
-      // If system, toggle to opposite of current resolved
-      return resolvedTheme === 'dark' ? 'light' : 'dark';
+      return current === 'light' ? 'dark' : 'light';
     });
   };
 

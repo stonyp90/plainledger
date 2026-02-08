@@ -41,8 +41,9 @@ export async function uploadLogo(
   formData.append("file", file);
 
   try {
+    const apiUrl = config.api.baseUrl;
     const response = await fetch(
-      `/api/uploads/logo/${tenantId}`,
+      `${apiUrl}/api/uploads/logo/${tenantId}`,
       {
         method: "POST",
         headers: {
@@ -88,8 +89,9 @@ export async function deleteLogo(tenantId: string): Promise<boolean> {
   }
 
   try {
+    const apiUrl = config.api.baseUrl;
     const response = await fetch(
-      `/api/uploads/logo/${tenantId}`,
+      `${apiUrl}/api/uploads/logo/${tenantId}`,
       {
         method: "DELETE",
         headers: {
@@ -122,8 +124,9 @@ export async function uploadProfilePicture(file: File): Promise<UploadResult> {
   formData.append("file", file);
 
   try {
+    const apiUrl = config.api.baseUrl;
     const response = await fetch(
-      `/api/uploads/profile-picture`,
+      `${apiUrl}/api/uploads/profile-picture`,
       {
         method: "POST",
         headers: {
@@ -169,8 +172,9 @@ export async function deleteProfilePicture(): Promise<boolean> {
   }
 
   try {
+    const apiUrl = config.api.baseUrl;
     const response = await fetch(
-      `/api/uploads/profile-picture`,
+      `${apiUrl}/api/uploads/profile-picture`,
       {
         method: "DELETE",
         headers: {

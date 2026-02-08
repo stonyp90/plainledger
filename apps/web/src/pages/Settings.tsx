@@ -46,6 +46,7 @@ import {
   deleteProfilePicture, 
   validateImageFile 
 } from '../lib/uploads';
+import { organizationSettingsApi } from '../lib/settings-api';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -193,6 +194,18 @@ export default function Settings() {
             logo: result.url,
           },
         });
+        
+        // Persist to API
+        try {
+          await organizationSettingsApi.updateBranding({
+            logo: result.url,
+            primaryColor: currentTenant.settings.branding?.primaryColor,
+            secondaryColor: currentTenant.settings.branding?.secondaryColor,
+          });
+        } catch (error) {
+          console.error('Failed to persist logo URL to API:', error);
+          // Don't show error to user - upload succeeded, just persistence failed
+        }
       } else {
         alert(result.error || 'Échec du téléversement du logo');
       }
@@ -228,6 +241,17 @@ export default function Settings() {
           logo: undefined,
         },
       });
+      
+      // Persist to API
+      try {
+        await organizationSettingsApi.updateBranding({
+          logo: undefined,
+          primaryColor: currentTenant.settings.branding?.primaryColor,
+          secondaryColor: currentTenant.settings.branding?.secondaryColor,
+        });
+      } catch (error) {
+        console.error('Failed to persist logo deletion to API:', error);
+      }
     } catch (error) {
       console.error('Logo delete error:', error);
       alert('Une erreur est survenue lors de la suppression');

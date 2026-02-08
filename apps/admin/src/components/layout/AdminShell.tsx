@@ -24,11 +24,12 @@ import {
   Mail,
   Sun,
   Moon,
-  Monitor,
   Code2,
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useTheme } from '@/hooks/useTheme';
+import { useKeycloak } from '@/hooks/useKeycloak';
+import { NotificationsButton } from './NotificationsButton';
 
 // Theme Selector Component
 function ThemeSelector() {
@@ -37,7 +38,6 @@ function ThemeSelector() {
   const themes = [
     { value: 'light' as const, icon: Sun, label: 'Light' },
     { value: 'dark' as const, icon: Moon, label: 'Dark' },
-    { value: 'system' as const, icon: Monitor, label: 'System' },
   ];
   
   return (
@@ -84,6 +84,7 @@ const navigation = [
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { admin } = useAdmin();
+  const { logout } = useKeycloak();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -194,12 +195,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <ThemeSelector />
             
             {/* Notifications */}
-            <button className="relative text-admin-400 hover:text-white">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                3
-              </span>
-            </button>
+            <NotificationsButton />
 
             {/* User menu */}
             <div className="relative">
@@ -223,7 +219,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     </p>
                     <p className="text-xs text-admin-400">{admin?.user?.email}</p>
                   </div>
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-admin-400 hover:bg-primary-600/20 hover:text-primary-400">
+                  <button 
+                    onClick={logout}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-admin-400 hover:bg-primary-600/20 hover:text-primary-400"
+                  >
                     <LogOut className="w-4 h-4" />
                     <span>Sign out</span>
                   </button>
