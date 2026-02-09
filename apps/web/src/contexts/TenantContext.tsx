@@ -401,10 +401,29 @@ export function TenantProvider({ children }: TenantProviderProps) {
     try {
       const response = await api.get<UserPermissionsData>('/api/users/me/permissions');
       setUserPermissions(response.data);
-    } catch (err) {
-      // Silently fallback - this is expected for users without custom permissions
-      // Will use ROLE_PERMISSIONS based on their role
-      setUserPermissions(null);
+    } catch (err: any) {
+      // For demo users or users without permissions, use default free tier permissions
+      // This ensures demo mode works without errors
+      console.warn('Failed to load user permissions, using defaults:', err.message);
+      setUserPermissions({
+        entitlements: [],
+        permissions: ['view'],
+        limits: {
+          maxDataSources: 0,
+          maxReportsPerMonth: 5,
+          maxStorageGB: 0,
+        },
+        overrides: [],
+        role: {
+          id: 'viewer',
+          name: 'Viewer',
+          tierLevel: 1,
+        },
+        plan: {
+          id: 'free',
+          name: 'Free',
+        },
+      });
     }
   };
 

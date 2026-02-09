@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
@@ -16,6 +17,8 @@ import { AdminHealthService } from '../services/admin-health.service';
 @Controller('admin/dashboard')
 @UseGuards(PlatformAdminGuard)
 export class AdminDashboardController {
+  private readonly logger = new Logger(AdminDashboardController.name);
+
   constructor(
     private readonly orgService: AdminOrgService,
     private readonly userService: AdminUserService,
@@ -102,7 +105,17 @@ export class AdminDashboardController {
   })
   @ApiResponse({ status: 200, description: 'System health status' })
   async getSystemHealth() {
-    return this.healthService.getOverallHealth();
+    try {
+      return await this.healthService.getOverallHealth();
+    } catch (error) {
+      this.logger.error(`Failed to get system health: ${error.message}`, error.stack);
+      return {
+        status: 'unknown',
+        degradedCount: 0,
+        unhealthyCount: 0,
+        services: {},
+      };
+    }
   }
 
   @Get('health/services')
@@ -113,9 +126,14 @@ export class AdminDashboardController {
   })
   @ApiResponse({ status: 200, description: 'Service health statuses' })
   async getServicesHealth() {
-    return {
-      services: await this.healthService.getServicesHealth(),
-    };
+    try {
+      return {
+        services: await this.healthService.getServicesHealth(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get services health: ${error.message}`, error.stack);
+      return { services: {} };
+    }
   }
 
   @Get('health/metrics')
@@ -137,6 +155,17 @@ export class AdminDashboardController {
   })
   @ApiResponse({ status: 200, description: 'Sync job statistics' })
   async getSyncStats() {
-    return this.healthService.getSyncJobStats();
+    try {
+      return await this.healthService.getSyncJobStats();
+    } catch (error) {
+      this.logger.error(`Failed to get sync stats: ${error.message}`, error.stack);
+      return {
+        total24h: 0,
+        completed: 0,
+        failed: 0,
+        running: 0,
+        byProvider: {},
+      };
+    }
   }
 }

@@ -57,13 +57,11 @@ export class PlatformAdminGuard implements CanActivate {
     });
 
     if (!adminUser) {
-      this.logger.warn(`PlatformAdminGuard: User ${user.email} (${user.sub}) is not a platform admin`);
-      // Don't throw error - allow access but log it
-      // Admin user will be created automatically or can be created manually
-      // For now, allow access but mark as limited
-      request.adminUser = null;
-      request.adminPermissions = new Set<string>();
-      return true; // Allow access but with limited permissions
+      this.logger.warn(`PlatformAdminGuard: User ${user.email || user.preferred_username} (${user.sub}) is not a platform admin - access denied`);
+      // Log unauthorized access attempt
+      await this.logUnauthorizedAccess(user, request);
+      // DENY access - only users in admin_users table can access admin endpoints
+      throw new ForbiddenException('You do not have permission to access the admin panel. Only platform administrators can access this area.');
     }
 
     // Get required permissions for this endpoint

@@ -11,6 +11,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
@@ -30,6 +31,8 @@ import {
 @Controller('admin/users')
 @UseGuards(PlatformAdminGuard)
 export class AdminUsersController {
+  private readonly logger = new Logger(AdminUsersController.name);
+
   constructor(
     private readonly userService: AdminUserService,
     private readonly auditService: AdminAuditService,
@@ -53,15 +56,20 @@ export class AdminUsersController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    const filter: UserListFilter = {
-      search,
-      organizationId,
-      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-      limit: limit ? Number(limit) : 50,
-      offset: offset ? Number(offset) : 0,
-    };
+    try {
+      const filter: UserListFilter = {
+        search,
+        organizationId,
+        isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+        limit: limit ? Number(limit) : 50,
+        offset: offset ? Number(offset) : 0,
+      };
 
-    return this.userService.listUsers(filter);
+      return await this.userService.listUsers(filter);
+    } catch (error) {
+      this.logger.error(`Failed to list users: ${error.message}`, error.stack);
+      return { users: [], total: 0 };
+    }
   }
 
   @Get('stats')

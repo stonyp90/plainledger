@@ -7,6 +7,7 @@ import {
   Body,
   Query,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
@@ -20,6 +21,8 @@ import { WebhookLogEntity } from '../entities/webhook-log.entity';
 @Controller('admin/integrations')
 @UseGuards(PlatformAdminGuard)
 export class AdminIntegrationController {
+  private readonly logger = new Logger(AdminIntegrationController.name);
+
   constructor(
     @InjectRepository(WebhookLogEntity)
     private readonly webhookLogRepository: Repository<WebhookLogEntity>,
@@ -117,12 +120,20 @@ export class AdminIntegrationController {
   })
   @ApiResponse({ status: 200, description: 'List of connections' })
   async listConnections(@Query('provider') provider?: string) {
-    // In production, would query from datasource repository
-    // For now, return placeholder
-    return {
-      connections: [],
-      total: 0,
-    };
+    try {
+      // In production, would query from datasource repository
+      // For now, return placeholder
+      return {
+        connections: [],
+        total: 0,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to list connections: ${error.message}`, error.stack);
+      return {
+        connections: [],
+        total: 0,
+      };
+    }
   }
 
   @Get('webhooks/logs')
@@ -138,31 +149,41 @@ export class AdminIntegrationController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    const queryBuilder = this.webhookLogRepository.createQueryBuilder('log');
+    try {
+      const queryBuilder = this.webhookLogRepository.createQueryBuilder('log');
 
-    if (provider) {
-      queryBuilder.andWhere('log.provider = :provider', { provider });
+      if (provider) {
+        queryBuilder.andWhere('log.provider = :provider', { provider });
+      }
+
+      if (status) {
+        queryBuilder.andWhere('log.status = :status', { status });
+      }
+
+      queryBuilder.orderBy('log.createdAt', 'DESC');
+
+      const limitValue = limit ? parseInt(limit.toString(), 10) : 50;
+      const offsetValue = offset ? parseInt(offset.toString(), 10) : 0;
+
+      queryBuilder.take(limitValue).skip(offsetValue);
+
+      const [logs, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        logs,
+        total,
+        limit: limitValue,
+        offset: offsetValue,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get webhook logs: ${error.message}`, error.stack);
+      return {
+        logs: [],
+        total: 0,
+        limit: 50,
+        offset: 0,
+      };
     }
-
-    if (status) {
-      queryBuilder.andWhere('log.status = :status', { status });
-    }
-
-    queryBuilder.orderBy('log.createdAt', 'DESC');
-
-    const limitValue = limit ? parseInt(limit.toString(), 10) : 50;
-    const offsetValue = offset ? parseInt(offset.toString(), 10) : 0;
-
-    queryBuilder.take(limitValue).skip(offsetValue);
-
-    const [logs, total] = await queryBuilder.getManyAndCount();
-
-    return {
-      logs,
-      total,
-      limit: limitValue,
-      offset: offsetValue,
-    };
   }
 
   @Post('test/:provider')

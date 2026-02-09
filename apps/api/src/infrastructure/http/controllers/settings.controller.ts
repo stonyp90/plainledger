@@ -179,9 +179,10 @@ export class SettingsController {
   /**
    * Get user settings
    * GET /api/v1/settings/user
+   * Accessible to all authenticated users (including demo users)
    */
   @Get("user")
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
   async getUserSettings(@Request() req: any) {
     try {
       const userId = req.user?.sub || req.user?.id;
@@ -190,20 +191,25 @@ export class SettingsController {
       }
 
       const settings = await this.settingsService.getUserSettings(userId);
+      // Return empty object if no settings found (for demo users)
       return settings || {};
     } catch (error) {
-      this.logger.error(`Failed to get user settings: ${error.message}`);
-      throw error;
+      // For demo users or users without settings, return empty object instead of error
+      this.logger.warn(
+        `Failed to get user settings for ${req.user?.sub || 'unknown'}, returning defaults: ${error.message}`,
+      );
+      return {};
     }
   }
 
   /**
    * Update user settings
    * PUT /api/v1/settings/user
+   * Accessible to all authenticated users (including demo users)
    */
   @Put("user")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
   async updateUserSettings(@Request() req: any, @Body() body: any) {
     try {
       const userId = req.user?.sub || req.user?.id;
@@ -225,10 +231,11 @@ export class SettingsController {
   /**
    * Update user notification preferences
    * PUT /api/v1/settings/user/notifications
+   * Accessible to all authenticated users (including demo users)
    */
   @Put("user/notifications")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
   async updateUserNotificationPreferences(
     @Request() req: any,
     @Body() preferences: any,
@@ -256,10 +263,11 @@ export class SettingsController {
   /**
    * Update user UI preferences
    * PUT /api/v1/settings/user/ui
+   * Accessible to all authenticated users (including demo users)
    */
   @Put("user/ui")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["user", "viewer", "admin", "owner", "accountant"] })
   async updateUserUIPreferences(@Request() req: any, @Body() preferences: any) {
     try {
       const userId = req.user?.sub || req.user?.id;

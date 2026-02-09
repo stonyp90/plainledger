@@ -11,6 +11,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
@@ -29,6 +30,8 @@ import {
 @Controller('admin/organizations')
 @UseGuards(PlatformAdminGuard)
 export class AdminOrganizationsController {
+  private readonly logger = new Logger(AdminOrganizationsController.name);
+
   constructor(
     private readonly orgService: AdminOrgService,
     private readonly auditService: AdminAuditService,
@@ -54,16 +57,21 @@ export class AdminOrganizationsController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ) {
-    const filter: OrgListFilter = {
-      search,
-      industry,
-      limit: limit ? Number(limit) : 50,
-      offset: offset ? Number(offset) : 0,
-      sortBy,
-      sortOrder,
-    };
+    try {
+      const filter: OrgListFilter = {
+        search,
+        industry,
+        limit: limit ? Number(limit) : 50,
+        offset: offset ? Number(offset) : 0,
+        sortBy,
+        sortOrder,
+      };
 
-    return this.orgService.listOrganizations(filter);
+      return await this.orgService.listOrganizations(filter);
+    } catch (error) {
+      this.logger.error(`Failed to list organizations: ${error.message}`, error.stack);
+      return { organizations: [], total: 0 };
+    }
   }
 
   @Get('stats')
@@ -73,7 +81,17 @@ export class AdminOrganizationsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getStats() {
-    return this.orgService.getOrgStats();
+    try {
+      return await this.orgService.getOrgStats();
+    } catch (error) {
+      this.logger.error(`Failed to get organization stats: ${error.message}`, error.stack);
+      return {
+        totalOrganizations: 0,
+        activeOrganizations: 0,
+        byPlan: {},
+        byIndustry: {},
+      };
+    }
   }
 
   @Get('industries')

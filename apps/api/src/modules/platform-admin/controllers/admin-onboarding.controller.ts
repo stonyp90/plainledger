@@ -5,6 +5,7 @@ import {
   Param,
   Body,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
@@ -16,6 +17,8 @@ import { AdminOnboardingService } from '../services/admin-onboarding.service';
 @Controller('admin/onboarding')
 @UseGuards(PlatformAdminGuard)
 export class AdminOnboardingController {
+  private readonly logger = new Logger(AdminOnboardingController.name);
+
   constructor(private readonly onboardingService: AdminOnboardingService) {}
 
   @Get('funnel')
@@ -26,7 +29,19 @@ export class AdminOnboardingController {
   })
   @ApiResponse({ status: 200, description: 'Funnel metrics' })
   async getFunnel() {
-    return this.onboardingService.getFunnelMetrics();
+    try {
+      return await this.onboardingService.getFunnelMetrics();
+    } catch (error) {
+      this.logger.error(`Failed to get funnel metrics: ${error.message}`, error.stack);
+      return {
+        signups: 0,
+        connectedDatasource: 0,
+        firstSync: 0,
+        viewedReport: 0,
+        converted: 0,
+        conversionRate: 0,
+      };
+    }
   }
 
   @Get('trials')
@@ -37,9 +52,14 @@ export class AdminOnboardingController {
   })
   @ApiResponse({ status: 200, description: 'Active trials' })
   async getTrials() {
-    return {
-      trials: await this.onboardingService.getActiveTrials(),
-    };
+    try {
+      return {
+        trials: await this.onboardingService.getActiveTrials(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get active trials: ${error.message}`, error.stack);
+      return { trials: [] };
+    }
   }
 
   @Get(':orgId/progress')
@@ -86,8 +106,13 @@ export class AdminOnboardingController {
   })
   @ApiResponse({ status: 200, description: 'At-risk trials' })
   async getAtRisk() {
-    return {
-      atRisk: await this.onboardingService.getAtRiskTrials(),
-    };
+    try {
+      return {
+        atRisk: await this.onboardingService.getAtRiskTrials(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get at-risk trials: ${error.message}`, error.stack);
+      return { atRisk: [] };
+    }
   }
 }

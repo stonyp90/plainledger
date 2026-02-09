@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   Request,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
@@ -18,6 +19,8 @@ import { AdminNotificationService, CreateNotificationDto } from '../services/adm
 @Controller('admin/notifications')
 @UseGuards(PlatformAdminGuard)
 export class AdminNotificationsController {
+  private readonly logger = new Logger(AdminNotificationsController.name);
+
   constructor(
     private readonly notificationService: AdminNotificationService,
   ) {}
@@ -83,14 +86,19 @@ export class AdminNotificationsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.notificationService.getNotifications({
-      status: status as any,
-      targetType,
-      channel: channel as any,
-      search,
-      page: page ? parseInt(page) : undefined,
-      limit: limit ? parseInt(limit) : undefined,
-    });
+    try {
+      return await this.notificationService.getNotifications({
+        status: status as any,
+        targetType,
+        channel: channel as any,
+        search,
+        page: page ? parseInt(page) : undefined,
+        limit: limit ? parseInt(limit) : undefined,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to get notifications: ${error.message}`, error.stack);
+      return { notifications: [], total: 0, page: 1, limit: 10 };
+    }
   }
 
   @Get('stats')
