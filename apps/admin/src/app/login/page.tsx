@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useKeycloak } from '@/hooks/useKeycloak';
 import { setAuthToken } from '@/lib/api';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Sun, Moon } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+type Theme = 'light' | 'dark';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +18,28 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [theme, setTheme] = useState<Theme>('dark');
+
+  // Load theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('admin-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
+
+  // Toggle theme
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('admin-theme', newTheme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -63,28 +87,75 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-admin-900 via-admin-800 to-admin-900 p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 transition-colors duration-200"
+      style={{ backgroundColor: 'var(--admin-bg)' }}
+    >
+      {/* Theme Toggle */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 p-2 rounded-lg transition-colors"
+        style={{ 
+          backgroundColor: 'var(--admin-surface)',
+          border: '1px solid var(--admin-border)',
+          color: 'var(--admin-text-muted)'
+        }}
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? (
+          <Sun className="w-5 h-5" />
+        ) : (
+          <Moon className="w-5 h-5" />
+        )}
+      </button>
+
       <div className="w-full max-w-md">
         {/* Logo/Branding */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">PlainLedger</h1>
-          <p className="text-admin-400">Admin Console</p>
+          <h1 
+            className="text-3xl font-bold mb-2"
+            style={{ color: 'var(--admin-text)' }}
+          >
+            PlainLedger
+          </h1>
+          <p style={{ color: 'var(--admin-text-muted)' }}>Admin Console</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-admin-800 rounded-xl border border-admin-700/50 p-8 shadow-2xl">
-          <h2 className="text-2xl font-semibold text-white mb-6">Sign in to your account</h2>
+        <div 
+          className="rounded-xl p-8 shadow-2xl transition-colors duration-200"
+          style={{ 
+            backgroundColor: 'var(--admin-surface)',
+            border: '1px solid var(--admin-border)'
+          }}
+        >
+          <h2 
+            className="text-2xl font-semibold mb-6"
+            style={{ color: 'var(--admin-text)' }}
+          >
+            Sign in to your account
+          </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-900/20 border border-red-600 rounded-lg">
-              <p className="text-red-400 text-sm">{error}</p>
+            <div 
+              className="mb-4 p-3 rounded-lg"
+              style={{ 
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid var(--admin-error)'
+              }}
+            >
+              <p className="text-sm" style={{ color: 'var(--admin-error)' }}>{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-admin-300 mb-2">
+              <label 
+                htmlFor="email" 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--admin-text-muted)' }}
+              >
                 Email
               </label>
               <input
@@ -93,7 +164,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-admin-900 border border-admin-700 rounded-lg text-white placeholder-admin-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 rounded-lg transition-all focus:outline-none focus:ring-2"
+                style={{ 
+                  backgroundColor: 'var(--admin-input-bg)',
+                  border: '1px solid var(--admin-border)',
+                  color: 'var(--admin-text)',
+                  '--tw-ring-color': 'var(--admin-primary)'
+                } as React.CSSProperties}
                 placeholder="admin@plainledger.ca"
                 disabled={loading}
               />
@@ -101,7 +178,11 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-admin-300 mb-2">
+              <label 
+                htmlFor="password" 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--admin-text-muted)' }}
+              >
                 Password
               </label>
               <div className="relative">
@@ -111,14 +192,21 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-admin-900 border border-admin-700 rounded-lg text-white placeholder-admin-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all pr-12"
+                  className="w-full px-4 py-3 rounded-lg transition-all focus:outline-none focus:ring-2 pr-12"
+                  style={{ 
+                    backgroundColor: 'var(--admin-input-bg)',
+                    border: '1px solid var(--admin-border)',
+                    color: 'var(--admin-text)',
+                    '--tw-ring-color': 'var(--admin-primary)'
+                  } as React.CSSProperties}
                   placeholder="Enter your password"
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-admin-400 hover:text-admin-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: 'var(--admin-text-muted)' }}
                   disabled={loading}
                 >
                   {showPassword ? (
@@ -134,7 +222,12 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                backgroundColor: loading ? 'var(--admin-primary)' : 'var(--admin-primary)',
+              }}
+              onMouseOver={(e) => !loading && (e.currentTarget.style.backgroundColor = 'var(--admin-primary-hover)')}
+              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'var(--admin-primary)')}
             >
               {loading ? (
                 <>
@@ -149,9 +242,15 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-admin-400">
+            <p className="text-sm" style={{ color: 'var(--admin-text-muted)' }}>
               Forgot your password?{' '}
-              <a href="#" className="text-primary-400 hover:text-primary-300 transition-colors">
+              <a 
+                href="#" 
+                className="transition-colors"
+                style={{ color: 'var(--admin-primary)' }}
+                onMouseOver={(e) => (e.currentTarget.style.color = 'var(--admin-primary-hover)')}
+                onMouseOut={(e) => (e.currentTarget.style.color = 'var(--admin-primary)')}
+              >
                 Contact support
               </a>
             </p>
@@ -160,7 +259,7 @@ export default function LoginPage() {
 
         {/* Additional Info */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-admin-500">
+          <p className="text-sm" style={{ color: 'var(--admin-text-muted)' }}>
             Secure access to PlainLedger Admin Console
           </p>
         </div>

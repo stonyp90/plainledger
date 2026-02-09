@@ -55,6 +55,7 @@ import { AdminSubscriptionPlansController } from './controllers/admin-subscripti
 import { AdminEntitlementsController } from './controllers/admin-entitlements.controller';
 import { AdminRolesController } from './controllers/admin-roles.controller';
 import { AdminPermissionsController } from './controllers/admin-permissions.controller';
+import { AdminBillingController } from './controllers/admin-billing.controller';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { AdminPermissionsController } from './controllers/admin-permissions.cont
     AdminEntitlementsController,
     AdminRolesController,
     AdminPermissionsController,
+    AdminBillingController,
   ],
   providers: [
     // Guards
