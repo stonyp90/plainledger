@@ -13,21 +13,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    // Load saved theme from localStorage, migrate 'system' to 'dark'
+    // Load saved theme from localStorage
     const savedTheme = localStorage.getItem('admin-theme');
     if (savedTheme) {
-      // Migrate 'system' to 'dark' if found
-      const theme = savedTheme === 'system' ? 'dark' : (savedTheme as Theme);
+      // Migrate 'system' or 'dark' (old default) to 'light' if no preference saved
+      const theme = savedTheme === 'system' ? 'light' : (savedTheme as Theme);
       if (theme === 'light' || theme === 'dark') {
         setThemeState(theme);
-        // Update localStorage if migration occurred
-        if (savedTheme === 'system') {
-          localStorage.setItem('admin-theme', 'dark');
-        }
       }
     }
   }, []);
