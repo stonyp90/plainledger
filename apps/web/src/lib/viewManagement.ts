@@ -432,7 +432,7 @@ export const VIEW_TEMPLATES: ViewTemplate[] = [
           nameEn: 'Cash Balance',
           chartType: 'area',
           metrics: ['cashFlow'],
-          timeRange: '6M',
+          timeRange: '1Y',
           comparison: 'forecast',
           groupBy: 'week',
         },

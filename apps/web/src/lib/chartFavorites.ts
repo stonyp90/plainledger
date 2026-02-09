@@ -113,7 +113,7 @@ export interface ChartPreferences {
 
 export const DEFAULT_PREFERENCES: ChartPreferences = {
   defaultChartType: 'line',
-  defaultTimeRange: '6M',
+  defaultTimeRange: '1Y',
   showAnimations: true,
   colorScheme: 'default',
   gridDensity: 'normal',
@@ -331,7 +331,7 @@ export const PRESET_CHARTS: ChartConfig[] = [
     descriptionEn: 'Revenue evolution over the selected period',
     chartType: 'area',
     metrics: ['revenue'],
-    timeRange: '6M',
+    timeRange: '1Y',
     comparison: 'previousYear',
     groupBy: 'month',
     showLegend: true,
@@ -346,7 +346,7 @@ export const PRESET_CHARTS: ChartConfig[] = [
     descriptionEn: 'Revenue and expenses comparison',
     chartType: 'bar',
     metrics: ['revenue', 'expenses'],
-    timeRange: '6M',
+    timeRange: '1Y',
     comparison: 'none',
     groupBy: 'month',
     showLegend: true,
@@ -575,7 +575,7 @@ export const chartFavoritesService = {
       nameEn,
       chartType,
       metrics,
-      timeRange: options.timeRange || '6M',
+      timeRange: options.timeRange || '1Y',
       comparison: options.comparison || 'none',
       ...options,
     };

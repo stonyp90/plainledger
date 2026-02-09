@@ -75,16 +75,25 @@ export const organizationSettingsApi = {
    * Get organization settings
    */
   async get(): Promise<any> {
-    const response = await fetch(`${API_BASE}/settings/organization`, {
-      method: 'GET',
-      headers: await getAuthHeaders(),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/settings/organization`, {
+        method: 'GET',
+        headers: await getAuthHeaders(),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch organization settings: ${response.statusText}`);
+      if (!response.ok) {
+        // 403/404 are expected for free tier or demo users - return empty object
+        if (response.status === 403 || response.status === 404) {
+          return {};
+        }
+        throw new Error(`Failed to fetch organization settings: ${response.statusText}`);
+      }
+
+      return safeJsonParse(response);
+    } catch (error) {
+      // Network errors - return empty object silently for demo/free tier users
+      return {};
     }
-
-    return safeJsonParse(response);
   },
 
   /**

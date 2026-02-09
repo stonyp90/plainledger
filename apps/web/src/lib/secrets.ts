@@ -260,14 +260,25 @@ class SecretsService {
         { headers }
       );
       
+      // 403/404 are expected for free tier or demo users - return mock data silently
+      if (response.status === 403 || response.status === 404) {
+        return this.getMockSecrets(organizationId);
+      }
+      
       if (!response.ok) {
         throw new Error('Failed to fetch secrets');
       }
       
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // Server returned HTML or other non-JSON - return mock data
+        return this.getMockSecrets(organizationId);
+      }
+      
       return await response.json();
     } catch (error) {
-      console.error('[SecretsService] Failed to list secrets:', error);
-      // Return mock data for demo
+      // Silently return mock data - API errors are expected for demo/free tier users
       return this.getMockSecrets(organizationId);
     }
   }

@@ -63,6 +63,14 @@ export interface DisplayConfig {
   showZeroValues: boolean;
   /** Show negative values in parentheses (accounting style) */
   useAccountingFormat: boolean;
+  /** Show grid lines on charts */
+  showGrid?: boolean;
+  /** Show legend on charts */
+  showLegend?: boolean;
+  /** Show data labels on chart elements */
+  showDataLabels?: boolean;
+  /** Enable chart animations */
+  animate?: boolean;
 }
 
 // ============================================================================
@@ -496,6 +504,10 @@ export const DEFAULT_DISPLAY_CONFIG: DisplayConfig = {
   showCurrencySymbol: true,
   showZeroValues: false,
   useAccountingFormat: false,
+  showGrid: true,
+  showLegend: true,
+  showDataLabels: false,
+  animate: true,
 };
 
 export const DEFAULT_CHART_VISUAL_CONFIG: ChartVisualConfig = {

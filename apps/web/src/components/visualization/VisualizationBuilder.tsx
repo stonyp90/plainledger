@@ -253,7 +253,7 @@ export function VisualizationBuilder({
   const [config, setConfig] = useState<Partial<VisualizationConfig>>({
     id: generateId('viz'),
     chartType: 'line',
-    timeRange: '6M' as TimeRange,
+    timeRange: '1Y' as TimeRange,
     comparison: 'none' as ComparisonMode,
     sources: [],
     fields: [],
@@ -274,7 +274,7 @@ export function VisualizationBuilder({
         setConfig({
           id: generateId('viz'),
           chartType: 'line',
-          timeRange: '6M' as TimeRange,
+          timeRange: '1Y' as TimeRange,
           comparison: 'none' as ComparisonMode,
           sources: [],
           fields: [],
@@ -349,7 +349,7 @@ export function VisualizationBuilder({
         name: config.name || 'Graphique personnalisé',
         nameEn: config.nameEn || 'Custom Chart',
         chartType: config.chartType || 'line',
-        timeRange: config.timeRange || '6M',
+        timeRange: config.timeRange || '1Y',
         comparison: config.comparison || 'none',
         sources: config.sources || [],
         fields: config.fields || [],

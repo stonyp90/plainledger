@@ -170,19 +170,14 @@ export default function ThresholdSettings({ onSave }: ThresholdSettingsProps) {
         return;
       }
 
-      // Skip API call in mock auth mode - no valid token to authenticate
-      if (!isMockAuthEnabled()) {
+      // Skip API call in mock auth mode or demo mode - no valid permissions
+      if (!isMockAuthEnabled() && !isDemoMode) {
         try {
           const settings = await organizationSettingsApi.get();
           let loadedThresholds = DEFAULT_THRESHOLDS;
           
           if (settings?.thresholdSettings) {
             loadedThresholds = settings.thresholdSettings;
-          } else if (isDemoMode) {
-            // Apply real estate preset for demo mode if no saved settings
-            const realEstatePreset = INDUSTRY_PRESETS.real_estate.thresholds;
-            loadedThresholds = { ...DEFAULT_THRESHOLDS, ...realEstatePreset };
-            setSelectedPreset('real_estate');
           } else {
             // Fallback to localStorage for backward compatibility
             const saved = localStorage.getItem('plainledger-thresholds');
@@ -196,7 +191,11 @@ export default function ThresholdSettings({ onSave }: ThresholdSettingsProps) {
           setLoading(false);
           return;
         } catch (error) {
-          console.error('Failed to load thresholds:', error);
+          // Silently handle 403/404 errors - expected for users without permissions
+          // Only log unexpected errors
+          if (error instanceof Error && !error.message.includes('403') && !error.message.includes('Forbidden')) {
+            console.error('Failed to load thresholds:', error);
+          }
         }
       }
       

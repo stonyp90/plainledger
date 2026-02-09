@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Settings2, TrendingUp, FileText, Target, X, Globe, RotateCcw, Info, Check, Calendar } from 'lucide-react';
+import { Settings2, TrendingUp, FileText, Target, X, Globe, RotateCcw, Info, Check, Calendar, Palette, Eye, Grid3X3, BarChart3, LineChart, Sparkles } from 'lucide-react';
 import { useGraphConfig, saveUserPreferences, saveChartSettings, clearChartSettings } from '../../hooks/useGraphConfig';
 import type { GraphConfig, PartialGraphConfig, IBCSConfig, PeriodConfig } from '../../lib/graphConfig';
 import { useI18n } from '../../lib/i18n';
@@ -167,7 +167,7 @@ export default function GraphConfigPanel({
           </button>
           <button
             onClick={() => setActiveTab('display')}
-            className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-all relative ${
+            className={`px-4 py-3 text-sm font-medium flex items-center gap-1.5 whitespace-nowrap transition-all relative ${
               activeTab === 'display'
                 ? 'text-primary'
                 : 'text-muted hover:text-text hover:bg-surface-hover'
@@ -176,6 +176,7 @@ export default function GraphConfigPanel({
               backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
             } : undefined}
           >
+            <Palette className="w-4 h-4" />
             {isEn ? 'Display' : 'Affichage'}
             {activeTab === 'display' && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
@@ -596,90 +597,252 @@ function DisplayConfigTab({
   isEn: boolean;
 }) {
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          {isEn ? 'Currency' : 'Devise'}
-        </label>
-        <select
-          value={config.display.currency}
-          onChange={(e) => onUpdate({ currency: e.target.value })}
-          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
-        >
-          <option value="CAD">CAD - Canadian Dollar</option>
-          <option value="USD">USD - US Dollar</option>
-          <option value="EUR">EUR - Euro</option>
-        </select>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          {isEn ? 'Number Format' : 'Format des nombres'}
-        </label>
-        <select
-          value={config.display.numberFormat}
-          onChange={(e) => onUpdate({ numberFormat: e.target.value as any })}
-          className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
-        >
-          <option value="actual">{isEn ? 'Actual Values' : 'Valeurs réelles'}</option>
-          <option value="thousands">{isEn ? 'Thousands (K)' : 'Milliers (K)'}</option>
-          <option value="millions">{isEn ? 'Millions (M)' : 'Millions (M)'}</option>
-          <option value="billions">{isEn ? 'Billions (B)' : 'Milliards (B)'}</option>
-        </select>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            {isEn ? 'Currency Decimals' : 'Décimales devise'}
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="4"
-            value={config.display.currencyDecimals}
-            onChange={(e) => onUpdate({ currencyDecimals: parseInt(e.target.value) })}
-            className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-          />
+    <div className="space-y-6">
+      {/* Currency & Numbers Section */}
+      <div className="space-y-4">
+        <h3 className="font-medium flex items-center gap-2">
+          <Grid3X3 className="w-4 h-4 text-primary" />
+          {isEn ? 'Numbers & Currency' : 'Nombres et devise'}
+        </h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {isEn ? 'Currency' : 'Devise'}
+            </label>
+            <select
+              value={config.display.currency}
+              onChange={(e) => onUpdate({ currency: e.target.value })}
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
+            >
+              <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+              <option value="USD">🇺🇸 USD - US Dollar</option>
+              <option value="EUR">🇪🇺 EUR - Euro</option>
+              <option value="GBP">🇬🇧 GBP - British Pound</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {isEn ? 'Number Scale' : 'Échelle des nombres'}
+            </label>
+            <select
+              value={config.display.numberFormat}
+              onChange={(e) => onUpdate({ numberFormat: e.target.value as any })}
+              className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all cursor-pointer"
+            >
+              <option value="actual">{isEn ? 'Full Values (1,234,567)' : 'Valeurs complètes (1 234 567)'}</option>
+              <option value="thousands">{isEn ? 'Thousands (1,234K)' : 'Milliers (1 234K)'}</option>
+              <option value="millions">{isEn ? 'Millions (1.2M)' : 'Millions (1,2M)'}</option>
+              <option value="billions">{isEn ? 'Billions (1.2B)' : 'Milliards (1,2G)'}</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            {isEn ? 'Percentage Decimals' : 'Décimales pourcentage'}
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="4"
-            value={config.display.percentageDecimals}
-            onChange={(e) => onUpdate({ percentageDecimals: parseInt(e.target.value) })}
-            className="w-full px-3 py-2.5 border-2 border-border rounded-lg bg-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-          />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {isEn ? 'Currency Decimals' : 'Décimales devise'}
+            </label>
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => onUpdate({ currencyDecimals: num })}
+                  className={`flex-1 px-3 py-2 text-sm rounded-lg border-2 transition-all font-medium ${
+                    config.display.currencyDecimals === num
+                      ? 'border-primary shadow-sm'
+                      : 'border-border hover:border-primary/50 hover:bg-surface-hover'
+                  }`}
+                  style={config.display.currencyDecimals === num ? {
+                    backgroundColor: 'rgb(var(--color-primary-500))',
+                    color: 'white',
+                    borderColor: 'rgb(var(--color-primary-500))',
+                  } : undefined}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              {isEn ? 'Percentage Decimals' : 'Décimales %'}
+            </label>
+            <div className="flex items-center gap-2">
+              {[0, 1, 2].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => onUpdate({ percentageDecimals: num })}
+                  className={`flex-1 px-3 py-2 text-sm rounded-lg border-2 transition-all font-medium ${
+                    config.display.percentageDecimals === num
+                      ? 'border-primary shadow-sm'
+                      : 'border-border hover:border-primary/50 hover:bg-surface-hover'
+                  }`}
+                  style={config.display.percentageDecimals === num ? {
+                    backgroundColor: 'rgb(var(--color-primary-500))',
+                    color: 'white',
+                    borderColor: 'rgb(var(--color-primary-500))',
+                  } : undefined}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       
-      <div className="space-y-3">
-        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
-          <input
-            type="checkbox"
-            checked={config.display.useAccountingFormat}
-            onChange={(e) => onUpdate({ useAccountingFormat: e.target.checked })}
-            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
-          />
-          <span className="text-sm">
-            {isEn ? 'Use Accounting Format (negative in parentheses)' : 'Format comptable (négatif entre parenthèses)'}
-          </span>
+      {/* Visual Options Section */}
+      <div className="space-y-4">
+        <h3 className="font-medium flex items-center gap-2">
+          <Eye className="w-4 h-4 text-primary" />
+          {isEn ? 'Visual Options' : 'Options visuelles'}
+        </h3>
+        
+        <div className="space-y-3">
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={config.display.useAccountingFormat}
+                onChange={(e) => onUpdate({ useAccountingFormat: e.target.checked })}
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  {isEn ? 'Accounting Format' : 'Format comptable'}
+                </span>
+                <p className="text-xs text-muted">
+                  {isEn ? 'Show negatives in parentheses: (1,234)' : 'Négatifs entre parenthèses: (1 234)'}
+                </p>
+              </div>
+            </div>
+          </label>
+          
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={config.display.showZeroValues}
+                onChange={(e) => onUpdate({ showZeroValues: e.target.checked })}
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  {isEn ? 'Show Zero Values' : 'Afficher les zéros'}
+                </span>
+                <p className="text-xs text-muted">
+                  {isEn ? 'Display $0 values instead of hiding them' : 'Afficher les valeurs $0 au lieu de les masquer'}
+                </p>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+      {/* Chart Elements Section */}
+      <div className="space-y-4">
+        <h3 className="font-medium flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-primary" />
+          {isEn ? 'Chart Elements' : 'Éléments du graphique'}
+        </h3>
+        
+        <div className="space-y-3">
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={config.display.showGrid !== false}
+                onChange={(e) => onUpdate({ showGrid: e.target.checked })}
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  {isEn ? 'Grid Lines' : 'Lignes de grille'}
+                </span>
+                <p className="text-xs text-muted">
+                  {isEn ? 'Show horizontal grid lines for easier reading' : 'Afficher les lignes de grille horizontales'}
+                </p>
+              </div>
+            </div>
+          </label>
+          
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={config.display.showLegend !== false}
+                onChange={(e) => onUpdate({ showLegend: e.target.checked })}
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  {isEn ? 'Legend' : 'Légende'}
+                </span>
+                <p className="text-xs text-muted">
+                  {isEn ? 'Show color legend below chart' : 'Afficher la légende des couleurs'}
+                </p>
+              </div>
+            </div>
+          </label>
+          
+          <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={config.display.showDataLabels !== false}
+                onChange={(e) => onUpdate({ showDataLabels: e.target.checked })}
+                className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  {isEn ? 'Data Labels' : 'Étiquettes de données'}
+                </span>
+                <p className="text-xs text-muted">
+                  {isEn ? 'Show values directly on chart elements' : 'Afficher les valeurs sur les éléments du graphique'}
+                </p>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+      {/* Animation Section */}
+      <div className="space-y-4">
+        <h3 className="font-medium flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          {isEn ? 'Animation' : 'Animation'}
+        </h3>
+        
+        <label className="flex items-center justify-between p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={config.display.animate !== false}
+              onChange={(e) => onUpdate({ animate: e.target.checked })}
+              className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
+            />
+            <div>
+              <span className="text-sm font-medium">
+                {isEn ? 'Enable Animations' : 'Activer les animations'}
+              </span>
+              <p className="text-xs text-muted">
+                {isEn ? 'Smooth transitions when data updates' : 'Transitions fluides lors des mises à jour'}
+              </p>
+            </div>
+          </div>
         </label>
-        <label className="flex items-center gap-3 p-3 border-2 border-border rounded-lg hover:border-primary/50 hover:bg-surface-hover cursor-pointer transition-all">
-          <input
-            type="checkbox"
-            checked={config.display.showZeroValues}
-            onChange={(e) => onUpdate({ showZeroValues: e.target.checked })}
-            className="w-4 h-4 rounded border-2 border-border text-primary focus:ring-primary/20"
-          />
-          <span className="text-sm">
-            {isEn ? 'Show Zero Values' : 'Afficher les valeurs zéro'}
-          </span>
-        </label>
+      </div>
+      
+      {/* Preview hint */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-surface-hover">
+        <Info className="w-4 h-4 text-muted mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-muted">
+          {isEn 
+            ? 'Changes are applied immediately. Close this panel to see the full effect on your chart.'
+            : 'Les modifications sont appliquées immédiatement. Fermez ce panneau pour voir l\'effet complet sur votre graphique.'}
+        </p>
       </div>
     </div>
   );

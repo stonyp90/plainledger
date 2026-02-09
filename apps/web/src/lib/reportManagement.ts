@@ -145,7 +145,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
           nameEn: 'Revenue Trend',
           chartType: 'area',
           metrics: ['revenue'],
-          timeRange: '6M',
+          timeRange: '1Y',
           comparison: 'previousYear',
           groupBy: 'month',
         },

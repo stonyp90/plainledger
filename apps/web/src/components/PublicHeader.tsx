@@ -146,7 +146,7 @@ export default function PublicHeader({
               </>
             ) : (
               <img 
-                src={isDark ? "/logo-full-dark.svg" : "/logo-full.svg"} 
+                src={isDark ? "/logo-full-dark.png" : "/logo-full.png"} 
                 alt="PlainLedger" 
                 className="h-9 sm:h-10 lg:h-11"
               />

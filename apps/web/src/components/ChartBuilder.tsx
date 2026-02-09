@@ -1608,7 +1608,7 @@ function LivePreview({ config, fields, isEn }: LivePreviewProps) {
             className="px-2 py-0.5 rounded"
             style={{ backgroundColor: 'rgb(var(--color-bg))', color: 'rgb(var(--color-text-muted))' }}
           >
-            {config.timeRange || '6M'}
+            {config.timeRange || '1Y'}
           </span>
           {config.comparison !== 'none' && (
             <span 
@@ -1641,7 +1641,7 @@ export default function ChartBuilder({
   const [activeStep, setActiveStep] = useState(0);
   const [config, setConfig] = useState<Partial<ChartConfig>>({
     chartType: 'line',
-    timeRange: '6M',
+    timeRange: '1Y',
     comparison: 'none',
     groupBy: 'month',
     showLegend: true,
@@ -1712,7 +1712,7 @@ export default function ChartBuilder({
       descriptionEn: description,
       chartType: config.chartType || 'line',
       metrics: enabledFields.map(f => f.id),
-      timeRange: config.timeRange || '6M',
+      timeRange: config.timeRange || '1Y',
       comparison: config.comparison || 'none',
       groupBy: config.groupBy,
       showLegend: config.showLegend,
