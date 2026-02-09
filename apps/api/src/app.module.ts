@@ -40,6 +40,17 @@ import { PlanEntitlementEntity } from "@infrastructure/persistence/postgres/enti
 import { PermissionEntity } from "@infrastructure/persistence/postgres/entities/permission.entity";
 import { RoleEntity } from "@infrastructure/persistence/postgres/entities/role.entity";
 
+// Platform Admin Entities
+import {
+  AdminUserEntity,
+  AdminGroupEntity,
+  AdminPermissionEntity,
+  AdminAuditLogEntity,
+} from "./modules/platform-admin/entities";
+import { WebhookLogEntity } from "./modules/platform-admin/entities/webhook-log.entity";
+import { OnboardingProgressEntity } from "./modules/platform-admin/entities/onboarding-progress.entity";
+import { CommunicationLogEntity } from "./modules/platform-admin/entities/communication-log.entity";
+
 // Infrastructure - HTTP Controllers
 import { HealthController } from "@infrastructure/http/controllers/health.controller";
 import { OrganizationController } from "@infrastructure/http/controllers/organization.controller";
@@ -223,6 +234,14 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           PlanEntitlementEntity,
           PermissionEntity,
           RoleEntity,
+          // Platform Admin Entities
+          AdminUserEntity,
+          AdminGroupEntity,
+          AdminPermissionEntity,
+          AdminAuditLogEntity,
+          WebhookLogEntity,
+          OnboardingProgressEntity,
+          CommunicationLogEntity,
         ],
         // Enable synchronize if SYNC_DB=true or in development
         synchronize:

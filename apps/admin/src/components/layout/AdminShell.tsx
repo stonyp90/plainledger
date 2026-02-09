@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -87,6 +87,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { logout } = useKeycloak();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [userMenuOpen]);
 
   return (
     <div className="min-h-screen bg-admin-900">
@@ -198,9 +212,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <NotificationsButton />
 
             {/* User menu */}
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
-                className="flex items-center gap-2 text-admin-400 hover:text-white"
+                className="flex items-center gap-2 text-admin-400 hover:text-white transition-colors"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
                 <div className="w-8 h-8 bg-primary-600/20 border border-primary-600/30 rounded-full flex items-center justify-center">
@@ -212,20 +226,29 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </button>
 
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-admin-800 border border-admin-700 rounded-lg shadow-lg py-1 z-50">
-                  <div className="px-4 py-2 border-b border-admin-700">
-                    <p className="text-sm font-medium text-white">
-                      {admin?.user?.displayName}
+                <div className="absolute right-0 mt-2 w-56 bg-admin-800 border border-admin-700 rounded-xl shadow-xl py-2 z-50">
+                  <div className="px-4 py-3 border-b border-admin-700">
+                    <p className="text-sm font-semibold text-white">
+                      {admin?.user?.displayName || 'Admin'}
                     </p>
-                    <p className="text-xs text-admin-400">{admin?.user?.email}</p>
+                    <p className="text-xs text-admin-400 truncate">{admin?.user?.email}</p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        {admin?.groups?.[0] || 'Platform Admin'}
+                      </span>
+                    </div>
                   </div>
-                  <button 
-                    onClick={logout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-admin-400 hover:bg-primary-600/20 hover:text-primary-400"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign out</span>
-                  </button>
+                  <div className="p-2">
+                    <button 
+                      onClick={logout}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all group"
+                    >
+                      <div className="p-1.5 rounded-md bg-red-500/10 group-hover:bg-red-500/20 transition-colors">
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Sign out</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

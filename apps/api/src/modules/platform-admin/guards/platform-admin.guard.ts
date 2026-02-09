@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdminUserEntity } from '../entities/admin-user.entity';
@@ -24,6 +25,7 @@ export class PlatformAdminGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
     @InjectRepository(AdminUserEntity)
     private readonly adminUserRepository: Repository<AdminUserEntity>,
     @InjectRepository(AdminAuditLogEntity)
@@ -42,6 +44,48 @@ export class PlatformAdminGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
+    
+    // DEVELOPMENT ONLY: Skip auth when SKIP_AUTH=true
+    const skipAuth = this.configService.get<string>('SKIP_AUTH') === 'true';
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    const isProduction = nodeEnv === 'production';
+
+    if (skipAuth && !isProduction) {
+      this.logger.warn('PlatformAdminGuard: SKIP_AUTH enabled - using mock admin user');
+      // Create a mock admin user with all permissions for development
+      request.user = {
+        sub: 'dev-admin-123',
+        email: 'dev-admin@plainledger.ca',
+        preferred_username: 'dev-admin',
+        name: 'Development Admin',
+      };
+      request.adminUser = {
+        id: 'dev-admin-123',
+        keycloakId: 'dev-admin-123',
+        email: 'dev-admin@plainledger.ca',
+        displayName: 'Development Admin',
+        isActive: true,
+        groups: [],
+      };
+      // Grant all permissions in dev mode
+      request.adminPermissions = new Set([
+        'org:list', 'org:view', 'org:create', 'org:edit', 'org:delete', 'org:hard_delete',
+        'user:list', 'user:view', 'user:create', 'user:edit', 'user:delete', 'user:impersonate',
+        'admin:list', 'admin:create', 'admin:disable',
+        'group:list', 'group:assign',
+        'billing:view', 'billing:manage',
+        'audit:view', 'audit:export',
+        'health:view',
+        'sync:view', 'sync:manage',
+        'notification:list', 'notification:create', 'notification:delete',
+        'integration:view', 'integration:manage',
+        'onboarding:view', 'onboarding:manage',
+        'communication:view', 'communication:send',
+        'chat:view', 'chat:respond',
+      ]);
+      return true;
+    }
+
     const user = request.user;
 
     // User must be authenticated
