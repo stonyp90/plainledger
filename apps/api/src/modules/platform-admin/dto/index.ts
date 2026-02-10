@@ -60,6 +60,11 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsNumber()
   fiscalYearEndMonth?: number;
+
+  @ApiPropertyOptional({ description: 'Subscription plan ID', example: 'enterprise' })
+  @IsOptional()
+  @IsString()
+  subscriptionPlanId?: string;
 }
 
 export class OrganizationListResponseDto {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { useAdmin } from '@/hooks/useAdmin';
 import { 
@@ -20,6 +20,8 @@ import {
   Clock,
   Link2,
   Unlink,
+  Crown,
+  Loader2,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import Link from 'next/link';
@@ -39,7 +41,14 @@ interface Organization {
   updatedAt?: string;
   deletedAt?: string;
   settings?: Record<string, unknown>;
+  subscriptionPlanId?: string;
 }
+
+const SUBSCRIPTION_PLANS = [
+  { id: 'free', name: 'Free', description: 'Basic access with limited features', color: 'gray' },
+  { id: 'professional', name: 'Professional', description: 'Full features for growing businesses', color: 'blue' },
+  { id: 'enterprise', name: 'Enterprise', description: 'Unlimited access with priority support', color: 'purple' },
+];
 
 interface Integration {
   id: string;
@@ -71,10 +80,31 @@ const INTEGRATION_NAMES: Record<string, string> = {
 export default function OrganizationDetailPage() {
   const params = useParams();
   const { token } = useAdmin();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'overview' | 'integrations' | 'users'>('overview');
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   // Skip fetching if this is the "new" route - should be handled by static /organizations/new page
   const isValidId = !!params.id && params.id !== 'new';
+
+  const updatePlanMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      const response = await fetch(`${API_URL}/api/admin/organizations/${params.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ subscriptionPlanId: planId }),
+      });
+      if (!response.ok) throw new Error('Failed to update subscription plan');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization', params.id] });
+      setShowPlanModal(false);
+    },
+  });
 
   const { data: org, isLoading, refetch } = useQuery({
     queryKey: ['organization', params.id, token],
@@ -192,6 +222,38 @@ export default function OrganizationDetailPage() {
         {/* Content */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Subscription Plan Card */}
+            <div className="lg:col-span-2 bg-gradient-to-r from-admin-800 to-admin-800/50 rounded-xl p-6 border border-admin-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    org.subscriptionPlanId === 'enterprise' ? 'bg-purple-600/20' :
+                    org.subscriptionPlanId === 'professional' ? 'bg-blue-600/20' : 'bg-gray-600/20'
+                  }`}>
+                    <Crown className={`w-6 h-6 ${
+                      org.subscriptionPlanId === 'enterprise' ? 'text-purple-400' :
+                      org.subscriptionPlanId === 'professional' ? 'text-blue-400' : 'text-gray-400'
+                    }`} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-admin-400">Subscription Plan</p>
+                    <p className="text-xl font-bold text-white capitalize">
+                      {org.subscriptionPlanId || 'Free'}
+                    </p>
+                    <p className="text-sm text-admin-500">
+                      {SUBSCRIPTION_PLANS.find(p => p.id === (org.subscriptionPlanId || 'free'))?.description}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowPlanModal(true)}
+                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Change Plan
+                </button>
+              </div>
+            </div>
+
             {/* Details Card */}
             <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
               <h2 className="text-lg font-semibold text-white mb-4">Organization Details</h2>
@@ -238,6 +300,54 @@ export default function OrganizationDetailPage() {
               <QuickStat label="Users" value="--" />
               <QuickStat label="Sync Jobs" value="--" />
               <QuickStat label="Last Activity" value="--" />
+            </div>
+          </div>
+        )}
+
+        {/* Subscription Plan Modal */}
+        {showPlanModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-admin-800 rounded-xl p-6 border border-admin-700 w-full max-w-md mx-4">
+              <h2 className="text-lg font-semibold text-white mb-4">Change Subscription Plan</h2>
+              <p className="text-sm text-admin-400 mb-6">
+                Select a new subscription plan for {org.name}
+              </p>
+              
+              <div className="space-y-3">
+                {SUBSCRIPTION_PLANS.map((plan) => (
+                  <button
+                    key={plan.id}
+                    onClick={() => updatePlanMutation.mutate(plan.id)}
+                    disabled={updatePlanMutation.isPending}
+                    className={`w-full p-4 rounded-lg border text-left transition-all ${
+                      org.subscriptionPlanId === plan.id || (!org.subscriptionPlanId && plan.id === 'free')
+                        ? 'bg-primary-600/20 border-primary-600'
+                        : 'bg-admin-900 border-admin-700 hover:border-admin-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-white">{plan.name}</p>
+                        <p className="text-sm text-admin-400">{plan.description}</p>
+                      </div>
+                      {updatePlanMutation.isPending && updatePlanMutation.variables === plan.id ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-primary-400" />
+                      ) : (org.subscriptionPlanId === plan.id || (!org.subscriptionPlanId && plan.id === 'free')) ? (
+                        <CheckCircle className="w-5 h-5 text-primary-400" />
+                      ) : null}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowPlanModal(false)}
+                  className="px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
