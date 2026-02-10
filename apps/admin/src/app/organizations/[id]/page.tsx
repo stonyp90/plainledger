@@ -136,7 +136,7 @@ export default function OrganizationDetailPage() {
         <div className="mb-6">
           <Link 
             href="/organizations"
-            className="inline-flex items-center gap-2 text-admin-400 hover:text-white mb-4 transition-colors"
+            className="inline-flex items-center gap-2 text-admin-400 hover:text-primary-400 mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Organizations
@@ -160,7 +160,7 @@ export default function OrganizationDetailPage() {
             
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-2 px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-admin-800/50 border border-admin-700/50 hover:bg-primary-600/20 rounded-lg text-admin-300 hover:text-primary-400 transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
               Refresh
@@ -177,7 +177,7 @@ export default function OrganizationDetailPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
                 activeTab === tab.id
                   ? 'bg-primary-600 text-white'
-                  : 'text-admin-400 hover:bg-admin-700 hover:text-white'
+                  : 'text-admin-400 hover:bg-primary-600/20 hover:text-primary-400'
               }`}
             >
               <tab.icon className="w-4 h-4" />

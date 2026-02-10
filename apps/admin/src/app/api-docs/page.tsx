@@ -53,14 +53,14 @@ export default function APIDocsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-admin-800/50 border border-admin-700/50 hover:bg-primary-600/20 hover:text-primary-400 rounded-lg text-admin-300 text-sm transition-colors"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={handleCopyUrl}
-              className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-admin-800/50 border border-admin-700/50 hover:bg-primary-600/20 hover:text-primary-400 rounded-lg text-admin-300 text-sm transition-colors"
             >
               {copied ? (
                 <>
@@ -78,7 +78,7 @@ export default function APIDocsPage() {
               href={swaggerUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-admin-800/50 border border-admin-700/50 hover:bg-primary-600/20 hover:text-primary-400 rounded-lg text-admin-300 text-sm transition-colors"
               title="Open in new tab"
             >
               <ExternalLink className="w-4 h-4" />

@@ -90,7 +90,7 @@ export default function IntegrationsPage() {
             </div>
             <button
               onClick={() => refetchConnections()}
-              className="p-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 transition-colors"
+              className="p-2 bg-admin-800/50 border border-admin-700/50 hover:bg-primary-600/20 rounded-lg text-admin-300 hover:text-primary-400 transition-colors"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />

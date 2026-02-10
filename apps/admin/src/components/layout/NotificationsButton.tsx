@@ -81,7 +81,7 @@ export function NotificationsButton() {
     <div className="relative flex items-center">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-admin-800/50 border border-admin-700/50 text-admin-400 hover:text-white hover:bg-admin-700/50 transition-all"
+        className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-admin-800/50 border border-admin-700/50 text-admin-400 hover:text-primary-400 hover:bg-primary-600/20 transition-all"
         aria-label="Notifications"
       >
         <Bell className="w-4 h-4" />
@@ -107,7 +107,7 @@ export function NotificationsButton() {
               <h3 className="text-sm font-semibold text-white">Notifications</h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-admin-400 hover:text-white"
+                className="text-admin-400 hover:text-primary-400 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

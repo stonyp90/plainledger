@@ -80,20 +80,20 @@ export default function RolesPermissionsPage() {
         <div className="flex gap-2 mb-4 border-b border-admin-700">
           <button
             onClick={() => setActiveTab('roles')}
-            className={`px-4 py-2 font-medium ${
+            className={`px-4 py-2 font-medium transition-colors ${
               activeTab === 'roles'
-                ? 'text-white border-b-2 border-white'
-                : 'text-admin-400 hover:text-white'
+                ? 'text-primary-400 border-b-2 border-primary-500'
+                : 'text-admin-400 hover:text-primary-400'
             }`}
           >
             Roles ({roles?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('permissions')}
-            className={`px-4 py-2 font-medium ${
+            className={`px-4 py-2 font-medium transition-colors ${
               activeTab === 'permissions'
-                ? 'text-white border-b-2 border-white'
-                : 'text-admin-400 hover:text-white'
+                ? 'text-primary-400 border-b-2 border-primary-500'
+                : 'text-admin-400 hover:text-primary-400'
             }`}
           >
             Permissions ({permissions?.length || 0})

@@ -67,7 +67,7 @@ export default function SettingsPage() {
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                     activeTab === tab.id
                       ? 'bg-primary-600 text-white'
-                      : 'text-admin-400 hover:bg-primary-600/20'
+                      : 'text-admin-400 hover:bg-primary-600/20 hover:text-primary-400'
                   }`}
                   style={activeTab === tab.id ? { color: '#ffffff' } : undefined}
                 >

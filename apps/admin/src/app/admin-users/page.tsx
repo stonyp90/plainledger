@@ -252,7 +252,7 @@ export default function AdminUsersPage() {
               <h2 className="text-xl font-semibold text-white">Add New Admin</h2>
               <button 
                 onClick={() => setShowAddModal(false)}
-                className="text-admin-400 hover:text-white"
+                className="text-admin-400 hover:text-primary-400 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>

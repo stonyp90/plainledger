@@ -50,7 +50,7 @@ function ThemeSelector() {
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
               isActive 
                 ? 'bg-primary-600 text-white shadow-sm' 
-                : 'text-admin-400 hover:text-white hover:bg-primary-600/50'
+                : 'text-admin-400 hover:text-primary-400 hover:bg-primary-600/20'
             }`}
             title={t.label}
           >
@@ -130,7 +130,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <button
-            className="lg:hidden text-admin-400 hover:text-white"
+            className="lg:hidden text-admin-400 hover:text-primary-400 transition-colors"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="w-5 h-5" />
@@ -148,7 +148,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
                     ? 'bg-primary-600'
-                    : 'text-admin-400 hover:bg-admin-700 hover:text-white'
+                    : 'text-admin-400 hover:bg-primary-600/20 hover:text-primary-400'
                 }`}
                 style={isActive ? { color: '#ffffff' } : undefined}
               >
@@ -185,7 +185,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <header className="h-16 bg-admin-800 border-b border-admin-700 flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
             <button
-              className="lg:hidden text-admin-400 hover:text-white"
+              className="lg:hidden text-admin-400 hover:text-primary-400 transition-colors"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="w-6 h-6" />
@@ -212,7 +212,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             {/* User menu */}
             <div className="relative" ref={userMenuRef}>
               <button
-                className="flex items-center gap-2 text-admin-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-admin-400 hover:text-primary-400 transition-colors"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
                 <div className="w-8 h-8 bg-primary-600/20 border border-primary-600/30 rounded-full flex items-center justify-center">

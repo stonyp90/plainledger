@@ -95,7 +95,7 @@ export default function OrganizationsPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-400 hover:text-white hover:bg-primary-600/20 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-400 hover:text-primary-400 hover:bg-primary-600/20 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
@@ -176,14 +176,14 @@ export default function OrganizationsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <a
                           href={`/organizations/${org.id}`}
-                          className="p-2 text-admin-400 hover:text-white hover:bg-admin-700 rounded-lg transition-colors"
+                          className="p-2 text-admin-400 hover:text-primary-400 hover:bg-primary-600/20 rounded-lg transition-colors"
                           title="View"
                         >
                           <Eye className="w-4 h-4" />
                         </a>
                         <a
                           href={`/organizations/${org.id}/edit`}
-                          className="p-2 text-admin-400 hover:text-white hover:bg-admin-700 rounded-lg transition-colors"
+                          className="p-2 text-admin-400 hover:text-primary-400 hover:bg-primary-600/20 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />

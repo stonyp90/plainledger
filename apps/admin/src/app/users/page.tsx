@@ -67,13 +67,13 @@ export default function UsersPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-admin-800 border border-admin-700 rounded-lg text-white placeholder-admin-400 focus:outline-none focus:border-primary-500"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-admin-700/50 transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-primary-600/20 hover:text-primary-400 transition-colors">
             <Filter className="w-4 h-4" />
             Filters
           </button>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-admin-700/50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-admin-800/50 border border-admin-700/50 rounded-lg text-admin-300 hover:bg-primary-600/20 hover:text-primary-400 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -145,8 +145,8 @@ export default function UsersPage() {
                       {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <button className="p-1 hover:bg-admin-700 rounded">
-                        <MoreVertical className="w-5 h-5 text-admin-400" />
+                      <button className="p-1 hover:bg-primary-600/20 rounded transition-colors">
+                        <MoreVertical className="w-5 h-5 text-admin-400 hover:text-primary-400" />
                       </button>
                     </td>
                   </tr>

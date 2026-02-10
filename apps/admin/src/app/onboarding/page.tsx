@@ -163,7 +163,7 @@ export default function OnboardingPage() {
               </thead>
               <tbody>
                 {trialsData?.trials?.map((trial: any) => (
-                  <tr key={trial.id} className="border-t border-admin-700 hover:bg-admin-700 cursor-pointer"
+                  <tr key={trial.id} className="border-t border-admin-700 hover:bg-primary-600/10 cursor-pointer"
                       onClick={() => setSelectedOrg(trial.id)}>
                     <td className="px-4 py-3 text-white">{trial.name}</td>
                     <td className="px-4 py-3 text-admin-400">{trial.daysRemaining} days</td>
