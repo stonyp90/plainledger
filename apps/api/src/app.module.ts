@@ -454,18 +454,27 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             )
           `);
           
-          // Create admin_audit_logs table
+          // Create audit_log table (matches AdminAuditLogEntity)
           await client.query(`
-            CREATE TABLE IF NOT EXISTS platform.admin_audit_logs (
+            CREATE TABLE IF NOT EXISTS platform.audit_log (
               id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
               admin_user_id UUID REFERENCES platform.admin_users(id),
               admin_email VARCHAR(255),
               action VARCHAR(100) NOT NULL,
               resource_type VARCHAR(50) NOT NULL,
               resource_id VARCHAR(100),
+              resource_name VARCHAR(255),
+              target_org_id UUID,
+              target_org_name VARCHAR(255),
+              target_user_id VARCHAR(100),
+              target_user_email VARCHAR(255),
+              before_state JSONB,
+              after_state JSONB,
               metadata JSONB,
               ip_address VARCHAR(45),
               user_agent TEXT,
+              session_id VARCHAR(100),
+              duration_ms INTEGER,
               success BOOLEAN DEFAULT true,
               error_message TEXT,
               created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()

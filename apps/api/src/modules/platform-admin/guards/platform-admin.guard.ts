@@ -112,6 +112,13 @@ export class PlatformAdminGuard implements CanActivate {
       adminUser = await this.autoProvisionAdmin(user);
     }
 
+    // Fix existing admin users who have no groups assigned (repair previous failed provisioning)
+    if (adminUser && (!adminUser.groups || adminUser.groups.length === 0) && 
+        user.email && AUTO_PROVISION_ADMINS.includes(user.email.toLowerCase())) {
+      this.logger.log(`PlatformAdminGuard: Fixing group assignment for ${user.email}`);
+      adminUser = await this.fixAdminGroups(adminUser);
+    }
+
     if (!adminUser) {
       this.logger.warn(`PlatformAdminGuard: User ${user.email || user.preferred_username} (${user.sub}) is not a platform admin - access denied`);
       // Log unauthorized access attempt
@@ -244,11 +251,47 @@ export class PlatformAdminGuard implements CanActivate {
   }
 
   /**
+   * Fix admin user who exists but has no groups assigned
+   */
+  private async fixAdminGroups(adminUser: AdminUserEntity): Promise<AdminUserEntity | null> {
+    try {
+      // Find the Super Admin group
+      const superAdminGroup = await this.adminGroupRepository.findOne({
+        where: { name: 'Super Admin' },
+        relations: ['permissions'],
+      });
+
+      if (!superAdminGroup) {
+        this.logger.error('PlatformAdminGuard: Super Admin group not found - cannot fix groups');
+        return adminUser;
+      }
+
+      // Assign the group
+      await this.adminUserRepository
+        .createQueryBuilder()
+        .relation(AdminUserEntity, 'groups')
+        .of(adminUser)
+        .add(superAdminGroup);
+
+      this.logger.log(`PlatformAdminGuard: Fixed group assignment for ${adminUser.email}`);
+
+      // Reload with relations
+      return this.adminUserRepository.findOne({
+        where: { id: adminUser.id },
+        relations: ['groups', 'groups.permissions'],
+      });
+    } catch (error) {
+      this.logger.error(`PlatformAdminGuard: Failed to fix groups for ${adminUser.email}`, error);
+      return adminUser;
+    }
+  }
+
+  /**
    * Auto-provision an admin user for allowed emails on first login
    */
   private async autoProvisionAdmin(user: any): Promise<AdminUserEntity | null> {
     try {
-      // Find the Super Admin group
+      // Find the Super Admin group with permissions
       const superAdminGroup = await this.adminGroupRepository.findOne({
         where: { name: 'Super Admin' },
         relations: ['permissions'],
@@ -259,17 +302,27 @@ export class PlatformAdminGuard implements CanActivate {
         return null;
       }
 
-      // Create the admin user
+      this.logger.log(`PlatformAdminGuard: Found Super Admin group with ${superAdminGroup.permissions?.length || 0} permissions`);
+
+      // Create the admin user first (without group)
       const newAdmin = this.adminUserRepository.create({
         keycloakId: user.sub,
         email: user.email,
         displayName: user.name || user.preferred_username || user.email,
         isActive: true,
-        groups: [superAdminGroup],
       });
 
       const savedAdmin = await this.adminUserRepository.save(newAdmin);
-      this.logger.log(`PlatformAdminGuard: Auto-provisioned admin ${user.email} with Super Admin role`);
+      this.logger.log(`PlatformAdminGuard: Created admin user ${savedAdmin.id}`);
+
+      // Now assign the group using query builder (ManyToMany requires this)
+      await this.adminUserRepository
+        .createQueryBuilder()
+        .relation(AdminUserEntity, 'groups')
+        .of(savedAdmin)
+        .add(superAdminGroup);
+
+      this.logger.log(`PlatformAdminGuard: Assigned Super Admin group to ${user.email}`);
 
       // Log the auto-provision event
       try {
@@ -282,6 +335,7 @@ export class PlatformAdminGuard implements CanActivate {
           metadata: {
             keycloakId: user.sub,
             autoProvisionReason: 'Email in AUTO_PROVISION_ADMINS list',
+            groupAssigned: 'Super Admin',
           },
           success: true,
         });
@@ -289,11 +343,15 @@ export class PlatformAdminGuard implements CanActivate {
         this.logger.error('Failed to log auto-provision event', auditError);
       }
 
-      // Reload with relations
-      return this.adminUserRepository.findOne({
+      // Reload with relations to get the full object with groups and permissions
+      const fullAdmin = await this.adminUserRepository.findOne({
         where: { id: savedAdmin.id },
         relations: ['groups', 'groups.permissions'],
       });
+
+      this.logger.log(`PlatformAdminGuard: Auto-provisioned admin ${user.email} with ${fullAdmin?.groups?.length || 0} groups`);
+
+      return fullAdmin;
     } catch (error) {
       this.logger.error(`PlatformAdminGuard: Failed to auto-provision admin for ${user.email}`, error);
       return null;
