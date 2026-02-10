@@ -292,6 +292,7 @@ export class HealthCheckService {
 
   /**
    * Check S3/LocalStack health
+   * Supports both explicit credentials and IAM role-based access (ECS task roles)
    */
   async checkS3(): Promise<ServiceHealth> {
     const startTime = Date.now();
@@ -299,32 +300,71 @@ export class HealthCheckService {
       const hasAccessKey = !!this.configService.get<string>('AWS_ACCESS_KEY_ID');
       const hasSecretKey = !!this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
       const endpoint = this.configService.get<string>('S3_ENDPOINT') || 'AWS default';
-
-      if (!hasAccessKey || !hasSecretKey) {
+      const bucket = this.configService.get<string>('S3_BUCKET_UPLOADS');
+      
+      // Check if running on ECS with task role (metadata endpoint available)
+      const isECS = !!process.env.ECS_CONTAINER_METADATA_URI_V4 || !!process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI;
+      
+      // AWS SDK will automatically use IAM role on ECS, or explicit credentials
+      const hasCredentials = hasAccessKey && hasSecretKey;
+      const hasIamRole = isECS;
+      
+      if (!hasCredentials && !hasIamRole) {
         return {
           name: 'S3 Storage',
           status: 'degraded',
           latencyMs: Date.now() - startTime,
           lastChecked: new Date(),
-          error: 'AWS credentials not configured',
+          error: 'No AWS credentials (explicit or IAM role)',
           details: {
             endpoint,
+            hasExplicitCredentials: false,
+            hasIamRole: false,
           },
         };
       }
 
-      // For health check, we just verify configuration
-      // Actual bucket access would be tested elsewhere
-      return {
-        name: 'S3 Storage',
-        status: 'healthy',
-        latencyMs: Date.now() - startTime,
-        lastChecked: new Date(),
-        details: {
-          endpoint,
-          configured: true,
-        },
-      };
+      // Try to actually list bucket to verify access
+      try {
+        const { S3Client, HeadBucketCommand } = await import('@aws-sdk/client-s3');
+        const s3Client = new S3Client({
+          region: this.configService.get<string>('AWS_REGION') || 'ca-central-1',
+          ...(endpoint && endpoint !== 'AWS default' ? { endpoint, forcePathStyle: true } : {}),
+        });
+        
+        if (bucket) {
+          await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+        }
+        
+        const latencyMs = Date.now() - startTime;
+        return {
+          name: 'S3 Storage',
+          status: latencyMs < 500 ? 'healthy' : 'degraded',
+          latencyMs,
+          lastChecked: new Date(),
+          details: {
+            endpoint,
+            bucket: bucket || 'not configured',
+            authMethod: hasCredentials ? 'explicit' : 'iam-role',
+            configured: true,
+          },
+        };
+      } catch (s3Error) {
+        const latencyMs = Date.now() - startTime;
+        return {
+          name: 'S3 Storage',
+          status: 'degraded',
+          latencyMs,
+          lastChecked: new Date(),
+          error: s3Error instanceof Error ? s3Error.message : 'S3 access failed',
+          details: {
+            endpoint,
+            bucket: bucket || 'not configured',
+            authMethod: hasCredentials ? 'explicit' : 'iam-role',
+            configured: true,
+          },
+        };
+      }
     } catch (error) {
       return {
         name: 'S3 Storage',

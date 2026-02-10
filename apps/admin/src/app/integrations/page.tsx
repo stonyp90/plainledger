@@ -1,16 +1,27 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { integrationsApi } from '@/lib/api';
+import { integrationsApi, organizationsApi } from '@/lib/api';
 import { useAdmin } from '@/hooks/useAdmin';
 import { AdminShell } from '@/components/layout/AdminShell';
-import { Plug, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Plug, CheckCircle2, XCircle, Clock, Building2, Filter, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function IntegrationsPage() {
   const { token } = useAdmin();
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [selectedOrg, setSelectedOrg] = useState<string>('all');
   const [webhookFilter, setWebhookFilter] = useState<string>('all');
+
+  // Fetch organizations for filter dropdown
+  const { data: orgsData } = useQuery({
+    queryKey: ['organizations', token],
+    queryFn: () => organizationsApi.list({ limit: '100' }),
+    enabled: !!token,
+  });
 
   const { data: providersData } = useQuery({
     queryKey: ['admin', 'integrations', 'providers', token],
@@ -18,14 +29,32 @@ export default function IntegrationsPage() {
     enabled: !!token,
   });
 
-  const { data: connectionsData } = useQuery({
-    queryKey: ['admin', 'integrations', 'connections', token],
-    queryFn: () => integrationsApi.listConnections(),
+  const { data: connectionsData, refetch: refetchConnections } = useQuery({
+    queryKey: ['admin', 'integrations', 'connections', selectedOrg, token],
+    queryFn: async () => {
+      if (selectedOrg && selectedOrg !== 'all') {
+        // Fetch connections for specific org
+        const response = await fetch(`${API_URL}/api/admin/organizations/${selectedOrg}/integrations`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) return { connections: [] };
+        const data = await response.json();
+        // Map integrations to connections format
+        return { 
+          connections: data.integrations?.map((i: any) => ({
+            ...i,
+            organizationId: selectedOrg,
+            organizationName: orgsData?.organizations?.find((o: any) => o.id === selectedOrg)?.name || 'Unknown',
+          })) || []
+        };
+      }
+      return integrationsApi.listConnections();
+    },
     enabled: !!token,
   });
 
   const { data: webhookLogs } = useQuery({
-    queryKey: ['admin', 'integrations', 'webhooks', webhookFilter, token],
+    queryKey: ['admin', 'integrations', 'webhooks', webhookFilter, selectedOrg, token],
     queryFn: () =>
       integrationsApi.getWebhookLogs(
         webhookFilter !== 'all' ? { status: webhookFilter } : undefined,
@@ -33,13 +62,62 @@ export default function IntegrationsPage() {
     enabled: !!token,
   });
 
+  const organizations = orgsData?.organizations || [];
+
   return (
     <AdminShell>
       <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">Integration Management</h1>
-          <p className="text-admin-400">Manage integration providers and monitor connections</p>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-2">Integration Management</h1>
+            <p className="text-admin-400">Manage integration providers and monitor connections</p>
+          </div>
+          
+          {/* Organization Filter */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-admin-400" />
+              <select
+                value={selectedOrg}
+                onChange={(e) => setSelectedOrg(e.target.value)}
+                className="bg-admin-800 border border-admin-700 rounded-lg px-3 py-2 text-white text-sm min-w-[200px]"
+              >
+                <option value="all">All Organizations</option>
+                {organizations.map((org: any) => (
+                  <option key={org.id} value={org.id}>{org.name}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => refetchConnections()}
+              className="p-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+        
+        {/* Organization Context Banner */}
+        {selectedOrg !== 'all' && (
+          <div className="mb-6 p-4 bg-primary-600/10 border border-primary-600/30 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-5 h-5 text-primary-400" />
+              <div>
+                <p className="text-white font-medium">
+                  Viewing: {organizations.find((o: any) => o.id === selectedOrg)?.name || 'Unknown Organization'}
+                </p>
+                <p className="text-sm text-admin-400">Showing connections for this organization only</p>
+              </div>
+            </div>
+            <Link 
+              href={`/organizations/${selectedOrg}`}
+              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded text-white text-sm transition-colors"
+            >
+              View Organization
+            </Link>
+          </div>
+        )}
 
         {/* Providers */}
         <div className="mb-6">
