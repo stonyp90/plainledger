@@ -56,6 +56,7 @@ import { AdminEntitlementsController } from './controllers/admin-entitlements.co
 import { AdminRolesController } from './controllers/admin-roles.controller';
 import { AdminPermissionsController } from './controllers/admin-permissions.controller';
 import { AdminBillingController } from './controllers/admin-billing.controller';
+import { AdminSyncJobsController } from './controllers/admin-sync-jobs.controller';
 
 @Module({
   imports: [
@@ -101,6 +102,7 @@ import { AdminBillingController } from './controllers/admin-billing.controller';
     AdminRolesController,
     AdminPermissionsController,
     AdminBillingController,
+    AdminSyncJobsController,
   ],
   providers: [
     // Guards

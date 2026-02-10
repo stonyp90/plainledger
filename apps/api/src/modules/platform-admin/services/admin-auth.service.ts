@@ -198,4 +198,34 @@ export class AdminAuthService {
   async enableAdminUser(userId: string): Promise<void> {
     await this.adminUserRepository.update(userId, { isActive: true });
   }
+
+  /**
+   * Get all admin users with their groups
+   */
+  async getAllAdmins(): Promise<{ admins: Array<{
+    id: string;
+    email: string;
+    displayName: string;
+    isActive: boolean;
+    groups: string[];
+    createdAt: Date;
+    lastLoginAt?: Date;
+  }> }> {
+    const admins = await this.adminUserRepository.find({
+      relations: ['groups'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      admins: admins.map(admin => ({
+        id: admin.id,
+        email: admin.email,
+        displayName: admin.displayName,
+        isActive: admin.isActive,
+        groups: admin.groups?.map(g => g.name) || [],
+        createdAt: admin.createdAt,
+        lastLoginAt: admin.lastAccessAt,
+      })),
+    };
+  }
 }

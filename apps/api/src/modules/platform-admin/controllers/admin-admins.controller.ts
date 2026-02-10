@@ -34,6 +34,16 @@ export class AdminAdminsController {
     private readonly auditService: AdminAuditService,
   ) {}
 
+  @Get()
+  @RequirePermission('admin:list')
+  @ApiOperation({ summary: 'List all admin users', description: 'Returns all platform admin users with their groups.' })
+  @ApiResponse({ status: 200, description: 'List of admin users' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async listAdmins() {
+    return this.authService.getAllAdmins();
+  }
+
   @Get('permissions')
   @RequirePermission('admin:list')
   @ApiOperation({ summary: 'Get all available permissions', description: 'Returns all platform permissions grouped by category.' })
