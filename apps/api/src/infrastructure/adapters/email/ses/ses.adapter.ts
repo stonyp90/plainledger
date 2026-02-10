@@ -652,6 +652,90 @@ export class SESAdapter implements OnModuleInit {
       category: "transactional",
     });
   }
+
+  /**
+   * Send admin invitation email
+   */
+  async sendAdminInviteEmail(
+    to: string,
+    name: string,
+    invitedBy: string,
+    loginUrl: string,
+  ): Promise<SESEmailResult> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <tr>
+            <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #059669 0%, #10b981 100%);">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">PlainLedger</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">Platform Administration</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="color: #18181b; margin: 0 0 16px 0; font-size: 22px;">Welcome to the Admin Team!</h2>
+              <p style="color: #52525b; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi ${name},
+              </p>
+              <p style="color: #52525b; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                You've been invited by <strong>${invitedBy}</strong> to join the PlainLedger admin team. As a platform administrator, you'll have access to manage organizations, users, and platform settings.
+              </p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="text-align: center; padding: 24px 0;">
+                    <a href="${loginUrl}" style="display: inline-block; padding: 14px 32px; background-color: #059669; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                      Access Admin Console
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color: #71717a; font-size: 14px; line-height: 1.6; margin: 24px 0 0 0;">
+                If you received a password reset email, please use it to set your password before logging in.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 30px; background-color: #f4f4f5; text-align: center;">
+              <p style="color: #71717a; font-size: 12px; margin: 0;">
+                This invitation was sent to ${to}.<br>
+                If you believe this was sent in error, please contact your administrator.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const text = `
+Welcome to the Admin Team!
+
+Hi ${name},
+
+You've been invited by ${invitedBy} to join the PlainLedger admin team. As a platform administrator, you'll have access to manage organizations, users, and platform settings.
+
+Access the Admin Console: ${loginUrl}
+
+If you received a password reset email, please use it to set your password before logging in.
+
+This invitation was sent to ${to}.
+If you believe this was sent in error, please contact your administrator.
+    `.trim();
+
+    return this.sendEmail({
+      to,
+      subject: "You've been invited to PlainLedger Admin",
+      html,
+      text,
+      category: "transactional",
+    });
+  }
 }
 
 // ============================================================================

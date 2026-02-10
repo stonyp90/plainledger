@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { useAdmin } from '@/hooks/useAdmin';
 import { adminsApi } from '@/lib/api';
@@ -13,7 +13,12 @@ import {
   CheckCircle,
   Ban,
   RefreshCw,
+  X,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 interface AdminUser {
   id: string;
@@ -25,16 +30,24 @@ interface AdminUser {
   lastLoginAt?: string;
 }
 
+interface AdminGroup {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export default function AdminUsersPage() {
   const { token } = useAdmin();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [newAdmin, setNewAdmin] = useState({ email: '', displayName: '', groupIds: [] as string[] });
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'admins', search, token],
     queryFn: async () => {
-      // The adminsApi doesn't have a list function, so we'll use direct fetch
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/admin/admins`, {
+      const response = await fetch(`${API_URL}/api/admin/admins`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -48,10 +61,70 @@ export default function AdminUsersPage() {
     enabled: !!token,
   });
 
+  // Fetch available groups
+  const { data: groupsData } = useQuery({
+    queryKey: ['admin', 'groups', token],
+    queryFn: async () => {
+      const response = await fetch(`${API_URL}/api/admin/admins/groups`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!token,
+  });
+
+  const createAdminMutation = useMutation({
+    mutationFn: async (data: { email: string; displayName: string; groupIds: string[] }) => {
+      const response = await fetch(`${API_URL}/api/admin/admins`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create admin');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] });
+      setShowAddModal(false);
+      setNewAdmin({ email: '', displayName: '', groupIds: [] });
+    },
+  });
+
+  const deleteAdminMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`${API_URL}/api/admin/admins/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to remove admin');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] });
+      setShowDeleteConfirm(null);
+    },
+  });
+
   const filteredAdmins = data?.admins?.filter((admin: AdminUser) =>
     admin.email.toLowerCase().includes(search.toLowerCase()) ||
     admin.displayName.toLowerCase().includes(search.toLowerCase())
   ) || [];
+
+  const groups: AdminGroup[] = groupsData || [];
 
   return (
     <AdminShell>
@@ -64,7 +137,10 @@ export default function AdminUsersPage() {
               Manage platform administrators and their permissions
             </p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+          >
             <UserPlus className="w-4 h-4" />
             Add Admin
           </button>
@@ -117,8 +193,12 @@ export default function AdminUsersPage() {
                       <p className="text-sm text-admin-400">{admin.email}</p>
                     </div>
                   </div>
-                  <button className="p-1 hover:bg-admin-700 rounded">
-                    <MoreVertical className="w-5 h-5 text-admin-400" />
+                  <button 
+                    onClick={() => setShowDeleteConfirm(admin.id)}
+                    className="p-1 hover:bg-red-500/20 rounded text-admin-400 hover:text-red-400 transition-colors"
+                    title="Remove admin"
+                  >
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -126,14 +206,16 @@ export default function AdminUsersPage() {
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-admin-500" />
                     <div className="flex flex-wrap gap-1">
-                      {admin.groups?.map((group) => (
+                      {admin.groups?.length > 0 ? admin.groups.map((group) => (
                         <span
                           key={group}
                           className="px-2 py-0.5 text-xs rounded bg-primary-600/20 border border-primary-600/30 text-primary-400"
                         >
                           {group}
                         </span>
-                      ))}
+                      )) : (
+                        <span className="text-xs text-admin-500">No groups assigned</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -161,6 +243,151 @@ export default function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {/* Add Admin Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-admin-800 rounded-xl p-6 w-full max-w-md border border-admin-700">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-white">Add New Admin</h2>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                className="text-admin-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              createAdminMutation.mutate(newAdmin);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-admin-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={newAdmin.email}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                    className="w-full px-3 py-2 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
+                    placeholder="admin@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-admin-300 mb-1">Display Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={newAdmin.displayName}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, displayName: e.target.value })}
+                    className="w-full px-3 py-2 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-admin-300 mb-1">Groups (optional)</label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {groups.map((group) => (
+                      <label key={group.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newAdmin.groupIds.includes(group.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewAdmin({ ...newAdmin, groupIds: [...newAdmin.groupIds, group.id] });
+                            } else {
+                              setNewAdmin({ ...newAdmin, groupIds: newAdmin.groupIds.filter(id => id !== group.id) });
+                            }
+                          }}
+                          className="rounded border-admin-600 bg-admin-900 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-admin-300">{group.name}</span>
+                      </label>
+                    ))}
+                    {groups.length === 0 && (
+                      <p className="text-sm text-admin-500">No groups available</p>
+                    )}
+                  </div>
+                </div>
+
+                {createAdminMutation.error && (
+                  <p className="text-sm text-red-400">
+                    {(createAdminMutation.error as Error).message}
+                  </p>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createAdminMutation.isPending}
+                    className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {createAdminMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      'Add Admin'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-admin-800 rounded-xl p-6 w-full max-w-sm border border-admin-700">
+            <h2 className="text-lg font-semibold text-white mb-2">Remove Admin?</h2>
+            <p className="text-admin-400 mb-6">
+              This will revoke admin privileges. The user account will remain active.
+            </p>
+            
+            {deleteAdminMutation.error && (
+              <p className="text-sm text-red-400 mb-4">
+                {(deleteAdminMutation.error as Error).message}
+              </p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteAdminMutation.mutate(showDeleteConfirm)}
+                disabled={deleteAdminMutation.isPending}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleteAdminMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  'Remove'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminShell>
   );
 }
