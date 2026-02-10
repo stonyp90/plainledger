@@ -69,11 +69,21 @@ export default function LoginPage() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store token
+      // Store tokens
       if (data.accessToken) {
         setAuthToken(data.accessToken);
         // Store in sessionStorage for persistence
         sessionStorage.setItem('admin_token', data.accessToken);
+        
+        // Store refresh token and expiry for automatic refresh
+        if (data.refreshToken) {
+          sessionStorage.setItem('admin_refresh_token', data.refreshToken);
+        }
+        if (data.expiresIn) {
+          // Store expiry time (current time + expiresIn seconds - 60 second buffer)
+          const expiryTime = Date.now() + (data.expiresIn - 60) * 1000;
+          sessionStorage.setItem('admin_token_expiry', expiryTime.toString());
+        }
         
         // Reload to initialize admin context
         window.location.href = '/';

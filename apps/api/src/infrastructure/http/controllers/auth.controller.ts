@@ -113,6 +113,11 @@ export class LoginDto {
   password: string;
 }
 
+export class RefreshTokenDto {
+  @IsString()
+  refreshToken: string;
+}
+
 export class ValidateResetTokenDto {
   @IsString()
   token: string;
@@ -364,6 +369,82 @@ export class AuthController {
       throw new UnauthorizedException(
         "Invalid email or password. Please try again.",
       );
+    }
+  }
+
+  /**
+   * Refresh access token using refresh token
+   * Public endpoint - exchanges refresh token for new access token
+   */
+  @Post("refresh")
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() dto: RefreshTokenDto) {
+    this.logger.log("Token refresh request");
+
+    try {
+      const keycloakUrl =
+        this.configService.get<string>("KEYCLOAK_URL") ||
+        "http://localhost:8080";
+      const realm =
+        this.configService.get<string>("KEYCLOAK_REALM") || "plainledger";
+      const clientId =
+        this.configService.get<string>("KEYCLOAK_CLIENT_ID") ||
+        "plainledger-api";
+      const clientSecret = this.configService.get<string>(
+        "KEYCLOAK_CLIENT_SECRET",
+      );
+
+      if (!clientSecret) {
+        this.logger.error("Keycloak client secret not configured");
+        throw new UnauthorizedException("Token refresh unavailable");
+      }
+
+      // Refresh token via Keycloak token endpoint
+      const tokenUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;
+
+      const params = new URLSearchParams();
+      params.append("grant_type", "refresh_token");
+      params.append("client_id", clientId);
+      params.append("client_secret", clientSecret);
+      params.append("refresh_token", dto.refreshToken);
+
+      const response = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        this.logger.warn(
+          `Token refresh failed: ${response.status} - ${errorData.error_description || errorData.error || "Unknown error"}`,
+        );
+        throw new UnauthorizedException("Token refresh failed. Please log in again.");
+      }
+
+      const tokenData = await response.json();
+
+      this.logger.log("Token refreshed successfully");
+
+      return {
+        success: true,
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token,
+        idToken: tokenData.id_token,
+        expiresIn: tokenData.expires_in,
+        refreshExpiresIn: tokenData.refresh_expires_in,
+        tokenType: tokenData.token_type,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      this.logger.error(`Token refresh failed: ${error.message}`, error.stack);
+      throw new UnauthorizedException("Token refresh failed. Please log in again.");
     }
   }
 
