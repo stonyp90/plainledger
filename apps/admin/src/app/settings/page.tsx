@@ -6,12 +6,12 @@ import {
   Settings as SettingsIcon,
   Bell,
   Shield,
-  Database,
   Mail,
   Globe,
   Key,
   Save,
   RefreshCw,
+  Info,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -22,7 +22,6 @@ export default function SettingsPage() {
     { id: 'general', label: 'General', icon: SettingsIcon },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'integrations', label: 'Integrations', icon: Database },
   ];
 
   const handleSave = async () => {
@@ -84,7 +83,6 @@ export default function SettingsPage() {
             {activeTab === 'general' && <GeneralSettings />}
             {activeTab === 'notifications' && <NotificationSettings />}
             {activeTab === 'security' && <SecuritySettings />}
-            {activeTab === 'integrations' && <IntegrationSettings />}
           </div>
         </div>
       </div>
@@ -221,50 +219,6 @@ function SecuritySettings() {
             <option value="basic">Basic (8+ chars)</option>
           </select>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function IntegrationSettings() {
-  const integrations = [
-    { name: 'QuickBooks', status: 'connected', icon: '📊' },
-    { name: 'Xero', status: 'connected', icon: '📈' },
-    { name: 'Stripe', status: 'connected', icon: '💳' },
-    { name: 'HubSpot', status: 'disconnected', icon: '📞' },
-    { name: 'Slack', status: 'disconnected', icon: '💬' },
-  ];
-
-  return (
-    <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
-      <h2 className="text-lg font-semibold text-white mb-4">Integrations</h2>
-      
-      <div className="space-y-3">
-        {integrations.map((integration) => (
-          <div
-            key={integration.name}
-            className="flex items-center justify-between p-4 bg-admin-900 rounded-lg border border-admin-700"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{integration.icon}</span>
-              <div>
-                <p className="font-medium text-white">{integration.name}</p>
-                <p className={`text-sm ${
-                  integration.status === 'connected' ? 'text-green-400' : 'text-admin-500'
-                }`}>
-                  {integration.status === 'connected' ? 'Connected' : 'Not connected'}
-                </p>
-              </div>
-            </div>
-            <button className={`px-3 py-1.5 rounded text-sm ${
-              integration.status === 'connected'
-                ? 'bg-primary-600/20 border border-primary-600/30 text-primary-400 hover:bg-primary-600/30'
-                : 'bg-primary-600 text-white hover:bg-primary-700'
-            }`}>
-              {integration.status === 'connected' ? 'Configure' : 'Connect'}
-            </button>
-          </div>
-        ))}
       </div>
     </div>
   );

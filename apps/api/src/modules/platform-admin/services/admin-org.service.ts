@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { OrganizationEntity } from '@infrastructure/persistence/postgres/entities/organization.entity';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
+import { DataSourceConnectionEntity } from '@infrastructure/persistence/postgres/entities/data-source-connection.entity';
 
 export interface OrgListFilter {
   search?: string;
@@ -40,6 +41,8 @@ export class AdminOrgService {
     private readonly orgRepository: Repository<OrganizationEntity>,
     @InjectRepository(UserProfileEntity)
     private readonly userRepository: Repository<UserProfileEntity>,
+    @InjectRepository(DataSourceConnectionEntity)
+    private readonly connectionRepository: Repository<DataSourceConnectionEntity>,
   ) {}
 
   /**
@@ -239,5 +242,38 @@ export class AdminOrgService {
       .getRawMany();
 
     return result.map(r => r.industry);
+  }
+
+  /**
+   * Get integrations for organization
+   */
+  async getOrganizationIntegrations(orgId: string): Promise<{ integrations: Array<{
+    id: string;
+    provider: string;
+    status: string;
+    connectedAt?: Date;
+    lastSyncAt?: Date;
+    lastSyncStatus?: string;
+    providerAccountName?: string;
+  }> }> {
+    // First verify organization exists
+    await this.getOrganization(orgId);
+
+    const connections = await this.connectionRepository.find({
+      where: { organizationId: orgId },
+      order: { provider: 'ASC' },
+    });
+
+    return {
+      integrations: connections.map(conn => ({
+        id: conn.id,
+        provider: conn.provider,
+        status: conn.status === 'active' ? 'connected' : conn.status,
+        connectedAt: conn.createdAt,
+        lastSyncAt: conn.lastSyncAt,
+        lastSyncStatus: conn.lastSyncStatus,
+        providerAccountName: conn.providerAccountName,
+      })),
+    };
   }
 }

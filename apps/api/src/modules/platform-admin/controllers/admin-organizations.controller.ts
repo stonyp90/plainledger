@@ -127,6 +127,16 @@ export class AdminOrganizationsController {
     return this.auditService.getLogsForOrganization(id);
   }
 
+  @Get(':id/integrations')
+  @RequirePermission('org:view')
+  @ApiOperation({ summary: 'Get integrations for organization', description: 'Returns all data source integrations connected to this organization' })
+  @ApiParam({ name: 'id', description: 'Organization ID' })
+  @ApiResponse({ status: 200, description: 'List of integrations for the organization' })
+  @ApiResponse({ status: 404, description: 'Organization not found' })
+  async getOrganizationIntegrations(@Param('id') id: string) {
+    return this.orgService.getOrganizationIntegrations(id);
+  }
+
   @Post()
   @RequirePermission('org:create')
   @ApiOperation({ summary: 'Create organization on behalf of customer', description: 'Creates a new organization. Use this to onboard customers without them needing to self-register.' })
