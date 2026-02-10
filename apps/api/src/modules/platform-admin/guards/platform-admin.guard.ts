@@ -149,6 +149,32 @@ export class PlatformAdminGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
+    // SUPER ADMIN BYPASS: Users with platform_admin Keycloak role get all permissions
+    // This ensures platform admins can always access everything, even if DB permissions aren't set up
+    if (hasPlatformAdminRole || isEmailAllowed) {
+      this.logger.log(`PlatformAdminGuard: Super admin bypass for ${adminUser.email} - granting all permissions`);
+      request.adminUser = adminUser;
+      request.adminPermissions = new Set([
+        'org:list', 'org:view', 'org:create', 'org:edit', 'org:delete', 'org:hard_delete',
+        'user:list', 'user:view', 'user:create', 'user:edit', 'user:delete', 'user:impersonate',
+        'admin:list', 'admin:create', 'admin:disable',
+        'group:list', 'group:assign',
+        'billing:view', 'billing:manage',
+        'audit:view', 'audit:export',
+        'health:view',
+        'sync:view', 'sync:manage',
+        'notification:list', 'notification:create', 'notification:delete',
+        'integration:view', 'integration:manage',
+        'onboarding:view', 'onboarding:manage',
+        'communication:view', 'communication:send',
+        'chat:view', 'chat:respond',
+        'dashboard:view', 'settings:view', 'settings:manage',
+      ]);
+      // Update last access
+      await this.adminUserRepository.update(adminUser.id, { lastAccessAt: new Date() });
+      return true;
+    }
+
     // If no specific permissions required, just being an admin is enough
     if (!requiredPermissions || requiredPermissions.length === 0) {
       request.adminUser = adminUser;
