@@ -12,12 +12,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdminUserEntity } from '../entities/admin-user.entity';
 import { AdminAuditLogEntity } from '../entities/admin-audit-log.entity';
+import { AdminGroupEntity } from '../entities/admin-group.entity';
 import { PLATFORM_PERMISSIONS_KEY, PUBLIC_ADMIN_KEY } from '../decorators/require-permission.decorator';
 
 interface PermissionRequirement {
   type: 'all' | 'any';
   permissions: string[];
 }
+
+// List of emails that should be auto-provisioned as Super Admin on first login
+const AUTO_PROVISION_ADMINS = ['tony@plainledger.ca'];
 
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
@@ -30,6 +34,8 @@ export class PlatformAdminGuard implements CanActivate {
     private readonly adminUserRepository: Repository<AdminUserEntity>,
     @InjectRepository(AdminAuditLogEntity)
     private readonly auditLogRepository: Repository<AdminAuditLogEntity>,
+    @InjectRepository(AdminGroupEntity)
+    private readonly adminGroupRepository: Repository<AdminGroupEntity>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -95,10 +101,16 @@ export class PlatformAdminGuard implements CanActivate {
     }
 
     // Find admin user by Keycloak ID
-    const adminUser = await this.adminUserRepository.findOne({
+    let adminUser = await this.adminUserRepository.findOne({
       where: { keycloakId: user.sub, isActive: true },
       relations: ['groups', 'groups.permissions'],
     });
+
+    // Auto-provision admin for allowed emails on first login
+    if (!adminUser && user.email && AUTO_PROVISION_ADMINS.includes(user.email.toLowerCase())) {
+      this.logger.log(`PlatformAdminGuard: Auto-provisioning admin for ${user.email}`);
+      adminUser = await this.autoProvisionAdmin(user);
+    }
 
     if (!adminUser) {
       this.logger.warn(`PlatformAdminGuard: User ${user.email || user.preferred_username} (${user.sub}) is not a platform admin - access denied`);
@@ -229,5 +241,62 @@ export class PlatformAdminGuard implements CanActivate {
       request.connection?.remoteAddress ||
       request.ip
     );
+  }
+
+  /**
+   * Auto-provision an admin user for allowed emails on first login
+   */
+  private async autoProvisionAdmin(user: any): Promise<AdminUserEntity | null> {
+    try {
+      // Find the Super Admin group
+      const superAdminGroup = await this.adminGroupRepository.findOne({
+        where: { name: 'Super Admin' },
+        relations: ['permissions'],
+      });
+
+      if (!superAdminGroup) {
+        this.logger.error('PlatformAdminGuard: Super Admin group not found - cannot auto-provision');
+        return null;
+      }
+
+      // Create the admin user
+      const newAdmin = this.adminUserRepository.create({
+        keycloakId: user.sub,
+        email: user.email,
+        displayName: user.name || user.preferred_username || user.email,
+        isActive: true,
+        groups: [superAdminGroup],
+      });
+
+      const savedAdmin = await this.adminUserRepository.save(newAdmin);
+      this.logger.log(`PlatformAdminGuard: Auto-provisioned admin ${user.email} with Super Admin role`);
+
+      // Log the auto-provision event
+      try {
+        await this.auditLogRepository.save({
+          adminUserId: savedAdmin.id,
+          adminEmail: savedAdmin.email,
+          action: 'admin:auto_provisioned',
+          resourceType: 'admin',
+          resourceId: savedAdmin.id,
+          metadata: {
+            keycloakId: user.sub,
+            autoProvisionReason: 'Email in AUTO_PROVISION_ADMINS list',
+          },
+          success: true,
+        });
+      } catch (auditError) {
+        this.logger.error('Failed to log auto-provision event', auditError);
+      }
+
+      // Reload with relations
+      return this.adminUserRepository.findOne({
+        where: { id: savedAdmin.id },
+        relations: ['groups', 'groups.permissions'],
+      });
+    } catch (error) {
+      this.logger.error(`PlatformAdminGuard: Failed to auto-provision admin for ${user.email}`, error);
+      return null;
+    }
   }
 }
