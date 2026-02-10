@@ -20,8 +20,8 @@ interface PermissionRequirement {
   permissions: string[];
 }
 
-// List of emails that should be auto-provisioned as Super Admin on first login
-const AUTO_PROVISION_ADMINS = ['tony@plainledger.ca'];
+// Keycloak role that grants platform admin access
+const PLATFORM_ADMIN_ROLE = 'platform_admin';
 
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
@@ -106,15 +106,17 @@ export class PlatformAdminGuard implements CanActivate {
       relations: ['groups', 'groups.permissions'],
     });
 
-    // Auto-provision admin for allowed emails on first login
-    if (!adminUser && user.email && AUTO_PROVISION_ADMINS.includes(user.email.toLowerCase())) {
-      this.logger.log(`PlatformAdminGuard: Auto-provisioning admin for ${user.email}`);
+    // Check if user has platform-admin role in Keycloak
+    const hasPlatformAdminRole = this.hasKeycloakRole(user, PLATFORM_ADMIN_ROLE);
+
+    // Auto-provision admin for users with platform-admin Keycloak role
+    if (!adminUser && hasPlatformAdminRole) {
+      this.logger.log(`PlatformAdminGuard: Auto-provisioning admin for ${user.email} (has ${PLATFORM_ADMIN_ROLE} role)`);
       adminUser = await this.autoProvisionAdmin(user);
     }
 
     // Fix existing admin users who have no groups assigned (repair previous failed provisioning)
-    if (adminUser && (!adminUser.groups || adminUser.groups.length === 0) && 
-        user.email && AUTO_PROVISION_ADMINS.includes(user.email.toLowerCase())) {
+    if (adminUser && (!adminUser.groups || adminUser.groups.length === 0) && hasPlatformAdminRole) {
       this.logger.log(`PlatformAdminGuard: Fixing group assignment for ${user.email}`);
       adminUser = await this.fixAdminGroups(adminUser);
     }
@@ -248,6 +250,27 @@ export class PlatformAdminGuard implements CanActivate {
       request.connection?.remoteAddress ||
       request.ip
     );
+  }
+
+  /**
+   * Check if user has a specific Keycloak role
+   * Checks both realm_access and resource_access (client roles)
+   */
+  private hasKeycloakRole(user: any, role: string): boolean {
+    // Check realm-level roles
+    if (user.realm_access?.roles?.includes(role)) {
+      return true;
+    }
+
+    // Check client-level roles for common client names
+    const clientNames = ['plainledger-api', 'plainledger-web', 'plainledger-admin'];
+    for (const client of clientNames) {
+      if (user.resource_access?.[client]?.roles?.includes(role)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

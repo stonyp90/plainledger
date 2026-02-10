@@ -291,6 +291,10 @@
     {
       "name": "Viewers",
       "realmRoles": ["viewer"]
+    },
+    {
+      "name": "Platform Admins",
+      "realmRoles": ["platform_admin"]
     }
   ],
   "users": [
@@ -371,6 +375,19 @@
           "query-clients",
           "query-groups"
         ]
+      }
+    },
+    {
+      "username": "tony@plainledger.ca",
+      "email": "tony@plainledger.ca",
+      "firstName": "Tony",
+      "lastName": "Administrator",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["platform_admin", "admin", "owner"],
+      "groups": ["Platform Admins", "Administrators"],
+      "attributes": {
+        "locale": ["en"]
       }
     }
   ],
