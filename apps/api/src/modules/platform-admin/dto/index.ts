@@ -175,10 +175,9 @@ export class UserStatsDto {
 // ============================================
 
 export class CreateAdminUserDto {
-  @ApiProperty({ description: 'Keycloak user ID (optional - will lookup/create if not provided)', required: false })
+  @ApiProperty({ description: 'Keycloak user ID' })
   @IsString()
-  @IsOptional()
-  keycloakId?: string;
+  keycloakId: string;
 
   @ApiProperty({ description: 'Admin email', example: 'admin@plainledger.ca' })
   @IsEmail()
@@ -191,8 +190,7 @@ export class CreateAdminUserDto {
   @ApiProperty({ description: 'Group IDs to assign', type: [String] })
   @IsArray()
   @IsUUID('4', { each: true })
-  @IsOptional()
-  groupIds?: string[];
+  groupIds: string[];
 }
 
 export class AssignGroupsDto {
