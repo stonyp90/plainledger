@@ -8,18 +8,27 @@
 /**
  * Get list of demo users that should use sandbox
  * Can be configured via SANDBOX_USERS environment variable (comma-separated)
+ * 
+ * Default demo users (one per tier):
+ *   - demo-free@plainledger.ca (Free tier)
+ *   - demo-pro@plainledger.ca (Professional tier)
+ *   - demo@plainledger.ca (Enterprise tier)
+ *   - admin@plainledger.ca (Admin)
+ *   - accountant@plainledger.ca (Accountant)
  */
 function getSandboxUsers(): string[] {
   const envUsers = process.env.SANDBOX_USERS;
   if (envUsers) {
     return envUsers.split(",").map((email) => email.trim().toLowerCase());
   }
-  // Default demo users
+  // Default demo users - one per tier plus admin users
   return [
-    process.env.ADMIN_EMAIL || "admin@plainledger.ca",
-    process.env.ACCOUNTANT_EMAIL || "accountant@plainledger.ca",
-    process.env.DEMO_EMAIL || "demo@plainledger.ca",
-  ].map((email) => email.toLowerCase());
+    "demo-free@plainledger.ca",    // Free tier demo
+    "demo-pro@plainledger.ca",     // Professional tier demo
+    "demo@plainledger.ca",         // Enterprise tier demo
+    "admin@plainledger.ca",        // Admin user
+    "accountant@plainledger.ca",   // Accountant user
+  ];
 }
 
 /**

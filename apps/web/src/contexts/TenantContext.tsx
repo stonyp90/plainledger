@@ -258,16 +258,20 @@ const ENTERPRISE_FEATURES: TenantSettings['features'] = {
 };
 
 
-// Mock data for development
+// Mock data for development - One demo organization per tier
+// Login credentials:
+//   Free:       demo-free@plainledger.ca / DemoFree123!@#
+//   Pro:        demo-pro@plainledger.ca / DemoPro123!@#
+//   Enterprise: demo@plainledger.ca / DemoPass123!@#
 const MOCK_TENANTS: Tenant[] = [
   {
-    id: 'free-org',  // Free tier organization for testing
-    name: 'Free Starter Co.',
-    slug: 'free-starter',
-    plan: 'free',  // Free plan - limited features
+    id: 'demo-free',  // Free tier demo organization
+    name: 'Demo Free Co.',
+    slug: 'demo-free',
+    plan: 'free',
     status: 'active',
     createdAt: '2026-01-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES, demoMode: true },  // Demo mode for free tier
+    settings: { ...DEFAULT_SETTINGS, features: FREE_FEATURES, demoMode: true },
     limits: {
       ...PLAN_LIMITS.free,
       currentUsage: { users: 1, connections: 0, reports: 2, storage: 10, apiCalls: 50 },
@@ -278,38 +282,38 @@ const MOCK_TENANTS: Tenant[] = [
     region: 'canada',
   },
   {
-    id: 'demo-org',  // Matches the organization key in Keycloak and MinIO data
-    name: 'Demo Real Estate Corp',
-    slug: 'demo-corp',
-    plan: 'professional',  // Professional plan - has real data access
-    status: 'active',
-    createdAt: '2024-01-15T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: PROFESSIONAL_FEATURES, demoMode: false },  // Real data mode
-    limits: {
-      ...PLAN_LIMITS.professional,
-      currentUsage: { users: 1, connections: 1, reports: 3, storage: 50, apiCalls: 100 },
-    },
-    members: 1,
-    role: 'owner',
-    industry: 'real_estate',  // Match seeded QuickBooks data industry
-    region: 'canada',
-  },
-  {
-    id: 'tenant-3',
-    name: 'Pro Organization',
-    slug: 'pro-org',
+    id: 'demo-pro',  // Professional tier demo organization
+    name: 'Demo Professional Corp',
+    slug: 'demo-pro',
     plan: 'professional',
     status: 'active',
-    createdAt: '2025-12-01T10:00:00Z',
-    settings: { ...DEFAULT_SETTINGS, features: PROFESSIONAL_FEATURES },
+    createdAt: '2025-06-01T10:00:00Z',
+    settings: { ...DEFAULT_SETTINGS, features: PROFESSIONAL_FEATURES, demoMode: false },
     limits: {
       ...PLAN_LIMITS.professional,
-      currentUsage: { users: 3, connections: 2, reports: 15, storage: 450, apiCalls: 2500 },
+      currentUsage: { users: 3, connections: 1, reports: 10, storage: 200, apiCalls: 1500 },
     },
     members: 3,
     role: 'owner',
     industry: 'construction',
     region: 'quebec',
+  },
+  {
+    id: 'demo-org',  // Enterprise tier demo organization (main demo with real QuickBooks data)
+    name: 'Demo Enterprise Inc.',
+    slug: 'demo-enterprise',
+    plan: 'enterprise',
+    status: 'active',
+    createdAt: '2024-01-15T10:00:00Z',
+    settings: { ...DEFAULT_SETTINGS, features: ENTERPRISE_FEATURES, demoMode: false },
+    limits: {
+      ...PLAN_LIMITS.enterprise,
+      currentUsage: { users: 5, connections: 2, reports: 25, storage: 500, apiCalls: 5000 },
+    },
+    members: 5,
+    role: 'owner',
+    industry: 'real_estate',
+    region: 'canada',
   },
 ];
 

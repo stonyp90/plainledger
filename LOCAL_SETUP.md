@@ -114,12 +114,16 @@ Access Storybook at http://localhost:6006
 
 ### 6. Access the Application
 
-Navigate to http://localhost:5173 and login with:
+Navigate to http://localhost:5173 and login with one of the demo users (one per tier):
 
-| Email | Password | Organization |
-|-------|----------|--------------|
-| `demo@plainledger.ca` | `DemoPass123!@#` | demo-org |
-| `admin@plainledger.ca` | `AdminPass123!@#` | demo-org |
+| Email | Password | Tier | Organization |
+|-------|----------|------|--------------|
+| `demo-free@plainledger.ca` | `DemoFree123!@#` | Free | Demo Free Co. |
+| `demo-pro@plainledger.ca` | `DemoPro123!@#` | Professional | Demo Professional Corp |
+| `demo@plainledger.ca` | `DemoPass123!@#` | Enterprise | Demo Enterprise Inc. |
+| `admin@plainledger.ca` | `AdminPass123!@#` | Enterprise | Demo Enterprise Inc. |
+
+All demo users connect to the QuickBooks US Sandbox (Sandbox Company_US_1).
 
 ---
 

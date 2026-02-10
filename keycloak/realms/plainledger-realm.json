@@ -341,10 +341,56 @@
       }
     },
     {
+      "username": "demo-free@plainledger.ca",
+      "email": "demo-free@plainledger.ca",
+      "firstName": "Demo",
+      "lastName": "Free",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "DemoFree123!@#",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["viewer"],
+      "groups": ["Viewers"],
+      "attributes": {
+        "organization": ["demo-free"],
+        "organizationName": ["Demo Free Co."],
+        "subscriptionPlan": ["free"],
+        "locale": ["en"]
+      }
+    },
+    {
+      "username": "demo-pro@plainledger.ca",
+      "email": "demo-pro@plainledger.ca",
+      "firstName": "Demo",
+      "lastName": "Professional",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "DemoPro123!@#",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["owner"],
+      "groups": ["Administrators"],
+      "attributes": {
+        "organization": ["demo-pro"],
+        "organizationName": ["Demo Professional Corp"],
+        "subscriptionPlan": ["professional"],
+        "locale": ["en"]
+      }
+    },
+    {
       "username": "demo@plainledger.ca",
       "email": "demo@plainledger.ca",
       "firstName": "Demo",
-      "lastName": "User",
+      "lastName": "Enterprise",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
@@ -354,10 +400,12 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["viewer"],
-      "groups": ["Viewers"],
+      "realmRoles": ["owner"],
+      "groups": ["Administrators"],
       "attributes": {
         "organization": ["demo-org"],
+        "organizationName": ["Demo Enterprise Inc."],
+        "subscriptionPlan": ["enterprise"],
         "locale": ["en"]
       }
     },
