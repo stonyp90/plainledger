@@ -182,38 +182,3 @@ export const billingApi = {
   },
 };
 
-// Communications
-export const communicationsApi = {
-  listTemplates: () => fetchApi<{ templates: any[] }>('/api/admin/communications/templates'),
-  getTemplate: (name: string) =>
-    fetchApi<{ name: string; content: string }>(`/api/admin/communications/templates/${name}`),
-  updateTemplate: (name: string, content: string) =>
-    fetchApi<any>(`/api/admin/communications/templates/${name}`, {
-      method: 'PUT',
-      body: JSON.stringify({ content }),
-    }),
-  previewTemplate: (name: string, testData?: Record<string, unknown>) =>
-    fetchApi<{ preview: string }>('/api/admin/communications/templates/preview', {
-      method: 'POST',
-      body: JSON.stringify({ name, testData }),
-    }),
-  sendBulk: (data: {
-    templateName: string;
-    recipientIds: string[];
-    subject: string;
-    metadata?: Record<string, unknown>;
-  }) =>
-    fetchApi<any>('/api/admin/communications/send', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  listCampaigns: () => fetchApi<{ campaigns: any[] }>('/api/admin/communications/campaigns'),
-  getCampaign: (id: string) =>
-    fetchApi<any>(`/api/admin/communications/campaigns/${id}`),
-  getLogs: (params?: Record<string, string>) => {
-    const query = params ? `?${new URLSearchParams(params)}` : '';
-    return fetchApi<{ logs: any[]; total: number; limit: number; offset: number }>(
-      `/api/admin/communications/logs${query}`,
-    );
-  },
-};

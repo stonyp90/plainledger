@@ -171,30 +171,35 @@ export class AdminCommunicationService {
    * List communication campaigns
    */
   async listCampaigns(): Promise<CommunicationCampaign[]> {
-    const campaigns = await this.communicationLogRepository
-      .createQueryBuilder('log')
-      .select('log.campaignId', 'id')
-      .addSelect('MIN(log.createdAt)', 'createdAt')
-      .addSelect('MIN(log.sentAt)', 'sentAt')
-      .addSelect('COUNT(*)', 'recipientCount')
-      .addSelect('SUM(CASE WHEN log.status = \'sent\' THEN 1 ELSE 0 END)', 'sentCount')
-      .addSelect('SUM(CASE WHEN log.status = \'delivered\' THEN 1 ELSE 0 END)', 'deliveredCount')
-      .addSelect('SUM(CASE WHEN log.status = \'failed\' THEN 1 ELSE 0 END)', 'failedCount')
-      .where('log.campaignId IS NOT NULL')
-      .groupBy('log.campaignId')
-      .getRawMany();
+    try {
+      const campaigns = await this.communicationLogRepository
+        .createQueryBuilder('log')
+        .select('log.campaignId', 'id')
+        .addSelect('MIN(log.createdAt)', 'createdAt')
+        .addSelect('MIN(log.sentAt)', 'sentAt')
+        .addSelect('COUNT(*)', 'recipientCount')
+        .addSelect('SUM(CASE WHEN log.status = \'sent\' THEN 1 ELSE 0 END)', 'sentCount')
+        .addSelect('SUM(CASE WHEN log.status = \'delivered\' THEN 1 ELSE 0 END)', 'deliveredCount')
+        .addSelect('SUM(CASE WHEN log.status = \'failed\' THEN 1 ELSE 0 END)', 'failedCount')
+        .where('log.campaignId IS NOT NULL')
+        .groupBy('log.campaignId')
+        .getRawMany();
 
-    return campaigns.map((campaign) => ({
-      id: campaign.id,
-      name: `Campaign ${campaign.id.substring(0, 8)}`,
-      templateName: '', // Would need to join or fetch separately
-      recipientCount: parseInt(campaign.recipientCount, 10),
-      sentCount: parseInt(campaign.sentCount, 10),
-      deliveredCount: parseInt(campaign.deliveredCount, 10),
-      failedCount: parseInt(campaign.failedCount, 10),
-      createdAt: campaign.createdAt,
-      sentAt: campaign.sentAt || undefined,
-    }));
+      return campaigns.map((campaign) => ({
+        id: campaign.id,
+        name: `Campaign ${campaign.id.substring(0, 8)}`,
+        templateName: '', // Would need to join or fetch separately
+        recipientCount: parseInt(campaign.recipientCount, 10),
+        sentCount: parseInt(campaign.sentCount, 10),
+        deliveredCount: parseInt(campaign.deliveredCount, 10),
+        failedCount: parseInt(campaign.failedCount, 10),
+        createdAt: campaign.createdAt,
+        sentAt: campaign.sentAt || undefined,
+      }));
+    } catch (error) {
+      this.logger.error(`Failed to list campaigns: ${error.message}`, error.stack);
+      return [];
+    }
   }
 
   /**
@@ -207,36 +212,46 @@ export class AdminCommunicationService {
     status?: string;
     templateName?: string;
   }) {
-    const queryBuilder = this.communicationLogRepository.createQueryBuilder('log');
+    try {
+      const queryBuilder = this.communicationLogRepository.createQueryBuilder('log');
 
-    if (params.type) {
-      queryBuilder.andWhere('log.type = :type', { type: params.type });
+      if (params.type) {
+        queryBuilder.andWhere('log.type = :type', { type: params.type });
+      }
+
+      if (params.status) {
+        queryBuilder.andWhere('log.status = :status', { status: params.status });
+      }
+
+      if (params.templateName) {
+        queryBuilder.andWhere('log.templateName = :templateName', {
+          templateName: params.templateName,
+        });
+      }
+
+      queryBuilder.orderBy('log.createdAt', 'DESC');
+
+      const limit = params.limit || 50;
+      const offset = params.offset || 0;
+
+      queryBuilder.take(limit).skip(offset);
+
+      const [logs, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        logs,
+        total,
+        limit,
+        offset,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get communication logs: ${error.message}`, error.stack);
+      return {
+        logs: [],
+        total: 0,
+        limit: params.limit || 50,
+        offset: params.offset || 0,
+      };
     }
-
-    if (params.status) {
-      queryBuilder.andWhere('log.status = :status', { status: params.status });
-    }
-
-    if (params.templateName) {
-      queryBuilder.andWhere('log.templateName = :templateName', {
-        templateName: params.templateName,
-      });
-    }
-
-    queryBuilder.orderBy('log.createdAt', 'DESC');
-
-    const limit = params.limit || 50;
-    const offset = params.offset || 0;
-
-    queryBuilder.take(limit).skip(offset);
-
-    const [logs, total] = await queryBuilder.getManyAndCount();
-
-    return {
-      logs,
-      total,
-      limit,
-      offset,
-    };
   }
 }

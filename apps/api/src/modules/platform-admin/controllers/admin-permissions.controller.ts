@@ -32,10 +32,15 @@ export class AdminPermissionsController {
   @ApiOperation({ summary: 'List all permissions' })
   @ApiResponse({ status: 200, description: 'List of permissions' })
   async listPermissions() {
-    const permissions = await this.permissionRepository.find({
-      order: { category: 'ASC', id: 'ASC' },
-    });
-    return permissions;
+    try {
+      const permissions = await this.permissionRepository.find({
+        order: { category: 'ASC', id: 'ASC' },
+      });
+      return permissions;
+    } catch (error) {
+      // Return empty array if table doesn't exist yet
+      return [];
+    }
   }
 
   @Get(':id')

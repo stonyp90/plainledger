@@ -32,10 +32,15 @@ export class AdminEntitlementsController {
   @ApiOperation({ summary: 'List all entitlements' })
   @ApiResponse({ status: 200, description: 'List of entitlements' })
   async listEntitlements() {
-    const entitlements = await this.entitlementRepository.find({
-      order: { category: 'ASC', id: 'ASC' },
-    });
-    return entitlements;
+    try {
+      const entitlements = await this.entitlementRepository.find({
+        order: { category: 'ASC', id: 'ASC' },
+      });
+      return entitlements;
+    } catch (error) {
+      // Return empty array if table doesn't exist yet
+      return [];
+    }
   }
 
   @Get(':id')

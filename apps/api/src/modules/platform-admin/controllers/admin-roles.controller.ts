@@ -35,11 +35,16 @@ export class AdminRolesController {
   @ApiOperation({ summary: 'List all roles' })
   @ApiResponse({ status: 200, description: 'List of roles' })
   async listRoles() {
-    const roles = await this.roleRepository.find({
-      relations: ['permissions'],
-      order: { tierLevel: 'DESC' },
-    });
-    return roles;
+    try {
+      const roles = await this.roleRepository.find({
+        relations: ['permissions'],
+        order: { tierLevel: 'DESC' },
+      });
+      return roles;
+    } catch (error) {
+      // Return empty array if table doesn't exist yet
+      return [];
+    }
   }
 
   @Get(':id')

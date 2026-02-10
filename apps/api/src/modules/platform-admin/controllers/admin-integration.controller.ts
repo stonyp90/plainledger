@@ -119,21 +119,13 @@ export class AdminIntegrationController {
     description: 'Returns all datasource connections across all organizations',
   })
   @ApiResponse({ status: 200, description: 'List of connections' })
-  async listConnections(@Query('provider') provider?: string) {
-    try {
-      // In production, would query from datasource repository
-      // For now, return placeholder
-      return {
-        connections: [],
-        total: 0,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to list connections: ${error.message}`, error.stack);
-      return {
-        connections: [],
-        total: 0,
-      };
-    }
+  async listConnections(@Query('provider') _provider?: string) {
+    // In production, would query from datasource repository
+    // For now, return placeholder
+    return {
+      connections: [],
+      total: 0,
+    };
   }
 
   @Get('webhooks/logs')

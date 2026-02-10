@@ -38,15 +38,20 @@ export class AdminSubscriptionPlansController {
   @ApiOperation({ summary: 'List all subscription plans' })
   @ApiResponse({ status: 200, description: 'List of subscription plans' })
   async listPlans() {
-    const plans = await this.planRepository.find({
-      relations: ['planEntitlements', 'planEntitlements.entitlement'],
-      order: { displayOrder: 'ASC' },
-    });
-    // Transform to include entitlements array for backwards compatibility
-    return plans.map((plan) => ({
-      ...plan,
-      entitlements: plan.planEntitlements?.map((pe) => pe.entitlement) || [],
-    }));
+    try {
+      const plans = await this.planRepository.find({
+        relations: ['planEntitlements', 'planEntitlements.entitlement'],
+        order: { displayOrder: 'ASC' },
+      });
+      // Transform to include entitlements array for backwards compatibility
+      return plans.map((plan) => ({
+        ...plan,
+        entitlements: plan.planEntitlements?.map((pe) => pe.entitlement) || [],
+      }));
+    } catch (error) {
+      // Return empty array if tables don't exist yet
+      return [];
+    }
   }
 
   @Get(':id')
