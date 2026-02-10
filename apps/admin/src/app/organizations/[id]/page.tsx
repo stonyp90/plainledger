@@ -73,6 +73,9 @@ export default function OrganizationDetailPage() {
   const { token } = useAdmin();
   const [activeTab, setActiveTab] = useState<'overview' | 'integrations' | 'users'>('overview');
 
+  // Skip fetching if this is the "new" route - should be handled by static /organizations/new page
+  const isValidId = !!params.id && params.id !== 'new';
+
   const { data: org, isLoading, refetch } = useQuery({
     queryKey: ['organization', params.id, token],
     queryFn: async () => {
@@ -84,7 +87,7 @@ export default function OrganizationDetailPage() {
       if (!response.ok) throw new Error('Failed to fetch organization');
       return response.json() as Promise<Organization>;
     },
-    enabled: !!token && !!params.id,
+    enabled: !!token && isValidId,
   });
 
   const { data: integrationsData } = useQuery({
@@ -98,7 +101,7 @@ export default function OrganizationDetailPage() {
       if (!response.ok) return { integrations: [] };
       return response.json();
     },
-    enabled: !!token && !!params.id,
+    enabled: !!token && isValidId,
   });
 
   const integrations: Integration[] = integrationsData?.integrations || [];
