@@ -782,6 +782,55 @@ export class KeycloakAdminService
   }
 
   /**
+   * List all users from Keycloak with pagination and search
+   */
+  async listUsers(options: {
+    search?: string;
+    first?: number;
+    max?: number;
+  } = {}): Promise<{ users: KeycloakUser[]; total: number }> {
+    if (!this.isConfigured) {
+      this.logger.warn('Keycloak Admin Service not configured, returning empty users list');
+      return { users: [], total: 0 };
+    }
+
+    try {
+      const { search, first = 0, max = 50 } = options;
+
+      // Get total count first
+      const countResult = await this.adminClient.users.count({
+        realm: this.realm,
+        ...(search ? { search } : {}),
+      });
+      const total = typeof countResult === 'number' ? countResult : 0;
+
+      // Get paginated users
+      const keycloakUsers = await this.adminClient.users.find({
+        realm: this.realm,
+        first,
+        max,
+        ...(search ? { search } : {}),
+      });
+
+      const users: KeycloakUser[] = keycloakUsers.map((user) => ({
+        id: user.id!,
+        email: user.email!,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        emailVerified: user.emailVerified ?? false,
+        enabled: user.enabled ?? true,
+        attributes: user.attributes as Record<string, string[]>,
+        createdTimestamp: user.createdTimestamp,
+      }));
+
+      return { users, total };
+    } catch (error) {
+      this.logger.error(`Failed to list users from Keycloak: ${error.message}`);
+      return { users: [], total: 0 };
+    }
+  }
+
+  /**
    * Delete user
    */
   async deleteUser(userId: string): Promise<void> {

@@ -48,50 +48,130 @@ export class AdminUserService {
 
   /**
    * List users with filters
+   * Queries Keycloak as the primary source of truth for users,
+   * and enriches with profile data from the database where available
    */
-  async listUsers(filter: UserListFilter): Promise<{ users: UserProfileEntity[]; total: number }> {
-    const queryBuilder = this.userRepository.createQueryBuilder('user');
-
-    if (filter.search) {
-      queryBuilder.andWhere(
-        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
-        { search: `%${filter.search}%` },
-      );
-    }
-
-    if (filter.organizationId) {
-      queryBuilder.andWhere('user.organizationId = :organizationId', { 
-        organizationId: filter.organizationId,
+  async listUsers(filter: UserListFilter): Promise<{ users: any[]; total: number }> {
+    try {
+      // Query Keycloak for users (source of truth for authentication)
+      const { users: keycloakUsers, total } = await this.keycloakAdmin.listUsers({
+        search: filter.search,
+        first: filter.offset || 0,
+        max: filter.limit || 50,
       });
-    }
 
-    if (filter.isActive !== undefined) {
-      queryBuilder.andWhere('user.isActive = :isActive', { isActive: filter.isActive });
-    }
+      // Get profile data from database for these users (if exists)
+      const userIds = keycloakUsers.map(u => u.id);
+      let profilesMap: Map<string, UserProfileEntity> = new Map();
+      
+      if (userIds.length > 0) {
+        try {
+          const profiles = await this.userRepository
+            .createQueryBuilder('user')
+            .where('user.id IN (:...userIds)', { userIds })
+            .getMany();
+          
+          profilesMap = new Map(profiles.map(p => [p.id, p]));
+        } catch (dbError) {
+          this.logger.warn(`Failed to get user profiles from database: ${dbError.message}`);
+        }
+      }
 
-    if (filter.emailVerified !== undefined) {
-      queryBuilder.andWhere('user.emailVerified = :emailVerified', { 
-        emailVerified: filter.emailVerified,
+      // Merge Keycloak users with profile data
+      const users = keycloakUsers.map(kcUser => {
+        const profile = profilesMap.get(kcUser.id);
+        const orgId = kcUser.attributes?.organization?.[0];
+        const orgName = kcUser.attributes?.organizationName?.[0];
+        
+        return {
+          id: kcUser.id,
+          email: kcUser.email,
+          firstName: kcUser.firstName || profile?.firstName,
+          lastName: kcUser.lastName || profile?.lastName,
+          emailVerified: kcUser.emailVerified,
+          isActive: kcUser.enabled,
+          organizationId: orgId || profile?.organizationId,
+          organizationName: orgName || profile?.organizationName,
+          role: profile?.role || kcUser.attributes?.role?.[0] || 'user',
+          lastLoginAt: profile?.lastLoginAt,
+          createdAt: kcUser.createdTimestamp ? new Date(kcUser.createdTimestamp) : profile?.createdAt,
+        };
       });
+
+      // Apply additional filters if needed (Keycloak search is limited)
+      let filteredUsers = users;
+      
+      if (filter.organizationId) {
+        filteredUsers = users.filter(u => u.organizationId === filter.organizationId);
+      }
+      
+      if (filter.isActive !== undefined) {
+        filteredUsers = users.filter(u => u.isActive === filter.isActive);
+      }
+
+      return { 
+        users: filteredUsers, 
+        total: filter.organizationId || filter.isActive !== undefined ? filteredUsers.length : total 
+      };
+    } catch (error) {
+      this.logger.error(`Failed to list users: ${error.message}`, error.stack);
+      
+      // Fallback to database-only query if Keycloak fails
+      return this.listUsersFromDatabase(filter);
     }
+  }
 
-    const sortBy = filter.sortBy || 'createdAt';
-    const sortOrder = filter.sortOrder || 'DESC';
-    queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
+  /**
+   * Fallback method to list users from database only
+   */
+  private async listUsersFromDatabase(filter: UserListFilter): Promise<{ users: UserProfileEntity[]; total: number }> {
+    try {
+      const queryBuilder = this.userRepository.createQueryBuilder('user');
 
-    const total = await queryBuilder.getCount();
+      if (filter.search) {
+        queryBuilder.andWhere(
+          '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+          { search: `%${filter.search}%` },
+        );
+      }
 
-    if (filter.limit) {
-      queryBuilder.limit(filter.limit);
+      if (filter.organizationId) {
+        queryBuilder.andWhere('user.organizationId = :organizationId', { 
+          organizationId: filter.organizationId,
+        });
+      }
+
+      if (filter.isActive !== undefined) {
+        queryBuilder.andWhere('user.isActive = :isActive', { isActive: filter.isActive });
+      }
+
+      if (filter.emailVerified !== undefined) {
+        queryBuilder.andWhere('user.emailVerified = :emailVerified', { 
+          emailVerified: filter.emailVerified,
+        });
+      }
+
+      const sortBy = filter.sortBy || 'createdAt';
+      const sortOrder = filter.sortOrder || 'DESC';
+      queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
+
+      const total = await queryBuilder.getCount();
+
+      if (filter.limit) {
+        queryBuilder.limit(filter.limit);
+      }
+
+      if (filter.offset) {
+        queryBuilder.offset(filter.offset);
+      }
+
+      const users = await queryBuilder.getMany();
+
+      return { users, total };
+    } catch (error) {
+      this.logger.error(`Database query failed: ${error.message}`);
+      return { users: [], total: 0 };
     }
-
-    if (filter.offset) {
-      queryBuilder.offset(filter.offset);
-    }
-
-    const users = await queryBuilder.getMany();
-
-    return { users, total };
   }
 
   /**
