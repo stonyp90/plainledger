@@ -15,8 +15,8 @@ import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { RoleEntity } from '@infrastructure/persistence/postgres/entities/role.entity';
-import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/permission.entity';
+import { AdminGroupEntity } from '../entities/admin-group.entity';
+import { AdminPermissionEntity } from '../entities/admin-permission.entity';
 
 @ApiTags('Platform Admin - Roles')
 @ApiBearerAuth()
@@ -24,23 +24,23 @@ import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/
 @UseGuards(PlatformAdminGuard)
 export class AdminRolesController {
   constructor(
-    @InjectRepository(RoleEntity)
-    private readonly roleRepository: Repository<RoleEntity>,
-    @InjectRepository(PermissionEntity)
-    private readonly permissionRepository: Repository<PermissionEntity>,
+    @InjectRepository(AdminGroupEntity)
+    private readonly groupRepository: Repository<AdminGroupEntity>,
+    @InjectRepository(AdminPermissionEntity)
+    private readonly permissionRepository: Repository<AdminPermissionEntity>,
   ) {}
 
   @Get()
   @RequirePermission('admin:view')
-  @ApiOperation({ summary: 'List all roles' })
+  @ApiOperation({ summary: 'List all roles (admin groups)' })
   @ApiResponse({ status: 200, description: 'List of roles' })
   async listRoles() {
     try {
-      const roles = await this.roleRepository.find({
+      const groups = await this.groupRepository.find({
         relations: ['permissions'],
         order: { tierLevel: 'DESC' },
       });
-      return roles;
+      return groups;
     } catch (error) {
       // Return empty array if table doesn't exist yet
       return [];
@@ -50,28 +50,27 @@ export class AdminRolesController {
   @Get(':id')
   @RequirePermission('admin:view')
   @ApiOperation({ summary: 'Get role by ID' })
-  @ApiParam({ name: 'id', description: 'Role ID' })
+  @ApiParam({ name: 'id', description: 'Role/Group ID' })
   @ApiResponse({ status: 200, description: 'Role details' })
   @ApiResponse({ status: 404, description: 'Role not found' })
   async getRole(@Param('id') id: string) {
-    const role = await this.roleRepository.findOne({
+    const group = await this.groupRepository.findOne({
       where: { id },
       relations: ['permissions'],
     });
-    if (!role) {
+    if (!group) {
       throw new Error(`Role ${id} not found`);
     }
-    return role;
+    return group;
   }
 
   @Post()
   @RequirePermission('admin:create')
-  @ApiOperation({ summary: 'Create new role' })
+  @ApiOperation({ summary: 'Create new role (admin group)' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        id: { type: 'string' },
         name: { type: 'string' },
         description: { type: 'string' },
         tierLevel: { type: 'number' },
@@ -82,18 +81,18 @@ export class AdminRolesController {
   })
   @ApiResponse({ status: 201, description: 'Role created successfully' })
   async createRole(@Body() data: any) {
-    const { permissionIds, ...roleData } = data;
-    const role = this.roleRepository.create(roleData);
-    const savedRole = (await this.roleRepository.save(role)) as unknown as RoleEntity;
+    const { permissionIds, ...groupData } = data;
+    const group = this.groupRepository.create(groupData as Partial<AdminGroupEntity>);
+    const savedGroup = await this.groupRepository.save(group) as AdminGroupEntity;
 
     if (permissionIds && permissionIds.length > 0) {
       const permissions = await this.permissionRepository.findBy({ id: In(permissionIds) });
-      (savedRole as any).permissions = permissions;
-      await this.roleRepository.save(savedRole);
+      savedGroup.permissions = permissions;
+      await this.groupRepository.save(savedGroup);
     }
 
-    return this.roleRepository.findOne({
-      where: { id: savedRole.id },
+    return this.groupRepository.findOne({
+      where: { id: savedGroup.id },
       relations: ['permissions'],
     });
   }
@@ -101,32 +100,32 @@ export class AdminRolesController {
   @Put(':id')
   @RequirePermission('admin:edit')
   @ApiOperation({ summary: 'Update role' })
-  @ApiParam({ name: 'id', description: 'Role ID' })
+  @ApiParam({ name: 'id', description: 'Role/Group ID' })
   @ApiResponse({ status: 200, description: 'Role updated successfully' })
   async updateRole(@Param('id') id: string, @Body() data: any) {
-    const { permissionIds, ...roleData } = data;
-    const role = await this.roleRepository.findOne({
+    const { permissionIds, ...groupData } = data;
+    const group = await this.groupRepository.findOne({
       where: { id },
       relations: ['permissions'],
     });
 
-    if (!role) {
+    if (!group) {
       throw new Error(`Role ${id} not found`);
     }
 
-    if (role.isSystem && roleData.isSystem === false) {
+    if (group.isSystem && groupData.isSystem === false) {
       throw new Error('Cannot modify system role');
     }
 
-    Object.assign(role, roleData);
+    Object.assign(group, groupData);
 
     if (permissionIds !== undefined) {
       const permissions = await this.permissionRepository.findBy({ id: In(permissionIds) });
-      (role as any).permissions = permissions;
+      group.permissions = permissions;
     }
 
-    await this.roleRepository.save(role);
-    return this.roleRepository.findOne({
+    await this.groupRepository.save(group);
+    return this.groupRepository.findOne({
       where: { id },
       relations: ['permissions'],
     });
@@ -136,13 +135,13 @@ export class AdminRolesController {
   @RequirePermission('admin:delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete role' })
-  @ApiParam({ name: 'id', description: 'Role ID' })
+  @ApiParam({ name: 'id', description: 'Role/Group ID' })
   @ApiResponse({ status: 204, description: 'Role deleted successfully' })
   async deleteRole(@Param('id') id: string) {
-    const role = await this.roleRepository.findOne({ where: { id } });
-    if (role?.isSystem) {
+    const group = await this.groupRepository.findOne({ where: { id } });
+    if (group?.isSystem) {
       throw new Error('Cannot delete system role');
     }
-    await this.roleRepository.delete(id);
+    await this.groupRepository.delete(id);
   }
 }

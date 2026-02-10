@@ -15,7 +15,7 @@ import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/permission.entity';
+import { AdminPermissionEntity } from '../entities/admin-permission.entity';
 
 @ApiTags('Platform Admin - Permissions')
 @ApiBearerAuth()
@@ -23,8 +23,8 @@ import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/
 @UseGuards(PlatformAdminGuard)
 export class AdminPermissionsController {
   constructor(
-    @InjectRepository(PermissionEntity)
-    private readonly permissionRepository: Repository<PermissionEntity>,
+    @InjectRepository(AdminPermissionEntity)
+    private readonly permissionRepository: Repository<AdminPermissionEntity>,
   ) {}
 
   @Get()
@@ -52,7 +52,7 @@ export class AdminPermissionsController {
   async getPermission(@Param('id') id: string) {
     const permission = await this.permissionRepository.findOne({
       where: { id },
-      relations: ['roles'],
+      relations: ['groups'],
     });
     if (!permission) {
       throw new Error(`Permission ${id} not found`);
@@ -75,7 +75,7 @@ export class AdminPermissionsController {
     },
   })
   @ApiResponse({ status: 201, description: 'Permission created successfully' })
-  async createPermission(@Body() data: Partial<PermissionEntity>) {
+  async createPermission(@Body() data: Partial<AdminPermissionEntity>) {
     const permission = this.permissionRepository.create(data);
     return this.permissionRepository.save(permission);
   }
@@ -85,7 +85,7 @@ export class AdminPermissionsController {
   @ApiOperation({ summary: 'Update permission' })
   @ApiParam({ name: 'id', description: 'Permission ID' })
   @ApiResponse({ status: 200, description: 'Permission updated successfully' })
-  async updatePermission(@Param('id') id: string, @Body() data: Partial<PermissionEntity>) {
+  async updatePermission(@Param('id') id: string, @Body() data: Partial<AdminPermissionEntity>) {
     const permission = await this.permissionRepository.findOne({ where: { id } });
     if (!permission) {
       throw new Error(`Permission ${id} not found`);
