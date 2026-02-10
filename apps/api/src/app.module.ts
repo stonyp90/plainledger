@@ -300,14 +300,25 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             )
           `);
           
-          // Seed default subscription plan before TypeORM synchronizes
+          // Seed default subscription plans before TypeORM synchronizes
           // This ensures foreign key constraints can be created successfully
           await client.query(`
             INSERT INTO tenant.subscription_plans (id, name, description, limits, display_order, is_active)
-            VALUES ('free', 'Free', 'Basic access with limited features', 
-                    '{"users": 1, "connections": 0, "reports": 5, "storage": 100, "apiCalls": 100, "powerBiDashboards": 0}'::jsonb, 
-                    1, true)
-            ON CONFLICT (id) DO NOTHING
+            VALUES 
+              ('free', 'Free', 'Basic access with limited features', 
+               '{"users": 1, "connections": 0, "reports": 5, "storage": 100, "apiCalls": 100, "powerBiDashboards": 0}'::jsonb, 
+               1, true),
+              ('professional', 'Professional', 'Full accounting features for growing businesses', 
+               '{"users": 5, "connections": 2, "reports": 50, "storage": 5000, "apiCalls": 10000, "powerBiDashboards": 2}'::jsonb, 
+               2, true),
+              ('enterprise', 'Enterprise', 'Unlimited access with priority support', 
+               '{"users": -1, "connections": -1, "reports": -1, "storage": -1, "apiCalls": -1, "powerBiDashboards": -1}'::jsonb, 
+               3, true)
+            ON CONFLICT (id) DO UPDATE SET
+              name = EXCLUDED.name,
+              description = EXCLUDED.description,
+              limits = EXCLUDED.limits,
+              display_order = EXCLUDED.display_order
           `);
           
           // Add subscription_plan_id column to organizations if it doesn't exist
