@@ -23,6 +23,9 @@ interface PermissionRequirement {
 // Keycloak role that grants platform admin access
 const PLATFORM_ADMIN_ROLE = 'platform_admin';
 
+// Fallback: Allow these emails as platform admins (backup while debugging Keycloak roles)
+const PLATFORM_ADMIN_EMAILS = ['tony@plainledger.ca'];
+
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
   private readonly logger = new Logger(PlatformAdminGuard.name);
@@ -108,15 +111,26 @@ export class PlatformAdminGuard implements CanActivate {
 
     // Check if user has platform-admin role in Keycloak
     const hasPlatformAdminRole = this.hasKeycloakRole(user, PLATFORM_ADMIN_ROLE);
+    
+    // Fallback: Check if email is in allowed list
+    const isEmailAllowed = user.email && PLATFORM_ADMIN_EMAILS.includes(user.email.toLowerCase());
+    
+    // Log for debugging
+    this.logger.log(`PlatformAdminGuard: Checking access for ${user.email}`);
+    this.logger.log(`PlatformAdminGuard: hasPlatformAdminRole=${hasPlatformAdminRole}, isEmailAllowed=${isEmailAllowed}`);
+    this.logger.log(`PlatformAdminGuard: realm_access=${JSON.stringify(user.realm_access)}`);
+    
+    // Allow access if user has role OR email is in allowed list
+    const canAutoProvision = hasPlatformAdminRole || isEmailAllowed;
 
-    // Auto-provision admin for users with platform-admin Keycloak role
-    if (!adminUser && hasPlatformAdminRole) {
-      this.logger.log(`PlatformAdminGuard: Auto-provisioning admin for ${user.email} (has ${PLATFORM_ADMIN_ROLE} role)`);
+    // Auto-provision admin for users with platform-admin Keycloak role OR allowed email
+    if (!adminUser && canAutoProvision) {
+      this.logger.log(`PlatformAdminGuard: Auto-provisioning admin for ${user.email} (role=${hasPlatformAdminRole}, email=${isEmailAllowed})`);
       adminUser = await this.autoProvisionAdmin(user);
     }
 
     // Fix existing admin users who have no groups assigned (repair previous failed provisioning)
-    if (adminUser && (!adminUser.groups || adminUser.groups.length === 0) && hasPlatformAdminRole) {
+    if (adminUser && (!adminUser.groups || adminUser.groups.length === 0) && canAutoProvision) {
       this.logger.log(`PlatformAdminGuard: Fixing group assignment for ${user.email}`);
       adminUser = await this.fixAdminGroups(adminUser);
     }
