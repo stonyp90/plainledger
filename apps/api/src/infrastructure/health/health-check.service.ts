@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import Redis from 'ioredis';
+import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { CacheService } from '@infrastructure/cache/cache.service';
 import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
 
@@ -324,9 +325,8 @@ export class HealthCheckService {
         };
       }
 
-      // Try to actually list bucket to verify access
+      // Try to actually access the bucket to verify credentials work
       try {
-        const { S3Client, HeadBucketCommand } = await import('@aws-sdk/client-s3');
         const s3Client = new S3Client({
           region: this.configService.get<string>('AWS_REGION') || 'ca-central-1',
           ...(endpoint && endpoint !== 'AWS default' ? { endpoint, forcePathStyle: true } : {}),
