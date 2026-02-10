@@ -44,18 +44,14 @@ export default function AuditLogsPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'audit', search, actionFilter, page, token],
     queryFn: async () => {
-      try {
-        const params: Record<string, string> = {
-          limit: limit.toString(),
-          offset: (page * limit).toString(),
-        };
-        if (search) params.search = search;
-        if (actionFilter !== 'all') params.action = actionFilter;
+      const params: Record<string, string> = {
+        limit: limit.toString(),
+        offset: (page * limit).toString(),
+      };
+      if (search) params.search = search;
+      if (actionFilter !== 'all') params.action = actionFilter;
 
-        return await auditApi.list(params);
-      } catch (error) {
-        return { logs: getMockLogs(), total: 10 };
-      }
+      return await auditApi.list(params);
     },
     enabled: !!token,
   });
@@ -224,55 +220,4 @@ export default function AuditLogsPage() {
       </div>
     </AdminShell>
   );
-}
-
-// Mock data for demo
-function getMockLogs(): AuditLog[] {
-  const now = new Date();
-  return [
-    {
-      id: '1',
-      adminUserId: 'admin-1',
-      adminUserEmail: 'admin@plainledger.ca',
-      action: 'org:create',
-      resourceType: 'organization',
-      resourceName: 'Acme Corp',
-      targetOrgName: 'Acme Corp',
-      ipAddress: '192.168.1.100',
-      createdAt: new Date(now.getTime() - 3600000).toISOString(),
-    },
-    {
-      id: '2',
-      adminUserId: 'admin-1',
-      adminUserEmail: 'admin@plainledger.ca',
-      action: 'user:invite',
-      resourceType: 'user',
-      targetOrgName: 'Acme Corp',
-      targetUserEmail: 'john@acme.com',
-      ipAddress: '192.168.1.100',
-      createdAt: new Date(now.getTime() - 7200000).toISOString(),
-    },
-    {
-      id: '3',
-      adminUserId: 'admin-2',
-      adminUserEmail: 'support@plainledger.ca',
-      action: 'user:disable',
-      resourceType: 'user',
-      resourceName: 'Jane Doe',
-      targetUserEmail: 'jane@techstartup.com',
-      ipAddress: '10.0.0.50',
-      createdAt: new Date(now.getTime() - 86400000).toISOString(),
-    },
-    {
-      id: '4',
-      adminUserId: 'admin-1',
-      adminUserEmail: 'admin@plainledger.ca',
-      action: 'org:edit',
-      resourceType: 'organization',
-      resourceName: 'Tech Startup Inc',
-      targetOrgName: 'Tech Startup Inc',
-      ipAddress: '192.168.1.100',
-      createdAt: new Date(now.getTime() - 172800000).toISOString(),
-    },
-  ];
 }

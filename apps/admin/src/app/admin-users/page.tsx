@@ -32,22 +32,18 @@ export default function AdminUsersPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'admins', search, token],
     queryFn: async () => {
-      try {
-        // The adminsApi doesn't have a list function, so we'll use direct fetch
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiUrl}/api/admin/admins`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) {
-          return { admins: getMockAdmins() };
-        }
-        return response.json();
-      } catch (error) {
-        return { admins: getMockAdmins() };
+      // The adminsApi doesn't have a list function, so we'll use direct fetch
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${apiUrl}/api/admin/admins`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch admins: ${response.status}`);
       }
+      return response.json();
     },
     enabled: !!token,
   });
@@ -167,36 +163,4 @@ export default function AdminUsersPage() {
       </div>
     </AdminShell>
   );
-}
-
-// Mock data
-function getMockAdmins(): AdminUser[] {
-  return [
-    {
-      id: '1',
-      email: 'admin@plainledger.ca',
-      displayName: 'Admin User',
-      isActive: true,
-      groups: ['Platform Owner'],
-      createdAt: '2024-01-01T00:00:00Z',
-      lastLoginAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      email: 'support@plainledger.ca',
-      displayName: 'Support Team',
-      isActive: true,
-      groups: ['Support', 'User Management'],
-      createdAt: '2024-01-15T00:00:00Z',
-      lastLoginAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: '3',
-      email: 'ops@plainledger.ca',
-      displayName: 'Operations',
-      isActive: true,
-      groups: ['Billing', 'Support'],
-      createdAt: '2024-02-01T00:00:00Z',
-    },
-  ];
 }

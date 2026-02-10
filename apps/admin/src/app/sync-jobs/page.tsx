@@ -35,23 +35,19 @@ export default function SyncJobsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch, error } = useQuery({
     queryKey: ['admin', 'sync-jobs', statusFilter, search, token],
     queryFn: async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/admin/sync-jobs?limit=50`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) {
-          return { jobs: getMockJobs(), total: 5 };
-        }
-        return res.json();
-      } catch (error) {
-        return { jobs: getMockJobs(), total: 5 };
+      const res = await fetch(`${API_URL}/api/admin/sync-jobs?limit=50`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch sync jobs: ${res.status}`);
       }
+      return res.json();
     },
     enabled: !!token,
     refetchInterval: 10000,
@@ -243,62 +239,4 @@ export default function SyncJobsPage() {
       </div>
     </AdminShell>
   );
-}
-
-// Mock data for demo
-function getMockJobs(): SyncJob[] {
-  const now = new Date();
-  return [
-    {
-      id: '1',
-      organizationId: 'org-1',
-      organizationName: 'Acme Corporation',
-      provider: 'quickbooks',
-      status: 'completed',
-      startedAt: new Date(now.getTime() - 3600000).toISOString(),
-      completedAt: new Date(now.getTime() - 3540000).toISOString(),
-      recordsProcessed: 1250,
-      createdAt: new Date(now.getTime() - 3600000).toISOString(),
-    },
-    {
-      id: '2',
-      organizationId: 'org-2',
-      organizationName: 'Tech Startup Inc',
-      provider: 'xero',
-      status: 'running',
-      startedAt: new Date(now.getTime() - 300000).toISOString(),
-      recordsProcessed: 450,
-      createdAt: new Date(now.getTime() - 300000).toISOString(),
-    },
-    {
-      id: '3',
-      organizationId: 'org-3',
-      organizationName: 'Restaurant Group',
-      provider: 'quickbooks',
-      status: 'failed',
-      startedAt: new Date(now.getTime() - 7200000).toISOString(),
-      completedAt: new Date(now.getTime() - 7140000).toISOString(),
-      errorMessage: 'OAuth token expired',
-      createdAt: new Date(now.getTime() - 7200000).toISOString(),
-    },
-    {
-      id: '4',
-      organizationId: 'org-4',
-      organizationName: 'Construction Co',
-      provider: 'sage',
-      status: 'pending',
-      createdAt: new Date(now.getTime() - 60000).toISOString(),
-    },
-    {
-      id: '5',
-      organizationId: 'org-5',
-      organizationName: 'Healthcare Services',
-      provider: 'quickbooks',
-      status: 'completed',
-      startedAt: new Date(now.getTime() - 10800000).toISOString(),
-      completedAt: new Date(now.getTime() - 10740000).toISOString(),
-      recordsProcessed: 3200,
-      createdAt: new Date(now.getTime() - 10800000).toISOString(),
-    },
-  ];
 }

@@ -14,29 +14,15 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 
-// Mock data for fallback
-const mockStats = {
-  mrr: 12450,
-  arr: 149400,
-  activeSubscriptions: 48,
-  churnRate: 2.3,
-  avgRevenuePerUser: 259.38,
-  growth: 15.2,
+// Default empty stats
+const emptyStats = {
+  mrr: 0,
+  arr: 0,
+  activeSubscriptions: 0,
+  churnRate: 0,
+  avgRevenuePerUser: 0,
+  growth: 0,
 };
-
-const mockTransactions = [
-  { id: '1', org: 'Acme Corporation', amount: 299, type: 'subscription', date: '2024-02-01', status: 'paid' },
-  { id: '2', org: 'Tech Startup Inc', amount: 499, type: 'subscription', date: '2024-02-01', status: 'paid' },
-  { id: '3', org: 'Restaurant Group', amount: 199, type: 'subscription', date: '2024-01-28', status: 'failed' },
-  { id: '4', org: 'Construction Co', amount: 299, type: 'upgrade', date: '2024-01-25', status: 'paid' },
-  { id: '5', org: 'Healthcare Services', amount: 499, type: 'subscription', date: '2024-01-20', status: 'paid' },
-];
-
-const mockPlanDistribution = [
-  { plan: 'Free', count: 156, percentage: 65 },
-  { plan: 'Professional', count: 62, percentage: 26 },
-  { plan: 'Enterprise', count: 22, percentage: 9 },
-];
 
 export default function BillingPage() {
   const { token } = useAdmin();
@@ -44,45 +30,27 @@ export default function BillingPage() {
   // Fetch billing stats
   const { data: statsData, isLoading: statsLoading, refetch } = useQuery({
     queryKey: ['admin', 'billing', 'stats', token],
-    queryFn: async () => {
-      try {
-        return await billingApi.getStats();
-      } catch {
-        return mockStats;
-      }
-    },
+    queryFn: () => billingApi.getStats(),
     enabled: !!token,
   });
 
   // Fetch transactions
   const { data: transactionsData } = useQuery({
     queryKey: ['admin', 'billing', 'transactions', token],
-    queryFn: async () => {
-      try {
-        return await billingApi.getTransactions({ limit: '5' });
-      } catch {
-        return { transactions: mockTransactions };
-      }
-    },
+    queryFn: () => billingApi.getTransactions({ limit: '5' }),
     enabled: !!token,
   });
 
   // Fetch plan distribution
   const { data: plansData } = useQuery({
     queryKey: ['admin', 'billing', 'plans', token],
-    queryFn: async () => {
-      try {
-        return await billingApi.getPlanDistribution();
-      } catch {
-        return { plans: mockPlanDistribution };
-      }
-    },
+    queryFn: () => billingApi.getPlanDistribution(),
     enabled: !!token,
   });
 
-  const stats = statsData || mockStats;
-  const recentTransactions = transactionsData?.transactions || mockTransactions;
-  const planDistribution = plansData?.plans || mockPlanDistribution;
+  const stats = statsData || emptyStats;
+  const recentTransactions = transactionsData?.transactions || [];
+  const planDistribution = plansData?.plans || [];
 
   return (
     <AdminShell>
