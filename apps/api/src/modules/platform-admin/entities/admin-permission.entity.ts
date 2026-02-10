@@ -9,16 +9,16 @@ import { AdminGroupEntity } from './admin-group.entity';
 
 @Entity({ name: 'permissions', schema: 'platform' })
 export class AdminPermissionEntity {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: 'varchar', length: 100 })
   id: string; // e.g., 'org:view', 'user:delete'
 
-  @Column()
+  @Column({ type: 'varchar', length: 100 })
   name: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 50 })
   category: string; // org, user, billing, sync, support, config, admin, analytics
 
   @Column({ name: 'is_dangerous', default: false })

@@ -30,6 +30,7 @@ import { PostgresUserProfileRepository } from "@infrastructure/persistence/postg
 import { ConfigService } from "@nestjs/config";
 import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
 import { NovuService } from "@infrastructure/adapters/notifications/novu/novu.adapter";
+import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import * as crypto from "crypto";
 
 // =====================================================
@@ -162,6 +163,7 @@ export class AuthController {
     private readonly userProfileRepository: PostgresUserProfileRepository,
     private readonly configService: ConfigService,
     private readonly novuService: NovuService,
+    private readonly createOrganizationUseCase: CreateOrganizationUseCase,
   ) {}
 
   /**
@@ -478,9 +480,7 @@ export class AuthController {
         );
       }
 
-      // Create user in Keycloak (WITHOUT Keycloak sending verification email)
-      // We'll send our own branded email via SES
-      // New signups are assigned to demo-signup organization with demo mode enabled
+      // Create user in Keycloak first (we'll update with org ID after)
       const user = await this.keycloakAdminService.createUser({
         email: dto.email.toLowerCase().trim(),
         firstName: dto.firstName.trim(),
@@ -490,11 +490,6 @@ export class AuthController {
         emailVerified: false,
         sendVerificationEmail: false, // We'll send our own email via SES
         attributes: {
-          // Assign to demo-signup organization (locked demo account)
-          organization: ["demo-signup"],
-          organizationName: dto.organizationName?.trim()
-            ? [dto.organizationName.trim()]
-            : ["Demo Account"],
           ...(dto.industry ? { industry: [dto.industry] } : {}),
           province: [dto.province],
           registrationSource: ["web-signup"],
@@ -509,6 +504,32 @@ export class AuthController {
 
       this.logger.log(`User created successfully in Keycloak: ${user.id}`);
 
+      // Create a personal organization for this user
+      const orgName = dto.organizationName?.trim() || `${dto.firstName.trim()}'s Organization`;
+      let organization;
+      try {
+        organization = await this.createOrganizationUseCase.execute({
+          tenantId: user.id, // Use user ID as tenant ID for personal org
+          name: orgName,
+          industry: dto.industry,
+          currency: "CAD",
+        });
+        this.logger.log(`Organization created: ${organization.id} for user: ${user.id}`);
+
+        // Update Keycloak user with organization info
+        await this.keycloakAdminService.updateUserAttributes({
+          userId: user.id,
+          attributes: {
+            organization: [organization.id],
+            organizationName: [organization.name],
+          },
+        });
+        this.logger.log(`Keycloak user updated with organization: ${organization.id}`);
+      } catch (orgError) {
+        this.logger.warn(`Failed to create organization: ${orgError.message}`);
+        // Continue without org - user can create one later
+      }
+
       // Save user profile to PlainLedger database
       try {
         await this.userProfileRepository.create({
@@ -517,7 +538,8 @@ export class AuthController {
           firstName: dto.firstName.trim(),
           lastName: dto.lastName.trim(),
           province: dto.province,
-          organizationName: dto.organizationName?.trim(),
+          organizationId: organization?.id,
+          organizationName: organization?.name || orgName,
           industry: dto.industry,
           registrationSource: "web-signup",
         });

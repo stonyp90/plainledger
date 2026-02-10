@@ -15,16 +15,16 @@ export class AdminGroupEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 100, unique: true })
   name: string;
 
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'tier_level', default: 1 })
+  @Column({ name: 'tier_level', type: 'int', default: 1 })
   tierLevel: number;
 
-  @Column({ name: 'is_system', default: true })
+  @Column({ name: 'is_system', type: 'boolean', default: true })
   isSystem: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

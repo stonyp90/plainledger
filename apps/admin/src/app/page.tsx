@@ -128,15 +128,6 @@ export default function DashboardPage() {
             icon={Activity}
             color="primary"
           />
-          {stats?.health && (
-            <StatCard
-              title="System Health"
-              value={statsLoading ? '...' : stats.health.overallStatus.toUpperCase()}
-              change={`${stats.health.unhealthyServices || 0} unhealthy`}
-              icon={Activity}
-              color={stats.health.overallStatus === 'healthy' ? 'green' : stats.health.overallStatus === 'degraded' ? 'yellow' : 'red'}
-            />
-          )}
         </div>
 
         {/* Quick Actions */}

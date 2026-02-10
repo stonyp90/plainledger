@@ -148,6 +148,21 @@ async function bootstrap() {
   const config = createSwaggerConfig(isProduction);
   const document = SwaggerModule.createDocument(app, config);
   
+  // Allow Swagger UI to be embedded in iframe from admin domain
+  // This sets Content-Security-Policy: frame-ancestors to allow embedding
+  expressApp.use("/api/docs", (req: any, res: any, next: any) => {
+    // Allow embedding from admin subdomain and localhost for development
+    const allowedFrameAncestors = [
+      "'self'",
+      "https://admin.plainledger.ca",
+      "http://localhost:3001",
+      "http://localhost:3000",
+    ].join(" ");
+    res.setHeader("Content-Security-Policy", `frame-ancestors ${allowedFrameAncestors}`);
+    res.removeHeader("X-Frame-Options"); // Remove restrictive X-Frame-Options
+    next();
+  });
+  
   // Always enable Swagger - useful for API consumers and debugging
   SwaggerModule.setup("api/docs", app, document, {
     swaggerOptions: {

@@ -523,11 +523,31 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             ON CONFLICT (id) DO NOTHING
           `);
           
+          // Cleanup duplicate/stale groups (keep only Super Admin)
+          await client.query(`
+            DELETE FROM platform.group_permissions 
+            WHERE group_id IN (
+              SELECT id FROM platform.groups 
+              WHERE id != '00000000-0000-0000-0000-000000000001'
+            )
+          `);
+          await client.query(`
+            DELETE FROM platform.user_groups 
+            WHERE group_id IN (
+              SELECT id FROM platform.groups 
+              WHERE id != '00000000-0000-0000-0000-000000000001'
+            )
+          `);
+          await client.query(`
+            DELETE FROM platform.groups 
+            WHERE id != '00000000-0000-0000-0000-000000000001'
+          `);
+          
           // Seed default Super Admin group
           await client.query(`
             INSERT INTO platform.groups (id, name, description, tier_level, is_system)
             VALUES ('00000000-0000-0000-0000-000000000001', 'Super Admin', 'Full access to all admin features', 100, true)
-            ON CONFLICT (name) DO NOTHING
+            ON CONFLICT (id) DO UPDATE SET name = 'Super Admin', description = 'Full access to all admin features'
           `);
           
           // Assign all permissions to Super Admin group

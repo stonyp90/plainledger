@@ -406,6 +406,7 @@ jobs:
             VITE_KEYCLOAK_REALM=plainledger
             VITE_KEYCLOAK_CLIENT_ID=plainledger-web
             VITE_MOCK_AUTH=false
+            VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
             CACHE_BUST=${{ github.sha }}
             ${{ matrix.app.build_args || '' }}
 

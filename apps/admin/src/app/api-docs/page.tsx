@@ -17,7 +17,7 @@ export default function APIDocsPage() {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const swaggerUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/docs`;
+  const swaggerUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://plainledger.ca'}/api/docs`;
 
   const handleCopyUrl = async () => {
     try {

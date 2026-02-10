@@ -9,6 +9,7 @@ export interface CreateUserProfileInput {
   firstName: string;
   lastName: string;
   province?: string;
+  organizationId?: string;
   organizationName?: string;
   industry?: string;
   language?: string;
@@ -59,6 +60,7 @@ export class PostgresUserProfileRepository {
       firstName: input.firstName,
       lastName: input.lastName,
       province: input.province,
+      organizationId: input.organizationId,
       organizationName: input.organizationName,
       industry: input.industry,
       language: input.language || "en",

@@ -259,21 +259,27 @@ export class AdminOrgService {
     // First verify organization exists
     await this.getOrganization(orgId);
 
-    const connections = await this.connectionRepository.find({
-      where: { organizationId: orgId },
-      order: { provider: 'ASC' },
-    });
+    try {
+      const connections = await this.connectionRepository.find({
+        where: { organizationId: orgId },
+        order: { provider: 'ASC' },
+      });
 
-    return {
-      integrations: connections.map(conn => ({
-        id: conn.id,
-        provider: conn.provider,
-        status: conn.status === 'active' ? 'connected' : conn.status,
-        connectedAt: conn.createdAt,
-        lastSyncAt: conn.lastSyncAt,
-        lastSyncStatus: conn.lastSyncStatus,
-        providerAccountName: conn.providerAccountName,
-      })),
-    };
+      return {
+        integrations: connections.map(conn => ({
+          id: conn.id,
+          provider: conn.provider,
+          status: conn.status === 'active' ? 'connected' : conn.status,
+          connectedAt: conn.createdAt,
+          lastSyncAt: conn.lastSyncAt,
+          lastSyncStatus: conn.lastSyncStatus,
+          providerAccountName: conn.providerAccountName,
+        })),
+      };
+    } catch (error) {
+      // Table may not exist yet - return empty integrations
+      this.logger.warn(`Failed to fetch integrations for org ${orgId}: ${error.message}`);
+      return { integrations: [] };
+    }
   }
 }

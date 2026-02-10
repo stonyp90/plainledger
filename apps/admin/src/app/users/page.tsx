@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { useAdmin } from '@/hooks/useAdmin';
-import { usersApi } from '@/lib/api';
+import { usersApi, organizationsApi } from '@/lib/api';
 import { 
   Search, 
   Filter, 
@@ -14,12 +14,18 @@ import {
   Ban,
   CheckCircle,
   RefreshCw,
+  X,
+  Loader2,
 } from 'lucide-react';
 
 export default function UsersPage() {
   const { token } = useAdmin();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: '', organizationId: '', role: 'user' });
+  const [inviteError, setInviteError] = useState('');
   const limit = 20;
 
   const { data, isLoading, refetch } = useQuery({
@@ -38,6 +44,43 @@ export default function UsersPage() {
     enabled: !!token,
   });
 
+  // Fetch organizations for the invite modal
+  const { data: orgsData } = useQuery({
+    queryKey: ['admin', 'organizations', token],
+    queryFn: async () => {
+      try {
+        return await organizationsApi.list({ limit: '100' });
+      } catch {
+        return { organizations: [], total: 0 };
+      }
+    },
+    enabled: !!token,
+  });
+
+  // Invite user mutation
+  const inviteMutation = useMutation({
+    mutationFn: (data: { email: string; organizationId: string; role?: string }) =>
+      usersApi.invite(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      setIsInviteModalOpen(false);
+      setInviteForm({ email: '', organizationId: '', role: 'user' });
+      setInviteError('');
+    },
+    onError: (error: Error) => {
+      setInviteError(error.message || 'Failed to invite user');
+    },
+  });
+
+  const handleInvite = () => {
+    setInviteError('');
+    if (!inviteForm.email || !inviteForm.organizationId) {
+      setInviteError('Email and organization are required');
+      return;
+    }
+    inviteMutation.mutate(inviteForm);
+  };
+
   return (
     <AdminShell>
       <div className="p-6">
@@ -49,7 +92,10 @@ export default function UsersPage() {
               Manage all users across organizations
             </p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors">
+          <button 
+            onClick={() => setIsInviteModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+          >
             <UserPlus className="w-4 h-4" />
             Invite User
           </button>
@@ -181,6 +227,109 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Invite User Modal */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-admin-800 rounded-xl border border-admin-700 p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">Invite User</h2>
+              <button
+                onClick={() => {
+                  setIsInviteModalOpen(false);
+                  setInviteError('');
+                }}
+                className="p-1 hover:bg-admin-700 rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-admin-400" />
+              </button>
+            </div>
+
+            {inviteError && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                {inviteError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-admin-300 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  placeholder="user@example.com"
+                  className="w-full px-3 py-2 bg-admin-900 border border-admin-700 rounded-lg text-white placeholder-admin-500 focus:outline-none focus:border-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-admin-300 mb-1">
+                  Organization
+                </label>
+                <select
+                  value={inviteForm.organizationId}
+                  onChange={(e) => setInviteForm({ ...inviteForm, organizationId: e.target.value })}
+                  className="w-full px-3 py-2 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
+                >
+                  <option value="">Select an organization</option>
+                  {orgsData?.organizations?.map((org: any) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-admin-300 mb-1">
+                  Role
+                </label>
+                <select
+                  value={inviteForm.role}
+                  onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
+                  className="w-full px-3 py-2 bg-admin-900 border border-admin-700 rounded-lg text-white focus:outline-none focus:border-primary-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                  <option value="owner">Owner</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setIsInviteModalOpen(false);
+                  setInviteError('');
+                }}
+                className="flex-1 px-4 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-white text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInvite}
+                disabled={inviteMutation.isPending}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg text-white text-sm transition-colors"
+              >
+                {inviteMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Inviting...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    Send Invite
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminShell>
   );
 }

@@ -54,7 +54,11 @@ export default function EntitlementsPage() {
               Manage feature entitlements for subscription plans
             </p>
           </div>
-          <button className="btn-primary flex items-center gap-2">
+          <button 
+            className="btn-primary flex items-center gap-2 opacity-50 cursor-not-allowed"
+            title="Coming soon"
+            disabled
+          >
             <Plus className="w-4 h-4" />
             New Entitlement
           </button>
@@ -109,10 +113,18 @@ export default function EntitlementsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-primary-600/20 rounded">
+                  <button 
+                    className="p-2 hover:bg-primary-600/20 rounded opacity-50 cursor-not-allowed" 
+                    title="Coming soon"
+                    disabled
+                  >
                     <Edit className="w-4 h-4 text-admin-400" />
                   </button>
-                  <button className="p-2 hover:bg-primary-600/20 rounded">
+                  <button 
+                    className="p-2 hover:bg-primary-600/20 rounded opacity-50 cursor-not-allowed" 
+                    title="Coming soon"
+                    disabled
+                  >
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
                 </div>
