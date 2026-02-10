@@ -6,14 +6,17 @@ import {
   ExternalLink,
   Copy,
   Shield,
-  Database,
-  FileJson,
+  Maximize2,
+  Minimize2,
   CheckCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function APIDocsPage() {
   const [copied, setCopied] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
   const swaggerUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/docs`;
 
   const handleCopyUrl = async () => {
@@ -26,152 +29,100 @@ export default function APIDocsPage() {
     }
   };
 
-  const endpoints = [
-    { name: 'Organizations', description: 'Manage tenant organizations' },
-    { name: 'Users', description: 'User management and permissions' },
-    { name: 'Financial Reports', description: 'Generate and retrieve reports' },
-    { name: 'Data Sync', description: 'Trigger and monitor data synchronization' },
-    { name: 'Health', description: 'System health checks and status' },
-    { name: 'Analytics', description: 'Business intelligence and metrics' },
-  ];
+  const handleRefresh = () => {
+    setIframeKey(prev => prev + 1);
+  };
 
   return (
     <AdminShell>
-      <div className="p-6">
+      <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-admin-900' : 'p-6'}`}>
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">API Documentation</h1>
-          <p className="text-admin-400 mt-1">
-            Interactive API documentation powered by Swagger/OpenAPI
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Swagger Card */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary-600/20 rounded-xl flex items-center justify-center">
-                    <Code2 className="w-6 h-6 text-primary-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">Swagger UI</h2>
-                    <p className="text-sm text-admin-400">
-                      Explore and test all available API endpoints
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 p-3 bg-admin-900 rounded-lg border border-admin-700 mb-4">
-                <FileJson className="w-4 h-4 text-admin-400" />
-                <code className="text-sm text-admin-300 flex-1 overflow-x-auto">
-                  {swaggerUrl}
-                </code>
-              </div>
-
-              <div className="flex gap-3">
-                <a
-                  href={swaggerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm font-medium transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open Swagger UI
-                </a>
-                <button
-                  onClick={handleCopyUrl}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm font-medium transition-colors"
-                >
-                  {copied ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copy URL
-                    </>
-                  )}
-                </button>
-              </div>
+        <div className={`flex items-center justify-between mb-4 ${isFullscreen ? 'p-4 bg-admin-800 border-b border-admin-700' : ''}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary-600/20 rounded-lg flex items-center justify-center">
+              <Code2 className="w-5 h-5 text-primary-400" />
             </div>
-
-            {/* Authentication Card */}
-            <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-accent-500/20 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-accent-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Authentication</h3>
-                  <p className="text-sm text-admin-400">Bearer token authentication</p>
-                </div>
-              </div>
-
-              <p className="text-sm text-admin-400 mb-4">
-                The API uses Bearer token authentication. Use the &quot;Authorize&quot; button in Swagger UI to authenticate with your access token.
+            <div>
+              <h1 className="text-xl font-bold text-white">API Documentation</h1>
+              <p className="text-sm text-admin-400">
+                Interactive Swagger UI
               </p>
-
-              <div className="p-3 bg-admin-900 rounded-lg border border-admin-700 font-mono text-sm text-admin-300">
-                Authorization: Bearer {'<token>'}
-              </div>
             </div>
           </div>
-
-          {/* Sidebar - Endpoints Overview */}
-          <div className="space-y-6">
-            <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-primary-500/20 rounded-lg flex items-center justify-center">
-                  <Database className="w-5 h-5 text-primary-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">API Endpoints</h3>
-                  <p className="text-sm text-admin-400">Available resources</p>
-                </div>
-              </div>
-
-              <ul className="space-y-3">
-                {endpoints.map((endpoint) => (
-                  <li key={endpoint.name} className="flex items-start gap-3">
-                    <span className="w-2 h-2 rounded-full bg-primary-500 mt-1.5 flex-shrink-0"></span>
-                    <div>
-                      <p className="text-sm font-medium text-white">{endpoint.name}</p>
-                      <p className="text-xs text-admin-500">{endpoint.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Quick Tips */}
-            <div className="bg-admin-800 rounded-xl p-6 border border-admin-700">
-              <h3 className="font-semibold text-white mb-4">Quick Tips</h3>
-              <ul className="space-y-3 text-sm text-admin-400">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-400">•</span>
-                  <span>Use &quot;Try it out&quot; in Swagger UI to test endpoints directly</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-400">•</span>
-                  <span>All requests require a valid JWT token in the Authorization header</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-400">•</span>
-                  <span>Response schemas are documented for each endpoint</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary-400">•</span>
-                  <span>Download the OpenAPI spec from /api/docs-json</span>
-                </li>
-              </ul>
-            </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleCopyUrl}
+              className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+            >
+              {copied ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-400" />
+                  <span className="hidden sm:inline">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span className="hidden sm:inline">Copy URL</span>
+                </>
+              )}
+            </button>
+            <a
+              href={swaggerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 bg-admin-700 hover:bg-admin-600 rounded-lg text-admin-300 text-sm transition-colors"
+              title="Open in new tab"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">New Tab</span>
+            </a>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="flex items-center gap-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Exit Fullscreen</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Fullscreen</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Embedded Swagger UI */}
+        <div className={`bg-white rounded-xl overflow-hidden border border-admin-700 ${isFullscreen ? 'h-[calc(100vh-80px)]' : 'h-[calc(100vh-200px)] min-h-[600px]'}`}>
+          <iframe
+            key={iframeKey}
+            src={swaggerUrl}
+            className="w-full h-full"
+            title="API Documentation - Swagger UI"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+          />
+        </div>
+
+        {/* Authentication hint - only show when not fullscreen */}
+        {!isFullscreen && (
+          <div className="mt-4 flex items-center gap-3 p-3 bg-admin-800 rounded-lg border border-admin-700">
+            <Shield className="w-5 h-5 text-accent-400 flex-shrink-0" />
+            <p className="text-sm text-admin-400">
+              <span className="text-white font-medium">Tip:</span> Use the &quot;Authorize&quot; button in Swagger UI to authenticate with your Bearer token.
+            </p>
+          </div>
+        )}
       </div>
     </AdminShell>
   );
