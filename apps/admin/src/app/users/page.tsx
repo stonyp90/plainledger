@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -16,6 +16,12 @@ import {
   RefreshCw,
   X,
   Loader2,
+  Eye,
+  Edit,
+  Key,
+  LogOut,
+  Trash2,
+  UserCheck,
 } from 'lucide-react';
 
 export default function UsersPage() {
@@ -26,7 +32,23 @@ export default function UsersPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: '', organizationId: '', role: 'user' });
   const [inviteError, setInviteError] = useState('');
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
   const limit = 20;
+
+  // Close action menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        setOpenActionMenu(null);
+      }
+    }
+    if (openActionMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openActionMenu]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'users', search, page, token],
@@ -79,6 +101,78 @@ export default function UsersPage() {
       return;
     }
     inviteMutation.mutate(inviteForm);
+  };
+
+  // User action handlers
+  const handleDisableUser = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      await usersApi.disable(userId);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    } catch (error) {
+      console.error('Failed to disable user:', error);
+    } finally {
+      setActionLoading(null);
+      setOpenActionMenu(null);
+    }
+  };
+
+  const handleEnableUser = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      await usersApi.enable(userId);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    } catch (error) {
+      console.error('Failed to enable user:', error);
+    } finally {
+      setActionLoading(null);
+      setOpenActionMenu(null);
+    }
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      await usersApi.resetPassword(userId);
+      alert('Password reset email sent');
+    } catch (error) {
+      console.error('Failed to reset password:', error);
+      alert('Failed to send password reset email');
+    } finally {
+      setActionLoading(null);
+      setOpenActionMenu(null);
+    }
+  };
+
+  const handleForceLogout = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      await usersApi.forceLogout(userId);
+      alert('User sessions terminated');
+    } catch (error) {
+      console.error('Failed to force logout:', error);
+      alert('Failed to terminate user sessions');
+    } finally {
+      setActionLoading(null);
+      setOpenActionMenu(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete ${email}? This action cannot be undone.`)) {
+      return;
+    }
+    setActionLoading(userId);
+    try {
+      await usersApi.delete(userId);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      alert('Failed to delete user');
+    } finally {
+      setActionLoading(null);
+      setOpenActionMenu(null);
+    }
   };
 
   return (
@@ -190,10 +284,72 @@ export default function UsersPage() {
                     <td className="px-4 py-4 text-admin-400 text-sm">
                       {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
                     </td>
-                    <td className="px-4 py-4 text-right">
-                      <button className="p-1 hover:bg-primary-600/20 rounded transition-colors">
-                        <MoreVertical className="w-5 h-5 text-admin-400 hover:text-primary-400" />
+                    <td className="px-4 py-4 text-right relative">
+                      <button 
+                        onClick={() => setOpenActionMenu(openActionMenu === user.id ? null : user.id)}
+                        className="p-1 hover:bg-primary-600/20 rounded transition-colors"
+                      >
+                        {actionLoading === user.id ? (
+                          <Loader2 className="w-5 h-5 text-admin-400 animate-spin" />
+                        ) : (
+                          <MoreVertical className="w-5 h-5 text-admin-400 hover:text-primary-400" />
+                        )}
                       </button>
+                      
+                      {/* Actions Dropdown */}
+                      {openActionMenu === user.id && (
+                        <div 
+                          ref={actionMenuRef}
+                          className="absolute right-0 top-full mt-1 w-48 bg-admin-800 border border-admin-700 rounded-lg shadow-lg z-10 py-1"
+                        >
+                          <button
+                            onClick={() => window.open(`/users/${user.id}`, '_blank')}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-admin-300 hover:bg-primary-600/20 hover:text-primary-400"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleResetPassword(user.id)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-admin-300 hover:bg-primary-600/20 hover:text-primary-400"
+                          >
+                            <Key className="w-4 h-4" />
+                            Reset Password
+                          </button>
+                          <button
+                            onClick={() => handleForceLogout(user.id)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-admin-300 hover:bg-primary-600/20 hover:text-primary-400"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Force Logout
+                          </button>
+                          <div className="border-t border-admin-700 my-1" />
+                          {user.isActive !== false ? (
+                            <button
+                              onClick={() => handleDisableUser(user.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-yellow-400 hover:bg-yellow-600/20"
+                            >
+                              <Ban className="w-4 h-4" />
+                              Disable User
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleEnableUser(user.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400 hover:bg-green-600/20"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              Enable User
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteUser(user.id, user.email)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-600/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete User
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
