@@ -5,8 +5,8 @@
  * These templates follow consistent branding across all email communications.
  */
 
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 // ============================================================================
 // Types
@@ -24,35 +24,40 @@ export interface EmailTemplateData {
 @Injectable()
 export class EmailTemplatesService {
   private baseUrl: string;
+  private logoUrl: string;
   private currentYear: number;
 
   constructor(private configService: ConfigService) {
-    this.baseUrl = this.configService.get<string>(
-      "APP_URL",
-      "https://plainledger.ca",
+    this.baseUrl = this.configService.get<string>('APP_URL', 'https://plainledger.ca');
+    this.logoUrl = this.configService.get<string>(
+      'EMAIL_LOGO_URL',
+      `${this.baseUrl}/logo-full.svg`,
     );
     this.currentYear = new Date().getFullYear();
   }
 
   /**
+   * Consistent thin CTA style across all templates.
+   */
+  private getPrimaryButtonStyle(): string {
+    return 'display: inline-block; padding: 10px 26px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; line-height: 1.2; border: 1px solid rgba(255,255,255,0.1);';
+  }
+
+  /**
    * Generate password reset email HTML
    */
-  passwordReset(data: {
-    firstName: string;
-    resetUrl: string;
-    expiresIn: string;
-  }): string {
+  passwordReset(data: { firstName: string; resetUrl: string; expiresIn: string }): string {
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
         Reset Your Password
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>We received a request to reset your PlainLedger password. Click the button below to create a new password:</p>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.resetUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.resetUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Reset Password
         </a>
       </div>
@@ -72,28 +77,24 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Reset Your Password");
+    return this.wrapInLayout(content, 'Reset Your Password');
   }
 
   /**
    * Generate email verification email HTML
    */
-  emailVerification(data: {
-    firstName: string;
-    verifyUrl: string;
-    expiresIn: string;
-  }): string {
+  emailVerification(data: { firstName: string; verifyUrl: string; expiresIn: string }): string {
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
         Verify Your Email
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>Thank you for creating a PlainLedger account! Please verify your email address by clicking the button below:</p>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.verifyUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.verifyUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Verify Email
         </a>
       </div>
@@ -117,16 +118,16 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Verify Your Email");
+    return this.wrapInLayout(content, 'Verify Your Email');
   }
 
   /**
    * Generate MFA enabled confirmation email HTML
    */
   mfaEnabled(data: { firstName: string; timestamp: string }): string {
-    const formattedDate = new Date(data.timestamp).toLocaleString("en-CA", {
-      dateStyle: "full",
-      timeStyle: "short",
+    const formattedDate = new Date(data.timestamp).toLocaleString('en-CA', {
+      dateStyle: 'full',
+      timeStyle: 'short',
     });
 
     const content = `
@@ -134,7 +135,7 @@ export class EmailTemplatesService {
         Two-Factor Authentication Enabled
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>Two-factor authentication has been successfully enabled on your PlainLedger account.</p>
       
@@ -155,20 +156,16 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Two-Factor Authentication Enabled");
+    return this.wrapInLayout(content, 'Two-Factor Authentication Enabled');
   }
 
   /**
    * Generate password changed security alert email HTML
    */
-  passwordChanged(data: {
-    firstName: string;
-    timestamp: string;
-    ipAddress?: string;
-  }): string {
-    const formattedDate = new Date(data.timestamp).toLocaleString("en-CA", {
-      dateStyle: "full",
-      timeStyle: "short",
+  passwordChanged(data: { firstName: string; timestamp: string; ipAddress?: string }): string {
+    const formattedDate = new Date(data.timestamp).toLocaleString('en-CA', {
+      dateStyle: 'full',
+      timeStyle: 'short',
     });
 
     const content = `
@@ -176,7 +173,7 @@ export class EmailTemplatesService {
         Password Changed
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>Your PlainLedger password was successfully changed.</p>
       
@@ -191,7 +188,7 @@ export class EmailTemplatesService {
           <strong>IP Address:</strong> ${data.ipAddress}
         </p>
         `
-            : ""
+            : ''
         }
       </div>
       
@@ -206,7 +203,7 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Password Changed");
+    return this.wrapInLayout(content, 'Password Changed');
   }
 
   /**
@@ -218,9 +215,9 @@ export class EmailTemplatesService {
         Welcome to PlainLedger!
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
-      <p>Welcome to PlainLedger${data.organizationName ? ` for ${data.organizationName}` : ""}! We're thrilled to have you on board.</p>
+      <p>Welcome to PlainLedger${data.organizationName ? ` for ${data.organizationName}` : ''}! We're thrilled to have you on board.</p>
       
       <div style="font-size: 14px; color: #64748b; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border-left: 4px solid #10b981; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
         <strong style="color: #059669;">Your free account is ready!</strong><br>
@@ -245,7 +242,7 @@ export class EmailTemplatesService {
       </ul>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${this.baseUrl}/app/connections" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${this.baseUrl}/app/connections" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Get Started
         </a>
       </div>
@@ -260,28 +257,24 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Welcome to PlainLedger");
+    return this.wrapInLayout(content, 'Welcome to PlainLedger');
   }
 
   /**
    * Generate journey day 1 email HTML - Connect your accounting software
    */
-  journeyDay1(data: {
-    firstName: string;
-    connectionUrl: string;
-    calendlyUrl: string;
-  }): string {
+  journeyDay1(data: { firstName: string; connectionUrl: string; calendlyUrl: string }): string {
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
         Connect Your Accounting Software
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>Welcome to PlainLedger! To get the most out of your account, connect your accounting software and start seeing your real financial data.</p>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.connectionUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.connectionUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Connect Your Software
         </a>
       </div>
@@ -301,28 +294,24 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Connect Your Accounting Software");
+    return this.wrapInLayout(content, 'Connect Your Accounting Software');
   }
 
   /**
    * Generate journey day 3 email HTML - Schedule onboarding call
    */
-  journeyDay3(data: {
-    firstName: string;
-    calendlyUrl: string;
-    helpUrl: string;
-  }): string {
+  journeyDay3(data: { firstName: string; calendlyUrl: string; helpUrl: string }): string {
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
         Need Help Getting Started?
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>We noticed you haven't connected your accounting software yet. We're here to help!</p>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.calendlyUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.calendlyUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Schedule a Free Call
         </a>
       </div>
@@ -354,7 +343,7 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Need Help Getting Started?");
+    return this.wrapInLayout(content, 'Need Help Getting Started?');
   }
 
   /**
@@ -371,7 +360,7 @@ export class EmailTemplatesService {
         We're Here to Help You Succeed
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>It's been a week since you signed up for PlainLedger. We want to make sure you're getting the most out of your account.</p>
       
@@ -398,7 +387,7 @@ export class EmailTemplatesService {
       </ul>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.calendlyUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.calendlyUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Book a Demo
         </a>
       </div>
@@ -430,7 +419,7 @@ export class EmailTemplatesService {
         Your Financial Dashboard is Ready!
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>Great news! We've successfully connected your ${data.providerName} account and your financial dashboard is now ready.</p>
       
@@ -440,7 +429,7 @@ export class EmailTemplatesService {
       </div>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.dashboardUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.dashboardUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           View Dashboard
         </a>
       </div>
@@ -455,7 +444,7 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Your Financial Dashboard is Ready!");
+    return this.wrapInLayout(content, 'Your Financial Dashboard is Ready!');
   }
 
   /**
@@ -468,19 +457,16 @@ export class EmailTemplatesService {
     upgradeUrl: string;
     pricingUrl: string;
   }): string {
-    const formattedDate = new Date(data.trialEndsAt).toLocaleDateString(
-      "en-CA",
-      {
-        dateStyle: "long",
-      },
-    );
+    const formattedDate = new Date(data.trialEndsAt).toLocaleDateString('en-CA', {
+      dateStyle: 'long',
+    });
 
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1e293b;">
-        Your PlainLedger Trial Ends ${data.daysLeft === 1 ? "Tomorrow" : `in ${data.daysLeft} Days`}
+        Your PlainLedger Trial Ends ${data.daysLeft === 1 ? 'Tomorrow' : `in ${data.daysLeft} Days`}
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>Your PlainLedger trial ends on ${formattedDate}. Don't lose access to your financial insights!</p>
       
@@ -490,7 +476,7 @@ export class EmailTemplatesService {
       </div>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.upgradeUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.upgradeUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Subscribe Now
         </a>
       </div>
@@ -507,7 +493,7 @@ export class EmailTemplatesService {
 
     return this.wrapInLayout(
       content,
-      `Your Trial Ends ${data.daysLeft === 1 ? "Tomorrow" : `in ${data.daysLeft} Days`}`,
+      `Your Trial Ends ${data.daysLeft === 1 ? 'Tomorrow' : `in ${data.daysLeft} Days`}`,
     );
   }
 
@@ -525,7 +511,7 @@ export class EmailTemplatesService {
         We Miss You at PlainLedger!
       </h1>
       
-      <p>Hello ${data.firstName || "there"},</p>
+      <p>Hello ${data.firstName || 'there'},</p>
       
       <p>We noticed you haven't been active on PlainLedger lately. We'd love to help you get back on track with your financial insights.</p>
       
@@ -535,7 +521,7 @@ export class EmailTemplatesService {
       </div>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.dashboardUrl}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="${data.dashboardUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Visit Dashboard
         </a>
       </div>
@@ -550,7 +536,7 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "We Miss You at PlainLedger!");
+    return this.wrapInLayout(content, 'We Miss You at PlainLedger!');
   }
 
   /**
@@ -577,16 +563,16 @@ export class EmailTemplatesService {
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;">
           <strong>From:</strong> ${data.name} &lt;${data.email}&gt;
         </p>
-        ${data.company ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Company:</strong> ${data.company}</p>` : ""}
-        ${data.phone ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Phone:</strong> ${data.phone}</p>` : ""}
-        ${data.industry ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Industry:</strong> ${data.industry}</p>` : ""}
+        ${data.company ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Company:</strong> ${data.company}</p>` : ''}
+        ${data.phone ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Phone:</strong> ${data.phone}</p>` : ''}
+        ${data.industry ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Industry:</strong> ${data.industry}</p>` : ''}
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;">
           <strong>Subject:</strong> ${data.subject}
         </p>
-        ${data.referralSource ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>How they found us:</strong> ${data.referralSource}</p>` : ""}
-        ${data.source ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Source:</strong> ${data.source}</p>` : ""}
+        ${data.referralSource ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>How they found us:</strong> ${data.referralSource}</p>` : ''}
+        ${data.source ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Source:</strong> ${data.source}</p>` : ''}
         <p style="margin: 0; font-size: 14px; color: #64748b;">
-          <strong>Submitted:</strong> ${new Date(data.timestamp).toLocaleString("en-CA")}
+          <strong>Submitted:</strong> ${new Date(data.timestamp).toLocaleString('en-CA')}
         </p>
       </div>
       
@@ -596,13 +582,13 @@ export class EmailTemplatesService {
       </div>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject)}" class="email-button" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+        <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject)}" class="email-button" style="${this.getPrimaryButtonStyle()}">
           Reply to ${data.name}
         </a>
       </div>
     `;
 
-    return this.wrapInLayout(content, "New Contact Form Submission");
+    return this.wrapInLayout(content, 'New Contact Form Submission');
   }
 
   /**
@@ -629,7 +615,7 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "Thank You for Contacting Us");
+    return this.wrapInLayout(content, 'Thank You for Contacting Us');
   }
 
   /**
@@ -657,12 +643,12 @@ export class EmailTemplatesService {
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;">
           <strong>Company:</strong> ${data.companyName}
         </p>
-        ${data.companySize ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Company Size:</strong> ${data.companySize}</p>` : ""}
-        ${data.industry ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Industry:</strong> ${data.industry}</p>` : ""}
-        ${data.fiscalYearEnd ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Fiscal Year End:</strong> Month ${data.fiscalYearEnd}</p>` : ""}
-        ${data.currency ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Currency:</strong> ${data.currency}</p>` : ""}
-        ${data.primarySource ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Primary Source:</strong> ${data.primarySource}</p>` : ""}
-        ${data.teamEmails ? `<p style="margin: 0; font-size: 14px; color: #64748b;"><strong>Team Emails:</strong> ${data.teamEmails}</p>` : ""}
+        ${data.companySize ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Company Size:</strong> ${data.companySize}</p>` : ''}
+        ${data.industry ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Industry:</strong> ${data.industry}</p>` : ''}
+        ${data.fiscalYearEnd ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Fiscal Year End:</strong> Month ${data.fiscalYearEnd}</p>` : ''}
+        ${data.currency ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Currency:</strong> ${data.currency}</p>` : ''}
+        ${data.primarySource ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b;"><strong>Primary Source:</strong> ${data.primarySource}</p>` : ''}
+        ${data.teamEmails ? `<p style="margin: 0; font-size: 14px; color: #64748b;"><strong>Team Emails:</strong> ${data.teamEmails}</p>` : ''}
       </div>
       
       <p style="font-size: 14px; color: #64748b;">
@@ -670,7 +656,7 @@ export class EmailTemplatesService {
       </p>
     `;
 
-    return this.wrapInLayout(content, "New Onboarding Completed");
+    return this.wrapInLayout(content, 'New Onboarding Completed');
   }
 
   /**
@@ -688,7 +674,7 @@ export class EmailTemplatesService {
     const quarantineRate =
       data.recordsProcessed > 0
         ? ((data.recordsQuarantined / data.recordsProcessed) * 100).toFixed(1)
-        : "0.0";
+        : '0.0';
 
     const content = `
       <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #059669;">
@@ -727,7 +713,7 @@ export class EmailTemplatesService {
           </td>
         </tr>
         <tr>
-          <td style="padding: 12px 16px; background: ${data.recordsQuarantined > 0 ? "#fffbeb" : "#f8fafc"}; border-radius: 8px; font-size: 15px; margin-top: 8px;">
+          <td style="padding: 12px 16px; background: ${data.recordsQuarantined > 0 ? '#fffbeb' : '#f8fafc'}; border-radius: 8px; font-size: 15px; margin-top: 8px;">
             <strong>Records Quarantined:</strong> ${data.recordsQuarantined.toLocaleString()} (${quarantineRate}%)
           </td>
         </tr>
@@ -740,7 +726,7 @@ export class EmailTemplatesService {
           <strong>⚠️ High Quarantine Rate:</strong> ${quarantineRate}% of records were quarantined. Please review the data quality rules.
         </div>
       `
-          : ""
+          : ''
       }
       
       <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 15px;">
@@ -749,7 +735,7 @@ export class EmailTemplatesService {
       </div>
     `;
 
-    return this.wrapInLayout(content, "ETL Pipeline Success");
+    return this.wrapInLayout(content, 'ETL Pipeline Success');
   }
 
   /**
@@ -780,7 +766,7 @@ export class EmailTemplatesService {
           <strong>Failed:</strong> ${data.timestamp}
         </div>
         <div style="font-size: 15px; color: #991b1b;">
-          <strong>Status:</strong> ${data.retryable ? "Retryable" : "Permanent Failure"}
+          <strong>Status:</strong> ${data.retryable ? 'Retryable' : 'Permanent Failure'}
         </div>
       </div>
       
@@ -802,7 +788,7 @@ ${data.errorDetails}
           </div>
         </details>
       `
-          : ""
+          : ''
       }
       
       ${
@@ -825,7 +811,7 @@ ${data.errorDetails}
       </div>
     `;
 
-    return this.wrapInLayout(content, "ETL Pipeline Failure");
+    return this.wrapInLayout(content, 'ETL Pipeline Failure');
   }
 
   /**
@@ -897,9 +883,9 @@ ${data.errorDetails}
           </div>
         `,
           )
-          .join("")}
+          .join('')}
       `
-          : ""
+          : ''
       }
       
       <div style="font-size: 14px; color: #92400e; background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
@@ -912,7 +898,7 @@ ${data.errorDetails}
       </div>
     `;
 
-    return this.wrapInLayout(content, "Data Quality Alert");
+    return this.wrapInLayout(content, 'Data Quality Alert');
   }
 
   /**
@@ -929,29 +915,35 @@ ${data.errorDetails}
     baseUrl: string;
   }): string {
     const isEn = true; // Default to English, can be made dynamic based on user preference
-    
+
     const content = `
       <h1 class="email-title">
-        ${isEn ? "Visualization Shared" : "Visualisation partagée"}
+        ${isEn ? 'Visualization Shared' : 'Visualisation partagée'}
       </h1>
 
       <p class="email-text">
-        ${isEn ? `Hello ${data.firstName || "there"},` : `Bonjour ${data.firstName || "vous"},`}
+        ${isEn ? `Hello ${data.firstName || 'there'},` : `Bonjour ${data.firstName || 'vous'},`}
       </p>
 
       <p class="email-text">
-        ${isEn 
-          ? `A visualization has been shared with you: <strong>${data.title}</strong>`
-          : `Une visualisation vous a été partagée : <strong>${data.title}</strong>`}
+        ${
+          isEn
+            ? `A visualization has been shared with you: <strong>${data.title}</strong>`
+            : `Une visualisation vous a été partagée : <strong>${data.title}</strong>`
+        }
       </p>
 
-      ${data.message ? `
+      ${
+        data.message
+          ? `
         <div class="info-box" style="margin: 24px 0;">
           <p style="margin: 0; font-size: 14px; color: #64748b; font-style: italic;">
             "${data.message}"
           </p>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <!-- Chart Preview -->
       <div style="text-align: center; margin: 32px 0;">
@@ -964,25 +956,29 @@ ${data.errorDetails}
 
       <!-- Share Link -->
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${data.shareUrl}" class="email-button">
-          ${isEn ? "View Full Visualization" : "Voir la visualisation complète"}
+        <a href="${data.shareUrl}" class="email-button" style="${this.getPrimaryButtonStyle()}">
+          ${isEn ? 'View Full Visualization' : 'Voir la visualisation complète'}
         </a>
       </div>
 
-      ${data.password ? `
+      ${
+        data.password
+          ? `
         <div class="info-box warning" style="margin: 24px 0;">
-          <strong>${isEn ? "Password" : "Mot de passe"}:</strong>
+          <strong>${isEn ? 'Password' : 'Mot de passe'}:</strong>
           <p style="margin: 8px 0 0 0; font-size: 14px; color: #64748b; font-family: monospace; letter-spacing: 0.1em;">
             ${data.password}
           </p>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <div class="info-box" style="margin: 24px 0;">
-        <strong>${isEn ? "Share Details" : "Détails du partage"}:</strong>
+        <strong>${isEn ? 'Share Details' : 'Détails du partage'}:</strong>
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
           <tr>
-            <td style="padding: 4px 0; color: #64748b; width: 120px;">${isEn ? "Expires" : "Expire"}:</td>
+            <td style="padding: 4px 0; color: #64748b; width: 120px;">${isEn ? 'Expires' : 'Expire'}:</td>
             <td style="padding: 4px 0; color: #1e293b; font-weight: 500;">${data.expiresIn}</td>
           </tr>
         </table>
@@ -991,17 +987,19 @@ ${data.errorDetails}
       <hr class="email-divider">
 
       <p class="email-text" style="font-size: 14px; color: #64748b;">
-        ${isEn 
-          ? "This visualization was shared from PlainLedger. You can access it using the link above."
-          : "Cette visualisation a été partagée depuis PlainLedger. Vous pouvez y accéder en utilisant le lien ci-dessus."}
+        ${
+          isEn
+            ? 'This visualization was shared from PlainLedger. You can access it using the link above.'
+            : 'Cette visualisation a été partagée depuis PlainLedger. Vous pouvez y accéder en utilisant le lien ci-dessus.'
+        }
       </p>
 
       <div class="email-signature">
-        <p>${isEn ? "Best regards" : "Cordialement"},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
+        <p>${isEn ? 'Best regards' : 'Cordialement'},<br><strong style="color: #1e293b;">The PlainLedger Team</strong></p>
       </div>
     `;
 
-    return this.wrapInLayout(content, isEn ? "Visualization Shared" : "Visualisation partagée");
+    return this.wrapInLayout(content, isEn ? 'Visualization Shared' : 'Visualisation partagée');
   }
 
   // ===========================================================================
@@ -1059,6 +1057,18 @@ ${data.errorDetails}
             .email-body { padding: 24px !important; }
             .email-footer { padding: 24px !important; }
         }
+        .email-button {
+            display: inline-block;
+            padding: 10px 26px;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 1.2;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -1069,14 +1079,7 @@ ${data.errorDetails}
                     <!-- Header -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 32px 40px; text-align: center;">
-                            <!-- Text-based logo - reliable across all email clients -->
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 8px auto;">
-                                <tr>
-                                    <td style="width: 44px; height: 44px; background: rgba(255,255,255,0.15); border-radius: 10px; text-align: center; vertical-align: middle; font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
-                                        PL
-                                    </td>
-                                </tr>
-                            </table>
+                            <img src="${this.logoUrl}" alt="PlainLedger" width="178" style="display: block; margin: 0 auto 10px auto; width: 178px; max-width: 100%; height: auto;">
                             <div style="color: #ffffff; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px;">PlainLedger</div>
                             <p style="color: rgba(255, 255, 255, 0.85); font-size: 13px; margin: 6px 0 0 0; font-style: italic;">No surprises. Just numbers.</p>
                         </td>

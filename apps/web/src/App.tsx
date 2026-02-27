@@ -102,7 +102,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!initialized) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
@@ -127,9 +127,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // If emailVerified is undefined, allow access (assume verified - better UX)
   // Also skip check for signup page (user is completing signup flow)
   const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
-  if (!skipEmailVerification && user && user.emailVerified === false && 
-      !location.pathname.includes('/verify-email') && 
-      !location.pathname.includes('/signup')) {
+  if (
+    !skipEmailVerification &&
+    user &&
+    user.emailVerified === false &&
+    !location.pathname.includes('/verify-email') &&
+    !location.pathname.includes('/signup')
+  ) {
     return <Navigate to="/verify-email" replace />;
   }
 
@@ -145,10 +149,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNode }) {
   const { authenticated, initialized, user } = useKeycloak();
   const emailFromQuery = new URLSearchParams(window.location.search).get('email');
+  const tokenFromQuery = new URLSearchParams(window.location.search).get('token');
 
   if (!initialized) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
@@ -160,10 +165,11 @@ function ProtectedEmailVerificationRoute({ children }: { children: React.ReactNo
     );
   }
 
-  // Allow unauthenticated users if they have an email query param (coming from signup)
-  // This is needed because after signup, the user has an account but hasn't logged in yet
-  if (!authenticated && !emailFromQuery) {
-    // No email param = not coming from signup, redirect to login
+  // Allow unauthenticated users when arriving from:
+  // - signup flow (?email=...)
+  // - email verification link (?token=...)
+  if (!authenticated && !emailFromQuery && !tokenFromQuery) {
+    // No signup email or verification token = redirect to login
     return <Navigate to="/login" replace />;
   }
 
@@ -184,7 +190,7 @@ function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
 
   if (!initialized) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
@@ -215,11 +221,7 @@ function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
 
 // App Layout wrapper for authenticated routes
 function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <Layout>
-      {children}
-    </Layout>
-  );
+  return <Layout>{children}</Layout>;
 }
 
 function App() {
@@ -235,7 +237,7 @@ function App() {
   // Show loading while Keycloak initializes (only for initial load)
   if (!initialized) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
@@ -254,575 +256,521 @@ function App() {
         {config.crisp.enabled && config.crisp.websiteId && (
           <CrispChat websiteId={config.crisp.websiteId} />
         )}
-        
+
         {/* Cookie Consent Banner - GDPR/Law 25 Compliant */}
         <CookieConsent />
-        
+
         {/* PWA Components - Only render on client to prevent hydration issues */}
         <ClientOnly>
           <SmartInstallBanner />
           <OfflineIndicator />
         </ClientOnly>
-        
+
         <Routes>
-        {/* Public routes - Main marketing website at root */}
-        <Route 
-          path="/" 
-          element={authenticated ? <Navigate to="/app" replace /> : <Landing />} 
-        />
-        
-        {/* Preview landing page (bypasses auth redirect) */}
-        <Route 
-          path="/preview-landing" 
-          element={<Landing />} 
-        />
-        
-        {/* Legacy routes redirect to root */}
-        <Route 
-          path="/store" 
-          element={<Navigate to="/" replace />} 
-        />
-        <Route 
-          path="/landing" 
-          element={<Navigate to="/" replace />} 
-        />
-        
-        {/* Signup - unified 3-step signup flow */}
-        <Route 
-          path="/signup" 
-          element={authenticated ? <Navigate to="/app" replace /> : <Signup />} 
-        />
-        
-        {/* Register - alias for signup */}
-        <Route 
-          path="/register" 
-          element={authenticated ? <Navigate to="/app" replace /> : <Signup />} 
-        />
-        
-        {/* Login - custom UI */}
-        <Route 
-          path="/login" 
-          element={authenticated ? <Navigate to="/app" replace /> : <Login />} 
-        />
-        
-        {/* Signin - alias for login */}
-        <Route 
-          path="/signin" 
-          element={authenticated ? <Navigate to="/app" replace /> : <Login />} 
-        />
-        
-        {/* Forgot Password */}
-        <Route 
-          path="/forgot-password" 
-          element={authenticated ? <Navigate to="/app" replace /> : <ForgotPassword />} 
-        />
-        
-        {/* Reset Password - custom UI for setting new password */}
-        <Route 
-          path="/reset-password" 
-          element={authenticated ? <Navigate to="/app" replace /> : <ResetPassword />} 
-        />
+          {/* Public routes - Main marketing website at root */}
+          <Route path="/" element={authenticated ? <Navigate to="/app" replace /> : <Landing />} />
 
-        {/* MFA Setup - authenticated users only */}
-        <Route 
-          path="/mfa/setup" 
-          element={authenticated ? <MFASetup /> : <Navigate to="/login" replace />} 
-        />
+          {/* Preview landing page (bypasses auth redirect) */}
+          <Route path="/preview-landing" element={<Landing />} />
 
-        {/* MFA Verify - during login when MFA is required */}
-        <Route 
-          path="/mfa/verify" 
-          element={<MFAVerify />} 
-        />
-        
-        <Route 
-          path="/newsletter" 
-          element={<NewsletterPage />} 
-        />
+          {/* Legacy routes redirect to root */}
+          <Route path="/store" element={<Navigate to="/" replace />} />
+          <Route path="/landing" element={<Navigate to="/" replace />} />
 
-        {/* Terms of Service - public page */}
-        <Route 
-          path="/terms" 
-          element={<TermsOfService />} 
-        />
+          {/* Signup - unified 3-step signup flow */}
+          <Route
+            path="/signup"
+            element={authenticated ? <Navigate to="/app" replace /> : <Signup />}
+          />
 
-        {/* Privacy Policy - public page */}
-        <Route 
-          path="/privacy" 
-          element={<PrivacyPolicy />} 
-        />
+          {/* Register - alias for signup */}
+          <Route
+            path="/register"
+            element={authenticated ? <Navigate to="/app" replace /> : <Signup />}
+          />
 
-        {/* Security & Compliance - public page */}
-        <Route 
-          path="/security" 
-          element={<Security />} 
-        />
+          {/* Login - custom UI */}
+          <Route
+            path="/login"
+            element={authenticated ? <Navigate to="/app" replace /> : <Login />}
+          />
 
-        {/* Quebec Landing Page - public */}
-        <Route 
-          path="/quebec" 
-          element={<Quebec />} 
-        />
-        <Route 
-          path="/qc" 
-          element={<Quebec />} 
-        />
+          {/* Signin - alias for login */}
+          <Route
+            path="/signin"
+            element={authenticated ? <Navigate to="/app" replace /> : <Login />}
+          />
 
-        {/* Canada Landing Page - public */}
-        <Route 
-          path="/canada" 
-          element={<Canada />} 
-        />
+          {/* Forgot Password */}
+          <Route
+            path="/forgot-password"
+            element={authenticated ? <Navigate to="/app" replace /> : <ForgotPassword />}
+          />
 
-        {/* SR&ED Calculator - public tool */}
-        <Route 
-          path="/tools/sred-calculator" 
-          element={<SREDCalculatorPage />} 
-        />
-        <Route 
-          path="/calculateur-rsde" 
-          element={<SREDCalculatorPage />} 
-        />
+          {/* Reset Password - custom UI for setting new password */}
+          <Route
+            path="/reset-password"
+            element={authenticated ? <Navigate to="/app" replace /> : <ResetPassword />}
+          />
 
-        {/* City Landing Pages - Quebec */}
-        <Route 
-          path="/quebec/montreal" 
-          element={<Montreal />} 
-        />
-        <Route 
-          path="/quebec/montréal" 
-          element={<Montreal />} 
-        />
+          {/* MFA Setup - authenticated users only */}
+          <Route
+            path="/mfa/setup"
+            element={authenticated ? <MFASetup /> : <Navigate to="/login" replace />}
+          />
 
-        {/* Shared Document Access - public page (no auth required) */}
-        <Route 
-          path="/shared/:shareToken" 
-          element={<SharedDocumentAccess />} 
-        />
+          {/* MFA Verify - during login when MFA is required */}
+          <Route path="/mfa/verify" element={<MFAVerify />} />
 
-        {/* Email Verification - protected but separate from main app */}
-        <Route
-          path="/verify-email"
-          element={
-            <ProtectedEmailVerificationRoute>
-              <EmailConfirmation />
-            </ProtectedEmailVerificationRoute>
-          }
-        />
-        
-        {/* Onboarding - protected but separate from main app */}
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedOnboardingRoute>
-              <Onboarding />
-            </ProtectedOnboardingRoute>
-          }
-        />
+          <Route path="/newsletter" element={<NewsletterPage />} />
 
-        {/* Knowledge Base - protected routes with AppLayout */}
-        <Route
-          path="/help/knowledge-base/:topicId/:articleId"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <KnowledgeBase />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/help/knowledge-base/:topicId"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <KnowledgeBase />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/help/knowledge-base"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <KnowledgeBase />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-      
-      {/* Protected app routes */}
-      <Route
-        path="/app"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/connections"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Connections />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/reports"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Reports />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/reports/balance-sheet"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <BalanceSheet />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/reports/income-statement"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <IncomeStatement />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/reports/cash-flow"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CashFlowStatement />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/reports/trial-balance"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <TrialBalance />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/settings"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Settings />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/contact"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Contact />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/analytics/powerbi"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <PowerBIAnalytics />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/admin/org-features"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <OrgFeaturesConfig />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/anomalies"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <AnomalyDashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/visualizations"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CustomDashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/board-meeting"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <BoardMeeting />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      {/* Board Ready redirects to Board Meeting with share tab */}
-      <Route
-        path="/app/board-ready"
-        element={<Navigate to="/app/board-meeting" replace />}
-      />
-      <Route
-        path="/app/strategic-planning"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <StrategicPlanning />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/financial-model"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <FinancialModel />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/montage-financier"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <MontageFinancier />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/market-analysis"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <MarketAnalysis />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/tax-credits"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <TaxCredits />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/document-shares"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <DocumentShares />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+          {/* Terms of Service - public page */}
+          <Route path="/terms" element={<TermsOfService />} />
 
-      {/* Admin routes */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminDashboard />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminUsers />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/organizations"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminOrganizations />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/notifications"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminNotifications />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/chat"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminChat />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/audit"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminAudit />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/connections"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminConnections />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/health"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminHealth />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/onboarding"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminOnboarding />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/integrations"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminIntegrations />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/communications"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminCommunications />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/billing"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminBilling />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/sync-jobs"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminSyncJobs />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/admin-users"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminAdminUsers />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/api-docs"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminApiDocs />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/settings"
-        element={
-          <ProtectedRoute>
-            <AdminLayout>
-              <AdminSettings />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
-      
-        {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Privacy Policy - public page */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+
+          {/* Security & Compliance - public page */}
+          <Route path="/security" element={<Security />} />
+
+          {/* Quebec Landing Page - public */}
+          <Route path="/quebec" element={<Quebec />} />
+          <Route path="/qc" element={<Quebec />} />
+
+          {/* Canada Landing Page - public */}
+          <Route path="/canada" element={<Canada />} />
+
+          {/* SR&ED Calculator - public tool */}
+          <Route path="/tools/sred-calculator" element={<SREDCalculatorPage />} />
+          <Route path="/calculateur-rsde" element={<SREDCalculatorPage />} />
+
+          {/* City Landing Pages - Quebec */}
+          <Route path="/quebec/montreal" element={<Montreal />} />
+          <Route path="/quebec/montréal" element={<Montreal />} />
+
+          {/* Shared Document Access - public page (no auth required) */}
+          <Route path="/shared/:shareToken" element={<SharedDocumentAccess />} />
+
+          {/* Email Verification - protected but separate from main app */}
+          <Route
+            path="/verify-email"
+            element={
+              <ProtectedEmailVerificationRoute>
+                <EmailConfirmation />
+              </ProtectedEmailVerificationRoute>
+            }
+          />
+
+          {/* Onboarding - protected but separate from main app */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedOnboardingRoute>
+                <Onboarding />
+              </ProtectedOnboardingRoute>
+            }
+          />
+
+          {/* Knowledge Base - protected routes with AppLayout */}
+          <Route
+            path="/help/knowledge-base/:topicId/:articleId"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <KnowledgeBase />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/help/knowledge-base/:topicId"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <KnowledgeBase />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/help/knowledge-base"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <KnowledgeBase />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected app routes */}
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/connections"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Connections />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/reports"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reports />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/reports/balance-sheet"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <BalanceSheet />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/reports/income-statement"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <IncomeStatement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/reports/cash-flow"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CashFlowStatement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/reports/trial-balance"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <TrialBalance />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/settings"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/contact"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Contact />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/analytics/powerbi"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PowerBIAnalytics />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/admin/org-features"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <OrgFeaturesConfig />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/anomalies"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <AnomalyDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/visualizations"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CustomDashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/board-meeting"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <BoardMeeting />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Board Ready redirects to Board Meeting with share tab */}
+          <Route path="/app/board-ready" element={<Navigate to="/app/board-meeting" replace />} />
+          <Route
+            path="/app/strategic-planning"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <StrategicPlanning />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/financial-model"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <FinancialModel />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/montage-financier"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MontageFinancier />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/market-analysis"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <MarketAnalysis />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/tax-credits"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <TaxCredits />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/app/document-shares"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <DocumentShares />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminUsers />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/organizations"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminOrganizations />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/notifications"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminNotifications />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/chat"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminChat />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminAudit />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/connections"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminConnections />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/health"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminHealth />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/onboarding"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminOnboarding />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/integrations"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminIntegrations />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/communications"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminCommunications />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/billing"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminBilling />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/sync-jobs"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminSyncJobs />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/admin-users"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminAdminUsers />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/api-docs"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminApiDocs />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute>
+                <AdminLayout>
+                  <AdminSettings />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnalyticsVisibilityProvider>
     </ApolloProvider>
