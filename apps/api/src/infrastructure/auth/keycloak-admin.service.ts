@@ -17,19 +17,19 @@
  * - Keycloak's executeActionsEmail API is NOT used - we bypass it entirely
  */
 
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { IKeycloakAdminService } from "@application/ports/outbound/IKeycloakAdminService";
-import { SESAdapter } from "@infrastructure/adapters/email/ses/ses.adapter";
-import * as crypto from "crypto";
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { IKeycloakAdminService } from '@application/ports/outbound/IKeycloakAdminService';
+import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
+import * as crypto from 'crypto';
 
 // Dynamic import for ESM module compatibility
 // The @keycloak/keycloak-admin-client v26+ is ESM-only
-type KcAdminClientType = import("@keycloak/keycloak-admin-client").default;
+type KcAdminClientType = import('@keycloak/keycloak-admin-client').default;
 type UserRepresentation =
-  import("@keycloak/keycloak-admin-client/lib/defs/userRepresentation").default;
+  import('@keycloak/keycloak-admin-client/lib/defs/userRepresentation').default;
 type RoleRepresentation =
-  import("@keycloak/keycloak-admin-client/lib/defs/roleRepresentation").default;
+  import('@keycloak/keycloak-admin-client/lib/defs/roleRepresentation').default;
 
 // Re-export interface for convenience
 export { IKeycloakAdminService };
@@ -74,9 +74,7 @@ export interface KeycloakUser {
 }
 
 @Injectable()
-export class KeycloakAdminService
-  implements IKeycloakAdminService, OnModuleInit
-{
+export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit {
   private readonly logger = new Logger(KeycloakAdminService.name);
   // Use definite assignment assertion since we check isConfigured before any use
   private adminClient!: KcAdminClientType;
@@ -87,21 +85,18 @@ export class KeycloakAdminService
     private readonly configService: ConfigService,
     private readonly sesAdapter: SESAdapter,
   ) {
-    this.realm = this.configService.get<string>(
-      "KEYCLOAK_REALM",
-      "plainledger",
-    );
+    this.realm = this.configService.get<string>('KEYCLOAK_REALM', 'plainledger');
   }
 
   async onModuleInit() {
-    this.logger.log("[onModuleInit] KeycloakAdminService starting...");
+    this.logger.log('[onModuleInit] KeycloakAdminService starting...');
     await this.initializeClient();
     // Auto-enable Direct Access Grants on plainledger-web client if not already enabled
     // This ensures the custom login UI works properly
     if (this.isConfigured) {
       await this.ensureDirectAccessGrantsEnabled();
     }
-    this.logger.log("[onModuleInit] KeycloakAdminService completed");
+    this.logger.log('[onModuleInit] KeycloakAdminService completed');
   }
 
   /**
@@ -109,35 +104,20 @@ export class KeycloakAdminService
    * Uses dynamic import for ESM module compatibility
    */
   private async initializeClient(): Promise<void> {
-    const baseUrl = this.configService.get<string>(
-      "KEYCLOAK_URL",
-      "http://localhost:8080",
-    );
-    const clientId = this.configService.get<string>(
-      "KEYCLOAK_ADMIN_CLIENT_ID",
-      "plainledger-api",
-    );
-    const clientSecret = this.configService.get<string>(
-      "KEYCLOAK_CLIENT_SECRET",
-    );
+    const baseUrl = this.configService.get<string>('KEYCLOAK_URL', 'http://localhost:8080');
+    const clientId = this.configService.get<string>('KEYCLOAK_ADMIN_CLIENT_ID', 'plainledger-api');
+    const clientSecret = this.configService.get<string>('KEYCLOAK_CLIENT_SECRET');
 
     if (!clientSecret) {
-      this.logger.warn(
-        "KEYCLOAK_CLIENT_SECRET not configured - Keycloak Admin API disabled",
-      );
+      this.logger.warn('KEYCLOAK_CLIENT_SECRET not configured - Keycloak Admin API disabled');
       return;
     }
 
     try {
       // Dynamic import for ESM module
       // Use Function constructor to prevent TypeScript from transforming import() to require()
-      const dynamicImport = new Function(
-        "specifier",
-        "return import(specifier)",
-      );
-      const KcAdminClientModule = await dynamicImport(
-        "@keycloak/keycloak-admin-client",
-      );
+      const dynamicImport = new Function('specifier', 'return import(specifier)');
+      const KcAdminClientModule = await dynamicImport('@keycloak/keycloak-admin-client');
       const KcAdminClient = KcAdminClientModule.default;
 
       this.adminClient = new KcAdminClient({
@@ -147,22 +127,18 @@ export class KeycloakAdminService
 
       // Authenticate with service account (client credentials)
       await this.adminClient.auth({
-        grantType: "client_credentials",
+        grantType: 'client_credentials',
         clientId,
         clientSecret,
       });
 
       this.isConfigured = true;
-      this.logger.log(
-        `Keycloak Admin Client initialized for realm: ${this.realm}`,
-      );
+      this.logger.log(`Keycloak Admin Client initialized for realm: ${this.realm}`);
 
       // Set up token refresh (tokens expire after 5 minutes by default)
       this.scheduleTokenRefresh(clientId, clientSecret);
     } catch (error) {
-      this.logger.error(
-        `Failed to initialize Keycloak Admin Client: ${error.message}`,
-      );
+      this.logger.error(`Failed to initialize Keycloak Admin Client: ${error.message}`);
       this.isConfigured = false;
     }
   }
@@ -177,15 +153,13 @@ export class KeycloakAdminService
         try {
           if (this.adminClient) {
             await this.adminClient.auth({
-              grantType: "client_credentials",
+              grantType: 'client_credentials',
               clientId,
               clientSecret,
             });
           }
         } catch (error) {
-          this.logger.error(
-            `Failed to refresh Keycloak Admin token: ${error.message}`,
-          );
+          this.logger.error(`Failed to refresh Keycloak Admin token: ${error.message}`);
         }
       },
       4 * 60 * 1000,
@@ -204,7 +178,7 @@ export class KeycloakAdminService
    */
   async createUser(input: CreateUserInput): Promise<KeycloakUser> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     this.logger.log(`Creating user: ${input.email}`);
@@ -222,7 +196,7 @@ export class KeycloakAdminService
 
     // If no password provided, user will need to set password via email
     if (!input.password) {
-      userRep.requiredActions = ["UPDATE_PASSWORD"];
+      userRep.requiredActions = ['UPDATE_PASSWORD'];
     }
 
     // NOTE: We do NOT add VERIFY_EMAIL required action here.
@@ -247,7 +221,7 @@ export class KeycloakAdminService
             realm: this.realm,
             id: userId,
             credential: {
-              type: "password",
+              type: 'password',
               value: input.password,
               temporary: input.temporaryPassword ?? false,
             },
@@ -263,9 +237,7 @@ export class KeycloakAdminService
               realm: this.realm,
               id: userId,
             });
-            this.logger.log(
-              `Cleaned up user ${userId} after password setting failure`,
-            );
+            this.logger.log(`Cleaned up user ${userId} after password setting failure`);
           } catch (deleteError) {
             this.logger.error(
               `Failed to clean up user ${userId} after password error: ${deleteError.message}`,
@@ -327,7 +299,7 @@ export class KeycloakAdminService
    */
   async findUserByEmail(email: string): Promise<KeycloakUser | null> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
@@ -363,7 +335,7 @@ export class KeycloakAdminService
    */
   async findUserById(userId: string): Promise<KeycloakUser | null> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
@@ -397,7 +369,7 @@ export class KeycloakAdminService
    */
   async updateUserAttributes(input: UpdateUserAttributesInput): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     this.logger.log(`Updating attributes for user: ${input.userId}`);
@@ -435,12 +407,10 @@ export class KeycloakAdminService
    */
   async assignRoles(userId: string, roleNames: string[]): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
-    this.logger.log(
-      `Assigning roles ${roleNames.join(", ")} to user: ${userId}`,
-    );
+    this.logger.log(`Assigning roles ${roleNames.join(', ')} to user: ${userId}`);
 
     try {
       // Get all realm roles
@@ -452,16 +422,12 @@ export class KeycloakAdminService
       const rolesToAssign = realmRoles
         .filter(
           (role): role is RoleRepresentation & { id: string; name: string } =>
-            Boolean(role.id) &&
-            Boolean(role.name) &&
-            roleNames.includes(role.name!),
+            Boolean(role.id) && Boolean(role.name) && roleNames.includes(role.name!),
         )
         .map((role) => ({ id: role.id, name: role.name }));
 
       if (rolesToAssign.length === 0) {
-        this.logger.warn(
-          `No matching roles found for: ${roleNames.join(", ")}`,
-        );
+        this.logger.warn(`No matching roles found for: ${roleNames.join(', ')}`);
         return;
       }
 
@@ -484,9 +450,9 @@ export class KeycloakAdminService
    */
   private getTokenSecret(): string {
     return (
-      this.configService.get<string>("TOKEN_SECRET") ||
-      this.configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
-      "plainledger-default-secret-change-me"
+      this.configService.get<string>('TOKEN_SECRET') ||
+      this.configService.get<string>('KEYCLOAK_CLIENT_SECRET') ||
+      'plainledger-default-secret-change-me'
     );
   }
 
@@ -498,14 +464,9 @@ export class KeycloakAdminService
   private generateVerificationToken(userId: string, email: string): string {
     const secret = this.getTokenSecret();
     const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString(
-      "base64url",
-    );
+    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString('base64url');
 
-    const signature = crypto
-      .createHmac("sha256", secret)
-      .update(payload)
-      .digest("base64url");
+    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
 
     return `${payload}.${signature}`;
   }
@@ -518,14 +479,9 @@ export class KeycloakAdminService
   private generateResetToken(userId: string, email: string): string {
     const secret = this.getTokenSecret();
     const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
-    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString(
-      "base64url",
-    );
+    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString('base64url');
 
-    const signature = crypto
-      .createHmac("sha256", secret)
-      .update(payload)
-      .digest("base64url");
+    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
 
     return `${payload}.${signature}`;
   }
@@ -535,12 +491,9 @@ export class KeycloakAdminService
    * Uses SES with custom tokens to ensure links point to custom UI
    * instead of Keycloak's default action pages
    */
-  async sendVerificationEmail(
-    userId: string,
-    redirectUri?: string,
-  ): Promise<void> {
+  async sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
@@ -555,35 +508,27 @@ export class KeycloakAdminService
       }
 
       // Generate custom verification token
-      const verificationToken = this.generateVerificationToken(
-        userId,
-        user.email,
-      );
+      const verificationToken = this.generateVerificationToken(userId, user.email);
 
       // Build verification URL pointing to custom UI
-      const frontendUrl = this.configService.get<string>(
-        "FRONTEND_URL",
-        "https://plainledger.ca",
-      );
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'https://plainledger.ca');
       const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
       // Send branded email via SES
       const emailSent = await this.sesAdapter.sendVerificationEmail(
         user.email,
-        user.firstName || "there",
+        user.firstName || 'there',
         verifyUrl,
         userId,
       );
 
       if (emailSent) {
-        this.logger.log(
-          `Verification email sent via SES to user: ${userId} (${user.email})`,
-        );
+        this.logger.log(`Verification email sent via SES to user: ${userId} (${user.email})`);
       } else {
         this.logger.warn(
           `Failed to send verification email via SES to user: ${userId} (${user.email})`,
         );
-        throw new Error("Failed to send verification email");
+        throw new Error('Failed to send verification email');
       }
     } catch (error) {
       this.logger.error(`Failed to send verification email: ${error.message}`);
@@ -595,26 +540,27 @@ export class KeycloakAdminService
    * Directly set email as verified for a user (Admin action)
    * Use this for admin-initiated verification or when user verification link fails
    */
-  async setEmailVerified(
-    userId: string,
-    verified: boolean = true,
-  ): Promise<void> {
+  async setEmailVerified(userId: string, verified: boolean = true): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
+      const existingUser = await this.adminClient.users.findOne({
+        realm: this.realm,
+        id: userId,
+      });
+      const requiredActions = (existingUser?.requiredActions || []).filter(
+        (action) => action !== 'VERIFY_EMAIL',
+      );
+
       await this.adminClient.users.update(
         { realm: this.realm, id: userId },
-        { emailVerified: verified },
+        { emailVerified: verified, requiredActions },
       );
-      this.logger.log(
-        `Email verified status set to ${verified} for user: ${userId}`,
-      );
+      this.logger.log(`Email verified status set to ${verified} for user: ${userId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to set email verified status: ${error.message}`,
-      );
+      this.logger.error(`Failed to set email verified status: ${error.message}`);
       throw error;
     }
   }
@@ -624,12 +570,9 @@ export class KeycloakAdminService
    * Uses SES with custom tokens to ensure links point to custom UI
    * instead of Keycloak's default action pages
    */
-  async sendPasswordResetEmail(
-    userId: string,
-    redirectUri?: string,
-  ): Promise<void> {
+  async sendPasswordResetEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
@@ -647,34 +590,27 @@ export class KeycloakAdminService
       const resetToken = this.generateResetToken(userId, user.email);
 
       // Build reset URL pointing to custom UI
-      const frontendUrl = this.configService.get<string>(
-        "FRONTEND_URL",
-        "https://plainledger.ca",
-      );
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'https://plainledger.ca');
       const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
       // Send branded email via SES
       const emailSent = await this.sesAdapter.sendPasswordResetEmail(
         user.email,
-        user.firstName || "there",
+        user.firstName || 'there',
         resetUrl,
         userId,
       );
 
       if (emailSent) {
-        this.logger.log(
-          `Password reset email sent via SES to user: ${userId} (${user.email})`,
-        );
+        this.logger.log(`Password reset email sent via SES to user: ${userId} (${user.email})`);
       } else {
         this.logger.warn(
           `Failed to send password reset email via SES to user: ${userId} (${user.email})`,
         );
-        throw new Error("Failed to send password reset email");
+        throw new Error('Failed to send password reset email');
       }
     } catch (error) {
-      this.logger.error(
-        `Failed to send password reset email: ${error.message}`,
-      );
+      this.logger.error(`Failed to send password reset email: ${error.message}`);
       throw error;
     }
   }
@@ -717,8 +653,8 @@ export class KeycloakAdminService
     // NOTE: sendVerificationEmail is false - caller will send via SES
     const newUser = await this.createUser({
       email: input.email,
-      firstName: input.firstName || "",
-      lastName: input.lastName || "",
+      firstName: input.firstName || '',
+      lastName: input.lastName || '',
       emailVerified: false,
       sendVerificationEmail: false, // Caller sends branded email via SES
       attributes: {
@@ -728,7 +664,7 @@ export class KeycloakAdminService
         invitedBy: [input.invitedBy],
         invitedAt: [new Date().toISOString()],
       },
-      roles: input.role ? [input.role] : ["viewer"], // Default to viewer role
+      roles: input.role ? [input.role] : ['viewer'], // Default to viewer role
     });
 
     return { ...newUser, isExisting: false };
@@ -737,11 +673,9 @@ export class KeycloakAdminService
   /**
    * Get all users in an organization (by attribute)
    */
-  async getUsersByOrganization(
-    organizationId: string,
-  ): Promise<KeycloakUser[]> {
+  async getUsersByOrganization(organizationId: string): Promise<KeycloakUser[]> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
@@ -774,9 +708,7 @@ export class KeycloakAdminService
           createdTimestamp: user.createdTimestamp,
         }));
     } catch (error) {
-      this.logger.error(
-        `Failed to get users by organization: ${error.message}`,
-      );
+      this.logger.error(`Failed to get users by organization: ${error.message}`);
       throw error;
     }
   }
@@ -784,11 +716,13 @@ export class KeycloakAdminService
   /**
    * List all users from Keycloak with pagination and search
    */
-  async listUsers(options: {
-    search?: string;
-    first?: number;
-    max?: number;
-  } = {}): Promise<{ users: KeycloakUser[]; total: number }> {
+  async listUsers(
+    options: {
+      search?: string;
+      first?: number;
+      max?: number;
+    } = {},
+  ): Promise<{ users: KeycloakUser[]; total: number }> {
     if (!this.isConfigured) {
       this.logger.warn('Keycloak Admin Service not configured, returning empty users list');
       return { users: [], total: 0 };
@@ -835,7 +769,7 @@ export class KeycloakAdminService
    */
   async deleteUser(userId: string): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
@@ -855,14 +789,11 @@ export class KeycloakAdminService
    */
   async disableUser(userId: string): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
-      await this.adminClient.users.update(
-        { realm: this.realm, id: userId },
-        { enabled: false },
-      );
+      await this.adminClient.users.update({ realm: this.realm, id: userId }, { enabled: false });
       this.logger.log(`User disabled: ${userId}`);
     } catch (error) {
       this.logger.error(`Failed to disable user: ${error.message}`);
@@ -875,14 +806,11 @@ export class KeycloakAdminService
    */
   async enableUser(userId: string): Promise<void> {
     if (!this.isConfigured) {
-      throw new Error("Keycloak Admin Service not configured");
+      throw new Error('Keycloak Admin Service not configured');
     }
 
     try {
-      await this.adminClient.users.update(
-        { realm: this.realm, id: userId },
-        { enabled: true },
-      );
+      await this.adminClient.users.update({ realm: this.realm, id: userId }, { enabled: true });
       this.logger.log(`User enabled: ${userId}`);
     } catch (error) {
       this.logger.error(`Failed to enable user: ${error.message}`);
@@ -898,30 +826,24 @@ export class KeycloakAdminService
     try {
       const clients = await this.adminClient.clients.find({
         realm: this.realm,
-        clientId: "plainledger-web",
+        clientId: 'plainledger-web',
       });
 
       if (!clients || clients.length === 0) {
-        this.logger.warn(
-          "plainledger-web client not found - skipping Direct Access Grants check",
-        );
+        this.logger.warn('plainledger-web client not found - skipping Direct Access Grants check');
         return;
       }
 
       const client = clients[0];
       if (client.directAccessGrantsEnabled === true) {
-        this.logger.log(
-          "Direct Access Grants already enabled on plainledger-web client",
-        );
+        this.logger.log('Direct Access Grants already enabled on plainledger-web client');
         return;
       }
 
-      this.logger.log(
-        "Enabling Direct Access Grants on plainledger-web client...",
-      );
+      this.logger.log('Enabling Direct Access Grants on plainledger-web client...');
 
       if (!client.id) {
-        this.logger.warn("Client ID is missing - cannot update");
+        this.logger.warn('Client ID is missing - cannot update');
         return;
       }
 
@@ -932,9 +854,7 @@ export class KeycloakAdminService
           directAccessGrantsEnabled: true,
         },
       );
-      this.logger.log(
-        "✅ Successfully enabled Direct Access Grants on plainledger-web client",
-      );
+      this.logger.log('✅ Successfully enabled Direct Access Grants on plainledger-web client');
     } catch (error) {
       // Don't fail startup if this fails - log and continue
       this.logger.warn(

@@ -201,7 +201,7 @@ export class AuthController {
       // Don't specify scope - use Keycloak client default scopes
       // Default scopes include: openid, profile, email, roles
 
-      const response = await fetch(tokenUrl, {
+      let response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -232,6 +232,27 @@ export class AuthController {
               email: dto.email.toLowerCase().trim(),
             });
           }
+
+          if (existingProfile?.emailVerified) {
+            const keycloakUser = await this.keycloakAdminService.findUserByEmail(
+              dto.email.toLowerCase().trim(),
+            );
+            if (keycloakUser && !keycloakUser.emailVerified) {
+              await this.keycloakAdminService.setEmailVerified(keycloakUser.id, true);
+            }
+
+            const retryResponse = await fetch(tokenUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: params.toString(),
+            });
+
+            if (retryResponse.ok) {
+              response = retryResponse;
+            }
+          }
         } catch (checkError) {
           // If it's our custom error, re-throw it
           if (checkError instanceof UnauthorizedException) {
@@ -240,8 +261,10 @@ export class AuthController {
           // Otherwise ignore and fall through to generic error
         }
 
-        // Don't reveal specific error details for security
-        throw new UnauthorizedException('Invalid email or password. Please try again.');
+        if (!response.ok) {
+          // Don't reveal specific error details for security
+          throw new UnauthorizedException('Invalid email or password. Please try again.');
+        }
       }
 
       const tokenData = await response.json();
@@ -966,6 +989,8 @@ export class AuthController {
 
       // Update email verified status in PlainLedger DB (source of truth)
       await this.userProfileRepository.markEmailVerified(tokenData.userId);
+      // Keep Keycloak in sync to avoid direct-grant login blocks.
+      await this.keycloakAdminService.setEmailVerified(tokenData.userId, true);
 
       this.logger.log(`Email successfully verified in DB for user: ${tokenData.email}`);
 
@@ -1174,6 +1199,7 @@ export class AuthController {
     email: string;
     firstName?: string;
     lastName?: string;
+    emailVerified?: boolean;
     attributes?: Record<string, string[]>;
   }) {
     const existingById = await this.userProfileRepository.findById(user.id);
@@ -1192,6 +1218,10 @@ export class AuthController {
         industry: user.attributes?.industry?.[0],
         registrationSource: 'legacy-migration',
       });
+
+      if (user.emailVerified) {
+        await this.userProfileRepository.markEmailVerified(user.id);
+      }
     } catch (error) {
       this.logger.warn(`Failed to backfill user profile for ${user.email}: ${error.message}`);
     }
