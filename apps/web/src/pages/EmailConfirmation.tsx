@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Mail, RefreshCw, CheckCircle, ArrowRight, Inbox, Clock, LogIn, Loader2, AlertCircle, ShieldAlert } from 'lucide-react';
+import {
+  Mail,
+  RefreshCw,
+  CheckCircle,
+  ArrowRight,
+  Inbox,
+  Clock,
+  LogIn,
+  Loader2,
+  AlertCircle,
+  ShieldAlert,
+} from 'lucide-react';
 import { useKeycloak } from '../lib/keycloak';
 import { useI18n } from '../lib/i18n';
 import { motion } from 'framer-motion';
@@ -10,21 +21,22 @@ export default function EmailConfirmation() {
   const { language } = useI18n();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // Token from URL (if user clicked verify link in email)
   const token = searchParams.get('token');
   const emailFromUrl = searchParams.get('email');
-  
+
   // Verification states
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [alreadyVerified, setAlreadyVerified] = useState(false);
-  
+
   // Resend states
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [autoSent, setAutoSent] = useState(false);
 
   const isEn = language === 'en';
 
@@ -34,6 +46,34 @@ export default function EmailConfirmation() {
       verifyEmail(token);
     }
   }, [token]);
+
+  // Auto-send verification email on mount when arriving without a token
+  // This ensures users always get a fresh email without clicking "Resend"
+  useEffect(() => {
+    if (token || autoSent) return;
+    const email = user?.email || emailFromUrl;
+    if (!email) return;
+
+    setAutoSent(true);
+    setIsResending(true);
+
+    fetch('/api/auth/resend-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          setCountdown(60);
+        }
+      })
+      .catch(() => {
+        // Silent fail - user can still click resend manually
+      })
+      .finally(() => {
+        setIsResending(false);
+      });
+  }, [token, autoSent, user?.email, emailFromUrl]);
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -46,47 +86,54 @@ export default function EmailConfirmation() {
   const verifyEmail = async (verificationToken: string) => {
     setIsVerifying(true);
     setVerificationError(null);
-    
+
     try {
       const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: verificationToken }),
       });
-      
+
       // Check if response is JSON before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(isEn 
-          ? 'Server error. Please try again later.' 
-          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+        throw new Error(
+          isEn
+            ? 'Server error. Please try again later.'
+            : 'Erreur du serveur. Veuillez réessayer plus tard.',
+        );
       }
-      
+
       let data;
       try {
         data = await response.json();
       } catch {
-        throw new Error(isEn 
-          ? 'Server error. Please try again later.' 
-          : 'Erreur du serveur. Veuillez réessayer plus tard.');
+        throw new Error(
+          isEn
+            ? 'Server error. Please try again later.'
+            : 'Erreur du serveur. Veuillez réessayer plus tard.',
+        );
       }
-      
+
       if (!response.ok) {
-        throw new Error(data.message || (isEn ? 'Verification failed' : 'Échec de la vérification'));
+        throw new Error(
+          data.message || (isEn ? 'Verification failed' : 'Échec de la vérification'),
+        );
       }
-      
+
       if (data.alreadyVerified) {
         setAlreadyVerified(true);
       }
-      
+
       setVerificationSuccess(true);
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
         navigate('/login?verified=true');
       }, 3000);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Verification failed. Please try again.';
+      const message =
+        error instanceof Error ? error.message : 'Verification failed. Please try again.';
       setVerificationError(message);
     } finally {
       setIsVerifying(false);
@@ -100,19 +147,21 @@ export default function EmailConfirmation() {
       if (!email) {
         throw new Error('No email address available');
       }
-      
+
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      
+
       if (!response.ok) {
-        throw new Error(isEn 
-          ? 'Failed to resend verification email' 
-          : 'Échec de l\'envoi du courriel de vérification');
+        throw new Error(
+          isEn
+            ? 'Failed to resend verification email'
+            : "Échec de l'envoi du courriel de vérification",
+        );
       }
-      
+
       setResendSuccess(true);
       setCountdown(60);
       setTimeout(() => setResendSuccess(false), 5000);
@@ -134,12 +183,15 @@ export default function EmailConfirmation() {
   // =========================================================================
   if (token && isVerifying) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
         <div className="text-center">
-          <Loader2 className="w-8 h-8 mx-auto mb-4 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <Loader2
+            className="w-8 h-8 mx-auto mb-4 animate-spin"
+            style={{ color: 'rgb(var(--color-primary-500))' }}
+          />
           <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {isEn ? 'Verifying your email...' : 'Vérification de votre courriel...'}
           </p>
@@ -153,7 +205,7 @@ export default function EmailConfirmation() {
   // =========================================================================
   if (verificationSuccess) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center px-4"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
@@ -162,27 +214,34 @@ export default function EmailConfirmation() {
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full card p-8 text-center"
         >
-          <div 
+          <div
             className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
           >
             <CheckCircle className="w-8 h-8" style={{ color: 'rgb(var(--color-success))' }} />
           </div>
           <h1 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-            {alreadyVerified 
-              ? (isEn ? 'Already Verified!' : 'Déjà vérifié!')
-              : (isEn ? 'Email Verified!' : 'Courriel vérifié!')}
+            {alreadyVerified
+              ? isEn
+                ? 'Already Verified!'
+                : 'Déjà vérifié!'
+              : isEn
+                ? 'Email Verified!'
+                : 'Courriel vérifié!'}
           </h1>
           <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {alreadyVerified
-              ? (isEn 
-                  ? 'Your email was already verified. Redirecting you to login...'
-                  : 'Votre courriel était déjà vérifié. Redirection vers la connexion...')
-              : (isEn 
-                  ? 'Your email has been verified successfully. Redirecting you to login...'
-                  : 'Votre courriel a été vérifié avec succès. Redirection vers la connexion...')}
+              ? isEn
+                ? 'Your email was already verified. Redirecting you to login...'
+                : 'Votre courriel était déjà vérifié. Redirection vers la connexion...'
+              : isEn
+                ? 'Your email has been verified successfully. Redirecting you to login...'
+                : 'Votre courriel a été vérifié avec succès. Redirection vers la connexion...'}
           </p>
-          <Loader2 className="w-6 h-6 mx-auto animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+          <Loader2
+            className="w-6 h-6 mx-auto animate-spin"
+            style={{ color: 'rgb(var(--color-primary-500))' }}
+          />
         </motion.div>
       </div>
     );
@@ -193,7 +252,7 @@ export default function EmailConfirmation() {
   // =========================================================================
   if (token && verificationError) {
     return (
-      <div 
+      <div
         className="min-h-screen flex items-center justify-center px-4"
         style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
       >
@@ -202,7 +261,7 @@ export default function EmailConfirmation() {
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full card p-8 text-center"
         >
-          <div 
+          <div
             className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
           >
@@ -213,14 +272,14 @@ export default function EmailConfirmation() {
           </h1>
           <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
             {verificationError.includes('expired')
-              ? (isEn 
-                  ? 'This verification link has expired. Please request a new one.'
-                  : 'Ce lien de vérification a expiré. Veuillez en demander un nouveau.')
-              : (isEn 
-                  ? 'This verification link is invalid. Please request a new one.'
-                  : 'Ce lien de vérification est invalide. Veuillez en demander un nouveau.')}
+              ? isEn
+                ? 'This verification link has expired. Please request a new one.'
+                : 'Ce lien de vérification a expiré. Veuillez en demander un nouveau.'
+              : isEn
+                ? 'This verification link is invalid. Please request a new one.'
+                : 'Ce lien de vérification est invalide. Veuillez en demander un nouveau.'}
           </p>
-          
+
           {/* Resend button */}
           <button
             onClick={handleResendEmail}
@@ -244,13 +303,13 @@ export default function EmailConfirmation() {
               </>
             )}
           </button>
-          
+
           {resendSuccess && (
-            <div 
+            <div
               className="rounded-lg p-3 mb-4 flex items-center justify-center gap-2"
-              style={{ 
+              style={{
                 backgroundColor: 'rgb(var(--color-success) / 0.1)',
-                color: 'rgb(var(--color-success))'
+                color: 'rgb(var(--color-success))',
               }}
             >
               <CheckCircle className="w-4 h-4" />
@@ -259,7 +318,7 @@ export default function EmailConfirmation() {
               </span>
             </div>
           )}
-          
+
           <Link
             to="/login"
             className="text-sm font-medium inline-flex items-center gap-2"
@@ -277,7 +336,7 @@ export default function EmailConfirmation() {
   // DEFAULT STATE - "Check your email" waiting page
   // =========================================================================
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
     >
@@ -285,59 +344,47 @@ export default function EmailConfirmation() {
         {/* Main Card */}
         <div className="card p-8 text-center">
           {/* Icon */}
-          <div 
+          <div
             className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-primary-100))' }}
           >
-            <Mail 
-              className="w-10 h-10" 
-              style={{ color: 'rgb(var(--color-primary-600))' }}
-            />
+            <Mail className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-600))' }} />
           </div>
 
           {/* Title */}
-          <h1 
-            className="text-2xl font-bold mb-2"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Check Your Email' : 'Vérifiez votre courriel'}
           </h1>
 
           {/* Subtitle */}
-          <p 
-            className="mb-6"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            {isEn 
+          <p className="mb-6" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn
               ? 'We sent a confirmation link to verify your email address.'
               : 'Nous avons envoyé un lien de confirmation pour vérifier votre adresse courriel.'}
           </p>
 
           {/* Email Display */}
-          <div 
+          <div
             className="rounded-lg p-4 mb-6"
             style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
           >
             <div className="flex items-center justify-center gap-2">
               <Inbox className="w-5 h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
-              <span 
-                className="font-medium"
-                style={{ color: 'rgb(var(--color-text))' }}
-              >
+              <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                 {displayEmail}
               </span>
             </div>
           </div>
 
           {/* Instructions */}
-          <div 
+          <div
             className="rounded-lg p-4 mb-6 text-left"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-primary-500) / 0.08)',
-              border: '1px solid rgb(var(--color-primary-500) / 0.2)'
+              border: '1px solid rgb(var(--color-primary-500) / 0.2)',
             }}
           >
-            <h3 
+            <h3
               className="font-semibold mb-3 flex items-center gap-2"
               style={{ color: 'rgb(var(--color-primary-600))' }}
             >
@@ -346,44 +393,44 @@ export default function EmailConfirmation() {
             </h3>
             <ol className="space-y-2 text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               <li className="flex items-start gap-2">
-                <span 
+                <span
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
-                    color: 'rgb(var(--color-primary-600))'
+                    color: 'rgb(var(--color-primary-600))',
                   }}
                 >
                   1
                 </span>
-                {isEn 
+                {isEn
                   ? 'Open the email we sent to your inbox'
                   : 'Ouvrez le courriel que nous avons envoyé'}
               </li>
               <li className="flex items-start gap-2">
-                <span 
+                <span
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
-                    color: 'rgb(var(--color-primary-600))'
+                    color: 'rgb(var(--color-primary-600))',
                   }}
                 >
                   2
                 </span>
-                {isEn 
+                {isEn
                   ? 'Click the "Verify Email" button in the email'
                   : 'Cliquez sur le bouton "Vérifier le courriel"'}
               </li>
               <li className="flex items-start gap-2">
-                <span 
+                <span
                   className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgb(var(--color-primary-500) / 0.2)',
-                    color: 'rgb(var(--color-primary-600))'
+                    color: 'rgb(var(--color-primary-600))',
                   }}
                 >
                   3
                 </span>
-                {isEn 
+                {isEn
                   ? 'You will be automatically signed in'
                   : 'Vous serez automatiquement connecté'}
               </li>
@@ -392,11 +439,11 @@ export default function EmailConfirmation() {
 
           {/* Success Message */}
           {resendSuccess && (
-            <div 
+            <div
               className="rounded-lg p-3 mb-4 flex items-center justify-center gap-2"
-              style={{ 
+              style={{
                 backgroundColor: 'rgb(var(--color-success) / 0.1)',
-                color: 'rgb(var(--color-success))'
+                color: 'rgb(var(--color-success))',
               }}
             >
               <CheckCircle className="w-4 h-4" />
@@ -453,13 +500,10 @@ export default function EmailConfirmation() {
 
           {/* Help Text */}
           <div className="mt-6 pt-6 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <p 
-              className="text-sm mb-2"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {isEn 
+            <p className="text-sm mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn
                 ? "Can't find the email? Check your spam folder."
-                : "Vous ne trouvez pas le courriel? Vérifiez votre dossier spam."}
+                : 'Vous ne trouvez pas le courriel? Vérifiez votre dossier spam.'}
             </p>
             {authenticated ? (
               <button
@@ -482,13 +526,10 @@ export default function EmailConfirmation() {
         </div>
 
         {/* Footer */}
-        <p 
-          className="text-center text-xs mt-6"
-          style={{ color: 'rgb(var(--color-text-subtle))' }}
-        >
-          {isEn 
+        <p className="text-center text-xs mt-6" style={{ color: 'rgb(var(--color-text-subtle))' }}>
+          {isEn
             ? 'Need help? Contact support@plainledger.ca'
-            : 'Besoin d\'aide? Contactez support@plainledger.ca'}
+            : "Besoin d'aide? Contactez support@plainledger.ca"}
         </p>
       </div>
     </div>

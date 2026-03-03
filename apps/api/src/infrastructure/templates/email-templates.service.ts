@@ -31,16 +31,17 @@ export class EmailTemplatesService {
     this.baseUrl = this.configService.get<string>('APP_URL', 'https://plainledger.ca');
     this.logoUrl = this.configService.get<string>(
       'EMAIL_LOGO_URL',
-      `${this.baseUrl}/logo-full.svg`,
+      `${this.baseUrl}/logo-full.png`,
     );
     this.currentYear = new Date().getFullYear();
   }
 
   /**
    * Consistent thin CTA style across all templates.
+   * Outlined style: green border, white background, green text.
    */
   private getPrimaryButtonStyle(): string {
-    return 'display: inline-block; padding: 10px 26px; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; line-height: 1.2; border: 1px solid rgba(255,255,255,0.1);';
+    return 'display: inline-block; padding: 10px 26px; background-color: #ffffff; color: #059669 !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; line-height: 1.2; border: 2px solid #059669;';
   }
 
   /**
@@ -1060,14 +1061,14 @@ ${data.errorDetails}
         .email-button {
             display: inline-block;
             padding: 10px 26px;
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            color: #ffffff !important;
+            background-color: #ffffff;
+            color: #059669 !important;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
             font-size: 14px;
             line-height: 1.2;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 2px solid #059669;
         }
     </style>
 </head>
@@ -1078,10 +1079,9 @@ ${data.errorDetails}
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);">
                     <!-- Header -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 32px 40px; text-align: center;">
-                            <img src="${this.logoUrl}" alt="PlainLedger" width="178" style="display: block; margin: 0 auto 10px auto; width: 178px; max-width: 100%; height: auto;">
-                            <div style="color: #ffffff; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin-top: 8px;">PlainLedger</div>
-                            <p style="color: rgba(255, 255, 255, 0.85); font-size: 13px; margin: 6px 0 0 0; font-style: italic;">No surprises. Just numbers.</p>
+                        <td style="background-color: #ffffff; padding: 32px 40px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            <img src="${this.logoUrl}" alt="PlainLedger" width="200" style="display: block; margin: 0 auto; width: 200px; max-width: 100%; height: auto;">
+                            <p style="color: #94a3b8; font-size: 13px; margin: 12px 0 0 0; font-style: italic; letter-spacing: 0.02em;">No surprises. Just numbers.</p>
                         </td>
                     </tr>
                     
