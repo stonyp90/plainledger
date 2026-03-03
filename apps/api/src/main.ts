@@ -67,18 +67,9 @@ async function bootstrap() {
 
   // Set global prefix for all routes except health check
   // This aligns with ALB routing rules that route /api/* to API service
+  // All auth routes are served under /api/auth/* (frontend calls /api/auth/register, etc.)
   app.setGlobalPrefix('api', {
-    // Keep backward compatibility for older frontend bundles that still call /auth/*
-    exclude: [
-      'health',
-      '/health',
-      'health/(.*)',
-      { path: 'health', method: RequestMethod.ALL },
-      'auth',
-      '/auth',
-      'auth/(.*)',
-      { path: 'auth', method: RequestMethod.ALL },
-    ],
+    exclude: ['health', '/health', 'health/(.*)', { path: 'health', method: RequestMethod.ALL }],
   });
 
   // CORS Configuration

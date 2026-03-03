@@ -12,12 +12,12 @@ const API_BASE = `${config.api.baseUrl}/api/v1`;
  */
 async function safeJsonParse(response: Response): Promise<any> {
   const contentType = response.headers.get('content-type');
-  
+
   // If content-type doesn't indicate JSON, throw a friendly error
   if (!contentType || !contentType.includes('application/json')) {
     throw new Error('Server error. Please try again later.');
   }
-  
+
   // Try to parse as JSON, catch any parsing errors
   try {
     return await response.json();
@@ -33,7 +33,7 @@ async function safeJsonParse(response: Response): Promise<any> {
  */
 async function getAuthHeaders(): Promise<HeadersInit> {
   let token: string | undefined = undefined;
-  
+
   if (typeof window !== 'undefined') {
     // Get token from Keycloak instance (exposed by keycloak.tsx)
     const keycloakInstance = (window as any).keycloak;
@@ -47,23 +47,21 @@ async function getAuthHeaders(): Promise<HeadersInit> {
         console.warn('Failed to get Keycloak token:', error);
       }
     }
-    
+
     // Fallback: Check sessionStorage (where Keycloak stores tokens)
     if (!token) {
-      token = sessionStorage.getItem('kc_token') || 
-              localStorage.getItem('kc_token') ||
-              undefined;
+      token = sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token') || undefined;
     }
   }
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   return headers;
 }
 
@@ -180,9 +178,11 @@ export const userSettingsApi = {
       });
 
       if (!response.ok) {
-        // 404 means no settings exist yet, 403 means user doesn't have permissions yet
-        // Both are expected states - silently return defaults
-        if (response.status === 404 || response.status === 403) {
+        // 401 means user isn't authenticated (e.g., on public pages like signup/login)
+        // 403 means user doesn't have permissions yet
+        // 404 means no settings exist yet
+        // All are expected states - silently return defaults
+        if (response.status === 401 || response.status === 403 || response.status === 404) {
           return {
             notificationPreferences: undefined,
             uiPreferences: undefined,

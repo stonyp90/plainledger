@@ -1,6 +1,6 @@
 /**
  * PlainLedger Stripe Integration
- * 
+ *
  * This module provides Stripe integration for subscription management.
  * It supports:
  * - Dynamic pricing plans
@@ -27,15 +27,9 @@ export interface StripeConfig {
  */
 const getStripeConfig = (): StripeConfig => {
   const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  const isProduction = import.meta.env.PROD;
-
-  // Validate in production
-  if (isProduction && (!publishableKey || publishableKey === 'pk_test_demo')) {
-    console.error('[Security] Stripe publishable key not configured for production');
-  }
 
   return {
-    publishableKey: publishableKey || (isProduction ? '' : 'pk_test_demo_disabled'),
+    publishableKey: publishableKey || (import.meta.env.PROD ? '' : 'pk_test_demo_disabled'),
     portalUrl: import.meta.env.VITE_STRIPE_PORTAL_URL || '/api/stripe/portal',
     checkoutSuccessUrl: `${window.location.origin}/app/settings?tab=subscription&status=success`,
     checkoutCancelUrl: `${window.location.origin}/app/settings?tab=subscription&status=cancelled`,
@@ -66,21 +60,21 @@ export interface PricingPlan {
   nameFr: string;
   description: string;
   descriptionFr: string;
-  
+
   // Stripe Price IDs (would be real Stripe IDs in production)
   stripePriceIdMonthly?: string;
   stripePriceIdYearly?: string;
-  
+
   // Pricing
   priceMonthly: number;
   priceYearly: number;
   currency: string;
-  
+
   // Display
   popular?: boolean;
   badge?: string;
   badgeFr?: string;
-  
+
   // Limits
   limits: {
     users: number; // -1 for unlimited
@@ -89,7 +83,7 @@ export interface PricingPlan {
     storage: number; // in MB
     apiCalls: number;
   };
-  
+
   // Features
   features: PricingFeature[];
 }
@@ -97,14 +91,14 @@ export interface PricingPlan {
 // =====================================================
 // ENTERPRISE-FOCUSED PRICING (2026)
 // =====================================================
-// 
+//
 // Target Market: Canadian enterprises with $2M-$20M+ annual revenue
-// 
+//
 // Competitive Positioning:
 // - Jirav: $500-2000/mo - We offer dedicated CPA support
 // - Vena: $1000+/mo - We're simpler, faster time-to-value
 // - Planful: $2000+/mo - We're better priced for mid-market
-// 
+//
 // PlainLedger Value Proposition:
 // - Dedicated CPA support included in all plans
 // - AI-powered anomaly detection (unique differentiator)
@@ -132,10 +126,16 @@ export const pricingPlans: PricingPlan[] = [
       apiCalls: 500,
     },
     features: [
-      { name: '3 users included', nameFr: '3 utilisateurs inclus', included: true, limit: '+$50/user', limitFr: '+50$/util.' },
+      {
+        name: '3 users included',
+        nameFr: '3 utilisateurs inclus',
+        included: true,
+        limit: '+$50/user',
+        limitFr: '+50$/util.',
+      },
       { name: '3 data connections', nameFr: '3 connexions de données', included: true },
       { name: 'Unlimited reports', nameFr: 'Rapports illimités', included: true },
-      { name: 'Anomaly detection', nameFr: 'Détection d\'anomalies', included: true },
+      { name: 'Anomaly detection', nameFr: "Détection d'anomalies", included: true },
       { name: 'Monthly reports', nameFr: 'Rapports mensuels', included: true },
       { name: 'CPA email support', nameFr: 'Support CPA par courriel', included: true },
       { name: 'Export (PDF/Excel)', nameFr: 'Export (PDF/Excel)', included: true },
@@ -165,7 +165,13 @@ export const pricingPlans: PricingPlan[] = [
       apiCalls: 5000,
     },
     features: [
-      { name: '5 users included', nameFr: '5 utilisateurs inclus', included: true, limit: '+$75/user', limitFr: '+75$/util.' },
+      {
+        name: '5 users included',
+        nameFr: '5 utilisateurs inclus',
+        included: true,
+        limit: '+$75/user',
+        limitFr: '+75$/util.',
+      },
       { name: '10 data connections', nameFr: '10 connexions de données', included: true },
       { name: 'Weekly reviews', nameFr: 'Revues hebdomadaires', included: true },
       { name: 'Priority CPA (48h)', nameFr: 'CPA prioritaire (48h)', included: true },
@@ -195,7 +201,13 @@ export const pricingPlans: PricingPlan[] = [
       apiCalls: -1, // Unlimited
     },
     features: [
-      { name: '10 users included', nameFr: '10 utilisateurs inclus', included: true, limit: '+$100/user', limitFr: '+100$/util.' },
+      {
+        name: '10 users included',
+        nameFr: '10 utilisateurs inclus',
+        included: true,
+        limit: '+$100/user',
+        limitFr: '+100$/util.',
+      },
       { name: 'Unlimited connections', nameFr: 'Connexions illimitées', included: true },
       { name: 'Dedicated CPA', nameFr: 'CPA dédié', included: true },
       { name: 'Same-day response', nameFr: 'Réponse le jour même', included: true },
@@ -239,23 +251,23 @@ export const pricingPlans: PricingPlan[] = [
 
 // Per-seat pricing rates (for usage-based billing)
 export const USER_PRICING = {
-  starter: { includedUsers: 3, additionalUserPrice: 50, maxUsers: 10 },     // Essentiel
+  starter: { includedUsers: 3, additionalUserPrice: 50, maxUsers: 10 }, // Essentiel
   professional: { includedUsers: 5, additionalUserPrice: 75, maxUsers: 25 }, // Professionnel
-  business: { includedUsers: 10, additionalUserPrice: 100, maxUsers: 50 },   // Premium
-  enterprise: { includedUsers: -1, additionalUserPrice: 0, maxUsers: -1 },   // Unlimited
+  business: { includedUsers: 10, additionalUserPrice: 100, maxUsers: 50 }, // Premium
+  enterprise: { includedUsers: -1, additionalUserPrice: 0, maxUsers: -1 }, // Unlimited
 } as const;
 
 // =====================================================
 // SUBSCRIPTION TYPES
 // =====================================================
 
-export type SubscriptionStatus = 
-  | 'active' 
-  | 'trialing' 
-  | 'past_due' 
-  | 'canceled' 
-  | 'unpaid' 
-  | 'incomplete' 
+export type SubscriptionStatus =
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'canceled'
+  | 'unpaid'
+  | 'incomplete'
   | 'incomplete_expired';
 
 export interface Subscription {
@@ -265,7 +277,7 @@ export interface Subscription {
   planId: string;
   planTier: PlanTier;
   interval: PlanInterval;
-  
+
   // Dates
   currentPeriodStart: string;
   currentPeriodEnd: string;
@@ -273,11 +285,11 @@ export interface Subscription {
   canceledAt?: string;
   trialStart?: string;
   trialEnd?: string;
-  
+
   // Payment
   latestInvoiceId?: string;
   defaultPaymentMethodId?: string;
-  
+
   // Usage (for metered billing)
   usage?: {
     reports: number;
@@ -333,7 +345,7 @@ class StripeService {
    * Get a specific plan by tier
    */
   getPlanByTier(tier: PlanTier): PricingPlan | undefined {
-    return pricingPlans.find(p => p.tier === tier);
+    return pricingPlans.find((p) => p.tier === tier);
   }
 
   /**
@@ -343,7 +355,7 @@ class StripeService {
     if (amount === 0) {
       return isEn ? 'Free' : 'Gratuit';
     }
-    
+
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
       style: 'currency',
       currency,
@@ -381,14 +393,13 @@ class StripeService {
     successUrl?: string;
     cancelUrl?: string;
   }): Promise<{ sessionId: string; url: string }> {
-    const plan = pricingPlans.find(p => p.id === params.planId);
+    const plan = pricingPlans.find((p) => p.id === params.planId);
     if (!plan) {
       throw new Error('Plan not found');
     }
 
-    const priceId = params.interval === 'year' 
-      ? plan.stripePriceIdYearly 
-      : plan.stripePriceIdMonthly;
+    const priceId =
+      params.interval === 'year' ? plan.stripePriceIdYearly : plan.stripePriceIdMonthly;
 
     if (!priceId) {
       throw new Error('Price ID not configured for this plan');
@@ -440,7 +451,7 @@ class StripeService {
    */
   async getSubscription(organizationId: string): Promise<Subscription | null> {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     // Return mock subscription - in production, fetch from your API
     return {
@@ -467,7 +478,7 @@ class StripeService {
    */
   async getPaymentMethods(organizationId: string): Promise<PaymentMethod[]> {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     // Return mock payment methods
     return [
@@ -491,7 +502,7 @@ class StripeService {
    */
   async getInvoices(organizationId: string, limit: number = 10): Promise<Invoice[]> {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     // Return mock invoices
     const now = Date.now();
@@ -539,7 +550,7 @@ class StripeService {
   async cancelSubscription(subscriptionId: string): Promise<void> {
     console.log('Canceling subscription:', subscriptionId);
     // In production, call API to cancel via Stripe
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   /**
@@ -549,7 +560,7 @@ class StripeService {
   async resumeSubscription(subscriptionId: string): Promise<void> {
     console.log('Resuming subscription:', subscriptionId);
     // In production, call API to resume via Stripe
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   /**

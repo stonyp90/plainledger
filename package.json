@@ -41,15 +41,15 @@
   },
   "lint-staged": {
     "apps/api/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "apps/api/node_modules/.bin/eslint --fix --config apps/api/eslint.config.mjs",
+      "apps/api/node_modules/.bin/prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "apps/web/node_modules/.bin/eslint --fix --config apps/web/eslint.config.js",
+      "apps/api/node_modules/.bin/prettier --write"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --write"
+      "apps/api/node_modules/.bin/prettier --write"
     ]
   }
 }
