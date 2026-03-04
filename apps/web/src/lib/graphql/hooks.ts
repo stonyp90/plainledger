@@ -4,7 +4,7 @@
  * Custom hooks for GraphQL queries and mutations.
  * Provides type-safe data fetching with loading and error states.
  */
-import { useQuery, useMutation, useLazyQuery } from "@apollo/client/react";
+import { useQuery, useMutation, useLazyQuery } from '@apollo/client/react';
 import {
   GET_DASHBOARD_SUMMARY,
   GET_FINANCIAL_TRENDS,
@@ -28,14 +28,14 @@ import {
   GET_BUDGET_SETTINGS,
   SAVE_BUDGET,
   GET_TAX_DEADLINES,
-} from "./queries";
+} from './queries';
 import {
   INITIATE_OAUTH,
   COMPLETE_OAUTH,
   SYNC_DATA_SOURCE,
   DISCONNECT_DATA_SOURCE,
   DELETE_DATA_SOURCE,
-} from "./mutations";
+} from './mutations';
 
 // =====================================================
 // DASHBOARD HOOKS
@@ -84,7 +84,11 @@ export interface PaginationInput {
   pageSize?: number;
 }
 
-export function useAccounts(filter?: AccountFilter, pagination?: PaginationInput, options?: { skip?: boolean }) {
+export function useAccounts(
+  filter?: AccountFilter,
+  pagination?: PaginationInput,
+  options?: { skip?: boolean },
+) {
   return useQuery(GET_ACCOUNTS, {
     variables: { filter, pagination },
     skip: options?.skip,
@@ -119,10 +123,7 @@ export interface TransactionFilter {
   search?: string;
 }
 
-export function useTransactions(
-  filter?: TransactionFilter,
-  pagination?: PaginationInput,
-) {
+export function useTransactions(filter?: TransactionFilter, pagination?: PaginationInput) {
   return useQuery(GET_TRANSACTIONS, {
     variables: { filter, pagination },
   });
@@ -132,13 +133,14 @@ export function useTransactions(
 // REPORT HOOKS
 // =====================================================
 
-export function useBalanceSheet(asOfDate?: Date) {
+export function useBalanceSheet(asOfDate?: Date, options?: { skip?: boolean }) {
   return useQuery(GET_BALANCE_SHEET, {
     variables: { asOfDate: asOfDate?.toISOString() },
+    skip: options?.skip,
   });
 }
 
-export function useIncomeStatement(startDate: Date, endDate: Date) {
+export function useIncomeStatement(startDate: Date, endDate: Date, options?: { skip?: boolean }) {
   return useQuery(GET_INCOME_STATEMENT, {
     variables: {
       dateRange: {
@@ -146,7 +148,7 @@ export function useIncomeStatement(startDate: Date, endDate: Date) {
         endDate: endDate.toISOString(),
       },
     },
-    skip: !startDate || !endDate,
+    skip: options?.skip || !startDate || !endDate,
   });
 }
 
@@ -288,7 +290,7 @@ export function useOrganizationComparison(
     debtToEquity?: number;
     operatingExpenseRatio?: number;
   },
-  revenueRange?: RevenueRange
+  revenueRange?: RevenueRange,
 ) {
   return useQuery(GET_ORGANIZATION_COMPARISON, {
     variables: {
@@ -369,7 +371,11 @@ export function useTrialBalance(options?: { skip?: boolean }) {
 /**
  * Hook to fetch real cash flow waterfall from transactions
  */
-export function useCashFlowWaterfall(options?: { startDate?: string; endDate?: string; skip?: boolean }) {
+export function useCashFlowWaterfall(options?: {
+  startDate?: string;
+  endDate?: string;
+  skip?: boolean;
+}) {
   return useQuery<{ cashFlowWaterfall: WaterfallItem[] }>(GET_CASH_FLOW_WATERFALL, {
     variables: { startDate: options?.startDate, endDate: options?.endDate },
     pollInterval: 5 * 60 * 1000,

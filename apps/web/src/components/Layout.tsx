@@ -64,10 +64,10 @@ interface LayoutProps {
 function HelpButton() {
   const navigate = useNavigate();
   const { language } = useI18n();
-  
+
   return (
-    <button 
-      className="icon-btn" 
+    <button
+      className="icon-btn"
       onClick={() => navigate('/help/knowledge-base')}
       title={language === 'en' ? 'Knowledge Base' : 'Base de connaissances'}
     >
@@ -82,7 +82,13 @@ interface SettingsSubmenuItem {
   name: { en: string; fr: string };
   description: { en: string; fr: string };
   icon: typeof Settings;
-  show: (permissions: { canManageSettings: boolean; canManageMembers: boolean; canManageBilling: boolean; isInternalStaff: boolean; isAdmin: boolean }) => boolean;
+  show: (permissions: {
+    canManageSettings: boolean;
+    canManageMembers: boolean;
+    canManageBilling: boolean;
+    isInternalStaff: boolean;
+    isAdmin: boolean;
+  }) => boolean;
   isLink?: boolean;
   href?: string;
 }
@@ -98,106 +104,115 @@ const settingsCategories: SettingsCategory[] = [
     id: 'personal',
     label: { en: 'Personal', fr: 'Personnel' },
     items: [
-      { 
-        id: 'profile', 
-        name: { en: 'Profile', fr: 'Profil' }, 
+      {
+        id: 'profile',
+        name: { en: 'Profile', fr: 'Profil' },
         description: { en: 'Your personal information', fr: 'Vos informations personnelles' },
-        icon: User, 
-        show: () => true 
+        icon: User,
+        show: () => true,
       },
-      { 
-        id: 'security', 
-        name: { en: 'Security', fr: 'Sécurité' }, 
+      {
+        id: 'security',
+        name: { en: 'Security', fr: 'Sécurité' },
         description: { en: 'Password, 2FA, sessions', fr: 'Mot de passe, 2FA, sessions' },
-        icon: Lock, 
-        show: () => true 
+        icon: Lock,
+        show: () => true,
       },
-      { 
-        id: 'notifications', 
-        name: { en: 'Notifications', fr: 'Notifications' }, 
+      {
+        id: 'notifications',
+        name: { en: 'Notifications', fr: 'Notifications' },
         description: { en: 'Email and alert preferences', fr: 'Préférences email et alertes' },
-        icon: Bell, 
-        show: () => true 
+        icon: Bell,
+        show: () => true,
       },
-    ]
+    ],
   },
   {
     id: 'organization',
     label: { en: 'Organization', fr: 'Organisation' },
     items: [
-      { 
-        id: 'organization', 
-        name: { en: 'Company', fr: 'Entreprise' }, 
-        description: { en: 'Company info, logo, fiscal year', fr: 'Infos entreprise, logo, exercice' },
-        icon: Building2, 
-        show: (p) => p.canManageSettings 
+      {
+        id: 'organization',
+        name: { en: 'Company', fr: 'Entreprise' },
+        description: {
+          en: 'Company info, logo, fiscal year',
+          fr: 'Infos entreprise, logo, exercice',
+        },
+        icon: Building2,
+        show: (p) => p.canManageSettings,
       },
-      { 
-        id: 'team', 
-        name: { en: 'Team', fr: 'Équipe' }, 
+      {
+        id: 'team',
+        name: { en: 'Team', fr: 'Équipe' },
         description: { en: 'Manage team members', fr: 'Gérer les membres' },
-        icon: Users, 
-        show: (p) => p.canManageMembers 
+        icon: Users,
+        show: (p) => p.canManageMembers,
       },
-      { 
-        id: 'roles', 
-        name: { en: 'Roles & Access', fr: 'Rôles & Accès' }, 
-        description: { en: 'Permissions and access control', fr: 'Permissions et contrôle d\'accès' },
-        icon: Shield, 
-        show: () => true 
+      {
+        id: 'roles',
+        name: { en: 'Roles & Access', fr: 'Rôles & Accès' },
+        description: {
+          en: 'Permissions and access control',
+          fr: "Permissions et contrôle d'accès",
+        },
+        icon: Shield,
+        show: () => true,
       },
-      { 
-        id: 'subscription', 
-        name: { en: 'Subscription', fr: 'Abonnement' }, 
+      {
+        id: 'subscription',
+        name: { en: 'Subscription', fr: 'Abonnement' },
         description: { en: 'Plan, billing, invoices', fr: 'Forfait, facturation' },
-        icon: CreditCard, 
-        show: (p) => p.canManageBilling 
+        icon: CreditCard,
+        show: (p) => p.canManageBilling,
       },
-    ]
+    ],
   },
   {
     id: 'configuration',
     label: { en: 'Configuration', fr: 'Configuration' },
     items: [
-      { 
-        id: 'anomalies', 
-        name: { en: 'Anomaly Detection', fr: 'Détection d\'anomalies' }, 
-        description: { en: 'Alert thresholds config', fr: 'Config. seuils d\'alerte' },
-        icon: AlertTriangle, 
-        show: (p) => p.canManageSettings 
+      {
+        id: 'anomalies',
+        name: { en: 'Anomaly Detection', fr: "Détection d'anomalies" },
+        description: { en: 'Alert thresholds config', fr: "Config. seuils d'alerte" },
+        icon: AlertTriangle,
+        show: (p) => p.canManageSettings,
       },
-      { 
-        id: 'document-shares', 
-        name: { en: 'Document Shares', fr: 'Partages' }, 
+      {
+        id: 'document-shares',
+        name: { en: 'Document Shares', fr: 'Partages' },
         description: { en: 'Shared documents & links', fr: 'Documents et liens partagés' },
-        icon: Share2, 
-        show: () => true, 
-        isLink: true, 
-        href: '/app/document-shares' 
+        icon: Share2,
+        show: () => true,
+        isLink: true,
+        href: '/app/document-shares',
       },
-      { 
-        id: 'secrets', 
-        name: { en: 'API Keys', fr: 'Clés API' }, 
+      {
+        id: 'secrets',
+        name: { en: 'API Keys', fr: 'Clés API' },
         description: { en: 'Manage API credentials', fr: 'Gérer identifiants API' },
-        icon: Lock, 
-        show: (p) => p.isAdmin 
+        icon: Lock,
+        show: (p) => p.isAdmin,
       },
-    ]
+    ],
   },
   {
     id: 'support',
     label: { en: 'Support', fr: 'Support' },
     items: [
-      { 
-        id: 'help-support', 
-        name: { en: 'Help & Support', fr: 'Aide & Support' }, 
-        description: { en: 'Contact us, FAQ, knowledge base', fr: 'Nous contacter, FAQ, base de connaissances' },
-        icon: LifeBuoy, 
+      {
+        id: 'help-support',
+        name: { en: 'Help & Support', fr: 'Aide & Support' },
+        description: {
+          en: 'Contact us, FAQ, knowledge base',
+          fr: 'Nous contacter, FAQ, base de connaissances',
+        },
+        icon: LifeBuoy,
         show: () => true,
         isLink: true,
-        href: '/app/contact'
+        href: '/app/contact',
       },
-    ]
+    ],
   },
 ];
 
@@ -222,14 +237,14 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
-  
+
   // Filter categories and items based on permissions
   const visibleCategories = settingsCategories
-    .map(category => ({
+    .map((category) => ({
       ...category,
-      items: category.items.filter(item => item.show(permissions))
+      items: category.items.filter((item) => item.show(permissions)),
     }))
-    .filter(category => category.items.length > 0);
+    .filter((category) => category.items.length > 0);
 
   // Calculate flyout position when opening
   const updateFlyoutPosition = () => {
@@ -237,35 +252,36 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const padding = 16; // Padding from viewport edges
-      
+
       // Calculate available height
-      const availableHeight = viewportHeight - (padding * 2);
-      
+      const availableHeight = viewportHeight - padding * 2;
+
       // Estimate flyout height based on number of visible items
       const headerHeight = 48;
       const categoryHeaderHeight = 32;
       const itemHeight = 52;
       const totalCategories = visibleCategories.length;
       const totalItems = visibleCategories.reduce((acc, cat) => acc + cat.items.length, 0);
-      const estimatedContentHeight = (totalCategories * categoryHeaderHeight) + (totalItems * itemHeight) + 16; // 16px for padding
+      const estimatedContentHeight =
+        totalCategories * categoryHeaderHeight + totalItems * itemHeight + 16; // 16px for padding
       const estimatedFlyoutHeight = headerHeight + estimatedContentHeight;
-      
+
       // Use available height (no arbitrary cap - let it use viewport space)
       const flyoutHeight = Math.min(estimatedFlyoutHeight, availableHeight);
-      
+
       // Position to the right of the button, trying to center vertically on button
-      let top = rect.top - (flyoutHeight / 2) + (rect.height / 2);
-      
+      let top = rect.top - flyoutHeight / 2 + rect.height / 2;
+
       // Make sure flyout doesn't go above viewport
       if (top < padding) {
         top = padding;
       }
-      
+
       // Make sure flyout doesn't go below viewport
       if (top + flyoutHeight > viewportHeight - padding) {
         top = viewportHeight - flyoutHeight - padding;
       }
-      
+
       setFlyoutPosition({
         top: Math.max(padding, top),
         left: rect.right + 8,
@@ -318,128 +334,141 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
       }
     };
   }, []);
-  
+
   // Flyout content rendered via portal
-  const flyoutContent = isOpen ? createPortal(
-    <div 
-      ref={flyoutRef}
-      className="fixed rounded-xl shadow-xl flex flex-col animate-in fade-in slide-in-from-left-2 duration-200"
-      style={{ 
-        backgroundColor: 'rgb(var(--color-surface))',
-        border: '1px solid rgb(var(--color-border))',
-        boxShadow: '0 10px 40px -10px rgb(0 0 0 / 0.2), 0 4px 12px rgb(0 0 0 / 0.1)',
-        top: flyoutPosition.top,
-        left: flyoutPosition.left,
-        width: 'min(320px, calc(100vw - 100px))',
-        maxHeight: 'calc(100vh - 32px)', // Dynamic height with 16px padding on each side
-        zIndex: 9999,
-      }}
-      onMouseEnter={handleFlyoutMouseEnter}
-      onMouseLeave={handleFlyoutMouseLeave}
-    >
-      {/* Flyout Header */}
-      <div 
-        className="px-4 py-3 border-b flex-shrink-0"
-        style={{ 
-          borderColor: 'rgb(var(--color-border))',
-          background: 'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, rgb(var(--color-primary-600) / 0.02) 100%)'
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
-            {language === 'en' ? 'Settings' : 'Paramètres'}
-          </span>
-        </div>
-      </div>
-      
-      {/* Flyout Content - Settings Items by Category - Scrollable */}
-      <div 
-        className="py-1 overflow-y-auto flex-1 min-h-0 overscroll-contain"
-        style={{ 
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'rgb(var(--color-border)) transparent',
-        }}
-      >
-        {visibleCategories.map((category, categoryIndex) => (
-          <div key={category.id}>
-            {/* Category Header */}
-            <div 
-              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider sticky top-0 ${categoryIndex > 0 ? 'mt-1 border-t pt-2' : ''}`}
-              style={{ 
-                color: 'rgb(var(--color-text-muted))',
-                borderColor: 'rgb(var(--color-border))',
-                backgroundColor: 'rgb(var(--color-surface))',
-              }}
-            >
-              {category.label[language]}
+  const flyoutContent = isOpen
+    ? createPortal(
+        <div
+          ref={flyoutRef}
+          className="fixed rounded-xl shadow-xl flex flex-col animate-in fade-in slide-in-from-left-2 duration-200"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            border: '1px solid rgb(var(--color-border))',
+            boxShadow: '0 10px 40px -10px rgb(0 0 0 / 0.2), 0 4px 12px rgb(0 0 0 / 0.1)',
+            top: flyoutPosition.top,
+            left: flyoutPosition.left,
+            width: 'min(320px, calc(100vw - 100px))',
+            maxHeight: 'calc(100vh - 32px)', // Dynamic height with 16px padding on each side
+            zIndex: 9999,
+          }}
+          onMouseEnter={handleFlyoutMouseEnter}
+          onMouseLeave={handleFlyoutMouseLeave}
+        >
+          {/* Flyout Header */}
+          <div
+            className="px-4 py-3 border-b flex-shrink-0"
+            style={{
+              borderColor: 'rgb(var(--color-border))',
+              background:
+                'linear-gradient(135deg, rgb(var(--color-primary-500) / 0.05) 0%, rgb(var(--color-primary-600) / 0.02) 100%)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                {language === 'en' ? 'Settings' : 'Paramètres'}
+              </span>
             </div>
-            
-            {/* Category Items */}
-            {category.items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleItemClick(item)}
-                className="w-full flex items-start gap-3 px-4 py-2 text-left transition-all rounded-lg mx-1"
-                style={{ 
-                  color: 'rgb(var(--color-text))',
-                  width: 'calc(100% - 8px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
-                  e.currentTarget.style.color = 'white';
-                  // Update icon container and description colors
-                  const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                  const description = e.currentTarget.querySelector('[data-description]') as HTMLElement;
-                  const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
-                  if (iconContainer) iconContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                  if (description) description.style.color = 'rgba(255, 255, 255, 0.8)';
-                  if (icon) icon.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'rgb(var(--color-text))';
-                  // Reset icon container and description colors
-                  const iconContainer = e.currentTarget.querySelector('[data-icon-container]') as HTMLElement;
-                  const description = e.currentTarget.querySelector('[data-description]') as HTMLElement;
-                  const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
-                  if (iconContainer) iconContainer.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
-                  if (description) description.style.color = 'rgb(var(--color-text-muted))';
-                  if (icon) icon.style.color = 'rgb(var(--color-primary-600))';
-                }}
-              >
-                <div 
-                  data-icon-container
-                  className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
-                  style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          </div>
+
+          {/* Flyout Content - Settings Items by Category - Scrollable */}
+          <div
+            className="py-1 overflow-y-auto flex-1 min-h-0 overscroll-contain"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgb(var(--color-border)) transparent',
+            }}
+          >
+            {visibleCategories.map((category, categoryIndex) => (
+              <div key={category.id}>
+                {/* Category Header */}
+                <div
+                  className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-wider sticky top-0 ${categoryIndex > 0 ? 'mt-1 border-t pt-2' : ''}`}
+                  style={{
+                    color: 'rgb(var(--color-text-muted))',
+                    borderColor: 'rgb(var(--color-border))',
+                    backgroundColor: 'rgb(var(--color-surface))',
+                  }}
                 >
-                  <item.icon 
-                    data-icon
-                    className="w-3.5 h-3.5 transition-colors"
-                    style={{ color: 'rgb(var(--color-primary-600))' }}
-                  />
+                  {category.label[language]}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium leading-tight">{item.name[language]}</div>
-                  <div 
-                    data-description
-                    className="text-xs mt-0.5 leading-tight transition-colors"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
+
+                {/* Category Items */}
+                {category.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => handleItemClick(item)}
+                    className="w-full flex items-start gap-3 px-4 py-2 text-left transition-all rounded-lg mx-1"
+                    style={{
+                      color: 'rgb(var(--color-text))',
+                      width: 'calc(100% - 8px)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))';
+                      e.currentTarget.style.color = 'white';
+                      // Update icon container and description colors
+                      const iconContainer = e.currentTarget.querySelector(
+                        '[data-icon-container]',
+                      ) as HTMLElement;
+                      const description = e.currentTarget.querySelector(
+                        '[data-description]',
+                      ) as HTMLElement;
+                      const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
+                      if (iconContainer)
+                        iconContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                      if (description) description.style.color = 'rgba(255, 255, 255, 0.8)';
+                      if (icon) icon.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'rgb(var(--color-text))';
+                      // Reset icon container and description colors
+                      const iconContainer = e.currentTarget.querySelector(
+                        '[data-icon-container]',
+                      ) as HTMLElement;
+                      const description = e.currentTarget.querySelector(
+                        '[data-description]',
+                      ) as HTMLElement;
+                      const icon = e.currentTarget.querySelector('[data-icon]') as HTMLElement;
+                      if (iconContainer)
+                        iconContainer.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                      if (description) description.style.color = 'rgb(var(--color-text-muted))';
+                      if (icon) icon.style.color = 'rgb(var(--color-primary-600))';
+                    }}
                   >
-                    {item.description[language]}
-                  </div>
-                </div>
-              </button>
+                    <div
+                      data-icon-container
+                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
+                      style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                    >
+                      <item.icon
+                        data-icon
+                        className="w-3.5 h-3.5 transition-colors"
+                        style={{ color: 'rgb(var(--color-primary-600))' }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium leading-tight">{item.name[language]}</div>
+                      <div
+                        data-description
+                        className="text-xs mt-0.5 leading-tight transition-colors"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
+                        {item.description[language]}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
-        ))}
-      </div>
-    </div>,
-    document.body
-  ) : null;
+        </div>,
+        document.body,
+      )
+    : null;
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative"
       onMouseEnter={handleMouseEnter}
@@ -454,8 +483,10 @@ function SettingsSubmenu({ isActive, isCollapsed, language, permissions }: Setti
         <Settings className="w-5 h-5 flex-shrink-0" />
         {!isCollapsed && (
           <>
-            <span className="flex-1 text-left">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
-            <ChevronRight 
+            <span className="flex-1 text-left">
+              {language === 'en' ? 'Settings' : 'Paramètres'}
+            </span>
+            <ChevronRight
               className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
               style={{ color: 'rgb(var(--color-text-muted))' }}
             />
@@ -483,17 +514,22 @@ interface MobileSettingsSubmenuProps {
   onNavigate: () => void;
 }
 
-function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: MobileSettingsSubmenuProps) {
+function MobileSettingsSubmenu({
+  isActive,
+  language,
+  permissions,
+  onNavigate,
+}: MobileSettingsSubmenuProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Filter categories and items based on permissions
   const visibleCategories = settingsCategories
-    .map(category => ({
+    .map((category) => ({
       ...category,
-      items: category.items.filter(item => item.show(permissions))
+      items: category.items.filter((item) => item.show(permissions)),
     }))
-    .filter(category => category.items.length > 0);
+    .filter((category) => category.items.length > 0);
 
   const handleItemClick = (item: SettingsSubmenuItem) => {
     if (item.isLink && item.href) {
@@ -512,8 +548,10 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: 
         className={`nav-item w-full ${isActive ? 'active' : ''}`}
       >
         <Settings className="w-5 h-5 flex-shrink-0" />
-        <span className="flex-1 truncate text-left">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
-        <ChevronRight 
+        <span className="flex-1 truncate text-left">
+          {language === 'en' ? 'Settings' : 'Paramètres'}
+        </span>
+        <ChevronRight
           className={`w-4 h-4 transition-transform duration-200 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
           style={{ color: 'rgb(var(--color-text-muted))' }}
         />
@@ -521,20 +559,20 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: 
 
       {/* Expandable Submenu Items by Category */}
       {isExpanded && (
-        <div 
+        <div
           className="ml-4 mt-1 pl-4 border-l-2"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
           {visibleCategories.map((category, categoryIndex) => (
             <div key={category.id} className={categoryIndex > 0 ? 'mt-3' : ''}>
               {/* Category Header */}
-              <div 
+              <div
                 className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
                 style={{ color: 'rgb(var(--color-text-muted))' }}
               >
                 {category.label[language]}
               </div>
-              
+
               {/* Category Items */}
               <div className="space-y-0.5">
                 {category.items.map((item) => (
@@ -542,15 +580,18 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: 
                     key={item.id}
                     onClick={() => handleItemClick(item)}
                     className="w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-all active:scale-[0.98]"
-                    style={{ 
+                    style={{
                       color: 'rgb(var(--color-text))',
                       backgroundColor: 'transparent',
                     }}
                   >
-                    <item.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                    <item.icon
+                      className="w-4 h-4 flex-shrink-0 mt-0.5"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium block">{item.name[language]}</span>
-                      <span 
+                      <span
                         className="text-xs block mt-0.5 leading-tight"
                         style={{ color: 'rgb(var(--color-text-muted))' }}
                       >
@@ -571,7 +612,14 @@ function MobileSettingsSubmenu({ isActive, language, permissions, onNavigate }: 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { currentTenant, hasPermission, isInternalStaff, canManageSettings, canManageMembers, canManageBilling } = useTenant();
+  const {
+    currentTenant,
+    hasPermission,
+    isInternalStaff,
+    canManageSettings,
+    canManageMembers,
+    canManageBilling,
+  } = useTenant();
   const { t, language, setLanguage, formatDate } = useI18n();
   const { toggleTheme } = useTheme();
   const searchModal = useSearchModal();
@@ -584,12 +632,14 @@ export default function Layout({ children }: LayoutProps) {
       return false;
     }
   });
-  
+
   // Track which navigation categories are expanded (all open by default)
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['overview', 'analytics', 'reports', 'planning', 'data']));
-  
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(['overview', 'analytics', 'reports', 'planning', 'data']),
+  );
+
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => {
+    setExpandedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryId)) {
         next.delete(categoryId);
@@ -599,7 +649,7 @@ export default function Layout({ children }: LayoutProps) {
       return next;
     });
   };
-  
+
   // Settings submenu permissions
   const settingsPermissions = {
     canManageSettings: canManageSettings ?? false,
@@ -622,7 +672,6 @@ export default function Layout({ children }: LayoutProps) {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
-
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -656,51 +705,101 @@ export default function Layout({ children }: LayoutProps) {
       id: 'overview',
       label: { en: 'Overview', fr: 'Aperçu' },
       items: [
-        { name: t('nav.dashboard'), href: '/app', icon: LayoutDashboard, permission: 'view:dashboard' },
-      ]
+        {
+          name: t('nav.dashboard'),
+          href: '/app',
+          icon: LayoutDashboard,
+          permission: 'view:dashboard',
+        },
+      ],
     },
     {
       id: 'analytics',
       label: { en: 'Analytics', fr: 'Analytique' },
       items: [
-        { name: t('nav.visualizations') || 'Visualisations', href: '/app/visualizations', icon: BarChart3, permission: 'view:reports', premiumFeature: 'advancedAnalytics' },
-        { name: language === 'en' ? 'Market Analysis' : 'Analyse de marché', href: '/app/market-analysis', icon: TrendingUp, permission: 'view:reports', premiumFeature: 'marketAnalysis' },
-        { name: t('nav.anomalies'), href: '/app/anomalies', icon: AlertTriangle, permission: 'view:reports' },
-      ]
+        {
+          name: t('nav.visualizations') || 'Visualisations',
+          href: '/app/visualizations',
+          icon: BarChart3,
+          permission: 'view:reports',
+          premiumFeature: 'advancedAnalytics',
+        },
+        {
+          name: language === 'en' ? 'Market Analysis' : 'Analyse de marché',
+          href: '/app/market-analysis',
+          icon: TrendingUp,
+          permission: 'view:reports',
+          premiumFeature: 'marketAnalysis',
+        },
+        {
+          name: t('nav.anomalies'),
+          href: '/app/anomalies',
+          icon: AlertTriangle,
+          permission: 'view:reports',
+        },
+      ],
     },
     {
       id: 'reports',
       label: { en: 'Reports', fr: 'Rapports' },
       items: [
-        { name: t('nav.reports'), href: '/app/reports', icon: FileText, permission: 'view:reports' },
-        { name: language === 'en' ? 'Tax Credits' : 'Crédits d\'impôt', href: '/app/tax-credits', icon: Receipt, permission: 'view:reports', premiumFeature: 'taxCredits' },
-        { name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'), href: '/app/board-meeting', icon: Presentation, permission: 'view:reports', premiumFeature: 'boardMeeting' },
-      ]
+        {
+          name: t('nav.reports'),
+          href: '/app/reports',
+          icon: FileText,
+          permission: 'view:reports',
+        },
+        {
+          name: language === 'en' ? 'Tax Credits' : "Crédits d'impôt",
+          href: '/app/tax-credits',
+          icon: Receipt,
+          permission: 'view:reports',
+          premiumFeature: 'taxCredits',
+        },
+        {
+          name: t('nav.boardMeeting') || (language === 'en' ? 'Board Meeting' : 'Réunion CA'),
+          href: '/app/board-meeting',
+          icon: Presentation,
+          permission: 'view:reports',
+          premiumFeature: 'boardMeeting',
+        },
+      ],
     },
     {
       id: 'planning',
       label: { en: 'Planning', fr: 'Planification' },
       items: [
-        { name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique', href: '/app/strategic-planning', icon: Target, permission: 'view:reports', premiumFeature: 'strategicPlanning' },
-      ]
+        {
+          name: language === 'en' ? 'Strategic Planning' : 'Planification stratégique',
+          href: '/app/strategic-planning',
+          icon: Target,
+          permission: 'view:reports',
+          premiumFeature: 'strategicPlanning',
+        },
+      ],
     },
     {
       id: 'data',
       label: { en: 'Data', fr: 'Données' },
       items: [
-        { name: t('nav.connections'), href: '/app/connections', icon: Link2, permission: 'view:connections' },
-      ]
+        {
+          name: t('nav.connections'),
+          href: '/app/connections',
+          icon: Link2,
+          permission: 'view:connections',
+        },
+      ],
     },
   ];
 
   // Filter categories and items based on permissions
   const filteredCategories = navigationCategories
-    .map(category => ({
+    .map((category) => ({
       ...category,
-      items: category.items.filter(item => hasPermission(item.permission))
+      items: category.items.filter((item) => hasPermission(item.permission)),
     }))
-    .filter(category => category.items.length > 0);
-  
+    .filter((category) => category.items.length > 0);
+
   // Settings shown separately with submenu
   const showSettings = hasPermission('view:settings');
 
@@ -711,44 +810,53 @@ export default function Layout({ children }: LayoutProps) {
 
   // Auto-expand the category containing the active page
   useEffect(() => {
-    const activeCategory = filteredCategories.find(category => 
-      category.items.some(item => isActive(item.href))
+    const activeCategory = filteredCategories.find((category) =>
+      category.items.some((item) => isActive(item.href)),
     );
     if (activeCategory && !expandedCategories.has(activeCategory.id)) {
-      setExpandedCategories(prev => new Set([...prev, activeCategory.id]));
+      setExpandedCategories((prev) => new Set([...prev, activeCategory.id]));
     }
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
+    <div
+      className="h-screen w-full flex flex-col lg:flex-row overflow-hidden"
+      style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+    >
       {/* Mobile Header - Optimized for touch */}
-      <header 
+      <header
         className="lg:hidden sticky top-0 z-50 flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b safe-area-top"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-surface))',
-          borderColor: 'rgb(var(--color-border))'
+          borderColor: 'rgb(var(--color-border))',
         }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Logo on the left */}
           <Link to="/app/dashboard" className="flex items-center group">
-            <div 
+            <div
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.3)'
+              style={{
+                background:
+                  'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.3)',
               }}
             >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+              <svg
+                className="w-5 h-5 sm:w-6 sm:h-6"
+                viewBox="0 0 32 32"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white" />
               </svg>
             </div>
           </Link>
@@ -769,7 +877,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Mobile Menu Overlay - Always rendered but visibility controlled via opacity for smooth transitions */}
-      <div 
+      <div
         className={`
           lg:hidden fixed inset-0 z-40 transition-all duration-300 ease-out
           ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
@@ -779,43 +887,53 @@ export default function Layout({ children }: LayoutProps) {
       />
 
       {/* Mobile Sidebar - Full height, optimized for touch */}
-      <aside 
+      <aside
         className={`
           lg:hidden fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[320px] flex flex-col
           transform transition-transform duration-300 ease-out safe-area-top safe-area-bottom
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-surface))',
-          boxShadow: isMobileMenuOpen ? '4px 0 24px rgba(0, 0, 0, 0.15)' : 'none'
+          boxShadow: isMobileMenuOpen ? '4px 0 24px rgba(0, 0, 0, 0.15)' : 'none',
         }}
       >
         {/* Mobile Sidebar Header */}
-        <div 
+        <div
           className="h-14 sm:h-16 flex items-center justify-between px-3 sm:px-4 border-b flex-shrink-0"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Link to="/app/dashboard" className="flex items-center gap-2 group" onClick={() => setIsMobileMenuOpen(false)}>
-            <div 
+          <Link
+            to="/app/dashboard"
+            className="flex items-center gap-2 group"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <div
               className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+              style={{
+                background:
+                  'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
               }}
             >
-              <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+              <svg
+                className="w-6 h-6"
+                viewBox="0 0 32 32"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white" />
               </svg>
             </div>
-            <span 
+            <span
               className="font-semibold text-sm tracking-tight"
               style={{ color: 'rgb(var(--color-text))' }}
             >
@@ -832,36 +950,44 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Mobile Organization Selector */}
-        <div className="p-3 sm:p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+        <div
+          className="p-3 sm:p-4 border-b flex-shrink-0"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
           <OrganizationSwitcher />
         </div>
 
         {/* Mobile Navigation - Scrollable with Collapsible Categories */}
-        <nav className="flex-1 overflow-y-auto p-3 sm:p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <nav
+          className="flex-1 overflow-y-auto p-3 sm:p-4"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {filteredCategories.map((category, categoryIndex) => {
             const isExpanded = expandedCategories.has(category.id);
-            const hasActiveItem = category.items.some(item => isActive(item.href));
-            
+            const hasActiveItem = category.items.some((item) => isActive(item.href));
+
             return (
               <div key={category.id} className={categoryIndex > 0 ? 'mt-2' : ''}>
                 {/* Category Header - Clickable to toggle */}
                 <button
                   onClick={() => toggleCategory(category.id)}
                   className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-medium uppercase tracking-wider rounded transition-colors active:scale-[0.98]"
-                  style={{ 
-                    color: hasActiveItem ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted) / 0.6)',
+                  style={{
+                    color: hasActiveItem
+                      ? 'rgb(var(--color-primary-500))'
+                      : 'rgb(var(--color-text-muted) / 0.6)',
                   }}
                 >
                   <span>{category.label[language as 'en' | 'fr']}</span>
-                  <ChevronDown 
+                  <ChevronDown
                     className={`w-3 h-3 transition-transform duration-200 opacity-50 ${isExpanded ? '' : '-rotate-90'}`}
                   />
                 </button>
-                
+
                 {/* Category Items - Collapsible */}
-                <div 
+                <div
                   className="space-y-0.5 mt-1 overflow-hidden transition-all duration-200"
-                  style={{ 
+                  style={{
                     maxHeight: isExpanded ? '500px' : '0px',
                     opacity: isExpanded ? 1 : 0,
                   }}
@@ -875,7 +1001,12 @@ export default function Layout({ children }: LayoutProps) {
                     >
                       <item.icon className="w-5 h-5 flex-shrink-0" />
                       <span className="flex-1 truncate">{item.name}</span>
-                      {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
+                      {item.premiumFeature && (
+                        <PremiumBadge
+                          feature={item.premiumFeature}
+                          isActive={isActive(item.href)}
+                        />
+                      )}
                       <ChevronRight className="w-4 h-4 opacity-50 flex-shrink-0" />
                     </Link>
                   ))}
@@ -883,11 +1014,11 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             );
           })}
-          
+
           {/* Mobile Settings - Direct link (tabs are on the Settings page) */}
           {showSettings && (
             <div className="mt-2">
-              <div 
+              <div
                 className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider"
                 style={{ color: 'rgb(var(--color-text-muted) / 0.6)' }}
               >
@@ -900,7 +1031,9 @@ export default function Layout({ children }: LayoutProps) {
                   className={`nav-item w-full ${isActive('/app/settings') ? 'active' : ''}`}
                 >
                   <Settings className="w-5 h-5 flex-shrink-0" />
-                  <span className="flex-1 truncate text-left">{language === 'en' ? 'Settings' : 'Paramètres'}</span>
+                  <span className="flex-1 truncate text-left">
+                    {language === 'en' ? 'Settings' : 'Paramètres'}
+                  </span>
                 </Link>
               </div>
             </div>
@@ -908,19 +1041,22 @@ export default function Layout({ children }: LayoutProps) {
         </nav>
 
         {/* Mobile User Menu - Fixed at bottom */}
-        <div className="p-3 sm:p-4 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+        <div
+          className="p-3 sm:p-4 border-t flex-shrink-0"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
           <div className="flex items-center gap-3 mb-3">
             {/* User Avatar */}
-            <div 
+            <div
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all"
-              style={{ 
+              style={{
                 backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
-                borderColor: 'rgb(var(--color-border))'
+                borderColor: 'rgb(var(--color-border))',
               }}
             >
               {user?.picture ? (
-                <img 
-                  src={user.picture} 
+                <img
+                  src={user.picture}
                   alt={user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -938,15 +1074,21 @@ export default function Layout({ children }: LayoutProps) {
                   }}
                 />
               ) : (
-                <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                <span
+                  className="font-semibold text-sm"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
                   {(user?.firstName?.[0] || '') + (user?.lastName?.[0] || '') || 'U'}
                 </span>
               )}
             </div>
-            
+
             {/* User Details */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+              <p
+                className="text-sm font-medium truncate"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {user?.name || user?.firstName || (language === 'en' ? 'User' : 'Utilisateur')}
               </p>
               <p className="text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
@@ -954,12 +1096,12 @@ export default function Layout({ children }: LayoutProps) {
               </p>
             </div>
           </div>
-          
+
           {/* Logout Button - Full width, touch-friendly */}
           <button
             onClick={logout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm rounded-lg transition-all active:scale-98"
-            style={{ 
+            style={{
               color: 'rgb(var(--color-error))',
               backgroundColor: 'rgb(var(--color-error) / 0.08)',
               minHeight: '48px',
@@ -972,47 +1114,53 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Desktop Sidebar */}
-      <aside 
+      <aside
         className={`hidden lg:flex flex-col border-r flex-shrink-0 transition-all duration-300 h-full ${
           isSidebarCollapsed ? 'w-16' : 'w-64'
         }`}
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-surface))',
-          borderColor: 'rgb(var(--color-border))'
+          borderColor: 'rgb(var(--color-border))',
         }}
       >
         {/* Logo */}
-        <div 
+        <div
           className="h-16 flex items-center justify-between px-4 sm:px-6 border-b flex-shrink-0 relative"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Link 
-            to="/app/dashboard" 
+          <Link
+            to="/app/dashboard"
             className={`flex items-center gap-2.5 group transition-all ${
               isSidebarCollapsed ? 'justify-center w-full' : ''
             }`}
           >
-            <div 
+            <div
               className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all group-hover:scale-105"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)'
+              style={{
+                background:
+                  'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
+                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
               }}
             >
-              <svg className="w-7 h-7" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+              <svg
+                className="w-7 h-7"
+                viewBox="0 0 32 32"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white" />
               </svg>
             </div>
             {!isSidebarCollapsed && (
-              <span 
+              <span
                 className="font-bold text-base tracking-tight"
                 style={{ color: 'rgb(var(--color-text))' }}
               >
@@ -1020,7 +1168,7 @@ export default function Layout({ children }: LayoutProps) {
               </span>
             )}
           </Link>
-          
+
           {/* Collapse Toggle */}
           <button
             onClick={() => {
@@ -1049,33 +1197,46 @@ export default function Layout({ children }: LayoutProps) {
               e.currentTarget.style.boxShadow = '0 2px 8px rgb(0 0 0 / 0.08)';
               e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
             }}
-            title={isSidebarCollapsed ? (language === 'en' ? 'Expand sidebar' : 'Agrandir la barre latérale') : (language === 'en' ? 'Collapse sidebar' : 'Réduire la barre latérale')}
+            title={
+              isSidebarCollapsed
+                ? language === 'en'
+                  ? 'Expand sidebar'
+                  : 'Agrandir la barre latérale'
+                : language === 'en'
+                  ? 'Collapse sidebar'
+                  : 'Réduire la barre latérale'
+            }
           >
-            <ChevronLeft 
+            <ChevronLeft
               className="w-4 h-4 transition-all duration-300 ease-out group-hover:text-white"
-              style={{ 
+              style={{
                 color: 'rgb(var(--color-text-muted))',
                 transform: isSidebarCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-              }} 
+              }}
             />
           </button>
         </div>
 
         {/* Organization Selector */}
         {!isSidebarCollapsed && (
-          <div className="p-4 border-b flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
+          <div
+            className="p-4 border-b flex-shrink-0"
+            style={{ borderColor: 'rgb(var(--color-border))' }}
+          >
             <OrganizationSwitcher />
           </div>
         )}
 
         {/* Navigation with Categories */}
-        <nav className={`flex-1 overflow-y-auto transition-all min-h-0 ${
-          isSidebarCollapsed ? 'p-2' : 'p-4'
-        }`}>
+        <nav
+          className={`flex-1 overflow-y-auto transition-all min-h-0 ${
+            isSidebarCollapsed ? 'p-2' : 'p-4'
+          }`}
+        >
           {filteredCategories.map((category, categoryIndex) => {
             const isExpanded = expandedCategories.has(category.id);
-            const hasActiveItem = category.items.some(item => isActive(item.href));
-            
+            const hasActiveItem = category.items.some((item) => isActive(item.href));
+
             return (
               <div key={category.id} className={categoryIndex > 0 ? 'mt-2' : ''}>
                 {/* Category Header - Clickable to toggle, hidden when sidebar collapsed */}
@@ -1083,21 +1244,23 @@ export default function Layout({ children }: LayoutProps) {
                   <button
                     onClick={() => toggleCategory(category.id)}
                     className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-medium uppercase tracking-wider rounded transition-colors"
-                    style={{ 
-                      color: hasActiveItem ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted) / 0.6)',
+                    style={{
+                      color: hasActiveItem
+                        ? 'rgb(var(--color-primary-500))'
+                        : 'rgb(var(--color-text-muted) / 0.6)',
                     }}
                   >
                     <span>{category.label[language as 'en' | 'fr']}</span>
-                    <ChevronDown 
+                    <ChevronDown
                       className={`w-3 h-3 transition-transform duration-200 opacity-50 ${isExpanded ? '' : '-rotate-90'}`}
                     />
                   </button>
                 )}
-                
+
                 {/* Category Items - Collapsible */}
-                <div 
+                <div
                   className={`space-y-0.5 overflow-hidden transition-all duration-200 ${!isSidebarCollapsed ? 'mt-1' : ''}`}
-                  style={{ 
+                  style={{
                     maxHeight: isSidebarCollapsed || isExpanded ? '500px' : '0px',
                     opacity: isSidebarCollapsed || isExpanded ? 1 : 0,
                   }}
@@ -1115,7 +1278,12 @@ export default function Layout({ children }: LayoutProps) {
                       {!isSidebarCollapsed && (
                         <>
                           <span className="flex-1">{item.name}</span>
-                          {item.premiumFeature && <PremiumBadge feature={item.premiumFeature} isActive={isActive(item.href)} />}
+                          {item.premiumFeature && (
+                            <PremiumBadge
+                              feature={item.premiumFeature}
+                              isActive={isActive(item.href)}
+                            />
+                          )}
                         </>
                       )}
                     </Link>
@@ -1124,12 +1292,12 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             );
           })}
-          
+
           {/* Settings Category */}
           {showSettings && (
             <div className="mt-2">
               {!isSidebarCollapsed && (
-                <div 
+                <div
                   className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider"
                   style={{ color: 'rgb(var(--color-text-muted) / 0.6)' }}
                 >
@@ -1150,9 +1318,9 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* User Menu - Bottom Left */}
         {!isSidebarCollapsed && (
-          <div 
+          <div
             className="p-3 sm:p-4 border-t flex-shrink-0 mt-auto"
-            style={{ 
+            style={{
               borderColor: 'rgb(var(--color-border))',
               backgroundColor: 'rgb(var(--color-surface))',
             }}
@@ -1170,16 +1338,16 @@ export default function Layout({ children }: LayoutProps) {
               }}
             >
               {/* User Avatar */}
-              <div 
+              <div
                 className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden border-2 transition-all"
-                style={{ 
+                style={{
                   backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
-                  borderColor: 'rgb(var(--color-border))'
+                  borderColor: 'rgb(var(--color-border))',
                 }}
               >
                 {user?.picture ? (
-                  <img 
-                    src={user.picture} 
+                  <img
+                    src={user.picture}
                     alt={user?.name || (language === 'en' ? 'User' : 'Utilisateur')}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -1198,15 +1366,23 @@ export default function Layout({ children }: LayoutProps) {
                     }}
                   />
                 ) : (
-                  <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                    {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
+                  <span
+                    className="font-semibold text-sm"
+                    style={{ color: 'rgb(var(--color-text-secondary))' }}
+                  >
+                    {(user?.firstName?.[0] || '') + (user?.lastName?.[0] || '') ||
+                      user?.name?.[0] ||
+                      'U'}
                   </span>
                 )}
               </div>
-              
+
               {/* User Details */}
               <div className="flex-1 min-w-0 overflow-hidden">
-                <p className="text-sm font-medium truncate" style={{ color: 'rgb(var(--color-text))' }}>
+                <p
+                  className="text-sm font-medium truncate"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
                   {user?.name || user?.firstName || (language === 'en' ? 'User' : 'Utilisateur')}
                 </p>
                 <p className="text-xs truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
@@ -1214,12 +1390,12 @@ export default function Layout({ children }: LayoutProps) {
                 </p>
               </div>
             </Link>
-            
+
             {/* Logout Button */}
             <button
               onClick={logout}
               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-all active:scale-[0.98]"
-              style={{ 
+              style={{
                 color: 'rgb(var(--color-error))',
                 backgroundColor: 'rgb(var(--color-error) / 0.05)',
               }}
@@ -1235,27 +1411,35 @@ export default function Layout({ children }: LayoutProps) {
             </button>
           </div>
         )}
-        
+
         {/* Collapsed User Avatar */}
         {isSidebarCollapsed && (
-          <div className="p-2 border-t flex-shrink-0" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <div 
+          <div
+            className="p-2 border-t flex-shrink-0"
+            style={{ borderColor: 'rgb(var(--color-border))' }}
+          >
+            <div
               className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-2 mx-auto cursor-pointer transition-all hover:scale-110"
-              style={{ 
+              style={{
                 backgroundColor: user?.picture ? 'transparent' : 'rgb(var(--color-bg-muted))',
-                borderColor: 'rgb(var(--color-border))'
+                borderColor: 'rgb(var(--color-border))',
               }}
               title={user?.name || user?.email || ''}
             >
               {user?.picture ? (
-                <img 
-                  src={user.picture} 
+                <img
+                  src={user.picture}
                   alt={user?.name || ''}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="font-semibold text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                  {((user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')) || (user?.name?.[0] || 'U')}
+                <span
+                  className="font-semibold text-xs"
+                  style={{ color: 'rgb(var(--color-text-secondary))' }}
+                >
+                  {(user?.firstName?.[0] || '') + (user?.lastName?.[0] || '') ||
+                    user?.name?.[0] ||
+                    'U'}
                 </span>
               )}
             </div>
@@ -1264,121 +1448,123 @@ export default function Layout({ children }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main 
+      <main
         className="flex-1 flex flex-col min-w-0 w-full lg:w-auto h-full overflow-hidden"
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
       >
         {/* Desktop Header */}
-        <header 
+        <header
           className="hidden lg:flex h-16 items-center justify-between px-6 sticky top-0 z-40 border-b flex-shrink-0"
-          style={{ 
+          style={{
             backgroundColor: 'rgb(var(--color-surface))',
-            borderColor: 'rgb(var(--color-border))'
+            borderColor: 'rgb(var(--color-border))',
           }}
         >
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-              {filteredCategories.flatMap(c => c.items).find((n) => isActive(n.href))?.name || 'PlainLedger'}
+              {filteredCategories.flatMap((c) => c.items).find((n) => isActive(n.href))?.name ||
+                'PlainLedger'}
             </h1>
-            
+
             {/* Industry Badge - Visible on all pages (smaller version for header) */}
-            {currentTenant?.industry && (() => {
-              const industry = currentTenant.industry;
-              const industryLabels: Record<string, { en: string; fr: string }> = {
-                real_estate: { en: 'Real Estate', fr: 'Immobilier' },
-                restaurant: { en: 'Restaurant', fr: 'Restaurant' },
-                hospitality: { en: 'Hospitality', fr: 'Hôtellerie' },
-                retail: { en: 'Retail', fr: 'Détail' },
-                construction: { en: 'Construction', fr: 'Construction' },
-                professional_services: { en: 'Services', fr: 'Services' },
-                manufacturing: { en: 'Manufacturing', fr: 'Fabrication' },
-                agriculture: { en: 'Agriculture', fr: 'Agriculture' },
-                transport: { en: 'Transport', fr: 'Transport' },
-                healthcare: { en: 'Healthcare', fr: 'Santé' },
-                education: { en: 'Education', fr: 'Éducation' },
-                wholesale: { en: 'Wholesale', fr: 'Gros' },
-                automotive: { en: 'Automotive', fr: 'Auto' },
-                beauty_wellness: { en: 'Beauty', fr: 'Beauté' },
-              };
-              const industryIcons: Record<string, typeof Building2> = {
-                real_estate: Building2,
-                restaurant: UtensilsCrossed,
-                hospitality: Hotel,
-                retail: ShoppingBag,
-                construction: Hammer,
-                professional_services: Briefcase,
-                manufacturing: Factory,
-                agriculture: Wheat,
-                transport: Truck,
-                healthcare: Heart,
-                education: GraduationCap,
-                wholesale: ShoppingBag,
-                automotive: Truck,
-                beauty_wellness: Heart,
-              };
-              const IndustryIcon = industryIcons[industry] || Building2;
-              const label = industryLabels[industry] || industryLabels.real_estate;
-              
-              return (
-                <div 
-                  className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded group cursor-default"
-                  style={{ 
-                    background: 'rgb(var(--color-primary-600) / 0.1)',
-                  }}
-                  title={language === 'en' ? `${label.en} Industry` : `Industrie: ${label.fr}`}
-                >
-                  <IndustryIcon 
-                    className="w-3 h-3 transition-transform group-hover:scale-110" 
-                    style={{ color: 'rgb(var(--color-primary-600))' }} 
-                  />
-                  <span 
-                    className="text-[10px] font-medium"
-                    style={{ color: 'rgb(var(--color-primary-600))' }}
+            {currentTenant?.industry &&
+              (() => {
+                const industry = currentTenant.industry;
+                const industryLabels: Record<string, { en: string; fr: string }> = {
+                  real_estate: { en: 'Real Estate', fr: 'Immobilier' },
+                  restaurant: { en: 'Restaurant', fr: 'Restaurant' },
+                  hospitality: { en: 'Hospitality', fr: 'Hôtellerie' },
+                  retail: { en: 'Retail', fr: 'Détail' },
+                  construction: { en: 'Construction', fr: 'Construction' },
+                  professional_services: { en: 'Services', fr: 'Services' },
+                  manufacturing: { en: 'Manufacturing', fr: 'Fabrication' },
+                  agriculture: { en: 'Agriculture', fr: 'Agriculture' },
+                  transport: { en: 'Transport', fr: 'Transport' },
+                  healthcare: { en: 'Healthcare', fr: 'Santé' },
+                  education: { en: 'Education', fr: 'Éducation' },
+                  wholesale: { en: 'Wholesale', fr: 'Gros' },
+                  automotive: { en: 'Automotive', fr: 'Auto' },
+                  beauty_wellness: { en: 'Beauty', fr: 'Beauté' },
+                };
+                const industryIcons: Record<string, typeof Building2> = {
+                  real_estate: Building2,
+                  restaurant: UtensilsCrossed,
+                  hospitality: Hotel,
+                  retail: ShoppingBag,
+                  construction: Hammer,
+                  professional_services: Briefcase,
+                  manufacturing: Factory,
+                  agriculture: Wheat,
+                  transport: Truck,
+                  healthcare: Heart,
+                  education: GraduationCap,
+                  wholesale: ShoppingBag,
+                  automotive: Truck,
+                  beauty_wellness: Heart,
+                };
+                const IndustryIcon = industryIcons[industry] || Building2;
+                const label = industryLabels[industry] || industryLabels.real_estate;
+
+                return (
+                  <div
+                    className="hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded group cursor-default"
+                    style={{
+                      background: 'rgb(var(--color-primary-600) / 0.1)',
+                    }}
+                    title={language === 'en' ? `${label.en} Industry` : `Industrie: ${label.fr}`}
                   >
-                    {language === 'en' ? label.en : label.fr}
-                  </span>
-                </div>
-              );
-            })()}
+                    <IndustryIcon
+                      className="w-3 h-3 transition-transform group-hover:scale-110"
+                      style={{ color: 'rgb(var(--color-primary-600))' }}
+                    />
+                    <span
+                      className="text-[10px] font-medium"
+                      style={{ color: 'rgb(var(--color-primary-600))' }}
+                    >
+                      {language === 'en' ? label.en : label.fr}
+                    </span>
+                  </div>
+                );
+              })()}
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Search */}
-            <button 
+            <button
               onClick={searchModal.open}
               className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all border hover:shadow-sm"
-              style={{ 
+              style={{
                 backgroundColor: 'transparent',
                 borderColor: 'rgb(var(--color-border))',
-                color: 'rgb(var(--color-text-muted))'
+                color: 'rgb(var(--color-text-muted))',
               }}
               title={`${t('common.search')} (⌘K)`}
             >
               <Search className="w-4 h-4" />
               <span className="text-sm hidden sm:inline">{t('common.search')}</span>
-              <kbd 
+              <kbd
                 className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] border"
-                style={{ 
+                style={{
                   borderColor: 'rgb(var(--color-border))',
-                  color: 'rgb(var(--color-text-muted))'
+                  color: 'rgb(var(--color-text-muted))',
                 }}
               >
                 <Command className="w-3 h-3" />K
               </kbd>
             </button>
-            
+
             {/* Help Center */}
             <HelpButton />
 
             {/* Live Chat */}
             {config.crisp.enabled && (
-              <button 
-                className="icon-btn relative" 
+              <button
+                className="icon-btn relative"
                 onClick={() => crispUtils.open()}
                 title={language === 'en' ? 'Live chat' : 'Chat en direct'}
               >
                 <MessageCircle className="w-5 h-5" />
-                <span 
+                <span
                   className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full animate-pulse"
                   style={{ backgroundColor: 'rgb(var(--color-success))' }}
                   title={language === 'en' ? 'Support online' : 'Support en ligne'}
@@ -1391,16 +1577,16 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* Theme Toggle */}
             <ThemeToggle />
-            
+
             {/* Notifications */}
             <NotificationPanel />
-            
+
             {/* Date */}
-            <span 
+            <span
               className="text-sm hidden xl:block pl-3 ml-2 border-l"
-              style={{ 
+              style={{
                 color: 'rgb(var(--color-text-muted))',
-                borderColor: 'rgb(var(--color-border))'
+                borderColor: 'rgb(var(--color-border))',
               }}
             >
               {formatDate(new Date(), {
@@ -1413,7 +1599,10 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Page Content - Responsive padding - optimized for space efficiency */}
-        <div className="flex-1 p-2.5 sm:p-3 lg:p-4 xl:p-5 overflow-auto min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div
+          className="flex-1 p-2.5 sm:p-3 lg:p-4 xl:p-5 overflow-auto min-h-0"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {children}
         </div>
       </main>

@@ -42,10 +42,10 @@ const SECURITY_MEASURES = [
   },
   {
     icon: Users,
-    title: { en: 'Access Control', fr: 'Contrôle d\'accès' },
+    title: { en: 'Access Control', fr: "Contrôle d'accès" },
     items: [
       { en: 'Multi-factor authentication (MFA)', fr: 'Authentification multi-facteurs (MFA)' },
-      { en: 'Role-based access control (RBAC)', fr: 'Contrôle d\'accès basé sur les rôles (RBAC)' },
+      { en: 'Role-based access control (RBAC)', fr: "Contrôle d'accès basé sur les rôles (RBAC)" },
       { en: 'Session management and timeout', fr: 'Gestion des sessions et expiration' },
       { en: 'IP allowlisting (Enterprise)', fr: 'Liste blanche IP (Entreprise)' },
     ],
@@ -65,8 +65,8 @@ const SECURITY_MEASURES = [
     title: { en: 'Monitoring & Logging', fr: 'Surveillance et journalisation' },
     items: [
       { en: 'Real-time security monitoring', fr: 'Surveillance de sécurité en temps réel' },
-      { en: 'Comprehensive audit logging', fr: 'Journalisation d\'audit complète' },
-      { en: 'Anomaly detection alerts', fr: 'Alertes de détection d\'anomalies' },
+      { en: 'Comprehensive audit logging', fr: "Journalisation d'audit complète" },
+      { en: 'Anomaly detection alerts', fr: "Alertes de détection d'anomalies" },
       { en: '7-year log retention', fr: 'Conservation des journaux sur 7 ans' },
     ],
   },
@@ -74,11 +74,14 @@ const SECURITY_MEASURES = [
 
 // Privacy officer info
 const PRIVACY_OFFICER = {
-  title: { en: 'Privacy Officer', fr: 'Responsable de la protection des renseignements personnels' },
+  title: {
+    en: 'Privacy Officer',
+    fr: 'Responsable de la protection des renseignements personnels',
+  },
   email: 'privacy@plainledger.ca',
   description: {
     en: 'For privacy-related inquiries, data access requests, or to report a concern.',
-    fr: 'Pour les demandes liées à la vie privée, les demandes d\'accès aux données ou pour signaler une préoccupation.',
+    fr: "Pour les demandes liées à la vie privée, les demandes d'accès aux données ou pour signaler une préoccupation.",
   },
 };
 
@@ -87,12 +90,9 @@ export default function Security() {
   const isEn = language === 'en';
 
   return (
-    <div 
-      className="min-h-screen"
-      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
-    >
+    <div className="min-h-screen" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
       {/* SEO */}
-      <SEOHead 
+      <SEOHead
         title={{
           en: 'Security & Compliance | PlainLedger - SOC 2, PIPEDA, Law 25',
           fr: 'Sécurité et conformité | PlainLedger - SOC 2, PIPEDA, Loi 25',
@@ -110,152 +110,114 @@ export default function Security() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Link */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="inline-flex items-center gap-2 text-sm hover:underline transition-colors mb-8"
           style={{ color: primaryColor }}
         >
           <ArrowLeft className="w-4 h-4" />
-          {isEn ? 'Back to Home' : 'Retour à l\'accueil'}
+          {isEn ? 'Back to Home' : "Retour à l'accueil"}
         </Link>
 
         {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div 
+        <div className="text-center mb-12">
+          <div
             className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
             style={{ backgroundColor: `${primaryColor}10` }}
           >
             <Shield className="w-8 h-8" style={{ color: primaryColor }} />
           </div>
-          <h1 
+          <h1
             className="text-3xl sm:text-4xl font-bold mb-4"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {isEn ? 'Security & Compliance' : 'Sécurité et conformité'}
           </h1>
-          <p 
-            className="text-lg max-w-2xl mx-auto"
-            style={{ color: 'rgb(var(--color-text-secondary))' }}
-          >
-            {isEn 
-              ? 'Your financial data deserves enterprise-grade security. Here\'s how we protect it.'
+          <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(var(--color-text))' }}>
+            {isEn
+              ? "Your financial data deserves enterprise-grade security. Here's how we protect it."
               : 'Vos données financières méritent une sécurité de niveau entreprise. Voici comment nous les protégeons.'}
           </p>
-        </motion.div>
+        </div>
 
         {/* Compliance Roadmap */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-16"
-        >
+        <section className="mb-16">
           <ComplianceRoadmap variant="full" />
-        </motion.section>
+        </section>
 
         {/* Security Measures */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-16"
-        >
-          <h2 
-            className="text-2xl font-bold mb-8"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold mb-8" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Security Measures' : 'Mesures de sécurité'}
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {SECURITY_MEASURES.map((measure, index) => {
               const Icon = measure.icon;
               return (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
                   className="p-6 rounded-2xl"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgb(var(--color-surface))',
                     border: '1px solid rgb(var(--color-border))',
                   }}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div 
+                    <div
                       className="p-2 rounded-lg"
                       style={{ backgroundColor: `${primaryColor}10` }}
                     >
                       <Icon className="w-5 h-5" style={{ color: primaryColor }} />
                     </div>
-                    <h3 
-                      className="font-semibold"
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
+                    <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
                       {isEn ? measure.title.en : measure.title.fr}
                     </h3>
                   </div>
-                  
+
                   <ul className="space-y-2">
                     {measure.items.map((item, i) => (
                       <li key={i} className="flex items-center gap-2">
                         <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
-                        <span 
-                          className="text-sm"
-                          style={{ color: 'rgb(var(--color-text-secondary))' }}
-                        >
+                        <span className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
                           {isEn ? item.en : item.fr}
                         </span>
                       </li>
                     ))}
                   </ul>
-                </motion.div>
+                </div>
               );
             })}
           </div>
-        </motion.section>
+        </section>
 
         {/* Privacy Officer */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-16"
-        >
-          <div 
+        <section className="mb-16">
+          <div
             className="p-8 rounded-2xl"
-            style={{ 
+            style={{
               backgroundColor: `${primaryColor}05`,
               border: `1px solid ${primaryColor}20`,
             }}
           >
             <div className="flex items-start gap-4">
-              <div 
+              <div
                 className="p-3 rounded-xl flex-shrink-0"
                 style={{ backgroundColor: `${primaryColor}15` }}
               >
                 <Users className="w-6 h-6" style={{ color: primaryColor }} />
               </div>
               <div>
-                <h3 
+                <h3
                   className="text-lg font-semibold mb-2"
                   style={{ color: 'rgb(var(--color-text))' }}
                 >
                   {isEn ? PRIVACY_OFFICER.title.en : PRIVACY_OFFICER.title.fr}
                 </h3>
-                <p 
-                  className="text-sm mb-4"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
+                <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text))' }}>
                   {isEn ? PRIVACY_OFFICER.description.en : PRIVACY_OFFICER.description.fr}
                 </p>
-                <a 
+                <a
                   href={`mailto:${PRIVACY_OFFICER.email}`}
                   className="inline-flex items-center gap-2 text-sm font-medium hover:underline"
                   style={{ color: primaryColor }}
@@ -266,59 +228,48 @@ export default function Security() {
               </div>
             </div>
           </div>
-        </motion.section>
+        </section>
 
         {/* Incident Response */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-16"
-        >
-          <h2 
-            className="text-2xl font-bold mb-6"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold mb-6" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Incident Response' : 'Réponse aux incidents'}
           </h2>
-          
-          <div 
+
+          <div
             className="p-6 rounded-2xl"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
             }}
           >
             <div className="flex items-start gap-4 mb-4">
-              <div 
+              <div
                 className="p-2 rounded-lg flex-shrink-0"
                 style={{ backgroundColor: 'rgb(var(--color-warning-100))' }}
               >
-                <AlertTriangle className="w-5 h-5" style={{ color: 'rgb(var(--color-warning-600))' }} />
+                <AlertTriangle
+                  className="w-5 h-5"
+                  style={{ color: 'rgb(var(--color-warning-600))' }}
+                />
               </div>
               <div>
-                <h3 
-                  className="font-semibold mb-2"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? 'Security Incident Reporting' : 'Signalement d\'incidents de sécurité'}
+                <h3 className="font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn ? 'Security Incident Reporting' : "Signalement d'incidents de sécurité"}
                 </h3>
-                <p 
-                  className="text-sm"
-                  style={{ color: 'rgb(var(--color-text-secondary))' }}
-                >
-                  {isEn 
+                <p className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                  {isEn
                     ? 'If you discover a security vulnerability or suspect unauthorized access, please report it immediately to our security team.'
                     : 'Si vous découvrez une vulnérabilité de sécurité ou soupçonnez un accès non autorisé, veuillez le signaler immédiatement à notre équipe de sécurité.'}
                 </p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <a 
+              <a
                 href="mailto:security@plainledger.ca"
                 className="flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-[1.02]"
-                style={{ 
+                style={{
                   backgroundColor: 'rgb(var(--color-bg-subtle))',
                 }}
               >
@@ -332,8 +283,8 @@ export default function Security() {
                   </p>
                 </div>
               </a>
-              
-              <div 
+
+              <div
                 className="flex items-center gap-3 p-4 rounded-xl"
                 style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
               >
@@ -349,32 +300,25 @@ export default function Security() {
               </div>
             </div>
           </div>
-        </motion.section>
+        </section>
 
         {/* Documents */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <h2 
-            className="text-2xl font-bold mb-6"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
+        <section>
+          <h2 className="text-2xl font-bold mb-6" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Legal Documents' : 'Documents juridiques'}
           </h2>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { 
+              {
                 title: { en: 'Privacy Policy', fr: 'Politique de confidentialité' },
                 link: '/privacy',
               },
-              { 
-                title: { en: 'Terms of Service', fr: 'Conditions d\'utilisation' },
+              {
+                title: { en: 'Terms of Service', fr: "Conditions d'utilisation" },
                 link: '/terms',
               },
-              { 
+              {
                 title: { en: 'Data Processing Agreement', fr: 'Accord de traitement des données' },
                 link: '/dpa',
               },
@@ -383,29 +327,29 @@ export default function Security() {
                 key={index}
                 to={doc.link}
                 className="flex items-center justify-between p-4 rounded-xl transition-all hover:scale-[1.02]"
-                style={{ 
+                style={{
                   backgroundColor: 'rgb(var(--color-surface))',
                   border: '1px solid rgb(var(--color-border))',
                 }}
               >
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5" style={{ color: primaryColor }} />
-                  <span 
-                    className="text-sm font-medium"
-                    style={{ color: 'rgb(var(--color-text))' }}
-                  >
+                  <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
                     {isEn ? doc.title.en : doc.title.fr}
                   </span>
                 </div>
-                <ExternalLink className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                <ExternalLink
+                  className="w-4 h-4"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                />
               </Link>
             ))}
           </div>
-        </motion.section>
+        </section>
       </main>
 
       {/* Footer */}
-      <footer 
+      <footer
         className="py-8 px-4 sm:px-6 border-t mt-16"
         style={{ borderColor: `${primaryColor}1a` }}
       >
@@ -413,10 +357,19 @@ export default function Security() {
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             © 2026 PlainLedger 🇨🇦
           </p>
-          <div className="flex items-center gap-6 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <Link to="/privacy" className="hover:underline">{isEn ? 'Privacy' : 'Confidentialité'}</Link>
-            <Link to="/terms" className="hover:underline">{isEn ? 'Terms' : 'Conditions'}</Link>
-            <Link to="/" className="hover:underline">{isEn ? 'Home' : 'Accueil'}</Link>
+          <div
+            className="flex items-center gap-6 text-sm"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            <Link to="/privacy" className="hover:underline">
+              {isEn ? 'Privacy' : 'Confidentialité'}
+            </Link>
+            <Link to="/terms" className="hover:underline">
+              {isEn ? 'Terms' : 'Conditions'}
+            </Link>
+            <Link to="/" className="hover:underline">
+              {isEn ? 'Home' : 'Accueil'}
+            </Link>
           </div>
         </div>
       </footer>
