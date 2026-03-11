@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { 
-  AlertTriangle, 
+import {
+  AlertTriangle,
   CheckCircle,
   RefreshCw,
   ChevronRight,
@@ -28,17 +28,23 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tooltip, ActionTooltip } from '../components/Tooltip';
-import { TrendChart, WaterfallChart, CurrentRatioCard, QuickRatioCard, DebtToEquityCard } from '../components/charts';
+import {
+  TrendChart,
+  WaterfallChart,
+  CurrentRatioCard,
+  QuickRatioCard,
+  DebtToEquityCard,
+} from '../components/charts';
 import type { IndustryType } from '../components/charts';
 import { VariancePinCompact } from '../components/charts/ibcs/VariancePin';
 import KPICard from '../components/KPICard';
 import MetricCard from '../components/MetricCard';
-import { 
-  AgingWidget, 
-  BankReconciliationWidget, 
-  BudgetWidget, 
+import {
+  AgingWidget,
+  BankReconciliationWidget,
+  BudgetWidget,
   DeadlinesWidget,
-  TrialBalanceSummary 
+  TrialBalanceSummary,
 } from '../components/AccountingWidgets';
 import AIQueryAssistant from '../components/AIQueryAssistant';
 import DecisionCapture from '../components/DecisionCapture';
@@ -54,17 +60,15 @@ import { useI18n } from '../lib/i18n';
 import { useFinancialData } from '../hooks/useFinancialData';
 import { useHasRealData } from '../hooks/useHasRealData';
 import { useAccountDataAccess } from '../hooks/useAccountDataAccess';
-import { 
-  runFullAnalysis, 
-  DEFAULT_THRESHOLDS,
-  type AccountBalance,
-} from '../lib/anomalyDetection';
+import { runFullAnalysis, DEFAULT_THRESHOLDS, type AccountBalance } from '../lib/anomalyDetection';
 import { INDUSTRY_KPIS } from '../lib/industryBenchmarkDisplay';
 import type { DataMetric, DecisionEvent } from '../lib/decisionContext';
 import { calculateVariance, type IBCSMetricType } from '../lib/ibcs';
 import EmptyDataState from '../components/EmptyDataState';
 import ConnectionWizard from '../components/ConnectionWizard';
-import DynamicDashboardLayout, { type DashboardSection } from '../components/DynamicDashboardLayout';
+import DynamicDashboardLayout, {
+  type DashboardSection,
+} from '../components/DynamicDashboardLayout';
 import AddWidgetCard from '../components/AddWidgetCard';
 import DashboardWidgetWrapper from '../components/DashboardWidgetWrapper';
 import VisualizationGrid from '../components/VisualizationGrid';
@@ -93,11 +97,12 @@ export default function Dashboard() {
   // Settings can be customized per-chart in the chart settings panel
   const ibcsMode = true;
   const { hasAccess: hasAIAccess } = usePremiumFeature('aiInsights');
-  
+
   // Decision capture feature - must be manually enabled per organization
   // Requires both AI access (premium) AND the decisionCapture feature flag to be enabled
-  const hasDecisionCapture = hasAIAccess && (currentTenant?.settings?.features?.decisionCapture ?? false);
-  
+  const hasDecisionCapture =
+    hasAIAccess && (currentTenant?.settings?.features?.decisionCapture ?? false);
+
   // Dashboard customization
   const hasCustomizePermission = hasPermission('customize:dashboard');
   const {
@@ -110,28 +115,30 @@ export default function Dashboard() {
     resetToDefaults,
     isWidgetVisible,
   } = useDashboardConfig();
-  
+
   // Can customize only if user has permission AND dashboard is not locked
   const canCustomize = hasCustomizePermission && !isDashboardLocked;
-  
+
   // Chart Gallery modal state
   const [showChartGallery, setShowChartGallery] = useState(false);
-  
+
   // Drag and drop state
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
-  
+
   // Report sections added from Reports page
-  const [reportSections, setReportSections] = useState<Array<{
-    id: string;
-    reportId: string;
-    name: string;
-    nameEn: string;
-    type: string;
-    charts: any[];
-    createdAt: string;
-  }>>([]);
-  
+  const [reportSections, setReportSections] = useState<
+    Array<{
+      id: string;
+      reportId: string;
+      name: string;
+      nameEn: string;
+      type: string;
+      charts: any[];
+      createdAt: string;
+    }>
+  >([]);
+
   // Load report sections from localStorage
   useEffect(() => {
     const loadReportSections = () => {
@@ -149,14 +156,17 @@ export default function Dashboard() {
     window.addEventListener('storage', loadReportSections);
     return () => window.removeEventListener('storage', loadReportSections);
   }, []);
-  
+
   // Remove report section
-  const removeReportSection = useCallback((sectionId: string) => {
-    const updated = reportSections.filter(s => s.id !== sectionId);
-    setReportSections(updated);
-    localStorage.setItem('plainledger_dashboard_sections', JSON.stringify(updated));
-  }, [reportSections]);
-  
+  const removeReportSection = useCallback(
+    (sectionId: string) => {
+      const updated = reportSections.filter((s) => s.id !== sectionId);
+      setReportSections(updated);
+      localStorage.setItem('plainledger_dashboard_sections', JSON.stringify(updated));
+    },
+    [reportSections],
+  );
+
   // Auto-enable demo mode for demo-signup users
   const isDemoSignupUser = user?.organization === 'demo-signup';
   useEffect(() => {
@@ -164,20 +174,20 @@ export default function Dashboard() {
       enableDemoMode();
     }
   }, [isDemoSignupUser, isDemoMode, enableDemoMode]);
-  
+
   // Account data access rules - determines what data the user can see
-  const { 
-    shouldBlockUI, 
-    isFreeUser, 
-    isPaidUser, 
+  const {
+    shouldBlockUI,
+    isFreeUser,
+    isPaidUser,
     hasConnection,
     showEnterpriseCTA,
     isLoading: accessLoading,
   } = useAccountDataAccess();
-  
+
   // Fetch financial data from the data service
   const { data: financialData, isLoading, refresh, error } = useFinancialData();
-  
+
   // Check data availability
   const {
     hasRealData,
@@ -192,14 +202,14 @@ export default function Dashboard() {
     hasPayables,
     hasSummaryMetrics,
   } = useHasRealData();
-  
+
   // Determine if we should show data (real data OR sandbox data for free users only)
   const shouldShowData = hasRealData || shouldShowSandboxData;
 
   // Transform financial data to account balances for anomaly detection
   const accountsData: AccountBalance[] = useMemo(() => {
     if (!financialData) return [];
-    return (financialData.accounts ?? []).map(a => ({
+    return (financialData.accounts ?? []).map((a) => ({
       code: a.code,
       name: a.name,
       current: a.current,
@@ -238,30 +248,30 @@ export default function Dashboard() {
   // MTD needs at least 2 points, QTD needs at least 3, YTD works with any data
   const availablePeriods = useMemo(() => {
     const periods: { id: string; label: string; minDataPoints: number }[] = [];
-    
+
     // MTD always available if we have at least 2 data points
     if (availableDataPoints >= 2) {
       periods.push({ id: 'mtd', label: t('dashboard.period.month'), minDataPoints: 2 });
     }
-    
+
     // QTD available if we have at least 3 data points
     if (availableDataPoints >= 3) {
       periods.push({ id: 'qtd', label: t('dashboard.period.quarter'), minDataPoints: 3 });
     }
-    
+
     // YTD available if we have more than 3 months (otherwise same as QTD)
     if (availableDataPoints > 3) {
       periods.push({ id: 'ytd', label: t('dashboard.period.year'), minDataPoints: 4 });
     }
-    
+
     return periods;
   }, [availableDataPoints, t]);
 
   // Auto-select a valid period if the current selection is no longer available
   useEffect(() => {
     if (availablePeriods.length === 0) return;
-    
-    const isCurrentPeriodAvailable = availablePeriods.some(p => p.id === selectedPeriod);
+
+    const isCurrentPeriodAvailable = availablePeriods.some((p) => p.id === selectedPeriod);
     if (!isCurrentPeriodAvailable) {
       // Select the first available period (MTD is preferred as it's most recent)
       setSelectedPeriod(availablePeriods[0].id as 'mtd' | 'qtd' | 'ytd');
@@ -304,7 +314,7 @@ export default function Dashboard() {
     const totalCashFlow = cashFlowData.reduce((sum, d) => sum + (d?.value ?? 0), 0);
     const totalBudget = revenueBudget.reduce((sum, b) => sum + (b ?? 0), 0);
     const budgetVariance = totalBudget > 0 ? ((totalRevenue - totalBudget) / totalBudget) * 100 : 0;
-    
+
     return {
       totalRevenue,
       totalCashFlow,
@@ -322,7 +332,11 @@ export default function Dashboard() {
 
   const analysis = useMemo(() => {
     if (!accountsData.length || !revenueData.length) {
-      return { anomalies: [], summary: { critical: 0, warning: 0, info: 0, total: 0 }, healthScore: 100 };
+      return {
+        anomalies: [],
+        summary: { critical: 0, warning: 0, info: 0, total: 0 },
+        healthScore: 100,
+      };
     }
     return runFullAnalysis(accountsData, revenueData, DEFAULT_THRESHOLDS);
   }, [accountsData, revenueData]);
@@ -352,90 +366,109 @@ export default function Dashboard() {
   const [recentDecisions, setRecentDecisions] = useState<DecisionEvent[]>([]);
 
   // Handle opening decision capture from a chart
-  const handleRecordDecision = useCallback((trigger: {
-    metricType: DataMetric;
-    metricLabel: string;
-    chartId: string;
-    currentValue: number;
-    benchmarkValue?: number;
-    period?: string;
-  }) => {
-    setDecisionTrigger(trigger);
-    setShowDecisionCapture(true);
-  }, []);
+  const handleRecordDecision = useCallback(
+    (trigger: {
+      metricType: DataMetric;
+      metricLabel: string;
+      chartId: string;
+      currentValue: number;
+      benchmarkValue?: number;
+      period?: string;
+    }) => {
+      setDecisionTrigger(trigger);
+      setShowDecisionCapture(true);
+    },
+    [],
+  );
 
   // Drag and drop handlers
-  const handleDragStart = useCallback((widgetId: string) => (e: React.DragEvent) => {
-    setDraggedWidgetId(widgetId);
-    e.dataTransfer.effectAllowed = 'move';
-  }, []);
+  const handleDragStart = useCallback(
+    (widgetId: string) => (e: React.DragEvent) => {
+      setDraggedWidgetId(widgetId);
+      e.dataTransfer.effectAllowed = 'move';
+    },
+    [],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggedWidgetId(null);
     setDragOverWidgetId(null);
   }, []);
 
-  const handleDragOver = useCallback((widgetId: string) => (e: React.DragEvent) => {
-    e.preventDefault();
-    if (widgetId !== draggedWidgetId) {
-      setDragOverWidgetId(widgetId);
-    }
-  }, [draggedWidgetId]);
+  const handleDragOver = useCallback(
+    (widgetId: string) => (e: React.DragEvent) => {
+      e.preventDefault();
+      if (widgetId !== draggedWidgetId) {
+        setDragOverWidgetId(widgetId);
+      }
+    },
+    [draggedWidgetId],
+  );
 
-  const handleDrop = useCallback((targetWidgetId: string) => (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!draggedWidgetId || draggedWidgetId === targetWidgetId) {
+  const handleDrop = useCallback(
+    (targetWidgetId: string) => (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!draggedWidgetId || draggedWidgetId === targetWidgetId) {
+        setDraggedWidgetId(null);
+        setDragOverWidgetId(null);
+        return;
+      }
+
+      // Get current order
+      const currentOrder = widgetConfigs.map((w) => w.id);
+      const draggedIndex = currentOrder.indexOf(draggedWidgetId);
+      const targetIndex = currentOrder.indexOf(targetWidgetId);
+
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      // Reorder array
+      const newOrder = [...currentOrder];
+      newOrder.splice(draggedIndex, 1);
+      newOrder.splice(targetIndex, 0, draggedWidgetId);
+
+      reorderWidgets(newOrder);
       setDraggedWidgetId(null);
       setDragOverWidgetId(null);
-      return;
-    }
-
-    // Get current order
-    const currentOrder = widgetConfigs.map(w => w.id);
-    const draggedIndex = currentOrder.indexOf(draggedWidgetId);
-    const targetIndex = currentOrder.indexOf(targetWidgetId);
-
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    // Reorder array
-    const newOrder = [...currentOrder];
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(targetIndex, 0, draggedWidgetId);
-
-    reorderWidgets(newOrder);
-    setDraggedWidgetId(null);
-    setDragOverWidgetId(null);
-  }, [draggedWidgetId, widgetConfigs, reorderWidgets]);
+    },
+    [draggedWidgetId, widgetConfigs, reorderWidgets],
+  );
 
   // Handle adding widget from chart gallery
-  const handleAddWidget = useCallback((chartConfig: ChartConfig) => {
-    const widgetConfig: DashboardWidgetConfig = {
-      id: `custom-${Date.now()}`,
-      type: 'custom-chart',
-      visible: true,
-      position: widgetConfigs.length + 1,
-      size: 'medium', // Half-width in grid
-      chartConfig: {
-        chartType: chartConfig.chartType,
-        metrics: chartConfig.metrics,
-        timeRange: chartConfig.timeRange,
-        name: chartConfig.name,
-        nameEn: chartConfig.nameEn || chartConfig.name,
-      },
-    };
-    addWidget(widgetConfig);
-    setShowChartGallery(false);
-    toast.success(isEn ? 'Widget added to dashboard' : 'Widget ajouté au tableau de bord');
-  }, [addWidget, widgetConfigs.length, isEn, toast]);
+  const handleAddWidget = useCallback(
+    (chartConfig: ChartConfig) => {
+      const widgetConfig: DashboardWidgetConfig = {
+        id: `custom-${Date.now()}`,
+        type: 'custom-chart',
+        visible: true,
+        position: widgetConfigs.length + 1,
+        size: 'medium', // Half-width in grid
+        chartConfig: {
+          chartType: chartConfig.chartType,
+          metrics: chartConfig.metrics,
+          timeRange: chartConfig.timeRange,
+          name: chartConfig.name,
+          nameEn: chartConfig.nameEn || chartConfig.name,
+        },
+      };
+      addWidget(widgetConfig);
+      setShowChartGallery(false);
+      toast.success(isEn ? 'Widget added to dashboard' : 'Widget ajouté au tableau de bord');
+    },
+    [addWidget, widgetConfigs.length, isEn, toast],
+  );
 
   // Collect all available dashboard sections dynamically
   const dashboardSections = useMemo((): DashboardSection[] => {
     const sections: DashboardSection[] = [];
-    
+
     // Helper to wrap section component with DashboardWidgetWrapper
     // Shows controls even when locked, but disables drag/remove functionality
     // Pass chartId for chart widgets to enable individual chart locking
-    const wrapSection = (id: string, component: React.ReactNode, chartId?: string): React.ReactNode => {
+    const wrapSection = (
+      id: string,
+      component: React.ReactNode,
+      chartId?: string,
+    ): React.ReactNode => {
       // Show wrapper if user has customize permission (even if currently locked)
       if (!hasCustomizePermission) {
         return component;
@@ -463,8 +496,9 @@ export default function Dashboard() {
 
     // Period Summary + Anomalies Row - Side by side layout
     const hasKPIs = hasTrends && periodSummary.dataPoints > 0 && isWidgetVisible('period-summary');
-    const hasAnomalies = shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies');
-    
+    const hasAnomalies =
+      shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies');
+
     if (hasKPIs || hasAnomalies) {
       sections.push({
         id: 'kpi-anomalies-row',
@@ -473,44 +507,59 @@ export default function Dashboard() {
             {/* KPI Cards - Left side (takes more space) */}
             {hasKPIs && (
               <div className="flex-1 lg:flex-[2]">
-                {wrapSection('period-summary', (
-                  <div 
+                {wrapSection(
+                  'period-summary',
+                  <div
                     className="grid grid-cols-4 gap-1 sm:gap-2 p-2 sm:p-3 rounded-xl h-full"
-                    style={{ 
+                    style={{
                       backgroundColor: 'rgb(var(--color-surface))',
                       border: '1px solid rgb(var(--color-border))',
                     }}
                   >
                     {/* Revenue - Primary metric */}
                     <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <p
+                        className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
                         {language === 'en' ? 'Revenue' : 'Revenus'}
                       </p>
-                      <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
+                      <p
+                        className="text-base sm:text-lg lg:text-xl font-bold tabular-nums"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
                         ${(periodSummary.totalRevenue / 1000).toFixed(0)}K
                       </p>
                     </div>
-                    
+
                     {/* Cash Flow - with semantic color */}
                     <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <p
+                        className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
                         {language === 'en' ? 'Cash Flow' : 'Trésorerie'}
                       </p>
-                      <p 
-                        className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" 
-                        style={{ 
-                          color: periodSummary.totalCashFlow >= 0 
-                            ? 'rgb(var(--color-success))' 
-                            : 'rgb(var(--color-error))' 
+                      <p
+                        className="text-base sm:text-lg lg:text-xl font-bold tabular-nums"
+                        style={{
+                          color:
+                            periodSummary.totalCashFlow >= 0
+                              ? 'rgb(var(--color-success))'
+                              : 'rgb(var(--color-error))',
                         }}
                       >
-                        {periodSummary.totalCashFlow >= 0 ? '+' : ''}{(periodSummary.totalCashFlow / 1000).toFixed(0)}K
+                        {periodSummary.totalCashFlow >= 0 ? '+' : ''}
+                        {(periodSummary.totalCashFlow / 1000).toFixed(0)}K
                       </p>
                     </div>
-                    
+
                     {/* Budget Variance - IBCS variance pin */}
                     <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <p
+                        className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
                         ΔPL
                       </p>
                       <div className="flex items-center justify-center">
@@ -521,109 +570,142 @@ export default function Dashboard() {
                         />
                       </div>
                     </div>
-                    
+
                     {/* Period indicator */}
                     <div className="text-center py-2 sm:py-3 px-1 sm:px-3">
-                      <p className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <p
+                        className="text-[9px] sm:text-[10px] uppercase tracking-wider font-medium mb-0.5 sm:mb-1 truncate"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
                         {language === 'en' ? 'Period' : 'Période'}
                       </p>
-                      <p className="text-base sm:text-lg lg:text-xl font-bold tabular-nums" style={{ color: 'rgb(var(--color-text))' }}>
-                        {periodSummary.dataPoints}<span className="text-xs sm:text-sm font-normal ml-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>mo</span>
+                      <p
+                        className="text-base sm:text-lg lg:text-xl font-bold tabular-nums"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        {periodSummary.dataPoints}
+                        <span
+                          className="text-xs sm:text-sm font-normal ml-0.5"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
+                        >
+                          mo
+                        </span>
                       </p>
                     </div>
-                  </div>
-                ))}
+                  </div>,
+                )}
               </div>
             )}
 
             {/* Anomalies Card - Right side (compact) */}
             {hasAnomalies && (
               <div className="lg:w-auto lg:min-w-[280px] lg:max-w-[320px]">
-                {wrapSection('anomalies', (
-                  <Link 
+                {wrapSection(
+                  'anomalies',
+                  <Link
                     to="/app/anomalies"
                     className="block rounded-xl p-2.5 sm:p-3 transition-all group hover:shadow-md h-full"
-                    style={{ 
+                    style={{
                       backgroundColor: 'rgb(var(--color-surface))',
                       border: '1px solid rgb(var(--color-border))',
                     }}
                   >
                     <div className="flex items-center gap-2.5">
                       {/* Icon */}
-                      <div 
+                      <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ 
-                          backgroundColor: analysis.summary.critical > 0 
-                            ? 'rgb(var(--color-error) / 0.08)' 
-                            : 'rgb(var(--color-text) / 0.05)',
+                        style={{
+                          backgroundColor:
+                            analysis.summary.critical > 0
+                              ? 'rgb(var(--color-error) / 0.08)'
+                              : 'rgb(var(--color-text) / 0.05)',
                         }}
                       >
-                        <AlertTriangle 
-                          className="w-4 h-4" 
-                          style={{ 
-                            color: analysis.summary.critical > 0 
-                              ? 'rgb(var(--color-error))' 
-                              : 'rgb(var(--color-text-muted))',
+                        <AlertTriangle
+                          className="w-4 h-4"
+                          style={{
+                            color:
+                              analysis.summary.critical > 0
+                                ? 'rgb(var(--color-error))'
+                                : 'rgb(var(--color-text-muted))',
                           }}
                         />
                       </div>
-                      
+
                       {/* Content */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                          <span
+                            className="text-sm font-semibold"
+                            style={{ color: 'rgb(var(--color-text))' }}
+                          >
                             {analysis.summary.total} {language === 'en' ? 'anomalies' : 'anomalies'}
                           </span>
                           {/* Compact severity badges */}
                           <div className="flex items-center gap-0.5">
                             {analysis.summary.critical > 0 && (
-                              <span 
+                              <span
                                 className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium"
-                                style={{ 
+                                style={{
                                   backgroundColor: 'rgb(var(--color-error) / 0.1)',
                                   color: 'rgb(var(--color-error))',
                                 }}
                               >
-                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-error))' }} />
+                                <span
+                                  className="w-1 h-1 rounded-full"
+                                  style={{ backgroundColor: 'rgb(var(--color-error))' }}
+                                />
                                 {analysis.summary.critical}
                               </span>
                             )}
                             {analysis.summary.warning > 0 && (
-                              <span 
+                              <span
                                 className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium"
-                                style={{ 
+                                style={{
                                   backgroundColor: 'rgb(var(--color-warning) / 0.1)',
                                   color: 'rgb(var(--color-warning))',
                                 }}
                               >
-                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-warning))' }} />
+                                <span
+                                  className="w-1 h-1 rounded-full"
+                                  style={{ backgroundColor: 'rgb(var(--color-warning))' }}
+                                />
                                 {analysis.summary.warning}
                               </span>
                             )}
                             {analysis.summary.info > 0 && (
-                              <span 
+                              <span
                                 className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium"
-                                style={{ 
+                                style={{
                                   backgroundColor: 'rgb(var(--color-info) / 0.08)',
                                   color: 'rgb(var(--color-info))',
                                 }}
                               >
-                                <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-info))' }} />
+                                <span
+                                  className="w-1 h-1 rounded-full"
+                                  style={{ backgroundColor: 'rgb(var(--color-info))' }}
+                                />
                                 {analysis.summary.info}
                               </span>
                             )}
                           </div>
                         </div>
-                        <p className="text-[10px] mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                        <p
+                          className="text-[10px] mt-0.5"
+                          style={{ color: 'rgb(var(--color-text-muted))' }}
+                        >
                           {language === 'en' ? 'Review required' : 'Examen requis'}
                         </p>
                       </div>
-                      
+
                       {/* Arrow */}
-                      <ChevronRight className="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-70 transition-opacity" style={{ color: 'rgb(var(--color-text-muted))' }} />
+                      <ChevronRight
+                        className="w-4 h-4 flex-shrink-0 opacity-40 group-hover:opacity-70 transition-opacity"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      />
                     </div>
-                  </Link>
-                ))}
+                  </Link>,
+                )}
               </div>
             )}
           </div>
@@ -639,11 +721,12 @@ export default function Dashboard() {
     if (false && shouldShowData && analysis.summary.total > 0 && isWidgetVisible('anomalies')) {
       sections.push({
         id: 'anomalies-legacy',
-        component: wrapSection('anomalies', (
-          <Link 
+        component: wrapSection(
+          'anomalies',
+          <Link
             to="/app/anomalies"
             className="block rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-4 transition-all group hover:shadow-md"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
             }}
@@ -653,76 +736,93 @@ export default function Dashboard() {
               {/* Left: Icon + Count + Badges */}
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 {/* Minimal icon - IBCS: reduce chart junk */}
-                <div 
+                <div
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ 
-                    backgroundColor: analysis.summary.critical > 0 
-                      ? 'rgb(var(--color-error) / 0.08)' 
-                      : 'rgb(var(--color-text) / 0.05)',
+                  style={{
+                    backgroundColor:
+                      analysis.summary.critical > 0
+                        ? 'rgb(var(--color-error) / 0.08)'
+                        : 'rgb(var(--color-text) / 0.05)',
                   }}
                 >
-                  <AlertTriangle 
-                    className="w-4 h-4 sm:w-4.5 sm:h-4.5" 
-                    style={{ 
-                      color: analysis.summary.critical > 0 
-                        ? 'rgb(var(--color-error))' 
-                        : 'rgb(var(--color-text-muted))',
+                  <AlertTriangle
+                    className="w-4 h-4 sm:w-4.5 sm:h-4.5"
+                    style={{
+                      color:
+                        analysis.summary.critical > 0
+                          ? 'rgb(var(--color-error))'
+                          : 'rgb(var(--color-text-muted))',
                     }}
                   />
                 </div>
-                
+
                 {/* Count and subtitle */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm sm:text-base font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                    <span
+                      className="text-sm sm:text-base font-semibold"
+                      style={{ color: 'rgb(var(--color-text))' }}
+                    >
                       {analysis.summary.total} {language === 'en' ? 'anomalies' : 'anomalies'}
                     </span>
                     {/* Inline severity badges - compact */}
                     <div className="flex items-center gap-1">
                       {analysis.summary.critical > 0 && (
-                        <span 
+                        <span
                           className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
-                          style={{ 
+                          style={{
                             backgroundColor: 'rgb(var(--color-error) / 0.1)',
                             color: 'rgb(var(--color-error))',
                           }}
                         >
-                          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-error))' }} />
+                          <span
+                            className="w-1 h-1 rounded-full"
+                            style={{ backgroundColor: 'rgb(var(--color-error))' }}
+                          />
                           {analysis.summary.critical}
                         </span>
                       )}
                       {analysis.summary.warning > 0 && (
-                        <span 
+                        <span
                           className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
-                          style={{ 
+                          style={{
                             backgroundColor: 'rgb(var(--color-warning) / 0.1)',
                             color: 'rgb(var(--color-warning))',
                           }}
                         >
-                          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-warning))' }} />
+                          <span
+                            className="w-1 h-1 rounded-full"
+                            style={{ backgroundColor: 'rgb(var(--color-warning))' }}
+                          />
                           {analysis.summary.warning}
                         </span>
                       )}
                       {analysis.summary.info > 0 && (
-                        <span 
+                        <span
                           className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-medium"
-                          style={{ 
+                          style={{
                             backgroundColor: 'rgb(var(--color-info) / 0.08)',
                             color: 'rgb(var(--color-info))',
                           }}
                         >
-                          <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'rgb(var(--color-info))' }} />
+                          <span
+                            className="w-1 h-1 rounded-full"
+                            style={{ backgroundColor: 'rgb(var(--color-info))' }}
+                          />
                           {analysis.summary.info}
                         </span>
                       )}
                     </div>
                   </div>
-                  <p className="text-[10px] sm:text-xs mt-0.5 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <p
+                    className="text-[10px] sm:text-xs mt-0.5 truncate"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
                     {language === 'en' ? 'Review required' : 'Examen requis'}
                   </p>
                 </div>
               </div>
-              
+
               {/* Right: Action area */}
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 {/* Slack badge - using button to avoid nested <a> tags */}
@@ -733,18 +833,18 @@ export default function Dashboard() {
                     window.location.href = '/app/settings?tab=notifications';
                   }}
                   className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-all hover:opacity-80"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgba(74, 21, 75, 0.1)',
                     color: '#4A154B',
                   }}
                   title={isEn ? 'Configure Slack alerts' : 'Configurer les alertes Slack'}
                 >
                   <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
                   </svg>
                   <span className="font-medium">Slack</span>
                 </button>
-                
+
                 {/* Teams badge - using button to avoid nested <a> tags */}
                 <button
                   onClick={(e) => {
@@ -753,7 +853,7 @@ export default function Dashboard() {
                     window.location.href = '/app/settings?tab=notifications';
                   }}
                   className="hidden sm:flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-all hover:opacity-80"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgba(70, 78, 184, 0.1)',
                     color: '#5059C9',
                   }}
@@ -761,19 +861,19 @@ export default function Dashboard() {
                 >
                   {/* Official Microsoft Teams logo */}
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.625 8.073c.574 0 1.125.228 1.531.634.407.407.636.958.636 1.534v5.166c0 .575-.229 1.127-.636 1.533a2.166 2.166 0 0 1-1.531.635h-4.87v-9.5h4.87v-.002zm-7.578-3.166c0-.575.229-1.127.636-1.534a2.166 2.166 0 0 1 1.531-.634h1.59c.575 0 1.126.228 1.532.634.406.407.635.959.635 1.534v.917a2.167 2.167 0 0 1 1.72.898 2.176 2.176 0 0 1 .422 1.28h-6.066V4.907zM8.25 5.823h6.75v11.844a2.167 2.167 0 0 1-.635 1.534 2.166 2.166 0 0 1-1.531.634H8.25V5.823zm-.75 0v13.927a.083.083 0 0 1-.083.083H2.333a.083.083 0 0 1-.083-.083V8.073c0-.576.229-1.127.636-1.534a2.166 2.166 0 0 1 1.531-.634H7.5v-.082zm5.125-3.157a1.333 1.333 0 1 0 0 2.667 1.333 1.333 0 0 0 0-2.667z"/>
+                    <path d="M20.625 8.073c.574 0 1.125.228 1.531.634.407.407.636.958.636 1.534v5.166c0 .575-.229 1.127-.636 1.533a2.166 2.166 0 0 1-1.531.635h-4.87v-9.5h4.87v-.002zm-7.578-3.166c0-.575.229-1.127.636-1.534a2.166 2.166 0 0 1 1.531-.634h1.59c.575 0 1.126.228 1.532.634.406.407.635.959.635 1.534v.917a2.167 2.167 0 0 1 1.72.898 2.176 2.176 0 0 1 .422 1.28h-6.066V4.907zM8.25 5.823h6.75v11.844a2.167 2.167 0 0 1-.635 1.534 2.166 2.166 0 0 1-1.531.634H8.25V5.823zm-.75 0v13.927a.083.083 0 0 1-.083.083H2.333a.083.083 0 0 1-.083-.083V8.073c0-.576.229-1.127.636-1.534a2.166 2.166 0 0 1 1.531-.634H7.5v-.082zm5.125-3.157a1.333 1.333 0 1 0 0 2.667 1.333 1.333 0 0 0 0-2.667z" />
                   </svg>
                   <span className="font-medium">Teams</span>
                 </button>
-                
-                <ChevronRight 
-                  className="w-4 h-4 sm:w-5 sm:h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" 
+
+                <ChevronRight
+                  className="w-4 h-4 sm:w-5 sm:h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 />
               </div>
             </div>
-          </Link>
-        )),
+          </Link>,
+        ),
         priority: 2,
         gridSpan: 'full',
       });
@@ -783,14 +883,15 @@ export default function Dashboard() {
     if (hasRealData && hasSummaryMetrics && isWidgetVisible('industry-benchmarks')) {
       sections.push({
         id: 'industry-benchmarks',
-        component: wrapSection('industry-benchmarks', (
-          <IndustryBenchmarksSection 
-            industry={currentTenant?.industry || 'real_estate'} 
+        component: wrapSection(
+          'industry-benchmarks',
+          <IndustryBenchmarksSection
+            industry={currentTenant?.industry || 'real_estate'}
             isEn={language === 'en'}
             ibcsMode={ibcsMode}
             financialData={financialData}
-          />
-        )),
+          />,
+        ),
         priority: 3,
         gridSpan: 'full',
       });
@@ -801,24 +902,36 @@ export default function Dashboard() {
       const selectedIndustry = (currentTenant?.industry || 'real_estate') as IndustryType;
       sections.push({
         id: 'financial-analysis',
-        component: wrapSection('financial-analysis', (
-          <div 
+        component: wrapSection(
+          'financial-analysis',
+          <div
             className="rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
             }}
           >
-            <h3 className="text-sm sm:text-base lg:text-lg font-semibold mb-3 sm:mb-4" style={{ color: 'rgb(var(--color-text))' }}>
+            <h3
+              className="text-sm sm:text-base lg:text-lg font-semibold mb-3 sm:mb-4"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               {isEn ? 'Financial Analysis' : 'Analyse financière'}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <CurrentRatioCard value={ratios.currentRatio} industry={selectedIndustry} isEn={isEn} />
+              <CurrentRatioCard
+                value={ratios.currentRatio}
+                industry={selectedIndustry}
+                isEn={isEn}
+              />
               <QuickRatioCard value={ratios.quickRatio} industry={selectedIndustry} isEn={isEn} />
-              <DebtToEquityCard value={ratios.debtToEquity} industry={selectedIndustry} isEn={isEn} />
+              <DebtToEquityCard
+                value={ratios.debtToEquity}
+                industry={selectedIndustry}
+                isEn={isEn}
+              />
             </div>
-          </div>
-        )),
+          </div>,
+        ),
         priority: 4,
         gridSpan: 'full',
       });
@@ -827,8 +940,9 @@ export default function Dashboard() {
     // Visualizations Section - Groups all charts together with equal heights
     // Built-in charts always show when data is available (not dependent on widget visibility)
     // Only custom charts use isWidgetVisible for user control
-    const visualizationItems: { id: string; component: React.ReactNode; size: 'half' | 'full' }[] = [];
-    
+    const visualizationItems: { id: string; component: React.ReactNode; size: 'half' | 'full' }[] =
+      [];
+
     // Cash Flow Chart (left side) - always show when data available
     if (hasCashFlowTrends && cashFlowData.length > 0) {
       visualizationItems.push({
@@ -837,17 +951,31 @@ export default function Dashboard() {
         component: (
           <TrendChart
             data={cashFlowData}
-            title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', isEn)}
-            titleEn={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'cashFlow', true)}
+            title={getIndustryChartTitle(
+              currentTenant?.industry || 'real_estate',
+              'cashFlow',
+              isEn,
+            )}
+            titleEn={getIndustryChartTitle(
+              currentTenant?.industry || 'real_estate',
+              'cashFlow',
+              true,
+            )}
             subtitle={
-              selectedPeriod === 'mtd' 
-                ? (language === 'en' ? `Current month (${cashFlowData.length} points)` : `Mois courant (${cashFlowData.length} points)`)
+              selectedPeriod === 'mtd'
+                ? language === 'en'
+                  ? `Current month (${cashFlowData.length} points)`
+                  : `Mois courant (${cashFlowData.length} points)`
                 : selectedPeriod === 'qtd'
-                  ? (language === 'en' ? `Last quarter (${cashFlowData.length} months)` : `Dernier trimestre (${cashFlowData.length} mois)`)
-                  : (language === 'en' ? `Full year (${cashFlowData.length} months)` : `Année complète (${cashFlowData.length} mois)`)
+                  ? language === 'en'
+                    ? `Last quarter (${cashFlowData.length} months)`
+                    : `Dernier trimestre (${cashFlowData.length} mois)`
+                  : language === 'en'
+                    ? `Full year (${cashFlowData.length} months)`
+                    : `Année complète (${cashFlowData.length} mois)`
             }
             subtitleEn={
-              selectedPeriod === 'mtd' 
+              selectedPeriod === 'mtd'
                 ? `Current month (${cashFlowData.length} points)`
                 : selectedPeriod === 'qtd'
                   ? `Last quarter (${cashFlowData.length} months)`
@@ -862,7 +990,7 @@ export default function Dashboard() {
             chartId="dashboard-cashflow-trend"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
-            recentDecisions={recentDecisions.filter(d => d.context.metricType === 'cash_flow')}
+            recentDecisions={recentDecisions.filter((d) => d.context.metricType === 'cash_flow')}
             metricType="cash_flow"
             compact={false}
           />
@@ -879,16 +1007,26 @@ export default function Dashboard() {
           <TrendChart
             data={revenueData}
             title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'revenue', isEn)}
-            titleEn={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'revenue', true)}
+            titleEn={getIndustryChartTitle(
+              currentTenant?.industry || 'real_estate',
+              'revenue',
+              true,
+            )}
             subtitle={
-              selectedPeriod === 'mtd' 
-                ? (language === 'en' ? `Current month (${revenueData.length} points)` : `Mois courant (${revenueData.length} points)`)
+              selectedPeriod === 'mtd'
+                ? language === 'en'
+                  ? `Current month (${revenueData.length} points)`
+                  : `Mois courant (${revenueData.length} points)`
                 : selectedPeriod === 'qtd'
-                  ? (language === 'en' ? `Last quarter (${revenueData.length} months)` : `Dernier trimestre (${revenueData.length} mois)`)
-                  : (language === 'en' ? `Full year (${revenueData.length} months)` : `Année complète (${revenueData.length} mois)`)
+                  ? language === 'en'
+                    ? `Last quarter (${revenueData.length} months)`
+                    : `Dernier trimestre (${revenueData.length} mois)`
+                  : language === 'en'
+                    ? `Full year (${revenueData.length} months)`
+                    : `Année complète (${revenueData.length} mois)`
             }
             subtitleEn={
-              selectedPeriod === 'mtd' 
+              selectedPeriod === 'mtd'
                 ? `Current month (${revenueData.length} points)`
                 : selectedPeriod === 'qtd'
                   ? `Last quarter (${revenueData.length} months)`
@@ -905,9 +1043,11 @@ export default function Dashboard() {
             chartId="dashboard-revenue-trend"
             enableDecisions={hasDecisionCapture}
             onRecordDecision={handleRecordDecision}
-            recentDecisions={recentDecisions.filter(d => d.context.metricType === 'revenue')}
+            recentDecisions={recentDecisions.filter((d) => d.context.metricType === 'revenue')}
             metricType="revenue"
-            benchmarkValue={revenueBudget.length > 0 ? revenueBudget[revenueBudget.length - 1] : undefined}
+            benchmarkValue={
+              revenueBudget.length > 0 ? revenueBudget[revenueBudget.length - 1] : undefined
+            }
             compact={false}
           />
         ),
@@ -922,8 +1062,16 @@ export default function Dashboard() {
         component: (
           <WaterfallChart
             data={cashFlowWaterfallData}
-            title={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'waterfall', isEn)}
-            titleEn={getIndustryChartTitle(currentTenant?.industry || 'real_estate', 'waterfall', true)}
+            title={getIndustryChartTitle(
+              currentTenant?.industry || 'real_estate',
+              'waterfall',
+              isEn,
+            )}
+            titleEn={getIndustryChartTitle(
+              currentTenant?.industry || 'real_estate',
+              'waterfall',
+              true,
+            )}
             subtitle={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', isEn)}
             subtitleEn={getIndustryChartSubtitle(currentTenant?.industry || 'real_estate', true)}
             isEn={language === 'en'}
@@ -940,7 +1088,9 @@ export default function Dashboard() {
     }
 
     // Add custom chart widgets
-    const customWidgets = widgetConfigs.filter(w => w.type === 'custom-chart' && w.visible && w.chartConfig);
+    const customWidgets = widgetConfigs.filter(
+      (w) => w.type === 'custom-chart' && w.visible && w.chartConfig,
+    );
     customWidgets.forEach((widget) => {
       if (widget.chartConfig) {
         visualizationItems.push({
@@ -975,7 +1125,7 @@ export default function Dashboard() {
           <div className="space-y-3">
             {/* Section header with Add Widget button */}
             <div className="flex items-center justify-between">
-              <h2 
+              <h2
                 className="text-sm font-semibold uppercase tracking-wider"
                 style={{ color: 'rgb(var(--color-text-muted))' }}
               >
@@ -989,26 +1139,31 @@ export default function Dashboard() {
                     backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                     color: 'rgb(var(--color-primary-500))',
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.2)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)'}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.2)')
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)')
+                  }
                 >
                   <span className="text-base leading-none">+</span>
                   {isEn ? 'Add Chart' : 'Ajouter'}
                 </button>
               )}
             </div>
-            
+
             {/* Visualization Grid */}
             <VisualizationGrid
               items={visualizationItems}
               canCustomize={canCustomize}
               onReorder={(newOrder) => {
                 // Reorder visualizations
-                const allIds = widgetConfigs.map(w => w.id);
+                const allIds = widgetConfigs.map((w) => w.id);
                 // Keep non-chart widgets in place, update chart order
-                const nonChartIds = allIds.filter(id => 
-                  !['cashflow-chart', 'revenue-chart', 'cashflow-waterfall'].includes(id) &&
-                  !id.startsWith('custom-')
+                const nonChartIds = allIds.filter(
+                  (id) =>
+                    !['cashflow-chart', 'revenue-chart', 'cashflow-waterfall'].includes(id) &&
+                    !id.startsWith('custom-'),
                 );
                 // Insert visualizations in their new order after industry-benchmarks
                 const benchmarkIndex = nonChartIds.indexOf('industry-benchmarks');
@@ -1034,14 +1189,14 @@ export default function Dashboard() {
       // Always show Visualizations section with industry-specific guidance
       const industry = currentTenant?.industry || 'real_estate';
       const industryCharts = getIndustryDefaultCharts(industry, isEn);
-      
+
       sections.push({
         id: 'visualizations-empty',
         component: (
           <div className="space-y-4">
             {/* Section header */}
             <div className="flex items-center justify-between">
-              <h2 
+              <h2
                 className="text-sm font-semibold uppercase tracking-wider"
                 style={{ color: 'rgb(var(--color-text-muted))' }}
               >
@@ -1051,56 +1206,74 @@ export default function Dashboard() {
                 to="/app/visualizations"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 active:opacity-80"
                 style={{
-                  backgroundColor: 'rgb(var(--color-primary-500))',
-                  color: 'white',
+                  backgroundColor: 'transparent',
+                  color: 'rgb(var(--color-primary-500))',
+                  border: '1px solid rgb(var(--color-primary-500) / 0.4)',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500) / 0.1)';
+                  e.currentTarget.style.borderColor = 'rgb(var(--color-primary-500) / 0.7)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgb(var(--color-primary-500) / 0.4)';
+                }}
               >
                 <BarChart2 className="w-3.5 h-3.5" />
                 {isEn ? 'Create Charts' : 'Créer des graphiques'}
               </Link>
             </div>
-            
+
             {/* Empty state with industry guidance */}
-            <div 
+            <div
               className="rounded-xl border-2 border-dashed p-6"
-              style={{ 
+              style={{
                 borderColor: 'rgb(var(--color-border))',
                 backgroundColor: 'rgb(var(--color-surface-elevated))',
               }}
             >
               <div className="text-center max-w-md mx-auto">
-                <div 
+                <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
                   style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                 >
-                  <BarChart2 className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  <BarChart2
+                    className="w-6 h-6"
+                    style={{ color: 'rgb(var(--color-primary-500))' }}
+                  />
                 </div>
-                
-                <h3 className="text-lg font-semibold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn 
-                    ? `${getIndustryName(industry, isEn)} Dashboard` 
+
+                <h3
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn
+                    ? `${getIndustryName(industry, isEn)} Dashboard`
                     : `Tableau de bord ${getIndustryName(industry, isEn)}`}
                 </h3>
-                
+
                 <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {isEn 
+                  {isEn
                     ? 'Connect your accounting software or create custom visualizations to see your financial data here.'
                     : 'Connectez votre logiciel comptable ou créez des visualisations personnalisées pour voir vos données financières ici.'}
                 </p>
-                
+
                 {/* Industry-specific chart suggestions */}
                 <div className="mb-4">
-                  <p className="text-xs font-medium mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? 'Suggested charts for your industry:' : 'Graphiques suggérés pour votre industrie:'}
+                  <p
+                    className="text-xs font-medium mb-2"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
+                    {isEn
+                      ? 'Suggested charts for your industry:'
+                      : 'Graphiques suggérés pour votre industrie:'}
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {industryCharts.slice(0, 4).map((chart, i) => (
-                      <span 
+                      <span
                         key={i}
                         className="px-2 py-1 rounded-md text-xs"
-                        style={{ 
+                        style={{
                           backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
                           color: 'rgb(var(--color-primary-500))',
                         }}
@@ -1110,7 +1283,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-                
+
                 {/* Action buttons */}
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <Link
@@ -1120,8 +1293,12 @@ export default function Dashboard() {
                       backgroundColor: 'rgb(var(--color-primary-500))',
                       color: 'white',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))'}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))')
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))')
+                    }
                   >
                     <BarChart2 className="w-4 h-4" />
                     {isEn ? 'Build Custom Dashboard' : 'Créer un tableau de bord'}
@@ -1153,36 +1330,36 @@ export default function Dashboard() {
         sections.push({
           id: reportSection.id,
           component: (
-            <div 
+            <div
               className="rounded-xl overflow-hidden"
-              style={{ 
+              style={{
                 backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))',
               }}
             >
               {/* Report Section Header */}
-              <div 
+              <div
                 className="flex items-center justify-between px-4 py-3 border-b"
                 style={{ borderColor: 'rgb(var(--color-border))' }}
               >
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-9 h-9 rounded-lg flex items-center justify-center"
                     style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
                   >
-                    <FileText className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                    <FileText
+                      className="w-4 h-4"
+                      style={{ color: 'rgb(var(--color-primary-500))' }}
+                    />
                   </div>
                   <div>
-                    <h3 
+                    <h3
                       className="font-semibold text-sm"
                       style={{ color: 'rgb(var(--color-text))' }}
                     >
                       {isEn ? reportSection.nameEn : reportSection.name}
                     </h3>
-                    <p 
-                      className="text-xs"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
+                    <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
                       {isEn ? 'Report Section' : 'Section de rapport'}
                     </p>
                   </div>
@@ -1210,24 +1387,24 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              
+
               {/* Report Content Preview */}
               <div className="p-4">
                 {reportSection.charts && reportSection.charts.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {reportSection.charts.slice(0, 4).map((chart, i) => (
-                      <div 
+                      <div
                         key={i}
                         className="p-3 rounded-lg text-center"
                         style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                       >
-                        <p 
+                        <p
                           className="text-xs font-medium truncate mb-1"
                           style={{ color: 'rgb(var(--color-text-muted))' }}
                         >
-                          {isEn ? (chart.nameEn || chart.name) : (chart.name || chart.nameEn)}
+                          {isEn ? chart.nameEn || chart.name : chart.name || chart.nameEn}
                         </p>
-                        <p 
+                        <p
                           className="text-lg font-bold"
                           style={{ color: 'rgb(var(--color-text))' }}
                         >
@@ -1237,19 +1414,16 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div 
+                  <div
                     className="text-center py-6 rounded-lg"
                     style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
                   >
-                    <FileText 
+                    <FileText
                       className="w-8 h-8 mx-auto mb-2"
                       style={{ color: 'rgb(var(--color-text-muted))' }}
                     />
-                    <p 
-                      className="text-sm"
-                      style={{ color: 'rgb(var(--color-text-muted))' }}
-                    >
-                      {isEn 
+                    <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      {isEn
                         ? 'Open the report to view full content'
                         : 'Ouvrez le rapport pour voir le contenu'}
                     </p>
@@ -1265,18 +1439,23 @@ export default function Dashboard() {
     }
 
     // Accounting Details Section (if has accounting data)
-    if (shouldShowData && (hasAccounts || hasReceivables || hasPayables || hasSummaryMetrics) && isWidgetVisible('accounting-details')) {
+    if (
+      shouldShowData &&
+      (hasAccounts || hasReceivables || hasPayables || hasSummaryMetrics) &&
+      isWidgetVisible('accounting-details')
+    ) {
       sections.push({
         id: 'accounting-details',
-        component: wrapSection('accounting-details', (
-          <CollapsibleAccountingSection 
+        component: wrapSection(
+          'accounting-details',
+          <CollapsibleAccountingSection
             financialData={financialData}
             analysis={analysis}
             language={language}
             isEn={language === 'en'}
             t={t}
-          />
-        )),
+          />,
+        ),
         priority: 7,
         gridSpan: 'full',
       });
@@ -1286,28 +1465,25 @@ export default function Dashboard() {
     if (shouldShowData && analysis.summary.total === 0 && isWidgetVisible('no-anomalies')) {
       sections.push({
         id: 'no-anomalies',
-        component: wrapSection('no-anomalies', (
+        component: wrapSection(
+          'no-anomalies',
           <div className="alert alert-success">
             <div className="alert-icon">
               <CheckCircle className="w-6 h-6" />
             </div>
             <div>
-              <p className="alert-title">
-                {t('dashboard.alerts.noAnomaliesDetected')}
-              </p>
-              <p className="alert-message">
-                {t('dashboard.alerts.dataConsistent')}
-              </p>
+              <p className="alert-title">{t('dashboard.alerts.noAnomaliesDetected')}</p>
+              <p className="alert-message">{t('dashboard.alerts.dataConsistent')}</p>
             </div>
-          </div>
-        )),
+          </div>,
+        ),
         priority: 8,
         gridSpan: 'full',
       });
     }
 
     // Filter sections by visibility and sort by custom order
-    const visibleSections = sections.filter(section => {
+    const visibleSections = sections.filter((section) => {
       // Add Widget card is always visible if user can customize
       if (section.id === 'add-widget') return true;
       // Visualizations section is always visible (it has its own internal filtering)
@@ -1320,7 +1496,7 @@ export default function Dashboard() {
     });
 
     // Sort by custom order if available
-    const customOrder = widgetConfigs.map(w => w.id);
+    const customOrder = widgetConfigs.map((w) => w.id);
     if (customOrder.length > 0) {
       visibleSections.sort((a, b) => {
         const aIndex = customOrder.indexOf(a.id);
@@ -1379,31 +1555,35 @@ export default function Dashboard() {
     removeReportSection,
   ]);
 
-
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   // Handle decision submission
-  const handleDecisionSubmit = useCallback(async (decision: DecisionEvent) => {
-    try {
-      // In production, this would POST to the API
-      // For now, store in local state and show toast
-      setRecentDecisions(prev => [decision, ...prev].slice(0, 10));
-      toast.success(
-        language === 'en' ? 'Decision recorded!' : 'Décision enregistrée!',
-        language === 'en' 
-          ? 'Your decision has been logged and will be tracked for outcome measurement.'
-          : 'Votre décision a été enregistrée et sera suivie pour mesurer les résultats.'
-      );
-      setShowDecisionCapture(false);
-      setDecisionTrigger(null);
-    } catch {
-      toast.error(
-        language === 'en' ? 'Error' : 'Erreur',
-        language === 'en' ? 'Failed to save decision' : 'Échec de l\'enregistrement de la décision'
-      );
-    }
-  }, [toast, language]);
+  const handleDecisionSubmit = useCallback(
+    async (decision: DecisionEvent) => {
+      try {
+        // In production, this would POST to the API
+        // For now, store in local state and show toast
+        setRecentDecisions((prev) => [decision, ...prev].slice(0, 10));
+        toast.success(
+          language === 'en' ? 'Decision recorded!' : 'Décision enregistrée!',
+          language === 'en'
+            ? 'Your decision has been logged and will be tracked for outcome measurement.'
+            : 'Votre décision a été enregistrée et sera suivie pour mesurer les résultats.',
+        );
+        setShowDecisionCapture(false);
+        setDecisionTrigger(null);
+      } catch {
+        toast.error(
+          language === 'en' ? 'Error' : 'Erreur',
+          language === 'en'
+            ? 'Failed to save decision'
+            : "Échec de l'enregistrement de la décision",
+        );
+      }
+    },
+    [toast, language],
+  );
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -1433,9 +1613,10 @@ export default function Dashboard() {
 
   // Use dynamically calculated available periods based on data points
   // This hides period options that don't have enough data
-  const periods = availablePeriods.length > 0 
-    ? availablePeriods 
-    : [{ id: 'mtd', label: t('dashboard.period.month'), minDataPoints: 2 }]; // Fallback to MTD
+  const periods =
+    availablePeriods.length > 0
+      ? availablePeriods
+      : [{ id: 'mtd', label: t('dashboard.period.month'), minDataPoints: 2 }]; // Fallback to MTD
 
   // CRITICAL: Block paid users without connection - show connection gate
   // They must connect before seeing any data
@@ -1445,16 +1626,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-1.5 sm:space-y-2 lg:space-y-2.5" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
+    <div
+      className="space-y-1.5 sm:space-y-2 lg:space-y-2.5"
+      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
+    >
       {/* Demo Signup Welcome Banner - Shows for new signups */}
       <DemoSignupWelcome />
-      
+
       {/* Demo Banner */}
       <DemoBanner />
-      
+
       {/* Connection Wizard - Show when no data available at all */}
       {/* In mock auth mode (local dev), mock data will be available, so dashboard shows */}
-      {!hasRealData && !hasQuickBooksConnection && !shouldShowSandboxData && !financialData && !isLoading ? (
+      {!hasRealData &&
+      !hasQuickBooksConnection &&
+      !shouldShowSandboxData &&
+      !financialData &&
+      !isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[50vh] py-6">
           <div className="w-full max-w-lg">
             <ConnectionWizard />
@@ -1472,9 +1660,9 @@ export default function Dashboard() {
                 </h1>
                 {/* Sample data indicator - very subtle */}
                 {shouldShowSandboxData && (
-                  <span 
+                  <span
                     className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0"
-                    style={{ 
+                    style={{
                       backgroundColor: 'rgb(var(--color-text-muted) / 0.08)',
                       color: 'rgb(var(--color-text-muted) / 0.6)',
                     }}
@@ -1483,7 +1671,7 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              
+
               {/* Right side controls */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {/* Period filter - themed dropdown (only show if multiple options available) */}
@@ -1494,41 +1682,48 @@ export default function Dashboard() {
                     onSelectPeriod={(id) => setSelectedPeriod(id as 'mtd' | 'qtd' | 'ytd')}
                     isEn={isEn}
                   />
-                ) : periods.length === 1 && (
-                  // Show static label when only one period available
-                  <div 
-                    className="flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 rounded-lg text-xs font-medium"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-surface))',
-                      color: 'rgb(var(--color-text))',
-                      border: '1px solid rgb(var(--color-border))',
-                    }}
-                  >
-                    <Calendar className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-                    <span>{periods[0].label}</span>
-                  </div>
+                ) : (
+                  periods.length === 1 && (
+                    // Show static label when only one period available
+                    <div
+                      className="flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 rounded-lg text-xs font-medium"
+                      style={{
+                        backgroundColor: 'rgb(var(--color-surface))',
+                        color: 'rgb(var(--color-text))',
+                        border: '1px solid rgb(var(--color-border))',
+                      }}
+                    >
+                      <Calendar
+                        className="w-3.5 h-3.5"
+                        style={{ color: 'rgb(var(--color-primary-500))' }}
+                      />
+                      <span>{periods[0].label}</span>
+                    </div>
+                  )
                 )}
-                
+
                 {/* Lock/Unlock Dashboard - Prevents move/delete on graphs */}
                 {hasCustomizePermission && (
                   <ActionTooltip
                     content={
                       <div>
                         <p className="font-medium text-xs mb-1">
-                          {isDashboardLocked 
-                            ? (isEn ? 'Dashboard Locked' : 'Tableau verrouillé')
-                            : (isEn ? 'Lock Dashboard' : 'Verrouiller')
-                          }
+                          {isDashboardLocked
+                            ? isEn
+                              ? 'Dashboard Locked'
+                              : 'Tableau verrouillé'
+                            : isEn
+                              ? 'Lock Dashboard'
+                              : 'Verrouiller'}
                         </p>
                         <p className="text-xs opacity-70">
-                          {isDashboardLocked 
-                            ? (isEn 
-                                ? 'Click to unlock. Move and delete controls are hidden on charts.' 
-                                : 'Cliquer pour déverrouiller. Les contrôles de déplacement et suppression sont masqués.')
-                            : (isEn 
-                                ? 'Lock to hide move and delete controls on charts.' 
-                                : 'Verrouiller pour masquer les contrôles de déplacement et suppression.')
-                          }
+                          {isDashboardLocked
+                            ? isEn
+                              ? 'Click to unlock. Move and delete controls are hidden on charts.'
+                              : 'Cliquer pour déverrouiller. Les contrôles de déplacement et suppression sont masqués.'
+                            : isEn
+                              ? 'Lock to hide move and delete controls on charts.'
+                              : 'Verrouiller pour masquer les contrôles de déplacement et suppression.'}
                         </p>
                       </div>
                     }
@@ -1539,49 +1734,66 @@ export default function Dashboard() {
                       onClick={() => {
                         const newLocked = toggleDashboardLock();
                         toast.success(
-                          newLocked 
-                            ? (isEn ? 'Dashboard locked' : 'Tableau verrouillé')
-                            : (isEn ? 'Dashboard unlocked' : 'Tableau déverrouillé'),
-                          newLocked 
-                            ? (isEn ? 'Move and delete controls are hidden' : 'Contrôles de déplacement et suppression masqués')
-                            : (isEn ? 'Editing enabled' : 'Modification activée')
+                          newLocked
+                            ? isEn
+                              ? 'Dashboard locked'
+                              : 'Tableau verrouillé'
+                            : isEn
+                              ? 'Dashboard unlocked'
+                              : 'Tableau déverrouillé',
+                          newLocked
+                            ? isEn
+                              ? 'Move and delete controls are hidden'
+                              : 'Contrôles de déplacement et suppression masqués'
+                            : isEn
+                              ? 'Editing enabled'
+                              : 'Modification activée',
                         );
                       }}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border"
                       style={{
-                        backgroundColor: isDashboardLocked 
-                          ? 'rgb(var(--color-warning) / 0.1)' 
+                        backgroundColor: isDashboardLocked
+                          ? 'rgb(var(--color-warning) / 0.1)'
                           : 'rgb(var(--color-surface))',
-                        borderColor: isDashboardLocked 
-                          ? 'rgb(var(--color-warning) / 0.3)' 
+                        borderColor: isDashboardLocked
+                          ? 'rgb(var(--color-warning) / 0.3)'
                           : 'rgb(var(--color-border))',
-                        color: isDashboardLocked 
-                          ? 'rgb(var(--color-warning))' 
+                        color: isDashboardLocked
+                          ? 'rgb(var(--color-warning))'
                           : 'rgb(var(--color-text-muted))',
                       }}
                     >
                       {/* Show action icon: Lock when unlocked (click to lock), Unlock when locked (click to unlock) */}
-                      {isDashboardLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                      {isDashboardLocked ? (
+                        <Unlock className="w-3.5 h-3.5" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5" />
+                      )}
                       <span className="hidden sm:inline">
-                        {isDashboardLocked 
-                          ? (isEn ? 'Unlock' : 'Déverrouiller') 
-                          : (isEn ? 'Lock' : 'Verrouiller')
-                        }
+                        {isDashboardLocked
+                          ? isEn
+                            ? 'Unlock'
+                            : 'Déverrouiller'
+                          : isEn
+                            ? 'Lock'
+                            : 'Verrouiller'}
                       </span>
                     </button>
                   </ActionTooltip>
                 )}
-                
+
                 {/* Reset to Defaults - Restores industry default dashboard */}
                 {canCustomize && (
                   <ActionTooltip
                     content={
                       <div>
-                        <p className="font-medium text-xs mb-1">{isEn ? 'Reset Dashboard' : 'Réinitialiser'}</p>
+                        <p className="font-medium text-xs mb-1">
+                          {isEn ? 'Reset Dashboard' : 'Réinitialiser'}
+                        </p>
                         <p className="text-xs opacity-70">
-                          {isEn 
+                          {isEn
                             ? 'Restore default industry dashboard layout and widgets.'
-                            : 'Restaurer la disposition et les widgets par défaut de l\'industrie.'}
+                            : "Restaurer la disposition et les widgets par défaut de l'industrie."}
                         </p>
                       </div>
                     }
@@ -1593,7 +1805,9 @@ export default function Dashboard() {
                         resetToDefaults();
                         toast.success(
                           isEn ? 'Dashboard reset' : 'Tableau réinitialisé',
-                          isEn ? 'Restored to industry defaults' : 'Restauré aux valeurs par défaut de l\'industrie'
+                          isEn
+                            ? 'Restored to industry defaults'
+                            : "Restauré aux valeurs par défaut de l'industrie",
                         );
                       }}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95 border hover:bg-[rgb(var(--color-bg-muted))] hover:text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-text-muted)/0.3)]"
@@ -1608,21 +1822,23 @@ export default function Dashboard() {
                     </button>
                   </ActionTooltip>
                 )}
-                
+
                 {/* Charts Dropdown - Add existing or create new */}
                 <ChartActionsDropdown
                   isEn={isEn}
                   onAddExisting={() => setShowChartGallery(true)}
                   canCustomize={canCustomize}
                 />
-                
+
                 {/* Refresh - Data sync (once daily, can trigger hourly) */}
                 <ActionTooltip
                   content={
                     <div>
-                      <p className="font-medium text-xs mb-1">{isEn ? 'Sync Data' : 'Synchroniser les données'}</p>
+                      <p className="font-medium text-xs mb-1">
+                        {isEn ? 'Sync Data' : 'Synchroniser les données'}
+                      </p>
                       <p className="text-xs opacity-70">
-                        {isEn 
+                        {isEn
                           ? 'Data syncs daily. Manual refresh available once per hour.'
                           : 'Synchronisation quotidienne. Actualisation manuelle possible toutes les heures.'}
                       </p>
@@ -1647,159 +1863,180 @@ export default function Dashboard() {
                 </ActionTooltip>
               </div>
             </div>
-            
+
             {/* Subtitle with live indicator */}
             <div className="flex items-center gap-2 -mt-0.5">
-              <p className="text-xs md:text-sm text-muted">
-                {t('dashboard.subtitle')}
-              </p>
+              <p className="text-xs md:text-sm text-muted">{t('dashboard.subtitle')}</p>
               {hasRealData && financialData?.lastUpdated && (
-                <span 
+                <span
                   className="text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1"
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgb(var(--color-bg-muted))',
-                    color: 'rgb(var(--color-text-muted))'
+                    color: 'rgb(var(--color-text-muted))',
                   }}
-                  title={financialData.lastUpdated ? new Date(financialData.lastUpdated).toLocaleString() : ''}
+                  title={
+                    financialData.lastUpdated
+                      ? new Date(financialData.lastUpdated).toLocaleString()
+                      : ''
+                  }
                 >
-                  <CheckCircle className="w-2.5 h-2.5" style={{ color: 'rgb(var(--color-success))' }} />
+                  <CheckCircle
+                    className="w-2.5 h-2.5"
+                    style={{ color: 'rgb(var(--color-success))' }}
+                  />
                   {isEn ? 'Live' : 'Direct'}
                 </span>
               )}
             </div>
           </div>
 
-      {/* Dynamic Dashboard Layout - Only renders sections with real data */}
-      <DynamicDashboardLayout 
-        sections={dashboardSections}
-        customOrder={widgetConfigs.map(w => w.id)}
-      />
+          {/* Dynamic Dashboard Layout - Only renders sections with real data */}
+          <DynamicDashboardLayout
+            sections={dashboardSections}
+            customOrder={widgetConfigs.map((w) => w.id)}
+          />
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <QuickAction
-          to="/app/anomalies"
-          icon={<AlertTriangle className="w-5 h-5" />}
-          title={t('dashboard.quickActions.anomalies')}
-          subtitle={analysis.summary.total > 0 
-            ? `${analysis.summary.total} ${t('dashboard.quickActions.toReview')}` 
-            : t('anomalies.noAnomalies')}
-          hasAttention={analysis.summary.critical > 0}
-        />
-        <QuickAction
-          to="/app/visualizations"
-          icon={<BarChart2 className="w-5 h-5" />}
-          title={isEn ? 'Visualizations' : 'Visualisations'}
-          subtitle={isEn ? 'Create custom charts' : 'Créer des graphiques'}
-          isPrimary
-        />
-        <QuickAction
-          to="/app/reports"
-          icon={<FileText className="w-5 h-5" />}
-          title={t('dashboard.quickActions.reports')}
-          subtitle={t('dashboard.quickActions.allReports')}
-        />
-        <QuickAction
-          to="/app/connections"
-          icon={<Link2 className="w-5 h-5" />}
-          title={t('dashboard.quickActions.connections')}
-          subtitle={t('dashboard.quickActions.dataSources')}
-        />
-      </div>
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <QuickAction
+              to="/app/anomalies"
+              icon={<AlertTriangle className="w-5 h-5" />}
+              title={t('dashboard.quickActions.anomalies')}
+              subtitle={
+                analysis.summary.total > 0
+                  ? `${analysis.summary.total} ${t('dashboard.quickActions.toReview')}`
+                  : t('anomalies.noAnomalies')
+              }
+              hasAttention={analysis.summary.critical > 0}
+            />
+            <QuickAction
+              to="/app/visualizations"
+              icon={<BarChart2 className="w-5 h-5" />}
+              title={isEn ? 'Visualizations' : 'Visualisations'}
+              subtitle={isEn ? 'Create custom charts' : 'Créer des graphiques'}
+              isPrimary
+            />
+            <QuickAction
+              to="/app/reports"
+              icon={<FileText className="w-5 h-5" />}
+              title={t('dashboard.quickActions.reports')}
+              subtitle={t('dashboard.quickActions.allReports')}
+            />
+            <QuickAction
+              to="/app/connections"
+              icon={<Link2 className="w-5 h-5" />}
+              title={t('dashboard.quickActions.connections')}
+              subtitle={t('dashboard.quickActions.dataSources')}
+            />
+          </div>
 
-      {/* Upgrade CTA Section - Show for non-premium users */}
-      {!hasAIAccess && (
-        <div 
-          className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
-          style={{ 
-            backgroundColor: 'rgb(var(--color-surface))',
-            border: '1px solid rgb(var(--color-border))',
-            boxShadow: '0 4px 12px -4px rgb(var(--color-border) / 0.2)',
-          }}
-        >
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 sm:gap-4">
-            <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
-              <div 
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-              >
-                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base sm:text-lg lg:text-xl font-bold mb-1 sm:mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-                  {language === 'en' ? 'Unlock Premium Features' : 'Débloquez les fonctionnalités Premium'}
-                </h3>
-                <p className="text-xs sm:text-sm max-w-xl leading-relaxed" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                  {language === 'en' 
-                    ? 'Get AI-powered insights, strategic planning tools, board meeting presentations, and more.'
-                    : 'Obtenez des analyses propulsées par l\'IA, des outils de planification stratégique, des présentations de CA, et plus encore.'
-                  }
-                </p>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
-                  {[
-                    language === 'en' ? 'AI Assistant' : 'Assistant IA',
-                    language === 'en' ? 'Strategic Planning' : 'Planification stratégique',
-                    language === 'en' ? 'Board Presentations' : 'Présentations CA',
-                    language === 'en' ? 'Custom Analytics' : 'Analytique personnalisée',
-                  ].map((feature, idx) => (
-                    <span 
-                      key={idx}
-                      className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap"
-                      style={{ 
-                        backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
-                        color: 'rgb(var(--color-primary-500))',
-                      }}
+          {/* Upgrade CTA Section - Show for non-premium users */}
+          {!hasAIAccess && (
+            <div
+              className="relative overflow-hidden rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
+              style={{
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))',
+                boxShadow: '0 4px 12px -4px rgb(var(--color-border) / 0.2)',
+              }}
+            >
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+                  <div
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+                  >
+                    <Sparkles
+                      className="w-5 h-5 sm:w-6 sm:h-6"
+                      style={{ color: 'rgb(var(--color-primary-500))' }}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3
+                      className="text-base sm:text-lg lg:text-xl font-bold mb-1 sm:mb-2"
+                      style={{ color: 'rgb(var(--color-text))' }}
                     >
-                      {feature}
-                    </span>
-                  ))}
+                      {language === 'en'
+                        ? 'Unlock Premium Features'
+                        : 'Débloquez les fonctionnalités Premium'}
+                    </h3>
+                    <p
+                      className="text-xs sm:text-sm max-w-xl leading-relaxed"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {language === 'en'
+                        ? 'Get AI-powered insights, strategic planning tools, board meeting presentations, and more.'
+                        : "Obtenez des analyses propulsées par l'IA, des outils de planification stratégique, des présentations de CA, et plus encore."}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
+                      {[
+                        language === 'en' ? 'AI Assistant' : 'Assistant IA',
+                        language === 'en' ? 'Strategic Planning' : 'Planification stratégique',
+                        language === 'en' ? 'Board Presentations' : 'Présentations CA',
+                        language === 'en' ? 'Custom Analytics' : 'Analytique personnalisée',
+                      ].map((feature, idx) => (
+                        <span
+                          key={idx}
+                          className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium whitespace-nowrap"
+                          style={{
+                            backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
+                            color: 'rgb(var(--color-primary-500))',
+                          }}
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+
+                <button
+                  onClick={() => window.open(CALENDLY_URL, '_blank')}
+                  className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-colors duration-150 active:opacity-80 flex-shrink-0 w-full sm:w-auto justify-center"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-primary-500))',
+                    color: 'white',
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))')
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))')
+                  }
+                >
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>{language === 'en' ? 'Schedule Demo' : 'Planifier une démo'}</span>
+                </button>
               </div>
             </div>
-            
-            <button
-              onClick={() => window.open(CALENDLY_URL, '_blank')}
-              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-colors duration-150 active:opacity-80 flex-shrink-0 w-full sm:w-auto justify-center"
-              style={{ 
-                backgroundColor: 'rgb(var(--color-primary-500))',
-                color: 'white',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-600))'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgb(var(--color-primary-500))'}
-            >
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>{language === 'en' ? 'Schedule Demo' : 'Planifier une démo'}</span>
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* AI Query Assistant Modal */}
-      {showAIAssistant && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowAIAssistant(false)}
-          />
-          <div 
-            className="relative w-full sm:max-w-2xl h-[85vh] sm:h-[600px] rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
-            style={{ backgroundColor: 'rgb(var(--color-surface))' }}
-          >
-            {hasAIAccess ? (
-              <AIQueryAssistant 
-                isModal={true} 
-                onClose={() => setShowAIAssistant(false)}
-                recentDecisions={recentDecisions}
-                industry={currentTenant?.industry || 'general'}
+          {/* AI Query Assistant Modal */}
+          {showAIAssistant && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <div
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={() => setShowAIAssistant(false)}
               />
-            ) : (
-              <PremiumFeatureGate feature="aiInsights" showPreview={false}>
-                <div />
-              </PremiumFeatureGate>
-            )}
-          </div>
-        </div>
-      )}
+              <div
+                className="relative w-full sm:max-w-2xl h-[85vh] sm:h-[600px] rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
+                style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+              >
+                {hasAIAccess ? (
+                  <AIQueryAssistant
+                    isModal={true}
+                    onClose={() => setShowAIAssistant(false)}
+                    recentDecisions={recentDecisions}
+                    industry={currentTenant?.industry || 'general'}
+                  />
+                ) : (
+                  <PremiumFeatureGate feature="aiInsights" showPreview={false}>
+                    <div />
+                  </PremiumFeatureGate>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Chart Gallery Modal */}
           <ChartGalleryModal
@@ -1846,7 +2083,13 @@ interface CollapsibleAccountingSectionProps {
   t: (key: string) => string;
 }
 
-function CollapsibleAccountingSection({ financialData, analysis, language, isEn, t }: CollapsibleAccountingSectionProps) {
+function CollapsibleAccountingSection({
+  financialData,
+  analysis,
+  language,
+  isEn,
+  t,
+}: CollapsibleAccountingSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const hasAccountingData = !!(
@@ -1864,9 +2107,9 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
   }
 
   return (
-    <div 
+    <div
       className="rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-md group"
-      style={{ 
+      style={{
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))',
       }}
@@ -1877,33 +2120,53 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
         className="w-full p-2.5 sm:p-3 lg:p-4 flex items-center justify-between transition-colors active:opacity-70 group-hover:bg-[rgb(var(--color-bg-muted))]"
       >
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <div 
+          <div
             className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
           >
-            <FileText className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            <FileText
+              className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            />
           </div>
           <div className="text-left min-w-0 flex-1">
-            <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+            <h3
+              className="text-sm sm:text-base lg:text-lg font-semibold truncate"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               {isEn ? 'Accounting Details' : 'Détails comptables'}
             </h3>
-            <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 line-clamp-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'AR/AP aging, trial balance, bank reconciliation' : 'Échéances AR/AP, balance de vérification, rapprochement bancaire'}
+            <p
+              className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 line-clamp-1"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn
+                ? 'AR/AP aging, trial balance, bank reconciliation'
+                : 'Échéances AR/AP, balance de vérification, rapprochement bancaire'}
             </p>
           </div>
         </div>
         <div className="flex-shrink-0 ml-2">
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            <ChevronUp
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            />
           ) : (
-            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'rgb(var(--color-text-muted))' }} />
+            <ChevronDown
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            />
           )}
         </div>
       </button>
 
       {/* Content - Collapsible */}
       {isExpanded && (
-        <div className="px-2 sm:px-4 lg:px-5 pb-2 sm:pb-4 lg:pb-5 pt-2 sm:pt-3 space-y-2 sm:space-y-3 lg:space-y-4" style={{ borderTop: '1px solid rgb(var(--color-border))' }}>
+        <div
+          className="px-2 sm:px-4 lg:px-5 pb-2 sm:pb-4 lg:pb-5 pt-2 sm:pt-3 space-y-2 sm:space-y-3 lg:space-y-4"
+          style={{ borderTop: '1px solid rgb(var(--color-border))' }}
+        >
           {/* Trial Balance Status */}
           {financialData?.summary?.trialBalance && (
             <TrialBalanceSummary
@@ -1949,10 +2212,7 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
             {/* Budget Comparison */}
             {financialData?.summary?.budgetComparisons && (
-              <BudgetWidget
-                data={financialData.summary?.budgetComparisons ?? []}
-                isEn={isEn}
-              />
+              <BudgetWidget data={financialData.summary?.budgetComparisons ?? []} isEn={isEn} />
             )}
 
             {/* Upcoming Deadlines */}
@@ -1979,12 +2239,8 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
                 <CheckCircle className="w-6 h-6" />
               </div>
               <div>
-                <p className="alert-title">
-                  {t('dashboard.alerts.noAnomaliesDetected')}
-                </p>
-                <p className="alert-message">
-                  {t('dashboard.alerts.dataConsistent')}
-                </p>
+                <p className="alert-title">{t('dashboard.alerts.noAnomaliesDetected')}</p>
+                <p className="alert-message">{t('dashboard.alerts.dataConsistent')}</p>
               </div>
             </div>
           )}
@@ -1997,7 +2253,6 @@ function CollapsibleAccountingSection({ financialData, analysis, language, isEn,
 // =====================================================
 // SUB-COMPONENTS
 // =====================================================
-
 
 interface QuickActionProps {
   to: string;
@@ -2013,33 +2268,41 @@ function QuickAction({ to, icon, title, subtitle, hasAttention, isPrimary }: Qui
     <Link
       to={to}
       className="relative overflow-hidden rounded-lg sm:rounded-xl transition-colors duration-150 active:opacity-90 group"
-      style={{ 
-        backgroundColor: isPrimary ? 'rgb(var(--color-primary-500) / 0.05)' : 'rgb(var(--color-surface))',
+      style={{
+        backgroundColor: isPrimary
+          ? 'rgb(var(--color-primary-500) / 0.05)'
+          : 'rgb(var(--color-surface))',
         border: `1px solid ${hasAttention ? 'rgb(var(--color-error) / 0.4)' : isPrimary ? 'rgb(var(--color-primary-500) / 0.3)' : 'rgb(var(--color-border))'}`,
       }}
     >
       {/* Hover background overlay */}
-      <div 
+      <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-        style={{ backgroundColor: isPrimary ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))' }}
+        style={{
+          backgroundColor: isPrimary
+            ? 'rgb(var(--color-primary-500) / 0.1)'
+            : 'rgb(var(--color-bg-muted))',
+        }}
       />
       <div className="relative flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 lg:p-4">
-        <div 
+        <div
           className="relative w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ 
-            backgroundColor: hasAttention 
-              ? 'rgb(var(--color-error) / 0.1)' 
+          style={{
+            backgroundColor: hasAttention
+              ? 'rgb(var(--color-error) / 0.1)'
               : isPrimary
                 ? 'rgb(var(--color-primary-500))'
                 : 'rgb(var(--color-primary-500) / 0.1)',
-            color: hasAttention 
-              ? 'rgb(var(--color-error))' 
+            color: hasAttention
+              ? 'rgb(var(--color-error))'
               : isPrimary
                 ? 'white'
-                : 'rgb(var(--color-primary-500))'
+                : 'rgb(var(--color-primary-500))',
           }}
         >
-          <span className="[&>svg]:w-3.5 [&>svg]:h-3.5 sm:[&>svg]:w-4 sm:[&>svg]:h-4 lg:[&>svg]:w-5 lg:[&>svg]:h-5">{icon}</span>
+          <span className="[&>svg]:w-3.5 [&>svg]:h-3.5 sm:[&>svg]:w-4 sm:[&>svg]:h-4 lg:[&>svg]:w-5 lg:[&>svg]:h-5">
+            {icon}
+          </span>
           {/* Pulse effect for attention items */}
           {hasAttention && (
             <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 flex h-2 w-2 sm:h-2.5 sm:w-2.5">
@@ -2049,13 +2312,13 @@ function QuickAction({ to, icon, title, subtitle, hasAttention, isPrimary }: Qui
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p 
+          <p
             className="font-semibold text-[11px] sm:text-xs lg:text-sm leading-snug"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             {title}
           </p>
-          <p 
+          <p
             className="text-[9px] sm:text-[10px] lg:text-xs mt-0.5 sm:mt-1 leading-snug"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
@@ -2081,8 +2344,8 @@ interface PeriodFilterProps {
 function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  const selectedLabel = periods.find(p => p.id === selectedPeriod)?.label || '';
+
+  const selectedLabel = periods.find((p) => p.id === selectedPeriod)?.label || '';
 
   // Close on click outside
   useEffect(() => {
@@ -2102,22 +2365,24 @@ function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodF
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 pl-2.5 pr-2 py-1.5 rounded-lg text-xs font-medium transition-all"
         style={{
-          backgroundColor: isOpen ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-surface))',
+          backgroundColor: isOpen
+            ? 'rgb(var(--color-primary-500) / 0.1)'
+            : 'rgb(var(--color-surface))',
           color: isOpen ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text))',
           border: `1px solid ${isOpen ? 'rgb(var(--color-primary-500) / 0.3)' : 'rgb(var(--color-border))'}`,
         }}
       >
         <Calendar className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
         <span>{selectedLabel}</span>
-        <ChevronDown 
+        <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           style={{ color: 'rgb(var(--color-text-muted))' }}
         />
       </button>
-      
+
       {/* Dropdown menu */}
       {isOpen && (
-        <div 
+        <div
           className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[120px] animate-in fade-in slide-in-from-top-1 duration-150"
           style={{
             backgroundColor: 'rgb(var(--color-surface))',
@@ -2125,7 +2390,7 @@ function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodF
             boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)',
           }}
         >
-          {periods.map(period => {
+          {periods.map((period) => {
             const isSelected = period.id === selectedPeriod;
             return (
               <button
@@ -2136,7 +2401,9 @@ function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodF
                 }}
                 className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium transition-colors text-left"
                 style={{
-                  backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.08)' : 'transparent',
+                  backgroundColor: isSelected
+                    ? 'rgb(var(--color-primary-500) / 0.08)'
+                    : 'transparent',
                   color: isSelected ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text))',
                 }}
                 onMouseEnter={(e) => {
@@ -2145,12 +2412,17 @@ function PeriodFilter({ periods, selectedPeriod, onSelectPeriod, isEn }: PeriodF
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = isSelected ? 'rgb(var(--color-primary-500) / 0.08)' : 'transparent';
+                  e.currentTarget.style.backgroundColor = isSelected
+                    ? 'rgb(var(--color-primary-500) / 0.08)'
+                    : 'transparent';
                 }}
               >
                 <span>{period.label}</span>
                 {isSelected && (
-                  <Check className="w-3.5 h-3.5" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                  <Check
+                    className="w-3.5 h-3.5"
+                    style={{ color: 'rgb(var(--color-primary-500))' }}
+                  />
                 )}
               </button>
             );
@@ -2192,19 +2464,20 @@ function ChartActionsDropdown({ isEn, onAddExisting, canCustomize }: ChartAction
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex-shrink-0 active:scale-95"
         style={{
-          backgroundColor: 'rgb(var(--color-primary-500))',
-          color: 'white',
+          backgroundColor: 'transparent',
+          color: 'rgb(var(--color-primary-500))',
+          border: '1px solid rgb(var(--color-primary-500) / 0.4)',
         }}
       >
         <BarChart2 className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">{isEn ? 'Charts' : 'Graphiques'}</span>
-        <ChevronDown 
+        <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {isOpen && (
-        <div 
+        <div
           className="absolute right-0 top-full mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[200px] animate-in fade-in slide-in-from-top-1 duration-150"
           style={{
             backgroundColor: 'rgb(var(--color-surface))',
@@ -2222,7 +2495,7 @@ function ChartActionsDropdown({ isEn, onAddExisting, canCustomize }: ChartAction
               className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium transition-colors text-left hover:bg-[rgb(var(--color-bg-muted))]"
               style={{ color: 'rgb(var(--color-text))' }}
             >
-              <div 
+              <div
                 className="w-7 h-7 rounded-md flex items-center justify-center"
                 style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
               >
@@ -2239,7 +2512,7 @@ function ChartActionsDropdown({ isEn, onAddExisting, canCustomize }: ChartAction
 
           {/* Divider */}
           {canCustomize && (
-            <div 
+            <div
               className="mx-3 my-1 border-t"
               style={{ borderColor: 'rgb(var(--color-border))' }}
             />
@@ -2252,7 +2525,7 @@ function ChartActionsDropdown({ isEn, onAddExisting, canCustomize }: ChartAction
             className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium transition-colors text-left hover:bg-[rgb(var(--color-bg-muted))]"
             style={{ color: 'rgb(var(--color-text))' }}
           >
-            <div 
+            <div
               className="w-7 h-7 rounded-md flex items-center justify-center"
               style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
             >
@@ -2275,143 +2548,179 @@ function ChartActionsDropdown({ isEn, onAddExisting, canCustomize }: ChartAction
 // HELPER FUNCTIONS FOR INDUSTRY-AWARE LABELS
 // =====================================================
 
-function getIndustryChartTitle(industry: string, type: 'revenue' | 'cashFlow' | 'waterfall', isEn: boolean): string {
+function getIndustryChartTitle(
+  industry: string,
+  type: 'revenue' | 'cashFlow' | 'waterfall',
+  isEn: boolean,
+): string {
   const titles: Record<string, Record<string, { en: string; fr: string }>> = {
     real_estate: {
       revenue: { en: 'Rental Income', fr: 'Revenus locatifs' },
-      cashFlow: { en: 'Net Operating Cash', fr: 'Trésorerie nette d\'exploitation' },
-      waterfall: { en: 'Property Cash Flow Analysis', fr: 'Analyse du flux de trésorerie immobilier' },
+      cashFlow: { en: 'Net Operating Cash', fr: "Trésorerie nette d'exploitation" },
+      waterfall: {
+        en: 'Property Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie immobilier',
+      },
     },
     restaurant: {
       revenue: { en: 'Restaurant Revenue', fr: 'Revenus restaurant' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Restaurant Cash Flow Analysis', fr: 'Analyse du flux de trésorerie restaurant' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Restaurant Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie restaurant',
+      },
     },
     hospitality: {
       revenue: { en: 'Room Revenue', fr: 'Revenus chambres' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
       waterfall: { en: 'Hotel Cash Flow Analysis', fr: 'Analyse du flux de trésorerie hôtel' },
     },
     retail: {
       revenue: { en: 'Sales Revenue', fr: 'Revenus ventes' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
       waterfall: { en: 'Retail Cash Flow Analysis', fr: 'Analyse du flux de trésorerie commerce' },
     },
     construction: {
       revenue: { en: 'Project Revenue', fr: 'Revenus projets' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Construction Cash Flow Analysis', fr: 'Analyse du flux de trésorerie construction' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Construction Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie construction',
+      },
     },
     professional_services: {
       revenue: { en: 'Billable Revenue', fr: 'Revenus facturables' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Services Cash Flow Analysis', fr: 'Analyse du flux de trésorerie services' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Services Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie services',
+      },
     },
     manufacturing: {
       revenue: { en: 'Production Revenue', fr: 'Revenus production' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Manufacturing Cash Flow Analysis', fr: 'Analyse du flux de trésorerie fabrication' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Manufacturing Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie fabrication',
+      },
     },
     agriculture: {
       revenue: { en: 'Crop Revenue', fr: 'Revenus récolte' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Agriculture Cash Flow Analysis', fr: 'Analyse du flux de trésorerie agriculture' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Agriculture Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie agriculture',
+      },
     },
     transport: {
       revenue: { en: 'Transport Revenue', fr: 'Revenus transport' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Transport Cash Flow Analysis', fr: 'Analyse du flux de trésorerie transport' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Transport Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie transport',
+      },
     },
     healthcare: {
       revenue: { en: 'Healthcare Revenue', fr: 'Revenus santé' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
       waterfall: { en: 'Healthcare Cash Flow Analysis', fr: 'Analyse du flux de trésorerie santé' },
     },
     education: {
       revenue: { en: 'Tuition Revenue', fr: 'Revenus scolarité' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Education Cash Flow Analysis', fr: 'Analyse du flux de trésorerie éducation' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Education Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie éducation',
+      },
     },
     wholesale: {
       revenue: { en: 'Wholesale Sales', fr: 'Ventes gros' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
       waterfall: { en: 'Wholesale Cash Flow Analysis', fr: 'Analyse du flux de trésorerie gros' },
     },
     automotive: {
       revenue: { en: 'Dealership Revenue', fr: 'Revenus concession' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Automotive Cash Flow Analysis', fr: 'Analyse du flux de trésorerie automobile' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Automotive Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie automobile',
+      },
     },
     beauty_wellness: {
       revenue: { en: 'Service Revenue', fr: 'Revenus services' },
-      cashFlow: { en: 'Operating Cash Flow', fr: 'Flux de trésorerie d\'exploitation' },
-      waterfall: { en: 'Beauty & Wellness Cash Flow Analysis', fr: 'Analyse du flux de trésorerie beauté' },
+      cashFlow: { en: 'Operating Cash Flow', fr: "Flux de trésorerie d'exploitation" },
+      waterfall: {
+        en: 'Beauty & Wellness Cash Flow Analysis',
+        fr: 'Analyse du flux de trésorerie beauté',
+      },
     },
   };
-  
-  return titles[industry]?.[type]?.[isEn ? 'en' : 'fr'] || titles.real_estate[type][isEn ? 'en' : 'fr'];
+
+  return (
+    titles[industry]?.[type]?.[isEn ? 'en' : 'fr'] || titles.real_estate[type][isEn ? 'en' : 'fr']
+  );
 }
 
 function getIndustryChartSubtitle(industry: string, isEn: boolean): string {
   const subtitles: Record<string, { en: string; fr: string }> = {
-    real_estate: { 
-      en: 'Understanding cash movements by property category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie' 
+    real_estate: {
+      en: 'Understanding cash movements by property category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie',
     },
-    restaurant: { 
-      en: 'Understanding cash movements by restaurant category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie restaurant' 
+    restaurant: {
+      en: 'Understanding cash movements by restaurant category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie restaurant',
     },
-    hospitality: { 
-      en: 'Understanding cash movements by hotel operations', 
-      fr: 'Décomposition des mouvements de trésorerie par opérations hôtel' 
+    hospitality: {
+      en: 'Understanding cash movements by hotel operations',
+      fr: 'Décomposition des mouvements de trésorerie par opérations hôtel',
     },
-    retail: { 
-      en: 'Understanding cash movements by retail category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie commerce' 
+    retail: {
+      en: 'Understanding cash movements by retail category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie commerce',
     },
-    construction: { 
-      en: 'Understanding cash movements by project category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie projet' 
+    construction: {
+      en: 'Understanding cash movements by project category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie projet',
     },
-    professional_services: { 
-      en: 'Understanding cash movements by service category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie service' 
+    professional_services: {
+      en: 'Understanding cash movements by service category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie service',
     },
-    manufacturing: { 
-      en: 'Understanding cash movements by production category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie production' 
+    manufacturing: {
+      en: 'Understanding cash movements by production category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie production',
     },
-    agriculture: { 
-      en: 'Understanding cash movements by crop category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie récolte' 
+    agriculture: {
+      en: 'Understanding cash movements by crop category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie récolte',
     },
-    transport: { 
-      en: 'Understanding cash movements by transport category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie transport' 
+    transport: {
+      en: 'Understanding cash movements by transport category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie transport',
     },
-    healthcare: { 
-      en: 'Understanding cash movements by healthcare category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie santé' 
+    healthcare: {
+      en: 'Understanding cash movements by healthcare category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie santé',
     },
-    education: { 
-      en: 'Understanding cash movements by education category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie éducation' 
+    education: {
+      en: 'Understanding cash movements by education category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie éducation',
     },
-    wholesale: { 
-      en: 'Understanding cash movements by wholesale category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie gros' 
+    wholesale: {
+      en: 'Understanding cash movements by wholesale category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie gros',
     },
-    automotive: { 
-      en: 'Understanding cash movements by dealership category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie concession' 
+    automotive: {
+      en: 'Understanding cash movements by dealership category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie concession',
     },
-    beauty_wellness: { 
-      en: 'Understanding cash movements by service category', 
-      fr: 'Décomposition des mouvements de trésorerie par catégorie service' 
+    beauty_wellness: {
+      en: 'Understanding cash movements by service category',
+      fr: 'Décomposition des mouvements de trésorerie par catégorie service',
     },
   };
-  
+
   return subtitles[industry]?.[isEn ? 'en' : 'fr'] || subtitles.real_estate[isEn ? 'en' : 'fr'];
 }
 
@@ -2444,28 +2753,82 @@ function getIndustryName(industry: string, isEn: boolean): string {
 function getIndustryDefaultCharts(industry: string, isEn: boolean): string[] {
   const chartSuggestions: Record<string, { en: string[]; fr: string[] }> = {
     real_estate: {
-      en: ['Rental Income Trend', 'Occupancy Rate', 'NOI by Property', 'Operating Expenses', 'Cap Rate Analysis'],
-      fr: ['Tendance des revenus locatifs', 'Taux d\'occupation', 'NOI par propriété', 'Dépenses d\'exploitation', 'Analyse du taux de capitalisation'],
+      en: [
+        'Rental Income Trend',
+        'Occupancy Rate',
+        'NOI by Property',
+        'Operating Expenses',
+        'Cap Rate Analysis',
+      ],
+      fr: [
+        'Tendance des revenus locatifs',
+        "Taux d'occupation",
+        'NOI par propriété',
+        "Dépenses d'exploitation",
+        'Analyse du taux de capitalisation',
+      ],
     },
     restaurant: {
       en: ['Daily Sales', 'Food Cost %', 'Labor Cost %', 'Revenue by Day', 'Inventory Turnover'],
-      fr: ['Ventes quotidiennes', 'Coût alimentaire %', 'Coût main-d\'œuvre %', 'Revenus par jour', 'Rotation des stocks'],
+      fr: [
+        'Ventes quotidiennes',
+        'Coût alimentaire %',
+        "Coût main-d'œuvre %",
+        'Revenus par jour',
+        'Rotation des stocks',
+      ],
     },
     hospitality: {
       en: ['RevPAR Trend', 'Occupancy Rate', 'ADR Analysis', 'Revenue by Channel', 'GOP Margin'],
-      fr: ['Tendance RevPAR', 'Taux d\'occupation', 'Analyse ADR', 'Revenus par canal', 'Marge GOP'],
+      fr: ['Tendance RevPAR', "Taux d'occupation", 'Analyse ADR', 'Revenus par canal', 'Marge GOP'],
     },
     retail: {
-      en: ['Sales Trend', 'Inventory Turnover', 'Gross Margin', 'Sales per Sqft', 'Customer Traffic'],
-      fr: ['Tendance des ventes', 'Rotation des stocks', 'Marge brute', 'Ventes par m²', 'Trafic client'],
+      en: [
+        'Sales Trend',
+        'Inventory Turnover',
+        'Gross Margin',
+        'Sales per Sqft',
+        'Customer Traffic',
+      ],
+      fr: [
+        'Tendance des ventes',
+        'Rotation des stocks',
+        'Marge brute',
+        'Ventes par m²',
+        'Trafic client',
+      ],
     },
     construction: {
-      en: ['Project Revenue', 'Job Costing', 'Backlog Analysis', 'Equipment Utilization', 'Gross Profit by Job'],
-      fr: ['Revenus projets', 'Coûts par projet', 'Analyse du carnet', 'Utilisation équipement', 'Profit brut par projet'],
+      en: [
+        'Project Revenue',
+        'Job Costing',
+        'Backlog Analysis',
+        'Equipment Utilization',
+        'Gross Profit by Job',
+      ],
+      fr: [
+        'Revenus projets',
+        'Coûts par projet',
+        'Analyse du carnet',
+        'Utilisation équipement',
+        'Profit brut par projet',
+      ],
     },
     professional_services: {
-      en: ['Billable Hours', 'Utilization Rate', 'Revenue per FTE', 'Realization Rate', 'Project Profitability'],
-      fr: ['Heures facturables', 'Taux d\'utilisation', 'Revenus par ETP', 'Taux de réalisation', 'Rentabilité projet'],
+      en: [
+        'Billable Hours',
+        'Utilization Rate',
+        'Revenue per FTE',
+        'Realization Rate',
+        'Project Profitability',
+      ],
+      fr: [
+        'Heures facturables',
+        "Taux d'utilisation",
+        'Revenus par ETP',
+        'Taux de réalisation',
+        'Rentabilité projet',
+      ],
     },
     manufacturing: {
       en: ['Production Output', 'OEE', 'Cost per Unit', 'Inventory Levels', 'Quality Rate'],
@@ -2473,35 +2836,98 @@ function getIndustryDefaultCharts(industry: string, isEn: boolean): string[] {
     },
     agriculture: {
       en: ['Crop Yield', 'Revenue per Acre', 'Input Costs', 'Equipment Costs', 'Seasonal Trends'],
-      fr: ['Rendement des cultures', 'Revenus par acre', 'Coûts des intrants', 'Coûts équipement', 'Tendances saisonnières'],
+      fr: [
+        'Rendement des cultures',
+        'Revenus par acre',
+        'Coûts des intrants',
+        'Coûts équipement',
+        'Tendances saisonnières',
+      ],
     },
     transport: {
-      en: ['Revenue per Mile', 'Fuel Costs', 'Fleet Utilization', 'On-Time Delivery', 'Load Factor'],
-      fr: ['Revenus par km', 'Coûts carburant', 'Utilisation flotte', 'Livraison à temps', 'Facteur de charge'],
+      en: [
+        'Revenue per Mile',
+        'Fuel Costs',
+        'Fleet Utilization',
+        'On-Time Delivery',
+        'Load Factor',
+      ],
+      fr: [
+        'Revenus par km',
+        'Coûts carburant',
+        'Utilisation flotte',
+        'Livraison à temps',
+        'Facteur de charge',
+      ],
     },
     healthcare: {
       en: ['Patient Revenue', 'Bed Occupancy', 'Cost per Patient', 'Staff Productivity', 'AR Days'],
-      fr: ['Revenus patients', 'Occupation des lits', 'Coût par patient', 'Productivité du personnel', 'Jours AR'],
+      fr: [
+        'Revenus patients',
+        'Occupation des lits',
+        'Coût par patient',
+        'Productivité du personnel',
+        'Jours AR',
+      ],
     },
     education: {
-      en: ['Enrollment Trend', 'Revenue per Student', 'Cost per Student', 'Retention Rate', 'Program Mix'],
-      fr: ['Tendance inscriptions', 'Revenus par étudiant', 'Coût par étudiant', 'Taux de rétention', 'Mix programmes'],
+      en: [
+        'Enrollment Trend',
+        'Revenue per Student',
+        'Cost per Student',
+        'Retention Rate',
+        'Program Mix',
+      ],
+      fr: [
+        'Tendance inscriptions',
+        'Revenus par étudiant',
+        'Coût par étudiant',
+        'Taux de rétention',
+        'Mix programmes',
+      ],
     },
     wholesale: {
-      en: ['Sales Volume', 'Gross Margin', 'Inventory Turnover', 'Customer Concentration', 'Order Fulfillment'],
-      fr: ['Volume des ventes', 'Marge brute', 'Rotation des stocks', 'Concentration clients', 'Exécution des commandes'],
+      en: [
+        'Sales Volume',
+        'Gross Margin',
+        'Inventory Turnover',
+        'Customer Concentration',
+        'Order Fulfillment',
+      ],
+      fr: [
+        'Volume des ventes',
+        'Marge brute',
+        'Rotation des stocks',
+        'Concentration clients',
+        'Exécution des commandes',
+      ],
     },
     automotive: {
       en: ['Units Sold', 'Gross per Unit', 'Service Revenue', 'F&I Income', 'Inventory Days'],
       fr: ['Unités vendues', 'Marge par unité', 'Revenus service', 'Revenus F&I', 'Jours de stock'],
     },
     beauty_wellness: {
-      en: ['Service Revenue', 'Client Retention', 'Revenue per Chair', 'Product Sales', 'Booking Rate'],
-      fr: ['Revenus services', 'Rétention clients', 'Revenus par chaise', 'Ventes produits', 'Taux de réservation'],
+      en: [
+        'Service Revenue',
+        'Client Retention',
+        'Revenue per Chair',
+        'Product Sales',
+        'Booking Rate',
+      ],
+      fr: [
+        'Revenus services',
+        'Rétention clients',
+        'Revenus par chaise',
+        'Ventes produits',
+        'Taux de réservation',
+      ],
     },
   };
-  
-  return chartSuggestions[industry]?.[isEn ? 'en' : 'fr'] || chartSuggestions.real_estate[isEn ? 'en' : 'fr'];
+
+  return (
+    chartSuggestions[industry]?.[isEn ? 'en' : 'fr'] ||
+    chartSuggestions.real_estate[isEn ? 'en' : 'fr']
+  );
 }
 
 // =====================================================
@@ -2515,21 +2941,26 @@ interface IndustryBenchmarksSectionProps {
   financialData?: any;
 }
 
-function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financialData }: IndustryBenchmarksSectionProps) {
+function IndustryBenchmarksSection({
+  industry,
+  isEn,
+  ibcsMode = false,
+  financialData,
+}: IndustryBenchmarksSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   // Find industry data or default to real_estate
-  const industryData = INDUSTRY_KPIS.find(ind => ind.id === industry) || INDUSTRY_KPIS[0];
-  
+  const industryData = INDUSTRY_KPIS.find((ind) => ind.id === industry) || INDUSTRY_KPIS[0];
+
   // Safety check - if no industry data found, don't render
   if (!industryData) {
     return null;
   }
-  
+
   const Icon = industryData.icon;
-  
+
   // Get top 4-5 KPIs for dashboard (prioritize ROI/profitability metrics)
   const topKPIs = industryData.kpis.slice(0, 5);
-  
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-CA', {
       style: 'currency',
@@ -2541,45 +2972,95 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
 
   const formatValue = (value: number, name: string): string => {
     // Currency values
-    if (name.includes('Revenue') || name.includes('NOI') || name.includes('Revenus') || name.includes('GOP') || 
-        name.includes('Revenue per') || name.includes('Revenus par')) {
+    if (
+      name.includes('Revenue') ||
+      name.includes('NOI') ||
+      name.includes('Revenus') ||
+      name.includes('GOP') ||
+      name.includes('Revenue per') ||
+      name.includes('Revenus par')
+    ) {
       return formatCurrency(value);
     }
     // Percentage values
-    if (name.includes('Rate') || name.includes('Taux') || name.includes('%') || name.includes('Margin') || 
-        name.includes('Marge') || name.includes('Occupancy') || name.includes('Occupation') || 
-        name.includes('Utilization') || name.includes('Utilisation') || name.includes('Retention') || 
-        name.includes('Rétention') || name.includes('Efficiency') || name.includes('Efficacité') ||
-        name.includes('Fill Rate') || name.includes('Taux remplissage') || name.includes('Delivery') ||
-        name.includes('Livraison') || name.includes('Cost %') || name.includes('Coût %')) {
+    if (
+      name.includes('Rate') ||
+      name.includes('Taux') ||
+      name.includes('%') ||
+      name.includes('Margin') ||
+      name.includes('Marge') ||
+      name.includes('Occupancy') ||
+      name.includes('Occupation') ||
+      name.includes('Utilization') ||
+      name.includes('Utilisation') ||
+      name.includes('Retention') ||
+      name.includes('Rétention') ||
+      name.includes('Efficiency') ||
+      name.includes('Efficacité') ||
+      name.includes('Fill Rate') ||
+      name.includes('Taux remplissage') ||
+      name.includes('Delivery') ||
+      name.includes('Livraison') ||
+      name.includes('Cost %') ||
+      name.includes('Coût %')
+    ) {
       return `${value}%`;
     }
     // Dollar amounts (not currency formatted, just $ prefix)
-    if (name.includes('ADR') || name.includes('TJM') || name.includes('Effective Rate') || 
-        name.includes('Taux effectif') || name.includes('Revenue per Mile') || name.includes('Revenus par mile') ||
-        name.includes('Revenue per Patient') || name.includes('Revenus par patient') ||
-        name.includes('Revenue per Student') || name.includes('Revenus par étudiant') ||
-        name.includes('Revenue per Client') || name.includes('Revenus par client')) {
+    if (
+      name.includes('ADR') ||
+      name.includes('TJM') ||
+      name.includes('Effective Rate') ||
+      name.includes('Taux effectif') ||
+      name.includes('Revenue per Mile') ||
+      name.includes('Revenus par mile') ||
+      name.includes('Revenue per Patient') ||
+      name.includes('Revenus par patient') ||
+      name.includes('Revenue per Student') ||
+      name.includes('Revenus par étudiant') ||
+      name.includes('Revenue per Client') ||
+      name.includes('Revenus par client')
+    ) {
       return `$${value.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     }
     // Multipliers (turnover, DSCR)
-    if (name.includes('Turnover') || name.includes('Rotation') || name.includes('DSCR') || 
-        name.includes('Ratio de couverture')) {
+    if (
+      name.includes('Turnover') ||
+      name.includes('Rotation') ||
+      name.includes('DSCR') ||
+      name.includes('Ratio de couverture')
+    ) {
       return `${value.toFixed(1)}x`;
     }
     // Days/Months
-    if (name.includes('Days') || name.includes('Jours') || name.includes('AR Days') || name.includes('Jours CC') ||
-        name.includes('Days Sales Outstanding') || name.includes('Jours ventes en attente')) {
+    if (
+      name.includes('Days') ||
+      name.includes('Jours') ||
+      name.includes('AR Days') ||
+      name.includes('Jours CC') ||
+      name.includes('Days Sales Outstanding') ||
+      name.includes('Jours ventes en attente')
+    ) {
       return `${Math.round(value)}d`;
     }
-    if (name.includes('Months') || name.includes('mois') || name.includes('Backlog Months') || 
-        name.includes('Carnet')) {
+    if (
+      name.includes('Months') ||
+      name.includes('mois') ||
+      name.includes('Backlog Months') ||
+      name.includes('Carnet')
+    ) {
       return `${Math.round(value)}mo`;
     }
     // Yield, Cost per Unit, etc. - format with appropriate decimals
-    if (name.includes('Yield') || name.includes('Rendement') || name.includes('Cost per Unit') || 
-        name.includes('Coût par unité') || name.includes('Revenue per Mile') || name.includes('Fuel Efficiency') ||
-        name.includes('Efficacité carburant')) {
+    if (
+      name.includes('Yield') ||
+      name.includes('Rendement') ||
+      name.includes('Cost per Unit') ||
+      name.includes('Coût par unité') ||
+      name.includes('Revenue per Mile') ||
+      name.includes('Fuel Efficiency') ||
+      name.includes('Efficacité carburant')
+    ) {
       return `${value.toFixed(1)}`;
     }
     // Large numbers (Revenue per Student, etc.)
@@ -2592,64 +3073,145 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
 
   const getIconForKPI = (name: string) => {
     // Occupancy/Utilization metrics
-    if (name.includes('Occupancy') || name.includes('Occupation') || name.includes('Utilization') || 
-        name.includes('Utilisation') || name.includes('Fill Rate') || name.includes('Taux remplissage') ||
-        name.includes('Class Utilization') || name.includes('Utilisation classes') ||
-        name.includes('Service Utilization') || name.includes('Utilisation services') ||
-        name.includes('Appointment Utilization') || name.includes('Utilisation rendez-vous')) return Home;
-    
+    if (
+      name.includes('Occupancy') ||
+      name.includes('Occupation') ||
+      name.includes('Utilization') ||
+      name.includes('Utilisation') ||
+      name.includes('Fill Rate') ||
+      name.includes('Taux remplissage') ||
+      name.includes('Class Utilization') ||
+      name.includes('Utilisation classes') ||
+      name.includes('Service Utilization') ||
+      name.includes('Utilisation services') ||
+      name.includes('Appointment Utilization') ||
+      name.includes('Utilisation rendez-vous')
+    )
+      return Home;
+
     // Revenue/Income metrics
-    if (name.includes('Revenue') || name.includes('Revenus') || name.includes('NOI') || 
-        name.includes('GOP') || name.includes('Revenue per') || name.includes('Revenus par')) return DollarSign;
-    
+    if (
+      name.includes('Revenue') ||
+      name.includes('Revenus') ||
+      name.includes('NOI') ||
+      name.includes('GOP') ||
+      name.includes('Revenue per') ||
+      name.includes('Revenus par')
+    )
+      return DollarSign;
+
     // Percentage/Rate/Margin metrics
-    if (name.includes('Rate') || name.includes('Taux') || name.includes('%') || name.includes('Margin') || 
-        name.includes('Marge') || name.includes('Retention') || name.includes('Rétention') ||
-        name.includes('Cap Rate') || name.includes('Taux de capitalisation')) return Percent;
-    
+    if (
+      name.includes('Rate') ||
+      name.includes('Taux') ||
+      name.includes('%') ||
+      name.includes('Margin') ||
+      name.includes('Marge') ||
+      name.includes('Retention') ||
+      name.includes('Rétention') ||
+      name.includes('Cap Rate') ||
+      name.includes('Taux de capitalisation')
+    )
+      return Percent;
+
     // Cash/Return/ROI metrics
-    if (name.includes('Cash') || name.includes('Return') || name.includes('Rendement') || 
-        name.includes('ROI') || name.includes('Cash-on-Cash')) return TrendingUp;
-    
+    if (
+      name.includes('Cash') ||
+      name.includes('Return') ||
+      name.includes('Rendement') ||
+      name.includes('ROI') ||
+      name.includes('Cash-on-Cash')
+    )
+      return TrendingUp;
+
     // Cost metrics
-    if (name.includes('Cost') || name.includes('Coût') || name.includes('Prime Cost')) return Calculator;
-    
+    if (name.includes('Cost') || name.includes('Coût') || name.includes('Prime Cost'))
+      return Calculator;
+
     // Turnover/Efficiency metrics
-    if (name.includes('Turnover') || name.includes('Rotation') || name.includes('Efficiency') || 
-        name.includes('Efficacité') || name.includes('Production Efficiency') || 
-        name.includes('Efficacité production') || name.includes('Crop Rotation Efficiency') ||
-        name.includes('Efficacité rotation') || name.includes('Fuel Efficiency') ||
-        name.includes('Efficacité carburant')) return Target;
-    
+    if (
+      name.includes('Turnover') ||
+      name.includes('Rotation') ||
+      name.includes('Efficiency') ||
+      name.includes('Efficacité') ||
+      name.includes('Production Efficiency') ||
+      name.includes('Efficacité production') ||
+      name.includes('Crop Rotation Efficiency') ||
+      name.includes('Efficacité rotation') ||
+      name.includes('Fuel Efficiency') ||
+      name.includes('Efficacité carburant')
+    )
+      return Target;
+
     // Time-based metrics (Days/Months)
-    if (name.includes('Days') || name.includes('Jours') || name.includes('Months') || 
-        name.includes('mois') || name.includes('AR Days') || name.includes('Jours CC') ||
-        name.includes('Days Sales Outstanding') || name.includes('Jours ventes en attente') ||
-        name.includes('Backlog Months') || name.includes('Carnet')) return Calendar;
-    
+    if (
+      name.includes('Days') ||
+      name.includes('Jours') ||
+      name.includes('Months') ||
+      name.includes('mois') ||
+      name.includes('AR Days') ||
+      name.includes('Jours CC') ||
+      name.includes('Days Sales Outstanding') ||
+      name.includes('Jours ventes en attente') ||
+      name.includes('Backlog Months') ||
+      name.includes('Carnet')
+    )
+      return Calendar;
+
     // Debt/Backlog metrics
-    if (name.includes('DSCR') || name.includes('Backlog') || name.includes('Carnet') ||
-        name.includes('Bid-to-Win Ratio') || name.includes('Ratio soumissions')) return Target;
-    
+    if (
+      name.includes('DSCR') ||
+      name.includes('Backlog') ||
+      name.includes('Carnet') ||
+      name.includes('Bid-to-Win Ratio') ||
+      name.includes('Ratio soumissions')
+    )
+      return Target;
+
     // Delivery/On-Time metrics
-    if (name.includes('Delivery') || name.includes('Livraison') || name.includes('On-Time')) return CheckCircle;
-    
+    if (name.includes('Delivery') || name.includes('Livraison') || name.includes('On-Time'))
+      return CheckCircle;
+
     // Default fallback
     return TrendingUp;
   };
 
   // Determine metric type for IBCS variance calculation
   const getMetricType = (kpiName: string): IBCSMetricType => {
-    if (kpiName.includes('Cost') || kpiName.includes('Coût') || kpiName.includes('Expense') || kpiName.includes('Dépense')) {
+    if (
+      kpiName.includes('Cost') ||
+      kpiName.includes('Coût') ||
+      kpiName.includes('Expense') ||
+      kpiName.includes('Dépense')
+    ) {
       return 'expense';
     }
-    if (kpiName.includes('Revenue') || kpiName.includes('Revenus') || kpiName.includes('Sales') || kpiName.includes('Ventes') || kpiName.includes('NOI') || kpiName.includes('GOP')) {
+    if (
+      kpiName.includes('Revenue') ||
+      kpiName.includes('Revenus') ||
+      kpiName.includes('Sales') ||
+      kpiName.includes('Ventes') ||
+      kpiName.includes('NOI') ||
+      kpiName.includes('GOP')
+    ) {
       return 'revenue';
     }
-    if (kpiName.includes('Profit') || kpiName.includes('Bénéfice') || kpiName.includes('Margin') || kpiName.includes('Marge')) {
+    if (
+      kpiName.includes('Profit') ||
+      kpiName.includes('Bénéfice') ||
+      kpiName.includes('Margin') ||
+      kpiName.includes('Marge')
+    ) {
       return 'profit';
     }
-    if (kpiName.includes('Rate') || kpiName.includes('Taux') || kpiName.includes('%') || kpiName.includes('Ratio') || kpiName.includes('Turnover') || kpiName.includes('Rotation')) {
+    if (
+      kpiName.includes('Rate') ||
+      kpiName.includes('Taux') ||
+      kpiName.includes('%') ||
+      kpiName.includes('Ratio') ||
+      kpiName.includes('Turnover') ||
+      kpiName.includes('Rotation')
+    ) {
       return 'ratio';
     }
     return 'count';
@@ -2675,17 +3237,21 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
 
   const kpiCards = topKPIs.map((kpi) => {
     const IconComponent = getIconForKPI(kpi.name);
-    const isGoodWhenDown = kpi.name.includes('Cost') || kpi.name.includes('Coût') || kpi.name.includes('Shrinkage') || kpi.name.includes('Variance');
-    
+    const isGoodWhenDown =
+      kpi.name.includes('Cost') ||
+      kpi.name.includes('Coût') ||
+      kpi.name.includes('Shrinkage') ||
+      kpi.name.includes('Variance');
+
     // Calculate variance for IBCS display
     const targetValue = extractTargetValue(kpi.target, kpi.currentValue);
     const metricType = getMetricType(kpi.name);
     const variance = calculateVariance(kpi.currentValue, targetValue, metricType);
-    
+
     return {
       id: kpi.name.toLowerCase().replace(/\s+/g, '_'),
       icon: IconComponent,
-      label: isEn ? kpi.name : (kpi.nameFr || kpi.name),
+      label: isEn ? kpi.name : kpi.nameFr || kpi.name,
       value: formatValue(kpi.currentValue, kpi.name),
       target: `${isEn ? 'Target' : 'Cible'}: ${kpi.target}`,
       change: kpi.trendValue,
@@ -2703,9 +3269,9 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
   });
 
   return (
-    <div 
+    <div
       className="rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5"
-      style={{ 
+      style={{
         backgroundColor: 'rgb(var(--color-surface))',
         border: '1px solid rgb(var(--color-border))',
       }}
@@ -2713,25 +3279,36 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div 
+          <div
             className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
           >
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+            <Icon
+              className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6"
+              style={{ color: 'rgb(var(--color-primary-500))' }}
+            />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm sm:text-base lg:text-lg font-semibold truncate" style={{ color: 'rgb(var(--color-text))' }}>
+            <h3
+              className="text-sm sm:text-base lg:text-lg font-semibold truncate"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               {isEn ? `${industryData.name.en} Benchmarks` : `Références ${industryData.name.fr}`}
             </h3>
-            <p className="text-xs sm:text-sm mt-0.5 sm:mt-1 truncate" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'Industry reference metrics for comparison' : 'Métriques de référence de l\'industrie pour comparaison'}
+            <p
+              className="text-xs sm:text-sm mt-0.5 sm:mt-1 truncate"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn
+                ? 'Industry reference metrics for comparison'
+                : "Métriques de référence de l'industrie pour comparaison"}
             </p>
           </div>
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-medium flex-shrink-0 transition-colors"
-          style={{ 
+          style={{
             backgroundColor: 'rgb(var(--color-bg-muted))',
             color: 'rgb(var(--color-text-muted))',
           }}
@@ -2751,18 +3328,20 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
           )}
         </button>
       </div>
-      
+
       {/* Benchmark Badge */}
       <div className="mb-3 sm:mb-4">
-        <span 
+        <span
           className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-          style={{ 
+          style={{
             backgroundColor: 'rgb(var(--color-info) / 0.1)',
             color: 'rgb(var(--color-info))',
           }}
         >
           <Target className="w-3 h-3" />
-          {isEn ? 'Reference values only - not your actual data' : 'Valeurs de référence uniquement - pas vos données réelles'}
+          {isEn
+            ? 'Reference values only - not your actual data'
+            : 'Valeurs de référence uniquement - pas vos données réelles'}
         </span>
       </div>
 
@@ -2771,21 +3350,30 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
         <>
           {/* ROI Highlight */}
           {industryData.roiHighlight && (
-            <div 
+            <div
               className="mb-4 sm:mb-5 p-3 sm:p-4 rounded-lg sm:rounded-xl"
-              style={{ 
+              style={{
                 backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
                 border: '1px solid rgb(var(--color-primary-500) / 0.2)',
               }}
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
-                  <span className="text-xs sm:text-sm font-semibold whitespace-nowrap" style={{ color: 'rgb(var(--color-text))' }}>
+                  <TrendingUp
+                    className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+                    style={{ color: 'rgb(var(--color-success))' }}
+                  />
+                  <span
+                    className="text-xs sm:text-sm font-semibold whitespace-nowrap"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
                     {isEn ? industryData.roiHighlight.en : industryData.roiHighlight.fr}:
                   </span>
                 </div>
-                <span className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: 'rgb(var(--color-success))' }}>
+                <span
+                  className="text-sm sm:text-base lg:text-lg font-bold"
+                  style={{ color: 'rgb(var(--color-success))' }}
+                >
                   {industryData.roiValue}
                 </span>
               </div>
@@ -2822,4 +3410,3 @@ function IndustryBenchmarksSection({ industry, isEn, ibcsMode = false, financial
     </div>
   );
 }
-

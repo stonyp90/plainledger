@@ -139,7 +139,7 @@ export default function AdminUsersPage() {
           </div>
           <button 
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded-lg text-primary-400 text-sm transition-colors"
           >
             <UserPlus className="w-4 h-4" />
             Add Admin
@@ -330,7 +330,7 @@ export default function AdminUsersPage() {
                   <button
                     type="submit"
                     disabled={createAdminMutation.isPending}
-                    className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded-lg text-primary-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {createAdminMutation.isPending ? (
                       <>
@@ -373,7 +373,7 @@ export default function AdminUsersPage() {
               <button
                 onClick={() => deleteAdminMutation.mutate(showDeleteConfirm)}
                 disabled={deleteAdminMutation.isPending}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 border border-red-600/40 hover:bg-red-600/10 hover:border-red-600/70 rounded-lg text-red-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {deleteAdminMutation.isPending ? (
                   <>

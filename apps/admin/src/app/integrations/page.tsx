@@ -110,9 +110,9 @@ export default function IntegrationsPage() {
                 <p className="text-sm text-admin-400">Showing connections for this organization only</p>
               </div>
             </div>
-            <Link 
+            <Link
               href={`/organizations/${selectedOrg}`}
-              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded text-white text-sm transition-colors"
+              className="px-3 py-1.5 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded text-primary-400 text-sm transition-colors"
             >
               View Organization
             </Link>
@@ -139,7 +139,7 @@ export default function IntegrationsPage() {
                 </div>
                 <p className="text-admin-400 text-sm capitalize">{provider.category}</p>
                 {provider.isBeta && (
-                  <span className="inline-block mt-2 px-2 py-1 bg-yellow-600 text-yellow-100 text-xs rounded">
+                  <span className="inline-block mt-2 px-2 py-1 bg-yellow-500/10 text-yellow-400 text-xs rounded">
                     Beta
                   </span>
                 )}
@@ -177,10 +177,10 @@ export default function IntegrationsPage() {
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
                             conn.status === 'connected'
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-green-500/10 text-green-400'
                               : conn.status === 'error'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-yellow-600 text-white'
+                              ? 'bg-red-500/10 text-red-400'
+                              : 'bg-yellow-500/10 text-yellow-400'
                           }`}
                         >
                           {conn.status || 'unknown'}
@@ -240,10 +240,10 @@ export default function IntegrationsPage() {
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
                             log.status === 'processed'
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-green-500/10 text-green-400'
                               : log.status === 'failed'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-yellow-600 text-white'
+                              ? 'bg-red-500/10 text-red-400'
+                              : 'bg-yellow-500/10 text-yellow-400'
                           }`}
                         >
                           {log.status}

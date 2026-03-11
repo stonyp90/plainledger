@@ -48,10 +48,10 @@ const DEMO_SLIDES = [
   {
     id: 'roi-summary',
     icon: DollarSign,
-    title: { en: 'Your ROI at a Glance', fr: 'Votre ROI en un coup d\'oeil' },
-    subtitle: { 
-      en: 'See how PlainLedger clients save $847K on average', 
-      fr: 'Découvrez comment les clients PlainLedger économisent 847 000$ en moyenne' 
+    title: { en: 'Your ROI at a Glance', fr: "Votre ROI en un coup d'oeil" },
+    subtitle: {
+      en: 'See how PlainLedger clients save $847K on average',
+      fr: 'Découvrez comment les clients PlainLedger économisent 847 000$ en moyenne',
     },
     stat: { value: '$847K', label: { en: 'Avg. annual savings', fr: 'Économies moy. annuelles' } },
     isROISlide: true,
@@ -60,9 +60,9 @@ const DEMO_SLIDES = [
     id: 'dashboard',
     icon: BarChart3,
     title: { en: 'Real-Time Financial Visibility', fr: 'Visibilité financière temps réel' },
-    subtitle: { 
-      en: 'Know your position now, not last month — accelerate decisions', 
-      fr: 'Connaissez votre position maintenant, pas le mois dernier — accélérez les décisions' 
+    subtitle: {
+      en: 'Know your position now, not last month — accelerate decisions',
+      fr: 'Connaissez votre position maintenant, pas le mois dernier — accélérez les décisions',
     },
     stat: { value: '60%', label: { en: 'Faster month-end close', fr: 'Clôture plus rapide' } },
   },
@@ -70,9 +70,9 @@ const DEMO_SLIDES = [
     id: 'anomalies',
     icon: Shield,
     title: { en: 'Prevent Financial Leakage', fr: 'Prévenez les fuites financières' },
-    subtitle: { 
-      en: 'AI catches duplicate payments, fraud patterns, and billing errors before they cost you', 
-      fr: 'L\'IA détecte paiements en double, fraudes et erreurs avant qu\'ils ne vous coûtent' 
+    subtitle: {
+      en: 'AI catches duplicate payments, fraud patterns, and billing errors before they cost you',
+      fr: "L'IA détecte paiements en double, fraudes et erreurs avant qu'ils ne vous coûtent",
     },
     stat: { value: '97%', label: { en: 'Detection accuracy', fr: 'Précision de détection' } },
   },
@@ -80,9 +80,9 @@ const DEMO_SLIDES = [
     id: 'industry-ai',
     icon: Brain,
     title: { en: 'Industry-Optimized AI', fr: 'IA optimisée par industrie' },
-    subtitle: { 
-      en: 'KPIs tailored to your sector: Real Estate, Restaurant, Retail, Construction & more', 
-      fr: 'KPIs adaptés à votre secteur: Immobilier, Restauration, Commerce, Construction et plus' 
+    subtitle: {
+      en: 'KPIs tailored to your sector: Real Estate, Restaurant, Retail, Construction & more',
+      fr: 'KPIs adaptés à votre secteur: Immobilier, Restauration, Commerce, Construction et plus',
     },
     stat: { value: '15+', label: { en: 'Industries supported', fr: 'Industries supportées' } },
   },
@@ -90,9 +90,9 @@ const DEMO_SLIDES = [
     id: 'cost-savings',
     icon: TrendingUp,
     title: { en: '1/3 the Cost of Enterprise BI', fr: '1/3 du coût du BI Enterprise' },
-    subtitle: { 
-      en: 'Same data lake capabilities as $50K+ tools, designed for growing businesses', 
-      fr: 'Mêmes capacités que les outils à 50 000$+, conçu pour les entreprises en croissance' 
+    subtitle: {
+      en: 'Same data lake capabilities as $50K+ tools, designed for growing businesses',
+      fr: 'Mêmes capacités que les outils à 50 000$+, conçu pour les entreprises en croissance',
     },
     stat: { value: '340%', label: { en: 'First-year ROI', fr: 'ROI première année' } },
     isROISlide: true,
@@ -105,10 +105,10 @@ const DEMO_SLIDES = [
 
 function useAnimatedCounter(target: number, duration: number = 1500, delay: number = 0) {
   const [count, setCount] = useState(0);
-  
+
   useEffect(() => {
     setCount(0);
-    
+
     const timeoutId = setTimeout(() => {
       const startTime = Date.now();
       const animate = () => {
@@ -116,18 +116,18 @@ function useAnimatedCounter(target: number, duration: number = 1500, delay: numb
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
         setCount(Math.floor(target * eased));
-        
+
         if (progress < 1) {
           requestAnimationFrame(animate);
         }
       };
-      
+
       requestAnimationFrame(animate);
     }, delay);
-    
+
     return () => clearTimeout(timeoutId);
   }, [target, duration, delay]);
-  
+
   return count;
 }
 
@@ -135,15 +135,15 @@ function useAnimatedCounter(target: number, duration: number = 1500, delay: numb
 // ANIMATED SPARKLINE COMPONENT
 // =====================================================
 
-function AnimatedSparkline({ 
-  data, 
-  color, 
+function AnimatedSparkline({
+  data,
+  color,
   showArea = true,
   delay = 300,
   width = 120,
-  height = 40 
-}: { 
-  data: number[]; 
+  height = 40,
+}: {
+  data: number[];
   color: string;
   showArea?: boolean;
   delay?: number;
@@ -151,44 +151,44 @@ function AnimatedSparkline({
   height?: number;
 }) {
   const [progress, setProgress] = useState(0);
-  
+
   useEffect(() => {
     setProgress(0);
-    
+
     const timeoutId = setTimeout(() => {
       const startTime = Date.now();
       const duration = 1500;
-      
+
       const animateProgress = () => {
         const elapsed = Date.now() - startTime;
         const p = Math.min(elapsed / duration, 1);
         setProgress(p);
-        
+
         if (p < 1) {
           requestAnimationFrame(animateProgress);
         }
       };
-      
+
       requestAnimationFrame(animateProgress);
     }, delay);
-    
+
     return () => clearTimeout(timeoutId);
   }, [data, delay]);
-  
+
   const points = useMemo(() => {
     const max = data.length > 0 ? Math.max(...data) : 0;
     const min = data.length > 0 ? Math.min(...data) : 0;
     const range = max - min || 1;
-    
+
     return data.map((value, i) => ({
       x: (i / (data.length - 1)) * width,
       y: height - ((value - min) / range) * (height - 8) - 4,
     }));
   }, [data, width, height]);
-  
+
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const areaPath = `${linePath} L ${width} ${height} L 0 ${height} Z`;
-  
+
   return (
     <svg width={width} height={height} className="overflow-visible">
       <defs>
@@ -197,7 +197,7 @@ function AnimatedSparkline({
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      
+
       {showArea && (
         <path
           d={areaPath}
@@ -205,7 +205,7 @@ function AnimatedSparkline({
           style={{ opacity: progress }}
         />
       )}
-      
+
       <path
         d={linePath}
         fill="none"
@@ -219,7 +219,7 @@ function AnimatedSparkline({
           transition: 'stroke-dashoffset 0.1s linear',
         }}
       />
-      
+
       {/* Animated dot at end */}
       {progress > 0.9 && (
         <circle
@@ -238,14 +238,14 @@ function AnimatedSparkline({
 // ANIMATED GAUGE COMPONENT
 // =====================================================
 
-function AnimatedGauge({ 
-  value, 
-  maxValue = 100, 
-  size = 120, 
+function AnimatedGauge({
+  value,
+  maxValue = 100,
+  size = 120,
   strokeWidth = 10,
   color = 'rgb(var(--color-success))',
   showLabel = true,
-  delay = 400
+  delay = 400,
 }: {
   value: number;
   maxValue?: number;
@@ -256,36 +256,36 @@ function AnimatedGauge({
   delay?: number;
 }) {
   const [animatedValue, setAnimatedValue] = useState(0);
-  
+
   useEffect(() => {
     setAnimatedValue(0);
-    
+
     const timeoutId = setTimeout(() => {
       const startTime = Date.now();
       const duration = 1500;
-      
+
       const animateValue = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 4);
         setAnimatedValue(Math.floor(value * eased));
-        
+
         if (progress < 1) {
           requestAnimationFrame(animateValue);
         }
       };
-      
+
       requestAnimationFrame(animateValue);
     }, delay);
-    
+
     return () => clearTimeout(timeoutId);
   }, [value, delay]);
-  
+
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const percentage = animatedValue / maxValue;
   const strokeDashoffset = circumference * (1 - percentage);
-  
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
@@ -298,7 +298,7 @@ function AnimatedGauge({
           stroke="rgb(var(--color-border))"
           strokeWidth={strokeWidth}
         />
-        
+
         {/* Progress circle */}
         <circle
           cx={size / 2}
@@ -310,19 +310,22 @@ function AnimatedGauge({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          style={{ 
+          style={{
             transition: 'stroke-dashoffset 0.1s linear',
             filter: `drop-shadow(0 0 6px ${color})`,
           }}
         />
       </svg>
-      
+
       {showLabel && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-2xl sm:text-3xl font-bold" style={{ color }}>
             {animatedValue}
           </span>
-          <span className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          <span
+            className="text-[10px] sm:text-xs"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
             / {maxValue}
           </span>
         </div>
@@ -349,35 +352,34 @@ function AnimatedBarChart({
   showTrend?: boolean;
 }) {
   const [progress, setProgress] = useState(0);
-  
+
   useEffect(() => {
     setProgress(0);
-    
+
     const timeoutId = setTimeout(() => {
       const startTime = Date.now();
       const duration = 1200;
-      
+
       const animateProgress = () => {
         const elapsed = Date.now() - startTime;
         const p = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - p, 3);
         setProgress(eased);
-        
+
         if (p < 1) {
           requestAnimationFrame(animateProgress);
         }
       };
-      
+
       requestAnimationFrame(animateProgress);
     }, delay);
-    
+
     return () => clearTimeout(timeoutId);
   }, [delay]);
-  
-  const maxValue = data.length > 0 
-    ? Math.max(...data.map(d => Math.max(d?.actual ?? 0, d?.budget ?? 0))) 
-    : 0;
-  
+
+  const maxValue =
+    data.length > 0 ? Math.max(...data.map((d) => Math.max(d?.actual ?? 0, d?.budget ?? 0))) : 0;
+
   return (
     <div className="w-full">
       <div className="flex items-end gap-1" style={{ height }}>
@@ -385,27 +387,29 @@ function AnimatedBarChart({
           const actualHeight = (d.actual / maxValue) * height * progress;
           const budgetHeight = (d.budget / maxValue) * height * progress;
           const isAboveBudget = d.actual > d.budget;
-          
+
           return (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="flex-1 flex flex-col items-center gap-0.5"
               style={{ transitionDelay: `${i * 50}ms` }}
             >
               <div className="w-full flex gap-0.5 h-full items-end justify-center">
-                <div 
+                <div
                   className="w-[45%] rounded-t transition-all duration-500"
-                  style={{ 
+                  style={{
                     height: actualHeight,
-                    backgroundColor: isAboveBudget 
-                      ? 'rgb(var(--color-primary-500))' 
+                    backgroundColor: isAboveBudget
+                      ? 'rgb(var(--color-primary-500))'
                       : 'rgb(var(--color-primary-400))',
-                    boxShadow: isAboveBudget ? '0 0 8px rgb(var(--color-primary-500) / 0.5)' : 'none',
+                    boxShadow: isAboveBudget
+                      ? '0 0 8px rgb(var(--color-primary-500) / 0.5)'
+                      : 'none',
                   }}
                 />
-                <div 
+                <div
                   className="w-[45%] rounded-t transition-all duration-500"
-                  style={{ 
+                  style={{
                     height: budgetHeight,
                     backgroundColor: 'rgb(var(--color-border))',
                     opacity: 0.6,
@@ -416,11 +420,11 @@ function AnimatedBarChart({
           );
         })}
       </div>
-      
+
       <div className="flex justify-between mt-2">
         {labels.map((label, i) => (
-          <span 
-            key={i} 
+          <span
+            key={i}
             className="text-[8px] sm:text-[9px] font-medium"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           >
@@ -428,16 +432,26 @@ function AnimatedBarChart({
           </span>
         ))}
       </div>
-      
+
       {showTrend && (
         <div className="flex items-center justify-center gap-4 mt-3">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }} />
-            <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>Actual</span>
+            <div
+              className="w-3 h-3 rounded"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+            />
+            <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              Actual
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgb(var(--color-border))' }} />
-            <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>Budget</span>
+            <div
+              className="w-3 h-3 rounded"
+              style={{ backgroundColor: 'rgb(var(--color-border))' }}
+            />
+            <span className="text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              Budget
+            </span>
           </div>
         </div>
       )}
@@ -453,7 +467,7 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
   const [showElements, setShowElements] = useState(false);
   const revenue = useAnimatedCounter(847, 1500, 500);
   const savings = useAnimatedCounter(156, 1500, 600);
-  
+
   const revenueData = [42, 58, 51, 67, 54, 78, 72, 89, 76, 94, 88, 102];
   const chartData = [
     { actual: 65, budget: 60 },
@@ -469,33 +483,46 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
     { actual: 105, budget: 100 },
     { actual: 118, budget: 105 },
   ];
-  
+
   useEffect(() => {
     const timer = setTimeout(() => setShowElements(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border" 
-      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}>
-      
+    <div
+      className="relative w-full rounded-xl overflow-hidden shadow-2xl border"
+      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}
+    >
       {/* Browser Chrome */}
-      <div className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b" 
-        style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+      <div
+        className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b"
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          borderColor: 'rgb(var(--color-border))',
+        }}
+      >
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium" 
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}>
+          <div
+            className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
+            style={{
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+          >
             app.plainledger.ca/dashboard
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+          >
             JD
           </div>
         </div>
@@ -504,184 +531,320 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
       {/* App Layout */}
       <div className="flex">
         {/* Sidebar - hidden on mobile */}
-        <div className="hidden md:flex flex-col w-14 lg:w-48 border-r py-3 px-2 lg:px-3 gap-1"
-          style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+        <div
+          className="hidden md:flex flex-col w-14 lg:w-48 border-r py-3 px-2 lg:px-3 gap-1"
+          style={{
+            backgroundColor: 'rgb(var(--color-surface))',
+            borderColor: 'rgb(var(--color-border))',
+          }}
+        >
           <div className="flex items-center gap-2 px-2 py-2 mb-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ 
-                background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)'
-              }}>
-              <svg className="w-4 h-4" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+            <div className="w-7 h-7 flex items-center justify-center">
+              <svg
+                className="w-7 h-7"
+                viewBox="0 0 32 32"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="5"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
               </svg>
             </div>
-            <span className="hidden lg:block text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+            <span
+              className="hidden lg:block text-sm font-semibold"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               PlainLedger
             </span>
           </div>
-          
+
           {[
             { icon: BarChart3, label: 'Dashboard', active: true },
             { icon: Shield, label: isEn ? 'Anomalies' : 'Anomalies', active: false, badge: '3' },
             { icon: FileText, label: isEn ? 'Reports' : 'Rapports', active: false },
             { icon: Brain, label: isEn ? 'AI' : 'IA', active: false },
           ].map((item, i) => (
-            <div 
+            <div
               key={i}
               className={`flex items-center gap-2 px-2 py-2 rounded-lg transition-all ${
                 item.active ? 'ring-1' : ''
               }`}
-              style={{ 
-                backgroundColor: item.active ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
-                '--tw-ring-color': 'rgb(var(--color-primary-500))',
-              } as React.CSSProperties}
+              style={
+                {
+                  backgroundColor: item.active
+                    ? 'rgb(var(--color-primary-500) / 0.1)'
+                    : 'transparent',
+                  '--tw-ring-color': 'rgb(var(--color-primary-500))',
+                } as React.CSSProperties
+              }
             >
-              <item.icon className="w-4 h-4" style={{ color: item.active ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))' }} />
-              <span className="hidden lg:block text-xs font-medium flex-1" style={{ color: item.active ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-secondary))' }}>
+              <item.icon
+                className="w-4 h-4"
+                style={{
+                  color: item.active
+                    ? 'rgb(var(--color-primary-500))'
+                    : 'rgb(var(--color-text-muted))',
+                }}
+              />
+              <span
+                className="hidden lg:block text-xs font-medium flex-1"
+                style={{
+                  color: item.active
+                    ? 'rgb(var(--color-primary-600))'
+                    : 'rgb(var(--color-text-secondary))',
+                }}
+              >
                 {item.label}
               </span>
               {item.badge && (
-                <span className="hidden lg:flex w-5 h-5 rounded-full items-center justify-center text-[10px] font-bold text-white"
-                  style={{ backgroundColor: 'rgb(var(--color-error))' }}>
+                <span
+                  className="hidden lg:flex w-5 h-5 rounded-full items-center justify-center text-[10px] font-bold text-white"
+                  style={{ backgroundColor: 'rgb(var(--color-error))' }}
+                >
                   {item.badge}
                 </span>
               )}
             </div>
           ))}
         </div>
-        
+
         {/* Main Content */}
         <div className="flex-1 p-3 sm:p-4 lg:p-5 min-h-[300px] sm:min-h-[360px] lg:min-h-[420px]">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+              <h1
+                className="text-sm sm:text-base lg:text-lg font-bold"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {isEn ? 'Financial Dashboard' : 'Tableau de bord financier'}
               </h1>
-              <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {isEn ? 'Last updated: Just now' : 'Dernière mise à jour: À l\'instant'}
+              <p
+                className="text-[10px] sm:text-xs"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
+                {isEn ? 'Last updated: Just now' : "Dernière mise à jour: À l'instant"}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium"
-                style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}>
+              <button
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium"
+                style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}
+              >
                 <Sparkles className="w-3.5 h-3.5" />
                 {isEn ? 'Ask AI' : 'Demander IA'}
               </button>
             </div>
           </div>
-          
+
           {/* Main Grid */}
           <div className="grid grid-cols-12 gap-3">
             {/* Health Score */}
-            <div className={`col-span-6 sm:col-span-4 lg:col-span-3 p-3 sm:p-4 rounded-xl transition-all duration-700 ${
-              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-              style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}>
+            <div
+              className={`col-span-6 sm:col-span-4 lg:col-span-3 p-3 sm:p-4 rounded-xl transition-all duration-700 ${
+                showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+              style={{
+                backgroundColor: 'rgb(var(--color-surface))',
+                border: '1px solid rgb(var(--color-border))',
+              }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <span
+                  className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
                   {isEn ? 'Health Score' : 'Score santé'}
                 </span>
                 <Gauge className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
               </div>
-              
+
               <div className="flex justify-center mb-3">
-                <AnimatedGauge 
-                  value={87} 
-                  size={100} 
+                <AnimatedGauge
+                  value={87}
+                  size={100}
                   strokeWidth={8}
                   color="rgb(var(--color-success))"
                   delay={400}
                 />
               </div>
-              
+
               <div className="flex justify-center gap-1.5">
-                <span className="px-2 py-1 rounded-full text-[8px] sm:text-[9px] font-medium flex items-center gap-1"
-                  style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)', color: 'rgb(var(--color-error))' }}>
+                <span
+                  className="px-2 py-1 rounded-full text-[8px] sm:text-[9px] font-medium flex items-center gap-1"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-error) / 0.1)',
+                    color: 'rgb(var(--color-error))',
+                  }}
+                >
                   <XCircle className="w-2.5 h-2.5" /> 2
                 </span>
-                <span className="px-2 py-1 rounded-full text-[8px] sm:text-[9px] font-medium flex items-center gap-1"
-                  style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)', color: 'rgb(var(--color-warning))' }}>
+                <span
+                  className="px-2 py-1 rounded-full text-[8px] sm:text-[9px] font-medium flex items-center gap-1"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+                    color: 'rgb(var(--color-warning))',
+                  }}
+                >
                   <AlertTriangle className="w-2.5 h-2.5" /> 3
                 </span>
-                <span className="px-2 py-1 rounded-full text-[8px] sm:text-[9px] font-medium flex items-center gap-1"
-                  style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)', color: 'rgb(var(--color-success))' }}>
+                <span
+                  className="px-2 py-1 rounded-full text-[8px] sm:text-[9px] font-medium flex items-center gap-1"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                    color: 'rgb(var(--color-success))',
+                  }}
+                >
                   <CheckCircle className="w-2.5 h-2.5" /> 5
                 </span>
               </div>
             </div>
-            
+
             {/* KPI Cards */}
             <div className="col-span-6 sm:col-span-8 lg:col-span-9 grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { 
-                  label: isEn ? 'Revenue MTD' : 'Revenus MTD', 
-                  value: `$${revenue.toLocaleString()}`, 
-                  change: '+12.4%', 
+                {
+                  label: isEn ? 'Revenue MTD' : 'Revenus MTD',
+                  value: `$${revenue.toLocaleString()}`,
+                  change: '+12.4%',
                   up: true,
                   sparkData: revenueData,
-                  color: 'rgb(var(--color-primary-500))'
+                  color: 'rgb(var(--color-primary-500))',
                 },
-                { 
-                  label: isEn ? 'Cash Position' : 'Trésorerie', 
-                  value: '$234,500', 
-                  change: '+8.2%', 
+                {
+                  label: isEn ? 'Cash Position' : 'Trésorerie',
+                  value: '$234,500',
+                  change: '+8.2%',
                   up: true,
                   sparkData: [35, 42, 38, 45, 52, 48, 55, 60, 58, 65, 62, 68],
-                  color: 'rgb(var(--color-success))'
+                  color: 'rgb(var(--color-success))',
                 },
-                { 
-                  label: isEn ? 'Working Capital' : 'Fonds de roul.', 
-                  value: `$${savings.toLocaleString()}`, 
-                  change: '+5.6%', 
+                {
+                  label: isEn ? 'Working Capital' : 'Fonds de roul.',
+                  value: `$${savings.toLocaleString()}`,
+                  change: '+5.6%',
                   up: true,
                   sparkData: [45, 48, 52, 55, 50, 58, 62, 60, 65, 70, 68, 75],
-                  color: 'rgb(var(--color-info))'
+                  color: 'rgb(var(--color-info))',
                 },
-                { 
-                  label: isEn ? 'Net Margin' : 'Marge nette', 
-                  value: '18.5%', 
-                  change: '-2.1%', 
+                {
+                  label: isEn ? 'Net Margin' : 'Marge nette',
+                  value: '18.5%',
+                  change: '-2.1%',
                   up: false,
                   sparkData: [22, 20, 21, 19, 20, 18, 19, 18, 17, 18, 19, 18.5],
-                  color: 'rgb(var(--color-warning))'
+                  color: 'rgb(var(--color-warning))',
                 },
               ].map((kpi, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`p-3 rounded-xl transition-all duration-700 ${
                     showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   }`}
-                  style={{ 
+                  style={{
                     backgroundColor: 'rgb(var(--color-surface))',
                     border: '1px solid rgb(var(--color-border))',
-                    transitionDelay: `${i * 100 + 200}ms`
+                    transitionDelay: `${i * 100 + 200}ms`,
                   }}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <span className="text-[8px] sm:text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                    <span
+                      className="text-[8px] sm:text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
                       {kpi.label}
                     </span>
-                    <div className={`flex items-center gap-0.5 text-[9px] font-bold ${kpi.up ? 'text-success' : 'text-error'}`}>
-                      {kpi.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    <div
+                      className={`flex items-center gap-0.5 text-[9px] font-bold ${kpi.up ? 'text-success' : 'text-error'}`}
+                    >
+                      {kpi.up ? (
+                        <ArrowUpRight className="w-3 h-3" />
+                      ) : (
+                        <ArrowDownRight className="w-3 h-3" />
+                      )}
                       {kpi.change}
                     </div>
                   </div>
-                  
-                  <div className="text-base sm:text-lg lg:text-xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
+
+                  <div
+                    className="text-base sm:text-lg lg:text-xl font-bold mb-2"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
                     {kpi.value}
                   </div>
-                  
-                  <AnimatedSparkline 
-                    data={kpi.sparkData} 
+
+                  <AnimatedSparkline
+                    data={kpi.sparkData}
                     color={kpi.color}
                     delay={300 + i * 100}
                     width={100}
@@ -690,32 +853,45 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
                 </div>
               ))}
             </div>
-            
+
             {/* Revenue Chart */}
-            <div className={`col-span-12 lg:col-span-8 p-4 rounded-xl transition-all duration-700 ${
-              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-              style={{ 
+            <div
+              className={`col-span-12 lg:col-span-8 p-4 rounded-xl transition-all duration-700 ${
+                showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+              style={{
                 backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))',
-                transitionDelay: '500ms'
-              }}>
+                transitionDelay: '500ms',
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                  <h3
+                    className="text-xs sm:text-sm font-semibold"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
                     {isEn ? 'Revenue vs Budget' : 'Revenus vs Budget'}
                   </h3>
-                  <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                  <p
+                    className="text-[9px] sm:text-[10px]"
+                    style={{ color: 'rgb(var(--color-text-muted))' }}
+                  >
                     {isEn ? 'Trailing 12 months performance' : 'Performance sur 12 mois'}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-medium"
-                  style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)', color: 'rgb(var(--color-success))' }}>
+                <div
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-medium"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                    color: 'rgb(var(--color-success))',
+                  }}
+                >
                   <TrendingUp className="w-3.5 h-3.5" />
                   +18% YoY
                 </div>
               </div>
-              
+
               <AnimatedBarChart
                 data={chartData}
                 labels={['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']}
@@ -723,42 +899,78 @@ function FullDashboardMockup({ isEn }: { isEn: boolean }) {
                 height={100}
               />
             </div>
-            
+
             {/* Key Ratios */}
-            <div className={`col-span-12 lg:col-span-4 p-4 rounded-xl transition-all duration-700 ${
-              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-              style={{ 
+            <div
+              className={`col-span-12 lg:col-span-4 p-4 rounded-xl transition-all duration-700 ${
+                showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              }`}
+              style={{
                 backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))',
-                transitionDelay: '600ms'
-              }}>
-              <h3 className="text-xs sm:text-sm font-semibold mb-3" style={{ color: 'rgb(var(--color-text))' }}>
+                transitionDelay: '600ms',
+              }}
+            >
+              <h3
+                className="text-xs sm:text-sm font-semibold mb-3"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {isEn ? 'Key Financial Ratios' : 'Ratios clés'}
               </h3>
-              
+
               <div className="space-y-3">
                 {[
-                  { label: isEn ? 'Current Ratio' : 'Ratio courant', value: '2.4x', target: '2.0x', percent: 85, good: true },
-                  { label: isEn ? 'Quick Ratio' : 'Ratio rapide', value: '1.8x', target: '1.5x', percent: 92, good: true },
-                  { label: isEn ? 'Debt/Equity' : 'Dette/Capitaux', value: '0.6x', target: '1.0x', percent: 70, good: true },
+                  {
+                    label: isEn ? 'Current Ratio' : 'Ratio courant',
+                    value: '2.4x',
+                    target: '2.0x',
+                    percent: 85,
+                    good: true,
+                  },
+                  {
+                    label: isEn ? 'Quick Ratio' : 'Ratio rapide',
+                    value: '1.8x',
+                    target: '1.5x',
+                    percent: 92,
+                    good: true,
+                  },
+                  {
+                    label: isEn ? 'Debt/Equity' : 'Dette/Capitaux',
+                    value: '0.6x',
+                    target: '1.0x',
+                    percent: 70,
+                    good: true,
+                  },
                   { label: 'DSO', value: '38d', target: '45d', percent: 78, good: true },
                 ].map((ratio, i) => (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-secondary))' }}>{ratio.label}</span>
+                      <span
+                        className="text-[9px] sm:text-[10px]"
+                        style={{ color: 'rgb(var(--color-text-secondary))' }}
+                      >
+                        {ratio.label}
+                      </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] sm:text-xs font-bold" style={{ color: 'rgb(var(--color-text))' }}>{ratio.value}</span>
+                        <span
+                          className="text-[10px] sm:text-xs font-bold"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                        >
+                          {ratio.value}
+                        </span>
                         <CheckCircle className="w-3.5 h-3.5 text-success" />
                       </div>
                     </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                      <div 
+                    <div
+                      className="h-1.5 rounded-full overflow-hidden"
+                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                    >
+                      <div
                         className={`h-full rounded-full transition-all duration-1000 ${showElements ? '' : 'w-0'}`}
-                        style={{ 
+                        style={{
                           width: showElements ? `${ratio.percent}%` : '0%',
                           backgroundColor: 'rgb(var(--color-success))',
-                          transitionDelay: `${i * 100 + 800}ms`
+                          transitionDelay: `${i * 100 + 800}ms`,
                         }}
                       />
                     </div>
@@ -782,44 +994,50 @@ function AnomalyMockup({ isEn }: { isEn: boolean }) {
   const [visibleAlerts, setVisibleAlerts] = useState(0);
   const savedAmount = useAnimatedCounter(847, 2000, 400);
   const accuracy = useAnimatedCounter(97, 1500, 500);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowElements(true);
-      
+
       const alertTimer = setInterval(() => {
-        setVisibleAlerts(prev => prev < 4 ? prev + 1 : prev);
+        setVisibleAlerts((prev) => (prev < 4 ? prev + 1 : prev));
       }, 400);
-      
+
       return () => clearInterval(alertTimer);
     }, 300);
     return () => clearTimeout(timer);
   }, []);
 
   const alerts = [
-    { 
-      severity: 'critical', 
+    {
+      severity: 'critical',
       title: isEn ? 'Duplicate Payment Detected' : 'Paiement en double détecté',
-      desc: isEn ? 'Invoice #4521 paid twice - AI flagged' : 'Facture #4521 payée deux fois - signalé par IA',
+      desc: isEn
+        ? 'Invoice #4521 paid twice - AI flagged'
+        : 'Facture #4521 payée deux fois - signalé par IA',
       amount: '$12,450',
       confidence: 99,
     },
-    { 
-      severity: 'critical', 
+    {
+      severity: 'critical',
       title: isEn ? 'Fraudulent Transaction Pattern' : 'Pattern de transaction frauduleuse',
-      desc: isEn ? 'Unusual vendor payment sequence' : 'Séquence de paiement fournisseur inhabituelle',
+      desc: isEn
+        ? 'Unusual vendor payment sequence'
+        : 'Séquence de paiement fournisseur inhabituelle',
       amount: '$45,230',
       confidence: 96,
     },
-    { 
-      severity: 'warning', 
+    {
+      severity: 'warning',
       title: isEn ? 'Expense Spike Anomaly' : 'Anomalie de pic de dépenses',
-      desc: isEn ? 'Marketing 340% above historical avg' : 'Marketing 340% au-dessus de la moy. historique',
+      desc: isEn
+        ? 'Marketing 340% above historical avg'
+        : 'Marketing 340% au-dessus de la moy. historique',
       amount: '$28,500',
       confidence: 94,
     },
-    { 
-      severity: 'warning', 
+    {
+      severity: 'warning',
       title: isEn ? 'Revenue Recognition Issue' : 'Problème de constatation des revenus',
       desc: isEn ? 'Timing variance detected in Q4' : 'Variance temporelle détectée au Q4',
       amount: '$67,000',
@@ -828,153 +1046,221 @@ function AnomalyMockup({ isEn }: { isEn: boolean }) {
   ];
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border" 
-      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}>
-      
+    <div
+      className="relative w-full rounded-xl overflow-hidden shadow-2xl border"
+      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}
+    >
       {/* Browser Chrome */}
-      <div className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b" 
-        style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+      <div
+        className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b"
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          borderColor: 'rgb(var(--color-border))',
+        }}
+      >
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium" 
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}>
+          <div
+            className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
+            style={{
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+          >
             app.plainledger.ca/anomalies
           </div>
         </div>
       </div>
-      
+
       {/* Content */}
       <div className="p-4 sm:p-5 lg:p-6 min-h-[300px] sm:min-h-[360px] lg:min-h-[420px]">
         {/* Header Stats */}
         <div className="grid grid-cols-3 gap-3 mb-5">
-          <div className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-700 ${
-            showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-            style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)', border: '1px solid rgb(var(--color-success) / 0.2)' }}>
+          <div
+            className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-700 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{
+              backgroundColor: 'rgb(var(--color-success) / 0.1)',
+              border: '1px solid rgb(var(--color-success) / 0.2)',
+            }}
+          >
             <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-success mb-1">
               ${Math.floor(savedAmount / 1000)}K
             </div>
-            <div className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'rgb(var(--color-success))' }}>
+            <div
+              className="text-[9px] sm:text-[10px] font-medium"
+              style={{ color: 'rgb(var(--color-success))' }}
+            >
               {isEn ? 'Saved YTD' : 'Économisé YTD'}
             </div>
           </div>
-          
-          <div className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-700 ${
-            showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)', 
+
+          <div
+            className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-700 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{
+              backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
               border: '1px solid rgb(var(--color-primary-500) / 0.2)',
-              transitionDelay: '100ms'
-            }}>
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              transitionDelay: '100ms',
+            }}
+          >
+            <div
+              className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1"
+              style={{ color: 'rgb(var(--color-primary-600))' }}
+            >
               {accuracy}%
             </div>
-            <div className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'rgb(var(--color-primary-600))' }}>
+            <div
+              className="text-[9px] sm:text-[10px] font-medium"
+              style={{ color: 'rgb(var(--color-primary-600))' }}
+            >
               {isEn ? 'AI Accuracy' : 'Précision IA'}
             </div>
           </div>
-          
-          <div className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-700 ${
-            showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-            style={{ 
-              backgroundColor: 'rgb(var(--color-warning) / 0.1)', 
+
+          <div
+            className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-700 ${
+              showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{
+              backgroundColor: 'rgb(var(--color-warning) / 0.1)',
               border: '1px solid rgb(var(--color-warning) / 0.2)',
-              transitionDelay: '200ms'
-            }}>
-            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-warning mb-1">
-              4
-            </div>
+              transitionDelay: '200ms',
+            }}
+          >
+            <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-warning mb-1">4</div>
             <div className="text-[9px] sm:text-[10px] font-medium text-warning">
               {isEn ? 'Issues Found' : 'Problèmes trouvés'}
             </div>
           </div>
         </div>
-        
+
         {/* AI Analysis Banner */}
-        <div className={`flex items-center gap-3 p-3 rounded-xl mb-4 transition-all duration-700 ${
-          showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-          style={{ 
-            backgroundColor: 'rgb(var(--color-primary-500) / 0.05)', 
+        <div
+          className={`flex items-center gap-3 p-3 rounded-xl mb-4 transition-all duration-700 ${
+            showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+          style={{
+            backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
             border: '1px solid rgb(var(--color-primary-500) / 0.1)',
-            transitionDelay: '300ms'
-          }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+            transitionDelay: '300ms',
+          }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
             <Brain className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              <span
+                className="text-[10px] sm:text-xs font-semibold"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {isEn ? 'AI Analysis Complete' : 'Analyse IA terminée'}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[8px] font-medium animate-pulse"
-                style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)', color: 'rgb(var(--color-success))' }}>
+              <span
+                className="px-2 py-0.5 rounded-full text-[8px] font-medium animate-pulse"
+                style={{
+                  backgroundColor: 'rgb(var(--color-success) / 0.1)',
+                  color: 'rgb(var(--color-success))',
+                }}
+              >
                 {isEn ? 'Real-time' : 'Temps réel'}
               </span>
             </div>
-            <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? '12 algorithms • 847 transactions scanned' : '12 algorithmes • 847 transactions analysées'}
+            <p
+              className="text-[9px] sm:text-[10px]"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
+              {isEn
+                ? '12 algorithms • 847 transactions scanned'
+                : '12 algorithmes • 847 transactions analysées'}
             </p>
           </div>
         </div>
-        
+
         {/* Alerts List */}
         <div className="space-y-2">
           {alerts.map((alert, i) => (
-            <div 
+            <div
               key={i}
               className={`p-3 sm:p-4 rounded-xl flex items-start gap-3 transition-all duration-500 ${
                 i < visibleAlerts ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
               }`}
-              style={{ 
-                backgroundColor: alert.severity === 'critical' 
-                  ? 'rgb(var(--color-error) / 0.08)' 
-                  : 'rgb(var(--color-warning) / 0.08)',
+              style={{
+                backgroundColor:
+                  alert.severity === 'critical'
+                    ? 'rgb(var(--color-error) / 0.08)'
+                    : 'rgb(var(--color-warning) / 0.08)',
                 border: `1px solid ${
-                  alert.severity === 'critical' 
-                    ? 'rgb(var(--color-error) / 0.2)' 
+                  alert.severity === 'critical'
+                    ? 'rgb(var(--color-error) / 0.2)'
                     : 'rgb(var(--color-warning) / 0.2)'
-                }`
+                }`,
               }}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                alert.severity === 'critical' ? 'bg-error/20' : 'bg-warning/20'
-              }`}>
-                <Shield className={`w-5 h-5 ${
-                  alert.severity === 'critical' ? 'text-error' : 'text-warning'
-                }`} />
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  alert.severity === 'critical' ? 'bg-error/20' : 'bg-warning/20'
+                }`}
+              >
+                <Shield
+                  className={`w-5 h-5 ${
+                    alert.severity === 'critical' ? 'text-error' : 'text-warning'
+                  }`}
+                />
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="text-[11px] sm:text-xs font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+                  <p
+                    className="text-[11px] sm:text-xs font-semibold"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
                     {alert.title}
                   </p>
-                  <span className="text-[11px] sm:text-xs font-bold flex-shrink-0" style={{ color: 'rgb(var(--color-text))' }}>
+                  <span
+                    className="text-[11px] sm:text-xs font-bold flex-shrink-0"
+                    style={{ color: 'rgb(var(--color-text))' }}
+                  >
                     {alert.amount}
                   </span>
                 </div>
-                <p className="text-[9px] sm:text-[10px] mb-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <p
+                  className="text-[9px] sm:text-[10px] mb-2"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
                   {alert.desc}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}>
+                  <span
+                    className="text-[8px] sm:text-[9px] px-2 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: 'rgb(var(--color-bg-muted))',
+                      color: 'rgb(var(--color-text-muted))',
+                    }}
+                  >
                     <Zap className="w-2.5 h-2.5 inline mr-1" />
                     {alert.confidence}% {isEn ? 'confidence' : 'confiance'}
                   </span>
                 </div>
               </div>
-              
-              <button className="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-medium flex-shrink-0"
-                style={{ backgroundColor: 'rgb(var(--color-surface))', color: 'rgb(var(--color-text-secondary))' }}>
+
+              <button
+                className="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-medium flex-shrink-0"
+                style={{
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  color: 'rgb(var(--color-text-secondary))',
+                }}
+              >
                 {isEn ? 'Review' : 'Examiner'}
               </button>
             </div>
@@ -992,71 +1278,110 @@ function AnomalyMockup({ isEn }: { isEn: boolean }) {
 function ReportsMockup({ isEn }: { isEn: boolean }) {
   const [showElements, setShowElements] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => setShowElements(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
   const reportData = [
-    { label: isEn ? 'Cash & Equivalents' : 'Trésorerie', current: 234500, prior: 198200, change: 18.3 },
-    { label: isEn ? 'Accounts Receivable' : 'Comptes clients', current: 156200, prior: 142800, change: 9.4 },
+    {
+      label: isEn ? 'Cash & Equivalents' : 'Trésorerie',
+      current: 234500,
+      prior: 198200,
+      change: 18.3,
+    },
+    {
+      label: isEn ? 'Accounts Receivable' : 'Comptes clients',
+      current: 156200,
+      prior: 142800,
+      change: 9.4,
+    },
     { label: isEn ? 'Inventory' : 'Stocks', current: 89300, prior: 78500, change: 13.8 },
-    { label: isEn ? 'Fixed Assets' : 'Immobilisations', current: 765000, prior: 683000, change: 12.0 },
+    {
+      label: isEn ? 'Fixed Assets' : 'Immobilisations',
+      current: 765000,
+      prior: 683000,
+      change: 12.0,
+    },
   ];
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border" 
-      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}>
-      
+    <div
+      className="relative w-full rounded-xl overflow-hidden shadow-2xl border"
+      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}
+    >
       {/* Browser Chrome */}
-      <div className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b" 
-        style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+      <div
+        className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b"
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          borderColor: 'rgb(var(--color-border))',
+        }}
+      >
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium" 
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}>
+          <div
+            className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
+            style={{
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+          >
             app.plainledger.ca/reports
           </div>
         </div>
       </div>
-      
+
       {/* Content */}
       <div className="p-4 sm:p-5 lg:p-6 min-h-[300px] sm:min-h-[360px] lg:min-h-[420px]">
         {/* Stats Bar */}
         <div className="grid grid-cols-4 gap-2 mb-5">
           {[
-            { label: isEn ? 'Reports Generated' : 'Rapports générés', value: '847', icon: FileText },
+            {
+              label: isEn ? 'Reports Generated' : 'Rapports générés',
+              value: '847',
+              icon: FileText,
+            },
             { label: isEn ? 'Avg. Generation Time' : 'Temps moy.', value: '2.3s', icon: Clock },
             { label: isEn ? 'Time Saved' : 'Temps économisé', value: '85%', icon: TrendingUp },
             { label: isEn ? 'Export Formats' : 'Formats export', value: '12+', icon: Activity },
           ].map((stat, i) => (
-            <div 
+            <div
               key={i}
               className={`p-2 sm:p-3 rounded-xl text-center transition-all duration-700 ${
                 showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
-              style={{ 
-                backgroundColor: 'rgb(var(--color-surface))', 
+              style={{
+                backgroundColor: 'rgb(var(--color-surface))',
                 border: '1px solid rgb(var(--color-border))',
-                transitionDelay: `${i * 100}ms`
+                transitionDelay: `${i * 100}ms`,
               }}
             >
-              <stat.icon className="w-4 h-4 mx-auto mb-1" style={{ color: 'rgb(var(--color-primary-500))' }} />
-              <div className="text-sm sm:text-base lg:text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+              <stat.icon
+                className="w-4 h-4 mx-auto mb-1"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              />
+              <div
+                className="text-sm sm:text-base lg:text-lg font-bold"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {stat.value}
               </div>
-              <div className="text-[8px] sm:text-[9px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <div
+                className="text-[8px] sm:text-[9px]"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
                 {stat.label}
               </div>
             </div>
           ))}
         </div>
-        
+
         {/* Report Tabs */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
           {[
@@ -1064,91 +1389,141 @@ function ReportsMockup({ isEn }: { isEn: boolean }) {
             { icon: PieChart, label: isEn ? 'Income Statement' : 'Compte de résultat' },
             { icon: DollarSign, label: isEn ? 'Cash Flow' : 'Flux de trésorerie' },
           ].map((tab, i) => (
-            <button 
+            <button
               key={i}
               onClick={() => setActiveTab(i)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap transition-all ${
                 activeTab === i ? 'ring-1' : ''
               }`}
-              style={{ 
-                backgroundColor: activeTab === i ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))',
-                color: activeTab === i ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
-                '--tw-ring-color': 'rgb(var(--color-primary-500))',
-              } as React.CSSProperties}
+              style={
+                {
+                  backgroundColor:
+                    activeTab === i
+                      ? 'rgb(var(--color-primary-500) / 0.1)'
+                      : 'rgb(var(--color-bg-muted))',
+                  color:
+                    activeTab === i
+                      ? 'rgb(var(--color-primary-600))'
+                      : 'rgb(var(--color-text-muted))',
+                  '--tw-ring-color': 'rgb(var(--color-primary-500))',
+                } as React.CSSProperties
+              }
             >
               <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           ))}
         </div>
-        
+
         {/* Report Preview */}
-        <div className={`rounded-xl overflow-hidden border transition-all duration-700 ${
-          showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
-          style={{ 
+        <div
+          className={`rounded-xl overflow-hidden border transition-all duration-700 ${
+            showElements ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+          style={{
             borderColor: 'rgb(var(--color-border))',
-            transitionDelay: '400ms'
-          }}>
-          <div className="p-3 sm:p-4 border-b flex items-center justify-between"
-            style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+            transitionDelay: '400ms',
+          }}
+        >
+          <div
+            className="p-3 sm:p-4 border-b flex items-center justify-between"
+            style={{
+              backgroundColor: 'rgb(var(--color-surface))',
+              borderColor: 'rgb(var(--color-border))',
+            }}
+          >
             <div>
-              <h3 className="text-xs sm:text-sm font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
+              <h3
+                className="text-xs sm:text-sm font-semibold"
+                style={{ color: 'rgb(var(--color-text))' }}
+              >
                 {isEn ? 'Balance Sheet' : 'Bilan'}
               </h3>
-              <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <p
+                className="text-[9px] sm:text-[10px]"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
                 {isEn ? 'As of December 31, 2025' : 'Au 31 décembre 2025'}
               </p>
             </div>
             <div className="flex gap-2">
-              <button className="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-medium"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-secondary))' }}>
+              <button
+                className="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-medium"
+                style={{
+                  backgroundColor: 'rgb(var(--color-bg-muted))',
+                  color: 'rgb(var(--color-text-secondary))',
+                }}
+              >
                 PDF
               </button>
-              <button className="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-medium"
-                style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}>
+              <button
+                className="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-medium"
+                style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}
+              >
                 {isEn ? 'Export' : 'Exporter'}
               </button>
             </div>
           </div>
-          
+
           <div className="divide-y" style={{ borderColor: 'rgb(var(--color-border))' }}>
-            <div className="grid grid-cols-4 text-[9px] sm:text-[10px] font-semibold p-3"
-              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+            <div
+              className="grid grid-cols-4 text-[9px] sm:text-[10px] font-semibold p-3"
+              style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+            >
               <span style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Account' : 'Compte'}</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Current' : 'Actuel'}</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Prior' : 'Précédent'}</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'Change' : 'Variation'}</span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Current' : 'Actuel'}
+              </span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Prior' : 'Précédent'}
+              </span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'Change' : 'Variation'}
+              </span>
             </div>
-            
-            <div className="grid grid-cols-4 text-[10px] sm:text-xs p-3 font-bold"
-              style={{ backgroundColor: 'rgb(var(--color-surface))' }}>
-              <span style={{ color: 'rgb(var(--color-text))' }}>{isEn ? 'TOTAL ASSETS' : 'TOTAL ACTIFS'}</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>$1,245,000</span>
-              <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>$1,102,500</span>
+
+            <div
+              className="grid grid-cols-4 text-[10px] sm:text-xs p-3 font-bold"
+              style={{ backgroundColor: 'rgb(var(--color-surface))' }}
+            >
+              <span style={{ color: 'rgb(var(--color-text))' }}>
+                {isEn ? 'TOTAL ASSETS' : 'TOTAL ACTIFS'}
+              </span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text))' }}>
+                $1,245,000
+              </span>
+              <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                $1,102,500
+              </span>
               <span className="text-right text-success">+12.9%</span>
             </div>
-            
+
             {reportData.map((row, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={`grid grid-cols-4 text-[9px] sm:text-[10px] p-3 pl-5 transition-all duration-500 ${
                   showElements ? 'opacity-100' : 'opacity-0'
                 }`}
-                style={{ 
+                style={{
                   backgroundColor: 'rgb(var(--color-surface))',
-                  transitionDelay: `${i * 100 + 500}ms`
+                  transitionDelay: `${i * 100 + 500}ms`,
                 }}
               >
                 <span style={{ color: 'rgb(var(--color-text-secondary))' }}>{row.label}</span>
-                <span className="text-right font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+                <span
+                  className="text-right font-medium"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
                   ${row.current.toLocaleString()}
                 </span>
                 <span className="text-right" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   ${row.prior.toLocaleString()}
                 </span>
-                <span className={`text-right font-medium ${row.change >= 0 ? 'text-success' : 'text-error'}`}>
-                  {row.change >= 0 ? '+' : ''}{row.change}%
+                <span
+                  className={`text-right font-medium ${row.change >= 0 ? 'text-success' : 'text-error'}`}
+                >
+                  {row.change >= 0 ? '+' : ''}
+                  {row.change}%
                 </span>
               </div>
             ))}
@@ -1167,16 +1542,16 @@ function AIMockup({ isEn }: { isEn: boolean }) {
   const [typedText, setTypedText] = useState('');
   const [showResponse, setShowResponse] = useState(false);
   const [showChart, setShowChart] = useState(false);
-  
-  const question = isEn 
-    ? 'Show me our top expenses vs budget and highlight any issues' 
+
+  const question = isEn
+    ? 'Show me our top expenses vs budget and highlight any issues'
     : 'Montre-moi nos principales dépenses vs budget et signale les problèmes';
-  
+
   useEffect(() => {
     setTypedText('');
     setShowResponse(false);
     setShowChart(false);
-    
+
     let i = 0;
     const timer = setTimeout(() => {
       const typeInterval = setInterval(() => {
@@ -1204,85 +1579,134 @@ function AIMockup({ isEn }: { isEn: boolean }) {
   ];
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden shadow-2xl border" 
-      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}>
-      
+    <div
+      className="relative w-full rounded-xl overflow-hidden shadow-2xl border"
+      style={{ backgroundColor: 'rgb(var(--color-bg))', borderColor: 'rgb(var(--color-border))' }}
+    >
       {/* Browser Chrome */}
-      <div className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b" 
-        style={{ backgroundColor: 'rgb(var(--color-surface))', borderColor: 'rgb(var(--color-border))' }}>
+      <div
+        className="h-8 sm:h-10 flex items-center px-3 sm:px-4 gap-2 border-b"
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          borderColor: 'rgb(var(--color-border))',
+        }}
+      >
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-400" />
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium" 
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))', color: 'rgb(var(--color-text-muted))' }}>
+          <div
+            className="px-3 sm:px-4 py-1 rounded-lg text-[10px] sm:text-xs font-medium"
+            style={{
+              backgroundColor: 'rgb(var(--color-bg-muted))',
+              color: 'rgb(var(--color-text-muted))',
+            }}
+          >
             app.plainledger.ca/ai-assistant
           </div>
         </div>
       </div>
-      
+
       {/* AI Chat Interface */}
       <div className="p-4 sm:p-5 lg:p-6 min-h-[300px] sm:min-h-[360px] lg:min-h-[420px] flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-4 pb-4 border-b" style={{ borderColor: 'rgb(var(--color-border))' }}>
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center relative"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
+        <div
+          className="flex items-center gap-3 mb-4 pb-4 border-b"
+          style={{ borderColor: 'rgb(var(--color-border))' }}
+        >
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center relative"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+          >
             <Brain className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
             <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-success animate-pulse" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+            <h2
+              className="text-sm sm:text-base font-bold"
+              style={{ color: 'rgb(var(--color-text))' }}
+            >
               {isEn ? 'PlainLedger AI' : 'IA PlainLedger'}
             </h2>
-            <p className="text-[10px] sm:text-xs flex items-center gap-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            <p
+              className="text-[10px] sm:text-xs flex items-center gap-1"
+              style={{ color: 'rgb(var(--color-text-muted))' }}
+            >
               <Sparkles className="w-3 h-3" />
-              {isEn ? 'Powered by GPT-4 • Trained on your data' : 'Propulsé par GPT-4 • Entraîné sur vos données'}
+              {isEn
+                ? 'Powered by GPT-4 • Trained on your data'
+                : 'Propulsé par GPT-4 • Entraîné sur vos données'}
             </p>
           </div>
         </div>
-        
+
         {/* Chat Messages */}
         <div className="flex-1 space-y-4 overflow-y-auto">
           {/* User Message */}
           <div className="flex justify-end">
-            <div className="max-w-[85%] sm:max-w-[75%] p-3 sm:p-4 rounded-2xl rounded-tr-md text-[11px] sm:text-xs"
-              style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}>
+            <div
+              className="max-w-[85%] sm:max-w-[75%] p-3 sm:p-4 rounded-2xl rounded-tr-md text-[11px] sm:text-xs"
+              style={{ backgroundColor: 'rgb(var(--color-primary-500))', color: 'white' }}
+            >
               {typedText}
               {typedText.length < question.length && <span className="animate-pulse">|</span>}
             </div>
           </div>
-          
+
           {/* AI Response */}
           {showResponse && (
             <div className="flex justify-start animate-fade-in">
-              <div className="max-w-[95%] sm:max-w-[85%] p-4 rounded-2xl rounded-tl-md"
-                style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}>
-                <p className="text-[11px] sm:text-xs mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-                  {isEn 
-                    ? 'I\'ve analyzed your Q4 expenses. Here\'s what I found:' 
-                    : 'J\'ai analysé vos dépenses Q4. Voici ce que j\'ai trouvé:'}
+              <div
+                className="max-w-[95%] sm:max-w-[85%] p-4 rounded-2xl rounded-tl-md"
+                style={{
+                  backgroundColor: 'rgb(var(--color-surface))',
+                  border: '1px solid rgb(var(--color-border))',
+                }}
+              >
+                <p
+                  className="text-[11px] sm:text-xs mb-4"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
+                  {isEn
+                    ? "I've analyzed your Q4 expenses. Here's what I found:"
+                    : "J'ai analysé vos dépenses Q4. Voici ce que j'ai trouvé:"}
                 </p>
-                
+
                 {/* Visual Chart */}
                 {showChart && (
-                  <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+                  <div
+                    className="mb-4 p-3 rounded-xl"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
                     <div className="space-y-3">
                       {expenseData.map((expense, i) => (
                         <div key={i} className="space-y-1">
                           <div className="flex items-center justify-between text-[9px] sm:text-[10px]">
-                            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>{expense.category}</span>
+                            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
+                              {expense.category}
+                            </span>
                             <div className="flex items-center gap-2">
-                              <span style={{ color: 'rgb(var(--color-text))' }}>${expense.actual.toLocaleString()}</span>
+                              <span style={{ color: 'rgb(var(--color-text))' }}>
+                                ${expense.actual.toLocaleString()}
+                              </span>
                               {expense.status === 'critical' && (
                                 <span className="px-1.5 py-0.5 rounded text-[8px] font-medium bg-error/10 text-error">
-                                  +{Math.round((expense.actual - expense.budget) / expense.budget * 100)}%
+                                  +
+                                  {Math.round(
+                                    ((expense.actual - expense.budget) / expense.budget) * 100,
+                                  )}
+                                  %
                                 </span>
                               )}
                               {expense.status === 'warning' && (
                                 <span className="px-1.5 py-0.5 rounded text-[8px] font-medium bg-warning/10 text-warning">
-                                  +{Math.round((expense.actual - expense.budget) / expense.budget * 100)}%
+                                  +
+                                  {Math.round(
+                                    ((expense.actual - expense.budget) / expense.budget) * 100,
+                                  )}
+                                  %
                                 </span>
                               )}
                               {expense.status === 'ok' && (
@@ -1290,16 +1714,20 @@ function AIMockup({ isEn }: { isEn: boolean }) {
                               )}
                             </div>
                           </div>
-                          <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'rgb(var(--color-border))' }}>
-                            <div 
+                          <div
+                            className="h-2 rounded-full overflow-hidden"
+                            style={{ backgroundColor: 'rgb(var(--color-border))' }}
+                          >
+                            <div
                               className="h-full rounded-full transition-all duration-1000"
-                              style={{ 
+                              style={{
                                 width: `${(expense.actual / expense.budget) * 80}%`,
-                                backgroundColor: expense.status === 'critical' 
-                                  ? 'rgb(var(--color-error))' 
-                                  : expense.status === 'warning'
-                                  ? 'rgb(var(--color-warning))'
-                                  : 'rgb(var(--color-success))',
+                                backgroundColor:
+                                  expense.status === 'critical'
+                                    ? 'rgb(var(--color-error))'
+                                    : expense.status === 'warning'
+                                      ? 'rgb(var(--color-warning))'
+                                      : 'rgb(var(--color-success))',
                               }}
                             />
                           </div>
@@ -1308,19 +1736,29 @@ function AIMockup({ isEn }: { isEn: boolean }) {
                     </div>
                   </div>
                 )}
-                
+
                 {/* AI Insight */}
-                <div className="p-3 rounded-xl flex items-start gap-2"
-                  style={{ backgroundColor: 'rgb(var(--color-error) / 0.08)', border: '1px solid rgb(var(--color-error) / 0.2)' }}>
+                <div
+                  className="p-3 rounded-xl flex items-start gap-2"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-error) / 0.08)',
+                    border: '1px solid rgb(var(--color-error) / 0.2)',
+                  }}
+                >
                   <AlertTriangle className="w-4 h-4 text-error flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-[10px] sm:text-[11px] font-semibold text-error mb-1">
-                      {isEn ? 'Critical: Marketing over budget by 29%' : 'Critique: Marketing dépasse le budget de 29%'}
+                      {isEn
+                        ? 'Critical: Marketing over budget by 29%'
+                        : 'Critique: Marketing dépasse le budget de 29%'}
                     </p>
-                    <p className="text-[9px] sm:text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn 
+                    <p
+                      className="text-[9px] sm:text-[10px]"
+                      style={{ color: 'rgb(var(--color-text-muted))' }}
+                    >
+                      {isEn
                         ? 'This exceeds your alert threshold. I recommend reviewing campaign ROI before next quarter.'
-                        : 'Cela dépasse votre seuil d\'alerte. Je recommande de revoir le ROI des campagnes avant le prochain trimestre.'}
+                        : "Cela dépasse votre seuil d'alerte. Je recommande de revoir le ROI des campagnes avant le prochain trimestre."}
                     </p>
                   </div>
                 </div>
@@ -1328,17 +1766,27 @@ function AIMockup({ isEn }: { isEn: boolean }) {
             </div>
           )}
         </div>
-        
+
         {/* Input */}
-        <div className="mt-4 flex items-center gap-2 p-2 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-          <input 
-            type="text" 
-            placeholder={isEn ? 'Ask anything about your finances...' : 'Posez une question sur vos finances...'}
+        <div
+          className="mt-4 flex items-center gap-2 p-2 rounded-xl"
+          style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+        >
+          <input
+            type="text"
+            placeholder={
+              isEn
+                ? 'Ask anything about your finances...'
+                : 'Posez une question sur vos finances...'
+            }
             className="flex-1 bg-transparent text-[11px] sm:text-xs outline-none px-2"
             style={{ color: 'rgb(var(--color-text))' }}
             disabled
           />
-          <button className="p-2 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>
+          <button
+            className="p-2 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+          >
             <ArrowRight className="w-4 h-4 text-white" />
           </button>
         </div>
@@ -1355,12 +1803,12 @@ function ROISummaryMockup({ isEn }: { isEn: boolean }) {
   const savings = useAnimatedCounter(847000, 2000, 300);
   const accuracy = useAnimatedCounter(97, 1500, 500);
   const roi = useAnimatedCounter(340, 1800, 700);
-  
+
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
       {/* Header */}
       <div className="text-center mb-8">
-        <div 
+        <div
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4"
           style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
         >
@@ -1373,30 +1821,54 @@ function ROISummaryMockup({ isEn }: { isEn: boolean }) {
           {isEn ? 'What Our Clients Achieve' : 'Ce que nos clients accomplissent'}
         </h3>
       </div>
-      
+
       {/* Big Stats Grid */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}>
-          <DollarSign className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+        <div
+          className="text-center p-4 rounded-xl"
+          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
+        >
+          <DollarSign
+            className="w-6 h-6 mx-auto mb-2"
+            style={{ color: 'rgb(var(--color-primary-500))' }}
+          />
+          <div
+            className="text-2xl sm:text-3xl font-bold mb-1"
+            style={{ color: 'rgb(var(--color-primary-600))' }}
+          >
             ${Math.floor(savings / 1000)}K
           </div>
           <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn ? 'Avg. Annual Savings' : 'Économies moy.'}
           </div>
         </div>
-        <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}>
+        <div
+          className="text-center p-4 rounded-xl"
+          style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
+        >
           <Shield className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
-          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-success))' }}>
+          <div
+            className="text-2xl sm:text-3xl font-bold mb-1"
+            style={{ color: 'rgb(var(--color-success))' }}
+          >
             {accuracy}%
           </div>
           <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn ? 'Detection Accuracy' : 'Précision détection'}
           </div>
         </div>
-        <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}>
-          <TrendingUp className="w-6 h-6 mx-auto mb-2" style={{ color: 'rgb(var(--color-warning))' }} />
-          <div className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'rgb(var(--color-warning))' }}>
+        <div
+          className="text-center p-4 rounded-xl"
+          style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)' }}
+        >
+          <TrendingUp
+            className="w-6 h-6 mx-auto mb-2"
+            style={{ color: 'rgb(var(--color-warning))' }}
+          />
+          <div
+            className="text-2xl sm:text-3xl font-bold mb-1"
+            style={{ color: 'rgb(var(--color-warning))' }}
+          >
             {roi}%
           </div>
           <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
@@ -1404,23 +1876,36 @@ function ROISummaryMockup({ isEn }: { isEn: boolean }) {
           </div>
         </div>
       </div>
-      
+
       {/* Sample Testimonial */}
-      <div 
+      <div
         className="p-4 rounded-xl"
-        style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+        style={{
+          backgroundColor: 'rgb(var(--color-surface))',
+          border: '1px solid rgb(var(--color-border))',
+        }}
       >
         <p className="text-xs italic mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          "{isEn 
+          "
+          {isEn
             ? 'PlainLedger caught a $45K duplicate payment in our first week. The platform paid for itself immediately.'
-            : 'PlainLedger a détecté un paiement en double de 45 000$ la première semaine. La plateforme s\'est rentabilisée immédiatement.'}"
+            : "PlainLedger a détecté un paiement en double de 45 000$ la première semaine. La plateforme s'est rentabilisée immédiatement."}
+          "
         </p>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
-            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}>MD</div>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+            style={{ backgroundColor: 'rgb(var(--color-primary-500))' }}
+          >
+            MD
+          </div>
           <div>
-            <div className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>Marie-Claire Dubois</div>
-            <div className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>CFO, Gestion Immobilière MTL</div>
+            <div className="text-xs font-medium" style={{ color: 'rgb(var(--color-text))' }}>
+              Marie-Claire Dubois
+            </div>
+            <div className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              CFO, Gestion Immobilière MTL
+            </div>
           </div>
         </div>
       </div>
@@ -1434,37 +1919,37 @@ function ROISummaryMockup({ isEn }: { isEn: boolean }) {
 
 function IndustryAIMockup({ isEn }: { isEn: boolean }) {
   const [selectedIndustry, setSelectedIndustry] = useState(0);
-  
+
   const industries = [
-    { 
-      name: { en: 'Real Estate', fr: 'Immobilier' }, 
+    {
+      name: { en: 'Real Estate', fr: 'Immobilier' },
       icon: '🏢',
       kpis: ['Occupancy Rate', 'Cap Rate', 'NOI', 'Cash-on-Cash'],
-      detected: { en: 'Late rent patterns identified', fr: 'Retards de loyer identifiés' }
+      detected: { en: 'Late rent patterns identified', fr: 'Retards de loyer identifiés' },
     },
-    { 
-      name: { en: 'Restaurant', fr: 'Restauration' }, 
+    {
+      name: { en: 'Restaurant', fr: 'Restauration' },
       icon: '🍽️',
       kpis: ['Food Cost %', 'Labor Cost %', 'Prime Cost', 'Avg Check'],
-      detected: { en: 'Inventory variance flagged', fr: 'Écart d\'inventaire signalé' }
+      detected: { en: 'Inventory variance flagged', fr: "Écart d'inventaire signalé" },
     },
-    { 
-      name: { en: 'Retail', fr: 'Commerce' }, 
+    {
+      name: { en: 'Retail', fr: 'Commerce' },
       icon: '🛍️',
       kpis: ['GMROI', 'Inventory Turnover', 'Shrinkage %', 'Sales/Sq Ft'],
-      detected: { en: 'Markdown timing optimized', fr: 'Timing des soldes optimisé' }
+      detected: { en: 'Markdown timing optimized', fr: 'Timing des soldes optimisé' },
     },
   ];
-  
+
   useEffect(() => {
     const timer = setInterval(() => {
-      setSelectedIndustry(prev => (prev + 1) % industries.length);
+      setSelectedIndustry((prev) => (prev + 1) % industries.length);
     }, 3000);
     return () => clearInterval(timer);
   }, [industries.length]);
-  
+
   const current = industries[selectedIndustry];
-  
+
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
       {/* Industry Tabs */}
@@ -1474,10 +1959,17 @@ function IndustryAIMockup({ isEn }: { isEn: boolean }) {
             key={i}
             onClick={() => setSelectedIndustry(i)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all`}
-            style={{ 
-              backgroundColor: i === selectedIndustry ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
-              color: i === selectedIndustry ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
-              border: i === selectedIndustry ? '1px solid rgb(var(--color-primary-500) / 0.3)' : '1px solid transparent'
+            style={{
+              backgroundColor:
+                i === selectedIndustry ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
+              color:
+                i === selectedIndustry
+                  ? 'rgb(var(--color-primary-600))'
+                  : 'rgb(var(--color-text-muted))',
+              border:
+                i === selectedIndustry
+                  ? '1px solid rgb(var(--color-primary-500) / 0.3)'
+                  : '1px solid transparent',
             }}
           >
             <span>{ind.icon}</span>
@@ -1485,31 +1977,45 @@ function IndustryAIMockup({ isEn }: { isEn: boolean }) {
           </button>
         ))}
       </div>
-      
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {current.kpis.map((kpi, i) => (
-          <div 
+          <div
             key={i}
             className="p-3 rounded-lg text-center"
-            style={{ backgroundColor: 'rgb(var(--color-surface))', border: '1px solid rgb(var(--color-border))' }}
+            style={{
+              backgroundColor: 'rgb(var(--color-surface))',
+              border: '1px solid rgb(var(--color-border))',
+            }}
           >
-            <div className="text-lg font-bold mb-1" style={{ color: 'rgb(var(--color-primary-600))' }}>
+            <div
+              className="text-lg font-bold mb-1"
+              style={{ color: 'rgb(var(--color-primary-600))' }}
+            >
               {['85%', '7.2%', '$1.2M', '9.4%'][i]}
             </div>
-            <div className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>{kpi}</div>
+            <div className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {kpi}
+            </div>
           </div>
         ))}
       </div>
-      
+
       {/* AI Detection Alert */}
-      <div 
+      <div
         className="p-4 rounded-xl flex items-start gap-3"
-        style={{ backgroundColor: 'rgb(var(--color-warning) / 0.1)', border: '1px solid rgb(var(--color-warning) / 0.3)' }}
+        style={{
+          backgroundColor: 'rgb(var(--color-warning) / 0.1)',
+          border: '1px solid rgb(var(--color-warning) / 0.3)',
+        }}
       >
         <Brain className="w-5 h-5 flex-shrink-0" style={{ color: 'rgb(var(--color-warning))' }} />
         <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'rgb(var(--color-warning))' }}>
+          <div
+            className="text-xs font-semibold mb-1"
+            style={{ color: 'rgb(var(--color-warning))' }}
+          >
             {isEn ? 'AI Industry Insight' : 'Insight IA industrie'}
           </div>
           <p className="text-xs" style={{ color: 'rgb(var(--color-text-secondary))' }}>
@@ -1517,11 +2023,13 @@ function IndustryAIMockup({ isEn }: { isEn: boolean }) {
           </p>
         </div>
       </div>
-      
+
       {/* Footer */}
       <div className="mt-4 text-center">
         <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn ? '15+ industries with tailored AI models' : '15+ industries avec modèles IA adaptés'}
+          {isEn
+            ? '15+ industries with tailored AI models'
+            : '15+ industries avec modèles IA adaptés'}
         </span>
       </div>
     </div>
@@ -1534,12 +2042,12 @@ function IndustryAIMockup({ isEn }: { isEn: boolean }) {
 
 function CostSavingsMockup({ isEn }: { isEn: boolean }) {
   const [showSavings, setShowSavings] = useState(false);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => setShowSavings(true), 500);
     return () => clearTimeout(timer);
   }, []);
-  
+
   return (
     <div className="rounded-xl p-6" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
       {/* Comparison Header */}
@@ -1551,50 +2059,73 @@ function CostSavingsMockup({ isEn }: { isEn: boolean }) {
           {isEn ? 'Same capabilities, fraction of the cost' : 'Mêmes capacités, fraction du coût'}
         </p>
       </div>
-      
+
       {/* Comparison Bars */}
       <div className="space-y-4 mb-6">
         {/* Enterprise */}
         <div>
           <div className="flex justify-between mb-1">
-            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-text-secondary))' }}>
+            <span
+              className="text-xs font-medium"
+              style={{ color: 'rgb(var(--color-text-secondary))' }}
+            >
               {isEn ? 'Enterprise BI Tools' : 'Outils BI Enterprise'}
             </span>
-            <span className="text-xs font-bold" style={{ color: 'rgb(var(--color-text-muted))' }}>$50,000+/yr</span>
+            <span className="text-xs font-bold" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              $50,000+/yr
+            </span>
           </div>
-          <div className="h-8 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-border))', width: '100%' }} />
+          <div
+            className="h-8 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-border))', width: '100%' }}
+          />
         </div>
-        
+
         {/* PlainLedger */}
         <div>
           <div className="flex justify-between mb-1">
-            <span className="text-xs font-medium" style={{ color: 'rgb(var(--color-primary-600))' }}>PlainLedger</span>
-            <span className="text-xs font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>~$15,000/yr</span>
+            <span
+              className="text-xs font-medium"
+              style={{ color: 'rgb(var(--color-primary-600))' }}
+            >
+              PlainLedger
+            </span>
+            <span className="text-xs font-bold" style={{ color: 'rgb(var(--color-primary-600))' }}>
+              ~$15,000/yr
+            </span>
           </div>
-          <div 
+          <div
             className="h-8 rounded-lg transition-all duration-1000"
-            style={{ 
-              backgroundColor: 'rgb(var(--color-primary-500))', 
-              width: showSavings ? '30%' : '0%'
-            }} 
+            style={{
+              backgroundColor: 'rgb(var(--color-primary-500))',
+              width: showSavings ? '30%' : '0%',
+            }}
           />
         </div>
       </div>
-      
+
       {/* Savings Callout */}
-      <div 
+      <div
         className={`p-4 rounded-xl text-center transition-all duration-500 ${showSavings ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-        style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)', border: '1px solid rgb(var(--color-success) / 0.3)' }}
+        style={{
+          backgroundColor: 'rgb(var(--color-success) / 0.1)',
+          border: '1px solid rgb(var(--color-success) / 0.3)',
+        }}
       >
-        <DollarSign className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgb(var(--color-success))' }} />
+        <DollarSign
+          className="w-8 h-8 mx-auto mb-2"
+          style={{ color: 'rgb(var(--color-success))' }}
+        />
         <div className="text-2xl font-bold mb-1" style={{ color: 'rgb(var(--color-success))' }}>
           {isEn ? 'Save $35,000+/year' : 'Économisez 35 000$+/an'}
         </div>
         <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn ? 'With the same data intelligence capabilities' : 'Avec les mêmes capacités d\'intelligence'}
+          {isEn
+            ? 'With the same data intelligence capabilities'
+            : "Avec les mêmes capacités d'intelligence"}
         </div>
       </div>
-      
+
       {/* Features Check */}
       <div className="mt-4 grid grid-cols-2 gap-2">
         {[
@@ -1604,7 +2135,10 @@ function CostSavingsMockup({ isEn }: { isEn: boolean }) {
           { en: 'Real-Time Dashboards', fr: 'Tableaux temps réel' },
         ].map((feature, i) => (
           <div key={i} className="flex items-center gap-2">
-            <CheckCircle className="w-3 h-3 flex-shrink-0" style={{ color: 'rgb(var(--color-success))' }} />
+            <CheckCircle
+              className="w-3 h-3 flex-shrink-0"
+              style={{ color: 'rgb(var(--color-success))' }}
+            />
             <span className="text-[10px]" style={{ color: 'rgb(var(--color-text-secondary))' }}>
               {isEn ? feature.en : feature.fr}
             </span>
@@ -1622,18 +2156,18 @@ function CostSavingsMockup({ isEn }: { isEn: boolean }) {
 export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoModalProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  
+
   // Auto-advance slides - 8s for busy executives
   useEffect(() => {
     if (!isOpen || !isAutoPlaying) return;
-    
+
     const timer = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % DEMO_SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % DEMO_SLIDES.length);
     }, 8000);
-    
+
     return () => clearInterval(timer);
   }, [isOpen, isAutoPlaying]);
-  
+
   // Reset on open
   useEffect(() => {
     if (isOpen) {
@@ -1641,70 +2175,73 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
       setIsAutoPlaying(true);
     }
   }, [isOpen]);
-  
+
   const goToSlide = useCallback((index: number) => {
     setCurrentSlide(index);
     setIsAutoPlaying(false);
   }, []);
-  
+
   const goNext = useCallback(() => {
-    setCurrentSlide(prev => (prev + 1) % DEMO_SLIDES.length);
+    setCurrentSlide((prev) => (prev + 1) % DEMO_SLIDES.length);
     setIsAutoPlaying(false);
   }, []);
-  
+
   const goPrev = useCallback(() => {
-    setCurrentSlide(prev => (prev - 1 + DEMO_SLIDES.length) % DEMO_SLIDES.length);
+    setCurrentSlide((prev) => (prev - 1 + DEMO_SLIDES.length) % DEMO_SLIDES.length);
     setIsAutoPlaying(false);
   }, []);
-  
+
   // Handle keyboard navigation
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') goPrev();
       if (e.key === 'ArrowRight') goNext();
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, goNext, goPrev]);
-  
+
   // Find the last ROI slide index for "Skip to ROI" button
-  const lastROISlideIndex = DEMO_SLIDES.findIndex(s => s.id === 'cost-savings');
-  
+  const lastROISlideIndex = DEMO_SLIDES.findIndex((s) => s.id === 'cost-savings');
+
   const skipToROI = useCallback(() => {
     setCurrentSlide(lastROISlideIndex);
     setIsAutoPlaying(false);
   }, [lastROISlideIndex]);
-  
+
   if (!isOpen) return null;
-  
+
   const slide = DEMO_SLIDES[currentSlide];
   const SlideIcon = slide.icon;
-  
+
   const renderMockup = () => {
     switch (slide.id) {
-      case 'roi-summary': return <ROISummaryMockup isEn={isEn} />;
-      case 'dashboard': return <FullDashboardMockup isEn={isEn} />;
-      case 'anomalies': return <AnomalyMockup isEn={isEn} />;
-      case 'industry-ai': return <IndustryAIMockup isEn={isEn} />;
-      case 'cost-savings': return <CostSavingsMockup isEn={isEn} />;
-      default: return <FullDashboardMockup isEn={isEn} />;
+      case 'roi-summary':
+        return <ROISummaryMockup isEn={isEn} />;
+      case 'dashboard':
+        return <FullDashboardMockup isEn={isEn} />;
+      case 'anomalies':
+        return <AnomalyMockup isEn={isEn} />;
+      case 'industry-ai':
+        return <IndustryAIMockup isEn={isEn} />;
+      case 'cost-savings':
+        return <CostSavingsMockup isEn={isEn} />;
+      default:
+        return <FullDashboardMockup isEn={isEn} />;
     }
   };
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
-        onClick={onClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+
       {/* Modal */}
-      <div 
+      <div
         className="relative w-full max-w-6xl max-h-[95vh] overflow-y-auto rounded-xl sm:rounded-2xl shadow-2xl"
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
       >
@@ -1716,39 +2253,54 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
         >
           <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
-        
+
         {/* Content */}
         <div className="p-3 sm:p-5 lg:p-6">
           {/* Header with stat highlight */}
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
               >
-                <SlideIcon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+                <SlideIcon
+                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  style={{ color: 'rgb(var(--color-primary-500))' }}
+                />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base lg:text-xl font-bold" style={{ color: 'rgb(var(--color-text))' }}>
+                <h3
+                  className="text-sm sm:text-base lg:text-xl font-bold"
+                  style={{ color: 'rgb(var(--color-text))' }}
+                >
                   {isEn ? slide.title.en : slide.title.fr}
                 </h3>
-                <p className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                <p
+                  className="text-[10px] sm:text-xs"
+                  style={{ color: 'rgb(var(--color-text-muted))' }}
+                >
                   {isEn ? slide.subtitle.en : slide.subtitle.fr}
                 </p>
               </div>
             </div>
-            
+
             {/* Highlighted stat */}
             <div className="hidden sm:flex flex-col items-end">
-              <div className="text-2xl lg:text-3xl font-bold" style={{ color: 'rgb(var(--color-primary-500))' }}>
+              <div
+                className="text-2xl lg:text-3xl font-bold"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              >
                 {slide.stat.value}
               </div>
-              <div className="text-[10px] sm:text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              <div
+                className="text-[10px] sm:text-xs"
+                style={{ color: 'rgb(var(--color-text-muted))' }}
+              >
                 {isEn ? slide.stat.label.en : slide.stat.label.fr}
               </div>
             </div>
           </div>
-          
+
           {/* Navigation Pills */}
           <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
             {DEMO_SLIDES.map((s, i) => (
@@ -1758,23 +2310,31 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap transition-all ${
                   i === currentSlide ? 'ring-1' : ''
                 }`}
-                style={{ 
-                  backgroundColor: i === currentSlide ? 'rgb(var(--color-primary-500) / 0.1)' : 'rgb(var(--color-bg-muted))',
-                  color: i === currentSlide ? 'rgb(var(--color-primary-600))' : 'rgb(var(--color-text-muted))',
-                  '--tw-ring-color': 'rgb(var(--color-primary-500))',
-                } as React.CSSProperties}
+                style={
+                  {
+                    backgroundColor:
+                      i === currentSlide
+                        ? 'rgb(var(--color-primary-500) / 0.1)'
+                        : 'rgb(var(--color-bg-muted))',
+                    color:
+                      i === currentSlide
+                        ? 'rgb(var(--color-primary-600))'
+                        : 'rgb(var(--color-text-muted))',
+                    '--tw-ring-color': 'rgb(var(--color-primary-500))',
+                  } as React.CSSProperties
+                }
               >
                 <s.icon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{isEn ? s.title.en : s.title.fr}</span>
               </button>
             ))}
-            
+
             {/* Skip to ROI Button - for busy executives */}
             {currentSlide < lastROISlideIndex && (
               <button
                 onClick={skipToROI}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap ml-auto"
-                style={{ 
+                style={{
                   backgroundColor: 'rgb(var(--color-accent-500) / 0.1)',
                   color: 'rgb(var(--color-accent-600))',
                 }}
@@ -1784,12 +2344,12 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
               </button>
             )}
           </div>
-          
+
           {/* Mockup Display */}
           <div className="mb-4" key={currentSlide}>
             {renderMockup()}
           </div>
-          
+
           {/* Bottom Controls */}
           <div className="flex items-center justify-between gap-4">
             {/* Left: Nav arrows */}
@@ -1801,7 +2361,7 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               {/* Progress dots */}
               <div className="flex items-center gap-1.5">
                 {DEMO_SLIDES.map((_, i) => (
@@ -1811,15 +2371,16 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
                     className={`h-1.5 rounded-full transition-all ${
                       i === currentSlide ? 'w-6' : 'w-1.5'
                     }`}
-                    style={{ 
-                      backgroundColor: i === currentSlide 
-                        ? 'rgb(var(--color-primary-500))' 
-                        : 'rgb(var(--color-border))'
+                    style={{
+                      backgroundColor:
+                        i === currentSlide
+                          ? 'rgb(var(--color-primary-500))'
+                          : 'rgb(var(--color-border))',
                     }}
                   />
                 ))}
               </div>
-              
+
               <button
                 onClick={goNext}
                 className="p-2 rounded-lg transition-colors hover:bg-black/5"
@@ -1827,19 +2388,27 @@ export default function DemoModal({ isOpen, onClose, isEn, onGetStarted }: DemoM
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
-              
+
               <button
                 onClick={() => setIsAutoPlaying(!isAutoPlaying)}
                 className="hidden sm:flex p-2 rounded-full transition-colors"
-                style={{ 
-                  backgroundColor: isAutoPlaying ? 'rgb(var(--color-primary-500) / 0.1)' : 'transparent',
-                  color: isAutoPlaying ? 'rgb(var(--color-primary-500))' : 'rgb(var(--color-text-muted))'
+                style={{
+                  backgroundColor: isAutoPlaying
+                    ? 'rgb(var(--color-primary-500) / 0.1)'
+                    : 'transparent',
+                  color: isAutoPlaying
+                    ? 'rgb(var(--color-primary-500))'
+                    : 'rgb(var(--color-text-muted))',
                 }}
               >
-                {isAutoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                {isAutoPlaying ? (
+                  <Pause className="w-3.5 h-3.5" />
+                ) : (
+                  <Play className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
-            
+
             {/* Right: CTA */}
             <button
               onClick={onGetStarted}

@@ -20,6 +20,21 @@ const KEYCLOAK_ADMIN_PASSWORD = process.env.KEYCLOAK_ADMIN_PASSWORD || 'admin';
 
 const TEST_USERS = [
   {
+    username: 'anthonypaquet1508@gmail.com',
+    email: 'anthonypaquet1508@gmail.com',
+    firstName: 'Anthony',
+    lastName: 'Paquet',
+    password: 'S00leils!!!!',
+    enabled: true,
+    emailVerified: true,
+    realmRoles: ['admin', 'owner', 'platform_admin'],
+    groups: ['Administrators'],
+    attributes: {
+      organization: ['demo-org'],
+      locale: ['en'],
+    },
+  },
+  {
     username: 'admin@plainledger.ca',
     email: 'admin@plainledger.ca',
     firstName: 'Admin',

@@ -13,7 +13,10 @@ import { Repository } from 'typeorm';
 import { AdminUserEntity } from '../entities/admin-user.entity';
 import { AdminAuditLogEntity } from '../entities/admin-audit-log.entity';
 import { AdminGroupEntity } from '../entities/admin-group.entity';
-import { PLATFORM_PERMISSIONS_KEY, PUBLIC_ADMIN_KEY } from '../decorators/require-permission.decorator';
+import {
+  PLATFORM_PERMISSIONS_KEY,
+  PUBLIC_ADMIN_KEY,
+} from '../decorators/require-permission.decorator';
 
 interface PermissionRequirement {
   type: 'all' | 'any';
@@ -24,7 +27,7 @@ interface PermissionRequirement {
 const PLATFORM_ADMIN_ROLE = 'platform_admin';
 
 // Fallback: Allow these emails as platform admins (backup while debugging Keycloak roles)
-const PLATFORM_ADMIN_EMAILS = ['tony@plainledger.ca'];
+const PLATFORM_ADMIN_EMAILS = ['tony@plainledger.ca', 'anthonypaquet1508@gmail.com'];
 
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
@@ -53,7 +56,7 @@ export class PlatformAdminGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    
+
     // DEVELOPMENT ONLY: Skip auth when SKIP_AUTH=true
     const skipAuth = this.configService.get<string>('SKIP_AUTH') === 'true';
     const nodeEnv = this.configService.get<string>('NODE_ENV');
@@ -78,19 +81,41 @@ export class PlatformAdminGuard implements CanActivate {
       };
       // Grant all permissions in dev mode
       request.adminPermissions = new Set([
-        'org:list', 'org:view', 'org:create', 'org:edit', 'org:delete', 'org:hard_delete',
-        'user:list', 'user:view', 'user:create', 'user:edit', 'user:delete', 'user:impersonate',
-        'admin:list', 'admin:create', 'admin:disable',
-        'group:list', 'group:assign',
-        'billing:view', 'billing:manage',
-        'audit:view', 'audit:export',
+        'org:list',
+        'org:view',
+        'org:create',
+        'org:edit',
+        'org:delete',
+        'org:hard_delete',
+        'user:list',
+        'user:view',
+        'user:create',
+        'user:edit',
+        'user:delete',
+        'user:impersonate',
+        'admin:list',
+        'admin:create',
+        'admin:disable',
+        'group:list',
+        'group:assign',
+        'billing:view',
+        'billing:manage',
+        'audit:view',
+        'audit:export',
         'health:view',
-        'sync:view', 'sync:manage',
-        'notification:list', 'notification:create', 'notification:delete',
-        'integration:view', 'integration:manage',
-        'onboarding:view', 'onboarding:manage',
-        'communication:view', 'communication:send',
-        'chat:view', 'chat:respond',
+        'sync:view',
+        'sync:manage',
+        'notification:list',
+        'notification:create',
+        'notification:delete',
+        'integration:view',
+        'integration:manage',
+        'onboarding:view',
+        'onboarding:manage',
+        'communication:view',
+        'communication:send',
+        'chat:view',
+        'chat:respond',
       ]);
       return true;
     }
@@ -111,21 +136,25 @@ export class PlatformAdminGuard implements CanActivate {
 
     // Check if user has platform-admin role in Keycloak
     const hasPlatformAdminRole = this.hasKeycloakRole(user, PLATFORM_ADMIN_ROLE);
-    
+
     // Fallback: Check if email is in allowed list
     const isEmailAllowed = user.email && PLATFORM_ADMIN_EMAILS.includes(user.email.toLowerCase());
-    
+
     // Log for debugging
     this.logger.log(`PlatformAdminGuard: Checking access for ${user.email}`);
-    this.logger.log(`PlatformAdminGuard: hasPlatformAdminRole=${hasPlatformAdminRole}, isEmailAllowed=${isEmailAllowed}`);
+    this.logger.log(
+      `PlatformAdminGuard: hasPlatformAdminRole=${hasPlatformAdminRole}, isEmailAllowed=${isEmailAllowed}`,
+    );
     this.logger.log(`PlatformAdminGuard: realm_access=${JSON.stringify(user.realm_access)}`);
-    
+
     // Allow access if user has role OR email is in allowed list
     const canAutoProvision = hasPlatformAdminRole || isEmailAllowed;
 
     // Auto-provision admin for users with platform-admin Keycloak role OR allowed email
     if (!adminUser && canAutoProvision) {
-      this.logger.log(`PlatformAdminGuard: Auto-provisioning admin for ${user.email} (role=${hasPlatformAdminRole}, email=${isEmailAllowed})`);
+      this.logger.log(
+        `PlatformAdminGuard: Auto-provisioning admin for ${user.email} (role=${hasPlatformAdminRole}, email=${isEmailAllowed})`,
+      );
       adminUser = await this.autoProvisionAdmin(user);
     }
 
@@ -136,11 +165,15 @@ export class PlatformAdminGuard implements CanActivate {
     }
 
     if (!adminUser) {
-      this.logger.warn(`PlatformAdminGuard: User ${user.email || user.preferred_username} (${user.sub}) is not a platform admin - access denied`);
+      this.logger.warn(
+        `PlatformAdminGuard: User ${user.email || user.preferred_username} (${user.sub}) is not a platform admin - access denied`,
+      );
       // Log unauthorized access attempt
       await this.logUnauthorizedAccess(user, request);
       // DENY access - only users in admin_users table can access admin endpoints
-      throw new ForbiddenException('You do not have permission to access the admin panel. Only platform administrators can access this area.');
+      throw new ForbiddenException(
+        'You do not have permission to access the admin panel. Only platform administrators can access this area.',
+      );
     }
 
     // Get required permissions for this endpoint
@@ -152,23 +185,49 @@ export class PlatformAdminGuard implements CanActivate {
     // SUPER ADMIN BYPASS: Users with platform_admin Keycloak role get all permissions
     // This ensures platform admins can always access everything, even if DB permissions aren't set up
     if (hasPlatformAdminRole || isEmailAllowed) {
-      this.logger.log(`PlatformAdminGuard: Super admin bypass for ${adminUser.email} - granting all permissions`);
+      this.logger.log(
+        `PlatformAdminGuard: Super admin bypass for ${adminUser.email} - granting all permissions`,
+      );
       request.adminUser = adminUser;
       request.adminPermissions = new Set([
-        'org:list', 'org:view', 'org:create', 'org:edit', 'org:delete', 'org:hard_delete',
-        'user:list', 'user:view', 'user:create', 'user:edit', 'user:delete', 'user:impersonate',
-        'admin:list', 'admin:create', 'admin:disable',
-        'group:list', 'group:assign',
-        'billing:view', 'billing:manage',
-        'audit:view', 'audit:export',
+        'org:list',
+        'org:view',
+        'org:create',
+        'org:edit',
+        'org:delete',
+        'org:hard_delete',
+        'user:list',
+        'user:view',
+        'user:create',
+        'user:edit',
+        'user:delete',
+        'user:impersonate',
+        'admin:list',
+        'admin:create',
+        'admin:disable',
+        'group:list',
+        'group:assign',
+        'billing:view',
+        'billing:manage',
+        'audit:view',
+        'audit:export',
         'health:view',
-        'sync:view', 'sync:manage',
-        'notification:list', 'notification:create', 'notification:delete',
-        'integration:view', 'integration:manage',
-        'onboarding:view', 'onboarding:manage',
-        'communication:view', 'communication:send',
-        'chat:view', 'chat:respond',
-        'dashboard:view', 'settings:view', 'settings:manage',
+        'sync:view',
+        'sync:manage',
+        'notification:list',
+        'notification:create',
+        'notification:delete',
+        'integration:view',
+        'integration:manage',
+        'onboarding:view',
+        'onboarding:manage',
+        'communication:view',
+        'communication:send',
+        'chat:view',
+        'chat:respond',
+        'dashboard:view',
+        'settings:view',
+        'settings:manage',
       ]);
       // Update last access
       await this.adminUserRepository.update(adminUser.id, { lastAccessAt: new Date() });
@@ -225,11 +284,11 @@ export class PlatformAdminGuard implements CanActivate {
     for (const req of requirements) {
       if (req.type === 'all') {
         // User must have ALL permissions in this requirement
-        const hasAll = req.permissions.every(p => userPermissions.has(p));
+        const hasAll = req.permissions.every((p) => userPermissions.has(p));
         if (!hasAll) return false;
       } else {
         // User must have ANY permission in this requirement
-        const hasAny = req.permissions.some(p => userPermissions.has(p));
+        const hasAny = req.permissions.some((p) => userPermissions.has(p));
         if (!hasAny) return false;
       }
     }
@@ -361,11 +420,15 @@ export class PlatformAdminGuard implements CanActivate {
       });
 
       if (!superAdminGroup) {
-        this.logger.error('PlatformAdminGuard: Super Admin group not found - cannot auto-provision');
+        this.logger.error(
+          'PlatformAdminGuard: Super Admin group not found - cannot auto-provision',
+        );
         return null;
       }
 
-      this.logger.log(`PlatformAdminGuard: Found Super Admin group with ${superAdminGroup.permissions?.length || 0} permissions`);
+      this.logger.log(
+        `PlatformAdminGuard: Found Super Admin group with ${superAdminGroup.permissions?.length || 0} permissions`,
+      );
 
       // Create the admin user first (without group)
       const newAdmin = this.adminUserRepository.create({
@@ -412,11 +475,16 @@ export class PlatformAdminGuard implements CanActivate {
         relations: ['groups', 'groups.permissions'],
       });
 
-      this.logger.log(`PlatformAdminGuard: Auto-provisioned admin ${user.email} with ${fullAdmin?.groups?.length || 0} groups`);
+      this.logger.log(
+        `PlatformAdminGuard: Auto-provisioned admin ${user.email} with ${fullAdmin?.groups?.length || 0} groups`,
+      );
 
       return fullAdmin;
     } catch (error) {
-      this.logger.error(`PlatformAdminGuard: Failed to auto-provision admin for ${user.email}`, error);
+      this.logger.error(
+        `PlatformAdminGuard: Failed to auto-provision admin for ${user.email}`,
+        error,
+      );
       return null;
     }
   }

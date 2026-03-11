@@ -187,7 +187,7 @@ export default function SubscriptionPlansPage() {
           </div>
           <button 
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded-lg text-primary-400 text-sm transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Plan
@@ -258,8 +258,8 @@ export default function SubscriptionPlansPage() {
                   <button 
                     onClick={() => handleDelete(plan.id)}
                     className={`p-2 rounded transition-colors ${
-                      deleteConfirm === plan.id 
-                        ? 'bg-red-600 text-white' 
+                      deleteConfirm === plan.id
+                        ? 'border border-red-600/40 bg-red-600/10 text-red-400'
                         : 'hover:bg-red-600/20'
                     }`}
                     title={deleteConfirm === plan.id ? 'Click again to confirm' : 'Delete plan'}
@@ -267,7 +267,7 @@ export default function SubscriptionPlansPage() {
                     {deleteMutation.isPending && deleteMutation.variables === plan.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Trash2 className={`w-4 h-4 ${deleteConfirm === plan.id ? 'text-white' : 'text-red-400'}`} />
+                      <Trash2 className="w-4 h-4 text-red-400" />
                     )}
                   </button>
                 </div>
@@ -412,7 +412,7 @@ export default function SubscriptionPlansPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg text-white transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 disabled:opacity-50 rounded-lg text-primary-400 transition-colors"
                   >
                     {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                     {editingPlan ? 'Update Plan' : 'Create Plan'}

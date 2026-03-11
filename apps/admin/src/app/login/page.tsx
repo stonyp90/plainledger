@@ -232,12 +232,22 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ 
-                backgroundColor: loading ? 'var(--admin-primary)' : 'var(--admin-primary)',
+              className="w-full py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: 'transparent',
+                color: 'var(--admin-primary)',
+                border: '1px solid color-mix(in srgb, var(--admin-primary) 40%, transparent)',
               }}
-              onMouseOver={(e) => !loading && (e.currentTarget.style.backgroundColor = 'var(--admin-primary-hover)')}
-              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'var(--admin-primary)')}
+              onMouseOver={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--admin-primary) 10%, transparent)';
+                  e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--admin-primary) 70%, transparent)';
+                }
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--admin-primary) 40%, transparent)';
+              }}
             >
               {loading ? (
                 <>

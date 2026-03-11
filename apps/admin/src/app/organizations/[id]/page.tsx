@@ -209,7 +209,7 @@ export default function OrganizationDetailPage() {
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-primary-600 text-white'
+                  ? 'border border-primary-600/40 bg-primary-600/10 text-primary-400'
                   : 'text-admin-400 hover:bg-primary-600/20 hover:text-primary-400'
               }`}
             >
@@ -247,7 +247,7 @@ export default function OrganizationDetailPage() {
                 </div>
                 <button
                   onClick={() => setShowPlanModal(true)}
-                  className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-medium transition-colors"
+                  className="px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded-lg text-primary-400 font-medium transition-colors"
                 >
                   Change Plan
                 </button>

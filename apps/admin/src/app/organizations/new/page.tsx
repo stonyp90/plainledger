@@ -235,7 +235,7 @@ export default function NewOrganizationPage() {
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 rounded-lg text-white transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 disabled:opacity-50 rounded-lg text-primary-400 transition-colors"
             >
               {createMutation.isPending ? (
                 <>

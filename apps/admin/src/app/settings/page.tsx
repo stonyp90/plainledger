@@ -45,7 +45,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 rounded-lg text-white text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 disabled:opacity-50 rounded-lg text-primary-400 text-sm transition-colors"
           >
             {saving ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -66,10 +66,9 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-primary-600 text-white'
+                      ? 'border border-primary-600/40 bg-primary-600/10 text-primary-400'
                       : 'text-admin-400 hover:bg-primary-600/20 hover:text-primary-400'
                   }`}
-                  style={activeTab === tab.id ? { color: '#ffffff' } : undefined}
                 >
                   <tab.icon className="w-4 h-4" />
                   {tab.label}

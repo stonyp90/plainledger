@@ -81,7 +81,10 @@ const INITIAL_DATA: OnboardingData = {
 // =====================================================
 
 // Industry icon mapping
-const INDUSTRY_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+const INDUSTRY_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+> = {
   real_estate: Building2,
   construction: Hammer,
   hospitality: Hotel,
@@ -107,13 +110,13 @@ const colors = {
 };
 
 // Step 1: Company Info
-export function CompanyInfoStep({ 
-  data, 
-  onChange, 
+export function CompanyInfoStep({
+  data,
+  onChange,
   onNext,
   onBack,
-}: { 
-  data: OnboardingData; 
+}: {
+  data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   onNext: () => void;
   onBack?: () => void;
@@ -122,7 +125,9 @@ export function CompanyInfoStep({
   const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
-  const theme = isDark ? { green: colors.green, gold: colors.gold } : { green: colors.green, gold: colors.gold };
+  const theme = isDark
+    ? { green: colors.green, gold: colors.gold }
+    : { green: colors.green, gold: colors.gold };
 
   const companySizes = [
     { value: '1', label: isEn ? 'Just me' : 'Juste moi' },
@@ -131,7 +136,6 @@ export function CompanyInfoStep({
     { value: '51-200', label: '51-200' },
     { value: '201+', label: '201+' },
   ];
-
 
   const isValid = data.companyName.trim().length > 0;
 
@@ -142,14 +146,18 @@ export function CompanyInfoStep({
           {isEn ? 'Tell us about your organization' : 'Parlez-nous de votre organisation'}
         </h2>
         <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn ? "We'll use this to personalize your reports" : "Nous utiliserons ceci pour personnaliser vos rapports"}
+          {isEn
+            ? "We'll use this to personalize your reports"
+            : 'Nous utiliserons ceci pour personnaliser vos rapports'}
         </p>
       </div>
 
       <div className="space-y-6">
         {/* Company Name */}
         <div>
-          <label className="label">{isEn ? 'Company / Organization Name' : 'Nom de l\'entreprise / Organisation'} *</label>
+          <label className="label">
+            {isEn ? 'Company / Organization Name' : "Nom de l'entreprise / Organisation"} *
+          </label>
           <input
             type="text"
             value={data.companyName}
@@ -162,7 +170,7 @@ export function CompanyInfoStep({
 
         {/* Company Size */}
         <div>
-          <label className="label">{isEn ? 'Team Size' : 'Taille de l\'équipe'}</label>
+          <label className="label">{isEn ? 'Team Size' : "Taille de l'équipe"}</label>
           <div className="flex flex-wrap gap-2">
             {companySizes.map((size) => (
               <button
@@ -170,12 +178,12 @@ export function CompanyInfoStep({
                 onClick={() => onChange({ companySize: size.value })}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors`}
                 style={{
-                  backgroundColor: data.companySize === size.value 
-                    ? 'rgb(var(--color-primary-500))' 
-                    : 'rgb(var(--color-bg-muted))',
-                  color: data.companySize === size.value 
-                    ? 'white' 
-                    : 'rgb(var(--color-text-secondary))',
+                  backgroundColor:
+                    data.companySize === size.value
+                      ? 'rgb(var(--color-primary-500))'
+                      : 'rgb(var(--color-bg-muted))',
+                  color:
+                    data.companySize === size.value ? 'white' : 'rgb(var(--color-text-secondary))',
                 }}
               >
                 {size.label}
@@ -186,30 +194,36 @@ export function CompanyInfoStep({
 
         {/* Industry - Visual Cards */}
         <div>
-          <label className="label">{isEn ? 'Industry' : 'Secteur d\'activité'}</label>
+          <label className="label">{isEn ? 'Industry' : "Secteur d'activité"}</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
             {getAllIndustries().map((industry) => {
               const IconComponent = INDUSTRY_ICONS[industry.id] || Building2;
               const iconColor = industry.popular ? theme.gold : theme.green;
-              
+
               return (
                 <button
                   key={industry.id}
                   onClick={() => onChange({ industry: industry.id })}
                   className="p-4 rounded-xl text-left transition-all border-2"
                   style={{
-                    borderColor: data.industry === industry.id
-                      ? iconColor
-                      : (isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'),
-                    backgroundColor: data.industry === industry.id
-                      ? `${iconColor}15`
-                      : (isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.9)'),
+                    borderColor:
+                      data.industry === industry.id
+                        ? iconColor
+                        : isDark
+                          ? 'rgba(71, 85, 105, 0.4)'
+                          : 'rgba(229, 231, 235, 0.8)',
+                    backgroundColor:
+                      data.industry === industry.id
+                        ? `${iconColor}15`
+                        : isDark
+                          ? 'rgba(30, 41, 59, 0.6)'
+                          : 'rgba(255, 255, 255, 0.9)',
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <div 
+                    <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ 
+                      style={{
                         backgroundColor: `${iconColor}15`,
                       }}
                     >
@@ -217,11 +231,14 @@ export function CompanyInfoStep({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                        <span
+                          className="font-semibold text-sm"
+                          style={{ color: 'rgb(var(--color-text))' }}
+                        >
                           {isEn ? industry.name.en : industry.name.fr}
                         </span>
                         {industry.popular && (
-                          <span 
+                          <span
                             className="text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap"
                             style={{
                               backgroundColor: `${theme.gold}20`,
@@ -232,7 +249,10 @@ export function CompanyInfoStep({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs mt-1 line-clamp-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
+                      <p
+                        className="text-xs mt-1 line-clamp-2"
+                        style={{ color: 'rgb(var(--color-text-muted))' }}
+                      >
                         {isEn ? industry.description.en : industry.description.fr}
                       </p>
                     </div>
@@ -246,7 +266,7 @@ export function CompanyInfoStep({
         {/* Fiscal Year & Currency */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">{isEn ? 'Fiscal Year End' : 'Fin d\'exercice'}</label>
+            <label className="label">{isEn ? 'Fiscal Year End' : "Fin d'exercice"}</label>
             <select
               value={data.fiscalYearEnd}
               onChange={(e) => onChange({ fiscalYearEnd: parseInt(e.target.value) })}
@@ -254,7 +274,9 @@ export function CompanyInfoStep({
             >
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
-                  {new Date(2000, i).toLocaleString(language === 'en' ? 'en-CA' : 'fr-CA', { month: 'long' })}
+                  {new Date(2000, i).toLocaleString(language === 'en' ? 'en-CA' : 'fr-CA', {
+                    month: 'long',
+                  })}
                 </option>
               ))}
             </select>
@@ -296,49 +318,85 @@ export function CompanyInfoStep({
 const ProviderLogos: Record<string, JSX.Element> = {
   quickbooks: (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="20" fill="#2CA01C"/>
-      <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none"/>
-      <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-      <path d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <circle cx="20" cy="20" r="20" fill="#2CA01C" />
+      <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none" />
+      <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <path
+        d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6"
+        stroke="white"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   ),
   xero: (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="20" fill="#13B5EA"/>
-      <text x="20" y="25" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="14" letterSpacing="-0.5">xero</text>
-      <circle cx="33" cy="20" r="1.5" fill="white"/>
+      <circle cx="20" cy="20" r="20" fill="#13B5EA" />
+      <text
+        x="20"
+        y="25"
+        textAnchor="middle"
+        fill="white"
+        fontFamily="Arial, sans-serif"
+        fontWeight="400"
+        fontSize="14"
+        letterSpacing="-0.5"
+      >
+        xero
+      </text>
+      <circle cx="33" cy="20" r="1.5" fill="white" />
     </svg>
   ),
   sage: (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="20" fill="#1D1D1B"/>
-      <text x="20" y="25" textAnchor="middle" fill="#00D639" fontFamily="Arial, sans-serif" fontWeight="400" fontSize="12">Sage</text>
+      <circle cx="20" cy="20" r="20" fill="#1D1D1B" />
+      <text
+        x="20"
+        y="25"
+        textAnchor="middle"
+        fill="#00D639"
+        fontFamily="Arial, sans-serif"
+        fontWeight="400"
+        fontSize="12"
+      >
+        Sage
+      </text>
     </svg>
   ),
   freshbooks: (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <rect width="40" height="40" rx="6" fill="#0075DD"/>
-      <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white"/>
-      <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white"/>
+      <rect width="40" height="40" rx="6" fill="#0075DD" />
+      <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white" />
+      <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white" />
     </svg>
   ),
   wave: (
     <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <path d="M6 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v12z" fill="#003D79"/>
-      <path d="M16 32c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v24z" fill="#2E77BC"/>
-      <path d="M26 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v16z" fill="#6AB8F7"/>
+      <path
+        d="M6 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v12z"
+        fill="#003D79"
+      />
+      <path
+        d="M16 32c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v24z"
+        fill="#2E77BC"
+      />
+      <path
+        d="M26 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v16z"
+        fill="#6AB8F7"
+      />
     </svg>
   ),
 };
 
 // Step 2: Connect Data Source
-function ConnectSourceStep({ 
-  data, 
-  onChange, 
-  onNext, 
-  onBack 
-}: { 
-  data: OnboardingData; 
+function ConnectSourceStep({
+  data,
+  onChange,
+  onNext,
+  onBack,
+}: {
+  data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   onNext: () => void;
   onBack: () => void;
@@ -376,27 +434,30 @@ function ConnectSourceStep({
           {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
         </h2>
         <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn 
-            ? "We'll securely sync your data in read-only mode" 
-            : "Nous synchroniserons vos données en mode lecture seule"}
+          {isEn
+            ? "We'll securely sync your data in read-only mode"
+            : 'Nous synchroniserons vos données en mode lecture seule'}
         </p>
       </div>
 
       {/* Security note */}
-      <div 
+      <div
         className="p-4 rounded-xl mb-6 flex items-start gap-3"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-success) / 0.1)',
-          border: '1px solid rgb(var(--color-success) / 0.2)'
+          border: '1px solid rgb(var(--color-success) / 0.2)',
         }}
       >
-        <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'rgb(var(--color-success))' }} />
+        <Shield
+          className="w-5 h-5 flex-shrink-0 mt-0.5"
+          style={{ color: 'rgb(var(--color-success))' }}
+        />
         <div className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
           <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Your data is secure' : 'Vos données sont sécurisées'}
           </span>
           <br />
-          {isEn 
+          {isEn
             ? 'Read-only access • Bank-level encryption (AES-256) • Data stored in Canada'
             : 'Accès lecture seule • Chiffrement bancaire (AES-256) • Données au Canada'}
         </div>
@@ -411,16 +472,15 @@ function ConnectSourceStep({
             className="p-4 rounded-xl text-center transition-all hover:scale-105"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
-              border: data.primarySource === source.id 
-                ? `2px solid ${source.color}` 
-                : '1px solid rgb(var(--color-border))',
+              border:
+                data.primarySource === source.id
+                  ? `2px solid ${source.color}`
+                  : '1px solid rgb(var(--color-border))',
             }}
           >
-            <div 
-              className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden"
-            >
+            <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden">
               {source.id === 'csv' ? (
-                <div 
+                <div
                   className="w-full h-full flex items-center justify-center rounded-xl"
                   style={{ backgroundColor: source.color + '20' }}
                 >
@@ -438,28 +498,25 @@ function ConnectSourceStep({
       </div>
 
       {/* Skip Option - Prominent */}
-      <div 
+      <div
         className="mt-8 p-4 rounded-xl text-center"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-bg-muted))',
-          border: '1px solid rgb(var(--color-border))'
+          border: '1px solid rgb(var(--color-border))',
         }}
       >
         <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn 
-            ? "Don't have your accounting software ready? No problem!" 
+          {isEn
+            ? "Don't have your accounting software ready? No problem!"
             : "Vous n'avez pas votre logiciel comptable sous la main? Pas de problème!"}
         </p>
-        <button 
-          onClick={handleSkip} 
-          className="btn-primary w-full"
-        >
+        <button onClick={handleSkip} className="btn-primary w-full">
           {isEn ? 'Skip and connect later' : 'Passer et connecter plus tard'}
           <ChevronRight className="w-4 h-4" />
         </button>
         <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn 
-            ? 'You can always connect your software from Settings' 
+          {isEn
+            ? 'You can always connect your software from Settings'
             : 'Vous pourrez toujours connecter votre logiciel depuis les Paramètres'}
         </p>
       </div>
@@ -475,13 +532,13 @@ function ConnectSourceStep({
 }
 
 // Step 5: Invite Team
-export function InviteTeamStep({ 
-  data, 
-  onChange, 
-  onNext, 
-  onBack 
-}: { 
-  data: OnboardingData; 
+export function InviteTeamStep({
+  data,
+  onChange,
+  onNext,
+  onBack,
+}: {
+  data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   onNext: () => void;
   onBack: () => void;
@@ -498,7 +555,7 @@ export function InviteTeamStep({
   };
 
   const removeEmail = (emailToRemove: string) => {
-    onChange({ teamEmails: data.teamEmails.filter(e => e !== emailToRemove) });
+    onChange({ teamEmails: data.teamEmails.filter((e) => e !== emailToRemove) });
   };
 
   const handleSkip = () => {
@@ -513,9 +570,9 @@ export function InviteTeamStep({
           {isEn ? 'Invite your team' : 'Invitez votre équipe'}
         </h2>
         <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn 
-            ? "Collaborate with your team on financial insights" 
-            : "Collaborez avec votre équipe sur les insights financiers"}
+          {isEn
+            ? 'Collaborate with your team on financial insights'
+            : 'Collaborez avec votre équipe sur les insights financiers'}
         </p>
       </div>
 
@@ -532,11 +589,7 @@ export function InviteTeamStep({
               className="input flex-1"
               placeholder={isEn ? 'colleague@company.com' : 'collegue@entreprise.com'}
             />
-            <button 
-              onClick={addEmail}
-              className="btn-primary"
-              disabled={!email}
-            >
+            <button onClick={addEmail} className="btn-primary" disabled={!email}>
               <UserPlus className="w-4 h-4" />
             </button>
           </div>
@@ -546,7 +599,7 @@ export function InviteTeamStep({
         {data.teamEmails.length > 0 && (
           <div className="space-y-2">
             {data.teamEmails.map((teamEmail) => (
-              <div 
+              <div
                 key={teamEmail}
                 className="flex items-center justify-between p-3 rounded-lg"
                 style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
@@ -555,7 +608,7 @@ export function InviteTeamStep({
                   <Mail className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
                   <span style={{ color: 'rgb(var(--color-text))' }}>{teamEmail}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => removeEmail(teamEmail)}
                   className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20"
                 >
@@ -568,9 +621,9 @@ export function InviteTeamStep({
 
         {/* Info */}
         <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn 
+          {isEn
             ? 'Team members will receive an invitation email to join your organization.'
-            : 'Les membres de l\'équipe recevront un courriel d\'invitation pour rejoindre votre organisation.'}
+            : "Les membres de l'équipe recevront un courriel d'invitation pour rejoindre votre organisation."}
         </p>
       </div>
 
@@ -609,17 +662,19 @@ export function IndustryPreviewStep({
   const { resolvedTheme } = useTheme();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
-  const theme = isDark ? { green: colors.green, gold: colors.gold } : { green: colors.green, gold: colors.gold };
-  
+  const theme = isDark
+    ? { green: colors.green, gold: colors.gold }
+    : { green: colors.green, gold: colors.gold };
+
   const industryTemplate = data.industry ? getIndustryTemplate(data.industry) : null;
   const kpis = industryTemplate ? getKPIsForIndustry(industryTemplate.id) : [];
-  
+
   if (!industryTemplate) {
     // Skip this step if no industry selected
     onNext();
     return null;
   }
-  
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
@@ -632,9 +687,9 @@ export function IndustryPreviewStep({
             : `Nous préconfigurerons ces métriques pour ${industryTemplate.name.fr}`}
         </p>
       </div>
-      
+
       {/* Industry Summary */}
-      <div 
+      <div
         className="p-6 rounded-xl mb-6"
         style={{
           backgroundColor: `${theme.green}08`,
@@ -645,7 +700,7 @@ export function IndustryPreviewStep({
           {(() => {
             const IconComponent = INDUSTRY_ICONS[industryTemplate.id] || Building2;
             return (
-              <div 
+              <div
                 className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: `${theme.green}15` }}
               >
@@ -663,7 +718,7 @@ export function IndustryPreviewStep({
           </div>
         </div>
       </div>
-      
+
       {/* Key KPIs */}
       <div className="mb-6">
         <h3 className="font-semibold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
@@ -682,7 +737,7 @@ export function IndustryPreviewStep({
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: `${metricColor}15` }}
                   >
@@ -690,14 +745,20 @@ export function IndustryPreviewStep({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-sm" style={{ color: 'rgb(var(--color-text))' }}>
+                      <span
+                        className="font-medium text-sm"
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
                         {isEn ? kpi.name.en : kpi.name.fr}
                       </span>
                       {kpi.benchmark && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap" style={{
-                          backgroundColor: `${metricColor}20`,
-                          color: metricColor,
-                        }}>
+                        <span
+                          className="text-[10px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap"
+                          style={{
+                            backgroundColor: `${metricColor}20`,
+                            color: metricColor,
+                          }}
+                        >
                           {kpi.benchmark.min}-{kpi.benchmark.max} {kpi.benchmark.unit}
                         </span>
                       )}
@@ -714,17 +775,21 @@ export function IndustryPreviewStep({
         {kpis.length > 6 && (
           <div className="mt-4 text-center">
             <p className="text-sm font-medium" style={{ color: theme.green }}>
-              {isEn ? `+ ${kpis.length - 6} more metrics available` : `+ ${kpis.length - 6} autres métriques disponibles`}
+              {isEn
+                ? `+ ${kpis.length - 6} more metrics available`
+                : `+ ${kpis.length - 6} autres métriques disponibles`}
             </p>
             <p className="text-xs mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-              {isEn ? 'These are just examples. Your dashboard will include all relevant KPIs for your industry.' : 'Ce ne sont que des exemples. Votre tableau de bord inclura tous les KPIs pertinents pour votre industrie.'}
+              {isEn
+                ? 'These are just examples. Your dashboard will include all relevant KPIs for your industry.'
+                : 'Ce ne sont que des exemples. Votre tableau de bord inclura tous les KPIs pertinents pour votre industrie.'}
             </p>
           </div>
         )}
       </div>
-      
+
       {/* Info */}
-      <div 
+      <div
         className="p-4 rounded-lg mb-6"
         style={{
           backgroundColor: 'rgb(var(--color-primary-500) / 0.1)',
@@ -737,7 +802,7 @@ export function IndustryPreviewStep({
             : 'Ces métriques seront automatiquement ajoutées à votre modèle financier. Vous pourrez les personnaliser plus tard.'}
         </p>
       </div>
-      
+
       <div className="flex justify-between">
         <button onClick={onBack} className="btn-ghost">
           <ChevronLeft className="w-4 h-4" />
@@ -753,13 +818,7 @@ export function IndustryPreviewStep({
 }
 
 // Step 6: Tour/Features
-function TourStep({ 
-  onNext, 
-  onBack 
-}: { 
-  onNext: () => void;
-  onBack: () => void;
-}) {
+function TourStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { language } = useI18n();
   const isEn = language === 'en';
 
@@ -767,21 +826,21 @@ function TourStep({
     {
       icon: BarChart3,
       title: isEn ? 'Smart Dashboard' : 'Tableau de bord intelligent',
-      description: isEn 
+      description: isEn
         ? 'Real-time financial health score, key metrics, and trends at a glance'
         : 'Score de santé financière en temps réel, métriques clés et tendances',
     },
     {
       icon: AlertTriangle,
-      title: isEn ? 'Anomaly Detection' : 'Détection d\'anomalies',
-      description: isEn 
+      title: isEn ? 'Anomaly Detection' : "Détection d'anomalies",
+      description: isEn
         ? 'Intelligent alerts for unusual transactions and potential issues, powered by our AI'
         : 'Alertes IA pour les transactions inhabituelles et problèmes potentiels',
     },
     {
       icon: Building2,
       title: isEn ? 'Financial Reports' : 'Rapports financiers',
-      description: isEn 
+      description: isEn
         ? 'Balance sheet, income statement, cash flow - ready to share'
         : 'Bilan, compte de résultat, flux de trésorerie - prêts à partager',
     },
@@ -794,25 +853,30 @@ function TourStep({
           {isEn ? 'What you can do with PlainLedger' : 'Ce que vous pouvez faire avec PlainLedger'}
         </h2>
         <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn ? "Here's a quick overview of your new superpowers" : "Voici un aperçu de vos nouveaux super pouvoirs"}
+          {isEn
+            ? "Here's a quick overview of your new superpowers"
+            : 'Voici un aperçu de vos nouveaux super pouvoirs'}
         </p>
       </div>
 
       <div className="space-y-4 mb-8">
         {features.map((feature, idx) => (
-          <div 
+          <div
             key={idx}
             className="p-5 rounded-xl flex items-start gap-4"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))'
+              border: '1px solid rgb(var(--color-border))',
             }}
           >
-            <div 
+            <div
               className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
             >
-              <feature.icon className="w-6 h-6" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <feature.icon
+                className="w-6 h-6"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              />
             </div>
             <div>
               <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
@@ -841,11 +905,21 @@ function TourStep({
 }
 
 // Step: Complete - Save onboarding data and launch dashboard
-function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish: () => void; user: { email?: string; name?: string; firstName?: string; lastName?: string } | null }) {
+function CompleteStep({
+  data,
+  onFinish,
+  user,
+}: {
+  data: OnboardingData;
+  onFinish: () => void;
+  user: { email?: string; name?: string; firstName?: string; lastName?: string } | null;
+}) {
   const { language } = useI18n();
   const isEn = language === 'en';
   const [isValidating, setIsValidating] = useState(false);
-  const [validationStep, setValidationStep] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [validationStep, setValidationStep] = useState<'idle' | 'saving' | 'success' | 'error'>(
+    'idle',
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFinish = async () => {
@@ -880,28 +954,30 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
 
       // Success - redirect to app
       setValidationStep('success');
-      
+
       // Brief delay to show success state before redirecting
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       onFinish();
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       setValidationStep('error');
-      
+
       if (error instanceof Error) {
         if (error.message.includes('network') || error.message.includes('fetch')) {
-          setErrorMessage(isEn 
-            ? 'Network error. Please check your connection and try again.'
-            : 'Erreur réseau. Veuillez vérifier votre connexion et réessayer.'
+          setErrorMessage(
+            isEn
+              ? 'Network error. Please check your connection and try again.'
+              : 'Erreur réseau. Veuillez vérifier votre connexion et réessayer.',
           );
         } else {
           setErrorMessage(error.message);
         }
       } else {
-        setErrorMessage(isEn 
-          ? 'An unexpected error occurred. Please try again.'
-          : 'Une erreur inattendue s\'est produite. Veuillez réessayer.'
+        setErrorMessage(
+          isEn
+            ? 'An unexpected error occurred. Please try again.'
+            : "Une erreur inattendue s'est produite. Veuillez réessayer.",
         );
       }
     } finally {
@@ -917,61 +993,93 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
       <div className="text-center max-w-md mx-auto">
         <div className="mb-8">
           {validationStep === 'success' ? (
-            <div 
+            <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
             >
               <Check className="w-10 h-10" style={{ color: 'rgb(var(--color-success))' }} />
             </div>
           ) : (
-            <div 
+            <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
               style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
             >
-              <Loader2 className="w-10 h-10 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Loader2
+                className="w-10 h-10 animate-spin"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              />
             </div>
           )}
-          
+
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {validationStep === 'success' 
-              ? (isEn ? 'Setup Complete!' : 'Configuration terminée!')
-              : (isEn ? 'Setting up your workspace...' : 'Configuration de votre espace...')
-            }
+            {validationStep === 'success'
+              ? isEn
+                ? 'Setup Complete!'
+                : 'Configuration terminée!'
+              : isEn
+                ? 'Setting up your workspace...'
+                : 'Configuration de votre espace...'}
           </h2>
-          
+
           <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {validationStep === 'saving' && (isEn ? 'Configuring your workspace...' : 'Configuration de votre espace...')}
-            {validationStep === 'success' && (isEn ? 'Redirecting to your dashboard...' : 'Redirection vers votre tableau de bord...')}
+            {validationStep === 'saving' &&
+              (isEn ? 'Configuring your workspace...' : 'Configuration de votre espace...')}
+            {validationStep === 'success' &&
+              (isEn
+                ? 'Redirecting to your dashboard...'
+                : 'Redirection vers votre tableau de bord...')}
           </p>
         </div>
 
         {/* Progress steps */}
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+          <div
+            className="flex items-center gap-3 p-3 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
             <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
             <span style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Account verified' : 'Compte vérifié'}
             </span>
           </div>
-          
-          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+
+          <div
+            className="flex items-center gap-3 p-3 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
             {validationStep === 'saving' ? (
-              <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'rgb(var(--color-primary-500))' }} />
+              <Loader2
+                className="w-5 h-5 animate-spin"
+                style={{ color: 'rgb(var(--color-primary-500))' }}
+              />
             ) : (
               <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
             )}
             <span style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Configuring workspace' : 'Configuration de l\'espace'}
+              {isEn ? 'Configuring workspace' : "Configuration de l'espace"}
             </span>
           </div>
-          
-          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
+
+          <div
+            className="flex items-center gap-3 p-3 rounded-lg"
+            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+          >
             {validationStep === 'success' ? (
               <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
             ) : (
-              <div className="w-5 h-5 rounded-full border-2" style={{ borderColor: 'rgb(var(--color-border))' }} />
+              <div
+                className="w-5 h-5 rounded-full border-2"
+                style={{ borderColor: 'rgb(var(--color-border))' }}
+              />
             )}
-            <span style={{ color: validationStep === 'success' ? 'rgb(var(--color-text))' : 'rgb(var(--color-text-muted))' }}>
+            <span
+              style={{
+                color:
+                  validationStep === 'success'
+                    ? 'rgb(var(--color-text))'
+                    : 'rgb(var(--color-text-muted))',
+              }}
+            >
               {isEn ? 'Launching dashboard' : 'Lancement du tableau de bord'}
             </span>
           </div>
@@ -985,43 +1093,35 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
     return (
       <div className="text-center max-w-md mx-auto">
         <div className="mb-8">
-          <div 
+          <div
             className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
             style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
           >
             <AlertTriangle className="w-10 h-10" style={{ color: 'rgb(var(--color-error))' }} />
           </div>
-          
+
           <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'Setup Failed' : 'Échec de la configuration'}
           </h2>
-          
-          <div 
+
+          <div
             className="p-4 rounded-xl mb-6"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-error) / 0.1)',
-              border: '1px solid rgb(var(--color-error) / 0.2)'
+              border: '1px solid rgb(var(--color-error) / 0.2)',
             }}
           >
-            <p style={{ color: 'rgb(var(--color-error))' }}>
-              {errorMessage}
-            </p>
+            <p style={{ color: 'rgb(var(--color-error))' }}>{errorMessage}</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-3">
-          <button 
-            onClick={handleFinish} 
-            className="btn-primary"
-          >
+          <button onClick={handleFinish} className="btn-primary">
             {isEn ? 'Try Again' : 'Réessayer'}
             <ArrowRight className="w-5 h-5" />
           </button>
-          
-          <button 
-            onClick={onFinish}
-            className="btn-secondary"
-          >
+
+          <button onClick={onFinish} className="btn-secondary">
             {isEn ? 'Skip and continue' : 'Passer et continuer'}
           </button>
         </div>
@@ -1033,33 +1133,33 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
   return (
     <div className="text-center max-w-xl mx-auto">
       <div className="mb-8">
-        <div 
+        <div
           className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
           style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
         >
           <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
         </div>
         <h1 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? "You're all set!" : "Vous êtes prêt!"}
+          {isEn ? "You're all set!" : 'Vous êtes prêt!'}
         </h1>
         <p className="text-lg mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn 
+          {isEn
             ? `Let's launch ${data.companyName}'s dashboard.`
             : `Lançons le tableau de bord de ${data.companyName}.`}
         </p>
         <p className="text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
-          {isEn 
+          {isEn
             ? 'Our clients save an average of $847K/year. Start seeing your ROI today.'
-            : 'Nos clients économisent en moyenne 847 000$/an. Commencez à voir votre ROI dès aujourd\'hui.'}
+            : "Nos clients économisent en moyenne 847 000$/an. Commencez à voir votre ROI dès aujourd'hui."}
         </p>
       </div>
-      
+
       {/* Account info */}
-      <div 
+      <div
         className="mb-6 p-4 rounded-xl text-left"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
-          border: '1px solid rgb(var(--color-primary-500) / 0.2)'
+          border: '1px solid rgb(var(--color-primary-500) / 0.2)',
         }}
       >
         <div className="flex items-center gap-3 mb-2">
@@ -1078,9 +1178,13 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
             </p>
           )}
           <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            <span className="font-medium">{isEn ? 'Organization:' : 'Organisation:'}</span> {data.companyName}
+            <span className="font-medium">{isEn ? 'Organization:' : 'Organisation:'}</span>{' '}
+            {data.companyName}
           </p>
-          <p className="text-sm flex items-center gap-1" style={{ color: 'rgb(var(--color-success))' }}>
+          <p
+            className="text-sm flex items-center gap-1"
+            style={{ color: 'rgb(var(--color-success))' }}
+          >
             <Check className="w-3.5 h-3.5" />
             {isEn ? 'Account verified' : 'Compte vérifié'}
           </p>
@@ -1088,7 +1192,7 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
       </div>
 
       {/* Summary */}
-      <div 
+      <div
         className="p-4 rounded-xl text-left mb-8"
         style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
       >
@@ -1112,17 +1216,16 @@ function CompleteStep({ data, onFinish, user }: { data: OnboardingData; onFinish
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
               <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? `${data.teamEmails.length} team member(s) invited` : `${data.teamEmails.length} membre(s) invité(s)`}
+                {isEn
+                  ? `${data.teamEmails.length} team member(s) invited`
+                  : `${data.teamEmails.length} membre(s) invité(s)`}
               </span>
             </div>
           )}
         </div>
       </div>
 
-      <button 
-        onClick={handleFinish} 
-        className="btn-primary btn-lg"
-      >
+      <button onClick={handleFinish} className="btn-primary btn-lg">
         {isEn ? 'Launch Dashboard' : 'Lancer le tableau de bord'}
         <ArrowRight className="w-5 h-5" />
       </button>
@@ -1139,7 +1242,7 @@ export default function Onboarding() {
   const { user } = useAuth();
   const { language } = useI18n();
   const isEn = language === 'en';
-  
+
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('company_info');
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [startTime] = useState(Date.now());
@@ -1163,7 +1266,7 @@ export default function Onboarding() {
   }, [user?.email]);
 
   const updateData = useCallback((newData: Partial<OnboardingData>) => {
-    setData(prev => {
+    setData((prev) => {
       const updated = { ...prev, ...newData };
       // Save to localStorage for FinancialModel to access
       try {
@@ -1175,13 +1278,16 @@ export default function Onboarding() {
     });
   }, []);
 
-  const goToStep = useCallback((step: OnboardingStep) => {
-    analytics.trackOnboardingStep(currentStep, 'completed');
-    if (user?.email) {
-      crmService.trackOnboardingProgress(user.email, currentStep, true);
-    }
-    setCurrentStep(step);
-  }, [currentStep, user?.email]);
+  const goToStep = useCallback(
+    (step: OnboardingStep) => {
+      analytics.trackOnboardingStep(currentStep, 'completed');
+      if (user?.email) {
+        crmService.trackOnboardingProgress(user.email, currentStep, true);
+      }
+      setCurrentStep(step);
+    },
+    [currentStep, user?.email],
+  );
 
   const goNext = useCallback(() => {
     const nextIndex = currentIndex + 1;
@@ -1199,7 +1305,7 @@ export default function Onboarding() {
 
   const handleFinish = useCallback(async () => {
     const totalTime = Math.floor((Date.now() - startTime) / 1000);
-    
+
     // Track completion
     analytics.trackOnboardingCompleted({
       totalTime,
@@ -1225,42 +1331,101 @@ export default function Onboarding() {
   }, [data, navigate, startTime, steps.length, user?.email]);
 
   // Progress indicator
-  const progress = ((currentIndex) / (steps.length - 1)) * 100;
+  const progress = (currentIndex / (steps.length - 1)) * 100;
 
   return (
-    <div 
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'rgb(var(--color-bg))' }}
-    >
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
       {/* Header */}
-      <header 
+      <header
         className="sticky top-0 z-50 border-b backdrop-blur-md"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-bg) / 0.95)',
-          borderColor: 'rgb(var(--color-border))'
+          borderColor: 'rgb(var(--color-border))',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-                style={{ 
-                  background: 'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                  boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.25)'
-                }}
-              >
-                <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white"/>
-                  <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white"/>
+              <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-105">
+                <svg
+                  className="w-8 h-8"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="5"
+                    y="5"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="13"
+                    y="5"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="21"
+                    y="5"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="5"
+                    y="13"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="13"
+                    y="13"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="21"
+                    y="13"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="5"
+                    y="21"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="13"
+                    y="21"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
+                  <rect
+                    x="21"
+                    y="21"
+                    width="6"
+                    height="6"
+                    rx="1.3"
+                    fill="rgb(var(--color-primary-500))"
+                  />
                 </svg>
               </div>
               <span className="font-semibold text-lg" style={{ color: 'rgb(var(--color-text))' }}>
@@ -1270,41 +1435,41 @@ export default function Onboarding() {
 
             {/* Desktop Nav - opens in new tab to preserve onboarding progress */}
             <nav className="hidden md:flex items-center gap-6">
-              <a 
-                href="/#features" 
-                target="_blank" 
+              <a
+                href="/#features"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group"
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
                 {isEn ? 'Features' : 'Fonctionnalités'}
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
-              <a 
-                href="/#pricing" 
-                target="_blank" 
+              <a
+                href="/#pricing"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group"
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
                 {isEn ? 'Pricing' : 'Tarifs'}
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
-              <a 
-                href="/#industry-kpis" 
-                target="_blank" 
+              <a
+                href="/#industry-kpis"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group"
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
                 {isEn ? 'Industries' : 'Industries'}
                 <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
               </a>
-              <a 
-                href="/#testimonials" 
-                target="_blank" 
+              <a
+                href="/#testimonials"
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group" 
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1 group"
                 style={{ color: 'rgb(var(--color-text-secondary))' }}
               >
                 {isEn ? 'Testimonials' : 'Témoignages'}
@@ -1318,23 +1483,28 @@ export default function Onboarding() {
               {currentStep !== 'complete' && (
                 <div className="hidden lg:flex items-center gap-3 mr-2">
                   <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                    {isEn ? `Step ${currentIndex + 1} of ${steps.length - 1}` : `Étape ${currentIndex + 1} sur ${steps.length - 1}`}
+                    {isEn
+                      ? `Step ${currentIndex + 1} of ${steps.length - 1}`
+                      : `Étape ${currentIndex + 1} sur ${steps.length - 1}`}
                   </span>
-                  <div className="w-24 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                    <div 
+                  <div
+                    className="w-24 h-2 rounded-full"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                  >
+                    <div
                       className="h-full rounded-full transition-all duration-300"
-                      style={{ 
+                      style={{
                         width: `${progress}%`,
-                        backgroundColor: 'rgb(var(--color-primary-500))'
+                        backgroundColor: 'rgb(var(--color-primary-500))',
                       }}
                     />
                   </div>
                 </div>
               )}
-              
+
               <ThemeToggle />
               <LanguageToggle />
-              
+
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1348,56 +1518,67 @@ export default function Onboarding() {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+            <div
+              className="md:hidden py-4 border-t"
+              style={{ borderColor: 'rgb(var(--color-border))' }}
+            >
               <nav className="flex flex-col gap-3">
-                <a 
-                  href="/#features" 
-                  target="_blank" 
+                <a
+                  href="/#features"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium py-2" 
+                  className="text-sm font-medium py-2"
                   style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
                   {isEn ? 'Features' : 'Fonctionnalités'}
                 </a>
-                <a 
-                  href="/#pricing" 
-                  target="_blank" 
+                <a
+                  href="/#pricing"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium py-2" 
+                  className="text-sm font-medium py-2"
                   style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
                   {isEn ? 'Pricing' : 'Tarifs'}
                 </a>
-                <a 
-                  href="/#industry-kpis" 
-                  target="_blank" 
+                <a
+                  href="/#industry-kpis"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium py-2" 
+                  className="text-sm font-medium py-2"
                   style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
                   {isEn ? 'Industries' : 'Industries'}
                 </a>
-                <a 
-                  href="/#testimonials" 
-                  target="_blank" 
+                <a
+                  href="/#testimonials"
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm font-medium py-2" 
+                  className="text-sm font-medium py-2"
                   style={{ color: 'rgb(var(--color-text-secondary))' }}
                 >
                   {isEn ? 'Testimonials' : 'Témoignages'}
                 </a>
                 {/* Progress indicator (mobile) */}
                 {currentStep !== 'complete' && (
-                  <div className="flex items-center gap-3 pt-3 border-t" style={{ borderColor: 'rgb(var(--color-border))' }}>
+                  <div
+                    className="flex items-center gap-3 pt-3 border-t"
+                    style={{ borderColor: 'rgb(var(--color-border))' }}
+                  >
                     <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                      {isEn ? `Step ${currentIndex + 1} of ${steps.length - 1}` : `Étape ${currentIndex + 1} sur ${steps.length - 1}`}
+                      {isEn
+                        ? `Step ${currentIndex + 1} of ${steps.length - 1}`
+                        : `Étape ${currentIndex + 1} sur ${steps.length - 1}`}
                     </span>
-                    <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}>
-                      <div 
+                    <div
+                      className="flex-1 h-2 rounded-full"
+                      style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
+                    >
+                      <div
                         className="h-full rounded-full transition-all duration-300"
-                        style={{ 
+                        style={{
                           width: `${progress}%`,
-                          backgroundColor: 'rgb(var(--color-primary-500))'
+                          backgroundColor: 'rgb(var(--color-primary-500))',
                         }}
                       />
                     </div>
@@ -1428,9 +1609,9 @@ export default function Onboarding() {
       {/* Footer */}
       <footer className="py-4 px-6 text-center">
         <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn 
+          {isEn
             ? 'Need help? Contact support@plainledger.ca'
-            : 'Besoin d\'aide ? Contactez support@plainledger.ca'}
+            : "Besoin d'aide ? Contactez support@plainledger.ca"}
         </p>
       </footer>
     </div>

@@ -1,6 +1,6 @@
 /**
  * CalculatedFieldBuilder - Advanced formula editor for calculated fields
- * 
+ *
  * Best-in-class features inspired by Looker LookML and Power BI DAX:
  * - Syntax-highlighted formula editor
  * - Field reference autocomplete
@@ -206,7 +206,7 @@ const FORMULA_FUNCTIONS: FormulaFunction[] = [
     category: 'date',
     syntax: 'YEAR(date)',
     descriptionEn: 'Extract year from date',
-    descriptionFr: 'Extraire l\'année de la date',
+    descriptionFr: "Extraire l'année de la date",
     exampleEn: 'YEAR(transaction_date)',
     exampleFr: 'YEAR(date_transaction)',
     returnType: 'NUMBER',
@@ -315,8 +315,21 @@ const FORMULA_FUNCTIONS: FormulaFunction[] = [
   },
 ];
 
-const CATEGORY_INFO: Record<string, { icon: React.ComponentType<{ className?: string }>; labelEn: string; labelFr: string; color: string }> = {
-  aggregate: { icon: Sigma, labelEn: 'Aggregate', labelFr: 'Agrégation', color: 'rgb(var(--color-primary-500))' },
+const CATEGORY_INFO: Record<
+  string,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    labelEn: string;
+    labelFr: string;
+    color: string;
+  }
+> = {
+  aggregate: {
+    icon: Sigma,
+    labelEn: 'Aggregate',
+    labelFr: 'Agrégation',
+    color: 'rgb(var(--color-primary-500))',
+  },
   math: { icon: Calculator, labelEn: 'Math', labelFr: 'Math', color: '#3B82F6' },
   string: { icon: Type, labelEn: 'Text', labelFr: 'Texte', color: '#8B5CF6' },
   date: { icon: Calendar, labelEn: 'Date', labelFr: 'Date', color: '#F59E0B' },
@@ -336,9 +349,9 @@ interface ValidationResult {
 }
 
 function validateFormula(
-  formula: string, 
+  formula: string,
   availableFields: string[],
-  isEn: boolean
+  isEn: boolean,
 ): ValidationResult {
   const result: ValidationResult = {
     isValid: true,
@@ -375,7 +388,7 @@ function validateFormula(
   let match;
   while ((match = functionPattern.exec(formula)) !== null) {
     const funcName = match[1];
-    const knownFunc = FORMULA_FUNCTIONS.find(f => f.name === funcName);
+    const knownFunc = FORMULA_FUNCTIONS.find((f) => f.name === funcName);
     if (!knownFunc) {
       result.errors.push({
         message: isEn ? `Unknown function: ${funcName}` : `Fonction inconnue: ${funcName}`,
@@ -429,82 +442,91 @@ function FormulaEditor({ value, onChange, availableFields, validation, isEn }: F
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Handle input and detect autocomplete triggers
-  const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
+  const handleInput = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      onChange(newValue);
 
-    // Check for field reference trigger
-    const cursorPos = e.target.selectionStart;
-    const textBeforeCursor = newValue.slice(0, cursorPos);
-    const fieldMatch = textBeforeCursor.match(/\$\{([^}]*)$/);
+      // Check for field reference trigger
+      const cursorPos = e.target.selectionStart;
+      const textBeforeCursor = newValue.slice(0, cursorPos);
+      const fieldMatch = textBeforeCursor.match(/\$\{([^}]*)$/);
 
-    if (fieldMatch) {
-      const searchTerm = fieldMatch[1].toLowerCase();
-      const matches = availableFields.filter(f => 
-        f.name.toLowerCase().includes(searchTerm) ||
-        f.id.toLowerCase().includes(searchTerm)
-      );
-      setAutocompleteItems(matches);
-      setShowAutocomplete(matches.length > 0);
-      setSelectedIndex(0);
-    } else {
-      setShowAutocomplete(false);
-    }
-  }, [onChange, availableFields]);
+      if (fieldMatch) {
+        const searchTerm = fieldMatch[1].toLowerCase();
+        const matches = availableFields.filter(
+          (f) =>
+            f.name.toLowerCase().includes(searchTerm) || f.id.toLowerCase().includes(searchTerm),
+        );
+        setAutocompleteItems(matches);
+        setShowAutocomplete(matches.length > 0);
+        setSelectedIndex(0);
+      } else {
+        setShowAutocomplete(false);
+      }
+    },
+    [onChange, availableFields],
+  );
 
   // Insert autocomplete selection
-  const insertField = useCallback((field: typeof availableFields[0]) => {
-    if (!textareaRef.current) return;
+  const insertField = useCallback(
+    (field: (typeof availableFields)[0]) => {
+      if (!textareaRef.current) return;
 
-    const cursorPos = textareaRef.current.selectionStart;
-    const textBeforeCursor = value.slice(0, cursorPos);
-    const textAfterCursor = value.slice(cursorPos);
-    
-    const fieldMatch = textBeforeCursor.match(/\$\{([^}]*)$/);
-    if (fieldMatch) {
-      const startPos = cursorPos - fieldMatch[0].length;
-      const newValue = value.slice(0, startPos) + `\${${field.id}}` + textAfterCursor;
-      onChange(newValue);
-    }
+      const cursorPos = textareaRef.current.selectionStart;
+      const textBeforeCursor = value.slice(0, cursorPos);
+      const textAfterCursor = value.slice(cursorPos);
 
-    setShowAutocomplete(false);
-    textareaRef.current.focus();
-  }, [value, onChange]);
+      const fieldMatch = textBeforeCursor.match(/\$\{([^}]*)$/);
+      if (fieldMatch) {
+        const startPos = cursorPos - fieldMatch[0].length;
+        const newValue = value.slice(0, startPos) + `\${${field.id}}` + textAfterCursor;
+        onChange(newValue);
+      }
+
+      setShowAutocomplete(false);
+      textareaRef.current.focus();
+    },
+    [value, onChange],
+  );
 
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!showAutocomplete) return;
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!showAutocomplete) return;
 
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(i => Math.min(i + 1, autocompleteItems.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(i => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
-      e.preventDefault();
-      if (autocompleteItems[selectedIndex]) {
-        insertField(autocompleteItems[selectedIndex]);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.min(i + 1, autocompleteItems.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        if (autocompleteItems[selectedIndex]) {
+          insertField(autocompleteItems[selectedIndex]);
+        }
+      } else if (e.key === 'Escape') {
+        setShowAutocomplete(false);
       }
-    } else if (e.key === 'Escape') {
-      setShowAutocomplete(false);
-    }
-  }, [showAutocomplete, autocompleteItems, selectedIndex, insertField]);
+    },
+    [showAutocomplete, autocompleteItems, selectedIndex, insertField],
+  );
 
   return (
     <div className="relative">
       {/* Editor */}
-      <div 
+      <div
         className="relative rounded-xl overflow-hidden"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-bg))',
           border: `2px solid ${validation.isValid ? 'rgb(var(--color-border))' : 'rgb(var(--color-error))'}`,
         }}
       >
         {/* Line numbers gutter */}
-        <div 
+        <div
           className="absolute left-0 top-0 bottom-0 w-10 text-right pr-2 pt-3 select-none"
-          style={{ 
+          style={{
             backgroundColor: 'rgb(var(--color-surface))',
             borderRight: '1px solid rgb(var(--color-border))',
             color: 'rgb(var(--color-text-muted))',
@@ -523,9 +545,10 @@ function FormulaEditor({ value, onChange, availableFields, validation, isEn }: F
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder={isEn 
-            ? 'Enter formula... Use ${field} to reference fields'
-            : 'Entrez la formule... Utilisez ${champ} pour référencer'
+          placeholder={
+            isEn
+              ? 'Enter formula... Use ${field} to reference fields'
+              : 'Entrez la formule... Utilisez ${champ} pour référencer'
           }
           className="w-full min-h-[150px] p-3 pl-12 font-mono text-sm resize-y focus:outline-none"
           style={{
@@ -539,7 +562,7 @@ function FormulaEditor({ value, onChange, availableFields, validation, isEn }: F
 
       {/* Autocomplete dropdown */}
       {showAutocomplete && (
-        <div 
+        <div
           className="absolute z-30 mt-1 w-64 max-h-48 overflow-y-auto rounded-xl shadow-lg"
           style={{
             backgroundColor: 'rgb(var(--color-surface))',
@@ -559,10 +582,7 @@ function FormulaEditor({ value, onChange, availableFields, validation, isEn }: F
               <Hash className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
               <div>
                 <div style={{ color: 'rgb(var(--color-text))' }}>{field.name}</div>
-                <div 
-                  className="text-xs"
-                  style={{ color: 'rgb(var(--color-text-muted))' }}
-                >
+                <div className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
                   {field.id}
                 </div>
               </div>
@@ -606,18 +626,20 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedFunc, setExpandedFunc] = useState<string | null>(null);
 
-  const categories = useMemo(() => 
-    Object.entries(CATEGORY_INFO).map(([key, info]) => ({
-      key,
-      ...info,
-      count: FORMULA_FUNCTIONS.filter(f => f.category === key).length,
-    })),
-    []
+  const categories = useMemo(
+    () =>
+      Object.entries(CATEGORY_INFO).map(([key, info]) => ({
+        key,
+        ...info,
+        count: FORMULA_FUNCTIONS.filter((f) => f.category === key).length,
+      })),
+    [],
   );
 
   const filteredFunctions = useMemo(() => {
-    return FORMULA_FUNCTIONS.filter(f => {
-      const matchesSearch = !search || 
+    return FORMULA_FUNCTIONS.filter((f) => {
+      const matchesSearch =
+        !search ||
         f.name.toLowerCase().includes(search.toLowerCase()) ||
         (isEn ? f.descriptionEn : f.descriptionFr).toLowerCase().includes(search.toLowerCase());
       const matchesCategory = !selectedCategory || f.category === selectedCategory;
@@ -629,7 +651,7 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
     <div className="space-y-4">
       {/* Search */}
       <div className="relative">
-        <Search 
+        <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
           style={{ color: 'rgb(var(--color-text-muted))' }}
         />
@@ -653,13 +675,13 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
           onClick={() => setSelectedCategory(null)}
           className={`
             px-3 py-1.5 rounded-full text-xs font-medium transition-all
-            ${!selectedCategory ? 'bg-primary-500 text-white' : 'bg-gray-700/50'}
+            ${!selectedCategory ? 'bg-primary-500/10 text-primary-500 border border-primary-500/30' : 'bg-gray-700/50'}
           `}
           style={selectedCategory ? { color: 'rgb(var(--color-text-muted))' } : undefined}
         >
           {isEn ? 'All' : 'Tous'}
         </button>
-        {categories.map(cat => {
+        {categories.map((cat) => {
           const Icon = cat.icon;
           return (
             <button
@@ -683,16 +705,16 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
       </div>
 
       {/* Function list */}
-      <div 
+      <div
         className="max-h-64 overflow-y-auto rounded-xl"
         style={{ backgroundColor: 'rgb(var(--color-surface))' }}
       >
-        {filteredFunctions.map(func => {
+        {filteredFunctions.map((func) => {
           const catInfo = CATEGORY_INFO[func.category];
           const isExpanded = expandedFunc === func.name;
 
           return (
-            <div 
+            <div
               key={func.name}
               className="border-b last:border-b-0"
               style={{ borderColor: 'rgb(var(--color-border))' }}
@@ -701,7 +723,7 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
                 onClick={() => setExpandedFunc(isExpanded ? null : func.name)}
                 className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-700/30"
               >
-                <div 
+                <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center"
                   style={{ backgroundColor: `${catInfo.color}20` }}
                 >
@@ -709,15 +731,15 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span 
+                    <span
                       className="font-mono font-semibold"
                       style={{ color: 'rgb(var(--color-text))' }}
                     >
                       {func.name}
                     </span>
-                    <span 
+                    <span
                       className="text-xs px-2 py-0.5 rounded"
-                      style={{ 
+                      style={{
                         backgroundColor: `${catInfo.color}20`,
                         color: catInfo.color,
                       }}
@@ -725,35 +747,32 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
                       {isEn ? catInfo.labelEn : catInfo.labelFr}
                     </span>
                   </div>
-                  <p 
-                    className="text-xs mt-0.5"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  >
+                  <p className="text-xs mt-0.5" style={{ color: 'rgb(var(--color-text-muted))' }}>
                     {isEn ? func.descriptionEn : func.descriptionFr}
                   </p>
                 </div>
-                <ChevronRight 
+                <ChevronRight
                   className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 />
               </button>
 
               {isExpanded && (
-                <div 
+                <div
                   className="px-4 pb-3 ml-11"
                   style={{ backgroundColor: 'rgb(var(--color-bg) / 0.5)' }}
                 >
                   <div className="space-y-2">
                     <div>
-                      <span 
+                      <span
                         className="text-xs font-medium"
                         style={{ color: 'rgb(var(--color-text-muted))' }}
                       >
                         {isEn ? 'Syntax:' : 'Syntaxe:'}
                       </span>
-                      <code 
+                      <code
                         className="block mt-1 px-2 py-1 rounded text-sm font-mono"
-                        style={{ 
+                        style={{
                           backgroundColor: 'rgb(var(--color-surface))',
                           color: 'rgb(var(--color-primary-500))',
                         }}
@@ -762,15 +781,15 @@ function FunctionBrowser({ onInsert, isEn }: FunctionBrowserProps) {
                       </code>
                     </div>
                     <div>
-                      <span 
+                      <span
                         className="text-xs font-medium"
                         style={{ color: 'rgb(var(--color-text-muted))' }}
                       >
                         {isEn ? 'Example:' : 'Exemple:'}
                       </span>
-                      <code 
+                      <code
                         className="block mt-1 px-2 py-1 rounded text-sm font-mono"
-                        style={{ 
+                        style={{
                           backgroundColor: 'rgb(var(--color-surface))',
                           color: 'rgb(var(--color-text))',
                         }}
@@ -812,24 +831,37 @@ interface CalculatedFieldEditorProps {
   isEn: boolean;
 }
 
-function CalculatedFieldEditor({ field, sources, onUpdate, onRemove, isEn }: CalculatedFieldEditorProps) {
+function CalculatedFieldEditor({
+  field,
+  sources,
+  onUpdate,
+  onRemove,
+  isEn,
+}: CalculatedFieldEditorProps) {
   const [showFunctionBrowser, setShowFunctionBrowser] = useState(false);
 
   // Get all available fields from sources
   const availableFields = useMemo(() => {
-    return sources.flatMap(s => {
+    return sources.flatMap((s) => {
       const source = getDataSource(s.id);
-      return source?.fields.map(f => ({
-        id: `${s.id}.${f.id}`,
-        name: isEn ? f.nameEn : f.name,
-        sourceId: s.id,
-      })) || [];
+      return (
+        source?.fields.map((f) => ({
+          id: `${s.id}.${f.id}`,
+          name: isEn ? f.nameEn : f.name,
+          sourceId: s.id,
+        })) || []
+      );
     });
   }, [sources, isEn]);
 
-  const validation = useMemo(() => 
-    validateFormula(field.formula, availableFields.map(f => f.id), isEn),
-    [field.formula, availableFields, isEn]
+  const validation = useMemo(
+    () =>
+      validateFormula(
+        field.formula,
+        availableFields.map((f) => f.id),
+        isEn,
+      ),
+    [field.formula, availableFields, isEn],
   );
 
   const insertFunction = (func: FormulaFunction) => {
@@ -839,9 +871,9 @@ function CalculatedFieldEditor({ field, sources, onUpdate, onRemove, isEn }: Cal
   };
 
   return (
-    <div 
+    <div
       className="p-4 rounded-xl border"
-      style={{ 
+      style={{
         backgroundColor: 'rgb(var(--color-surface))',
         borderColor: validation.isValid ? 'rgb(var(--color-border))' : 'rgb(var(--color-error))',
       }}
@@ -849,7 +881,7 @@ function CalculatedFieldEditor({ field, sources, onUpdate, onRemove, isEn }: Cal
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div 
+          <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.2)' }}
           >
@@ -858,8 +890,10 @@ function CalculatedFieldEditor({ field, sources, onUpdate, onRemove, isEn }: Cal
           <div className="flex-1">
             <input
               type="text"
-              value={isEn ? (field.nameEn || '') : (field.name || '')}
-              onChange={(e) => onUpdate(isEn ? { nameEn: e.target.value } : { name: e.target.value })}
+              value={isEn ? field.nameEn || '' : field.name || ''}
+              onChange={(e) =>
+                onUpdate(isEn ? { nameEn: e.target.value } : { name: e.target.value })
+              }
               placeholder={isEn ? 'Field name...' : 'Nom du champ...'}
               className="font-medium bg-transparent border-none outline-none"
               style={{ color: 'rgb(var(--color-text))' }}
@@ -896,12 +930,10 @@ function CalculatedFieldEditor({ field, sources, onUpdate, onRemove, isEn }: Cal
           onClick={() => setShowFunctionBrowser(!showFunctionBrowser)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
           style={{
-            backgroundColor: showFunctionBrowser 
-              ? 'rgb(var(--color-primary-500))' 
+            backgroundColor: showFunctionBrowser
+              ? 'rgb(var(--color-primary-500))'
               : 'rgb(var(--color-bg))',
-            color: showFunctionBrowser 
-              ? 'white' 
-              : 'rgb(var(--color-text-muted))',
+            color: showFunctionBrowser ? 'white' : 'rgb(var(--color-text-muted))',
           }}
         >
           <FunctionIcon className="w-3 h-3" />
@@ -911,9 +943,9 @@ function CalculatedFieldEditor({ field, sources, onUpdate, onRemove, isEn }: Cal
         <div className="flex-1" />
 
         {validation.inferredType && (
-          <span 
+          <span
             className="text-xs px-2 py-1 rounded"
-            style={{ 
+            style={{
               backgroundColor: 'rgb(var(--color-bg))',
               color: 'rgb(var(--color-text-muted))',
             }}
@@ -943,7 +975,11 @@ interface CalculatedFieldBuilderProps {
   onFieldsChange: (fields: CalculatedField[]) => void;
 }
 
-export function CalculatedFieldBuilder({ sources, calculatedFields, onFieldsChange }: CalculatedFieldBuilderProps) {
+export function CalculatedFieldBuilder({
+  sources,
+  calculatedFields,
+  onFieldsChange,
+}: CalculatedFieldBuilderProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
 
@@ -959,13 +995,11 @@ export function CalculatedFieldBuilder({ sources, calculatedFields, onFieldsChan
   };
 
   const updateField = (id: string, updates: Partial<CalculatedField>) => {
-    onFieldsChange(
-      calculatedFields.map(f => f.id === id ? { ...f, ...updates } : f)
-    );
+    onFieldsChange(calculatedFields.map((f) => (f.id === id ? { ...f, ...updates } : f)));
   };
 
   const removeField = (id: string) => {
-    onFieldsChange(calculatedFields.filter(f => f.id !== id));
+    onFieldsChange(calculatedFields.filter((f) => f.id !== id));
   };
 
   return (
@@ -973,18 +1007,15 @@ export function CalculatedFieldBuilder({ sources, calculatedFields, onFieldsChan
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 
+          <h3
             className="text-lg font-semibold flex items-center gap-2"
             style={{ color: 'rgb(var(--color-text))' }}
           >
             <Calculator className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
             {isEn ? 'Calculated Fields' : 'Champs calculés'}
           </h3>
-          <p 
-            className="text-sm mt-1"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            {isEn 
+          <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn
               ? 'Create custom metrics using formulas'
               : 'Créez des métriques personnalisées avec des formules'}
           </p>
@@ -1005,7 +1036,7 @@ export function CalculatedFieldBuilder({ sources, calculatedFields, onFieldsChan
       {/* Calculated Fields List */}
       {calculatedFields.length > 0 ? (
         <div className="space-y-4">
-          {calculatedFields.map(field => (
+          {calculatedFields.map((field) => (
             <CalculatedFieldEditor
               key={field.id}
               field={field}
@@ -1017,25 +1048,19 @@ export function CalculatedFieldBuilder({ sources, calculatedFields, onFieldsChan
           ))}
         </div>
       ) : (
-        <div 
+        <div
           className="text-center py-12 rounded-xl border-2 border-dashed"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Calculator 
+          <Calculator
             className="w-12 h-12 mx-auto mb-3 opacity-30"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           />
-          <p 
-            className="text-sm mb-2"
-            style={{ color: 'rgb(var(--color-text))' }}
-          >
+          <p className="text-sm mb-2" style={{ color: 'rgb(var(--color-text))' }}>
             {isEn ? 'No calculated fields' : 'Aucun champ calculé'}
           </p>
-          <p 
-            className="text-xs mb-4"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            {isEn 
+          <p className="text-xs mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn
               ? 'Create custom metrics like profit margin, growth rates, and more'
               : 'Créez des métriques comme la marge bénéficiaire, les taux de croissance, etc.'}
           </p>
@@ -1054,23 +1079,38 @@ export function CalculatedFieldBuilder({ sources, calculatedFields, onFieldsChan
       )}
 
       {/* Tips */}
-      <div 
+      <div
         className="flex items-start gap-2 p-3 rounded-lg text-xs"
-        style={{ 
+        style={{
           backgroundColor: 'rgb(var(--color-accent-500) / 0.1)',
           border: '1px solid rgb(var(--color-accent-500) / 0.3)',
         }}
       >
-        <Lightbulb 
+        <Lightbulb
           className="w-4 h-4 flex-shrink-0 mt-0.5"
           style={{ color: 'rgb(var(--color-accent-500))' }}
         />
         <div style={{ color: 'rgb(var(--color-text))' }}>
           <strong>{isEn ? 'Pro Tips:' : 'Conseils:'}</strong>
-          <ul className="mt-1 space-y-0.5 list-disc list-inside" style={{ color: 'rgb(var(--color-text-muted))' }}>
-            <li>{isEn ? 'Use ${field_name} to reference fields' : 'Utilisez ${nom_champ} pour référencer les champs'}</li>
-            <li>{isEn ? 'Combine aggregates: SUM(${amount}) / COUNT(${id})' : 'Combinez les agrégats: SUM(${montant}) / COUNT(${id})'}</li>
-            <li>{isEn ? 'Use IF() for conditional calculations' : 'Utilisez IF() pour les calculs conditionnels'}</li>
+          <ul
+            className="mt-1 space-y-0.5 list-disc list-inside"
+            style={{ color: 'rgb(var(--color-text-muted))' }}
+          >
+            <li>
+              {isEn
+                ? 'Use ${field_name} to reference fields'
+                : 'Utilisez ${nom_champ} pour référencer les champs'}
+            </li>
+            <li>
+              {isEn
+                ? 'Combine aggregates: SUM(${amount}) / COUNT(${id})'
+                : 'Combinez les agrégats: SUM(${montant}) / COUNT(${id})'}
+            </li>
+            <li>
+              {isEn
+                ? 'Use IF() for conditional calculations'
+                : 'Utilisez IF() pour les calculs conditionnels'}
+            </li>
           </ul>
         </div>
       </div>

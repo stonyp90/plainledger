@@ -86,7 +86,7 @@ export default function APIDocsPage() {
             </a>
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="flex items-center gap-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-white text-sm transition-colors"
+              className="flex items-center gap-2 px-3 py-2 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded-lg text-primary-400 text-sm transition-colors"
             >
               {isFullscreen ? (
                 <>

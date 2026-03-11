@@ -249,48 +249,46 @@
   }
 }
 
-/* Primary button - Emerald (main actions) */
+/* Primary button - Emerald outline (main actions) */
 .btn-primary {
   @apply btn;
-  background-color: var(--admin-primary);
-  color: #ffffff;
-  box-shadow: var(--shadow-xs);
+  background-color: transparent;
+  color: var(--admin-primary);
+  border: 1px solid color-mix(in srgb, var(--admin-primary) 40%, transparent);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--admin-primary-hover);
-  box-shadow: var(--shadow-sm);
-  color: #ffffff;
+  background-color: color-mix(in srgb, var(--admin-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--admin-primary) 70%, transparent);
+  color: var(--admin-primary);
   text-decoration: none;
 }
 
 .btn-primary:disabled {
-  background-color: var(--admin-primary);
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Accent button - Gold (premium/important CTAs) */
+/* Accent button - Gold outline (premium/important CTAs) */
 .btn-accent {
   @apply btn;
-  background-color: var(--admin-accent);
-  color: #ffffff;
-  box-shadow: var(--shadow-xs);
+  background-color: transparent;
+  color: var(--admin-accent);
+  border: 1px solid color-mix(in srgb, var(--admin-accent) 40%, transparent);
 }
 
 .btn-accent:hover:not(:disabled) {
-  background-color: var(--admin-accent-hover);
-  box-shadow: var(--shadow-sm);
-  color: #ffffff;
+  background-color: color-mix(in srgb, var(--admin-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--admin-accent) 70%, transparent);
+  color: var(--admin-accent);
 }
 
 /* Secondary button */
 .btn-secondary {
   @apply btn;
-  background-color: var(--admin-surface);
+  background-color: transparent;
   border: 1px solid var(--admin-border);
   color: var(--admin-text);
-  box-shadow: var(--shadow-xs);
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -310,30 +308,30 @@
   color: var(--admin-text);
 }
 
-/* Danger button */
+/* Danger button - outline */
 .btn-danger {
   @apply btn;
-  background-color: var(--admin-error);
-  color: #ffffff;
-  box-shadow: var(--shadow-xs);
+  background-color: transparent;
+  color: var(--admin-error);
+  border: 1px solid color-mix(in srgb, var(--admin-error) 30%, transparent);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #dc2626;
-  box-shadow: var(--shadow-sm);
+  background-color: color-mix(in srgb, var(--admin-error) 10%, transparent);
+  border-color: color-mix(in srgb, var(--admin-error) 50%, transparent);
 }
 
-/* Success button */
+/* Success button - outline */
 .btn-success {
   @apply btn;
-  background-color: var(--admin-success);
-  color: #ffffff;
-  box-shadow: var(--shadow-xs);
+  background-color: transparent;
+  color: var(--admin-success);
+  border: 1px solid color-mix(in srgb, var(--admin-success) 30%, transparent);
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: var(--admin-primary-hover);
-  box-shadow: var(--shadow-sm);
+  background-color: color-mix(in srgb, var(--admin-success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--admin-success) 50%, transparent);
 }
 
 /* Button sizes */
@@ -529,31 +527,19 @@ body {
   color: #1e293b;
 }
 
-/* Ensure buttons keep white text - these should NOT be overridden */
-[data-theme="light"] button.bg-primary-600 .text-white,
-[data-theme="light"] button.bg-primary-600.text-white,
-[data-theme="light"] a.bg-primary-600 .text-white,
-[data-theme="light"] a.bg-primary-600.text-white,
-[data-theme="light"] .btn-primary,
-[data-theme="light"] .btn-accent,
+/* Outline buttons use their semantic colors in light mode */
+[data-theme="light"] .btn-primary {
+  color: var(--admin-primary);
+}
+[data-theme="light"] .btn-accent {
+  color: var(--admin-accent);
+}
 [data-theme="light"] .btn-danger {
-  color: #ffffff !important;
+  color: var(--admin-error);
 }
 
-/* Badge/pill text should stay white on colored backgrounds */
-[data-theme="light"] .bg-green-600.text-white,
-[data-theme="light"] .bg-red-600.text-white,
-[data-theme="light"] .bg-yellow-600.text-white,
-[data-theme="light"] .bg-primary-600.text-white {
-  color: #ffffff !important;
-}
-
-/* Status badges */
-[data-theme="light"] span[class*="bg-green-"] .text-white,
-[data-theme="light"] span[class*="bg-red-"] .text-white,
-[data-theme="light"] span[class*="bg-yellow-"] .text-white {
-  color: #ffffff !important;
-}
+/* Status badges now use tinted backgrounds (bg-*-500/10) with colored text,
+   no white text overrides needed */
 
 /* ============================================
    Light Theme - Additional Component Overrides
@@ -591,6 +577,35 @@ body {
 
 [data-theme="light"] .border-primary-600\/20 {
   border-color: rgba(5, 150, 105, 0.2);
+}
+
+[data-theme="light"] .border-primary-600\/40 {
+  border-color: rgba(5, 150, 105, 0.4);
+}
+
+[data-theme="light"] .border-primary-600\/70 {
+  border-color: rgba(5, 150, 105, 0.7);
+}
+
+[data-theme="light"] .border-red-600\/40 {
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+[data-theme="light"] .border-green-600\/40 {
+  border-color: rgba(5, 150, 105, 0.4);
+}
+
+/* Outline button text colors in light mode */
+[data-theme="light"] .text-red-400 {
+  color: #dc2626; /* red-600 for light */
+}
+
+[data-theme="light"] .text-green-400 {
+  color: #059669; /* emerald-600 for light */
+}
+
+[data-theme="light"] .text-yellow-400 {
+  color: #d97706; /* amber-600 for light */
 }
 
 /* ============================================

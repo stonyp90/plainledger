@@ -128,13 +128,13 @@ export default function OnboardingPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => extendTrialMutation.mutate({ orgId: trial.id, days: 7 })}
-                            className="px-3 py-1 bg-primary-600 hover:bg-primary-700 rounded text-sm text-white"
+                            className="px-3 py-1 border border-primary-600/40 hover:bg-primary-600/10 hover:border-primary-600/70 rounded text-sm text-primary-400"
                           >
                             Extend 7d
                           </button>
                           <button
                             onClick={() => convertMutation.mutate(trial.id)}
-                            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm text-white"
+                            className="px-3 py-1 border border-green-600/40 hover:bg-green-600/10 hover:border-green-600/70 rounded text-sm text-green-400"
                           >
                             Convert
                           </button>

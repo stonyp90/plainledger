@@ -1,6 +1,6 @@
 /**
  * FilterBuilder - Filter configuration component
- * 
+ *
  * Features:
  * - Type-specific filter UI (string, number, date, boolean)
  * - AND/OR logic groups
@@ -10,13 +10,7 @@
  */
 
 import { useState } from 'react';
-import {
-  Filter,
-  Plus,
-  X,
-  ChevronDown,
-  Trash2,
-} from 'lucide-react';
+import { Filter, Plus, X, ChevronDown, Trash2 } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import {
   FilterConfig,
@@ -47,7 +41,7 @@ const OPERATOR_LABELS: Record<FilterOperator, { en: string; fr: string }> = {
   in: { en: 'in list', fr: 'dans la liste' },
   not_in: { en: 'not in list', fr: 'pas dans la liste' },
   is_null: { en: 'is empty', fr: 'est vide' },
-  is_not_null: { en: 'is not empty', fr: 'n\'est pas vide' },
+  is_not_null: { en: 'is not empty', fr: "n'est pas vide" },
 };
 
 // =====================================================
@@ -67,7 +61,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
 
   // Get current source and field
   const source = getDataSource(filter.sourceId);
-  const field = source?.fields.find(f => f.id === filter.fieldId);
+  const field = source?.fields.find((f) => f.id === filter.fieldId);
   const fieldType: FieldType = field?.type || 'STRING';
   const operators = getOperatorsForFieldType(fieldType);
 
@@ -86,10 +80,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
             type={fieldType === 'NUMBER' || fieldType === 'CURRENCY' ? 'number' : 'text'}
             value={Array.isArray(filter.value) ? filter.value[0] : ''}
             onChange={(e) => {
-              const newValue = [
-                e.target.value,
-                Array.isArray(filter.value) ? filter.value[1] : '',
-              ];
+              const newValue = [e.target.value, Array.isArray(filter.value) ? filter.value[1] : ''];
               onUpdate({ value: newValue as [number, number] });
             }}
             placeholder={isEn ? 'From' : 'De'}
@@ -105,10 +96,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
             type={fieldType === 'NUMBER' || fieldType === 'CURRENCY' ? 'number' : 'text'}
             value={Array.isArray(filter.value) ? filter.value[1] : ''}
             onChange={(e) => {
-              const newValue = [
-                Array.isArray(filter.value) ? filter.value[0] : '',
-                e.target.value,
-              ];
+              const newValue = [Array.isArray(filter.value) ? filter.value[0] : '', e.target.value];
               onUpdate({ value: newValue as [number, number] });
             }}
             placeholder={isEn ? 'To' : 'À'}
@@ -195,7 +183,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
   };
 
   return (
-    <div 
+    <div
       className="flex items-center gap-2 p-3 rounded-xl"
       style={{ backgroundColor: 'rgb(var(--color-surface))' }}
     >
@@ -211,49 +199,55 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
           }}
         >
           <span className="truncate">
-            {field 
-              ? (isEn ? field.nameEn : field.name)
-              : (isEn ? 'Select field...' : 'Sélectionner...')}
+            {field
+              ? isEn
+                ? field.nameEn
+                : field.name
+              : isEn
+                ? 'Select field...'
+                : 'Sélectionner...'}
           </span>
           <ChevronDown className="w-4 h-4 flex-shrink-0" />
         </button>
 
         {showFieldDropdown && (
-          <div 
+          <div
             className="absolute z-20 top-full left-0 mt-1 w-64 max-h-64 overflow-y-auto py-1 rounded-xl shadow-lg"
             style={{
               backgroundColor: 'rgb(var(--color-surface))',
               border: '1px solid rgb(var(--color-border))',
             }}
           >
-            {sources.map(s => {
+            {sources.map((s) => {
               const dataSource = getDataSource(s.id);
               if (!dataSource) return null;
 
               return (
                 <div key={s.id}>
-                  <div 
+                  <div
                     className="px-3 py-1.5 text-xs font-medium"
                     style={{ color: 'rgb(var(--color-text-muted))' }}
                   >
                     {dataSource.icon} {isEn ? dataSource.nameEn : dataSource.name}
                   </div>
-                  {dataSource.fields.filter(f => f.filterable).map(f => (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        onUpdate({ sourceId: s.id, fieldId: f.id, value: '' });
-                        setShowFieldDropdown(false);
-                      }}
-                      className={`
+                  {dataSource.fields
+                    .filter((f) => f.filterable)
+                    .map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() => {
+                          onUpdate({ sourceId: s.id, fieldId: f.id, value: '' });
+                          setShowFieldDropdown(false);
+                        }}
+                        className={`
                         w-full px-3 py-2 text-left text-sm hover:bg-gray-700/50
                         ${filter.fieldId === f.id && filter.sourceId === s.id ? 'bg-primary-500/10' : ''}
                       `}
-                      style={{ color: 'rgb(var(--color-text))' }}
-                    >
-                      {isEn ? f.nameEn : f.name}
-                    </button>
-                  ))}
+                        style={{ color: 'rgb(var(--color-text))' }}
+                      >
+                        {isEn ? f.nameEn : f.name}
+                      </button>
+                    ))}
                 </div>
               );
             })}
@@ -272,7 +266,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
           color: 'rgb(var(--color-text))',
         }}
       >
-        {operators.map(op => (
+        {operators.map((op) => (
           <option key={op} value={op}>
             {OPERATOR_LABELS[op][isEn ? 'en' : 'fr']}
           </option>
@@ -280,9 +274,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
       </select>
 
       {/* Value Input */}
-      <div className="flex-1">
-        {renderValueInput()}
-      </div>
+      <div className="flex-1">{renderValueInput()}</div>
 
       {/* Enable Toggle */}
       <button
@@ -300,10 +292,7 @@ function FilterRow({ filter, sources, onUpdate, onRemove, isEn }: FilterRowProps
       </button>
 
       {/* Remove Button */}
-      <button
-        onClick={onRemove}
-        className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors"
-      >
+      <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors">
         <Trash2 className="w-4 h-4 text-red-400" />
       </button>
     </div>
@@ -322,9 +311,9 @@ interface FilterBuilderProps {
   onLogicChange?: (logic: 'AND' | 'OR') => void;
 }
 
-export function FilterBuilder({ 
-  sources, 
-  filters, 
+export function FilterBuilder({
+  sources,
+  filters,
   onFiltersChange,
   filterLogic = 'AND',
   onLogicChange,
@@ -336,7 +325,7 @@ export function FilterBuilder({
   const addFilter = () => {
     const firstSource = sources[0];
     const dataSource = firstSource ? getDataSource(firstSource.id) : null;
-    const firstField = dataSource?.fields.find(f => f.filterable);
+    const firstField = dataSource?.fields.find((f) => f.filterable);
 
     const newFilter: FilterConfig = {
       id: generateId('filter'),
@@ -351,14 +340,12 @@ export function FilterBuilder({
 
   // Update filter
   const updateFilter = (id: string, updates: Partial<FilterConfig>) => {
-    onFiltersChange(
-      filters.map(f => f.id === id ? { ...f, ...updates } : f)
-    );
+    onFiltersChange(filters.map((f) => (f.id === id ? { ...f, ...updates } : f)));
   };
 
   // Remove filter
   const removeFilter = (id: string) => {
-    onFiltersChange(filters.filter(f => f.id !== id));
+    onFiltersChange(filters.filter((f) => f.id !== id));
   };
 
   // Clear all filters
@@ -373,26 +360,22 @@ export function FilterBuilder({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div 
+          <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.2)' }}
           >
             <Filter className="w-4 h-4" style={{ color: 'rgb(var(--color-primary-500))' }} />
           </div>
           <div>
-            <h4 
-              className="font-semibold"
-              style={{ color: 'rgb(var(--color-text))' }}
-            >
+            <h4 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
               {isEn ? 'Filters' : 'Filtres'}
             </h4>
-            <p 
-              className="text-xs"
-              style={{ color: 'rgb(var(--color-text-muted))' }}
-            >
-              {hasFilters 
-                ? `${filters.filter(f => f.enabled).length} ${isEn ? 'active' : 'actifs'}`
-                : (isEn ? 'No filters applied' : 'Aucun filtre appliqué')}
+            <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {hasFilters
+                ? `${filters.filter((f) => f.enabled).length} ${isEn ? 'active' : 'actifs'}`
+                : isEn
+                  ? 'No filters applied'
+                  : 'Aucun filtre appliqué'}
             </p>
           </div>
         </div>
@@ -423,20 +406,19 @@ export function FilterBuilder({
       {/* Logic Toggle */}
       {filters.length > 1 && onLogicChange && (
         <div className="flex items-center gap-2">
-          <span 
-            className="text-sm"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
+          <span className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {isEn ? 'Match' : 'Correspondre à'}
           </span>
-          <div 
+          <div
             className="flex rounded-lg overflow-hidden"
             style={{ backgroundColor: 'rgb(var(--color-bg))' }}
           >
             <button
               onClick={() => onLogicChange('AND')}
               className={`px-3 py-1.5 text-sm font-medium transition-all ${
-                filterLogic === 'AND' ? 'bg-primary-500 text-white' : ''
+                filterLogic === 'AND'
+                  ? 'bg-primary-500/10 text-primary-500 border-primary-500/40'
+                  : ''
               }`}
               style={filterLogic !== 'AND' ? { color: 'rgb(var(--color-text-muted))' } : undefined}
             >
@@ -445,7 +427,9 @@ export function FilterBuilder({
             <button
               onClick={() => onLogicChange('OR')}
               className={`px-3 py-1.5 text-sm font-medium transition-all ${
-                filterLogic === 'OR' ? 'bg-primary-500 text-white' : ''
+                filterLogic === 'OR'
+                  ? 'bg-primary-500/10 text-primary-500 border-primary-500/40'
+                  : ''
               }`}
               style={filterLogic !== 'OR' ? { color: 'rgb(var(--color-text-muted))' } : undefined}
             >
@@ -461,15 +445,13 @@ export function FilterBuilder({
           {filters.map((filter, index) => (
             <div key={filter.id}>
               {index > 0 && (
-                <div 
+                <div
                   className="flex items-center gap-2 py-1"
                   style={{ color: 'rgb(var(--color-text-muted))' }}
                 >
                   <div className="flex-1 h-px bg-gray-700" />
                   <span className="text-xs font-medium">
-                    {filterLogic === 'AND' 
-                      ? (isEn ? 'AND' : 'ET')
-                      : (isEn ? 'OR' : 'OU')}
+                    {filterLogic === 'AND' ? (isEn ? 'AND' : 'ET') : isEn ? 'OR' : 'OU'}
                   </span>
                   <div className="flex-1 h-px bg-gray-700" />
                 </div>
@@ -485,19 +467,16 @@ export function FilterBuilder({
           ))}
         </div>
       ) : (
-        <div 
+        <div
           className="text-center py-8 rounded-xl border-2 border-dashed"
           style={{ borderColor: 'rgb(var(--color-border))' }}
         >
-          <Filter 
+          <Filter
             className="w-10 h-10 mx-auto mb-2 opacity-30"
             style={{ color: 'rgb(var(--color-text-muted))' }}
           />
-          <p 
-            className="text-sm"
-            style={{ color: 'rgb(var(--color-text-muted))' }}
-          >
-            {isEn 
+          <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn
               ? 'Add filters to narrow down your data'
               : 'Ajoutez des filtres pour affiner vos données'}
           </p>

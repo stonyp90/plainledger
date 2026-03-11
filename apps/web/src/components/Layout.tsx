@@ -834,29 +834,85 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Logo on the left */}
           <Link to="/app/dashboard" className="flex items-center group">
-            <div
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105"
-              style={{
-                background:
-                  'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 6px rgb(var(--color-primary-500) / 0.3)',
-              }}
-            >
+            <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
               <svg
-                className="w-5 h-5 sm:w-6 sm:h-6"
+                className="w-7 h-7 sm:w-8 sm:h-8"
                 viewBox="0 0 32 32"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect
+                  x="5"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
               </svg>
             </div>
           </Link>
@@ -908,29 +964,85 @@ export default function Layout({ children }: LayoutProps) {
             className="flex items-center gap-2 group"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-              style={{
-                background:
-                  'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
-              }}
-            >
+            <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-105">
               <svg
-                className="w-6 h-6"
+                className="w-8 h-8"
                 viewBox="0 0 32 32"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect
+                  x="5"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
               </svg>
             </div>
             <span
@@ -1134,29 +1246,85 @@ export default function Layout({ children }: LayoutProps) {
               isSidebarCollapsed ? 'justify-center w-full' : ''
             }`}
           >
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all group-hover:scale-105"
-              style={{
-                background:
-                  'linear-gradient(135deg, rgb(var(--color-primary-500)) 0%, rgb(var(--color-primary-700)) 100%)',
-                boxShadow: '0 2px 8px rgb(var(--color-primary-500) / 0.3)',
-              }}
-            >
+            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 transition-all group-hover:scale-105">
               <svg
-                className="w-7 h-7"
+                className="w-9 h-9"
                 viewBox="0 0 32 32"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <rect x="5" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="5" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="5" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="13" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="5" y="21" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="13" y="21" width="6" height="6" rx="1.3" fill="white" />
-                <rect x="21" y="21" width="6" height="6" rx="1.3" fill="white" />
+                <rect
+                  x="5"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="5"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="13"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="5"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="13"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
+                <rect
+                  x="21"
+                  y="21"
+                  width="6"
+                  height="6"
+                  rx="1.3"
+                  fill="rgb(var(--color-primary-500))"
+                />
               </svg>
             </div>
             {!isSidebarCollapsed && (

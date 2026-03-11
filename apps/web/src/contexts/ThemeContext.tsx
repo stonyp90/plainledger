@@ -42,7 +42,7 @@ export function ThemeProvider({
     // Set resolved theme directly (no system detection needed)
     setResolvedTheme(theme);
     updateDocumentClass(theme);
-    
+
     localStorage.setItem(storageKey, theme);
   }, [theme, storageKey]);
 
@@ -50,6 +50,10 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(resolved);
+    // Clear inline background styles set by index.html flash-prevention script
+    // so CSS variables can take over
+    root.style.backgroundColor = '';
+    document.body.style.backgroundColor = '';
   };
 
   const setTheme = (newTheme: Theme) => {
@@ -57,7 +61,7 @@ export function ThemeProvider({
   };
 
   const toggleTheme = () => {
-    setThemeState(current => {
+    setThemeState((current) => {
       return current === 'light' ? 'dark' : 'light';
     });
   };

@@ -1,13 +1,13 @@
 /**
  * JobsSettings - Admin UI for managing scheduled jobs
- * 
+ *
  * Features:
  * - View all scheduled jobs
  * - Enable/disable jobs
  * - Configure alert settings
  * - View execution history
  * - Manually trigger jobs
- * 
+ *
  * Bilingual support (EN/FR)
  */
 
@@ -112,7 +112,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
     setSaving(true);
     try {
       const response = await adminJobsApi.update(editingJob, formData);
-      setJobs(jobs.map(j => j.id === editingJob ? response.data : j));
+      setJobs(jobs.map((j) => (j.id === editingJob ? response.data : j)));
       setSelectedJob(response.data);
       setEditingJob(null);
       setError(null);
@@ -128,7 +128,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
   const handleToggleJob = async (jobId: string) => {
     try {
       const response = await adminJobsApi.toggle(jobId);
-      setJobs(jobs.map(j => j.id === jobId ? response.data : j));
+      setJobs(jobs.map((j) => (j.id === jobId ? response.data : j)));
       if (selectedJob?.id === jobId) {
         setSelectedJob(response.data);
       }
@@ -168,17 +168,23 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
   const describeCron = (cron: string) => {
     const parts = cron.split(' ');
     if (parts.length < 5) return cron;
-    
+
     const [min, hour, dom, , dow] = parts;
-    
+
     if (dom === '*' && dow === '*') {
-      return isEn ? `Daily at ${hour}:${min.padStart(2, '0')}` : `Quotidien à ${hour}h${min.padStart(2, '0')}`;
+      return isEn
+        ? `Daily at ${hour}:${min.padStart(2, '0')}`
+        : `Quotidien à ${hour}h${min.padStart(2, '0')}`;
     }
     if (dow === '0') {
-      return isEn ? `Weekly (Sun) at ${hour}:${min.padStart(2, '0')}` : `Hebdo (dim) à ${hour}h${min.padStart(2, '0')}`;
+      return isEn
+        ? `Weekly (Sun) at ${hour}:${min.padStart(2, '0')}`
+        : `Hebdo (dim) à ${hour}h${min.padStart(2, '0')}`;
     }
     if (dow === '1') {
-      return isEn ? `Weekly (Mon) at ${hour}:${min.padStart(2, '0')}` : `Hebdo (lun) à ${hour}h${min.padStart(2, '0')}`;
+      return isEn
+        ? `Weekly (Mon) at ${hour}:${min.padStart(2, '0')}`
+        : `Hebdo (lun) à ${hour}h${min.padStart(2, '0')}`;
     }
     return cron;
   };
@@ -225,9 +231,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
         </button>
       </div>
 
-      {error && (
-        <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">{error}</div>
-      )}
+      {error && <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">{error}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Jobs List */}
@@ -246,19 +250,13 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">{CATEGORY_ICONS[job.category]}</span>
                   <div>
-                    <h4 className="font-medium text-gray-900">
-                      {isEn ? job.nameEn : job.nameFr}
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      {describeCron(job.cronExpression)}
-                    </p>
+                    <h4 className="font-medium text-gray-900">{isEn ? job.nameEn : job.nameFr}</h4>
+                    <p className="text-sm text-gray-500">{describeCron(job.cronExpression)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-2 py-0.5 text-xs rounded-full ${
-                      CATEGORY_COLORS[job.category]
-                    }`}
+                    className={`px-2 py-0.5 text-xs rounded-full ${CATEGORY_COLORS[job.category]}`}
                   >
                     {job.category}
                   </span>
@@ -274,26 +272,29 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                     }`}
                   >
                     {job.isEnabled
-                      ? isEn ? 'Enabled' : 'Activé'
-                      : isEn ? 'Disabled' : 'Désactivé'}
+                      ? isEn
+                        ? 'Enabled'
+                        : 'Activé'
+                      : isEn
+                        ? 'Disabled'
+                        : 'Désactivé'}
                   </button>
                 </div>
               </div>
-              
+
               {/* Status */}
               {job.lastRunAt && (
                 <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4 text-sm">
                   <span className="text-gray-500">
-                    {isEn ? 'Last run:' : 'Dernière exécution:'}{' '}
-                    {formatDate(job.lastRunAt)}
+                    {isEn ? 'Last run:' : 'Dernière exécution:'} {formatDate(job.lastRunAt)}
                   </span>
                   <span
                     className={`px-1.5 py-0.5 rounded text-xs ${
                       job.lastRunStatus === 'success'
                         ? 'bg-primary-100 text-primary-700'
                         : job.lastRunStatus === 'failed'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-gray-100 text-gray-600'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-gray-100 text-gray-600'
                     }`}
                   >
                     {job.lastRunStatus || 'unknown'}
@@ -338,7 +339,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                     <button
                       onClick={handleSaveJob}
                       disabled={saving}
-                      className="px-3 py-1.5 text-sm bg-primary-600 text-white hover:bg-primary-700 rounded-md disabled:opacity-50"
+                      className="px-3 py-1.5 text-sm border border-primary-600/40 text-primary-600 hover:bg-primary-600/10 rounded-md disabled:opacity-50"
                     >
                       {saving ? '...' : isEn ? 'Save' : 'Sauvegarder'}
                     </button>
@@ -362,21 +363,21 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                   <input
                     type="text"
                     value={formData.cronExpression || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cronExpression: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, cronExpression: e.target.value })}
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="0 4 * * *"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {isEn ? 'Format: minute hour day month weekday' : 'Format: minute heure jour mois jour_semaine'}
+                    {isEn
+                      ? 'Format: minute hour day month weekday'
+                      : 'Format: minute heure jour mois jour_semaine'}
                   </p>
                 </div>
 
                 {/* Timeout */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {isEn ? 'Timeout (seconds)' : 'Délai d\'expiration (secondes)'}
+                    {isEn ? 'Timeout (seconds)' : "Délai d'expiration (secondes)"}
                   </label>
                   <input
                     type="number"
@@ -391,7 +392,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                 {/* Alerts */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {isEn ? 'Alert Settings' : 'Paramètres d\'alerte'}
+                    {isEn ? 'Alert Settings' : "Paramètres d'alerte"}
                   </label>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2">
@@ -404,7 +405,7 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                         className="rounded"
                       />
                       <span className="text-sm">
-                        {isEn ? 'Alert on failure' : 'Alerter en cas d\'échec'}
+                        {isEn ? 'Alert on failure' : "Alerter en cas d'échec"}
                       </span>
                     </label>
                     <label className="flex items-center gap-2">
@@ -430,7 +431,9 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                         className="rounded"
                       />
                       <span className="text-sm">
-                        {isEn ? 'Alert when changes detected' : 'Alerter lorsque des changements sont détectés'}
+                        {isEn
+                          ? 'Alert when changes detected'
+                          : 'Alerter lorsque des changements sont détectés'}
                       </span>
                     </label>
                   </div>
@@ -439,7 +442,9 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                 {/* Alert Emails */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {isEn ? 'Alert Emails (comma separated)' : 'Courriels d\'alerte (séparés par virgule)'}
+                    {isEn
+                      ? 'Alert Emails (comma separated)'
+                      : "Courriels d'alerte (séparés par virgule)"}
                   </label>
                   <input
                     type="text"
@@ -447,7 +452,10 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        alertEmails: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                        alertEmails: e.target.value
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean),
                       })
                     }
                     className="w-full px-3 py-2 border rounded-md text-sm"
@@ -485,7 +493,9 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                     <p className="font-medium">{selectedJob.timeoutSeconds}s</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">{isEn ? 'Last Run:' : 'Dernière exécution:'}</span>
+                    <span className="text-gray-500">
+                      {isEn ? 'Last Run:' : 'Dernière exécution:'}
+                    </span>
                     <p className="font-medium">{formatDate(selectedJob.lastRunAt)}</p>
                   </div>
                   <div>
@@ -548,30 +558,24 @@ export function JobsSettings({ userRole }: JobsSettingsProps) {
                             exec.status === 'completed'
                               ? 'bg-primary-500'
                               : exec.status === 'failed'
-                              ? 'bg-red-500'
-                              : exec.status === 'running'
-                              ? 'bg-blue-500 animate-pulse'
-                              : 'bg-gray-400'
+                                ? 'bg-red-500'
+                                : exec.status === 'running'
+                                  ? 'bg-blue-500 animate-pulse'
+                                  : 'bg-gray-400'
                           }`}
                         />
-                        <span className="text-gray-600">
-                          {formatDate(exec.startedAt)}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          ({exec.triggerType})
-                        </span>
+                        <span className="text-gray-600">{formatDate(exec.startedAt)}</span>
+                        <span className="text-xs text-gray-400">({exec.triggerType})</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-500">
-                          {formatDuration(exec.durationMs)}
-                        </span>
+                        <span className="text-gray-500">{formatDuration(exec.durationMs)}</span>
                         <span
                           className={`px-1.5 py-0.5 text-xs rounded ${
                             exec.status === 'completed'
                               ? 'bg-primary-100 text-primary-700'
                               : exec.status === 'failed'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-100 text-gray-600'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-600'
                           }`}
                         >
                           {exec.status}

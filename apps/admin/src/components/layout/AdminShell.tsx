@@ -48,8 +48,8 @@ function ThemeSelector() {
             key={t.value}
             onClick={() => setTheme(t.value)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-              isActive 
-                ? 'bg-primary-600 text-white shadow-sm' 
+              isActive
+                ? 'border border-primary-600/40 bg-primary-600/10 text-primary-400 shadow-sm'
                 : 'text-admin-400 hover:text-primary-400 hover:bg-primary-600/20'
             }`}
             title={t.label}
@@ -147,10 +147,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-primary-600'
+                    ? 'border border-primary-600/40 bg-primary-600/10 text-primary-400'
                     : 'text-admin-400 hover:bg-primary-600/20 hover:text-primary-400'
                 }`}
-                style={isActive ? { color: '#ffffff' } : undefined}
               >
                 <item.icon className="w-5 h-5" />
                 <span>{item.name}</span>
