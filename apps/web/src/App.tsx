@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client/react';
 import { apolloClient } from './lib/graphql/client';
-import { useKeycloak } from './lib/keycloak';
+import { useKeycloak, isMockAuthEnabled } from './lib/keycloak';
+import DevSignIn from './pages/DevSignIn';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
@@ -289,16 +290,34 @@ function App() {
             element={authenticated ? <Navigate to="/app" replace /> : <Signup />}
           />
 
-          {/* Login - custom UI */}
+          {/* Login - dev sign-in when mock auth is enabled, otherwise custom login UI */}
           <Route
             path="/login"
-            element={authenticated ? <Navigate to="/app" replace /> : <Login />}
+            element={
+              authenticated ? (
+                <Navigate to="/app" replace />
+              ) : isMockAuthEnabled() &&
+                !new URLSearchParams(window.location.search).has('real') ? (
+                <DevSignIn />
+              ) : (
+                <Login />
+              )
+            }
           />
 
           {/* Signin - alias for login */}
           <Route
             path="/signin"
-            element={authenticated ? <Navigate to="/app" replace /> : <Login />}
+            element={
+              authenticated ? (
+                <Navigate to="/app" replace />
+              ) : isMockAuthEnabled() &&
+                !new URLSearchParams(window.location.search).has('real') ? (
+                <DevSignIn />
+              ) : (
+                <Login />
+              )
+            }
           />
 
           {/* Forgot Password */}

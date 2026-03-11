@@ -77,9 +77,6 @@ CREATE INDEX IF NOT EXISTS idx_admin_users_active ON platform.admin_users(is_act
 CREATE TABLE IF NOT EXISTS platform.user_groups (
     user_id UUID REFERENCES platform.admin_users(id) ON DELETE CASCADE,
     group_id UUID REFERENCES platform.groups(id) ON DELETE CASCADE,
-    granted_at TIMESTAMPTZ DEFAULT NOW(),
-    granted_by UUID REFERENCES platform.admin_users(id),
-    expires_at TIMESTAMPTZ,                    -- Optional expiration for temporary access
     PRIMARY KEY (user_id, group_id)
 );
 
@@ -87,7 +84,6 @@ COMMENT ON TABLE platform.user_groups IS 'Maps admin users to their groups';
 
 CREATE INDEX IF NOT EXISTS idx_user_groups_user ON platform.user_groups(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_groups_group ON platform.user_groups(group_id);
-CREATE INDEX IF NOT EXISTS idx_user_groups_expires ON platform.user_groups(expires_at) WHERE expires_at IS NOT NULL;
 
 -- ==============================================================================
 -- AUDIT LOG TABLE
@@ -126,48 +122,10 @@ CREATE INDEX IF NOT EXISTS idx_audit_created ON platform.audit_log(created_at DE
 CREATE INDEX IF NOT EXISTS idx_audit_success ON platform.audit_log(success) WHERE success = false;
 
 -- ==============================================================================
--- HELPER VIEW: User Effective Permissions
+-- NOTE: Helper views (user_effective_permissions, user_tier_levels) are NOT
+-- created here because TypeORM synchronize manages the platform schema tables.
+-- Views would block TypeORM from modifying columns they depend on.
 -- ==============================================================================
-CREATE OR REPLACE VIEW platform.user_effective_permissions AS
-SELECT DISTINCT
-    u.id AS user_id,
-    u.email,
-    u.display_name,
-    p.id AS permission_id,
-    p.name AS permission_name,
-    p.category,
-    p.is_dangerous,
-    g.id AS group_id,
-    g.name AS group_name,
-    g.tier_level,
-    ug.expires_at
-FROM platform.admin_users u
-JOIN platform.user_groups ug ON u.id = ug.user_id
-JOIN platform.groups g ON ug.group_id = g.id
-JOIN platform.group_permissions gp ON g.id = gp.group_id
-JOIN platform.permissions p ON gp.permission_id = p.id
-WHERE u.is_active = true
-  AND (ug.expires_at IS NULL OR ug.expires_at > NOW());
-
-COMMENT ON VIEW platform.user_effective_permissions IS 'Computed view of all permissions for active users';
-
--- ==============================================================================
--- HELPER VIEW: User Max Tier Level
--- ==============================================================================
-CREATE OR REPLACE VIEW platform.user_tier_levels AS
-SELECT 
-    u.id AS user_id,
-    u.email,
-    MAX(g.tier_level) AS max_tier_level,
-    array_agg(DISTINCT g.name ORDER BY g.name) AS group_names
-FROM platform.admin_users u
-JOIN platform.user_groups ug ON u.id = ug.user_id
-JOIN platform.groups g ON ug.group_id = g.id
-WHERE u.is_active = true
-  AND (ug.expires_at IS NULL OR ug.expires_at > NOW())
-GROUP BY u.id, u.email;
-
-COMMENT ON VIEW platform.user_tier_levels IS 'Max tier level and group names for each user';
 
 -- ==============================================================================
 -- SEED DATA: PERMISSIONS (Comprehensive Admin Capabilities)
@@ -516,5 +474,3 @@ ON CONFLICT DO NOTHING;
 GRANT USAGE ON SCHEMA platform TO plainledger;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA platform TO plainledger;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA platform TO plainledger;
-GRANT SELECT ON platform.user_effective_permissions TO plainledger;
-GRANT SELECT ON platform.user_tier_levels TO plainledger;

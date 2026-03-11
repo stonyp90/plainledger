@@ -92,7 +92,7 @@ services:
       POSTGRES_USER: plainledger
       POSTGRES_PASSWORD: plainledger_secret
     ports:
-      - '5432:5432'
+      - '5434:5432'
     volumes:
       - app-db-data:/var/lib/postgresql/data
       - ./local-dev/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -140,7 +140,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: plainledger_secret
       MONGO_INITDB_DATABASE: plainledger_analytics
     ports:
-      - '27017:27017'
+      - '27018:27017'
     volumes:
       - mongodb-data:/data/db
     healthcheck:
@@ -191,8 +191,8 @@ services:
       MINIO_ROOT_USER: plainledger
       MINIO_ROOT_PASSWORD: plainledger_secret
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '9002:9000'
+      - '9003:9001'
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
@@ -322,8 +322,8 @@ services:
     image: mailhog/mailhog:latest
     container_name: plainledger-mailhog
     ports:
-      - '1025:1025' # SMTP
-      - '8025:8025' # Web UI
+      - '1026:1025' # SMTP
+      - '8026:8025' # Web UI
     healthcheck:
       test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:8025']
       interval: 10s

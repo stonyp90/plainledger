@@ -335,8 +335,6 @@ ON CONFLICT DO NOTHING;
 GRANT USAGE ON SCHEMA tenant TO plainledger;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA tenant TO plainledger;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA tenant TO plainledger;
-GRANT SELECT ON tenant.user_effective_permissions TO plainledger;
-GRANT SELECT ON tenant.organization_effective_entitlements TO plainledger;
 
 -- ==============================================================================
 -- UPDATE ORGANIZATION TABLE
@@ -429,47 +427,7 @@ BEGIN
 END $$;
 
 -- ==============================================================================
--- HELPER VIEW: User Effective Permissions
+-- NOTE: Helper views (user_effective_permissions, organization_effective_entitlements)
+-- are NOT created here because TypeORM synchronize manages the referenced tables.
+-- Views would block TypeORM from modifying columns they depend on.
 -- ==============================================================================
-CREATE OR REPLACE VIEW tenant.user_effective_permissions AS
-SELECT DISTINCT
-    up.id AS user_id,
-    up.email,
-    up.organization_id,
-    COALESCE(up.role, 'viewer') AS role_id,
-    r.name AS role_name,
-    p.id AS permission_id,
-    p.name AS permission_name,
-    p.category AS permission_category
-FROM accounting.user_profiles up
-JOIN tenant.roles r ON COALESCE(up.role, 'viewer') = r.id
-JOIN tenant.role_permissions rp ON r.id = rp.role_id
-JOIN tenant.permissions p ON rp.permission_id = p.id
-WHERE up.is_active = true;
-
-COMMENT ON VIEW tenant.user_effective_permissions IS 'Computed view of all permissions for active users';
-
--- ==============================================================================
--- HELPER VIEW: Organization Effective Entitlements
--- ==============================================================================
-CREATE OR REPLACE VIEW tenant.organization_effective_entitlements AS
-SELECT DISTINCT
-    o.id AS organization_id,
-    COALESCE(o.subscription_plan_id, 'free') AS subscription_plan_id,
-    sp.name AS plan_name,
-    e.id AS entitlement_id,
-    e.name AS entitlement_name,
-    e.category AS entitlement_category,
-    pe.config AS entitlement_config,
-    COALESCE(oeo.enabled, true) AS is_enabled,
-    COALESCE(oeo.config, pe.config, '{}'::jsonb) AS effective_config
-FROM accounting.organizations o
-JOIN tenant.subscription_plans sp ON COALESCE(o.subscription_plan_id, 'free') = sp.id
-JOIN tenant.plan_entitlements pe ON sp.id = pe.plan_id
-JOIN tenant.entitlements e ON pe.entitlement_id = e.id
-LEFT JOIN tenant.organization_entitlement_overrides oeo ON o.id = oeo.organization_id AND e.id = oeo.entitlement_id
-WHERE o.deleted_at IS NULL
-  AND sp.is_active = true
-  AND (oeo.expires_at IS NULL OR oeo.expires_at > NOW());
-
-COMMENT ON VIEW tenant.organization_effective_entitlements IS 'Computed view of all entitlements for active organizations';

@@ -1,44 +1,39 @@
-import { Module } from "@nestjs/common";
-import { ConfigModule, ConfigService } from "@nestjs/config";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { APP_GUARD } from "@nestjs/core";
-import { ScheduleModule } from "@nestjs/schedule";
-import { ThrottlerModule } from "@nestjs/throttler";
-import { GqlThrottlerGuard } from "@infrastructure/http/guards/gql-throttler.guard";
-import {
-  KeycloakConnectModule,
-  ResourceGuard,
-  RoleGuard,
-  AuthGuard,
-} from "nest-keycloak-connect";
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { GqlThrottlerGuard } from '@infrastructure/http/guards/gql-throttler.guard';
+import { KeycloakConnectModule, ResourceGuard, RoleGuard, AuthGuard } from 'nest-keycloak-connect';
 
 // Configuration
-import { AppConfig } from "@infrastructure/config/app.config";
+import { AppConfig } from '@infrastructure/config/app.config';
 
 // Domain
-import { OrganizationEntity } from "@infrastructure/persistence/postgres/entities/organization.entity";
-import { AccountEntity } from "@infrastructure/persistence/postgres/entities/account.entity";
-import { UserProfileEntity } from "@infrastructure/persistence/postgres/entities/user-profile.entity";
-import { OrganizationSettingsEntity } from "@infrastructure/persistence/postgres/entities/organization-settings.entity";
-import { UserSettingsEntity } from "@infrastructure/persistence/postgres/entities/user-settings.entity";
-import { DecisionEventEntity } from "@infrastructure/persistence/postgres/entities/decision-event.entity";
-import { IndustryPatternEntity } from "@infrastructure/persistence/postgres/entities/industry-pattern.entity";
-import { SharedDocumentEntity } from "@infrastructure/persistence/postgres/entities/shared-document.entity";
-import { EmailEventEntity } from "@infrastructure/persistence/postgres/entities/email-event.entity";
+import { OrganizationEntity } from '@infrastructure/persistence/postgres/entities/organization.entity';
+import { AccountEntity } from '@infrastructure/persistence/postgres/entities/account.entity';
+import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
+import { OrganizationSettingsEntity } from '@infrastructure/persistence/postgres/entities/organization-settings.entity';
+import { UserSettingsEntity } from '@infrastructure/persistence/postgres/entities/user-settings.entity';
+import { DecisionEventEntity } from '@infrastructure/persistence/postgres/entities/decision-event.entity';
+import { IndustryPatternEntity } from '@infrastructure/persistence/postgres/entities/industry-pattern.entity';
+import { SharedDocumentEntity } from '@infrastructure/persistence/postgres/entities/shared-document.entity';
+import { EmailEventEntity } from '@infrastructure/persistence/postgres/entities/email-event.entity';
 import {
   IndustryBenchmarkEntity,
   BenchmarkRefreshLogEntity,
-} from "@infrastructure/persistence/postgres/entities/industry-benchmark.entity";
-import { VisualizationEntity } from "@infrastructure/persistence/postgres/entities/visualization.entity";
-import { CustomEntityEntity } from "@infrastructure/persistence/postgres/entities/custom-entity.entity";
-import { SavedReportEntity } from "@infrastructure/persistence/postgres/entities/saved-report.entity";
-import { BoardMeetingEntity } from "@infrastructure/persistence/postgres/entities/board-meeting.entity";
-import { ScenarioEntity } from "@infrastructure/persistence/postgres/entities/scenario.entity";
-import { EntitlementEntity } from "@infrastructure/persistence/postgres/entities/entitlement.entity";
-import { SubscriptionPlanEntity } from "@infrastructure/persistence/postgres/entities/subscription-plan.entity";
-import { PlanEntitlementEntity } from "@infrastructure/persistence/postgres/entities/plan-entitlement.entity";
-import { PermissionEntity } from "@infrastructure/persistence/postgres/entities/permission.entity";
-import { RoleEntity } from "@infrastructure/persistence/postgres/entities/role.entity";
+} from '@infrastructure/persistence/postgres/entities/industry-benchmark.entity';
+import { VisualizationEntity } from '@infrastructure/persistence/postgres/entities/visualization.entity';
+import { CustomEntityEntity } from '@infrastructure/persistence/postgres/entities/custom-entity.entity';
+import { SavedReportEntity } from '@infrastructure/persistence/postgres/entities/saved-report.entity';
+import { BoardMeetingEntity } from '@infrastructure/persistence/postgres/entities/board-meeting.entity';
+import { ScenarioEntity } from '@infrastructure/persistence/postgres/entities/scenario.entity';
+import { EntitlementEntity } from '@infrastructure/persistence/postgres/entities/entitlement.entity';
+import { SubscriptionPlanEntity } from '@infrastructure/persistence/postgres/entities/subscription-plan.entity';
+import { PlanEntitlementEntity } from '@infrastructure/persistence/postgres/entities/plan-entitlement.entity';
+import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/permission.entity';
+import { RoleEntity } from '@infrastructure/persistence/postgres/entities/role.entity';
 
 // Platform Admin Entities
 import {
@@ -46,129 +41,129 @@ import {
   AdminGroupEntity,
   AdminPermissionEntity,
   AdminAuditLogEntity,
-} from "./modules/platform-admin/entities";
-import { WebhookLogEntity } from "./modules/platform-admin/entities/webhook-log.entity";
-import { OnboardingProgressEntity } from "./modules/platform-admin/entities/onboarding-progress.entity";
-import { CommunicationLogEntity } from "./modules/platform-admin/entities/communication-log.entity";
+} from './modules/platform-admin/entities';
+import { WebhookLogEntity } from './modules/platform-admin/entities/webhook-log.entity';
+import { OnboardingProgressEntity } from './modules/platform-admin/entities/onboarding-progress.entity';
+import { CommunicationLogEntity } from './modules/platform-admin/entities/communication-log.entity';
 
 // Infrastructure - HTTP Controllers
-import { HealthController } from "@infrastructure/http/controllers/health.controller";
-import { OrganizationController } from "@infrastructure/http/controllers/organization.controller";
-import { ReportController } from "@infrastructure/http/controllers/report.controller";
-import { DataSourceController } from "@infrastructure/http/controllers/datasource.controller";
-import { OAuthCallbackController } from "@infrastructure/http/controllers/oauth-callback.controller";
-import { ContactController } from "@infrastructure/http/controllers/contact.controller";
-import { OnboardingController } from "@infrastructure/http/controllers/onboarding.controller";
-import { AIController } from "@infrastructure/http/controllers/ai.controller";
-import { AIFeedbackController } from "@infrastructure/http/controllers/ai-feedback.controller";
-import { AnalyticsController } from "@infrastructure/http/controllers/analytics.controller";
-import { AIAnalyticsController } from "@infrastructure/http/controllers/ai-analytics.controller";
-import { BIDataController } from "@infrastructure/http/controllers/bi-data.controller";
-import { TeamController } from "@infrastructure/http/controllers/team.controller";
-import { AuthController } from "@infrastructure/http/controllers/auth.controller";
-import { SyncAdminController } from "@infrastructure/http/controllers/sync-admin.controller";
-import { IdentityAdminController } from "@infrastructure/http/controllers/identity-admin.controller";
-import { UploadController } from "@infrastructure/http/controllers/upload.controller";
-import { SettingsController } from "@infrastructure/http/controllers/settings.controller";
-import { DocumentShareController } from "@infrastructure/http/controllers/document-share.controller";
-import { ShareController } from "@infrastructure/http/controllers/share.controller";
-import { EmailWebhookController } from "@infrastructure/http/controllers/email-webhook.controller";
-import { UnsubscribeController } from "@infrastructure/http/controllers/unsubscribe.controller";
-import { CacheController } from "@infrastructure/http/controllers/cache.controller";
-import { SimilarityController } from "@infrastructure/http/controllers/similarity.controller";
-import { ETLProgressController } from "@infrastructure/http/controllers/etl-progress.controller";
-import { DataSourceSyncController } from "@infrastructure/http/controllers/datasource-sync.controller";
-import { ETLTriggerController } from "@infrastructure/http/controllers/etl-trigger.controller";
-import { PermissionsController } from "@infrastructure/http/controllers/permissions.controller";
-import { UserPermissionsController } from "@infrastructure/http/controllers/user-permissions.controller";
+import { HealthController } from '@infrastructure/http/controllers/health.controller';
+import { OrganizationController } from '@infrastructure/http/controllers/organization.controller';
+import { ReportController } from '@infrastructure/http/controllers/report.controller';
+import { DataSourceController } from '@infrastructure/http/controllers/datasource.controller';
+import { OAuthCallbackController } from '@infrastructure/http/controllers/oauth-callback.controller';
+import { ContactController } from '@infrastructure/http/controllers/contact.controller';
+import { OnboardingController } from '@infrastructure/http/controllers/onboarding.controller';
+import { AIController } from '@infrastructure/http/controllers/ai.controller';
+import { AIFeedbackController } from '@infrastructure/http/controllers/ai-feedback.controller';
+import { AnalyticsController } from '@infrastructure/http/controllers/analytics.controller';
+import { AIAnalyticsController } from '@infrastructure/http/controllers/ai-analytics.controller';
+import { BIDataController } from '@infrastructure/http/controllers/bi-data.controller';
+import { TeamController } from '@infrastructure/http/controllers/team.controller';
+import { AuthController } from '@infrastructure/http/controllers/auth.controller';
+import { SyncAdminController } from '@infrastructure/http/controllers/sync-admin.controller';
+import { IdentityAdminController } from '@infrastructure/http/controllers/identity-admin.controller';
+import { UploadController } from '@infrastructure/http/controllers/upload.controller';
+import { SettingsController } from '@infrastructure/http/controllers/settings.controller';
+import { DocumentShareController } from '@infrastructure/http/controllers/document-share.controller';
+import { ShareController } from '@infrastructure/http/controllers/share.controller';
+import { EmailWebhookController } from '@infrastructure/http/controllers/email-webhook.controller';
+import { UnsubscribeController } from '@infrastructure/http/controllers/unsubscribe.controller';
+import { CacheController } from '@infrastructure/http/controllers/cache.controller';
+import { SimilarityController } from '@infrastructure/http/controllers/similarity.controller';
+import { ETLProgressController } from '@infrastructure/http/controllers/etl-progress.controller';
+import { DataSourceSyncController } from '@infrastructure/http/controllers/datasource-sync.controller';
+import { ETLTriggerController } from '@infrastructure/http/controllers/etl-trigger.controller';
+import { PermissionsController } from '@infrastructure/http/controllers/permissions.controller';
+import { UserPermissionsController } from '@infrastructure/http/controllers/user-permissions.controller';
 
 // Infrastructure - Auth
-import { KeycloakAdminService } from "@infrastructure/auth/keycloak-admin.service";
+import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
 
 // Infrastructure - Storage
-import { FileStorageService } from "@infrastructure/storage/file-storage.service";
-import { DocumentShareService } from "@infrastructure/storage/document-share.service";
-import { AIService } from "@infrastructure/ai/ai.service";
-import { AICacheService } from "@infrastructure/ai/ai-cache.service";
-import { PowerBIAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi.adapter";
-import { PowerBIThemeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-theme.adapter";
-import { PowerBIDatalakeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi-datalake.adapter";
-import { DatalakeDataService } from "@infrastructure/services/datalake-data.service";
-import { SettingsService } from "@infrastructure/services/settings.service";
-import { CacheService } from "@infrastructure/cache/cache.service";
-import { EmbeddingService } from "@infrastructure/ai/embedding.service";
-import { SimilaritySearchService } from "@application/services/similarity-search.service";
-import { CustomEntityService } from "@application/services/custom-entity.service";
-import { UserPermissionsService } from "@application/services/user-permissions.service";
-import { ProviderFactory } from "@application/services/provider-factory.service";
-import { QuickBooksProvider } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.provider";
-import { QuickBooksService } from "@infrastructure/adapters/accounting/quickbooks/quickbooks.service";
-import { S3CleanupAdapter } from "@infrastructure/adapters/storage/s3/s3-cleanup.adapter";
-import { NovuModule } from "@infrastructure/adapters/notifications/novu/novu.adapter";
-import { BenchmarkRefreshService } from "@infrastructure/services/benchmark-refresh.service";
-import { BenchmarkHealthService } from "@infrastructure/services/benchmark-health.service";
-import { ISEDBenchmarkService } from "@infrastructure/services/ised-benchmark.service";
-import { StatsCanBenchmarkService } from "@infrastructure/services/statscan-benchmark.service";
-import { DataSourceMetadataService } from "@infrastructure/services/datasource-metadata.service";
-import { VisualizationQueryService } from "@application/services/visualization-query.service";
-import { AthenaQueryAdapter } from "@infrastructure/adapters/analytics/athena-query.adapter";
-import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
-import { PubSub } from "graphql-subscriptions";
-import { ETLSubscriptionResolver } from "@infrastructure/graphql/resolvers/etl.subscription";
-import { AccountBalanceSubscriptionResolver } from "@infrastructure/graphql/resolvers/account-balance.subscription";
-import { TransactionSubscriptionResolver } from "@infrastructure/graphql/resolvers/transaction.subscription";
-import { ETLPublisherService } from "@infrastructure/services/etl-publisher.service";
-import { AccountBalancePublisherService } from "@infrastructure/services/account-balance-publisher.service";
+import { FileStorageService } from '@infrastructure/storage/file-storage.service';
+import { DocumentShareService } from '@infrastructure/storage/document-share.service';
+import { AIService } from '@infrastructure/ai/ai.service';
+import { AICacheService } from '@infrastructure/ai/ai-cache.service';
+import { PowerBIAdapter } from '@infrastructure/adapters/bi/powerbi/powerbi.adapter';
+import { PowerBIThemeAdapter } from '@infrastructure/adapters/bi/powerbi/powerbi-theme.adapter';
+import { PowerBIDatalakeAdapter } from '@infrastructure/adapters/bi/powerbi/powerbi-datalake.adapter';
+import { DatalakeDataService } from '@infrastructure/services/datalake-data.service';
+import { SettingsService } from '@infrastructure/services/settings.service';
+import { CacheService } from '@infrastructure/cache/cache.service';
+import { EmbeddingService } from '@infrastructure/ai/embedding.service';
+import { SimilaritySearchService } from '@application/services/similarity-search.service';
+import { CustomEntityService } from '@application/services/custom-entity.service';
+import { UserPermissionsService } from '@application/services/user-permissions.service';
+import { ProviderFactory } from '@application/services/provider-factory.service';
+import { QuickBooksProvider } from '@infrastructure/adapters/accounting/quickbooks/quickbooks.provider';
+import { QuickBooksService } from '@infrastructure/adapters/accounting/quickbooks/quickbooks.service';
+import { S3CleanupAdapter } from '@infrastructure/adapters/storage/s3/s3-cleanup.adapter';
+import { NovuModule } from '@infrastructure/adapters/notifications/novu/novu.adapter';
+import { BenchmarkRefreshService } from '@infrastructure/services/benchmark-refresh.service';
+import { BenchmarkHealthService } from '@infrastructure/services/benchmark-health.service';
+import { ISEDBenchmarkService } from '@infrastructure/services/ised-benchmark.service';
+import { StatsCanBenchmarkService } from '@infrastructure/services/statscan-benchmark.service';
+import { DataSourceMetadataService } from '@infrastructure/services/datasource-metadata.service';
+import { VisualizationQueryService } from '@application/services/visualization-query.service';
+import { AthenaQueryAdapter } from '@infrastructure/adapters/analytics/athena-query.adapter';
+import { CPAAdminGuard } from '@infrastructure/http/guards/cpa-admin.guard';
+import { PubSub } from 'graphql-subscriptions';
+import { ETLSubscriptionResolver } from '@infrastructure/graphql/resolvers/etl.subscription';
+import { AccountBalanceSubscriptionResolver } from '@infrastructure/graphql/resolvers/account-balance.subscription';
+import { TransactionSubscriptionResolver } from '@infrastructure/graphql/resolvers/transaction.subscription';
+import { ETLPublisherService } from '@infrastructure/services/etl-publisher.service';
+import { AccountBalancePublisherService } from '@infrastructure/services/account-balance-publisher.service';
 
 // Infrastructure - GraphQL
-import { GraphQLModule } from "@infrastructure/graphql/graphql.module";
-import { FinancialResolver } from "@infrastructure/graphql/resolvers/financial.resolver";
-import { OrganizationResolver } from "@infrastructure/graphql/resolvers/organization.resolver";
-import { DataSourceResolver } from "@infrastructure/graphql/resolvers/datasource.resolver";
-import { MarketAnalysisResolver } from "@infrastructure/graphql/resolvers/market-analysis.resolver";
-import { VisualizationResolver } from "@infrastructure/graphql/resolvers/visualization.resolver";
-import { TaxCreditResolver } from "@infrastructure/graphql/resolvers/tax-credit.resolver";
-import { UserSettingsResolver } from "@infrastructure/graphql/resolvers/user-settings.resolver";
-import { GqlAuthGuard } from "@infrastructure/graphql/guards/gql-auth.guard";
+import { GraphQLModule } from '@infrastructure/graphql/graphql.module';
+import { FinancialResolver } from '@infrastructure/graphql/resolvers/financial.resolver';
+import { OrganizationResolver } from '@infrastructure/graphql/resolvers/organization.resolver';
+import { DataSourceResolver } from '@infrastructure/graphql/resolvers/datasource.resolver';
+import { MarketAnalysisResolver } from '@infrastructure/graphql/resolvers/market-analysis.resolver';
+import { VisualizationResolver } from '@infrastructure/graphql/resolvers/visualization.resolver';
+import { TaxCreditResolver } from '@infrastructure/graphql/resolvers/tax-credit.resolver';
+import { UserSettingsResolver } from '@infrastructure/graphql/resolvers/user-settings.resolver';
+import { GqlAuthGuard } from '@infrastructure/graphql/guards/gql-auth.guard';
 
 // Application - Use Cases
-import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
-import { GetOrganizationUseCase } from "@application/use-cases/get-organization.use-case";
-import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
-import { GetEmbedConfigUseCase } from "@application/use-cases/get-embed-config.use-case";
-import { ListAnalyticsReportsUseCase } from "@application/use-cases/list-analytics-reports.use-case";
-import { UpdateOrgFeaturesUseCase } from "@application/use-cases/update-org-features.use-case";
-import { GenerateAIResponseUseCase } from "@application/use-cases/generate-ai-response.use-case";
+import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
+import { GetOrganizationUseCase } from '@application/use-cases/get-organization.use-case';
+import { GenerateBalanceSheetUseCase } from '@application/use-cases/generate-balance-sheet.use-case';
+import { GetEmbedConfigUseCase } from '@application/use-cases/get-embed-config.use-case';
+import { ListAnalyticsReportsUseCase } from '@application/use-cases/list-analytics-reports.use-case';
+import { UpdateOrgFeaturesUseCase } from '@application/use-cases/update-org-features.use-case';
+import { GenerateAIResponseUseCase } from '@application/use-cases/generate-ai-response.use-case';
 
 // Repositories
-import { PostgresOrganizationRepository } from "@infrastructure/persistence/postgres/postgres-organization.repository";
-import { DecisionRepository } from "@infrastructure/persistence/decision.repository";
-import { DECISION_REPOSITORY_TOKEN } from "@application/ports/outbound/IDecisionRepository";
-import { PostgresAccountRepository } from "@infrastructure/persistence/postgres/postgres-account.repository";
-import { PostgresAnalyticsReportRepository } from "@infrastructure/persistence/postgres/postgres-analytics-report.repository";
-import { PostgresOrganizationFeaturesRepository } from "@infrastructure/persistence/postgres/postgres-organization-features.repository";
-import { PostgresUserProfileRepository } from "@infrastructure/persistence/postgres/postgres-user-profile.repository";
-import { PostgresOrganizationSettingsRepository } from "@infrastructure/persistence/postgres/postgres-organization-settings.repository";
-import { PostgresUserSettingsRepository } from "@infrastructure/persistence/postgres/postgres-user-settings.repository";
-import { PostgresVisualizationRepository } from "@infrastructure/persistence/postgres/postgres-visualization.repository";
-import { PostgresCustomEntityRepository } from "@infrastructure/persistence/postgres/postgres-custom-entity.repository";
-import { DatabaseInitializerService } from "@infrastructure/persistence/postgres/database-initializer.service";
+import { PostgresOrganizationRepository } from '@infrastructure/persistence/postgres/postgres-organization.repository';
+import { DecisionRepository } from '@infrastructure/persistence/decision.repository';
+import { DECISION_REPOSITORY_TOKEN } from '@application/ports/outbound/IDecisionRepository';
+import { PostgresAccountRepository } from '@infrastructure/persistence/postgres/postgres-account.repository';
+import { PostgresAnalyticsReportRepository } from '@infrastructure/persistence/postgres/postgres-analytics-report.repository';
+import { PostgresOrganizationFeaturesRepository } from '@infrastructure/persistence/postgres/postgres-organization-features.repository';
+import { PostgresUserProfileRepository } from '@infrastructure/persistence/postgres/postgres-user-profile.repository';
+import { PostgresOrganizationSettingsRepository } from '@infrastructure/persistence/postgres/postgres-organization-settings.repository';
+import { PostgresUserSettingsRepository } from '@infrastructure/persistence/postgres/postgres-user-settings.repository';
+import { PostgresVisualizationRepository } from '@infrastructure/persistence/postgres/postgres-visualization.repository';
+import { PostgresCustomEntityRepository } from '@infrastructure/persistence/postgres/postgres-custom-entity.repository';
+import { DatabaseInitializerService } from '@infrastructure/persistence/postgres/database-initializer.service';
 
 // Notifications (Email via SES Adapter)
-import { SESAdapter } from "./infrastructure/adapters/email/ses/ses.adapter";
+import { SESAdapter } from './infrastructure/adapters/email/ses/ses.adapter';
 
 // Email Templates
-import { EmailTemplatesService } from "./infrastructure/templates/email-templates.service";
-import { HealthCheckService } from "./infrastructure/health/health-check.service";
-import { SharedServicesModule } from "./modules/shared/shared-services.module";
+import { EmailTemplatesService } from './infrastructure/templates/email-templates.service';
+import { HealthCheckService } from './infrastructure/health/health-check.service';
+import { SharedServicesModule } from './modules/shared/shared-services.module';
 
 // Journey Tracking
-import { JourneyTrackingService } from "@application/services/journey-tracking.service";
-import { CustomerJourneyJob } from "@infrastructure/jobs/customer-journey.job";
-import { DataRetentionJob } from "@infrastructure/jobs/data-retention.job";
-import { TaxCreditSyncJob } from "@infrastructure/jobs/tax-credit-sync.job";
-import { JobConfigurationService } from "@application/services/job-configuration.service";
-import { JobsController } from "@infrastructure/controllers/jobs.controller";
+import { JourneyTrackingService } from '@application/services/journey-tracking.service';
+import { CustomerJourneyJob } from '@infrastructure/jobs/customer-journey.job';
+import { DataRetentionJob } from '@infrastructure/jobs/data-retention.job';
+import { TaxCreditSyncJob } from '@infrastructure/jobs/tax-credit-sync.job';
+import { JobConfigurationService } from '@application/services/job-configuration.service';
+import { JobsController } from '@infrastructure/controllers/jobs.controller';
 
 // MongoDB (Analytics & Audit)
 import {
@@ -176,42 +171,38 @@ import {
   MongoDBService,
   AnalyticsRepository,
   AuditRepository,
-} from "@infrastructure/persistence/mongodb";
+} from '@infrastructure/persistence/mongodb';
 
 // CRM (HubSpot Adapter)
-import { HubSpotAdapter } from "@infrastructure/adapters/crm/hubspot/hubspot.adapter";
+import { HubSpotAdapter } from '@infrastructure/adapters/crm/hubspot/hubspot.adapter';
 
 // Intelligence Platform
-import { IntelligenceModule } from "@infrastructure/intelligence/intelligence.module";
+import { IntelligenceModule } from '@infrastructure/intelligence/intelligence.module';
 
 // Platform Admin Module
-import { PlatformAdminModule } from "./modules/platform-admin";
+import { PlatformAdminModule } from './modules/platform-admin';
 
 @Module({
   imports: [
     // Shared Services (must be imported first to ensure singleton instances)
     SharedServicesModule,
-    
+
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [".env.local", ".env"],
+      envFilePath: ['.env.local', '.env'],
     }),
 
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: "postgres",
-        host: configService.get<string>("DATABASE_HOST") || "localhost",
-        port: parseInt(
-          configService.get<string>("DATABASE_PORT") || "5432",
-          10,
-        ),
-        username: configService.get<string>("DATABASE_USER") || "plainledger",
-        password:
-          configService.get<string>("DATABASE_PASSWORD") || "plainledger",
-        database: configService.get<string>("DATABASE_NAME") || "plainledger",
+        type: 'postgres',
+        host: configService.get<string>('DATABASE_HOST') || 'localhost',
+        port: parseInt(configService.get<string>('DATABASE_PORT') || '5432', 10),
+        username: configService.get<string>('DATABASE_USER') || 'plainledger',
+        password: configService.get<string>('DATABASE_PASSWORD') || 'plainledger',
+        database: configService.get<string>('DATABASE_NAME') || 'plainledger',
         entities: [
           OrganizationEntity,
           AccountEntity,
@@ -243,24 +234,20 @@ import { PlatformAdminModule } from "./modules/platform-admin";
           OnboardingProgressEntity,
           CommunicationLogEntity,
         ],
-        // Enable synchronize if SYNC_DB=true or in development
+        // Enable synchronize if SYNC_DB=true or in development (SYNC_DB=false overrides)
         synchronize:
-          process.env.SYNC_DB === "true" ||
-          process.env.NODE_ENV !== "production",
-        logging:
-          process.env.NODE_ENV !== "production" ||
-          process.env.SYNC_DB === "true",
-        ssl:
-          process.env.NODE_ENV === "production"
-            ? { rejectUnauthorized: false }
-            : false,
+          process.env.SYNC_DB === 'false'
+            ? false
+            : process.env.SYNC_DB === 'true' || process.env.NODE_ENV !== 'production',
+        logging: process.env.NODE_ENV !== 'production' || process.env.SYNC_DB === 'true',
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
       }),
       inject: [ConfigService],
       // Create schemas before TypeORM synchronize
       async dataSourceFactory(options) {
-        const { DataSource } = await import("typeorm");
-        const { Client } = await import("pg");
-        
+        const { DataSource } = await import('typeorm');
+        const { Client } = await import('pg');
+
         // Create schemas using raw PostgreSQL client before TypeORM initializes
         // Cast options to access PostgreSQL-specific properties
         const pgOptions = options as any;
@@ -276,13 +263,13 @@ import { PlatformAdminModule } from "./modules/platform-admin";
         try {
           await client.connect();
           await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-          await client.query("CREATE SCHEMA IF NOT EXISTS accounting");
-          await client.query("CREATE SCHEMA IF NOT EXISTS reporting");
-          await client.query("CREATE SCHEMA IF NOT EXISTS integration");
-          await client.query("CREATE SCHEMA IF NOT EXISTS intelligence");
-          await client.query("CREATE SCHEMA IF NOT EXISTS platform");
-          await client.query("CREATE SCHEMA IF NOT EXISTS tenant");
-          
+          await client.query('CREATE SCHEMA IF NOT EXISTS accounting');
+          await client.query('CREATE SCHEMA IF NOT EXISTS reporting');
+          await client.query('CREATE SCHEMA IF NOT EXISTS integration');
+          await client.query('CREATE SCHEMA IF NOT EXISTS intelligence');
+          await client.query('CREATE SCHEMA IF NOT EXISTS platform');
+          await client.query('CREATE SCHEMA IF NOT EXISTS tenant');
+
           // Create subscription_plans table if it doesn't exist (TypeORM will create it later, but we need it now)
           await client.query(`
             CREATE TABLE IF NOT EXISTS tenant.subscription_plans (
@@ -299,7 +286,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
             )
           `);
-          
+
           // Seed default subscription plans before TypeORM synchronizes
           // This ensures foreign key constraints can be created successfully
           await client.query(`
@@ -320,7 +307,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               limits = EXCLUDED.limits,
               display_order = EXCLUDED.display_order
           `);
-          
+
           // Add subscription_plan_id column to organizations if it doesn't exist
           await client.query(`
             DO $$ 
@@ -336,7 +323,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               END IF;
             END $$;
           `);
-          
+
           // Update ALL organizations to use 'free' plan to ensure FK constraint can be created
           // This prevents foreign key constraint violations during TypeORM synchronize
           // Use a transaction to ensure atomicity
@@ -348,8 +335,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               SET subscription_plan_id = 'free' 
               WHERE subscription_plan_id IS NULL
             `);
-            console.log(`[Database] Updated ${nullUpdateResult.rowCount} organizations with NULL subscription_plan_id`);
-            
+            console.log(
+              `[Database] Updated ${nullUpdateResult.rowCount} organizations with NULL subscription_plan_id`,
+            );
+
             // Then, update any invalid values (not in subscription_plans table)
             const invalidUpdateResult = await client.query(`
               UPDATE accounting.organizations 
@@ -357,8 +346,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               WHERE subscription_plan_id IS NOT NULL 
               AND subscription_plan_id NOT IN (SELECT id FROM tenant.subscription_plans)
             `);
-            console.log(`[Database] Updated ${invalidUpdateResult.rowCount} organizations with invalid subscription_plan_id`);
-            
+            console.log(
+              `[Database] Updated ${invalidUpdateResult.rowCount} organizations with invalid subscription_plan_id`,
+            );
+
             // Finally, ensure ALL organizations have a valid subscription_plan_id
             // This is a safety check - set any remaining invalid values to 'free'
             const finalUpdateResult = await client.query(`
@@ -367,8 +358,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               WHERE subscription_plan_id IS NOT NULL 
               AND NOT EXISTS (SELECT 1 FROM tenant.subscription_plans WHERE id = accounting.organizations.subscription_plan_id)
             `);
-            console.log(`[Database] Final safety update: ${finalUpdateResult.rowCount} organizations`);
-            
+            console.log(
+              `[Database] Final safety update: ${finalUpdateResult.rowCount} organizations`,
+            );
+
             // Verify all organizations now have valid subscription_plan_id
             const invalidCount = await client.query(`
               SELECT COUNT(*) as count 
@@ -378,11 +371,13 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             `);
             const invalidCountNum = parseInt(invalidCount.rows[0]?.count || '0');
             if (invalidCountNum > 0) {
-              console.warn(`[Database] WARNING: ${invalidCountNum} organizations still have invalid subscription_plan_id`);
+              console.warn(
+                `[Database] WARNING: ${invalidCountNum} organizations still have invalid subscription_plan_id`,
+              );
             } else {
               console.log(`[Database] ✅ All organizations have valid subscription_plan_id`);
             }
-            
+
             // Fix user_profiles with invalid organization_id references
             // This prevents FK constraint violations when TypeORM synchronizes
             const userProfilesUpdateResult = await client.query(`
@@ -391,19 +386,21 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               WHERE organization_id IS NOT NULL 
               AND organization_id NOT IN (SELECT id FROM accounting.organizations)
             `);
-            console.log(`[Database] Updated ${userProfilesUpdateResult.rowCount} user_profiles with invalid organization_id`);
-            
+            console.log(
+              `[Database] Updated ${userProfilesUpdateResult.rowCount} user_profiles with invalid organization_id`,
+            );
+
             await client.query('COMMIT');
           } catch (error) {
             await client.query('ROLLBACK');
-            console.error("[Database] Error updating organizations:", error.message);
+            console.error('[Database] Error updating organizations:', error.message);
             throw error;
           }
-          
+
           // Create platform admin tables if they don't exist
           // These are required for the admin panel to function
-          console.log("[Database] Creating platform admin tables...");
-          
+          console.log('[Database] Creating platform admin tables...');
+
           // Create permissions table
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.permissions (
@@ -415,7 +412,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
             )
           `);
-          
+
           // Create groups table
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.groups (
@@ -428,7 +425,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
             )
           `);
-          
+
           // Create admin_users table
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.admin_users (
@@ -446,7 +443,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
             )
           `);
-          
+
           // Create user_groups junction table
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.user_groups (
@@ -455,7 +452,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               PRIMARY KEY (user_id, group_id)
             )
           `);
-          
+
           // Create group_permissions junction table
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.group_permissions (
@@ -464,7 +461,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               PRIMARY KEY (group_id, permission_id)
             )
           `);
-          
+
           // Create audit_log table (matches AdminAuditLogEntity)
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.audit_log (
@@ -491,7 +488,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
             )
           `);
-          
+
           // Seed default permissions
           await client.query(`
             INSERT INTO platform.permissions (id, name, description, category, is_dangerous)
@@ -533,7 +530,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
               ('chat:respond', 'Respond to Chats', 'Respond to support chats', 'chat', false)
             ON CONFLICT (id) DO NOTHING
           `);
-          
+
           // Cleanup duplicate/stale groups (keep only Super Admin)
           await client.query(`
             DELETE FROM platform.group_permissions 
@@ -553,26 +550,26 @@ import { PlatformAdminModule } from "./modules/platform-admin";
             DELETE FROM platform.groups 
             WHERE id != '00000000-0000-0000-0000-000000000001'
           `);
-          
+
           // Seed default Super Admin group
           await client.query(`
             INSERT INTO platform.groups (id, name, description, tier_level, is_system)
             VALUES ('00000000-0000-0000-0000-000000000001', 'Super Admin', 'Full access to all admin features', 100, true)
             ON CONFLICT (id) DO UPDATE SET name = 'Super Admin', description = 'Full access to all admin features'
           `);
-          
+
           // Assign all permissions to Super Admin group
           await client.query(`
             INSERT INTO platform.group_permissions (group_id, permission_id)
             SELECT '00000000-0000-0000-0000-000000000001', id FROM platform.permissions
             ON CONFLICT DO NOTHING
           `);
-          
-          console.log("[Database] Platform admin tables created successfully");
-          
-          console.log("[Database] Schemas created successfully");
+
+          console.log('[Database] Platform admin tables created successfully');
+
+          console.log('[Database] Schemas created successfully');
         } catch (error) {
-          console.error("[Database] Schema creation error:", error.message);
+          console.error('[Database] Schema creation error:', error.message);
         } finally {
           await client.end();
         }
@@ -608,14 +605,10 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     KeycloakConnectModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        authServerUrl:
-          configService.get<string>("KEYCLOAK_URL") || "http://localhost:8080",
-        realm: configService.get<string>("KEYCLOAK_REALM") || "plainledger",
-        clientId:
-          configService.get<string>("KEYCLOAK_CLIENT_ID") || "plainledger-api",
-        secret:
-          configService.get<string>("KEYCLOAK_CLIENT_SECRET") ||
-          "change-me-in-production",
+        authServerUrl: configService.get<string>('KEYCLOAK_URL') || 'http://localhost:8080',
+        realm: configService.get<string>('KEYCLOAK_REALM') || 'plainledger',
+        clientId: configService.get<string>('KEYCLOAK_CLIENT_ID') || 'plainledger-api',
+        secret: configService.get<string>('KEYCLOAK_CLIENT_SECRET') || 'change-me-in-production',
         bearerOnly: true,
       }),
       inject: [ConfigService],
@@ -648,7 +641,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
         throttlers: [
           {
             ttl: 60, // Time window in seconds
-            limit: configService.get<number>("RATE_LIMIT_REQUESTS", 100), // Max requests per window
+            limit: configService.get<number>('RATE_LIMIT_REQUESTS', 100), // Max requests per window
           },
         ],
       }),
@@ -690,8 +683,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
   providers: [
     // Guards - conditionally register Keycloak guards based on SKIP_AUTH
     // In development with SKIP_AUTH=true, we skip these guards to allow unauthenticated access
-    ...(process.env.SKIP_AUTH === "true" &&
-    process.env.NODE_ENV !== "production"
+    ...(process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production'
       ? []
       : [
           {
@@ -754,24 +746,24 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     StatsCanBenchmarkService,
     JobConfigurationService,
     {
-      provide: "IPowerBIAdapter",
+      provide: 'IPowerBIAdapter',
       useClass: PowerBIAdapter,
     },
     // Register interfaces for dependency injection
     {
-      provide: "IAIService",
+      provide: 'IAIService',
       useClass: AIService,
     },
     {
-      provide: "IDatalakeDataService",
+      provide: 'IDatalakeDataService',
       useClass: DatalakeDataService,
     },
     {
-      provide: "IPowerBIDatalakeService",
+      provide: 'IPowerBIDatalakeService',
       useClass: PowerBIDatalakeAdapter,
     },
     {
-      provide: "IKeycloakAdminService",
+      provide: 'IKeycloakAdminService',
       useExisting: KeycloakAdminService, // Use existing instance instead of creating another
     },
     // INotificationService removed - use SESAdapter directly
@@ -788,30 +780,38 @@ import { PlatformAdminModule } from "./modules/platform-admin";
 
     // GraphQL PubSub for subscriptions - keep mock for services that inject it
     {
-      provide: "PUB_SUB",
+      provide: 'PUB_SUB',
       useValue: {
         publish: () => Promise.resolve(),
-        subscribe: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
-        asyncIterator: () => ({ [Symbol.asyncIterator]: () => ({ next: () => Promise.resolve({ done: true, value: undefined }) }) }),
+        subscribe: () => ({
+          [Symbol.asyncIterator]: () => ({
+            next: () => Promise.resolve({ done: true, value: undefined }),
+          }),
+        }),
+        asyncIterator: () => ({
+          [Symbol.asyncIterator]: () => ({
+            next: () => Promise.resolve({ done: true, value: undefined }),
+          }),
+        }),
       },
     },
 
     // Repositories (Adapters)
     {
-      provide: "IOrganizationRepository",
+      provide: 'IOrganizationRepository',
       useClass: PostgresOrganizationRepository,
     },
     {
-      provide: "IAccountRepository",
+      provide: 'IAccountRepository',
       useClass: PostgresAccountRepository,
     },
     // TODO: Implement these repositories
     {
-      provide: "IAnalyticsReportRepository",
+      provide: 'IAnalyticsReportRepository',
       useClass: PostgresAnalyticsReportRepository,
     },
     {
-      provide: "IOrganizationFeaturesRepository",
+      provide: 'IOrganizationFeaturesRepository',
       useClass: PostgresOrganizationFeaturesRepository,
     },
     PostgresUserProfileRepository,
@@ -835,20 +835,20 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     PostgresVisualizationRepository,
     PostgresCustomEntityRepository,
     {
-      provide: "IVisualizationRepository",
+      provide: 'IVisualizationRepository',
       useClass: PostgresVisualizationRepository,
     },
     {
-      provide: "ICustomEntityRepository",
+      provide: 'ICustomEntityRepository',
       useClass: PostgresCustomEntityRepository,
     },
     {
-      provide: "IDataSourceMetadataService",
+      provide: 'IDataSourceMetadataService',
       useClass: DataSourceMetadataService,
     },
     AthenaQueryAdapter,
     {
-      provide: "IQueryExecutor",
+      provide: 'IQueryExecutor',
       useClass: AthenaQueryAdapter,
     },
     CustomEntityService,
@@ -857,8 +857,7 @@ import { PlatformAdminModule } from "./modules/platform-admin";
     // Centralized Application Configuration
     {
       provide: AppConfig,
-      useFactory: (configService: ConfigService) =>
-        new AppConfig(configService),
+      useFactory: (configService: ConfigService) => new AppConfig(configService),
       inject: [ConfigService],
     },
   ],
