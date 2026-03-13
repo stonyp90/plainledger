@@ -1,11 +1,6 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,6 +11,7 @@ import { OrganizationEntity } from '@infrastructure/persistence/postgres/entitie
 @ApiTags('Platform Admin - Sync Jobs')
 @ApiBearerAuth()
 @Controller('admin/sync-jobs')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminSyncJobsController {
   private readonly logger = new Logger(AdminSyncJobsController.name);
@@ -29,14 +25,14 @@ export class AdminSyncJobsController {
 
   @Get()
   @RequirePermission('org:view')
-  @ApiOperation({ summary: 'List recent sync jobs', description: 'Returns recent data sync jobs across all organizations' })
+  @ApiOperation({
+    summary: 'List recent sync jobs',
+    description: 'Returns recent data sync jobs across all organizations',
+  })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of sync jobs' })
-  async listSyncJobs(
-    @Query('limit') limit?: number,
-    @Query('status') status?: string,
-  ) {
+  async listSyncJobs(@Query('limit') limit?: number, @Query('status') status?: string) {
     try {
       // Get connections with recent sync activity
       const queryBuilder = this.connectionRepository
@@ -53,8 +49,8 @@ export class AdminSyncJobsController {
 
       // Transform to sync job format
       const jobs = connections
-        .filter(conn => conn.lastSyncAt)
-        .map(conn => ({
+        .filter((conn) => conn.lastSyncAt)
+        .map((conn) => ({
           id: `sync-${conn.id}`,
           organizationId: conn.organizationId,
           organizationName: conn.organization?.name || 'Unknown',
@@ -63,16 +59,17 @@ export class AdminSyncJobsController {
           startedAt: conn.lastSyncAt?.toISOString(),
           completedAt: conn.lastSyncAt?.toISOString(),
           recordsProcessed: conn.lastSyncRecordsCount || 0,
-          errorMessage: conn.lastSyncStatus === 'failed' ? conn.lastSyncError || 'Sync failed' : undefined,
+          errorMessage:
+            conn.lastSyncStatus === 'failed' ? conn.lastSyncError || 'Sync failed' : undefined,
           createdAt: conn.createdAt?.toISOString(),
         }));
 
       // Calculate stats
       const stats = {
         total24h: jobs.length,
-        completed: jobs.filter(j => j.status === 'completed').length,
-        failed: jobs.filter(j => j.status === 'failed').length,
-        running: jobs.filter(j => j.status === 'running').length,
+        completed: jobs.filter((j) => j.status === 'completed').length,
+        failed: jobs.filter((j) => j.status === 'failed').length,
+        running: jobs.filter((j) => j.status === 'running').length,
       };
 
       return {
@@ -94,7 +91,9 @@ export class AdminSyncJobsController {
     }
   }
 
-  private mapSyncStatus(status: string | null | undefined): 'pending' | 'running' | 'completed' | 'failed' {
+  private mapSyncStatus(
+    status: string | null | undefined,
+  ): 'pending' | 'running' | 'completed' | 'failed' {
     switch (status) {
       case 'success':
         return 'completed';

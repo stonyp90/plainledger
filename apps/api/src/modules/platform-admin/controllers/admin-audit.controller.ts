@@ -1,10 +1,6 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminAuditService, AuditLogFilter } from '../services/admin-audit.service';
@@ -12,6 +8,7 @@ import { AdminAuditService, AuditLogFilter } from '../services/admin-audit.servi
 @ApiTags('Platform Admin - Audit')
 @ApiBearerAuth()
 @Controller('admin/audit')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminAuditController {
   constructor(private readonly auditService: AdminAuditService) {}

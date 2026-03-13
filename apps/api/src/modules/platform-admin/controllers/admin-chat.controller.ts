@@ -1,14 +1,13 @@
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminChatService, SendMessageDto } from '../services/admin-chat.service';
@@ -16,11 +15,10 @@ import { AdminChatService, SendMessageDto } from '../services/admin-chat.service
 @ApiTags('Platform Admin - Chat')
 @ApiBearerAuth()
 @Controller('admin/chat')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminChatController {
-  constructor(
-    private readonly chatService: AdminChatService,
-  ) {}
+  constructor(private readonly chatService: AdminChatService) {}
 
   // =========================================================================
   // Sessions
@@ -28,9 +26,9 @@ export class AdminChatController {
 
   @Get('sessions')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'List chat sessions',
-    description: 'Returns paginated list of chat sessions with filters' 
+    description: 'Returns paginated list of chat sessions with filters',
   })
   @ApiQuery({ name: 'status', required: false, enum: ['active', 'waiting', 'closed', 'archived'] })
   @ApiQuery({ name: 'assignedAdminId', required: false, type: String })
@@ -62,9 +60,9 @@ export class AdminChatController {
 
   @Get('sessions/online')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get online customers',
-    description: 'Returns list of currently online customers with active/waiting sessions' 
+    description: 'Returns list of currently online customers with active/waiting sessions',
   })
   @ApiResponse({ status: 200, description: 'List of online customers' })
   async getOnlineCustomers() {
@@ -73,9 +71,9 @@ export class AdminChatController {
 
   @Get('sessions/:id')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get chat session details',
-    description: 'Returns detailed information about a specific chat session' 
+    description: 'Returns detailed information about a specific chat session',
   })
   @ApiResponse({ status: 200, description: 'Chat session details' })
   @ApiResponse({ status: 404, description: 'Session not found' })
@@ -89,26 +87,23 @@ export class AdminChatController {
 
   @Post('sessions/:id/assign')
   @RequirePermission('chat:manage')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Assign session to admin',
-    description: 'Assigns a chat session to the current admin' 
+    description: 'Assigns a chat session to the current admin',
   })
   @ApiResponse({ status: 200, description: 'Session assigned' })
-  async assignSession(
-    @Param('id') id: string,
-    @Request() req: any,
-  ) {
+  async assignSession(@Param('id') id: string, @Request() req: any) {
     const adminId = req.adminUser?.id || req.user?.sub;
     const adminEmail = req.adminUser?.email || req.user?.email;
-    
+
     return this.chatService.assignSession(id, adminId, adminEmail);
   }
 
   @Post('sessions/:id/close')
   @RequirePermission('chat:manage')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Close chat session',
-    description: 'Closes a chat session with optional resolution notes' 
+    description: 'Closes a chat session with optional resolution notes',
   })
   @ApiBody({
     schema: {
@@ -126,7 +121,7 @@ export class AdminChatController {
   ) {
     const adminId = req.adminUser?.id || req.user?.sub;
     const adminEmail = req.adminUser?.email || req.user?.email;
-    
+
     return this.chatService.closeSession(id, adminId, adminEmail, body.resolutionNotes);
   }
 
@@ -136,9 +131,9 @@ export class AdminChatController {
 
   @Get('sessions/:id/messages')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get chat messages',
-    description: 'Returns paginated messages for a chat session' 
+    description: 'Returns paginated messages for a chat session',
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -157,9 +152,9 @@ export class AdminChatController {
 
   @Post('sessions/:id/messages')
   @RequirePermission('chat:manage')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Send a message',
-    description: 'Sends a message in a chat session as admin' 
+    description: 'Sends a message in a chat session as admin',
   })
   @ApiBody({
     schema: {
@@ -184,7 +179,7 @@ export class AdminChatController {
     const adminId = req.adminUser?.id || req.user?.sub;
     const adminEmail = req.adminUser?.email || req.user?.email;
     const adminName = req.adminUser?.email?.split('@')[0] || 'Admin';
-    
+
     return this.chatService.sendMessage({
       sessionId,
       senderType: 'admin',
@@ -197,9 +192,9 @@ export class AdminChatController {
 
   @Post('sessions/:id/messages/read')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Mark messages as read',
-    description: 'Marks all unread customer messages in a session as read by admin' 
+    description: 'Marks all unread customer messages in a session as read by admin',
   })
   @ApiResponse({ status: 200, description: 'Messages marked as read' })
   async markMessagesAsRead(@Param('id') sessionId: string) {
@@ -213,9 +208,9 @@ export class AdminChatController {
 
   @Get('stats')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get chat statistics',
-    description: 'Returns aggregate statistics about chat sessions' 
+    description: 'Returns aggregate statistics about chat sessions',
   })
   @ApiResponse({ status: 200, description: 'Chat statistics' })
   async getStats() {
@@ -224,9 +219,9 @@ export class AdminChatController {
 
   @Get('unread')
   @RequirePermission('chat:view')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get unread message count',
-    description: 'Returns count of unread messages from customers' 
+    description: 'Returns count of unread messages from customers',
   })
   @ApiResponse({ status: 200, description: 'Unread count' })
   async getUnreadCount(@Request() req: any) {

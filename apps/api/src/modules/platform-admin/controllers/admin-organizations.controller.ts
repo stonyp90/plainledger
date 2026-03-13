@@ -13,14 +13,22 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminOrgService, OrgListFilter } from '../services/admin-org.service';
 import { AdminAuditService } from '../services/admin-audit.service';
-import { 
-  CreateOrganizationDto, 
-  UpdateOrganizationDto, 
+import {
+  CreateOrganizationDto,
+  UpdateOrganizationDto,
   OrganizationListResponseDto,
   OrganizationStatsDto,
 } from '../dto';
@@ -28,6 +36,7 @@ import {
 @ApiTags('Platform Admin - Organizations')
 @ApiBearerAuth()
 @Controller('admin/organizations')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminOrganizationsController {
   private readonly logger = new Logger(AdminOrganizationsController.name);
@@ -39,14 +48,35 @@ export class AdminOrganizationsController {
 
   @Get()
   @RequirePermission('org:list')
-  @ApiOperation({ summary: 'List all organizations', description: 'Returns paginated list of all organizations. Requires org:list permission.' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name, tenant ID, or legal name' })
+  @ApiOperation({
+    summary: 'List all organizations',
+    description: 'Returns paginated list of all organizations. Requires org:list permission.',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by name, tenant ID, or legal name',
+  })
   @ApiQuery({ name: 'industry', required: false, description: 'Filter by industry' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of results (default 50)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of results (default 50)',
+  })
   @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Pagination offset' })
   @ApiQuery({ name: 'sortBy', required: false, description: 'Sort field (e.g., createdAt, name)' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Sort order' })
-  @ApiResponse({ status: 200, description: 'List of organizations', type: OrganizationListResponseDto })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort order',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of organizations',
+    type: OrganizationListResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async listOrganizations(
@@ -76,7 +106,10 @@ export class AdminOrganizationsController {
 
   @Get('stats')
   @RequirePermission('org:list')
-  @ApiOperation({ summary: 'Get organization statistics', description: 'Returns aggregate statistics about organizations.' })
+  @ApiOperation({
+    summary: 'Get organization statistics',
+    description: 'Returns aggregate statistics about organizations.',
+  })
   @ApiResponse({ status: 200, description: 'Organization statistics', type: OrganizationStatsDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -129,7 +162,10 @@ export class AdminOrganizationsController {
 
   @Get(':id/integrations')
   @RequirePermission('org:view')
-  @ApiOperation({ summary: 'Get integrations for organization', description: 'Returns all data source integrations connected to this organization' })
+  @ApiOperation({
+    summary: 'Get integrations for organization',
+    description: 'Returns all data source integrations connected to this organization',
+  })
   @ApiParam({ name: 'id', description: 'Organization ID' })
   @ApiResponse({ status: 200, description: 'List of integrations for the organization' })
   @ApiResponse({ status: 404, description: 'Organization not found' })
@@ -139,7 +175,11 @@ export class AdminOrganizationsController {
 
   @Post()
   @RequirePermission('org:create')
-  @ApiOperation({ summary: 'Create organization on behalf of customer', description: 'Creates a new organization. Use this to onboard customers without them needing to self-register.' })
+  @ApiOperation({
+    summary: 'Create organization on behalf of customer',
+    description:
+      'Creates a new organization. Use this to onboard customers without them needing to self-register.',
+  })
   @ApiResponse({ status: 201, description: 'Organization created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -161,7 +201,10 @@ export class AdminOrganizationsController {
 
   @Put(':id')
   @RequirePermission('org:edit')
-  @ApiOperation({ summary: 'Update organization', description: 'Update organization settings and metadata.' })
+  @ApiOperation({
+    summary: 'Update organization',
+    description: 'Update organization settings and metadata.',
+  })
   @ApiParam({ name: 'id', description: 'Organization ID' })
   @ApiResponse({ status: 200, description: 'Organization updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })

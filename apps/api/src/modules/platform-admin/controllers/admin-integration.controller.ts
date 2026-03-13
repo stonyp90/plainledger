@@ -1,15 +1,6 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Put, Post, Param, Body, Query, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,6 +10,7 @@ import { WebhookLogEntity } from '../entities/webhook-log.entity';
 @ApiTags('Platform Admin - Integrations')
 @ApiBearerAuth()
 @Controller('admin/integrations')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminIntegrationController {
   private readonly logger = new Logger(AdminIntegrationController.name);

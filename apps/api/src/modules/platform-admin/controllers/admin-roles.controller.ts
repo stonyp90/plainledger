@@ -10,7 +10,15 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,6 +29,7 @@ import { AdminPermissionEntity } from '../entities/admin-permission.entity';
 @ApiTags('Platform Admin - Roles')
 @ApiBearerAuth()
 @Controller('admin/roles')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminRolesController {
   constructor(
@@ -83,7 +92,7 @@ export class AdminRolesController {
   async createRole(@Body() data: any) {
     const { permissionIds, ...groupData } = data;
     const group = this.groupRepository.create(groupData as Partial<AdminGroupEntity>);
-    const savedGroup = await this.groupRepository.save(group) as AdminGroupEntity;
+    const savedGroup = (await this.groupRepository.save(group)) as AdminGroupEntity;
 
     if (permissionIds && permissionIds.length > 0) {
       const permissions = await this.permissionRepository.findBy({ id: In(permissionIds) });

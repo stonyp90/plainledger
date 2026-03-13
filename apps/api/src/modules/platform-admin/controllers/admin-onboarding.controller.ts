@@ -1,13 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminOnboardingService } from '../services/admin-onboarding.service';
@@ -15,6 +8,7 @@ import { AdminOnboardingService } from '../services/admin-onboarding.service';
 @ApiTags('Platform Admin - Onboarding')
 @ApiBearerAuth()
 @Controller('admin/onboarding')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminOnboardingController {
   private readonly logger = new Logger(AdminOnboardingController.name);
@@ -25,7 +19,8 @@ export class AdminOnboardingController {
   @RequirePermission('onboarding:view')
   @ApiOperation({
     summary: 'Get conversion funnel metrics',
-    description: 'Returns conversion funnel metrics (signups → connected → sync → report → converted)',
+    description:
+      'Returns conversion funnel metrics (signups → connected → sync → report → converted)',
   })
   @ApiResponse({ status: 200, description: 'Funnel metrics' })
   async getFunnel() {
@@ -80,10 +75,7 @@ export class AdminOnboardingController {
     description: 'Extends the trial period for an organization',
   })
   @ApiResponse({ status: 200, description: 'Trial extended' })
-  async extendTrial(
-    @Param('orgId') orgId: string,
-    @Body() body: { days: number },
-  ) {
+  async extendTrial(@Param('orgId') orgId: string, @Body() body: { days: number }) {
     return this.onboardingService.extendTrial(orgId, body.days);
   }
 

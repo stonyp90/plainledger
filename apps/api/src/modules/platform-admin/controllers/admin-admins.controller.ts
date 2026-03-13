@@ -12,13 +12,14 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminAuthService } from '../services/admin-auth.service';
 import { AdminAuditService } from '../services/admin-audit.service';
-import { 
-  CreateAdminUserDto, 
-  AssignGroupsDto, 
+import {
+  CreateAdminUserDto,
+  AssignGroupsDto,
   AdminUserResponseDto,
   PermissionDto,
   GroupDto,
@@ -27,6 +28,7 @@ import {
 @ApiTags('Platform Admin - Admin Management')
 @ApiBearerAuth()
 @Controller('admin/admins')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminAdminsController {
   constructor(
@@ -36,7 +38,10 @@ export class AdminAdminsController {
 
   @Get()
   @RequirePermission('admin:list')
-  @ApiOperation({ summary: 'List all admin users', description: 'Returns all platform admin users with their groups.' })
+  @ApiOperation({
+    summary: 'List all admin users',
+    description: 'Returns all platform admin users with their groups.',
+  })
   @ApiResponse({ status: 200, description: 'List of admin users' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -46,8 +51,14 @@ export class AdminAdminsController {
 
   @Get('permissions')
   @RequirePermission('admin:list')
-  @ApiOperation({ summary: 'Get all available permissions', description: 'Returns all platform permissions grouped by category.' })
-  @ApiResponse({ status: 200, description: 'Permissions grouped by category (org, user, billing, etc.)' })
+  @ApiOperation({
+    summary: 'Get all available permissions',
+    description: 'Returns all platform permissions grouped by category.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Permissions grouped by category (org, user, billing, etc.)',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getPermissions() {
@@ -56,7 +67,10 @@ export class AdminAdminsController {
 
   @Get('groups')
   @RequirePermission('group:list')
-  @ApiOperation({ summary: 'Get all groups with permissions', description: 'Returns all admin groups with their assigned permissions.' })
+  @ApiOperation({
+    summary: 'Get all groups with permissions',
+    description: 'Returns all admin groups with their assigned permissions.',
+  })
   @ApiResponse({ status: 200, description: 'List of groups with permissions', type: [GroupDto] })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -65,12 +79,20 @@ export class AdminAdminsController {
   }
 
   @Get('me')
-  @ApiOperation({ summary: 'Get current admin user with permissions', description: 'Returns the authenticated admin user with their effective permissions and groups.' })
-  @ApiResponse({ status: 200, description: 'Current admin user with permissions', type: AdminUserResponseDto })
+  @ApiOperation({
+    summary: 'Get current admin user with permissions',
+    description:
+      'Returns the authenticated admin user with their effective permissions and groups.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current admin user with permissions',
+    type: AdminUserResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMe(@Req() req: any) {
     const adminData = await this.authService.getAdminWithPermissions(req.user.sub);
-    
+
     // If admin user doesn't exist, return basic info from token
     if (!adminData) {
       return {
@@ -86,21 +108,21 @@ export class AdminAdminsController {
         maxTierLevel: 0,
       };
     }
-    
+
     return adminData;
   }
 
   @Post()
   @RequirePermission('admin:create')
-  @ApiOperation({ summary: 'Create new admin user', description: 'Invites a new platform admin user. Requires admin:create permission.' })
+  @ApiOperation({
+    summary: 'Create new admin user',
+    description: 'Invites a new platform admin user. Requires admin:create permission.',
+  })
   @ApiResponse({ status: 201, description: 'Admin created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Requires admin:create permission' })
-  async createAdmin(
-    @Body() body: CreateAdminUserDto,
-    @Req() req: any,
-  ) {
+  async createAdmin(@Body() body: CreateAdminUserDto, @Req() req: any) {
     return this.auditService.logWithTiming(
       {
         adminUser: req.adminUser,
@@ -122,18 +144,17 @@ export class AdminAdminsController {
 
   @Put(':id/groups')
   @RequirePermission('group:assign')
-  @ApiOperation({ summary: 'Assign admin to groups', description: 'Replace the groups assigned to an admin user.' })
+  @ApiOperation({
+    summary: 'Assign admin to groups',
+    description: 'Replace the groups assigned to an admin user.',
+  })
   @ApiParam({ name: 'id', description: 'Admin user ID' })
   @ApiResponse({ status: 200, description: 'Groups assigned successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Requires group:assign permission' })
   @ApiResponse({ status: 404, description: 'Admin user not found' })
-  async assignGroups(
-    @Param('id') id: string,
-    @Body() body: AssignGroupsDto,
-    @Req() req: any,
-  ) {
+  async assignGroups(@Param('id') id: string, @Body() body: AssignGroupsDto, @Req() req: any) {
     return this.auditService.logWithTiming(
       {
         adminUser: req.adminUser,

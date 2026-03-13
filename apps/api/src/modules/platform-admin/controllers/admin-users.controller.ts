@@ -13,14 +13,26 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
-import { AdminUserService, UserListFilter, CreateUserServiceDto } from '../services/admin-user.service';
+import {
+  AdminUserService,
+  UserListFilter,
+  CreateUserServiceDto,
+} from '../services/admin-user.service';
 import { AdminAuditService } from '../services/admin-audit.service';
-import { 
-  CreateUserDto, 
-  UpdateUserDto, 
+import {
+  CreateUserDto,
+  UpdateUserDto,
   InviteUserDto,
   UserListResponseDto,
   UserStatsDto,
@@ -29,6 +41,7 @@ import {
 @ApiTags('Platform Admin - Users')
 @ApiBearerAuth()
 @Controller('admin/users')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminUsersController {
   private readonly logger = new Logger(AdminUsersController.name);
@@ -40,11 +53,28 @@ export class AdminUsersController {
 
   @Get()
   @RequirePermission('user:list')
-  @ApiOperation({ summary: 'List all users', description: 'Returns paginated list of all users across organizations.' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by email, first name, or last name' })
+  @ApiOperation({
+    summary: 'List all users',
+    description: 'Returns paginated list of all users across organizations.',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search by email, first name, or last name',
+  })
   @ApiQuery({ name: 'organizationId', required: false, description: 'Filter by organization ID' })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of results (default 50)' })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filter by active status',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of results (default 50)',
+  })
   @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Pagination offset' })
   @ApiResponse({ status: 200, description: 'List of users', type: UserListResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

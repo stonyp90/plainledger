@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Post,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Put, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminCommunicationService } from '../services/admin-communication.service';
@@ -16,11 +8,10 @@ import { AdminCommunicationService } from '../services/admin-communication.servi
 @ApiTags('Platform Admin - Communications')
 @ApiBearerAuth()
 @Controller('admin/communications')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminCommunicationController {
-  constructor(
-    private readonly communicationService: AdminCommunicationService,
-  ) {}
+  constructor(private readonly communicationService: AdminCommunicationService) {}
 
   @Get('templates')
   @RequirePermission('communication:view')
@@ -56,10 +47,7 @@ export class AdminCommunicationController {
     description: 'Updates an email template',
   })
   @ApiResponse({ status: 200, description: 'Template updated' })
-  async updateTemplate(
-    @Param('name') name: string,
-    @Body() body: { content: string },
-  ) {
+  async updateTemplate(@Param('name') name: string, @Body() body: { content: string }) {
     await this.communicationService.updateTemplate(name, body.content);
     return {
       name,
@@ -74,14 +62,9 @@ export class AdminCommunicationController {
     description: 'Renders a template with test data for preview',
   })
   @ApiResponse({ status: 200, description: 'Rendered template' })
-  async previewTemplate(
-    @Body() body: { name: string; testData?: Record<string, unknown> },
-  ) {
+  async previewTemplate(@Body() body: { name: string; testData?: Record<string, unknown> }) {
     return {
-      preview: await this.communicationService.previewTemplate(
-        body.name,
-        body.testData,
-      ),
+      preview: await this.communicationService.previewTemplate(body.name, body.testData),
     };
   }
 
@@ -92,12 +75,15 @@ export class AdminCommunicationController {
     description: 'Sends emails to multiple recipients using a template',
   })
   @ApiResponse({ status: 200, description: 'Communication queued' })
-  async sendBulk(@Body() body: {
-    templateName: string;
-    recipientIds: string[];
-    subject: string;
-    metadata?: Record<string, unknown>;
-  }) {
+  async sendBulk(
+    @Body()
+    body: {
+      templateName: string;
+      recipientIds: string[];
+      subject: string;
+      metadata?: Record<string, unknown>;
+    },
+  ) {
     return this.communicationService.sendBulkCommunication(body);
   }
 

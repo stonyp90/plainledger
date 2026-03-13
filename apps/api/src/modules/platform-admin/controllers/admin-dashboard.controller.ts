@@ -1,10 +1,6 @@
-import {
-  Controller,
-  Get,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminOrgService } from '../services/admin-org.service';
@@ -15,6 +11,7 @@ import { AdminHealthService } from '../services/admin-health.service';
 @ApiTags('Platform Admin - Dashboard')
 @ApiBearerAuth()
 @Controller('admin/dashboard')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminDashboardController {
   private readonly logger = new Logger(AdminDashboardController.name);
@@ -28,29 +25,43 @@ export class AdminDashboardController {
 
   @Get('stats')
   @RequirePermission('org:list')
-  @ApiOperation({ 
-    summary: 'Get aggregated dashboard statistics', 
-    description: 'Returns combined statistics for the admin dashboard including organizations, users, and activity.' 
+  @ApiOperation({
+    summary: 'Get aggregated dashboard statistics',
+    description:
+      'Returns combined statistics for the admin dashboard including organizations, users, and activity.',
   })
   @ApiResponse({ status: 200, description: 'Dashboard statistics' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async getDashboardStats() {
     try {
-      const [orgStats, userStats, recentAuditLogs, syncStats, overallHealth] = await Promise.allSettled([
-        this.orgService.getOrgStats(),
-        this.userService.getUserStats(),
-        this.auditService.getRecentLogs(10),
-        this.healthService.getSyncJobStats(),
-        this.healthService.getOverallHealth(),
-      ]);
+      const [orgStats, userStats, recentAuditLogs, syncStats, overallHealth] =
+        await Promise.allSettled([
+          this.orgService.getOrgStats(),
+          this.userService.getUserStats(),
+          this.auditService.getRecentLogs(10),
+          this.healthService.getSyncJobStats(),
+          this.healthService.getOverallHealth(),
+        ]);
 
       // Extract values with defaults for failed promises
-      const orgData = orgStats.status === 'fulfilled' ? orgStats.value : { totalOrganizations: 0, byIndustry: {}, activeOrganizations: 0 };
-      const userData = userStats.status === 'fulfilled' ? userStats.value : { totalUsers: 0, activeUsers: 0, activeToday: 0, newThisMonth: 0 };
+      const orgData =
+        orgStats.status === 'fulfilled'
+          ? orgStats.value
+          : { totalOrganizations: 0, byIndustry: {}, activeOrganizations: 0 };
+      const userData =
+        userStats.status === 'fulfilled'
+          ? userStats.value
+          : { totalUsers: 0, activeUsers: 0, activeToday: 0, newThisMonth: 0 };
       const auditData = recentAuditLogs.status === 'fulfilled' ? recentAuditLogs.value : [];
-      const syncData = syncStats.status === 'fulfilled' ? syncStats.value : { total24h: 0, completed: 0, failed: 0, running: 0, byProvider: {} };
-      const healthData = overallHealth.status === 'fulfilled' ? overallHealth.value : { status: 'unknown', degradedCount: 0, unhealthyCount: 0 };
+      const syncData =
+        syncStats.status === 'fulfilled'
+          ? syncStats.value
+          : { total24h: 0, completed: 0, failed: 0, running: 0, byProvider: {} };
+      const healthData =
+        overallHealth.status === 'fulfilled'
+          ? overallHealth.value
+          : { status: 'unknown', degradedCount: 0, unhealthyCount: 0 };
 
       return {
         organizations: {
@@ -99,9 +110,9 @@ export class AdminDashboardController {
 
   @Get('health')
   @RequirePermission('org:list')
-  @ApiOperation({ 
-    summary: 'Get system health status', 
-    description: 'Returns health status of platform services.' 
+  @ApiOperation({
+    summary: 'Get system health status',
+    description: 'Returns health status of platform services.',
   })
   @ApiResponse({ status: 200, description: 'System health status' })
   async getSystemHealth() {
@@ -120,9 +131,10 @@ export class AdminDashboardController {
 
   @Get('health/services')
   @RequirePermission('health:view')
-  @ApiOperation({ 
-    summary: 'Get per-service health status', 
-    description: 'Returns detailed health status for each service (PostgreSQL, Redis, Keycloak, etc.)' 
+  @ApiOperation({
+    summary: 'Get per-service health status',
+    description:
+      'Returns detailed health status for each service (PostgreSQL, Redis, Keycloak, etc.)',
   })
   @ApiResponse({ status: 200, description: 'Service health statuses' })
   async getServicesHealth() {
@@ -138,9 +150,9 @@ export class AdminDashboardController {
 
   @Get('health/metrics')
   @RequirePermission('health:view')
-  @ApiOperation({ 
-    summary: 'Get system metrics', 
-    description: 'Returns system performance metrics (requests/min, error rates, etc.)' 
+  @ApiOperation({
+    summary: 'Get system metrics',
+    description: 'Returns system performance metrics (requests/min, error rates, etc.)',
   })
   @ApiResponse({ status: 200, description: 'System metrics' })
   async getSystemMetrics() {
@@ -149,9 +161,9 @@ export class AdminDashboardController {
 
   @Get('sync/stats')
   @RequirePermission('sync:view')
-  @ApiOperation({ 
-    summary: 'Get sync job statistics', 
-    description: 'Returns ETL sync job statistics with success/failure rates' 
+  @ApiOperation({
+    summary: 'Get sync job statistics',
+    description: 'Returns ETL sync job statistics with success/failure rates',
   })
   @ApiResponse({ status: 200, description: 'Sync job statistics' })
   async getSyncStats() {

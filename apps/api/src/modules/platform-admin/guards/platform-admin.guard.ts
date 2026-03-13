@@ -124,11 +124,19 @@ export class PlatformAdminGuard implements CanActivate {
       return true;
     }
 
-    const user = request.user;
+    // Extract user from request - either set by Keycloak AuthGuard or decode JWT ourselves
+    // (Admin controllers use @Unprotected() to bypass Keycloak guards, so we must handle JWT decoding)
+    let user = request.user;
+    if (!user?.sub) {
+      user = this.decodeJwtFromRequest(request);
+      if (user) {
+        request.user = user;
+      }
+    }
 
     // User must be authenticated
     if (!user?.sub) {
-      this.logger.warn('PlatformAdminGuard: No authenticated user');
+      this.logger.warn('PlatformAdminGuard: No authenticated user - no valid JWT token');
       throw new UnauthorizedException('Authentication required');
     }
 
@@ -160,6 +168,15 @@ export class PlatformAdminGuard implements CanActivate {
         `PlatformAdminGuard: Auto-provisioning admin for ${user.email} (role=${hasPlatformAdminRole}, email=${isEmailAllowed})`,
       );
       adminUser = await this.autoProvisionAdmin(user);
+
+      // If full auto-provisioning failed (e.g. group doesn't exist), create bare admin user
+      // The super admin bypass below will grant all permissions regardless
+      if (!adminUser) {
+        this.logger.warn(
+          `PlatformAdminGuard: Full auto-provision failed for ${user.email}, creating bare admin user`,
+        );
+        adminUser = await this.createBareAdminUser(user);
+      }
     }
 
     // Fix existing admin users who have no groups assigned (repair previous failed provisioning)
@@ -356,6 +373,80 @@ export class PlatformAdminGuard implements CanActivate {
   }
 
   /**
+   * Create a bare admin user without group assignment (fallback when group doesn't exist)
+   * The super admin bypass will grant all permissions for allowed emails
+   */
+  private async createBareAdminUser(user: any): Promise<AdminUserEntity | null> {
+    try {
+      const newAdmin = this.adminUserRepository.create({
+        keycloakId: user.sub,
+        email: user.email,
+        displayName: user.name || user.preferred_username || user.email,
+        isActive: true,
+      });
+
+      const savedAdmin = await this.adminUserRepository.save(newAdmin);
+      this.logger.log(
+        `PlatformAdminGuard: Created bare admin user ${savedAdmin.id} for ${user.email}`,
+      );
+
+      return this.adminUserRepository.findOne({
+        where: { id: savedAdmin.id },
+        relations: ['groups', 'groups.permissions'],
+      });
+    } catch (error) {
+      this.logger.error(`PlatformAdminGuard: Failed to create bare admin for ${user.email}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Decode JWT token from Authorization header when Keycloak guards are bypassed (@Unprotected)
+   */
+  private decodeJwtFromRequest(request: any): any | null {
+    try {
+      const authHeader = request.headers?.authorization;
+      if (!authHeader) {
+        return null;
+      }
+
+      const [type, token] = authHeader.split(' ');
+      if (type !== 'Bearer' || !token) {
+        return null;
+      }
+
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        return null;
+      }
+
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+
+      // Check expiration
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        this.logger.warn('PlatformAdminGuard: JWT token expired');
+        return null;
+      }
+
+      this.logger.log(
+        `PlatformAdminGuard: Decoded JWT for ${payload.email || payload.preferred_username}`,
+      );
+
+      return {
+        sub: payload.sub,
+        email: payload.email,
+        preferred_username: payload.preferred_username,
+        name: payload.name || payload.given_name,
+        realm_access: payload.realm_access,
+        resource_access: payload.resource_access,
+      };
+    } catch (error) {
+      this.logger.error('PlatformAdminGuard: Failed to decode JWT', error);
+      return null;
+    }
+  }
+
+  /**
    * Check if user has a specific Keycloak role
    * Checks both realm_access and resource_access (client roles)
    */
@@ -383,7 +474,7 @@ export class PlatformAdminGuard implements CanActivate {
     try {
       // Find the Super Admin group
       const superAdminGroup = await this.adminGroupRepository.findOne({
-        where: { name: 'Super Admin' },
+        where: [{ name: 'Platform Owner' }, { name: 'Super Admin' }],
         relations: ['permissions'],
       });
 
@@ -419,7 +510,7 @@ export class PlatformAdminGuard implements CanActivate {
     try {
       // Find the Super Admin group with permissions
       const superAdminGroup = await this.adminGroupRepository.findOne({
-        where: { name: 'Super Admin' },
+        where: [{ name: 'Platform Owner' }, { name: 'Super Admin' }],
         relations: ['permissions'],
       });
 

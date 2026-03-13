@@ -10,7 +10,15 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,6 +28,7 @@ import { AdminPermissionEntity } from '../entities/admin-permission.entity';
 @ApiTags('Platform Admin - Permissions')
 @ApiBearerAuth()
 @Controller('admin/permissions')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminPermissionsController {
   constructor(

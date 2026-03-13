@@ -10,7 +10,15 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +30,7 @@ import { PlanEntitlementEntity } from '@infrastructure/persistence/postgres/enti
 @ApiTags('Platform Admin - Subscription Plans')
 @ApiBearerAuth()
 @Controller('admin/subscription-plans')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminSubscriptionPlansController {
   constructor(

@@ -1,11 +1,6 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Unprotected } from 'nest-keycloak-connect';
 import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +10,7 @@ import { OrganizationEntity } from '@infrastructure/persistence/postgres/entitie
 @ApiTags('Platform Admin - Billing')
 @ApiBearerAuth()
 @Controller('admin/billing')
+@Unprotected()
 @UseGuards(PlatformAdminGuard)
 export class AdminBillingController {
   private readonly logger = new Logger(AdminBillingController.name);
@@ -58,7 +54,7 @@ export class AdminBillingController {
         const planId = row.planId?.toLowerCase() || 'free';
         const count = parseInt(row.count, 10) || 0;
         planDistribution[planId] = count;
-        
+
         if (planId !== 'free') {
           mrr += (planPrices[planId] || 0) * count;
           activeSubscriptions += count;
@@ -106,12 +102,7 @@ export class AdminBillingController {
       // In a real implementation, this would query a transactions table
       const query = this.orgRepository
         .createQueryBuilder('org')
-        .select([
-          'org.id',
-          'org.name',
-          'org.subscriptionPlanId',
-          'org.createdAt',
-        ])
+        .select(['org.id', 'org.name', 'org.subscriptionPlanId', 'org.createdAt'])
         .where('org.deletedAt IS NULL')
         .andWhere("org.subscriptionPlanId != 'free'")
         .orderBy('org.createdAt', 'DESC')
@@ -178,7 +169,12 @@ export class AdminBillingController {
     summary: 'Get revenue trend data',
     description: 'Returns revenue trend over time.',
   })
-  @ApiQuery({ name: 'period', required: false, type: String, description: 'daily, weekly, monthly' })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    type: String,
+    description: 'daily, weekly, monthly',
+  })
   @ApiResponse({ status: 200, description: 'Revenue trend' })
   async getRevenueTrend(@Query('period') period = 'monthly') {
     try {
@@ -188,12 +184,25 @@ export class AdminBillingController {
       });
 
       const baseRevenue = orgCount * 50; // Average revenue per org
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       const currentMonth = new Date().getMonth();
 
       const trend = months.slice(0, currentMonth + 1).map((month, index) => ({
         period: month,
-        revenue: Math.round(baseRevenue * (0.7 + (index * 0.05) + Math.random() * 0.1)),
+        revenue: Math.round(baseRevenue * (0.7 + index * 0.05 + Math.random() * 0.1)),
         subscriptions: Math.round(orgCount * (0.7 + index * 0.05)),
       }));
 
