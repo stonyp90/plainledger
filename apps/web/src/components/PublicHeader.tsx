@@ -109,8 +109,8 @@ export default function PublicHeader({
     <header
       className={`sticky top-0 z-50 border-b backdrop-blur-md ${className}`}
       style={{
-        backgroundColor: '#0f172a',
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: isDark ? '#0f172a' : 'rgba(255, 255, 255, 0.95)',
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -204,7 +204,10 @@ export default function PublicHeader({
                   </svg>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-lg" style={{ color: '#ffffff' }}>
+                  <span
+                    className="font-bold text-lg"
+                    style={{ color: isDark ? '#ffffff' : '#0f172a' }}
+                  >
                     PlainLedger
                   </span>
                   <span
@@ -216,7 +219,11 @@ export default function PublicHeader({
                 </div>
               </>
             ) : (
-              <img src="/logo-full-dark.png" alt="PlainLedger" className="h-9 sm:h-10 lg:h-11" />
+              <img
+                src={isDark ? '/logo-full-dark.png' : '/logo-full.png'}
+                alt="PlainLedger"
+                className="h-9 sm:h-10 lg:h-11"
+              />
             )}
           </Link>
 
@@ -234,7 +241,9 @@ export default function PublicHeader({
                       key={index}
                       onClick={() => handleMenuItemClick(item)}
                       className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap"
-                      style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                      style={{
+                        color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                      }}
                     >
                       {isEn ? item.labelEn : item.labelFr}
                     </button>
@@ -243,7 +252,9 @@ export default function PublicHeader({
                       key={index}
                       href={item.href}
                       className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap"
-                      style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                      style={{
+                        color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                      }}
                     >
                       {isEn ? item.labelEn : item.labelFr}
                     </a>
@@ -259,21 +270,21 @@ export default function PublicHeader({
                 <a
                   href="/#pipeline"
                   className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap"
-                  style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                  style={{ color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)' }}
                 >
                   {isEn ? 'How it works' : 'Comment ça marche'}
                 </a>
                 <a
                   href="/#industries"
                   className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap"
-                  style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                  style={{ color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)' }}
                 >
                   {isEn ? 'Industries' : 'Industries'}
                 </a>
                 <a
                   href="/#contact"
                   className="text-sm font-medium hover:text-primary transition-colors whitespace-nowrap"
-                  style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                  style={{ color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)' }}
                 >
                   Contact
                 </a>
@@ -287,14 +298,14 @@ export default function PublicHeader({
                 <a
                   href="/#industries"
                   className="text-sm font-medium hover:text-primary transition-colors"
-                  style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                  style={{ color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)' }}
                 >
                   {isEn ? 'Industries' : 'Industries'}
                 </a>
                 <a
                   href="/#pricing"
                   className="text-sm font-medium hover:text-primary transition-colors"
-                  style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                  style={{ color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)' }}
                 >
                   {isEn ? 'Pricing' : 'Tarifs'}
                 </a>
@@ -306,7 +317,10 @@ export default function PublicHeader({
             {/* Progress indicator (if provided) */}
             {showProgress && (
               <div className="flex items-center gap-3 mr-2">
-                <span className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                <span
+                  className="text-sm"
+                  style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(15, 23, 42, 0.5)' }}
+                >
                   {isEn
                     ? `Step ${showProgress.currentStep} of ${showProgress.totalSteps}`
                     : `Étape ${showProgress.currentStep} sur ${showProgress.totalSteps}`}
@@ -356,7 +370,9 @@ export default function PublicHeader({
                   <Link
                     to="/login"
                     className="text-sm font-medium whitespace-nowrap"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     {isEn ? 'Sign in' : 'Connexion'}
                   </Link>
@@ -382,7 +398,7 @@ export default function PublicHeader({
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                style={{ color: '#ffffff' }}
+                style={{ color: isDark ? '#ffffff' : '#0f172a' }}
                 aria-label={isEn ? 'Toggle menu' : 'Ouvrir le menu'}
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -395,7 +411,10 @@ export default function PublicHeader({
         {isMobileMenuOpen && !minimal && (
           <motion.div
             className="md:hidden py-4 border-t"
-            style={{ borderColor: 'rgba(255, 255, 255, 0.1)', backgroundColor: '#0f172a' }}
+            style={{
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: isDark ? '#0f172a' : 'rgba(255, 255, 255, 0.95)',
+            }}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -414,7 +433,9 @@ export default function PublicHeader({
                         key={index}
                         onClick={() => handleMenuItemClick(item)}
                         className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
-                        style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                        style={{
+                          color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                        }}
                       >
                         {isEn ? item.labelEn : item.labelFr}
                       </button>
@@ -424,7 +445,9 @@ export default function PublicHeader({
                         href={item.href}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                        style={{
+                          color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                        }}
                       >
                         {isEn ? item.labelEn : item.labelFr}
                       </a>
@@ -436,7 +459,7 @@ export default function PublicHeader({
                     <div
                       className="pt-3 mt-2 border-t"
                       style={{
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
                       }}
                     >
                       <button
@@ -462,7 +485,9 @@ export default function PublicHeader({
                     href="/#pipeline"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     {isEn ? 'How it works' : 'Comment ça marche'}
                   </a>
@@ -470,7 +495,9 @@ export default function PublicHeader({
                     href="/#industries"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     {isEn ? 'Industries' : 'Industries'}
                   </a>
@@ -478,7 +505,9 @@ export default function PublicHeader({
                     href="/#contact"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     Contact
                   </a>
@@ -487,7 +516,9 @@ export default function PublicHeader({
                   {!authenticated && (
                     <div
                       className="flex flex-col gap-3 pt-4 mt-2 border-t"
-                      style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                      style={{
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                      }}
                     >
                       <button
                         onClick={() => {
@@ -495,7 +526,9 @@ export default function PublicHeader({
                           setIsMobileMenuOpen(false);
                         }}
                         className="text-sm font-medium py-2.5 px-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                        style={{
+                          color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                        }}
                       >
                         {isEn ? 'Sign in' : 'Connexion'}
                       </button>
@@ -517,7 +550,9 @@ export default function PublicHeader({
                     href="/#industries"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     {isEn ? 'Industries' : 'Industries'}
                   </a>
@@ -525,7 +560,9 @@ export default function PublicHeader({
                     href="/#pricing"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     {isEn ? 'Pricing' : 'Tarifs'}
                   </a>
@@ -533,7 +570,9 @@ export default function PublicHeader({
                     to="/login"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                    style={{ color: 'rgba(255, 255, 255, 0.75)' }}
+                    style={{
+                      color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
+                    }}
                   >
                     {isEn ? 'Sign in' : 'Connexion'}
                   </Link>
@@ -544,7 +583,7 @@ export default function PublicHeader({
               <div
                 className="flex items-center gap-3 pt-3 mt-2 border-t"
                 style={{
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
                 }}
               >
                 <LanguageToggle />
@@ -554,9 +593,14 @@ export default function PublicHeader({
               {showProgress && (
                 <div
                   className="flex items-center gap-3 pt-3 border-t"
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  style={{
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                  }}
                 >
-                  <span className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(15, 23, 42, 0.5)' }}
+                  >
                     {isEn
                       ? `Step ${showProgress.currentStep} of ${showProgress.totalSteps}`
                       : `Étape ${showProgress.currentStep} sur ${showProgress.totalSteps}`}
