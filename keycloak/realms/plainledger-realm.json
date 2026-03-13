@@ -147,20 +147,8 @@
         "https://app.plainledger.ca",
         "+"
       ],
-      "defaultClientScopes": [
-        "openid",
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ],
+      "defaultClientScopes": ["openid", "web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5176/*##https://plainledger.ca/*##https://www.plainledger.ca/*##https://app.plainledger.ca/*"
@@ -177,31 +165,10 @@
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
       "secret": "${API_CLIENT_SECRET:change-me-in-production}",
-      "redirectUris": [
-        "http://localhost:3000/*",
-        "http://localhost:3001/*",
-        "https://api.plainledger.ca/*"
-      ],
-      "webOrigins": [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://api.plainledger.ca",
-        "+"
-      ],
-      "defaultClientScopes": [
-        "openid",
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ],
+      "redirectUris": ["http://localhost:3000/*", "http://localhost:3001/*", "https://api.plainledger.ca/*"],
+      "webOrigins": ["http://localhost:3000", "http://localhost:3001", "https://api.plainledger.ca", "+"],
+      "defaultClientScopes": ["openid", "web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
       "attributes": {
         "access.token.lifespan": "300",
         "client.secret.creation.time": "0"
@@ -219,31 +186,10 @@
       "protocol": "openid-connect",
       "rootUrl": "${ADMIN_URL:https://admin.plainledger.ca}",
       "baseUrl": "/",
-      "redirectUris": [
-        "http://localhost:3001/*",
-        "http://127.0.0.1:3001/*",
-        "https://admin.plainledger.ca/*"
-      ],
-      "webOrigins": [
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "https://admin.plainledger.ca",
-        "+"
-      ],
-      "defaultClientScopes": [
-        "openid",
-        "web-origins",
-        "acr",
-        "profile",
-        "roles",
-        "email"
-      ],
-      "optionalClientScopes": [
-        "address",
-        "phone",
-        "offline_access",
-        "microprofile-jwt"
-      ],
+      "redirectUris": ["http://localhost:3001/*", "http://127.0.0.1:3001/*", "https://admin.plainledger.ca/*"],
+      "webOrigins": ["http://localhost:3001", "http://127.0.0.1:3001", "https://admin.plainledger.ca", "+"],
+      "defaultClientScopes": ["openid", "web-origins", "acr", "profile", "roles", "email"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:3001/*##https://admin.plainledger.ca/*"
@@ -414,15 +360,7 @@
       "enabled": true,
       "serviceAccountClientId": "plainledger-api",
       "clientRoles": {
-        "realm-management": [
-          "manage-users",
-          "view-users",
-          "manage-clients",
-          "view-clients",
-          "query-users",
-          "query-clients",
-          "query-groups"
-        ]
+        "realm-management": ["manage-users", "view-users", "manage-clients", "view-clients", "query-users", "query-clients", "query-groups"]
       }
     },
     {
@@ -435,6 +373,48 @@
       "realmRoles": ["platform_admin", "admin", "owner"],
       "groups": ["Platform Admins", "Administrators"],
       "attributes": {
+        "locale": ["en"]
+      }
+    },
+    {
+      "username": "antoine@tablix.ca",
+      "email": "antoine@tablix.ca",
+      "firstName": "Antoine",
+      "lastName": "Paquet",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Logmein123!!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["platform_admin", "admin", "owner"],
+      "groups": ["Platform Admins", "Administrators"],
+      "attributes": {
+        "organization": ["demo-org"],
+        "locale": ["en"]
+      }
+    },
+    {
+      "username": "anthonypaquet1508@gmail.com",
+      "email": "anthonypaquet1508@gmail.com",
+      "firstName": "Anthony",
+      "lastName": "Paquet",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Logmein123!!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["platform_admin", "admin", "owner"],
+      "groups": ["Platform Admins", "Administrators"],
+      "attributes": {
+        "organization": ["demo-org"],
         "locale": ["en"]
       }
     }
@@ -679,20 +659,8 @@
       "roles": ["offline_access"]
     }
   ],
-  "defaultDefaultClientScopes": [
-    "openid",
-    "profile",
-    "email",
-    "roles",
-    "web-origins",
-    "acr"
-  ],
-  "defaultOptionalClientScopes": [
-    "offline_access",
-    "address",
-    "phone",
-    "microprofile-jwt"
-  ],
+  "defaultDefaultClientScopes": ["openid", "profile", "email", "roles", "web-origins", "acr"],
+  "defaultOptionalClientScopes": ["offline_access", "address", "phone", "microprofile-jwt"],
   "identityProviders": [
     {
       "alias": "google",

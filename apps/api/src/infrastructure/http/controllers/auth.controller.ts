@@ -26,6 +26,7 @@ import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
 import { NovuService } from '@infrastructure/adapters/notifications/novu/novu.adapter';
 import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
 import * as crypto from 'crypto';
+import { RateLimit } from '@infrastructure/http/decorators/rate-limit.decorator';
 
 // =====================================================
 // DTOs
@@ -293,6 +294,13 @@ export class AuthController {
 
           if (!user.enabled) {
             throw new UnauthorizedException('Your account is disabled. Please contact support.');
+          }
+
+          // Sync email_verified from Keycloak → DB when Keycloak is ahead
+          if (profile && !profile.emailVerified && user.emailVerified) {
+            this.logger.log(`Syncing emailVerified from Keycloak for ${user.email}`);
+            await this.userProfileRepository.markEmailVerified(profile.id);
+            profile.emailVerified = true;
           }
 
           if (profile && !profile.emailVerified) {
@@ -948,6 +956,7 @@ export class AuthController {
    */
   @Post('verify-email')
   @Public()
+  @RateLimit({ ttl: 60, limit: 5 })
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     this.logger.log('Email verification attempt with token');
@@ -1017,6 +1026,7 @@ export class AuthController {
    */
   @Post('resend-verification')
   @Public()
+  @RateLimit({ ttl: 60, limit: 3 })
   @HttpCode(HttpStatus.OK)
   async resendVerification(@Body() dto: ResendVerificationDto) {
     this.logger.log(`Resend verification request for: ${dto.email}`);

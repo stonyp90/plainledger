@@ -122,12 +122,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Check if email verification is needed (skip for verify-email route itself)
-  // In production, this checks the emailVerified flag from Keycloak
-  // Allow bypass with URL parameter for development/testing
   // IMPORTANT: Only redirect if we KNOW email is not verified (emailVerified === false)
   // If emailVerified is undefined, allow access (assume verified - better UX)
   // Also skip check for signup page (user is completing signup flow)
-  const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
+  // Dev-only bypass via URL parameter (stripped in production builds)
+  const skipEmailVerification =
+    import.meta.env.DEV && window.location.search.includes('skipEmailVerification=true');
   if (
     !skipEmailVerification &&
     user &&
@@ -208,8 +208,9 @@ function ProtectedOnboardingRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if email verification is needed first
-  const skipEmailVerification = window.location.search.includes('skipEmailVerification=true');
+  // Check if email verification is needed first (dev-only bypass)
+  const skipEmailVerification =
+    import.meta.env.DEV && window.location.search.includes('skipEmailVerification=true');
   if (!skipEmailVerification && user && !user.emailVerified) {
     return <Navigate to="/verify-email" replace />;
   }

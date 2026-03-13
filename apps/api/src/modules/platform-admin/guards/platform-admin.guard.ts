@@ -27,7 +27,11 @@ interface PermissionRequirement {
 const PLATFORM_ADMIN_ROLE = 'platform_admin';
 
 // Fallback: Allow these emails as platform admins (backup while debugging Keycloak roles)
-const PLATFORM_ADMIN_EMAILS = ['tony@plainledger.ca', 'anthonypaquet1508@gmail.com'];
+const PLATFORM_ADMIN_EMAILS = [
+  'tony@plainledger.ca',
+  'anthonypaquet1508@gmail.com',
+  'antoine@tablix.ca',
+];
 
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
