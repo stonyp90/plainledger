@@ -25,6 +25,7 @@ import {
   Inject,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { ConfigService } from "@nestjs/config";
 import { SetMetadata } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -49,6 +50,7 @@ export class TenantGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
     @InjectRepository(UserProfileEntity)
     private readonly userProfileRepository: Repository<UserProfileEntity>,
     @Inject(CacheService)
@@ -151,9 +153,16 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    // Check for PlainLedger admin email domain
-    if (user.email?.endsWith("@plainledger.ca")) {
-      return true;
+    // Check if email is in the PLATFORM_ADMIN_EMAILS env var (comma-separated list)
+    if (user.email) {
+      const raw = this.configService.get<string>("PLATFORM_ADMIN_EMAILS") || "";
+      const adminEmails = raw
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter((e) => e.length > 0);
+      if (adminEmails.includes(user.email.toLowerCase())) {
+        return true;
+      }
     }
 
     return false;
