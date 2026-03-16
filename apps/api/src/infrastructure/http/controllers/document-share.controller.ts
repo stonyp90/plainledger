@@ -69,7 +69,6 @@ export class DocumentShareController {
    * Upload and create a new password-protected share
    */
   @Post()
-  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
@@ -170,7 +169,6 @@ export class DocumentShareController {
    * List all shares for the current organization
    */
   @Get()
-  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @ApiOperation({ summary: "List document shares for your organization" })
   @ApiResponse({
@@ -191,7 +189,6 @@ export class DocumentShareController {
    * List shares created by the current user
    */
   @Get("my")
-  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @ApiOperation({ summary: "List document shares created by you" })
   @ApiResponse({
@@ -304,7 +301,6 @@ export class DocumentShareController {
    * Deactivate a share
    */
   @Post(":shareId/deactivate")
-  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Deactivate a document share" })
@@ -334,7 +330,6 @@ export class DocumentShareController {
    * Delete a share permanently
    */
   @Delete(":shareId")
-  @Public() // TODO: Remove for production - temporarily public for local testing
   @ApiBearerAuth()
   // @Roles({ roles: ["admin", "owner"] }) // Disabled for local testing
   @HttpCode(HttpStatus.OK)
