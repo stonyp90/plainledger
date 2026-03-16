@@ -5,7 +5,7 @@
  * Extracts user context from JWT token and validates access.
  *
  * Security features:
- * - JWT token validation via Keycloak
+ * - JWT signature verification via Keycloak JWKS (cryptographic validation)
  * - Rate limiting per user
  * - Request logging for audit
  * - Tenant isolation enforcement
@@ -16,10 +16,13 @@ import {
   ExecutionContext,
   UnauthorizedException,
   Logger,
+  Inject,
 } from "@nestjs/common";
 import { GqlExecutionContext } from "@nestjs/graphql";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
+import { KEYCLOAK_INSTANCE } from "nest-keycloak-connect";
+import * as KeycloakConnect from "keycloak-connect";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -39,6 +42,8 @@ export class GqlAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
+    @Inject(KEYCLOAK_INSTANCE)
+    private readonly keycloak: KeycloakConnect.Keycloak,
   ) {
     // Clean up expired rate limits periodically
     setInterval(() => {
@@ -154,8 +159,12 @@ export class GqlAuthGuard implements CanActivate {
   }
 
   /**
-   * Validate JWT token
-   * In production, this would verify with Keycloak
+   * Validate JWT token via Keycloak's JWKS (cryptographic signature verification).
+   *
+   * Uses the same grantManager from keycloak-connect that the global
+   * nest-keycloak-connect AuthGuard uses for REST endpoints.
+   * createGrant() validates the token signature against Keycloak's
+   * public keys and checks expiration, issuer, and audience.
    */
   private async validateToken(token: string): Promise<{
     sub: string;
@@ -165,7 +174,27 @@ export class GqlAuthGuard implements CanActivate {
     name?: string;
   }> {
     try {
-      // Decode JWT payload (base64)
+      const gm = this.keycloak.grantManager;
+
+      // createGrant validates the JWT signature against Keycloak's
+      // public key (fetched from the JWKS endpoint) and checks
+      // expiration. This is the same verification path used by
+      // nest-keycloak-connect's AuthGuard for REST endpoints.
+      const grant = await gm.createGrant({ access_token: token as any });
+      const accessToken = grant.access_token;
+
+      if (!accessToken) {
+        throw new Error("No access token in grant");
+      }
+
+      // Perform online validation against Keycloak server
+      // (checks token revocation, session validity, etc.)
+      const validationResult = await gm.validateAccessToken(accessToken);
+      if (!validationResult) {
+        throw new Error("Token rejected by Keycloak server");
+      }
+
+      // Token is now cryptographically verified — safe to extract claims
       const parts = token.split(".");
       if (parts.length !== 3) {
         throw new Error("Invalid JWT format");
@@ -175,12 +204,6 @@ export class GqlAuthGuard implements CanActivate {
         Buffer.from(parts[1], "base64").toString("utf8"),
       );
 
-      // Check expiration
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        throw new Error("Token expired");
-      }
-
-      // Extract user info
       return {
         sub: payload.sub || payload.user_id,
         email: payload.email || payload.preferred_username,
