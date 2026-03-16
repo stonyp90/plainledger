@@ -8,6 +8,7 @@ import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
 import { GqlExecutionContext } from "@nestjs/graphql";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
+import { KEYCLOAK_INSTANCE } from "nest-keycloak-connect";
 import { GqlAuthGuard } from "../guards/gql-auth.guard";
 
 // Mock GqlExecutionContext
@@ -22,6 +23,7 @@ describe("GqlAuthGuard", () => {
   let guard: GqlAuthGuard;
   let reflector: Reflector;
   let configService: ConfigService;
+  let mockKeycloak: any;
 
   const createMockContext = (
     headers: Record<string, string> = {},
@@ -64,6 +66,21 @@ describe("GqlAuthGuard", () => {
   };
 
   beforeEach(async () => {
+    // Mock Keycloak instance with grantManager that simulates
+    // successful signature verification via createGrant/validateAccessToken
+    mockKeycloak = {
+      grantManager: {
+        createGrant: jest.fn().mockImplementation(({ access_token }: any) => {
+          // Simulate Keycloak's grant creation (signature verification)
+          return Promise.resolve({ access_token });
+        }),
+        validateAccessToken: jest.fn().mockImplementation((token: any) => {
+          // Simulate successful online validation
+          return Promise.resolve(token);
+        }),
+      },
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GqlAuthGuard,
@@ -82,6 +99,10 @@ describe("GqlAuthGuard", () => {
               return undefined;
             }),
           },
+        },
+        {
+          provide: KEYCLOAK_INSTANCE,
+          useValue: mockKeycloak,
         },
       ],
     }).compile();
@@ -304,6 +325,19 @@ describe("GqlAuthGuard Token Validation", () => {
               if (key === "NODE_ENV") return "production";
               return undefined;
             }),
+          },
+        },
+        {
+          provide: KEYCLOAK_INSTANCE,
+          useValue: {
+            grantManager: {
+              createGrant: jest.fn().mockImplementation(({ access_token }: any) =>
+                Promise.resolve({ access_token }),
+              ),
+              validateAccessToken: jest.fn().mockImplementation((token: any) =>
+                Promise.resolve(token),
+              ),
+            },
           },
         },
       ],
