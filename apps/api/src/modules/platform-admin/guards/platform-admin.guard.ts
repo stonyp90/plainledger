@@ -26,12 +26,15 @@ interface PermissionRequirement {
 // Keycloak role that grants platform admin access
 const PLATFORM_ADMIN_ROLE = 'platform_admin';
 
-// Fallback: Allow these emails as platform admins (backup while debugging Keycloak roles)
-const PLATFORM_ADMIN_EMAILS = [
-  'tony@plainledger.ca',
-  'anthonypaquet1508@gmail.com',
-  'antoine@tablix.ca',
-];
+// Platform admin emails loaded from PLATFORM_ADMIN_EMAILS env var (comma-separated)
+// e.g. PLATFORM_ADMIN_EMAILS=tony@plainledger.ca,antoine@tablix.ca
+function getPlatformAdminEmails(configService: ConfigService): string[] {
+  const raw = configService.get<string>('PLATFORM_ADMIN_EMAILS') || '';
+  return raw
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e.length > 0);
+}
 
 @Injectable()
 export class PlatformAdminGuard implements CanActivate {
@@ -149,8 +152,9 @@ export class PlatformAdminGuard implements CanActivate {
     // Check if user has platform-admin role in Keycloak
     const hasPlatformAdminRole = this.hasKeycloakRole(user, PLATFORM_ADMIN_ROLE);
 
-    // Fallback: Check if email is in allowed list
-    const isEmailAllowed = user.email && PLATFORM_ADMIN_EMAILS.includes(user.email.toLowerCase());
+    // Fallback: Check if email is in allowed list (from PLATFORM_ADMIN_EMAILS env var)
+    const platformAdminEmails = getPlatformAdminEmails(this.configService);
+    const isEmailAllowed = user.email && platformAdminEmails.includes(user.email.toLowerCase());
 
     // Log for debugging
     this.logger.log(`PlatformAdminGuard: Checking access for ${user.email}`);
