@@ -50,11 +50,12 @@ const authLink = new ApolloLink((operation, forward) => {
 
 // Mock Link - short-circuits GraphQL requests when mock auth is enabled
 // This prevents 500 errors when the API server isn't running in local dev
+// Returns an observable that never emits, keeping queries in "loading" state
+// which components already handle gracefully
 const mockLink = new ApolloLink((operation, forward) => {
   if (isMockAuthEnabled()) {
-    return new Observable((observer) => {
-      observer.next({ data: {} });
-      observer.complete();
+    return new Observable(() => {
+      // Never emit or complete — prevents network requests and cache write warnings
     });
   }
   return forward(operation);
