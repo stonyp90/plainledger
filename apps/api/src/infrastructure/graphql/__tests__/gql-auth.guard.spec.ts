@@ -3,23 +3,23 @@
  *
  * Tests for authentication, rate limiting, and security features.
  */
-import { Test, TestingModule } from "@nestjs/testing";
-import { ExecutionContext, UnauthorizedException } from "@nestjs/common";
-import { GqlExecutionContext } from "@nestjs/graphql";
-import { Reflector } from "@nestjs/core";
-import { ConfigService } from "@nestjs/config";
-import { KEYCLOAK_INSTANCE } from "nest-keycloak-connect";
-import { GqlAuthGuard } from "../guards/gql-auth.guard";
+import { Test, TestingModule } from '@nestjs/testing';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { GqlExecutionContext } from '@nestjs/graphql';
+import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { KEYCLOAK_INSTANCE } from 'nest-keycloak-connect';
+import { GqlAuthGuard } from '../guards/gql-auth.guard';
 
 // Mock GqlExecutionContext
-jest.mock("@nestjs/graphql", () => ({
-  ...jest.requireActual("@nestjs/graphql"),
+jest.mock('@nestjs/graphql', () => ({
+  ...jest.requireActual('@nestjs/graphql'),
   GqlExecutionContext: {
     create: jest.fn(),
   },
 }));
 
-describe("GqlAuthGuard", () => {
+describe('GqlAuthGuard', () => {
   let guard: GqlAuthGuard;
   let reflector: Reflector;
   let configService: ConfigService;
@@ -37,8 +37,8 @@ describe("GqlAuthGuard", () => {
     const mockGqlContext = {
       getContext: () => ({ req: mockRequest }),
       getInfo: () => ({
-        fieldName: "testQuery",
-        parentType: { name: "Query" },
+        fieldName: 'testQuery',
+        parentType: { name: 'Query' },
       }),
     };
 
@@ -52,16 +52,14 @@ describe("GqlAuthGuard", () => {
 
   // Create a valid JWT for testing
   const createMockToken = (payload: Record<string, unknown>): string => {
-    const header = Buffer.from(
-      JSON.stringify({ alg: "HS256", typ: "JWT" }),
-    ).toString("base64");
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
     const body = Buffer.from(
       JSON.stringify({
         exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
         ...payload,
       }),
-    ).toString("base64");
-    const signature = "mock-signature";
+    ).toString('base64');
+    const signature = 'mock-signature';
     return `${header}.${body}.${signature}`;
   };
 
@@ -72,6 +70,18 @@ describe("GqlAuthGuard", () => {
       grantManager: {
         createGrant: jest.fn().mockImplementation(({ access_token }: any) => {
           // Simulate Keycloak's grant creation (signature verification)
+          // Check token expiration like real Keycloak would
+          try {
+            const parts = access_token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+              if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+                return Promise.reject(new Error('Token is expired'));
+              }
+            }
+          } catch (e) {
+            /* ignore parse errors */
+          }
           return Promise.resolve({ access_token });
         }),
         validateAccessToken: jest.fn().mockImplementation((token: any) => {
@@ -94,8 +104,8 @@ describe("GqlAuthGuard", () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn().mockImplementation((key: string) => {
-              if (key === "NODE_ENV") return "test";
-              if (key === "SKIP_AUTH") return "false";
+              if (key === 'NODE_ENV') return 'test';
+              if (key === 'SKIP_AUTH') return 'false';
               return undefined;
             }),
           },
@@ -112,9 +122,9 @@ describe("GqlAuthGuard", () => {
     configService = module.get<ConfigService>(ConfigService);
   });
 
-  describe("canActivate", () => {
-    it("should allow access to public endpoints", async () => {
-      jest.spyOn(reflector, "get").mockReturnValue(true);
+  describe('canActivate', () => {
+    it('should allow access to public endpoints', async () => {
+      jest.spyOn(reflector, 'get').mockReturnValue(true);
 
       const context = createMockContext();
       const result = await guard.canActivate(context);
@@ -122,40 +132,34 @@ describe("GqlAuthGuard", () => {
       expect(result).toBe(true);
     });
 
-    it("should reject requests without authorization header", async () => {
+    it('should reject requests without authorization header', async () => {
       const context = createMockContext({});
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     });
 
-    it("should reject requests with invalid authorization format", async () => {
+    it('should reject requests with invalid authorization format', async () => {
       const context = createMockContext({
-        authorization: "InvalidFormat token123",
+        authorization: 'InvalidFormat token123',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     });
 
-    it("should reject requests with invalid JWT format", async () => {
+    it('should reject requests with invalid JWT format', async () => {
       const context = createMockContext({
-        authorization: "Bearer invalid-token",
+        authorization: 'Bearer invalid-token',
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     });
 
-    it("should allow requests with valid JWT", async () => {
+    it('should allow requests with valid JWT', async () => {
       const token = createMockToken({
-        sub: "user-123",
-        email: "test@example.com",
-        organization_id: "org-456",
-        realm_access: { roles: ["user"] },
+        sub: 'user-123',
+        email: 'test@example.com',
+        organization_id: 'org-456',
+        realm_access: { roles: ['user'] },
       });
 
       const context = createMockContext({
@@ -167,40 +171,34 @@ describe("GqlAuthGuard", () => {
       expect(result).toBe(true);
     });
 
-    it("should reject expired tokens", async () => {
+    it('should reject expired tokens', async () => {
       const expiredPayload = {
-        sub: "user-123",
+        sub: 'user-123',
         exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
       };
-      const header = Buffer.from(JSON.stringify({ alg: "HS256" })).toString(
-        "base64",
-      );
-      const body = Buffer.from(JSON.stringify(expiredPayload)).toString(
-        "base64",
-      );
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256' })).toString('base64');
+      const body = Buffer.from(JSON.stringify(expiredPayload)).toString('base64');
       const token = `${header}.${body}.signature`;
 
       const context = createMockContext({
         authorization: `Bearer ${token}`,
       });
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     });
 
-    it("should extract organization ID from token", async () => {
+    it('should extract organization ID from token', async () => {
       const token = createMockToken({
-        sub: "user-123",
-        organization_id: "org-specific-123",
+        sub: 'user-123',
+        organization_id: 'org-specific-123',
       });
 
       const mockRequest = { headers: {}, user: undefined as unknown };
       const mockGqlContext = {
         getContext: () => ({ req: mockRequest }),
         getInfo: () => ({
-          fieldName: "testQuery",
-          parentType: { name: "Query" },
+          fieldName: 'testQuery',
+          parentType: { name: 'Query' },
         }),
       };
       (GqlExecutionContext.create as jest.Mock).mockReturnValue(mockGqlContext);
@@ -215,16 +213,14 @@ describe("GqlAuthGuard", () => {
       await guard.canActivate(context);
 
       expect(mockRequest.user).toBeDefined();
-      expect((mockRequest.user as Record<string, string>).organizationId).toBe(
-        "org-specific-123",
-      );
+      expect((mockRequest.user as Record<string, string>).organizationId).toBe('org-specific-123');
     });
 
-    it("should extract roles from Keycloak token format", async () => {
+    it('should extract roles from Keycloak token format', async () => {
       const token = createMockToken({
-        sub: "user-123",
+        sub: 'user-123',
         realm_access: {
-          roles: ["admin", "user", "reports-viewer"],
+          roles: ['admin', 'user', 'reports-viewer'],
         },
       });
 
@@ -232,8 +228,8 @@ describe("GqlAuthGuard", () => {
       const mockGqlContext = {
         getContext: () => ({ req: mockRequest }),
         getInfo: () => ({
-          fieldName: "testQuery",
-          parentType: { name: "Query" },
+          fieldName: 'testQuery',
+          parentType: { name: 'Query' },
         }),
       };
       (GqlExecutionContext.create as jest.Mock).mockReturnValue(mockGqlContext);
@@ -247,20 +243,16 @@ describe("GqlAuthGuard", () => {
 
       await guard.canActivate(context);
 
-      expect((mockRequest.user as Record<string, string[]>).roles).toContain(
-        "admin",
-      );
-      expect((mockRequest.user as Record<string, string[]>).roles).toContain(
-        "user",
-      );
+      expect((mockRequest.user as Record<string, string[]>).roles).toContain('admin');
+      expect((mockRequest.user as Record<string, string[]>).roles).toContain('user');
     });
   });
 
-  describe("development mode", () => {
-    it("should allow access when SKIP_AUTH is true in development", async () => {
-      jest.spyOn(configService, "get").mockImplementation((key: string) => {
-        if (key === "NODE_ENV") return "development";
-        if (key === "SKIP_AUTH") return "true";
+  describe('development mode', () => {
+    it('should allow access when SKIP_AUTH is true in development', async () => {
+      jest.spyOn(configService, 'get').mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') return 'development';
+        if (key === 'SKIP_AUTH') return 'true';
         return undefined;
       });
 
@@ -270,26 +262,24 @@ describe("GqlAuthGuard", () => {
       expect(result).toBe(true);
     });
 
-    it("should NOT skip auth in production even if SKIP_AUTH is set", async () => {
-      jest.spyOn(configService, "get").mockImplementation((key: string) => {
-        if (key === "NODE_ENV") return "production";
-        if (key === "SKIP_AUTH") return "true";
+    it('should NOT skip auth in production even if SKIP_AUTH is set', async () => {
+      jest.spyOn(configService, 'get').mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') return 'production';
+        if (key === 'SKIP_AUTH') return 'true';
         return undefined;
       });
 
       const context = createMockContext({});
 
-      await expect(guard.canActivate(context)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
     });
   });
 
-  describe("rate limiting", () => {
-    it("should allow requests within rate limit", async () => {
+  describe('rate limiting', () => {
+    it('should allow requests within rate limit', async () => {
       const token = createMockToken({
-        sub: "rate-limit-user",
-        email: "rate@example.com",
+        sub: 'rate-limit-user',
+        email: 'rate@example.com',
       });
 
       const context = createMockContext({
@@ -307,7 +297,7 @@ describe("GqlAuthGuard", () => {
   });
 });
 
-describe("GqlAuthGuard Token Validation", () => {
+describe('GqlAuthGuard Token Validation', () => {
   let guard: GqlAuthGuard;
 
   beforeEach(async () => {
@@ -322,7 +312,7 @@ describe("GqlAuthGuard Token Validation", () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn().mockImplementation((key: string) => {
-              if (key === "NODE_ENV") return "production";
+              if (key === 'NODE_ENV') return 'production';
               return undefined;
             }),
           },
@@ -331,12 +321,12 @@ describe("GqlAuthGuard Token Validation", () => {
           provide: KEYCLOAK_INSTANCE,
           useValue: {
             grantManager: {
-              createGrant: jest.fn().mockImplementation(({ access_token }: any) =>
-                Promise.resolve({ access_token }),
-              ),
-              validateAccessToken: jest.fn().mockImplementation((token: any) =>
-                Promise.resolve(token),
-              ),
+              createGrant: jest
+                .fn()
+                .mockImplementation(({ access_token }: any) => Promise.resolve({ access_token })),
+              validateAccessToken: jest
+                .fn()
+                .mockImplementation((token: any) => Promise.resolve(token)),
             },
           },
         },
@@ -346,24 +336,22 @@ describe("GqlAuthGuard Token Validation", () => {
     guard = module.get<GqlAuthGuard>(GqlAuthGuard);
   });
 
-  it("should handle tokens with alternative claim names", async () => {
+  it('should handle tokens with alternative claim names', async () => {
     // Some identity providers use different claim names
     const payload = {
-      user_id: "alt-user-123", // Instead of sub
-      preferred_username: "alt@example.com", // Instead of email
-      org_id: "alt-org-456", // Instead of organization_id
-      roles: ["user"], // Instead of realm_access.roles
+      user_id: 'alt-user-123', // Instead of sub
+      preferred_username: 'alt@example.com', // Instead of email
+      org_id: 'alt-org-456', // Instead of organization_id
+      roles: ['user'], // Instead of realm_access.roles
     };
 
-    const header = Buffer.from(JSON.stringify({ alg: "HS256" })).toString(
-      "base64",
-    );
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256' })).toString('base64');
     const body = Buffer.from(
       JSON.stringify({
         ...payload,
         exp: Math.floor(Date.now() / 1000) + 3600,
       }),
-    ).toString("base64");
+    ).toString('base64');
     const token = `${header}.${body}.signature`;
 
     const mockRequest = {
@@ -373,8 +361,8 @@ describe("GqlAuthGuard Token Validation", () => {
     const mockGqlContext = {
       getContext: () => ({ req: mockRequest }),
       getInfo: () => ({
-        fieldName: "testQuery",
-        parentType: { name: "Query" },
+        fieldName: 'testQuery',
+        parentType: { name: 'Query' },
       }),
     };
     (GqlExecutionContext.create as jest.Mock).mockReturnValue(mockGqlContext);
@@ -386,11 +374,7 @@ describe("GqlAuthGuard Token Validation", () => {
 
     await guard.canActivate(context);
 
-    expect((mockRequest.user as Record<string, string>).sub).toBe(
-      "alt-user-123",
-    );
-    expect((mockRequest.user as Record<string, string>).organizationId).toBe(
-      "alt-org-456",
-    );
+    expect((mockRequest.user as Record<string, string>).sub).toBe('alt-user-123');
+    expect((mockRequest.user as Record<string, string>).organizationId).toBe('alt-org-456');
   });
 });

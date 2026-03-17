@@ -69,7 +69,7 @@ async function bootstrap() {
   // This aligns with ALB routing rules that route /api/* to API service
   // All auth routes are served under /api/auth/* (frontend calls /api/auth/register, etc.)
   app.setGlobalPrefix('api', {
-    exclude: ['health', '/health', 'health/(.*)', { path: 'health', method: RequestMethod.ALL }],
+    exclude: ['health', '/health', 'health/{*path}', { path: 'health', method: RequestMethod.ALL }],
   });
 
   // CORS Configuration
@@ -110,7 +110,10 @@ async function bootstrap() {
 
   // Use function-based origin check for better flexibility
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, origin?: boolean) => void,
+    ) => {
       // Allow requests with no origin (like mobile apps, curl, Postman)
       if (!origin) {
         return callback(null, true);
