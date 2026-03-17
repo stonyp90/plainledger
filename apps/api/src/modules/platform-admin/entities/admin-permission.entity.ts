@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { AdminGroupEntity } from './admin-group.entity';
 
-@Entity({ name: 'permissions', schema: 'platform' })
+@Entity({ name: 'admin_permissions', schema: 'platform' })
 export class AdminPermissionEntity {
   @PrimaryColumn({ type: 'varchar', length: 100 })
   id: string; // e.g., 'org:view', 'user:delete'
