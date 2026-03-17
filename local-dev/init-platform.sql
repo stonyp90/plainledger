@@ -9,8 +9,8 @@ CREATE SCHEMA IF NOT EXISTS platform;
 -- ==============================================================================
 -- PERMISSIONS TABLE (Seed Data - Immutable)
 -- ==============================================================================
-CREATE TABLE IF NOT EXISTS platform.permissions (
-    id VARCHAR(50) PRIMARY KEY,              -- e.g., 'org:view', 'user:delete'
+CREATE TABLE IF NOT EXISTS platform.admin_permissions (
+    id VARCHAR(100) PRIMARY KEY,             -- e.g., 'org:view', 'user:delete'
     name VARCHAR(100) NOT NULL,
     description TEXT,
     category VARCHAR(50) NOT NULL,           -- org, user, billing, sync, support, config, admin, analytics
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS platform.permissions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-COMMENT ON TABLE platform.permissions IS 'Platform-level permissions (immutable seed data)';
+COMMENT ON TABLE platform.admin_permissions IS 'Platform-level permissions (immutable seed data)';
 
 -- ==============================================================================
 -- GROUPS TABLE
@@ -39,9 +39,8 @@ COMMENT ON TABLE platform.groups IS 'Platform admin groups with tier levels for 
 -- GROUP-PERMISSION MAPPING (Many-to-Many)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS platform.group_permissions (
-    group_id UUID REFERENCES platform.groups(id) ON DELETE CASCADE,
-    permission_id VARCHAR(50) REFERENCES platform.permissions(id) ON DELETE CASCADE,
-    granted_at TIMESTAMPTZ DEFAULT NOW(),
+    group_id UUID NOT NULL,
+    permission_id VARCHAR(100) NOT NULL,
     PRIMARY KEY (group_id, permission_id)
 );
 
@@ -75,8 +74,8 @@ CREATE INDEX IF NOT EXISTS idx_admin_users_active ON platform.admin_users(is_act
 -- USER-GROUP MEMBERSHIP (Many-to-Many)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS platform.user_groups (
-    user_id UUID REFERENCES platform.admin_users(id) ON DELETE CASCADE,
-    group_id UUID REFERENCES platform.groups(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    group_id UUID NOT NULL,
     PRIMARY KEY (user_id, group_id)
 );
 
@@ -130,7 +129,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_success ON platform.audit_log(success) WHER
 -- ==============================================================================
 -- SEED DATA: PERMISSIONS (Comprehensive Admin Capabilities)
 -- ==============================================================================
-INSERT INTO platform.permissions (id, name, category, description, is_dangerous) VALUES
+INSERT INTO platform.admin_permissions (id, name, category, description, is_dangerous) VALUES
     -- ============================================
     -- ORGANIZATION MANAGEMENT
     -- ============================================
@@ -345,16 +344,16 @@ ON CONFLICT (id) DO UPDATE SET
 -- Viewer (Tier 0): All view/list permissions only
 INSERT INTO platform.group_permissions (group_id, permission_id)
 SELECT '00000000-0000-0000-0000-000000000001'::uuid, id 
-FROM platform.permissions 
-WHERE id LIKE '%:list' OR id LIKE '%:view' 
+FROM platform.admin_permissions
+WHERE id LIKE '%:list' OR id LIKE '%:view'
    OR id IN ('audit:search', 'compliance:view')
 ON CONFLICT DO NOTHING;
 
 -- L1 Support (Tier 1): View + basic support operations
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000002'::uuid, id 
-FROM platform.permissions 
-WHERE id LIKE '%:list' OR id LIKE '%:view' 
+SELECT '00000000-0000-0000-0000-000000000002'::uuid, id
+FROM platform.admin_permissions
+WHERE id LIKE '%:list' OR id LIKE '%:view'
    OR id IN (
        'support:create_ticket', 'support:manage_tickets',
        'notes:view', 'notes:create',
@@ -365,9 +364,9 @@ ON CONFLICT DO NOTHING;
 
 -- L2 Support (Tier 2): L1 + edit permissions + account management
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000003'::uuid, id 
-FROM platform.permissions 
-WHERE id LIKE '%:list' OR id LIKE '%:view' 
+SELECT '00000000-0000-0000-0000-000000000003'::uuid, id
+FROM platform.admin_permissions
+WHERE id LIKE '%:list' OR id LIKE '%:view'
    OR id IN (
        -- Organization
        'org:edit',
@@ -396,17 +395,17 @@ ON CONFLICT DO NOTHING;
 
 -- L3 Support / Engineering (Tier 3): Full technical access
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000004'::uuid, id 
-FROM platform.permissions 
+SELECT '00000000-0000-0000-0000-000000000004'::uuid, id
+FROM platform.admin_permissions
 WHERE category NOT IN ('admin')
    OR id IN ('admin:list', 'admin:view', 'group:list', 'group:view')
 ON CONFLICT DO NOTHING;
 
 -- Customer Success (Tier 5): Account management + billing focus
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000005'::uuid, id 
-FROM platform.permissions 
-WHERE id LIKE '%:list' OR id LIKE '%:view' 
+SELECT '00000000-0000-0000-0000-000000000005'::uuid, id
+FROM platform.admin_permissions
+WHERE id LIKE '%:list' OR id LIKE '%:view'
    OR id IN (
        -- Organization
        'org:create', 'org:edit',
@@ -440,8 +439,8 @@ ON CONFLICT DO NOTHING;
 
 -- Operations (Tier 8): Platform ops, infrastructure focus
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000006'::uuid, id 
-FROM platform.permissions 
+SELECT '00000000-0000-0000-0000-000000000006'::uuid, id
+FROM platform.admin_permissions
 WHERE category IN ('sync', 'data', 'config', 'analytics', 'audit')
    OR id LIKE '%:list' OR id LIKE '%:view'
    OR id IN (
@@ -454,18 +453,18 @@ ON CONFLICT DO NOTHING;
 
 -- Platform Administrator (Tier 10): Everything except admin/group management
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000007'::uuid, id 
-FROM platform.permissions 
+SELECT '00000000-0000-0000-0000-000000000007'::uuid, id
+FROM platform.admin_permissions
 WHERE id NOT IN (
-    'admin:create', 'admin:edit', 'admin:disable', 'admin:delete', 
+    'admin:create', 'admin:edit', 'admin:disable', 'admin:delete',
     'group:create', 'group:edit', 'group:delete', 'group:assign'
 )
 ON CONFLICT DO NOTHING;
 
 -- Platform Owner (Tier 100): God mode - all permissions
 INSERT INTO platform.group_permissions (group_id, permission_id)
-SELECT '00000000-0000-0000-0000-000000000008'::uuid, id 
-FROM platform.permissions
+SELECT '00000000-0000-0000-0000-000000000008'::uuid, id
+FROM platform.admin_permissions
 ON CONFLICT DO NOTHING;
 
 -- ==============================================================================
