@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { AdminUserEntity } from '../entities/admin-user.entity';
 import { AdminGroupEntity } from '../entities/admin-group.entity';
 import { AdminPermissionEntity } from '../entities/admin-permission.entity';
+import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
 
 export interface AdminUserWithPermissions {
   user: AdminUserEntity;
@@ -23,6 +24,7 @@ export class AdminAuthService {
     private readonly adminGroupRepository: Repository<AdminGroupEntity>,
     @InjectRepository(AdminPermissionEntity)
     private readonly permissionRepository: Repository<AdminPermissionEntity>,
+    private readonly keycloakAdmin: KeycloakAdminService,
   ) {}
 
   /**
@@ -72,7 +74,7 @@ export class AdminAuthService {
    */
   async hasAnyPermission(keycloakId: string, permissionIds: string[]): Promise<boolean> {
     const admin = await this.getAdminWithPermissions(keycloakId);
-    return permissionIds.some(p => admin?.permissions.includes(p));
+    return permissionIds.some((p) => admin?.permissions.includes(p));
   }
 
   /**
@@ -80,7 +82,7 @@ export class AdminAuthService {
    */
   async hasAllPermissions(keycloakId: string, permissionIds: string[]): Promise<boolean> {
     const admin = await this.getAdminWithPermissions(keycloakId);
-    return permissionIds.every(p => admin?.permissions.includes(p));
+    return permissionIds.every((p) => admin?.permissions.includes(p));
   }
 
   /**
@@ -139,11 +141,11 @@ export class AdminAuthService {
       where: { id: user.id },
       relations: ['groups', 'groups.permissions'],
     });
-    
+
     if (!updatedUser) {
       throw new Error('Failed to retrieve created admin user');
     }
-    
+
     return updatedUser;
   }
 
@@ -181,7 +183,7 @@ export class AdminAuthService {
       throw new Error('Admin user not found');
     }
 
-    user.groups = user.groups.filter(g => !groupIds.includes(g.id));
+    user.groups = user.groups.filter((g) => !groupIds.includes(g.id));
     await this.adminUserRepository.save(user);
   }
 
@@ -200,29 +202,56 @@ export class AdminAuthService {
   }
 
   /**
+   * Delete an admin user from both database and Keycloak
+   */
+  async deleteAdminUser(userId: string): Promise<void> {
+    const user = await this.adminUserRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Admin user not found');
+    }
+
+    // Delete from Keycloak first
+    if (user.keycloakId) {
+      try {
+        await this.keycloakAdmin.deleteUser(user.keycloakId);
+      } catch (error) {
+        this.logger.warn(`Failed to delete admin from Keycloak: ${error.message}`);
+      }
+    }
+
+    // Delete from database
+    await this.adminUserRepository.remove(user);
+  }
+
+  /**
    * Get all admin users with their groups
    */
-  async getAllAdmins(): Promise<{ admins: Array<{
-    id: string;
-    email: string;
-    displayName: string;
-    isActive: boolean;
-    groups: string[];
-    createdAt: Date;
-    lastLoginAt?: Date;
-  }> }> {
+  async getAllAdmins(): Promise<{
+    admins: Array<{
+      id: string;
+      email: string;
+      displayName: string;
+      isActive: boolean;
+      groups: string[];
+      createdAt: Date;
+      lastLoginAt?: Date;
+    }>;
+  }> {
     const admins = await this.adminUserRepository.find({
       relations: ['groups'],
       order: { createdAt: 'DESC' },
     });
 
     return {
-      admins: admins.map(admin => ({
+      admins: admins.map((admin) => ({
         id: admin.id,
         email: admin.email,
         displayName: admin.displayName,
         isActive: admin.isActive,
-        groups: admin.groups?.map(g => g.name) || [],
+        groups: admin.groups?.map((g) => g.name) || [],
         createdAt: admin.createdAt,
         lastLoginAt: admin.lastAccessAt,
       })),

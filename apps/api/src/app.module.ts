@@ -240,7 +240,12 @@ import { PlatformAdminModule } from './modules/platform-admin';
             ? false
             : process.env.SYNC_DB === 'true' || process.env.NODE_ENV !== 'production',
         logging: process.env.NODE_ENV !== 'production' || process.env.SYNC_DB === 'true',
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
+        ssl:
+          process.env.DATABASE_SSL === 'false'
+            ? false
+            : process.env.NODE_ENV === 'production'
+              ? { rejectUnauthorized: true }
+              : false,
       }),
       inject: [ConfigService],
       // Create schemas before TypeORM synchronize

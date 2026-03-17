@@ -170,6 +170,28 @@ export class AdminAdminsController {
     );
   }
 
+  @Delete(':id')
+  @RequirePermission('admin:delete')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete admin user' })
+  @ApiParam({ name: 'id', description: 'Admin user ID' })
+  @ApiResponse({ status: 204, description: 'Admin deleted' })
+  @ApiResponse({ status: 404, description: 'Admin user not found' })
+  async deleteAdmin(@Param('id') id: string, @Req() req: any) {
+    return this.auditService.logWithTiming(
+      {
+        adminUser: req.adminUser,
+        action: 'admin:delete',
+        resourceType: 'admin',
+        resourceId: id,
+        metadata: { warning: 'ADMIN DELETION' },
+      },
+      async () => {
+        await this.authService.deleteAdminUser(id);
+      },
+    );
+  }
+
   @Post(':id/disable')
   @RequirePermission('admin:disable')
   @HttpCode(HttpStatus.NO_CONTENT)
