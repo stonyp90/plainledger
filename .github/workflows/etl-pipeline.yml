@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -95,7 +95,7 @@ jobs:
     needs: extract
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -141,7 +141,7 @@ jobs:
     needs: transform-bronze-silver
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -186,7 +186,7 @@ jobs:
     needs: transform-silver-gold
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
@@ -284,7 +284,7 @@ jobs:
     needs: [extract, transform-bronze-silver, transform-silver-gold, invalidate-cache]
     if: failure()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v5
