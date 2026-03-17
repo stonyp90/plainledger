@@ -12,20 +12,20 @@ export const config = {
     version: import.meta.env.VITE_APP_VERSION || '1.0.0',
     environment: import.meta.env.MODE || 'development',
   },
-  
+
   // API Configuration
   api: {
-    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    baseUrl: import.meta.env.VITE_API_URL || '',
     timeout: 30000,
   },
-  
+
   // Keycloak/Auth Configuration
   auth: {
     url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8080',
     realm: import.meta.env.VITE_KEYCLOAK_REALM || 'plainledger',
     clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web',
   },
-  
+
   // Power BI Configuration
   powerBI: {
     enabled: import.meta.env.VITE_POWERBI_ENABLED === 'true',
@@ -44,7 +44,7 @@ export const config = {
       customTheme: import.meta.env.VITE_POWERBI_CUSTOM_THEME || '',
     },
   },
-  
+
   // Data Sources Configuration
   dataSources: {
     quickbooks: {
@@ -75,7 +75,7 @@ export const config = {
       maxFileSizeMB: 10,
     },
   },
-  
+
   // Data Lake Configuration
   dataLake: {
     enabled: import.meta.env.VITE_DATALAKE_ENABLED === 'true',
@@ -83,7 +83,7 @@ export const config = {
     bucket: import.meta.env.VITE_DATALAKE_BUCKET || '',
     region: import.meta.env.VITE_DATALAKE_REGION || 'ca-central-1',
   },
-  
+
   // Feature Flags
   features: {
     anomalyDetection: import.meta.env.VITE_FEATURE_ANOMALY_DETECTION !== 'false',
@@ -93,7 +93,7 @@ export const config = {
     auditLogs: import.meta.env.VITE_FEATURE_AUDIT_LOGS === 'true',
     webhooks: import.meta.env.VITE_FEATURE_WEBHOOKS === 'true',
   },
-  
+
   // Branding Configuration (overridable per tenant)
   branding: {
     logo: import.meta.env.VITE_BRANDING_LOGO || '',
@@ -101,14 +101,14 @@ export const config = {
     accentColor: import.meta.env.VITE_BRANDING_ACCENT || '#2563eb',
     favicon: import.meta.env.VITE_BRANDING_FAVICON || '/favicon.svg',
   },
-  
+
   // Analytics & Monitoring
   analytics: {
     enabled: import.meta.env.VITE_ANALYTICS_ENABLED === 'true',
     provider: import.meta.env.VITE_ANALYTICS_PROVIDER || 'none', // 'none' | 'ga4' | 'mixpanel' | 'segment'
     id: import.meta.env.VITE_ANALYTICS_ID || '',
   },
-  
+
   // Support & Help
   support: {
     email: import.meta.env.VITE_SUPPORT_EMAIL || 'support@plainledger.ca',
@@ -147,7 +147,7 @@ export interface OrganizationConfig {
 // Merge organization config with base config
 export function getOrganizationConfig(orgConfig?: OrganizationConfig) {
   if (!orgConfig) return config;
-  
+
   return {
     ...config,
     branding: {

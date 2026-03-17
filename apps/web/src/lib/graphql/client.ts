@@ -12,42 +12,59 @@ import {
   createHttpLink,
   from,
   ApolloLink,
-} from "@apollo/client";
+  Observable,
+} from '@apollo/client';
+import { isMockAuthEnabled } from '../keycloak';
 
 // Get the GraphQL endpoint from environment or default
-const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || "/graphql";
+const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
 
-console.log("[Apollo] Initializing with URL:", GRAPHQL_URL);
+if (!isMockAuthEnabled()) {
+  console.log('[Apollo] Initializing with URL:', GRAPHQL_URL);
+}
 
 // HTTP Link - handles the actual GraphQL requests
 const httpLink = createHttpLink({
   uri: GRAPHQL_URL,
-  credentials: "include", // Include cookies for session auth
+  credentials: 'include', // Include cookies for session auth
 });
 
 // Auth Link - adds the JWT token and CSRF prevention headers to requests
 const authLink = new ApolloLink((operation, forward) => {
   // Get the authentication token from Keycloak or localStorage
   // Note: Keycloak stores tokens with underscore (kc_token), not hyphen
-  const token = sessionStorage.getItem("kc_token") || 
-                localStorage.getItem("kc_token");
+  const token = sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token');
 
   operation.setContext(({ headers = {} }) => ({
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
+      authorization: token ? `Bearer ${token}` : '',
       // Required for Apollo Server 4 CSRF protection
-      "apollo-require-preflight": "true",
-      "content-type": "application/json",
+      'apollo-require-preflight': 'true',
+      'content-type': 'application/json',
     },
   }));
 
   return forward(operation);
 });
 
-// Create the Apollo Client instance - simplified without logging link
+// Mock Link - short-circuits GraphQL requests when mock auth is enabled
+// This prevents 500 errors when the API server isn't running in local dev
+const mockLink = new ApolloLink((operation, forward) => {
+  if (isMockAuthEnabled()) {
+    return new Observable((observer) => {
+      observer.next({ data: {} });
+      observer.complete();
+    });
+  }
+  return forward(operation);
+});
+
+// Create the Apollo Client instance
+// When mock auth is enabled, mockLink intercepts and returns empty data
+// Otherwise, requests flow through authLink → httpLink as normal
 export const apolloClient = new ApolloClient({
-  link: from([authLink, httpLink]),
+  link: from([mockLink, authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {
@@ -55,7 +72,7 @@ export const apolloClient = new ApolloClient({
           // Configure cache behavior for specific queries
           accounts: {
             // Merge paginated results
-            keyArgs: ["filter"],
+            keyArgs: ['filter'],
             merge(existing, incoming, { args }) {
               if (!args?.pagination?.page || args.pagination.page === 1) {
                 return incoming;
@@ -67,7 +84,7 @@ export const apolloClient = new ApolloClient({
             },
           },
           transactions: {
-            keyArgs: ["filter"],
+            keyArgs: ['filter'],
             merge(existing, incoming, { args }) {
               if (!args?.pagination?.page || args.pagination.page === 1) {
                 return incoming;
@@ -82,30 +99,30 @@ export const apolloClient = new ApolloClient({
       },
       Organization: {
         // Use id as the cache key
-        keyFields: ["id"],
+        keyFields: ['id'],
       },
       Account: {
-        keyFields: ["id"],
+        keyFields: ['id'],
       },
       Transaction: {
-        keyFields: ["id"],
+        keyFields: ['id'],
       },
       DataSource: {
-        keyFields: ["id"],
+        keyFields: ['id'],
       },
     },
   }),
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: "cache-and-network",
-      errorPolicy: "all",
+      fetchPolicy: 'cache-and-network',
+      errorPolicy: 'all',
     },
     query: {
-      fetchPolicy: "cache-first",
-      errorPolicy: "all",
+      fetchPolicy: 'cache-first',
+      errorPolicy: 'all',
     },
     mutate: {
-      errorPolicy: "all",
+      errorPolicy: 'all',
     },
   },
   connectToDevTools: import.meta.env.DEV,
@@ -114,19 +131,19 @@ export const apolloClient = new ApolloClient({
 // Export a function to update the auth token
 export function updateAuthToken(token: string | null): void {
   if (token) {
-    sessionStorage.setItem("kc_token", token);
+    sessionStorage.setItem('kc_token', token);
   } else {
-    sessionStorage.removeItem("kc_token");
+    sessionStorage.removeItem('kc_token');
   }
-  
+
   // Clear the Apollo cache to refetch with new auth
   apolloClient.clearStore();
 }
 
 // Export a function to reset the client (for logout)
 export function resetApolloClient(): Promise<unknown[]> {
-  sessionStorage.removeItem("kc_token");
-  sessionStorage.removeItem("kc_refresh_token");
-  sessionStorage.removeItem("kc_id_token");
+  sessionStorage.removeItem('kc_token');
+  sessionStorage.removeItem('kc_refresh_token');
+  sessionStorage.removeItem('kc_id_token');
   return apolloClient.resetStore();
 }
