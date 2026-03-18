@@ -69,6 +69,11 @@ export class GqlAuthGuard implements CanActivate {
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext();
 
+    if (!req) {
+      this.logger.warn("No request object in GraphQL context");
+      throw new UnauthorizedException("Authentication required");
+    }
+
     // SECURITY: Only skip auth in development mode - NEVER in production
     // Check multiple sources: configService first (for tests), then process.env, then .env file
     let nodeEnv =
