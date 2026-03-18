@@ -97,6 +97,7 @@ async function bootstrap() {
       `${protocol}://${baseUrl}`,
       `${protocol}://www.${baseUrl}`,
       `${protocol}://admin.${baseUrl}`,
+      `${protocol}://app.${baseUrl}`,
     ];
 
     for (const variant of variants) {

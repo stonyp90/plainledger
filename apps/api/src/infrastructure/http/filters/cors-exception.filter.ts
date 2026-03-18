@@ -44,6 +44,7 @@ export class CorsExceptionFilter implements ExceptionFilter {
         `${protocol}://${baseUrl}`,
         `${protocol}://www.${baseUrl}`,
         `${protocol}://admin.${baseUrl}`,
+        `${protocol}://app.${baseUrl}`,
       ];
       
       for (const variant of variants) {
