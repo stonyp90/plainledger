@@ -212,7 +212,7 @@ export class GqlAuthGuard implements CanActivate {
       return {
         sub: payload.sub || payload.user_id,
         email: payload.email || payload.preferred_username,
-        organizationId: payload.organization_id || payload.org_id || "default",
+        organizationId: payload.organization_id || payload.organization || payload.org_id || "default",
         roles: payload.realm_access?.roles || payload.roles || [],
         name: payload.name || payload.given_name,
       };
