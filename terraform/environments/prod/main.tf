@@ -427,6 +427,8 @@ module "ecs" {
   ecr_keycloak_repository_url = aws_ecr_repository.keycloak.repository_url
   ecr_admin_repository_url    = aws_ecr_repository.admin.repository_url
 
+  slack_alert_webhook_url = var.slack_alert_webhook_url
+
   datalake_bucket_arns = module.datalake.datalake_bucket_arns
   uploads_bucket_arn   = aws_s3_bucket.uploads.arn
 

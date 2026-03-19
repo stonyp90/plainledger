@@ -282,3 +282,10 @@ variable "ecr_admin_repository_url" {
   description = "ECR repository URL for admin console"
   type        = string
 }
+
+# Slack Alerts
+variable "slack_alert_webhook_url" {
+  description = "Slack incoming webhook URL for #plainledger-alerts"
+  type        = string
+  default     = ""
+}

@@ -22,6 +22,9 @@ novu_app_id  = "..."
 # 4. Copy the 'Secret' value
 keycloak_client_secret = "your-keycloak-client-secret-here"
 
+# Slack Alerts (incoming webhook for #plainledger-alerts)
+slack_alert_webhook_url = "https://hooks.slack.com/services/..."
+
 # Optional overrides
 # domain_name          = "plainledger.ca"
 # create_hosted_zone   = true
