@@ -744,7 +744,9 @@ resource "aws_ecs_task_definition" "api" {
         { name = "SES_FROM_ADDRESS", value = "noreply@${var.domain_name}" },
         { name = "SES_FROM_NAME", value = "PlainLedger" },
         { name = "SES_REPLY_TO_ADDRESS", value = "support@${var.domain_name}" },
-        { name = "SES_CONFIGURATION_SET", value = "${var.project}-tracking" }
+        { name = "SES_CONFIGURATION_SET", value = "${var.project}-tracking" },
+        # Slack alerts
+        { name = "SLACK_ALERT_WEBHOOK_URL", value = var.slack_alert_webhook_url }
       ]
 
       secrets = concat([

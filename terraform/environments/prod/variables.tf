@@ -198,6 +198,13 @@ variable "alert_email" {
   default     = "tony@plainledger.ca"
 }
 
+# Slack Alerts
+variable "slack_alert_webhook_url" {
+  description = "Slack incoming webhook URL for #plainledger-alerts channel"
+  type        = string
+  default     = ""
+}
+
 # Terraform Backend
 variable "terraform_state_bucket" {
   description = "S3 bucket for Terraform state"

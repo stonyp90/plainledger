@@ -14,6 +14,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { Request, Response } from "express";
+import { alertServerError } from "@infrastructure/slack/slack-alert";
 
 @Catch()
 export class CorsExceptionFilter implements ExceptionFilter {
@@ -106,6 +107,7 @@ export class CorsExceptionFilter implements ExceptionFilter {
         `${request.method} ${request.url} - ${status}: ${message}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+      alertServerError(exception, { method: request.method, url: request.url }).catch(() => {});
     }
 
     // Build response object

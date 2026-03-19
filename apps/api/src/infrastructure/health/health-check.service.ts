@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { CacheService } from '@infrastructure/cache/cache.service';
 import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
+import { alertHealthDegraded } from '@infrastructure/slack/slack-alert';
 
 export interface ServiceHealth {
   name: string;
@@ -423,6 +424,13 @@ export class HealthCheckService {
       overallStatus = 'degraded';
     } else {
       overallStatus = 'healthy';
+    }
+
+    // Alert Slack for unhealthy services
+    for (const svc of services) {
+      if (svc.status === 'unhealthy') {
+        alertHealthDegraded(svc.name, svc.error).catch(() => {});
+      }
     }
 
     return {
