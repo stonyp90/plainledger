@@ -31,9 +31,10 @@ const httpLink = createHttpLink({
 
 // Auth Link - adds the JWT token and CSRF prevention headers to requests
 const authLink = new ApolloLink((operation, forward) => {
-  // Get the authentication token from Keycloak or localStorage
-  // Note: Keycloak stores tokens with underscore (kc_token), not hyphen
-  const token = sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token');
+  // Get the authentication token from the Keycloak instance first (primary source),
+  // then fall back to sessionStorage/localStorage (during login transition)
+  const keycloak = (window as unknown as { keycloak?: { token?: string } }).keycloak;
+  const token = keycloak?.token || sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token');
 
   operation.setContext(({ headers = {} }) => ({
     headers: {
