@@ -69,8 +69,8 @@ export class GqlAuthGuard implements CanActivate {
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext();
 
-    if (!req) {
-      this.logger.warn("No request object in GraphQL context");
+    if (!req || !req.headers) {
+      this.logger.warn("No request object or headers in GraphQL context");
       throw new UnauthorizedException("Authentication required");
     }
 
