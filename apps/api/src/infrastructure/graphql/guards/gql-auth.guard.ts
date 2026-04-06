@@ -67,7 +67,14 @@ export class GqlAuthGuard implements CanActivate {
     }
 
     const ctx = GqlExecutionContext.create(context);
-    const { req } = ctx.getContext();
+    const gqlContext = ctx.getContext();
+
+    // Get request from GraphQL context first, fall back to HTTP context
+    // In some Apollo/NestJS configurations, the GraphQL context's req
+    // may not be the full Express request object
+    const req = gqlContext?.req?.headers
+      ? gqlContext.req
+      : context.switchToHttp().getRequest();
 
     if (!req || !req.headers) {
       this.logger.warn("No request object or headers in GraphQL context");
@@ -127,7 +134,11 @@ export class GqlAuthGuard implements CanActivate {
       this.logger.warn(
         `Authentication skipped (development mode, NODE_ENV=${nodeEnv})`,
       );
-      req.user = this.getMockUser();
+      const mockUser = this.getMockUser();
+      req.user = mockUser;
+      if (gqlContext?.req && gqlContext.req !== req) {
+        gqlContext.req.user = mockUser;
+      }
       return true;
     }
 
@@ -150,8 +161,11 @@ export class GqlAuthGuard implements CanActivate {
       // Check rate limit
       await this.checkRateLimit(user.sub);
 
-      // Attach user to request context
+      // Attach user to request context (both HTTP req and GraphQL context)
       req.user = user;
+      if (gqlContext?.req && gqlContext.req !== req) {
+        gqlContext.req.user = user;
+      }
 
       // Log access for audit
       this.logAccess(ctx, user);
