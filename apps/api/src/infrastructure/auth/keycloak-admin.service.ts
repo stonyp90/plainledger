@@ -80,6 +80,7 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   private adminClient!: KcAdminClientType;
   private realm: string;
   private isConfigured = false;
+  private initInFlight: Promise<void> | null = null;
 
   constructor(
     private readonly configService: ConfigService,
@@ -91,12 +92,51 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   async onModuleInit() {
     this.logger.log('[onModuleInit] KeycloakAdminService starting...');
     await this.initializeClient();
-    // Auto-enable Direct Access Grants on plainledger-web client if not already enabled
-    // This ensures the custom login UI works properly
     if (this.isConfigured) {
       await this.ensureDirectAccessGrantsEnabled();
+    } else {
+      // Keycloak may still be starting (DB migrations, realm import). Schedule background
+      // retry so the admin client self-heals once Keycloak becomes reachable.
+      this.scheduleBackgroundReinit();
     }
     this.logger.log('[onModuleInit] KeycloakAdminService completed');
+  }
+
+  /**
+   * Background retry loop with capped backoff. Stops once initialization succeeds.
+   */
+  private scheduleBackgroundReinit(): void {
+    const delays = [10_000, 30_000, 60_000];
+    let attempt = 0;
+    const tryAgain = async () => {
+      if (this.isConfigured) return;
+      attempt += 1;
+      this.logger.log(`Retrying Keycloak Admin init (attempt ${attempt})...`);
+      await this.initializeClient();
+      if (this.isConfigured) {
+        await this.ensureDirectAccessGrantsEnabled();
+        return;
+      }
+      const delay = delays[Math.min(attempt - 1, delays.length - 1)];
+      setTimeout(tryAgain, delay);
+    };
+    setTimeout(tryAgain, delays[0]);
+  }
+
+  /**
+   * Best-effort lazy re-init triggered when a caller needs the admin client.
+   * Returns true once configured, false if still unavailable. Concurrent callers
+   * share a single in-flight init attempt so we don't hammer Keycloak.
+   */
+  async ensureAvailable(): Promise<boolean> {
+    if (this.isConfigured) return true;
+    if (!this.initInFlight) {
+      this.initInFlight = this.initializeClient().finally(() => {
+        this.initInFlight = null;
+      });
+    }
+    await this.initInFlight;
+    return this.isConfigured;
   }
 
   /**
