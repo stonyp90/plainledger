@@ -148,6 +148,7 @@ import { PostgresUserSettingsRepository } from '@infrastructure/persistence/post
 import { PostgresVisualizationRepository } from '@infrastructure/persistence/postgres/postgres-visualization.repository';
 import { PostgresCustomEntityRepository } from '@infrastructure/persistence/postgres/postgres-custom-entity.repository';
 import { DatabaseInitializerService } from '@infrastructure/persistence/postgres/database-initializer.service';
+import { PlatformSeederService } from '@infrastructure/persistence/postgres/platform-seeder.service';
 
 // Notifications (Email via SES Adapter)
 import { SESAdapter } from './infrastructure/adapters/email/ses/ses.adapter';
@@ -402,175 +403,25 @@ import { PlatformAdminModule } from './modules/platform-admin';
             throw error;
           }
 
-          // Create platform admin tables if they don't exist
-          // These are required for the admin panel to function
-          console.log('[Database] Creating platform admin tables...');
-
-          // Create permissions table
-          await client.query(`
-            CREATE TABLE IF NOT EXISTS platform.permissions (
-              id VARCHAR(100) PRIMARY KEY,
-              name VARCHAR(100) NOT NULL,
-              description TEXT,
-              category VARCHAR(50) NOT NULL,
-              is_dangerous BOOLEAN DEFAULT false,
-              created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-            )
-          `);
-
-          // Create groups table
-          await client.query(`
-            CREATE TABLE IF NOT EXISTS platform.groups (
-              id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-              name VARCHAR(100) NOT NULL UNIQUE,
-              description TEXT,
-              tier_level INTEGER DEFAULT 1,
-              is_system BOOLEAN DEFAULT true,
-              created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-              updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-            )
-          `);
-
-          // Create admin_users table
-          await client.query(`
-            CREATE TABLE IF NOT EXISTS platform.admin_users (
-              id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-              keycloak_id VARCHAR(100) NOT NULL UNIQUE,
-              email VARCHAR(255) NOT NULL,
-              display_name VARCHAR(255),
-              avatar_url VARCHAR(500),
-              is_active BOOLEAN DEFAULT true,
-              mfa_enabled BOOLEAN DEFAULT false,
-              last_access_at TIMESTAMP WITH TIME ZONE,
-              invited_by UUID REFERENCES platform.admin_users(id),
-              notes TEXT,
-              created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-              updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-            )
-          `);
-
-          // Create user_groups junction table
-          await client.query(`
-            CREATE TABLE IF NOT EXISTS platform.user_groups (
-              user_id UUID NOT NULL REFERENCES platform.admin_users(id) ON DELETE CASCADE,
-              group_id UUID NOT NULL REFERENCES platform.groups(id) ON DELETE CASCADE,
-              PRIMARY KEY (user_id, group_id)
-            )
-          `);
-
-          // Create group_permissions junction table
+          // Pre-create platform admin join tables with correct composite PKs.
+          // TypeORM synchronize has a bug where it drops composite PKs during column
+          // type reconciliation and re-creates them with only one column, causing a crash.
+          // By pre-creating with exact column types, TypeORM finds them matching and skips ALTER.
           await client.query(`
             CREATE TABLE IF NOT EXISTS platform.group_permissions (
-              group_id UUID NOT NULL REFERENCES platform.groups(id) ON DELETE CASCADE,
-              permission_id VARCHAR(100) NOT NULL REFERENCES platform.permissions(id) ON DELETE CASCADE,
+              group_id UUID NOT NULL,
+              permission_id VARCHAR(100) NOT NULL,
               PRIMARY KEY (group_id, permission_id)
             )
           `);
-
-          // Create audit_log table (matches AdminAuditLogEntity)
           await client.query(`
-            CREATE TABLE IF NOT EXISTS platform.audit_log (
-              id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-              admin_user_id UUID REFERENCES platform.admin_users(id),
-              admin_email VARCHAR(255),
-              action VARCHAR(100) NOT NULL,
-              resource_type VARCHAR(50) NOT NULL,
-              resource_id VARCHAR(100),
-              resource_name VARCHAR(255),
-              target_org_id UUID,
-              target_org_name VARCHAR(255),
-              target_user_id VARCHAR(100),
-              target_user_email VARCHAR(255),
-              before_state JSONB,
-              after_state JSONB,
-              metadata JSONB,
-              ip_address VARCHAR(45),
-              user_agent TEXT,
-              session_id VARCHAR(100),
-              duration_ms INTEGER,
-              success BOOLEAN DEFAULT true,
-              error_message TEXT,
-              created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+            CREATE TABLE IF NOT EXISTS platform.user_groups (
+              user_id UUID NOT NULL,
+              group_id UUID NOT NULL,
+              PRIMARY KEY (user_id, group_id)
             )
           `);
-
-          // Seed default permissions
-          await client.query(`
-            INSERT INTO platform.permissions (id, name, description, category, is_dangerous)
-            VALUES 
-              ('org:list', 'List Organizations', 'View list of all organizations', 'org', false),
-              ('org:view', 'View Organization', 'View organization details', 'org', false),
-              ('org:create', 'Create Organization', 'Create new organizations', 'org', false),
-              ('org:edit', 'Edit Organization', 'Edit organization settings', 'org', false),
-              ('org:delete', 'Delete Organization', 'Soft delete organizations', 'org', true),
-              ('org:hard_delete', 'Hard Delete Organization', 'Permanently delete organizations', 'org', true),
-              ('user:list', 'List Users', 'View list of users', 'user', false),
-              ('user:view', 'View User', 'View user details', 'user', false),
-              ('user:create', 'Create User', 'Create new users', 'user', false),
-              ('user:edit', 'Edit User', 'Edit user settings', 'user', false),
-              ('user:delete', 'Delete User', 'Delete users', 'user', true),
-              ('user:impersonate', 'Impersonate User', 'Login as another user', 'user', true),
-              ('admin:list', 'List Admins', 'View admin users', 'admin', false),
-              ('admin:create', 'Create Admin', 'Create admin users', 'admin', true),
-              ('admin:disable', 'Disable Admin', 'Disable admin users', 'admin', true),
-              ('group:list', 'List Groups', 'View admin groups', 'admin', false),
-              ('group:assign', 'Assign Groups', 'Assign users to groups', 'admin', false),
-              ('billing:view', 'View Billing', 'View billing information', 'billing', false),
-              ('billing:manage', 'Manage Billing', 'Manage billing settings', 'billing', false),
-              ('audit:view', 'View Audit Logs', 'View audit logs', 'audit', false),
-              ('audit:export', 'Export Audit Logs', 'Export audit logs', 'audit', false),
-              ('health:view', 'View Health', 'View system health', 'health', false),
-              ('sync:view', 'View Sync', 'View sync status', 'sync', false),
-              ('sync:manage', 'Manage Sync', 'Manage data sync', 'sync', false),
-              ('notification:list', 'List Notifications', 'View notifications', 'notification', false),
-              ('notification:create', 'Create Notification', 'Send notifications', 'notification', false),
-              ('notification:delete', 'Delete Notification', 'Delete notifications', 'notification', false),
-              ('integration:view', 'View Integrations', 'View integrations', 'integration', false),
-              ('integration:manage', 'Manage Integrations', 'Manage integrations', 'integration', false),
-              ('onboarding:view', 'View Onboarding', 'View onboarding progress', 'onboarding', false),
-              ('onboarding:manage', 'Manage Onboarding', 'Manage onboarding', 'onboarding', false),
-              ('communication:view', 'View Communications', 'View communications', 'communication', false),
-              ('communication:send', 'Send Communication', 'Send communications', 'communication', false),
-              ('chat:view', 'View Chats', 'View support chats', 'chat', false),
-              ('chat:respond', 'Respond to Chats', 'Respond to support chats', 'chat', false)
-            ON CONFLICT (id) DO NOTHING
-          `);
-
-          // Cleanup duplicate/stale groups (keep only Super Admin)
-          await client.query(`
-            DELETE FROM platform.group_permissions 
-            WHERE group_id IN (
-              SELECT id FROM platform.groups 
-              WHERE id != '00000000-0000-0000-0000-000000000001'
-            )
-          `);
-          await client.query(`
-            DELETE FROM platform.user_groups 
-            WHERE group_id IN (
-              SELECT id FROM platform.groups 
-              WHERE id != '00000000-0000-0000-0000-000000000001'
-            )
-          `);
-          await client.query(`
-            DELETE FROM platform.groups 
-            WHERE id != '00000000-0000-0000-0000-000000000001'
-          `);
-
-          // Seed default Super Admin group
-          await client.query(`
-            INSERT INTO platform.groups (id, name, description, tier_level, is_system)
-            VALUES ('00000000-0000-0000-0000-000000000001', 'Super Admin', 'Full access to all admin features', 100, true)
-            ON CONFLICT (id) DO UPDATE SET name = 'Super Admin', description = 'Full access to all admin features'
-          `);
-
-          // Assign all permissions to Super Admin group
-          await client.query(`
-            INSERT INTO platform.group_permissions (group_id, permission_id)
-            SELECT '00000000-0000-0000-0000-000000000001', id FROM platform.permissions
-            ON CONFLICT DO NOTHING
-          `);
-
-          console.log('[Database] Platform admin tables created successfully');
+          console.log('[Database] Platform admin join tables pre-created');
 
           console.log('[Database] Schemas created successfully');
         } catch (error) {
@@ -823,6 +674,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
     PostgresOrganizationSettingsRepository,
     PostgresUserSettingsRepository,
     DatabaseInitializerService,
+    PlatformSeederService,
     DecisionRepository,
     {
       provide: DECISION_REPOSITORY_TOKEN,
