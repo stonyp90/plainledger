@@ -24,6 +24,8 @@ env:
 
 jobs:
   build-deploy:
+    # Deploys to AWS (S3 + CloudFront): only when the AWS_DEPLOY_ENABLED repository variable is 'true'
+    if: vars.AWS_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write

@@ -327,6 +327,8 @@ jobs:
 
   # ==========================================================================
   # Stage 4: Build Docker Images and Push to ECR
+  # AWS stages (4-6) only run when the AWS_DEPLOY_ENABLED repository variable is
+  # 'true'. The website now deploys to Cloudflare (deploy-website.yml).
   # ==========================================================================
   build-and-push:
     name: Build ${{ matrix.app.name }}
@@ -334,6 +336,7 @@ jobs:
     needs: [lint-api, lint-web, test-api, test-web]
     if: |
       always() &&
+      vars.AWS_DEPLOY_ENABLED == 'true' &&
       (needs.lint-api.result == 'success' || needs.lint-api.result == 'skipped') &&
       (needs.lint-web.result == 'success' || needs.lint-web.result == 'skipped') &&
       (needs.test-api.result == 'success' || needs.test-api.result == 'skipped') &&
@@ -419,6 +422,7 @@ jobs:
     needs: build-and-push
     if: |
       always() &&
+      vars.AWS_DEPLOY_ENABLED == 'true' &&
       (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped' || github.event.inputs.deploy_only == 'true') &&
       github.event_name != 'pull_request'
     environment: production
@@ -725,6 +729,7 @@ jobs:
     needs: [lint-web, test-web]
     if: |
       always() &&
+      vars.AWS_DEPLOY_ENABLED == 'true' &&
       (needs.lint-web.result == 'success' || needs.lint-web.result == 'skipped') &&
       (needs.test-web.result == 'success' || needs.test-web.result == 'skipped') &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&

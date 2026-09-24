@@ -1,0 +1,3 @@
+# Files in dist/ that wrangler must not upload to Cloudflare static assets.
+# Source maps would publish the original (proprietary) source code.
+*.map
