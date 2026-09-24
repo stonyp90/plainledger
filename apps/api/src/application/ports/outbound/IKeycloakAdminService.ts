@@ -17,6 +17,13 @@ export interface IKeycloakAdminService {
   isAvailable(): boolean;
 
   /**
+   * Best-effort lazy initialization. Returns true once configured, false if still
+   * unavailable. Use this from request handlers so the service self-heals when
+   * Keycloak was unreachable at API startup.
+   */
+  ensureAvailable(): Promise<boolean>;
+
+  /**
    * Create a new user in Keycloak
    */
   createUser(input: CreateUserInput): Promise<KeycloakUser>;
