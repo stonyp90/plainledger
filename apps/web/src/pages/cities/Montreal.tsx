@@ -7,7 +7,7 @@
  * - French-first content
  */
 
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../lib/keycloak';
 import PublicHeader from '../../components/PublicHeader';
