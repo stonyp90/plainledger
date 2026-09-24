@@ -180,9 +180,10 @@ export class UserStatsDto {
 // ============================================
 
 export class CreateAdminUserDto {
-  @ApiProperty({ description: 'Keycloak user ID' })
+  @ApiPropertyOptional({ description: 'Keycloak user ID (auto-resolved from email if omitted)' })
+  @IsOptional()
   @IsString()
-  keycloakId: string;
+  keycloakId?: string;
 
   @ApiProperty({ description: 'Admin email', example: 'admin@plainledger.ca' })
   @IsEmail()

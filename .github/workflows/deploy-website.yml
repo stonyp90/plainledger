@@ -1,0 +1,168 @@
+# Deploys the public website (apps/web) to Cloudflare Workers on the free plan.
+# One-time setup (Cloudflare zone, GoDaddy nameservers, API token): docs/CLOUDFLARE_DEPLOYMENT.md
+name: Deploy Website (Cloudflare)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NODE_VERSION: '22'
+  WRANGLER_VERSION: '4.137.0'
+  DOMAIN: plainledger.ca
+
+jobs:
+  preflight:
+    name: Check Cloudflare credentials
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.creds.outputs.ready }}
+    steps:
+      - id: creds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping website deploy: set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets (docs/CLOUDFLARE_DEPLOYMENT.md)."
+          fi
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: |
+          npm ci --include=optional
+          # package-lock.json lacks the Linux Rollup binary (npm optional-deps bug)
+          npm install --no-save "@rollup/rollup-linux-x64-gnu@$(node -p "require('rollup/package.json').version")"
+
+      - name: Build website
+        working-directory: apps/web
+        env:
+          VITE_MOCK_AUTH: 'false'
+          # Empty until the backend is back: the app then runs in guest mode (public pages
+          # only). Set these as repository variables to re-enable sign-in.
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
+          VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM || 'plainledger' }}
+          VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web' }}
+        run: npm run build
+
+      - name: Check Cloudflare zone status
+        id: zone
+        run: |
+          code=$(curl -sS -o zone.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}&account.id=${CLOUDFLARE_ACCOUNT_ID}" || true)
+          if [ "$code" != "200" ]; then
+            echo "::warning::Could not read the ${DOMAIN} zone (HTTP $code): $(jq -c '.errors' zone.json 2>/dev/null). Does the token have Zone:Read?"
+          fi
+          status=$(jq -r '.result[0].status // "not found"' zone.json 2>/dev/null || echo "not found")
+          nameservers=$(jq -r '(.result[0].name_servers // []) | join(" ")' zone.json 2>/dev/null || true)
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "nameservers=$nameservers" >> "$GITHUB_OUTPUT"
+          echo "Zone ${DOMAIN}: ${status} ${nameservers:+(Cloudflare nameservers: $nameservers)}"
+
+      - name: Deploy website Worker
+        id: deploy
+        working-directory: apps/web
+        env:
+          ZONE_STATUS: ${{ steps.zone.outputs.status }}
+          API_ORIGIN: ${{ vars.API_ORIGIN }}
+        run: |
+          args=()
+          # Custom domains need an active zone; until then the site is only on workers.dev
+          if [ "$ZONE_STATUS" = "active" ]; then args+=(--domain "$DOMAIN"); fi
+          if [ -n "$API_ORIGIN" ]; then args+=(--var "API_ORIGIN:$API_ORIGIN"); fi
+          npx --yes "wrangler@${WRANGLER_VERSION}" deploy "${args[@]}" | tee deploy.log
+          echo "workers_dev_url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy www redirect Worker
+        if: steps.zone.outputs.status == 'active'
+        working-directory: apps/web
+        run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy --config wrangler.www.jsonc --domain "www.${DOMAIN}"
+
+      - name: Smoke test
+        env:
+          WORKERS_DEV_URL: ${{ steps.deploy.outputs.workers_dev_url }}
+          ZONE_STATUS: ${{ steps.zone.outputs.status }}
+          API_ORIGIN: ${{ vars.API_ORIGIN }}
+        run: |
+          # usage: check_url <url> <status> [body-substring]; retries while the edge picks up the deploy
+          check_url() {
+            local code
+            for _ in $(seq 1 12); do
+              code=$(curl -sS -o body.txt -w '%{http_code}' "$1" || true)
+              if [ "$code" = "$2" ] && { [ -z "${3:-}" ] || grep -q "$3" body.txt; }; then
+                echo "OK   $1 -> $code"; return 0
+              fi
+              sleep 10
+            done
+            echo "FAIL $1 -> $code (expected $2${3:+ containing \"$3\"})"; return 1
+          }
+          check_url "$WORKERS_DEV_URL/" 200 PlainLedger
+          check_url "$WORKERS_DEV_URL/quebec" 200 PlainLedger
+          if [ -z "$API_ORIGIN" ]; then check_url "$WORKERS_DEV_URL/api/health" 503 SERVICE_UNAVAILABLE; fi
+          if [ "$ZONE_STATUS" = "active" ]; then
+            # New custom domains can take a few minutes to get their certificate: warn only
+            check_url "https://${DOMAIN}/" 200 PlainLedger || echo "::warning::https://${DOMAIN} is not serving yet; re-check in a few minutes."
+          fi
+
+      - name: Summary
+        if: always()
+        env:
+          WORKERS_DEV_URL: ${{ steps.deploy.outputs.workers_dev_url }}
+          ZONE_STATUS: ${{ steps.zone.outputs.status }}
+          NAMESERVERS: ${{ steps.zone.outputs.nameservers }}
+        run: |
+          {
+            echo "## Website deploy (Cloudflare Workers)"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| workers.dev | ${WORKERS_DEV_URL:-n/a} |"
+            echo "| Zone \`${DOMAIN}\` | ${ZONE_STATUS:-unknown} |"
+            if [ "$ZONE_STATUS" = "active" ]; then
+              echo "| Live at | https://${DOMAIN} (www redirects to it) |"
+            fi
+            echo ""
+            if [ "$ZONE_STATUS" = "pending" ]; then
+              echo "**Next step:** at GoDaddy, set the nameservers of \`${DOMAIN}\` to: \`${NAMESERVERS}\`, then re-run this workflow once Cloudflare shows the zone as Active."
+            elif [ "$ZONE_STATUS" != "active" ]; then
+              echo "**Next step:** add \`${DOMAIN}\` to Cloudflare (Free plan), then point the GoDaddy nameservers to it. See docs/CLOUDFLARE_DEPLOYMENT.md."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

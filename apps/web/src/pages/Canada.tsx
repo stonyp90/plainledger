@@ -40,6 +40,7 @@ import {
   GraduationCap,
   Plane,
   Server,
+  X,
 } from 'lucide-react';
 
 // Canadian theme - Red and White inspired

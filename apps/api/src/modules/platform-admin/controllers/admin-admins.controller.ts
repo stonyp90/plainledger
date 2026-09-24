@@ -17,6 +17,7 @@ import { PlatformAdminGuard } from '../guards/platform-admin.guard';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AdminAuthService } from '../services/admin-auth.service';
 import { AdminAuditService } from '../services/admin-audit.service';
+import { KeycloakAdminService } from '@infrastructure/auth/keycloak-admin.service';
 import {
   CreateAdminUserDto,
   AssignGroupsDto,
@@ -34,6 +35,7 @@ export class AdminAdminsController {
   constructor(
     private readonly authService: AdminAuthService,
     private readonly auditService: AdminAuditService,
+    private readonly keycloakAdmin: KeycloakAdminService,
   ) {}
 
   @Get()
@@ -131,8 +133,26 @@ export class AdminAdminsController {
         metadata: { email: body.email, groups: body.groupIds },
       },
       async () => {
+        // Resolve keycloakId: use provided value, look up existing user, or create new one
+        let keycloakId = body.keycloakId;
+        if (!keycloakId) {
+          const existingUser = await this.keycloakAdmin.findUserByEmail(body.email);
+          if (existingUser) {
+            keycloakId = existingUser.id;
+          } else {
+            const nameParts = body.displayName.trim().split(/\s+/);
+            const newUser = await this.keycloakAdmin.createUser({
+              email: body.email,
+              firstName: nameParts[0] || body.displayName,
+              lastName: nameParts.slice(1).join(' ') || '',
+              emailVerified: true,
+            });
+            keycloakId = newUser.id;
+          }
+        }
+
         return this.authService.createAdminUser(
-          body.keycloakId,
+          keycloakId,
           body.email,
           body.displayName,
           body.groupIds,

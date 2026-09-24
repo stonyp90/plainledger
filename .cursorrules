@@ -102,6 +102,11 @@
 - Patterns: `apps/web/agent.md`
 - Code: `apps/web/src/`
 
+**For Design System (colours, type, components, brand):**
+- Rules and brand book: `design-system/README.md`, `design-system/guidelines/`
+- Tokens: `design-system/tokens.json` → `npm run tokens` generates `apps/web/src/styles/tokens.css` (never edit it by hand)
+- Component classes: `apps/web/src/styles/globals.css`
+
 **For Testing:**
 - Patterns: `e2e/agent.md`
 - Tests: `e2e/*.spec.ts`
@@ -428,6 +433,8 @@ export function ComponentName({ props }: Props) {
   return (/* JSX */);
 }
 ```
+
+**Styling:** Colours come from tokens (`rgb(var(--color-surface))`), actions are outlined `btn-*` classes, financial charts use IBCS notation, and every string exists in EN and FR. See `design-system/README.md`.
 
 **See:** `apps/web/agent.md` for detailed React patterns
 

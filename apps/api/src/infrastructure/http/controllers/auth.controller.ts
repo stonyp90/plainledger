@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import { Public } from 'nest-keycloak-connect';
 import { IsEmail, IsString, IsOptional, MinLength, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { IKeycloakAdminService } from '@application/ports/outbound/IKeycloakAdminService';
 import { Inject } from '@nestjs/common';
 import { PostgresUserProfileRepository } from '@infrastructure/persistence/postgres/postgres-user-profile.repository';
@@ -50,6 +51,7 @@ const _VALID_PROVINCES = [
 ];
 
 export class RegisterUserDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 
@@ -91,16 +93,19 @@ export class RegisterUserDto {
 }
 
 export class ForgotPasswordDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 }
 
 export class ResendVerificationDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 }
 
 export class LoginDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 
@@ -172,7 +177,7 @@ export class AuthController {
   async login(@Body() dto: LoginDto) {
     this.logger.log(`Login attempt for: ${dto.email}`);
 
-    if (!this.keycloakAdminService.isAvailable()) {
+    if (!(await this.keycloakAdminService.ensureAvailable())) {
       throw new BadRequestException(
         'Authentication is temporarily unavailable. Please try again later.',
       );
@@ -466,7 +471,7 @@ export class AuthController {
   async register(@Body() dto: RegisterUserDto) {
     this.logger.log(`Registration request for: ${dto.email}`);
 
-    if (!this.keycloakAdminService.isAvailable()) {
+    if (!(await this.keycloakAdminService.ensureAvailable())) {
       this.logger.error('Keycloak Admin Service not configured');
       throw new BadRequestException(
         'Registration is temporarily unavailable. Please try again later.',
@@ -764,7 +769,7 @@ export class AuthController {
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     this.logger.log(`Password reset request for: ${dto.email}`);
 
-    if (!this.keycloakAdminService.isAvailable()) {
+    if (!(await this.keycloakAdminService.ensureAvailable())) {
       throw new BadRequestException(
         'Password reset is temporarily unavailable. Please try again later.',
       );
@@ -850,7 +855,7 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     this.logger.log('Password reset attempt with token');
 
-    if (!this.keycloakAdminService.isAvailable()) {
+    if (!(await this.keycloakAdminService.ensureAvailable())) {
       throw new BadRequestException(
         'Password reset is temporarily unavailable. Please try again later.',
       );
@@ -961,7 +966,7 @@ export class AuthController {
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     this.logger.log('Email verification attempt with token');
 
-    if (!this.keycloakAdminService.isAvailable()) {
+    if (!(await this.keycloakAdminService.ensureAvailable())) {
       throw new BadRequestException(
         'Email verification is temporarily unavailable. Please try again later.',
       );
@@ -1031,7 +1036,7 @@ export class AuthController {
   async resendVerification(@Body() dto: ResendVerificationDto) {
     this.logger.log(`Resend verification request for: ${dto.email}`);
 
-    if (!this.keycloakAdminService.isAvailable()) {
+    if (!(await this.keycloakAdminService.ensureAvailable())) {
       throw new BadRequestException(
         'Verification is temporarily unavailable. Please try again later.',
       );

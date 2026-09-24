@@ -6,14 +6,15 @@
  */
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/keycloak';
 import PublicHeader from '../components/PublicHeader';
 import { useI18n } from '../lib/i18n';
 import SREDCalculator from '../components/SREDCalculator';
 import SEOHead from '../components/SEOHead';
-import { 
+import {
+  ArrowRight,
   Check,
   Calendar,
   Mail,

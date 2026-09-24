@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.deploy_only != 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -103,7 +103,7 @@ jobs:
     needs: setup
     if: ${{ github.event.inputs.deploy_only != 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -124,7 +124,7 @@ jobs:
     needs: setup
     if: ${{ github.event.inputs.deploy_only != 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -133,6 +133,8 @@ jobs:
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
+      - name: Check design tokens are generated from design-system/tokens.json
+        run: node design-system/build-tokens.mjs --check
       - run: npx tsc --noEmit || echo "⚠️ TypeScript warnings - will fix incrementally"
         working-directory: apps/web
 
@@ -145,7 +147,7 @@ jobs:
     needs: setup
     if: ${{ github.event.inputs.skip_tests != 'true' && github.event.inputs.deploy_only != 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -179,7 +181,7 @@ jobs:
     needs: setup
     if: ${{ github.event.inputs.skip_tests != 'true' && github.event.inputs.deploy_only != 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -238,7 +240,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -327,6 +329,8 @@ jobs:
 
   # ==========================================================================
   # Stage 4: Build Docker Images and Push to ECR
+  # AWS stages (4-6) only run when the AWS_DEPLOY_ENABLED repository variable is
+  # 'true'. The website now deploys to Cloudflare (deploy-website.yml).
   # ==========================================================================
   build-and-push:
     name: Build ${{ matrix.app.name }}
@@ -334,6 +338,7 @@ jobs:
     needs: [lint-api, lint-web, test-api, test-web]
     if: |
       always() &&
+      vars.AWS_DEPLOY_ENABLED == 'true' &&
       (needs.lint-api.result == 'success' || needs.lint-api.result == 'skipped') &&
       (needs.lint-web.result == 'success' || needs.lint-web.result == 'skipped') &&
       (needs.test-api.result == 'success' || needs.test-api.result == 'skipped') &&
@@ -369,10 +374,10 @@ jobs:
     outputs:
       image_tag: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
@@ -419,12 +424,13 @@ jobs:
     needs: build-and-push
     if: |
       always() &&
+      vars.AWS_DEPLOY_ENABLED == 'true' &&
       (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped' || github.event.inputs.deploy_only == 'true') &&
       github.event_name != 'pull_request'
     environment: production
     steps:
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}
@@ -725,12 +731,13 @@ jobs:
     needs: [lint-web, test-web]
     if: |
       always() &&
+      vars.AWS_DEPLOY_ENABLED == 'true' &&
       (needs.lint-web.result == 'success' || needs.lint-web.result == 'skipped') &&
       (needs.test-web.result == 'success' || needs.test-web.result == 'skipped') &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -761,7 +768,7 @@ jobs:
           VITE_KEYCLOAK_CLIENT_ID: plainledger-web
 
       - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/plainledger-prod-github-actions
           aws-region: ${{ env.AWS_REGION }}

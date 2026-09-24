@@ -523,7 +523,15 @@ npm run test:e2e:report
 
 ## 🚢 Deployment
 
+### Website (Cloudflare, free plan)
+
+The public website at [plainledger.ca](https://plainledger.ca) is deployed to Cloudflare Workers by
+`.github/workflows/deploy-website.yml` on every push to `main`. Setup and configuration:
+[docs/CLOUDFLARE_DEPLOYMENT.md](docs/CLOUDFLARE_DEPLOYMENT.md).
+
 ### Cloud Deployment (AWS)
+
+> The AWS jobs in `ci.yml` and `storybook.yml` only run when the `AWS_DEPLOY_ENABLED` repository variable is `true`.
 
 ```bash
 # Deploy infrastructure

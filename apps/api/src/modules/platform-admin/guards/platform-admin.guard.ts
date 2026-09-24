@@ -149,15 +149,19 @@ export class PlatformAdminGuard implements CanActivate {
       relations: ['groups', 'groups.permissions'],
     });
 
+    // Resolve email: prefer JWT email claim, fall back to preferred_username if it looks like an email
+    const userEmail: string | undefined =
+      user.email || (user.preferred_username?.includes('@') ? user.preferred_username : undefined);
+
     // Check if user has platform-admin role in Keycloak
     const hasPlatformAdminRole = this.hasKeycloakRole(user, PLATFORM_ADMIN_ROLE);
 
     // Fallback: Check if email is in allowed list (from PLATFORM_ADMIN_EMAILS env var)
     const platformAdminEmails = getPlatformAdminEmails(this.configService);
-    const isEmailAllowed = user.email && platformAdminEmails.includes(user.email.toLowerCase());
+    const isEmailAllowed = userEmail && platformAdminEmails.includes(userEmail.toLowerCase());
 
     // Log for debugging
-    this.logger.log(`PlatformAdminGuard: Checking access for ${user.email}`);
+    this.logger.log(`PlatformAdminGuard: Checking access for ${userEmail || user.sub}`);
     this.logger.log(
       `PlatformAdminGuard: hasPlatformAdminRole=${hasPlatformAdminRole}, isEmailAllowed=${isEmailAllowed}`,
     );
@@ -168,30 +172,37 @@ export class PlatformAdminGuard implements CanActivate {
 
     // Auto-provision admin for users with platform-admin Keycloak role OR allowed email
     if (!adminUser && canAutoProvision) {
-      this.logger.log(
-        `PlatformAdminGuard: Auto-provisioning admin for ${user.email} (role=${hasPlatformAdminRole}, email=${isEmailAllowed})`,
-      );
-      adminUser = await this.autoProvisionAdmin(user);
-
-      // If full auto-provisioning failed (e.g. group doesn't exist), create bare admin user
-      // The super admin bypass below will grant all permissions regardless
-      if (!adminUser) {
-        this.logger.warn(
-          `PlatformAdminGuard: Full auto-provision failed for ${user.email}, creating bare admin user`,
+      if (!userEmail) {
+        this.logger.error(
+          `PlatformAdminGuard: Cannot auto-provision admin for ${user.sub} - no email in JWT. Check Keycloak email scope mappers.`,
         );
-        adminUser = await this.createBareAdminUser(user);
+      } else {
+        this.logger.log(
+          `PlatformAdminGuard: Auto-provisioning admin for ${userEmail} (role=${hasPlatformAdminRole}, email=${isEmailAllowed})`,
+        );
+        const userWithEmail = { ...user, email: userEmail };
+        adminUser = await this.autoProvisionAdmin(userWithEmail);
+
+        // If full auto-provisioning failed (e.g. group doesn't exist), create bare admin user
+        // The super admin bypass below will grant all permissions regardless
+        if (!adminUser) {
+          this.logger.warn(
+            `PlatformAdminGuard: Full auto-provision failed for ${userEmail}, creating bare admin user`,
+          );
+          adminUser = await this.createBareAdminUser(userWithEmail);
+        }
       }
     }
 
     // Fix existing admin users who have no groups assigned (repair previous failed provisioning)
     if (adminUser && (!adminUser.groups || adminUser.groups.length === 0) && canAutoProvision) {
-      this.logger.log(`PlatformAdminGuard: Fixing group assignment for ${user.email}`);
+      this.logger.log(`PlatformAdminGuard: Fixing group assignment for ${userEmail}`);
       adminUser = await this.fixAdminGroups(adminUser);
     }
 
     if (!adminUser) {
       this.logger.warn(
-        `PlatformAdminGuard: User ${user.email || user.preferred_username} (${user.sub}) is not a platform admin - access denied`,
+        `PlatformAdminGuard: User ${userEmail || user.preferred_username || user.sub} (${user.sub}) is not a platform admin - access denied`,
       );
       // Log unauthorized access attempt
       await this.logUnauthorizedAccess(user, request);

@@ -1,3 +1,6 @@
+/* Design tokens: generated from design-system/tokens.json (run `npm run tokens`). */
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,180 +8,17 @@
 /* ============================================================================
    PLAINLEDGER CORPORATE DESIGN SYSTEM
    Enterprise-grade financial reporting platform
+
+   Colours, shadows, radii and transitions come from ./tokens.css, which is
+   generated from design-system/tokens.json. Read design-system/README.md
+   before adding a colour or a component class here.
    ============================================================================ */
 
 :root {
-  /* === NEUTRAL SCALE - Corporate slate palette === */
-  --color-white: 255 255 255;
-  --color-black: 15 23 42;
-  
-  /* Slate grays - sophisticated corporate feel */
-  --color-gray-25: 248 250 252;
-  --color-gray-50: 241 245 249;
-  --color-gray-100: 226 232 240;
-  --color-gray-200: 203 213 225;
-  --color-gray-300: 148 163 184;
-  --color-gray-400: 100 116 139;
-  
-  /* Mid grays - for borders and muted elements */
-  --color-gray-500: 71 85 105;
-  --color-gray-600: 51 65 85;
-  
-  /* Dark grays - corporate navy tones */
-  --color-gray-700: 39 51 70;
-  --color-gray-800: 27 38 56;
-  --color-gray-850: 21 31 48;
-  --color-gray-900: 15 23 42;
-  --color-gray-950: 8 15 30;
-
-  /* === BRAND COLORS - Finance Green (Emerald) === */
-  --color-primary-50: 236 253 245;
-  --color-primary-100: 209 250 229;
-  --color-primary-200: 167 243 208;
-  --color-primary-300: 110 231 183;
-  --color-primary-400: 52 211 153;
-  --color-primary-500: 16 185 129;
-  --color-primary-600: 5 150 105;
-  --color-primary-700: 4 120 87;
-  --color-primary-800: 6 95 70;
-  --color-primary-900: 6 78 59;
-  
-  /* === ACCENT COLORS - Gold/Yellow (Premium CTAs) === */
-  --color-accent-50: 255 251 235;
-  --color-accent-100: 254 243 199;
-  --color-accent-200: 253 230 138;
-  --color-accent-300: 252 211 77;
-  --color-accent-400: 251 191 36;
-  --color-accent-500: 245 158 11;
-  --color-accent-600: 217 119 6;
-  --color-accent-700: 180 83 9;
-  --color-accent-800: 146 64 14;
-  --color-accent-900: 120 53 15;
-
-  /* === SEMANTIC COLORS - Muted corporate tones === */
-  /* Success - Professional green */
-  --color-success-light: 34 197 94;
-  --color-success: 22 163 74;
-  --color-success-dark: 21 128 61;
-  
-  /* Warning - Muted amber */
-  --color-warning-light: 251 191 36;
-  --color-warning: 217 119 6;
-  --color-warning-dark: 180 83 9;
-  
-  /* Error/Danger - Professional red */
-  --color-error-light: 248 113 113;
-  --color-error: 220 38 38;
-  --color-error-dark: 185 28 28;
-  
-  /* Info - Corporate blue */
-  --color-info-light: 96 165 250;
-  --color-info: 59 130 246;
-  --color-info-dark: 37 99 235;
-
-  /* === LIGHT MODE (Default) === */
-  /* Backgrounds */
-  --color-bg: var(--color-white);
-  --color-bg-subtle: var(--color-gray-25);
-  --color-bg-muted: var(--color-gray-50);
-  --color-bg-emphasis: var(--color-gray-100);
-  
-  /* Surfaces */
-  --color-surface: var(--color-white);
-  --color-surface-raised: var(--color-white);
-  --color-surface-overlay: var(--color-white);
-  
-  /* Text - High contrast corporate */
-  --color-text: var(--color-gray-900);           /* Primary text - near black */
-  --color-text-secondary: var(--color-gray-600); /* Secondary text */
-  --color-text-muted: var(--color-gray-500);     /* Muted text */
-  --color-text-subtle: var(--color-gray-400);    /* Disabled/placeholder */
-  --color-text-inverted: var(--color-white);
-  
-  /* Borders - Refined */
-  --color-border: var(--color-gray-200);
-  --color-border-subtle: var(--color-gray-100);
-  --color-border-strong: var(--color-gray-300);
-  --color-border-emphasis: var(--color-gray-400);
-  
-  /* Interactive states - Corporate blue */
-  --color-interactive: var(--color-primary-600);
-  --color-interactive-hover: var(--color-primary-700);
-  --color-interactive-active: var(--color-primary-800);
-  
-  /* Focus ring */
-  --color-focus-ring: var(--color-primary-500);
-  
-  /* Shadows - Subtle and professional */
-  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
-  --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.04);
-  --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.04);
-  --shadow-2xl: 0 25px 50px -12px rgb(15 23 42 / 0.2);
-
-  /* Radius - More refined, less playful */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-full: 9999px;
-
-  /* Transitions */
-  --transition-fast: 100ms ease-out;
-  --transition-normal: 150ms ease-out;
-  --transition-slow: 200ms ease-out;
-
   /* ===================================================================
-     STORE/MARKETING PAGE - Trust Theme (Green & Gold)
-     These colors inspire trust and prosperity in the finance industry.
-     Update these to change all Store page colors at once.
+     STORE/MARKETING PAGE - gradients built from the store-* tokens
      =================================================================== */
-  
-  /* Trust Green - Primary trust color (using emerald green) */
-  --store-trust-primary: var(--color-primary-600);
-  --store-trust-primary-light: var(--color-primary-500);
-  --store-trust-primary-dark: var(--color-primary-700);
-  --store-trust-primary-bg: var(--color-primary-500) / 0.1;
-  --store-trust-primary-border: var(--color-primary-500) / 0.2;
-  
-  /* Prosperity Gold - Secondary accent color (using amber/gold) */
-  --store-prosperity-accent: var(--color-accent-600);
-  --store-prosperity-accent-light: var(--color-accent-500);
-  --store-prosperity-accent-dark: var(--color-accent-700);
-  --store-prosperity-accent-bg: var(--color-accent-500) / 0.1;
-  --store-prosperity-accent-border: var(--color-accent-500) / 0.2;
-  
-  /* Trust Badge colors */
   --store-badge-trust-bg: linear-gradient(135deg, rgb(var(--color-primary-500) / 0.1) 0%, rgb(var(--color-accent-500) / 0.1) 100%);
-  --store-badge-trust-border: var(--color-primary-500) / 0.2;
-  
-  /* CTA button colors */
-  --store-cta-primary-bg: var(--color-primary-600);
-  --store-cta-primary-hover: var(--color-primary-700);
-  --store-cta-accent-bg: var(--color-accent-500);
-  --store-cta-accent-hover: var(--color-accent-600);
-  
-  /* Hero section gradient */
-  --store-hero-gradient-1: var(--color-primary-500);
-  --store-hero-gradient-2: var(--color-accent-500);
-  --store-hero-gradient-3: var(--color-primary-400);
-  
-  /* Stats/metrics colors */
-  --store-stat-savings: var(--color-primary-600);
-  --store-stat-accuracy: var(--color-accent-600);
-  --store-stat-cost: var(--color-primary-600);
-  
-  /* Feature card colors */
-  --store-feature-success: var(--color-success);
-  --store-feature-success-bg: var(--color-success) / 0.1;
-  --store-feature-primary: var(--color-primary-600);
-  --store-feature-primary-bg: var(--color-primary-500) / 0.1;
-  --store-feature-accent: var(--color-accent-600);
-  --store-feature-accent-bg: var(--color-accent-500) / 0.1;
-  
-  /* Bottom CTA section */
   --store-cta-section-bg: linear-gradient(135deg, rgb(var(--color-primary-600)) 0%, rgb(var(--color-primary-700)) 100%);
   --store-cta-button-bg: linear-gradient(135deg, rgb(var(--color-accent-400)) 0%, rgb(var(--color-accent-500)) 100%);
 
@@ -219,71 +59,8 @@
   --text-subtitle-compact: clamp(0.5625rem, 0.55rem + 0.1vw, 0.625rem); /* 9-10px - Compact subtitles */
 }
 
-/* === DARK MODE - Corporate Navy === */
+/* === DARK MODE - Corporate Navy (token overrides live in ./tokens.css) === */
 .dark {
-  /* Backgrounds - Deep corporate navy */
-  --color-bg: var(--color-gray-950);
-  --color-bg-subtle: var(--color-gray-900);
-  --color-bg-muted: var(--color-gray-850);
-  --color-bg-emphasis: var(--color-gray-800);
-  
-  /* Surfaces */
-  --color-surface: var(--color-gray-900);
-  --color-surface-raised: var(--color-gray-850);
-  --color-surface-overlay: var(--color-gray-800);
-  
-  /* Text - Crisp on dark (improved visibility) */
-  --color-text: var(--color-gray-50);
-  --color-text-secondary: var(--color-gray-200);
-  --color-text-muted: var(--color-gray-300);
-  --color-text-subtle: var(--color-gray-400);
-  --color-text-inverted: var(--color-gray-950);
-  
-  /* Borders - Refined */
-  --color-border: var(--color-gray-800);
-  --color-border-subtle: var(--color-gray-850);
-  --color-border-strong: var(--color-gray-700);
-  --color-border-emphasis: var(--color-gray-600);
-  
-  /* Interactive states */
-  --color-interactive: var(--color-primary-400);
-  --color-interactive-hover: var(--color-primary-300);
-  --color-interactive-active: var(--color-primary-200);
-  
-  /* Focus ring */
-  --color-focus-ring: var(--color-primary-400);
-  
-  /* Semantic colors - Adjusted for dark mode */
-  --color-success-light: 74 222 128;
-  --color-success: 34 197 94;
-  --color-warning-light: 251 191 36;
-  --color-warning: 245 158 11;
-  --color-error-light: 252 165 165;
-  --color-error: 248 113 113;
-  --color-info-light: 147 197 253;
-  --color-info: 96 165 250;
-  
-  /* Shadows - Deeper */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.25);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.35), 0 1px 2px -1px rgb(0 0 0 / 0.35);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.35), 0 2px 4px -2px rgb(0 0 0 / 0.35);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.35), 0 4px 6px -4px rgb(0 0 0 / 0.35);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
-  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
-
-  /* Store/Marketing - Dark mode adjustments */
-  --store-trust-primary: var(--color-primary-400);
-  --store-trust-primary-light: var(--color-primary-300);
-  --store-trust-primary-dark: var(--color-primary-500);
-  --store-prosperity-accent: var(--color-accent-400);
-  --store-prosperity-accent-light: var(--color-accent-300);
-  --store-prosperity-accent-dark: var(--color-accent-500);
-  --store-stat-savings: var(--color-primary-400);
-  --store-stat-accuracy: var(--color-accent-400);
-  --store-stat-cost: var(--color-primary-400);
-  --store-feature-primary: var(--color-primary-400);
-  --store-feature-accent: var(--color-accent-400);
-
   /* Landing page - Dark mode adjustments */
   --landing-bg: linear-gradient(135deg, #0f172a 0%, #111827 25%, #0f172a 50%, #111827 75%, #0f172a 100%);
   --landing-bg-subtle: rgba(52, 211, 153, 0.03);
