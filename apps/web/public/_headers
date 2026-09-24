@@ -1,0 +1,17 @@
+# Response headers for Cloudflare Workers static assets (not served as a file).
+# https://developers.cloudflare.com/workers/static-assets/headers/
+# Same security headers the nginx image used; nothing here applies to /api or /graphql.
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
+
+# Vite output is content-hashed, so it can be cached forever
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Keep the *.workers.dev copy of the site out of search results (plainledger.ca is canonical)
+https://:worker.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex

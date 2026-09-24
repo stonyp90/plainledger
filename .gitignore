@@ -80,6 +80,9 @@ tmp/
 temp/
 .cache/
 
+# Cloudflare Wrangler local state
+.wrangler/
+
 # TypeScript
 *.tsbuildinfo
 
