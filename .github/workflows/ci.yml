@@ -133,6 +133,8 @@ jobs:
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
+      - name: Check design tokens are generated from design-system/tokens.json
+        run: node design-system/build-tokens.mjs --check
       - run: npx tsc --noEmit || echo "⚠️ TypeScript warnings - will fix incrementally"
         working-directory: apps/web
 

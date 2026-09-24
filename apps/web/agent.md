@@ -357,15 +357,17 @@ export { ChartErrorBoundary, withChartErrorBoundary } from './ChartErrorBoundary
 
 ### Brand Compliance
 
-**ALWAYS follow these rules:**
+**ALWAYS follow [`design-system/README.md`](../../design-system/README.md)**: the ten rules, the tokens and the brand book in `design-system/guidelines/`. In short:
 
-1. **Logo:** Use green gradient, never gray
-   - Reference: [`src/components/Layout.tsx`](src/components/Layout.tsx) (lines 146-162)
+1. **Logo:** The ledger grid (nine rounded cells) in `rgb(var(--color-primary-500))`, never gray and never a generic glyph
+   - Reference: [`src/components/Layout.tsx`](src/components/Layout.tsx) (the inline sidebar mark)
+   - The app tile is flat `color-primary-600` with #e9fff6 cells; only the relief mark carries a gradient
 
 2. **Colors:** Use CSS variables, never hardcoded
    - Primary: `rgb(var(--color-primary-500))`
    - Background: `rgb(var(--color-bg))`
    - Text: `rgb(var(--color-text))`
+   - Tokens are generated into `src/styles/tokens.css` from `design-system/tokens.json`. Change the JSON, then run `npm run tokens` from the repository root; never edit `tokens.css` by hand
 
 3. **Components:** Use design system classes
    - Buttons: `btn-primary`, `btn-accent`, `btn-secondary`
@@ -731,9 +733,11 @@ interface IBCSChartConfig {
 
 ### Variance Colors
 
-- **Green (rgb(34, 197, 94))**: Favorable variance
-- **Red (rgb(239, 68, 68))**: Unfavorable variance
-- **Gray (rgb(148, 163, 184))**: Neutral variance
+These match `IBCSColors` in `src/lib/ibcs/theme.ts` and the `--ibcs-*` tokens:
+
+- **Favorable** (`ibcs-favorable`, emerald-600 `rgb(var(--color-primary-600))`): revenue above plan, expenses below plan
+- **Unfavorable** (`ibcs-unfavorable`, #dc2626): the opposite
+- **Neutral** (`ibcs-neutral`, #6b7280): within the ±2% on-target band
 
 ### Bar Styles
 

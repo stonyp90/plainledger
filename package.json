@@ -23,6 +23,8 @@
     "test:e2e:api": "playwright test api-contract.spec.ts",
     "test:e2e:integration": "playwright test integration-with-fixtures.spec.ts",
     "check:class-sizes": "./scripts/check-class-sizes.sh",
+    "tokens": "node design-system/build-tokens.mjs",
+    "tokens:check": "node design-system/build-tokens.mjs --check",
     "prepare": "husky"
   },
   "devDependencies": {
