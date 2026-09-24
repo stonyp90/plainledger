@@ -61,6 +61,16 @@ async function bootstrap() {
     }),
   );
 
+  // Security hardening
+  app.getHttpAdapter().getInstance().disable('x-powered-by');
+  app.use((_req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
+
   // Global exception filters
   // CorsExceptionFilter must be last (catch-all) to handle CORS on all error responses
   app.useGlobalFilters(new DomainExceptionFilter(), new CorsExceptionFilter());
@@ -122,9 +132,9 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      // Log rejected origins for debugging
+      // Reject unknown origins without throwing (avoids 500)
       console.warn(`[CORS] Rejected origin: ${origin}`);
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
+      callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
