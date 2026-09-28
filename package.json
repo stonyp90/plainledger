@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "^26.5.5",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.63.0",
     "@testcontainers/postgresql": "^11.0.0",
     "@testcontainers/redis": "^11.0.0",
     "@types/pg": "^8.16.0",
