@@ -72,14 +72,14 @@ jobs:
 
       - name: Cache API node_modules
         id: cache-api
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
 
       - name: Cache Web node_modules
         id: cache-web
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
@@ -108,7 +108,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore API cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
@@ -129,7 +129,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore Web cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
@@ -152,7 +152,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore API cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
@@ -186,7 +186,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Restore Web cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
@@ -247,7 +247,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore API cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
@@ -744,7 +744,7 @@ jobs:
           node-version: '22'
 
       - name: Restore Web cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
