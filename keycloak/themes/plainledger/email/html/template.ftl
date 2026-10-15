@@ -64,7 +64,8 @@
         
         /* Header with Logo */
         .email-header {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
             padding: 20px 32px;
             text-align: center;
         }
@@ -72,20 +73,12 @@
             display: inline-block;
         }
         .email-logo-icon {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 8px;
-        }
-        .email-logo-text {
-            color: #ffffff;
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-            margin: 0;
-            text-decoration: none;
+            width: 200px;
+            max-width: 100%;
+            height: auto;
         }
         .email-tagline {
-            color: rgba(255, 255, 255, 0.85);
+            color: #64748b;
             font-size: 13px;
             margin: 4px 0 0 0;
             font-weight: 400;
@@ -299,9 +292,6 @@
             .email-footer {
                 padding: 24px !important;
             }
-            .email-logo-text {
-                font-size: 20px !important;
-            }
             .footer-links a {
                 display: block;
                 margin: 8px 0;
@@ -316,12 +306,11 @@
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container" style="max-width: 600px; width: 100%;">
                     <!-- Header with Logo -->
                     <tr>
-                        <td class="email-header">
+                        <td class="email-header" bgcolor="#ffffff" style="background-color: #ffffff; border-bottom: 1px solid #e2e8f0;">
                             <div class="email-logo">
-                                <!-- PlainLedger Logo Icon -->
-                                <img src="https://plainledger.ca/logo-white.png" alt="PlainLedger" class="email-logo-icon" width="32" height="32" style="width: 32px; height: 32px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;">
-                                <div class="email-logo-text">PlainLedger</div>
-                                <p class="email-tagline">No surprises. Just numbers.</p>
+                                <!-- The full lockup includes the brand name. -->
+                                <img src="https://plainledger.ca/logo-full.png" alt="PlainLedger" class="email-logo-icon" width="200" style="width: 200px; max-width: 100%; height: auto; display: block; margin-left: auto; margin-right: auto;">
+                                <p class="email-tagline" style="color: #64748b;">No surprises. Just numbers.</p>
                             </div>
                         </td>
                     </tr>
