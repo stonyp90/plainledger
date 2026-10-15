@@ -4,6 +4,7 @@ node_modules/
 .pnp.js
 
 # Build outputs
+.claude/worktrees/
 dist/
 build/
 .next/
