@@ -47,7 +47,7 @@ services:
   # Keycloak - Identity Provider
   # ============================================
   keycloak:
-    image: quay.io/keycloak/keycloak:26.1
+    image: quay.io/keycloak/keycloak:26.8.1
     container_name: plainledger-keycloak
     environment:
       KEYCLOAK_ADMIN: admin

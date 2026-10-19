@@ -126,7 +126,7 @@ jobs:
             echo 'ERROR: bootstrap accepted an existing database'
             exit 1
           fi
-          rg 'database already contains user tables' /tmp/bootstrap-repeat.log
+          grep -F 'database already contains user tables' /tmp/bootstrap-repeat.log
           node e2e/seed-real-stack.cjs
       - name: Start real Keycloak with isolated test realm
         run: |
@@ -140,7 +140,7 @@ jobs:
             -e KC_HTTP_ENABLED=true \
             -e KC_HEALTH_ENABLED=true \
             -v "$PWD/e2e/.runtime/realms:/opt/keycloak/data/import:ro" \
-            quay.io/keycloak/keycloak:26.1.0 start --import-realm
+            quay.io/keycloak/keycloak:26.8.1 start --import-realm
           node e2e/wait-for-http.cjs http://localhost:8080/realms/plainledger/.well-known/openid-configuration
       - name: Start production API and web build
         run: |
