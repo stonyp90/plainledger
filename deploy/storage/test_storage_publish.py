@@ -41,7 +41,7 @@ class StoragePublicationTests(unittest.TestCase):
                     (licenses / filename).write_text('Synthetic license evidence for validator unit tests.\n')
                 (licenses / 'SOURCE').write_text(f"https://{component['module']}/tree/{component['commit']}\n")
                 (provenance / 'module.json').write_text(json.dumps({'Path': component['module'],
-                    'Version': 'v0.0.0-20250101000000-' + component['commit'][:12]}))
+                    'Version': component['source_version'], 'Origin': {'Hash': component['commit']}}))
                 (provenance / 'go-build.txt').write_text('/out/bin/' + name + ': go' + component['go_version'] + '\n')
                 (provenance / 'binary.sha256').write_text('0' * 64 + '  /out/bin/' + name + '\n')
             record = {'schema': 1, 'source_sha': self.sha, 'architecture': architecture,
@@ -131,6 +131,14 @@ class StoragePublicationTests(unittest.TestCase):
         module.write_text(json.dumps({'Path': 'github.com/other/mc', 'Version': 'unreviewed'}))
         with self.assertRaisesRegex(ValueError, 'module provenance'):
             self.validate()
+        component = self.pins['components']['mc']
+        for origin in [None, {'Hash': component['commit'][:12] + '0' * 28}]:
+            metadata = {'Path': component['module'], 'Version': component['source_version']}
+            if origin is not None:
+                metadata['Origin'] = origin
+            module.write_text(json.dumps(metadata))
+            with self.subTest(origin=origin), self.assertRaisesRegex(ValueError, 'module provenance'):
+                self.validate()
 
     def test_loaded_image_configuration_must_match_native_qualification(self):
         record = self.records['arm64']

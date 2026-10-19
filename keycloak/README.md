@@ -17,6 +17,38 @@ realm-management roles to the API service account. Its existing `manage-users`
 permission authorizes application user updates; changing the profile schema
 itself requires a separately authorized operator with `manage-realm`.
 
+## Native account-console scopes
+
+The realm import declares both Keycloak-native `account` and `account-console`
+clients. Keycloak 26.8.1 otherwise creates these clients before importing the
+explicit `clientScopes` list, leaving the console without its role mappers.
+A user can then sign in successfully while the console's token has audience
+`account` but no `resource_access.account` roles, causing its profile request
+to return HTTP 403.
+
+Both native clients receive only `openid`, `profile`, `email`, `roles`,
+`web-origins` and `acr`. They keep `fullScopeAllowed: false`, relative account
+redirects, and disabled direct/password, implicit and service-account flows.
+The console requires PKCE S256 and retains the upstream `manage-account` and
+`view-groups` role scope. Application organization and API-audience scopes
+are not assigned to these clients.
+
+The imported `account` role definitions preserve the upstream composites:
+`manage-account` includes `manage-account-links`, and `manage-consent` includes
+`view-consent`. Its `defaultRoles` list preserves only `view-profile` and
+`manage-account`. Keycloak 26.8.1 converts this client list into the existing
+realm default-role composite during import; the application `viewer` default
+is unchanged. The API service account keeps its five reviewed management roles.
+
+After changing the reviewed realm source, regenerate and check it:
+
+```bash
+python3 keycloak/prepare-production-realm.py
+python3 keycloak/prepare-production-realm.py --check
+python3 keycloak/test_production_realm.py
+node --test e2e/prepare-real-stack.test.cjs
+```
+
 ## Keep the import files synchronized
 
 After a reviewed change to `user-profile.json`, run:
@@ -74,6 +106,52 @@ ordinary account's attempted tenant edit. They do not certify that an existing
 production realm received this configuration update. That requires verification
 against the separately configured production identity service.
 
+### Attach scopes to existing native account clients
+
+An existing realm needs the reviewed default scopes attached to its **existing**
+`account` and `account-console` clients. Importing the new JSON at startup does
+not perform this migration. Do not recreate either client or the realm, replace
+user identities, or expand the API machine's roles.
+
+Use the existing authenticated operator session with permission to manage the
+clients and client scopes. First resolve the two client UUIDs and the six scope
+UUIDs, then save and review each client's current representation and assigned
+scopes:
+
+```bash
+kcadm.sh get clients -r plainledger -q clientId=account --fields id,clientId
+kcadm.sh get clients -r plainledger -q clientId=account-console --fields id,clientId
+kcadm.sh get client-scopes -r plainledger --fields id,name
+kcadm.sh get clients/ACCOUNT_CLIENT_UUID -r plainledger
+kcadm.sh get clients/ACCOUNT_CLIENT_UUID/default-client-scopes -r plainledger
+```
+
+Replace `ACCOUNT_CLIENT_UUID` and `SCOPE_UUID` below with the verified IDs from
+that realm. For each missing assignment among `openid`, `profile`, `email`,
+`roles`, `web-origins` and `acr`, attach the scope to each of the two existing
+clients using this idempotent operation:
+
+```bash
+kcadm.sh update clients/ACCOUNT_CLIENT_UUID/default-client-scopes/SCOPE_UUID \
+  -r plainledger --no-merge
+kcadm.sh get clients/ACCOUNT_CLIENT_UUID/default-client-scopes -r plainledger
+```
+
+The underlying endpoint is
+`PUT /admin/realms/plainledger/clients/{clientId}/default-client-scopes/{scopeId}`.
+Leave the native restricted role mappings and existing reviewed scopes in place;
+check any unexpected pre-existing scope separately before changing it. Confirm
+`fullScopeAllowed` remains false, the console still requires PKCE S256, and its
+role scope contains only the native `manage-account` and `view-groups` mappings.
+No `organization` or `plainledger-api-audience` scope is needed here.
+
+Then obtain a new console token through normal browser sign-in and verify the
+correct user's account profile loads with HTTP 200 in both EN and FR. It should
+carry the `account` audience and the user's scoped own-account role claim.
+Never record the raw access or refresh token as verification evidence. The
+fresh-realm CI checks do not establish that this migration was applied to an
+existing production service.
+
 ## Pinned implementation references
 
 The base profile follows Keycloak's
@@ -86,3 +164,11 @@ keeps unmanaged attributes disabled when no enabling policy is configured.
 The
 [profile resource](https://github.com/keycloak/keycloak/blob/26.8.1/services/src/main/java/org/keycloak/services/resources/admin/UserProfileResource.java)
 requires realm-management authorization for schema changes.
+
+Native account client and role defaults follow
+[RealmManager](https://github.com/keycloak/keycloak/blob/26.8.1/services/src/main/java/org/keycloak/services/managers/RealmManager.java)
+and [AccountRoles](https://github.com/keycloak/keycloak/blob/26.8.1/server-spi-private/src/main/java/org/keycloak/models/AccountRoles.java).
+The import ordering and supported client-default-role conversion are in
+[DefaultExportImportManager](https://github.com/keycloak/keycloak/blob/26.8.1/model/storage-private/src/main/java/org/keycloak/storage/datastore/DefaultExportImportManager.java).
+The existing-client scope assignment endpoint is implemented by
+[ClientResource](https://github.com/keycloak/keycloak/blob/26.8.1/services/src/main/java/org/keycloak/services/resources/admin/ClientResource.java).

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build official pinned storage sources on this native CI architecture."""
 import argparse
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -39,6 +40,9 @@ def read_pins():
     for name, component in pins['components'].items():
         if component['module'] != f'github.com/minio/{name}' or not re.fullmatch(r'[a-f0-9]{40}', component['commit']):
             raise ValueError('Storage source must be an exact official MinIO commit')
+        timestamp = datetime.strptime(component['source_time'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y%m%d%H%M%S')
+        if component.get('source_version') != 'v0.0.0-' + timestamp + '-' + component['commit'][:12]:
+            raise ValueError('Canonical Go source version must match the reviewed commit and timestamp')
         expected = 'golang:' + component['go_version'] + '-alpine@sha256:'
         if not component['builder_image'].startswith(expected) or not re.fullmatch(r'[a-f0-9]{64}', component['builder_image'][len(expected):]):
             raise ValueError('Compiler must use the reviewed version and official image digest')
@@ -77,6 +81,7 @@ def build_images(source_sha, output):
             'BUILDER_IMAGE': component['builder_image'], 'RUNTIME_IMAGE': pins['runtime_image'],
             'MODULE': component['module'], 'SOURCE_COMMIT': component['commit'],
             'SOURCE_RELEASE': component['release'], 'SOURCE_TIME': component['source_time'],
+            'SOURCE_VERSION': component['source_version'],
             'GO_VERSION': component['go_version'], 'COMPONENT': name,
         }
         for key, value in build_args.items():

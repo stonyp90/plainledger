@@ -16,6 +16,8 @@ SOURCE = ROOT / 'realms/plainledger-realm.json'
 OUTPUT = ROOT / 'realms/plainledger-production-realm.json'
 PROFILE = ROOT / 'user-profile.json'
 PROFILE_PROVIDER = 'org.keycloak.userprofile.UserProfileProvider'
+ACCOUNT_CLIENT_IDS = {'account', 'account-console'}
+ACCOUNT_SCOPES = {'openid', 'profile', 'email', 'roles', 'web-origins', 'acr'}
 
 
 def profile_components():
@@ -41,8 +43,38 @@ def write_atomic(target, text):
             temporary.unlink()
 
 
+def validate_account_import(realm):
+    # Explicit clients avoid Keycloak creating them before this import's scopes.
+    # Keep their native own-account boundary; application audiences do not belong here.
+    clients = [client for client in realm['clients'] if client['clientId'] in ACCOUNT_CLIENT_IDS]
+    if len(clients) != 2 or {client['clientId'] for client in clients} != ACCOUNT_CLIENT_IDS:
+        raise ValueError('Both reviewed native account clients are required')
+    base = '/realms/' + realm['realm'] + '/account/'
+    for client in clients:
+        expected = {
+            'enabled': True, 'publicClient': True, 'standardFlowEnabled': True,
+            'fullScopeAllowed': False, 'directAccessGrantsEnabled': False,
+            'implicitFlowEnabled': False, 'serviceAccountsEnabled': False,
+            'rootUrl': '${authBaseUrl}', 'baseUrl': base,
+            'redirectUris': [base + '*'], 'webOrigins': [], 'optionalClientScopes': [],
+        }
+        if (any(client.get(name) != value for name, value in expected.items())
+                or 'secret' in client or set(client.get('defaultClientScopes', [])) != ACCOUNT_SCOPES):
+            raise ValueError('Native account clients must retain restricted identity scopes and redirects')
+    account = next(client for client in clients if client['clientId'] == 'account')
+    console = next(client for client in clients if client['clientId'] == 'account-console')
+    if account.get('defaultRoles') != ['view-profile', 'manage-account']:
+        raise ValueError('Native account defaults must preserve only standard own-account roles')
+    if console.get('attributes', {}).get('pkce.code.challenge.method') != 'S256':
+        raise ValueError('The account console requires authorization-code PKCE')
+    if realm.get('clientScopeMappings', {}).get('account') != [
+            {'client': 'account-console', 'roles': ['manage-account', 'view-groups']}]:
+        raise ValueError('The account console must retain its native restricted role scope')
+
+
 def production_realm(source):
     realm = copy.deepcopy(source)
+    validate_account_import(realm)
     # The same reviewed managed fields govern both imports. No unmanaged fields
     # are enabled, and custom identity/tenant fields are writable only by admins.
     realm.setdefault('components', {})[PROFILE_PROVIDER] = profile_components()
@@ -69,6 +101,8 @@ def production_realm(source):
 
     for client in realm['clients']:
         client_id = client['clientId']
+        if client_id in ACCOUNT_CLIENT_IDS:
+            continue  # Preserve Keycloak's relative account URLs and restricted scopes.
         if client_id not in {'plainledger-web', 'plainledger-api', 'plainledger-admin'}:
             raise ValueError(f'Unreviewed production client: {client_id}')
         client['directAccessGrantsEnabled'] = False

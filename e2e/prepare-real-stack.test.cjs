@@ -90,3 +90,21 @@ test('missing or ambiguous production user-profile configuration fails before re
     }), /exactly one reviewed user-profile configuration/);
   }
 });
+
+
+test('isolated account console uses the same restricted native clients and role scopes as production', () => {
+  const realm = buildIsolatedRealm();
+  for (const name of ['account', 'account-console']) {
+    const client = realm.clients.find(client => client.clientId === name);
+    assert.deepEqual(client, productionRealm.clients.find(client => client.clientId === name));
+    assert.equal(client.fullScopeAllowed, false);
+    assert.equal(client.serviceAccountsEnabled, false);
+    assert.ok(client.defaultClientScopes.includes('roles'));
+    assert.ok(!client.defaultClientScopes.includes('organization'));
+    assert.ok(!client.defaultClientScopes.includes('plainledger-api-audience'));
+  }
+  assert.deepEqual(realm.roles.client.account, productionRealm.roles.client.account);
+  assert.deepEqual(realm.clientScopeMappings.account, [
+    { client: 'account-console', roles: ['manage-account', 'view-groups'] },
+  ]);
+});

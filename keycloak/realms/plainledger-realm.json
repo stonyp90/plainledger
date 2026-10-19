@@ -257,6 +257,82 @@
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:3001/*##https://admin.plainledger.ca/*"
       }
+    },
+    {
+      "clientId": "account",
+      "name": "${client_account}",
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "publicClient": true,
+      "fullScopeAllowed": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "rootUrl": "${authBaseUrl}",
+      "baseUrl": "/realms/plainledger/account/",
+      "redirectUris": [
+        "/realms/plainledger/account/*"
+      ],
+      "webOrigins": [],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles",
+        "web-origins",
+        "acr"
+      ],
+      "optionalClientScopes": [],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultRoles": [
+        "view-profile",
+        "manage-account"
+      ]
+    },
+    {
+      "clientId": "account-console",
+      "name": "${client_account-console}",
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "publicClient": true,
+      "fullScopeAllowed": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "rootUrl": "${authBaseUrl}",
+      "baseUrl": "/realms/plainledger/account/",
+      "redirectUris": [
+        "/realms/plainledger/account/*"
+      ],
+      "webOrigins": [],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "roles",
+        "web-origins",
+        "acr"
+      ],
+      "optionalClientScopes": [],
+      "attributes": {
+        "post.logout.redirect.uris": "+",
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience resolve",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-resolve-mapper",
+          "consentRequired": false,
+          "config": {}
+        }
+      ]
     }
   ],
   "roles": {
@@ -323,7 +399,59 @@
           ]
         }
       }
-    ]
+    ],
+    "client": {
+      "account": [
+        {
+          "name": "view-profile",
+          "description": "${role_view-profile}"
+        },
+        {
+          "name": "manage-account",
+          "description": "${role_manage-account}",
+          "composite": true,
+          "composites": {
+            "client": {
+              "account": [
+                "manage-account-links"
+              ]
+            }
+          }
+        },
+        {
+          "name": "manage-account-links",
+          "description": "${role_manage-account-links}"
+        },
+        {
+          "name": "view-applications",
+          "description": "${role_view-applications}"
+        },
+        {
+          "name": "view-consent",
+          "description": "${role_view-consent}"
+        },
+        {
+          "name": "manage-consent",
+          "description": "${role_manage-consent}",
+          "composite": true,
+          "composites": {
+            "client": {
+              "account": [
+                "view-consent"
+              ]
+            }
+          }
+        },
+        {
+          "name": "view-groups",
+          "description": "${role_view-groups}"
+        },
+        {
+          "name": "delete-account",
+          "description": "${role_delete-account}"
+        }
+      ]
+    }
   },
   "defaultRoles": [
     "viewer"
@@ -1030,6 +1158,17 @@
             "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}}},{\"name\":\"email\",\"displayName\":\"${email}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"email\":{},\"length\":{\"max\":255}}},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}}},{\"name\":\"organization\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"organizationName\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"industry\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"province\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"registrationSource\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"registeredAt\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"demoMode\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"plan\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"accountStatus\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"invitedBy\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}},{\"name\":\"invitedAt\",\"multivalued\":false,\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"max\":2048}}}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
           ]
         }
+      }
+    ]
+  },
+  "clientScopeMappings": {
+    "account": [
+      {
+        "client": "account-console",
+        "roles": [
+          "manage-account",
+          "view-groups"
+        ]
       }
     ]
   }

@@ -20,8 +20,13 @@ include native Linux AMD64 and ARM64 images.
 
 The compiler versions match each source commit's `go.mod` toolchain directive.
 Builds set `GOTOOLCHAIN=local`, fetch modules from the official Go proxy, verify
-module checksums through `sum.golang.org`, and use the full upstream commit.
-Release metadata comes from the pinned source time and revision. No `latest`,
+module checksums through `sum.golang.org`, and preserve the full upstream commit.
+The official proxy's canonical Go pseudo-version is pinned alongside that commit
+and timestamp. Builds use this immutable version instead of repeating the
+proxy's temporary revision-resolution lookup, and require its `Origin.Hash` to
+match the full reviewed commit before compilation. The same pinned Go operation
+is retried at most three times for transient proxy failures. Release metadata
+comes from the pinned source time and revision. No `latest`,
 `master`, mutable package install, legacy MinIO image or external mirror is used
 by the Dockerfile.
 
@@ -52,8 +57,13 @@ storage job. Both use a bootstrapped, disposable PostgreSQL database and Redis.
 The package:
 
 1. Builds both images from the pinned inputs and records their Docker image IDs.
-2. Starts a restricted non-root server on loopback port 19000 with an isolated
-   network and a new named volume. This avoids Keycloak's host health port 9000.
+2. Starts a restricted non-root server on loopback port 19000 with a dedicated
+   bridge network and a new named volume. The bridge's default published address
+   and the server's explicit binding both use `127.0.0.1`. This gives the host's
+   SDK/accounting harness a real S3 route while avoiding Keycloak's health port
+   9000. Both container health and host HTTP readiness must pass, including after
+   restart. A failed host readiness check records container health and only the
+   port mappings, without collecting environment credentials, before cleanup.
 3. Runs the actual `deploy/oracle/init/storage.sh` unchanged, twice, using the
    built client image. This verifies its commands and idempotent initialization.
 4. Runs nine checks for application bucket access, multipart permissions, scoped

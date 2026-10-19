@@ -72,10 +72,13 @@ jobs:
       SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
       VERIFICATION_RUN_ID: ${{ needs.preflight.outputs.verification_run_id }}
       VERIFICATION_RUN_ATTEMPT: ${{ needs.preflight.outputs.verification_run_attempt }}
-      DOCKER_CONFIG: ${{ runner.temp }}/plainledger-storage-registry
-      EVIDENCE_DIRECTORY: ${{ runner.temp }}/plainledger-storage-evidence
-      PUBLICATION_DIRECTORY: ${{ runner.temp }}/plainledger-storage-publication
     steps:
+      - name: Initialize this runner's temporary publication paths
+        run: |
+          set -euo pipefail
+          printf '%s\n' "DOCKER_CONFIG=$RUNNER_TEMP/plainledger-storage-registry" \
+            "EVIDENCE_DIRECTORY=$RUNNER_TEMP/plainledger-storage-evidence" \
+            "PUBLICATION_DIRECTORY=$RUNNER_TEMP/plainledger-storage-publication" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.preflight.outputs.source_sha }}
@@ -158,4 +161,7 @@ jobs:
           PY
       - name: Remove this job's temporary registry authentication
         if: always()
-        run: rm -rf -- "$DOCKER_CONFIG"
+        run: |
+          if [[ "${DOCKER_CONFIG:-}" == "$RUNNER_TEMP/plainledger-storage-registry" ]]; then
+            rm -rf -- "$DOCKER_CONFIG"
+          fi

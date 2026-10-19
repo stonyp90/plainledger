@@ -47,6 +47,16 @@ def wait_for_container(name):
     raise TimeoutError('Built storage container did not become ready')
 
 
+
+def wait_for_host(environment):
+    target = environment['S3_ENDPOINT'] + '/minio/health/ready'
+    try:
+        run(['node', 'e2e/wait-for-http.cjs', target], environment=environment, timeout=195)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError('Host storage readiness failed at ' + target +
+                           '; inspect test-results/runtime/plainledger-s3.log for health and loopback port mappings') from error
+
+
 def qualify(source_sha, output):
     environment = fixture_environment()
     manifest = build_images(source_sha, output)
@@ -59,7 +69,11 @@ def qualify(source_sha, output):
     evidence.mkdir()
     runtime_checks = []
     try:
-        run(['docker', 'network', 'create', '--internal', network], capture=True)
+        # The SDK/accounting harness runs on the host. Internal-only bridge
+        # networks do not supply the localhost published-port path it requires.
+        # Every published port stays restricted to this disposable runner's loopback.
+        run(['docker', 'network', 'create', '--driver', 'bridge', '--opt',
+             'com.docker.network.bridge.host_binding_ipv4=127.0.0.1', network], capture=True)
         started.append(('network', network))
         run(['docker', 'volume', 'create', volume], capture=True)
         started.append(('volume', volume))
@@ -75,6 +89,7 @@ def qualify(source_sha, output):
         run(arguments, capture=True, environment=environment)
         started.append(('container', server))
         wait_for_container(server)
+        wait_for_host(environment)
         for name, image in manifest['images'].items():
             check = ['docker', 'run', '--rm', '--network', 'none', '--read-only',
                      '--entrypoint', '/bin/sh', image['tag'], '-ec',
@@ -105,6 +120,7 @@ def qualify(source_sha, output):
             if stage == 'after-restart':
                 run(['docker', 'restart', server], capture=True)
                 wait_for_container(server)
+                wait_for_host(environment)
             result_file = output / (stage + '.json')
             run(['node', 'deploy/storage/qualify-permissions.cjs', stage, str(result_file)], environment=environment)
             checks.extend(json.loads(result_file.read_text())['checks'])
@@ -145,6 +161,9 @@ def qualify(source_sha, output):
             log = ROOT / 'test-results/runtime/plainledger-s3.log'
             log.parent.mkdir(parents=True, exist_ok=True)
             with log.open('w') as stream:
+                subprocess.run(['docker', 'inspect', '--format',
+                                'status={{.State.Status}} health={{.State.Health.Status}} ports={{json .NetworkSettings.Ports}}', server],
+                               stdout=stream, stderr=subprocess.STDOUT, check=False)
                 subprocess.run(['docker', 'logs', server], stdout=stream, stderr=subprocess.STDOUT, check=False)
         for kind, name in reversed(started):
             command = ['docker', 'rm', '-f', name] if kind == 'container' else ['docker', kind, 'rm', name]

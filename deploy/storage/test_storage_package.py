@@ -36,6 +36,9 @@ class StoragePackageTests(unittest.TestCase):
         source = copy.deepcopy(self.pins)
         source['components']['mc']['commit'] = 'master'
         invalid.append(source)
+        revision = copy.deepcopy(self.pins)
+        revision['components']['mc']['source_version'] = 'v0.0.0-20250813083541-000000000000'
+        invalid.append(revision)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'pins.json'
             for pins in invalid:

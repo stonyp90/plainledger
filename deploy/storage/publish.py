@@ -91,7 +91,8 @@ def validate_artifacts(directory, source_sha, run_id, run_attempt):
             if source != f"https://{component['module']}/tree/{component['commit']}":
                 raise ValueError('Artifact upstream source differs from the reviewed source')
             module = read_json(folder / name / 'provenance/module.json')
-            if module.get('Path') != component['module'] or not module.get('Version', '').endswith(component['commit'][:12]):
+            if (module.get('Path') != component['module'] or module.get('Version') != component['source_version']
+                    or module.get('Origin', {}).get('Hash') != component['commit']):
                 raise ValueError('Go module provenance differs from the reviewed upstream commit')
             for filename in ('go-build.txt', 'binary.sha256'):
                 path = folder / name / 'provenance' / filename

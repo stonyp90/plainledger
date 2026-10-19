@@ -78,10 +78,92 @@ class ProductionRealmTests(unittest.TestCase):
         self.assertEqual(client['redirectUris'], [])
         self.assertEqual(client['webOrigins'], [])
 
-    def test_browser_tokens_have_tenant_and_api_audience_scopes(self):
-        for client in self.clients.values():
+    def test_application_tokens_have_tenant_and_api_audience_scopes(self):
+        for client_id in ('plainledger-web', 'plainledger-api', 'plainledger-admin'):
+            client = self.clients[client_id]
             self.assertIn('organization', client['defaultClientScopes'])
             self.assertIn('plainledger-api-audience', client['defaultClientScopes'])
+
+    def test_native_account_clients_use_identity_scopes_without_application_access(self):
+        expected_scopes = {'openid', 'profile', 'email', 'roles', 'web-origins', 'acr'}
+        source_clients = {client['clientId']: client for client in self.source['clients']}
+        for name in ('account', 'account-console'):
+            client = self.clients[name]
+            self.assertEqual(client, source_clients[name])
+            self.assertEqual(set(client['defaultClientScopes']), expected_scopes)
+            self.assertEqual(client['optionalClientScopes'], [])
+            self.assertFalse(client['fullScopeAllowed'])
+            self.assertFalse(client['serviceAccountsEnabled'])
+            self.assertFalse(client['directAccessGrantsEnabled'])
+            self.assertFalse(client['implicitFlowEnabled'])
+            self.assertNotIn('secret', client)
+            self.assertEqual(client['rootUrl'], '${authBaseUrl}')
+            self.assertEqual(client['redirectUris'], ['/realms/plainledger/account/*'])
+            self.assertEqual(client['webOrigins'], [])
+
+    def test_native_account_role_defaults_and_composites_are_preserved(self):
+        roles = {role['name']: role for role in self.realm['roles']['client']['account']}
+        self.assertEqual(set(roles), {'view-profile', 'manage-account', 'manage-account-links',
+                                    'view-applications', 'view-consent', 'manage-consent',
+                                    'view-groups', 'delete-account'})
+        self.assertEqual(roles['manage-account']['composites'],
+                         {'client': {'account': ['manage-account-links']}})
+        self.assertEqual(roles['manage-consent']['composites'],
+                         {'client': {'account': ['view-consent']}})
+        # Keycloak 26.8.1 imports these into its default-role composite, as its
+        # built-in client setup does for new application-registered humans.
+        self.assertEqual(self.clients['account']['defaultRoles'], ['view-profile', 'manage-account'])
+        self.assertNotIn('defaultRole', self.realm)  # Required by that import conversion.
+        self.assertEqual(self.realm['defaultRoles'], ['viewer'])
+        self.assertNotIn('defaultRoles', self.clients['account-console'])
+
+    def test_account_console_requires_pkce_and_only_native_role_scope(self):
+        client = self.clients['account-console']
+        self.assertEqual(client['attributes']['pkce.code.challenge.method'], 'S256')
+        self.assertEqual(self.realm['clientScopeMappings']['account'], [
+            {'client': 'account-console', 'roles': ['manage-account', 'view-groups']},
+        ])
+        self.assertFalse(any(mapping.get('client') == 'account-console'
+                             for mapping in self.realm['scopeMappings']))
+        scopes = {scope['name']: scope for scope in self.realm['clientScopes']}
+        role_mappers = scopes['roles']['protocolMappers']
+        client_roles = next(mapper for mapper in role_mappers
+                            if mapper['protocolMapper'] == 'oidc-usermodel-client-role-mapper')
+        self.assertEqual(client_roles['config']['access.token.claim'], 'true')
+        self.assertEqual(client_roles['config']['claim.name'], 'resource_access.${client_id}.roles')
+        self.assertTrue(any(mapper['protocolMapper'] == 'oidc-audience-resolve-mapper'
+                            for mapper in client['protocolMappers']))
+
+    def test_missing_or_duplicate_native_account_clients_fail_before_import(self):
+        for name in ('account', 'account-console'):
+            for duplicate in (False, True):
+                source = copy.deepcopy(self.source)
+                client = next(client for client in source['clients'] if client['clientId'] == name)
+                if duplicate:
+                    source['clients'].append(copy.deepcopy(client))
+                else:
+                    source['clients'].remove(client)
+                with self.subTest(name=name, duplicate=duplicate), self.assertRaisesRegex(ValueError, 'Both reviewed native account clients'):
+                    generator.production_realm(source)
+
+    def test_account_import_rejects_broader_scopes_origins_credentials_and_role_grants(self):
+        changes = [
+            {'fullScopeAllowed': True}, {'serviceAccountsEnabled': True},
+            {'directAccessGrantsEnabled': True}, {'secret': 'not-a-runtime-secret'},
+            {'redirectUris': ['*']}, {'webOrigins': ['*']},
+            {'defaultClientScopes': ['openid', 'profile', 'email', 'roles', 'web-origins', 'acr', 'plainledger-api-audience']},
+            {'optionalClientScopes': ['organization']},
+        ]
+        for changeset in changes:
+            source = copy.deepcopy(self.source)
+            client = next(client for client in source['clients'] if client['clientId'] == 'account-console')
+            client.update(changeset)
+            with self.subTest(changes=changeset), self.assertRaisesRegex(ValueError, 'restricted identity scopes'):
+                generator.production_realm(source)
+        source = copy.deepcopy(self.source)
+        source['clientScopeMappings']['account'][0]['roles'].append('delete-account')
+        with self.assertRaisesRegex(ValueError, 'native restricted role scope'):
+            generator.production_realm(source)
 
     def test_every_client_has_an_enabled_subject_mapper(self):
         # Keycloak 25+ requires explicit token inclusion. An empty mapper config

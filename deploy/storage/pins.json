@@ -15,7 +15,8 @@
       "go_version": "1.24.8",
       "builder_image": "golang:1.24.8-alpine@sha256:3d78beb141d98f42337f1252ecf2a5f20374109929a4c3f6817f9e4179cc0ae5",
       "target": "server",
-      "repository": "ghcr.io/stonyp90/plainledger-minio"
+      "repository": "ghcr.io/stonyp90/plainledger-minio",
+      "source_version": "v0.0.0-20251015172955-9e49d5e7a648"
     },
     "mc": {
       "module": "github.com/minio/mc",
@@ -25,7 +26,8 @@
       "go_version": "1.23.10",
       "builder_image": "golang:1.23.10-alpine@sha256:9a425d78a8257fc92d41ad979d38cb54005bac3fdefbdadde868e004eccbb898",
       "target": "client",
-      "repository": "ghcr.io/stonyp90/plainledger-mc"
+      "repository": "ghcr.io/stonyp90/plainledger-mc",
+      "source_version": "v0.0.0-20250813083541-7394ce0dd2a8"
     }
   }
 }
