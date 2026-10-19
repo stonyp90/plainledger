@@ -61,20 +61,20 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: pgvector/pgvector:pg16
+        image: pgvector/pgvector@sha256:7b822b0aac60967beb1ea5e576b8602c94c300a157d187f385ae3e0da199b90a
         env:
           POSTGRES_USER: plainledger
           POSTGRES_PASSWORD: isolated-e2e-only
           POSTGRES_DB: plainledger
         ports: ['5432:5432']
         options: >-
-          --health-cmd 'pg_isready -U plainledger -d plainledger'
+          --health-cmd "pg_isready -U plainledger -d plainledger"
           --health-interval 5s --health-timeout 5s --health-retries 12
       redis:
         image: redis:7.4-alpine
         ports: ['6379:6379']
         options: >-
-          --health-cmd 'redis-cli ping'
+          --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       NODE_ENV: production
