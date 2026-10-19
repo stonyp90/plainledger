@@ -2,7 +2,8 @@
 // See docs/CLOUDFLARE_DEPLOYMENT.md for the one-time setup and how deploys work.
 //
 // - Static assets (the Vite build) are served directly by Cloudflare: free, no request limit.
-// - worker/index.ts only runs for /api and /graphql (proxy to API_ORIGIN, or a JSON 503).
+// - worker/index.ts runs for /api and /graphql (proxy to API_ORIGIN, or a JSON 503),
+//   plus the exact Google verification filename to prevent an HTML canonical redirect.
 // - Custom domains are attached by .github/workflows/deploy-website.yml (`--domain`) once the
 //   plainledger.ca zone is active on Cloudflare, so a deploy never fails while DNS moves over.
 {
@@ -13,7 +14,7 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api", "/api/*", "/graphql", "/graphql/*"]
+    "run_worker_first": ["/api", "/api/*", "/graphql", "/graphql/*", "/google5781a30bbd14f93a.html"]
   },
   "workers_dev": true,
   "preview_urls": false,

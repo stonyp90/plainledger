@@ -12,7 +12,6 @@ import { useAuth } from '../lib/keycloak';
 import PublicHeader from '../components/PublicHeader';
 import { useI18n } from '../lib/i18n';
 import SREDCalculator from '../components/SREDCalculator';
-import SEOHead from '../components/SEOHead';
 import {
   ArrowRight,
   Check,
@@ -108,17 +107,6 @@ export default function SREDCalculatorPage() {
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
       {/* SEO */}
-      <SEOHead 
-        title={{
-          en: 'SR&ED Tax Credit Calculator | Free R&D Tax Credit Estimator Canada',
-          fr: 'Calculateur de crédit d\'impôt RSDE | Estimateur gratuit de crédit R&D Canada',
-        }}
-        description={{
-          en: 'Free SR&ED tax credit calculator. Estimate your Canadian R&D tax credit in 2 minutes. Federal 35% + provincial credits. Works for software, manufacturing, and tech companies.',
-          fr: 'Calculateur gratuit de crédit RSDE. Estimez votre crédit d\'impôt R&D canadien en 2 minutes. Fédéral 35% + crédits provinciaux. Pour logiciel, manufacturier et technologie.',
-        }}
-        canonicalPath="/tools/sred-calculator"
-      />
 
       {/* Navigation - Using shared PublicHeader with minimal menu */}
       <PublicHeader

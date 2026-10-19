@@ -1,82 +1,63 @@
-# PlainLedger robots.txt
-# https://plainledger.ca
-
+# Public discovery policy. Search and training preferences remain allowed.
+# One common group preserves private-path exclusions for every crawler.
 User-agent: *
 Allow: /
-
-# Crawl-delay for respectful crawling
-Crawl-delay: 1
-
-# Sitemaps
-Sitemap: https://plainledger.ca/sitemap.xml
-
-# LLMs.txt for AI assistants
-# https://plainledger.ca/llms.txt
-
-# Allow all major search engine bots
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Slurp
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
-# Allow AI crawlers for GEO (Generative Engine Optimization)
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: Anthropic-AI
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: Gemini
-Allow: /
-
-User-agent: CCBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: YouBot
-Allow: /
-
-User-agent: Cohere-ai
-Allow: /
-
-User-agent: Meta-ExternalAgent
-Allow: /
-
-User-agent: Applebot-Extended
-Allow: /
-
-User-agent: Bytespider
-Allow: /
-
-# Disallow app routes that require authentication
+Disallow: /app$
+Disallow: /app?
 Disallow: /app/
+Disallow: /admin$
+Disallow: /admin?
+Disallow: /admin/
+Disallow: /dashboard$
+Disallow: /dashboard?
 Disallow: /dashboard/
+Disallow: /settings$
+Disallow: /settings?
 Disallow: /settings/
+Disallow: /api$
+Disallow: /api?
 Disallow: /api/
+Disallow: /graphql$
+Disallow: /graphql?
+Disallow: /graphql/
+Disallow: /shared$
+Disallow: /shared?
+Disallow: /shared/
+Disallow: /help/knowledge-base$
+Disallow: /help/knowledge-base?
+Disallow: /help/knowledge-base/
+Disallow: /login$
+Disallow: /login?
+Disallow: /login/
+Disallow: /signin$
+Disallow: /signin?
+Disallow: /signin/
+Disallow: /signup$
+Disallow: /signup?
+Disallow: /signup/
+Disallow: /register$
+Disallow: /register?
+Disallow: /register/
+Disallow: /forgot-password$
+Disallow: /forgot-password?
+Disallow: /forgot-password/
+Disallow: /reset-password$
+Disallow: /reset-password?
+Disallow: /reset-password/
+Disallow: /verify-email$
+Disallow: /verify-email?
+Disallow: /verify-email/
+Disallow: /onboarding$
+Disallow: /onboarding?
+Disallow: /onboarding/
+Disallow: /mfa$
+Disallow: /mfa?
+Disallow: /mfa/
+Disallow: /preview-landing$
+Disallow: /preview-landing?
+Disallow: /preview-landing/
+Disallow: /silent-check-sso.html$
+Disallow: /silent-check-sso.html?
+Disallow: /silent-check-sso.html/
 
-# Host
-Host: https://plainledger.ca
+Sitemap: https://plainledger.ca/sitemap.xml
