@@ -1,0 +1,161 @@
+name: Publish qualified storage images
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: plainledger-storage-publication
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  preflight:
+    name: Require exact current-main verification and existing quality checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.quality.outputs.source_sha }}
+      verification_run_id: ${{ steps.quality.outputs.verification_run_id }}
+      verification_run_attempt: ${{ steps.quality.outputs.verification_run_attempt }}
+      verification_url: ${{ steps.quality.outputs.verification_url }}
+      quality_url: ${{ steps.quality.outputs.quality_url }}
+    steps:
+      - name: Select trusted current main before checkout
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REPOSITORY" != 'stonyp90/plainledger' || "$GITHUB_EVENT_NAME" != 'workflow_dispatch' || "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo '::error::Storage publication requires manual dispatch on owned main.'
+            exit 1
+          fi
+          [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          current_main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          if [[ "$GITHUB_SHA" != "$current_main_sha" ]]; then
+            echo '::error::Main advanced; this source is stale.'
+            exit 1
+          fi
+          echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.source_sha }}
+          persist-credentials: false
+      - name: Require both exact-current-main source workflows
+        id: quality
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA" --github-output "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish the exact images qualified on both native architectures
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      packages: write
+    env:
+      SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+      VERIFICATION_RUN_ID: ${{ needs.preflight.outputs.verification_run_id }}
+      VERIFICATION_RUN_ATTEMPT: ${{ needs.preflight.outputs.verification_run_attempt }}
+      DOCKER_CONFIG: ${{ runner.temp }}/plainledger-storage-registry
+      EVIDENCE_DIRECTORY: ${{ runner.temp }}/plainledger-storage-evidence
+      PUBLICATION_DIRECTORY: ${{ runner.temp }}/plainledger-storage-publication
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+          persist-credentials: false
+      - name: Download the exact verified amd64 attempt
+        uses: actions/download-artifact@v4
+        with:
+          name: qualified-storage-amd64-attempt-${{ needs.preflight.outputs.verification_run_attempt }}
+          path: ${{ env.EVIDENCE_DIRECTORY }}/amd64
+          run-id: ${{ needs.preflight.outputs.verification_run_id }}
+          github-token: ${{ github.token }}
+      - name: Download the exact verified arm64 attempt
+        uses: actions/download-artifact@v4
+        with:
+          name: qualified-storage-arm64-attempt-${{ needs.preflight.outputs.verification_run_attempt }}
+          path: ${{ env.EVIDENCE_DIRECTORY }}/arm64
+          run-id: ${{ needs.preflight.outputs.verification_run_id }}
+          github-token: ${{ github.token }}
+      - name: Validate every qualification result and load the same archived images
+        run: |
+          set -euo pipefail
+          python3 -B -m unittest discover -s deploy/storage -p 'test_*.py' -v
+          python3 deploy/storage/publish.py verify --artifacts "$EVIDENCE_DIRECTORY" \
+            --source-sha "$SOURCE_SHA" --verification-run-id "$VERIFICATION_RUN_ID" \
+            --verification-run-attempt "$VERIFICATION_RUN_ATTEMPT"
+      - name: Recheck current main and reject a superseding verification run or attempt
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          gate_output="$RUNNER_TEMP/plainledger-storage-final-gate.txt"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA" --github-output "$gate_output"
+          python3 - "$gate_output" <<'PY'
+          import os, pathlib, sys
+          values = dict(line.split('=', 1) for line in pathlib.Path(sys.argv[1]).read_text().splitlines())
+          expected = {'source_sha': os.environ['SOURCE_SHA'],
+                      'verification_run_id': os.environ['VERIFICATION_RUN_ID'],
+                      'verification_run_attempt': os.environ['VERIFICATION_RUN_ATTEMPT']}
+          if any(values.get(name) != value for name, value in expected.items()):
+              raise SystemExit('Verification changed after artifact selection; publication remains blocked.')
+          PY
+      - name: Authenticate only for the qualified owned registry publication
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$DOCKER_CONFIG"
+          chmod 700 "$DOCKER_CONFIG"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+      - name: Publish immutable native manifests and verify the final platform indices
+        run: |
+          set -euo pipefail
+          python3 deploy/storage/publish.py publish --artifacts "$EVIDENCE_DIRECTORY" \
+            --source-sha "$SOURCE_SHA" --verification-run-id "$VERIFICATION_RUN_ID" \
+            --verification-run-attempt "$VERIFICATION_RUN_ATTEMPT" --output "$PUBLICATION_DIRECTORY"
+      - name: Retain final registry digests and exact qualification references
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-storage-${{ needs.preflight.outputs.source_sha }}-run-${{ needs.preflight.outputs.verification_run_id }}-attempt-${{ needs.preflight.outputs.verification_run_attempt }}
+          path: ${{ env.PUBLICATION_DIRECTORY }}
+          if-no-files-found: error
+          retention-days: 90
+      - name: Report the qualified image references
+        env:
+          VERIFICATION_URL: ${{ needs.preflight.outputs.verification_url }}
+          QUALITY_URL: ${{ needs.preflight.outputs.quality_url }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          result = json.loads((pathlib.Path(os.environ['PUBLICATION_DIRECTORY']) / 'publication.json').read_text())
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Qualified storage image publication\n\n')
+              summary.write(f"Source: `{result['source_sha']}`\n\n")
+              summary.write(f"[Verification]({os.environ['VERIFICATION_URL']}) and [CI quality checks]({os.environ['QUALITY_URL']})\n\n")
+              for name, image in result['images'].items():
+                  summary.write(f"- {name}: `{image['reference']}`\n")
+              summary.write('\nThese digests identify the qualified images. Production activation still requires host access, registry pull access, configured services and the production readiness checks.\n')
+          PY
+      - name: Remove this job's temporary registry authentication
+        if: always()
+        run: rm -rf -- "$DOCKER_CONFIG"

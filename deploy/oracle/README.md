@@ -101,9 +101,23 @@ configuration values or run `docker compose config` in a way that dumps secrets.
 
 ## GitHub delivery
 
-The manual **Deploy Oracle candidate** workflow accepts only `main` and requires
-a successful `verify.yml` run for the exact commit. It never accepts a successful
-run from another revision as deployment evidence.
+The manual **Deploy Oracle candidate** workflow accepts only the current `main`
+commit. Before checkout it verifies that source against GitHub; then the shared
+`.github/scripts/require_production_quality.py` gate requires the newest
+same-repository, exact-commit `verify.yml` and `ci.yml` runs to be completed
+successfully. Only main-branch push or manual runs qualify. The latest CI
+attempt must contain exactly one successful **Lint API**, **Lint Web**,
+**Test API** and **Test Web** job. Missing, pending, failed, cancelled or skipped
+runs/jobs block deployment, including CI runs with manual skip inputs. A prior
+successful run cannot hide a newer failure.
+
+The workflow repeats the complete gate immediately before the SSH deployment.
+Both checks read the gate from the selected immutable Git commit and use only
+`contents: read` and `actions: read` GitHub permissions; SSH credentials are
+scoped to the remote deployment step. Existing lint and coverage requirements
+remain in force. Use **Re-run all jobs** when a failed-only CI retry would omit
+required jobs from the latest attempt. The gate's isolated metadata fixtures
+are included in the deployment helper tests below and make no network calls.
 
 Set these repository or `production` environment **variables** only after the
 correct pre-provisioned Oracle host has been confirmed:

@@ -69,7 +69,7 @@ test('real login, refresh, reload, tenant denial, and logout', async ({ page }) 
   await expect.poll(() => page.evaluate(() => Boolean((window as unknown as { keycloak?: { authenticated: boolean } }).keycloak?.authenticated))).toBe(false);
 });
 
-test('verified invitee accepts once and current membership governs viewer and admin access', async ({ page, browser, baseURL }, testInfo) => {
+test('verified invitee accepts once and current membership governs viewer and admin access', async ({ page, browser, request, baseURL }, testInfo) => {
   test.setTimeout(90_000);
   const database = await openIsolatedDatabase(baseURL);
   const invitedContext = await browser.newContext({ baseURL });
@@ -101,6 +101,51 @@ test('verified invitee accepts once and current membership governs viewer and ad
     expect(await accepted.json()).toMatchObject({ id: identity.organizationId, tenantId: identity.organization, refreshSession: true });
     await expect(invitedPage.getByRole('status').filter({ hasText: /You have joined|Vous avez rejoint/ })).toBeVisible();
     await expect.poll(() => invitedPage.evaluate(() => (window as unknown as { keycloak: { tokenParsed?: { organization?: string } } }).keycloak.tokenParsed?.organization)).toBe(identity.organization);
+
+    // Application-managed tenant fields must persist without becoming editable
+    // through the same human's real Keycloak account self-service API.
+    const adminHeaders = { Authorization: `Bearer ${await keycloakAdminToken(request, baseURL)}` };
+    const readInvitedIdentity = async () => {
+      const response = await request.get(`http://localhost:8080/admin/realms/plainledger/users/${invitee.userId}`, { headers: adminHeaders });
+      expect(response.status()).toBe(200);
+      return response.json() as Promise<{ id: string; email: string; attributes: Record<string, string[]> }>;
+    };
+    const persistedIdentity = await readInvitedIdentity();
+    const tenantAttributes = { organization: [identity.organization], organizationName: [identity.organizationName], demoMode: ['false'] };
+    expect(persistedIdentity).toMatchObject({ id: invitee.userId, email: invitee.username, attributes: tenantAttributes });
+
+    const humanHeaders = {
+      Authorization: `Bearer ${await invitedPage.evaluate(() => (window as unknown as { keycloak: { token: string } }).keycloak.token)}`,
+      Accept: 'application/json',
+    };
+    const accountUrl = 'http://localhost:8080/realms/plainledger/account/';
+    const account = await request.get(accountUrl, { headers: humanHeaders });
+    expect(account.status()).toBe(200);
+    const ownProfile = await account.json() as {
+      id: string; username: string; email: string; firstName: string; lastName: string; attributes?: Record<string, string[]>;
+    };
+    expect(ownProfile).toMatchObject({ id: invitee.userId, email: invitee.username });
+    for (const field of Object.keys(tenantAttributes)) {
+      expect(ownProfile.attributes ?? {}).not.toHaveProperty(field);
+    }
+    const changeTenant = await request.post(accountUrl, {
+      headers: humanHeaders,
+      data: {
+        username: ownProfile.username, email: ownProfile.email, firstName: ownProfile.firstName, lastName: ownProfile.lastName,
+        attributes: { ...ownProfile.attributes, organization: [invitee.organization], organizationName: [identity.registration.organizationName], demoMode: ['true'] },
+      },
+    });
+    expect(changeTenant.status()).toBe(400);
+    expect(await changeTenant.json()).toMatchObject({
+      errors: expect.arrayContaining(Object.keys(tenantAttributes).map(field =>
+        expect.objectContaining({ field, errorMessage: 'error-user-attribute-read-only' }))),
+    });
+    expect((await readInvitedIdentity()).attributes).toEqual(persistedIdentity.attributes);
+    expect(await invitedPage.evaluate(async () => {
+      const keycloak = (window as unknown as { keycloak: { updateToken: (minValidity: number) => Promise<boolean>; tokenParsed?: { organization?: string } } }).keycloak;
+      await keycloak.updateToken(-1);
+      return keycloak.tokenParsed?.organization;
+    })).toBe(identity.organization);
 
     const refreshed = await invitedPage.evaluate(() => {
       const claims = (window as unknown as { keycloak: { tokenParsed: { sub: string; jti: string; realm_access?: { roles?: string[] } } } }).keycloak.tokenParsed;
@@ -157,6 +202,22 @@ test.describe('disposable public registration', () => {
     try {
       const adminToken = await keycloakAdminToken(request, baseURL);
       const adminHeaders = { Authorization: `Bearer ${adminToken}` };
+      // Resolve the built-in client through a user mapping: listing clients would
+      // require broader machine permissions than application registration needs.
+      const importedRoles = await request.get(`http://localhost:8080/admin/realms/plainledger/users/${identity.userId}/role-mappings`, { headers: adminHeaders });
+      expect(importedRoles.status()).toBe(200);
+      const accountMapping = (await importedRoles.json() as { clientMappings?: Record<string, { id: string; client: string }> }).clientMappings?.account;
+      expect(accountMapping?.client).toBe('account');
+      expect(accountMapping?.id).toBeTruthy();
+      const accountClientId = accountMapping!.id;
+      const expectOwnAccountRoles = async (userId: string) => {
+        const effectiveRoles = await request.get(`http://localhost:8080/admin/realms/plainledger/users/${encodeURIComponent(userId)}/role-mappings/clients/${encodeURIComponent(accountClientId)}/composite`, { headers: adminHeaders });
+        expect(effectiveRoles.status()).toBe(200);
+        expect(await effectiveRoles.json()).toEqual(expect.arrayContaining([
+          expect.objectContaining({ name: 'manage-account', clientRole: true, containerId: accountClientId }),
+          expect.objectContaining({ name: 'view-profile', clientRole: true, containerId: accountClientId }),
+        ]));
+      };
       const { emailDomain, ...registration } = identity.registration;
       const email = `signup-owner-${randomUUID()}@${emailDomain}`;
       const payload = { ...registration, email, password: identity.password };
@@ -169,6 +230,7 @@ test.describe('disposable public registration', () => {
       const keycloakOwner = await request.get(`http://localhost:8080/admin/realms/plainledger/users/${owner.userId}`, { headers: adminHeaders });
       expect(keycloakOwner.status()).toBe(200);
       expect(await keycloakOwner.json()).toMatchObject({ id: owner.userId, email, enabled: true, emailVerified: false, requiredActions: expect.arrayContaining(['VERIFY_EMAIL']), attributes: { organization: [owner.userId] } });
+      await expectOwnAccountRoles(owner.userId);
       const ownerState = await database.query(`SELECT o.id,o.tenant_id,o.name,o.subscription_plan_id,p.id AS user_id,p.role,p.email_verified,p.is_active,f.updated_by
         FROM accounting.organizations o JOIN accounting.user_profiles p ON p.organization_id=o.id
         JOIN accounting.organization_features f ON f.organization_id=o.id WHERE o.id=$1 AND p.id=$2`, [owner.organizationId, owner.userId]);
@@ -200,6 +262,7 @@ test.describe('disposable public registration', () => {
       const keycloakMember = await request.get(`http://localhost:8080/admin/realms/plainledger/users/${member.userId}`, { headers: adminHeaders });
       expect(keycloakMember.status()).toBe(200);
       expect(await keycloakMember.json()).toMatchObject({ emailVerified: false, requiredActions: expect.arrayContaining(['VERIFY_EMAIL']), attributes: { organization: [identity.organization] } });
+      await expectOwnAccountRoles(member.userId);
       const joinedProfile = await database.query('SELECT organization_id,role,email_verified,registration_source FROM accounting.user_profiles WHERE id=$1', [member.userId]);
       expect(joinedProfile.rows).toEqual([{ organization_id: identity.organizationId, role: 'viewer', email_verified: false, registration_source: 'invite' }]);
       expect((await database.query('SELECT id FROM accounting.organizations WHERE tenant_id=$1', [member.userId])).rowCount).toBe(0);
@@ -242,7 +305,9 @@ for (const security of securityPages) {
         (response.headers()['content-type'] || '').includes('application/json');
     });
     await openAccount.click();
-    await page.waitForURL(url => url.origin === identityOrigin && url.pathname.startsWith(accountPath));
+    await page.waitForURL(url => url.origin === identityOrigin && (
+      url.pathname === accountPath.slice(0, -1) || url.pathname.startsWith(accountPath)
+    ));
     const account = await profile;
     expect(account.status()).toBe(200);
     expect(await account.json()).toMatchObject({ id: identity.userId, email: identity.username });

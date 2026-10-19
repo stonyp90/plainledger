@@ -7,15 +7,45 @@ Runtime URL/secret substitutions are resolved by Keycloak's realm importer.
 import argparse
 import copy
 import json
+import os
 from pathlib import Path
+import tempfile
 
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / 'realms/plainledger-realm.json'
 OUTPUT = ROOT / 'realms/plainledger-production-realm.json'
+PROFILE = ROOT / 'user-profile.json'
+PROFILE_PROVIDER = 'org.keycloak.userprofile.UserProfileProvider'
+
+
+def profile_components():
+    return [{
+        'name': 'declarative-user-profile',
+        'providerId': 'declarative-user-profile',
+        'config': {'kc.user.profile.config': [json.dumps(json.loads(PROFILE.read_text()), separators=(',', ':'))]},
+    }]
+
+
+def write_atomic(target, text):
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', dir=target.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.chmod(target.stat().st_mode & 0o777 if target.exists() else 0o644)
+        os.replace(temporary, target)
+    finally:
+        if temporary and temporary.exists():
+            temporary.unlink()
 
 
 def production_realm(source):
     realm = copy.deepcopy(source)
+    # The same reviewed managed fields govern both imports. No unmanaged fields
+    # are enabled, and custom identity/tenant fields are writable only by admins.
+    realm.setdefault('components', {})[PROFILE_PROVIDER] = profile_components()
     # Only a machine identity is needed for API registration/reset operations.
     # Reconstruct it so no human credentials or inherited demo attributes survive.
     realm['users'] = [{
@@ -66,20 +96,30 @@ def production_realm(source):
 
 
 def render():
-    return json.dumps(production_realm(json.loads(SOURCE.read_text())), indent=2) + '\n'
+    source = json.loads(SOURCE.read_text())
+    if source.get('components', {}).get(PROFILE_PROVIDER) != profile_components():
+        raise ValueError('Development profile is stale; run keycloak/prepare-production-realm.py --sync-profile')
+    return json.dumps(production_realm(source), indent=2) + '\n'
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--check', action='store_true')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--check', action='store_true')
+    mode.add_argument('--sync-profile', action='store_true',
+                      help='Sync the reviewed profile into the development import, then regenerate production')
     args = parser.parse_args()
+    if args.sync_profile:
+        source = json.loads(SOURCE.read_text())
+        source.setdefault('components', {})[PROFILE_PROVIDER] = profile_components()
+        write_atomic(SOURCE, json.dumps(source, indent=2) + '\n')
     output = render()
     if args.check:
         if not OUTPUT.exists() or OUTPUT.read_text() != output:
             raise SystemExit('Production realm is stale; run keycloak/prepare-production-realm.py')
         print('Production realm is current')
     else:
-        OUTPUT.write_text(output)
+        write_atomic(OUTPUT, output)
         print('Production realm generated without human accounts or fixed credentials')
 
 

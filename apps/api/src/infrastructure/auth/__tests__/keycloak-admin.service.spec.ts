@@ -18,6 +18,7 @@ const createAdminClient = () => ({
     del: jest.fn().mockResolvedValue(undefined),
     update: jest.fn().mockResolvedValue(undefined),
     find: jest.fn().mockResolvedValue([{ id: 'pre-existing-user', email: input.email }]),
+    findOne: jest.fn().mockResolvedValue(undefined),
   },
   roles: {
     find: jest.fn().mockResolvedValue([
@@ -26,7 +27,7 @@ const createAdminClient = () => ({
   },
 });
 
-describe('Keycloak user creation compensation', () => {
+describe('Keycloak user provisioning and profile updates', () => {
   let client: ReturnType<typeof createAdminClient>;
   let service: KeycloakAdminService;
   let errorLog: jest.SpyInstance;
@@ -120,5 +121,59 @@ describe('Keycloak user creation compensation', () => {
     Object.assign(service, { isConfigured: false });
     await expect(service.createUser(input)).rejects.toThrow('Keycloak Admin Service not configured');
     expect(client.users.create).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])('preserves the required identity profile while merging tenant attributes without resending security state (verified=%s)', async (emailVerified) => {
+    const existing = {
+      id: USER_ID, username: 'existing-login-name', email: input.email,
+      firstName: 'Existing', lastName: 'Profile',
+      attributes: { organization: ['unassigned'], locale: ['fr'] },
+      enabled: false, emailVerified, requiredActions: ['VERIFY_EMAIL'],
+      credentials: [{ type: 'otp' }], realmRoles: ['user'],
+    };
+    client.users.findOne.mockResolvedValueOnce(existing);
+
+    await service.updateUserAttributes({ userId: USER_ID, attributes: { organization: ['accepted-tenant'], demoMode: ['false'] } });
+
+    expect(client.users.findOne).toHaveBeenCalledWith({ realm: REALM, id: USER_ID });
+    // Keycloak's PUT validates required profile fields whenever attributes exist.
+    // The exact shape also rejects accidental credentials, verification or role writes.
+    expect(client.users.update).toHaveBeenCalledWith({ realm: REALM, id: USER_ID }, {
+      username: existing.username, email: existing.email,
+      firstName: existing.firstName, lastName: existing.lastName,
+      attributes: { organization: ['accepted-tenant'], locale: ['fr'], demoMode: ['false'] },
+    });
+    expect(existing.attributes).toEqual({ organization: ['unassigned'], locale: ['fr'] });
+    expect(client.users.del).not.toHaveBeenCalled();
+    expect(client.users.addRealmRoleMappings).not.toHaveBeenCalled();
+  });
+
+  it('adds the first custom attributes without inventing missing optional profile fields', async () => {
+    client.users.findOne.mockResolvedValueOnce({ id: USER_ID, username: input.email, email: input.email });
+    await service.updateUserAttributes({ userId: USER_ID, attributes: { organization: ['accepted-tenant'] } });
+    expect(client.users.update).toHaveBeenCalledWith({ realm: REALM, id: USER_ID }, {
+      username: input.email, email: input.email, firstName: undefined, lastName: undefined,
+      attributes: { organization: ['accepted-tenant'] },
+    });
+  });
+
+  it('does not update or adopt another identity when the requested user is missing', async () => {
+    await expect(service.updateUserAttributes({ userId: USER_ID, attributes: { organization: ['accepted-tenant'] } }))
+      .rejects.toThrow(`User not found: ${USER_ID}`);
+    expect(client.users.update).not.toHaveBeenCalled();
+    expect(client.users.find).not.toHaveBeenCalled();
+    expect(client.users.del).not.toHaveBeenCalled();
+  });
+
+  it.each(['read', 'write'] as const)('propagates the original profile %s failure for the caller transaction to roll back', async (stage) => {
+    const failure = new Error(`Profile ${stage} rejected`);
+    client.users.findOne.mockResolvedValue({ id: USER_ID, username: input.email, email: input.email, firstName: input.firstName, lastName: input.lastName });
+    const operation = stage === 'read' ? client.users.findOne : client.users.update;
+    operation.mockRejectedValueOnce(failure);
+    await expect(service.updateUserAttributes({ userId: USER_ID, attributes: { organization: ['accepted-tenant'] } })).rejects.toBe(failure);
+    if (stage === 'read') expect(client.users.update).not.toHaveBeenCalled();
+    expect(client.users.del).not.toHaveBeenCalled();
+    expect(client.users.resetPassword).not.toHaveBeenCalled();
+    expect(client.users.addRealmRoleMappings).not.toHaveBeenCalled();
   });
 });

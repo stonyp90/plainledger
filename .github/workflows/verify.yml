@@ -56,6 +56,8 @@ jobs:
         run: python3 -m unittest discover -s deploy/oracle/tests -v
       - name: Validate reviewed Keycloak realm imports
         run: python3 keycloak/test_production_realm.py
+      - name: Validate pinned storage qualification boundaries
+        run: python3 -B -m unittest discover -s deploy/storage -p 'test_*.py' -v
 
   real-stack:
     name: Real Keycloak, PostgreSQL, Redis and browser flows
@@ -162,48 +164,22 @@ jobs:
           node e2e/wait-for-http.cjs http://localhost:5173
       - name: Public states and real PKCE authentication
         run: npx --no-install playwright test --config playwright.strict.config.ts
-      - name: Install pinned compiler for upstream S3 source build
+      - name: Qualify pinned storage containers and committed accounting snapshots
+        id: storage_qualification
         if: ${{ !cancelled() }}
-        uses: actions/setup-go@v5
-        with:
-          # Matches the toolchain directive in the pinned upstream go.mod.
-          go-version: '1.24.8'
-          check-latest: false
-          cache: false
-      - name: Verify actual object storage and committed accounting snapshots
-        if: ${{ !cancelled() }}
-        timeout-minutes: 15
-        env:
-          GOTOOLCHAIN: local
-          GOSUMDB: sum.golang.org
-          GOPROXY: https://proxy.golang.org,direct
-          # Official source release RELEASE.2025-10-15T17-29-55Z, including its security fix.
-          # MinIO no longer publishes community container releases. Build the exact source
-          # for this disposable test only. This does not qualify an Oracle production image.
-          MINIO_SOURCE_COMMIT: 9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+        timeout-minutes: 20
         run: |
           node --test e2e/wait-for-http.test.cjs
-          s3_runtime=$(mktemp -d "$RUNNER_TEMP/plainledger-s3.XXXXXX")
-          mkdir -p "$s3_runtime/bin" "$s3_runtime/data" test-results/runtime
-          GOBIN="$s3_runtime/bin" CGO_ENABLED=0 go install -trimpath "github.com/minio/minio@$MINIO_SOURCE_COMMIT"
-          {
-            echo 'repository=https://github.com/minio/minio'
-            echo "source_commit=$MINIO_SOURCE_COMMIT"
-            echo 'release=RELEASE.2025-10-15T17-29-55Z'
-            go version
-            go version -m "$s3_runtime/bin/minio"
-            sha256sum "$s3_runtime/bin/minio"
-          } > test-results/runtime/s3-build.txt
-          MINIO_ROOT_USER="$AWS_ACCESS_KEY_ID" MINIO_ROOT_PASSWORD="$AWS_SECRET_ACCESS_KEY" MINIO_BROWSER=off \
-            "$s3_runtime/bin/minio" server "$s3_runtime/data" --address 127.0.0.1:19000 \
-            > /tmp/plainledger-s3.log 2>&1 &
-          s3_pid=$!
-          trap 'kill "$s3_pid" 2>/dev/null || true; wait "$s3_pid" 2>/dev/null || true' EXIT
-          if ! node e2e/wait-for-http.cjs "$S3_ENDPOINT/minio/health/ready"; then
-            cat /tmp/plainledger-s3.log
-            exit 1
-          fi
-          node e2e/datalake-real-storage.cjs
+          python3 deploy/storage/qualify.py --source-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/plainledger-storage"
+      - name: Retain qualified amd64 images and exact source evidence
+        if: ${{ !cancelled() && steps.storage_qualification.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualified-storage-amd64-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/plainledger-storage/qualified
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
       - name: Collect runtime logs
         if: always()
         run: |
@@ -221,4 +197,69 @@ jobs:
           path: |
             playwright-report
             test-results
+          retention-days: 7
+
+  storage-arm64:
+    name: Native arm64 storage container qualification
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector@sha256:7b822b0aac60967beb1ea5e576b8602c94c300a157d187f385ae3e0da199b90a
+        env:
+          POSTGRES_USER: plainledger
+          POSTGRES_PASSWORD: isolated-e2e-only
+          POSTGRES_DB: plainledger
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U plainledger -d plainledger"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      NODE_ENV: production
+      DATABASE_HOST: localhost
+      DATABASE_PORT: '5432'
+      DATABASE_USER: plainledger
+      DATABASE_PASSWORD: isolated-e2e-only
+      DATABASE_NAME: plainledger
+      DATABASE_SSL: 'false'
+      SYNC_DB: 'false'
+      SKIP_AUTH: 'false'
+      REDIS_HOST: localhost
+      REDIS_PORT: '6379'
+      REDIS_TLS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - name: Install and build the locked API for the real accounting harness
+        run: |
+          npm --prefix apps/api ci --include=dev --no-audit --no-fund
+          npm --prefix apps/api run build
+          node apps/api/scripts/bootstrap-empty-database.cjs --apply
+      - name: Qualify pinned storage containers and committed accounting snapshots
+        id: storage_qualification
+        run: python3 deploy/storage/qualify.py --source-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/plainledger-storage"
+      - name: Retain qualified arm64 images and exact source evidence
+        if: ${{ !cancelled() && steps.storage_qualification.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualified-storage-arm64-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/plainledger-storage/qualified
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storage-arm64-results
+          path: test-results
           retention-days: 7

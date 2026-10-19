@@ -423,9 +423,18 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
         ...input.attributes,
       };
 
+      // Keycloak 26 validates the submitted profile when attributes are present;
+      // an attributes-only PUT omits required names/email. Preserve the profile
+      // returned by the read without resending credentials or security flags.
       await this.adminClient.users.update(
         { realm: this.realm, id: input.userId },
-        { attributes: mergedAttributes },
+        {
+          username: existingUser.username,
+          email: existingUser.email,
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName,
+          attributes: mergedAttributes,
+        },
       );
 
       this.logger.log(`Attributes updated for user: ${input.userId}`);

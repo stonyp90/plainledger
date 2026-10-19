@@ -105,9 +105,15 @@ async function main() {
   assert.equal(marker.length, 1, 'Run the guarded empty-database bootstrap before this harness');
   s3 = new S3Client({ endpoint: process.env.S3_ENDPOINT, forcePathStyle: true, region: process.env.S3_REGION || 'us-east-1',
     credentials: { accessKeyId: process.env.AWS_ACCESS_KEY_ID, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY }, requestHandler: { connectionTimeout: 5000, requestTimeout: 30_000 } });
-  try { await s3.send(new CreateBucketCommand({ Bucket: process.env.S3_BUCKET_GOLD })); }
-  catch (error) { if (!['BucketAlreadyOwnedByYou', 'BucketAlreadyExists'].includes(error.name)) throw error; }
-  await s3.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET_GOLD }));
+  // Production initialization owns bucket administration; scoped application
+  // credentials only need to use an existing bucket. Preserve the standalone
+  // empty-service setup when a bucket genuinely does not exist (HTTP 404).
+  try { await s3.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET_GOLD })); }
+  catch (error) {
+    if (error.$metadata?.httpStatusCode !== 404) throw error;
+    await s3.send(new CreateBucketCommand({ Bucket: process.env.S3_BUCKET_GOLD }));
+    await s3.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET_GOLD }));
+  }
   const prior = await s3.send(new ListObjectsV2Command({ Bucket: process.env.S3_BUCKET_GOLD, MaxKeys: 1 }));
   assert.equal(prior.KeyCount || 0, 0, 'Refusing to reuse a bucket containing prior data');
   cache = new CacheService(config); await cache.onModuleInit();

@@ -3,7 +3,9 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('production_realm', ROOT / 'prepare-production-realm.py')
@@ -107,6 +109,58 @@ class ProductionRealmTests(unittest.TestCase):
         self.assertEqual(self.realm['accountTheme'], 'keycloak.v3')
         roles = {role['name'] for role in self.realm['roles']['realm']}
         self.assertTrue({'user', 'member', 'viewer', 'admin', 'owner'}.issubset(roles))
+
+    def test_managed_profile_is_imported_from_the_same_reviewed_configuration(self):
+        reviewed = json.loads(generator.PROFILE.read_text())
+        for realm in (self.source, self.realm):
+            components = realm['components'][generator.PROFILE_PROVIDER]
+            self.assertEqual(len(components), 1)
+            self.assertEqual(components[0]['providerId'], 'declarative-user-profile')
+            encoded = components[0]['config']['kc.user.profile.config']
+            self.assertEqual(len(encoded), 1)
+            self.assertEqual(json.loads(encoded[0]), reviewed)
+        self.assertTrue(self.realm['internationalizationEnabled'])
+
+    def test_built_in_profile_validators_and_user_permissions_are_preserved(self):
+        profile = json.loads(generator.PROFILE.read_text())
+        attributes = {attribute['name']: attribute for attribute in profile['attributes']}
+        for name in ('username', 'email', 'firstName', 'lastName'):
+            attribute = attributes[name]
+            self.assertEqual(attribute['permissions'], {'view': ['admin', 'user'], 'edit': ['admin', 'user']})
+            self.assertEqual(attribute['validations']['length']['max'], 255)
+        self.assertEqual(attributes['username']['validations']['length']['min'], 3)
+        self.assertIn('username-prohibited-characters', attributes['username']['validations'])
+        self.assertIn('up-username-not-idn-homograph', attributes['username']['validations'])
+        self.assertIn('email', attributes['email']['validations'])
+        for name in ('email', 'firstName', 'lastName'):
+            self.assertEqual(attributes[name]['required'], {'roles': ['user']})
+        for name in ('firstName', 'lastName'):
+            self.assertIn('person-name-prohibited-characters', attributes[name]['validations'])
+
+    def test_only_reviewed_application_attributes_are_writable_and_only_by_admin(self):
+        profile = json.loads(generator.PROFILE.read_text())
+        self.assertIsNone(profile.get('unmanagedAttributePolicy'))
+        application = [attribute for attribute in profile['attributes']
+                       if attribute['name'] not in {'username', 'email', 'firstName', 'lastName'}]
+        expected = {'organization', 'organizationName', 'industry', 'province',
+                    'registrationSource', 'registeredAt', 'demoMode', 'plan',
+                    'accountStatus', 'invitedBy', 'invitedAt'}
+        self.assertEqual({attribute['name'] for attribute in application}, expected)
+        self.assertEqual(len(application), len(expected))
+        for attribute in application:
+            self.assertEqual(attribute['permissions'], {'view': ['admin'], 'edit': ['admin']})
+            self.assertFalse(attribute['multivalued'])
+            self.assertNotIn('required', attribute)
+            self.assertEqual(attribute['validations']['length'], {'max': 2048})
+
+    def test_stale_development_profile_cannot_pass_the_generator_check(self):
+        source = copy.deepcopy(self.source)
+        source['components'].pop(generator.PROFILE_PROVIDER)
+        with tempfile.TemporaryDirectory() as directory:
+            stale = Path(directory) / 'realm.json'
+            stale.write_text(json.dumps(source))
+            with patch.object(generator, 'SOURCE', stale), self.assertRaisesRegex(ValueError, 'Development profile is stale'):
+                generator.render()
 
     def test_unreviewed_clients_fail_closed(self):
         self.source['clients'].append({'clientId': 'unreviewed-client'})

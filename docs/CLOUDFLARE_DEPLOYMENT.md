@@ -21,22 +21,26 @@ Without a backend the app runs in **guest mode**: every public page works, and `
    Set _Account Resources_ to your account and _Zone Resources_ to _Specific zone_ → `plainledger.ca`, add the permission
    **Zone → Zone → Read**, then create the token. The **Account ID** is shown on the _Workers & Pages_ overview page.
 4. **Add GitHub secrets**: repository _Settings_ → _Secrets and variables_ → _Actions_ → add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-5. **Deploy**: merge to `main` and wait for **PlainLedger verification** to pass. Its completion triggers the website deployment.
-   To repeat a deployment, run _Actions_ → **Deploy Website (Cloudflare)** → _Run workflow_ on `main`; the current commit must already have a successful verification run.
+5. **Deploy**: merge to `main` and wait for both **PlainLedger verification** and **CI/CD Pipeline** to pass for that commit. Completion of either workflow triggers a website deployment attempt; publishing remains blocked until both qualify.
+   To repeat a deployment, run _Actions_ → **Deploy Website (Cloudflare)** → _Run workflow_ on `main`; the current commit must already satisfy both workflows and all required CI jobs below.
    The first run publishes to `plainledger-web.<account-subdomain>.workers.dev`. Once Cloudflare marks the zone **Active**
    after the nameserver change, run the workflow again: it attaches `plainledger.ca` and `www.plainledger.ca`
    and Cloudflare issues the certificates. While the zone is pending, the job summary lists the nameservers to set at GoDaddy.
 
 ## How deploys work
 
-`.github/workflows/deploy-website.yml` runs after **PlainLedger verification** completes on `main`, or by manual dispatch on `main`:
+`.github/workflows/deploy-website.yml` runs after **PlainLedger verification** or **CI/CD Pipeline** completes on `main`, or by manual dispatch on `main`:
 
-1. Requires a successful `verify.yml` run from this repository's `main` branch for the exact source commit. Pull request and fork runs cannot authorize deployment. The newest matching push or manual run must be successful; an older success cannot hide a newer failure or an unfinished run.
-2. Rejects a stale commit if `main` has advanced, checks the Cloudflare credentials, and checks out the verified SHA explicitly. For a `workflow_run` event, the source is the triggering run's `head_sha`, not the deployment event's default-branch SHA.
-3. Installs the locked dependencies and builds the site (`npm run build`) with the repository variables below. The lockfile already includes the Linux Rollup binary.
-4. Checks the zone status through the Cloudflare API and rechecks the current `main` SHA immediately before publishing.
-5. Runs `wrangler deploy` (adds `--domain plainledger.ca` once the zone is active), then deploys the www redirect.
-6. Retries the complete smoke-test contracts during edge propagation and writes the verified SHA, verification run and deployment results to the summary.
+1. Validates the source before checkout: the triggering completion must belong to the exact `verify.yml` or `ci.yml` workflow in this repository, run on `main` by push or manual dispatch, and finish successfully. A manual deployment must also target `main`. The source SHA must still be the current `main` commit. Pull request, fork and stale runs cannot authorize checkout. For a `workflow_run` event, the source is its `head_sha`.
+2. Runs `.github/scripts/require_production_quality.py` from that immutable Git commit. The newest exact-commit `verify.yml` **and** `ci.yml` runs must both be completed successfully. The latest CI attempt must contain exactly one successful **Lint API**, **Lint Web**, **Test API** and **Test Web** job. Missing, pending, failed, cancelled or skipped evidence blocks publishing; an older success cannot hide it. Manual inputs that skip required jobs do not qualify.
+3. Checks the Cloudflare credentials, installs locked dependencies and builds the site (`npm run build`) with the repository variables below. The lockfile already includes the Linux Rollup binary. Cloudflare credentials are available only to the steps that need them.
+4. Checks the zone status through the Cloudflare API, then repeats the complete current-main and quality checks immediately before publishing the website Worker. The gate uses a read-only GitHub token and receives no Cloudflare credentials.
+5. Runs `wrangler deploy` (adds `--domain plainledger.ca` once the zone is active). It repeats the same gate again immediately before publishing the www redirect.
+6. Retries the complete smoke-test contracts during edge propagation and writes the verified SHA, both quality-run URLs and deployment results to the summary.
+
+An early automatic attempt can be blocked while the other workflow is still running. Its later successful completion starts another attempt. Fix genuine lint, test or coverage failures before retrying; passing functional tests alone does not satisfy the existing coverage thresholds. When retrying CI, use **Re-run all jobs** if a failed-only retry would omit any of the four required jobs from the latest attempt.
+
+The gate also returns `verification_run_id` and `verification_run_attempt` for consumers that bind qualified artifacts to an exact verification attempt. Its isolated metadata fixtures run with `python3 -m unittest discover -s deploy/oracle/tests -p test_production_quality_gate.py -v`; they make no GitHub or cloud calls.
 
 The automatic `workflow_run` trigger becomes available when this workflow is present on the default branch.
 The workflow uses `contents: read` and `actions: read` for its GitHub checks. Deployment runs share one concurrency group and do not cancel an active publish.

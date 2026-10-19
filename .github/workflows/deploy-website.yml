@@ -4,7 +4,7 @@ name: Deploy Website (Cloudflare)
 
 on:
   workflow_run:
-    workflows: ['PlainLedger verification']
+    workflows: ['PlainLedger verification', 'CI/CD Pipeline']
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -41,54 +41,50 @@ jobs:
       ready: ${{ steps.creds.outputs.ready }}
       source_sha: ${{ steps.verify.outputs.source_sha }}
       verification_url: ${{ steps.verify.outputs.verification_url }}
+      quality_url: ${{ steps.verify.outputs.quality_url }}
     steps:
-      - name: Require successful verification of this exact current main commit
-        id: verify
+      - name: Select trusted current main source before checkout
+        id: source
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          source_run_id=''
           if [ "$GITHUB_EVENT_NAME" = 'workflow_run' ]; then
             jq -e --arg repository "$GITHUB_REPOSITORY" '
               .workflow_run |
-              .head_repository.full_name == $repository and
-              .head_branch == "main" and
+              .head_repository.full_name == $repository and .head_branch == "main" and
               (.event == "push" or .event == "workflow_dispatch") and
+              (.path == ".github/workflows/verify.yml" or .path == ".github/workflows/ci.yml") and
               .status == "completed" and .conclusion == "success"
             ' "$GITHUB_EVENT_PATH" > /dev/null
             source_sha=$(jq -er '.workflow_run.head_sha' "$GITHUB_EVENT_PATH")
-            source_run_id=$(jq -er '.workflow_run.id | tostring' "$GITHUB_EVENT_PATH")
           elif [ "$GITHUB_EVENT_NAME" = 'workflow_dispatch' ] && [ "$GITHUB_REF" = 'refs/heads/main' ]; then
             source_sha="$GITHUB_SHA"
           else
-            echo '::error::Website deployment requires verified source from this repository main branch.'
+            echo '::error::Website deployment requires a trusted main workflow completion or manual main dispatch.'
             exit 1
           fi
           [[ "$source_sha" =~ ^[a-f0-9]{40}$ ]] || exit 1
-          gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/verify.yml/runs?branch=main&head_sha=${source_sha}&per_page=100" \
-            > "$RUNNER_TEMP/website-verification-runs.json"
-          # Select the newest main push/manual run before checking its result. An older
-          # success must not hide a newer failed, cancelled, queued or rerunning attempt.
-          verification_url=$(jq -er --arg repository "$GITHUB_REPOSITORY" --arg sha "$source_sha" --arg run_id "$source_run_id" '
-            [.workflow_runs[] | select(
-              .head_repository.full_name == $repository and .head_branch == "main" and .head_sha == $sha and
-              (.event == "push" or .event == "workflow_dispatch")
-            )] | max_by(.id) |
-            select(.status == "completed" and .conclusion == "success") |
-            select($run_id == "" or (.id | tostring) == $run_id) | .html_url
-          ' "$RUNNER_TEMP/website-verification-runs.json") || {
-            echo '::error::The exact source commit has no current successful verify.yml run. Deployment remains blocked.'
-            exit 1
-          }
           current_main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
           if [ "$source_sha" != "$current_main_sha" ]; then
-            echo '::error::This verification is stale: main has advanced. Deploy the latest verified main commit.'
+            echo '::error::Main has advanced; this deployment source is stale.'
             exit 1
           fi
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
-          echo "verification_url=$verification_url" >> "$GITHUB_OUTPUT"
-          echo "Verified source: $source_sha ($verification_url)"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.source_sha }}
+          persist-credentials: false
+      - name: Require verification and existing CI quality gates for the exact source
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA" --github-output "$GITHUB_OUTPUT"
       - id: creds
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -110,8 +106,6 @@ jobs:
     timeout-minutes: 20
     env:
       SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -142,6 +136,9 @@ jobs:
 
       - name: Check Cloudflare zone status
         id: zone
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           code=$(curl --connect-timeout 5 --max-time 20 -sS -o zone.json -w '%{http_code}' \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
@@ -155,22 +152,21 @@ jobs:
           echo "nameservers=$nameservers" >> "$GITHUB_OUTPUT"
           echo "Zone ${DOMAIN}: ${status} ${nameservers:+(Cloudflare nameservers: $nameservers)}"
 
-      - name: Recheck current main immediately before publishing
+      - name: Recheck current main and both quality gates immediately before publishing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          current_main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
-          if [ "$SOURCE_SHA" != "$current_main_sha" ]; then
-            echo '::error::Main advanced during the build. This stale deployment remains blocked.'
-            exit 1
-          fi
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA"
 
       - name: Deploy website Worker
         id: deploy
         working-directory: apps/web
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ZONE_STATUS: ${{ steps.zone.outputs.status }}
           API_ORIGIN: ${{ vars.API_ORIGIN }}
         run: |
@@ -181,9 +177,22 @@ jobs:
           npx --yes "wrangler@${WRANGLER_VERSION}" deploy "${args[@]}" | tee deploy.log
           echo "workers_dev_url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)" >> "$GITHUB_OUTPUT"
 
+      - name: Recheck quality gates immediately before publishing the www redirect
+        if: steps.zone.outputs.status == 'active'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA"
+
       - name: Deploy www redirect Worker
         if: steps.zone.outputs.status == 'active'
         working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy --config wrangler.www.jsonc --domain "www.${DOMAIN}"
 
       - name: Smoke test
@@ -258,6 +267,7 @@ jobs:
           NAMESERVERS: ${{ steps.zone.outputs.nameservers }}
           SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
           VERIFICATION_URL: ${{ needs.preflight.outputs.verification_url }}
+          QUALITY_URL: ${{ needs.preflight.outputs.quality_url }}
           API_ORIGIN: ${{ vars.API_ORIGIN }}
         run: |
           {
@@ -267,6 +277,7 @@ jobs:
             echo "|---|---|"
             echo "| Verified source | \`${SOURCE_SHA}\` |"
             echo "| Verification run | ${VERIFICATION_URL} |"
+            echo "| CI lint and coverage run | ${QUALITY_URL} |"
             echo "| workers.dev | ${WORKERS_DEV_URL:-n/a} |"
             echo "| Zone \`${DOMAIN}\` | ${ZONE_STATUS:-unknown} |"
             if [ "$ZONE_STATUS" = "active" ] && [ "$SMOKE_OUTCOME" = "success" ]; then
