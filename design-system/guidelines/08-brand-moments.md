@@ -6,9 +6,13 @@ A handful of moments carry the brand beyond ordinary screens. Keep each one exac
 
 - The nine-cell mark appears in the sidebar, the header, the favicon, the PWA icons, the social cards and every email header.
 - It is always `color-primary-500` on the product's own ground, or #e9fff6 cells on a `color-primary-600` tile when it stands alone as an icon.
-- It never animates cell by cell. The only motion is a 1.05 scale on hover in the app header.
+- Ordinary in-app marks do not animate cell by cell. The app header retains its 1.05 hover scale.
+- Owner-approved exception (2026-10-19): the public website entrance and Scaleforged portfolio card use the approved nine-tile assembly. The original renderer and outlined wordmark are retained in `apps/web/public/brand/splash/scene.html`; approval and hashes are in `approval.json`.
 
 ## The splash
+
+- The public homepage plays the approved tile assembly on every full visit, not every client-side navigation. Its five-second visual score plays in three seconds, followed by a 320 ms fade into the existing website.
+- Pause, Skip, Escape, French/English labels, reduced-motion bypass and a six-second failed-load escape are required. The website is never gated by session storage.
 
 - The iOS launch screens (`apple-splash-*.png`, seven sizes from 1170×2532 to 2048×2732) centre the filled app tile on #0f172a.
 - The PWA `background_color` is #0f172a, so Android shows the same navy.

@@ -1,0 +1,18 @@
+{
+  "version": "2026-10-19-approved-tiles-v1",
+  "approval": "Owner approved PlainLedger_Animation.html in this conversation and requested its publication on PlainLedger and Scaleforged.",
+  "source_filename": "PlainLedger_Animation.html",
+  "source_sha256": "e84b0136d608f696dc7519fd51c6798f0f64e8494362a8ce5d68eebd105cce72",
+  "renderer_sha256": "5b7fb75cff75c11fda723d57af75513c97816e88ff5ecdf589321638afb0c94e",
+  "assets_sha256": "19e79b688c2fa7c634ba8708c8bc88c00f7649a67a42744883c2e65acc415450",
+  "scene_sha256": "1cef194e16e683999c7a49819c74f0f5c4ca3c60c39cd553375a9144b50e6648",
+  "original_score_seconds": 5,
+  "website_playback_seconds": 3,
+  "website_exit_fade_ms": 320,
+  "renderer_unchanged": true,
+  "wordmark_unchanged": true,
+  "locales": [
+    "en",
+    "fr"
+  ]
+}
