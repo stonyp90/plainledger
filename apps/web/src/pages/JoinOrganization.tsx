@@ -6,6 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { useKeycloak } from '../lib/keycloak';
 import api from '../lib/api';
 import { authRequestError } from '../lib/authFeedback';
+import { useTenant } from '../contexts/TenantContext';
 
 const TOKEN_KEY = 'plainledger-pending-invitation';
 const PREVIEW_KEY = 'plainledger-invitation-preview';
@@ -34,6 +35,7 @@ export default function JoinOrganization() {
   const { language } = useI18n();
   const isEn = language === 'en';
   const { initialized, authenticated, user, keycloak, authError } = useKeycloak();
+  const { isLoading: organizationLoading } = useTenant();
   const [token] = useState(readInvitationToken);
   const [preview, setPreview] = useState<InvitationPreview | null>(null);
   const [loading, setLoading] = useState(Boolean(token));
@@ -48,7 +50,7 @@ export default function JoinOrganization() {
     setLoading(true);
     setError(null);
     setPreview(null);
-    api.post<InvitationPreview>('/organizations/invitations/preview', { token }, { signal: controller.signal })
+    api.post<InvitationPreview>('/organizations/invitations/preview', { token }, { signal: controller.signal, authentication: 'none' })
       .then(({ data }) => {
         if (!data?.tenantId || !data.organizationName || !data.email || !['admin', 'member', 'viewer'].includes(data.role) || !Number.isFinite(Date.parse(data.expiresAt))) {
           throw new Error(isEn ? 'The invitation response is incomplete.' : 'La réponse de l’invitation est incomplète.');
@@ -63,11 +65,11 @@ export default function JoinOrganization() {
       .catch(cause => { if (!controller.signal.aborted) setError(authRequestError(cause, isEn, isEn ? 'Unable to load invitation. Please try again.' : 'Impossible de charger l’invitation. Veuillez réessayer.')); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [token, attempt, isEn, initialized, accepted]);
+  }, [token, attempt, isEn, accepted]);
 
   const matchingEmail = Boolean(preview && user?.email?.trim().toLowerCase() === preview.email.toLowerCase());
   const accept = async () => {
-    if (!preview || !matchingEmail || !user?.emailVerified || accepting || loading) return;
+    if (!initialized || !authenticated || organizationLoading || !preview || !matchingEmail || !user?.emailVerified || accepting || loading) return;
     if (Date.parse(preview.expiresAt) <= Date.now()) {
       setPreview(null);
       setError(isEn ? 'This invitation has expired. Ask your administrator for a new link.' : 'Cette invitation est expirée. Demandez un nouveau lien à votre administrateur.');
@@ -116,7 +118,7 @@ export default function JoinOrganization() {
               <Link to="/login?redirect=%2Fjoin" className="rounded-lg px-4 py-3 text-center text-white" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>{isEn ? 'Sign in' : 'Se connecter'}</Link>
               <Link to="/signup" className="rounded-lg border px-4 py-3 text-center">{isEn ? 'Create account' : 'Créer un compte'}</Link>
             </div>
-          </div> : !matchingEmail ? <p role="alert">{isEn ? `You are signed in as ${user?.email}. Sign out and use ${preview.email} to accept this invitation.` : `Vous êtes connecté avec ${user?.email}. Déconnectez-vous et utilisez ${preview.email} pour accepter cette invitation.`}</p> : !user?.emailVerified ? <div className="space-y-3"><p>{isEn ? 'Verify your email address before accepting the invitation.' : 'Vérifiez votre adresse courriel avant d’accepter l’invitation.'}</p><Link className="underline" to="/verify-email">{isEn ? 'Verify email' : 'Vérifier le courriel'}</Link></div> : <button type="button" disabled={accepting} onClick={accept} className="w-full rounded-lg px-4 py-3 text-white disabled:opacity-60" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>{accepting ? (isEn ? 'Joining…' : 'Adhésion…') : (isEn ? 'Accept invitation' : 'Accepter l’invitation')}</button>}
+          </div> : !matchingEmail ? <p role="alert">{isEn ? `You are signed in as ${user?.email}. Sign out and use ${preview.email} to accept this invitation.` : `Vous êtes connecté avec ${user?.email}. Déconnectez-vous et utilisez ${preview.email} pour accepter cette invitation.`}</p> : !user?.emailVerified ? <div className="space-y-3"><p>{isEn ? 'Verify your email address before accepting the invitation.' : 'Vérifiez votre adresse courriel avant d’accepter l’invitation.'}</p><Link className="underline" to="/verify-email">{isEn ? 'Verify email' : 'Vérifier le courriel'}</Link></div> : <div className="space-y-3">{organizationLoading && <p role="status">{isEn ? 'Checking your organization…' : 'Vérification de votre organisation…'}</p>}<button type="button" disabled={accepting || organizationLoading} onClick={accept} className="w-full rounded-lg px-4 py-3 text-white disabled:opacity-60" style={{ backgroundColor: 'rgb(var(--color-primary-600))' }}>{accepting ? (isEn ? 'Joining…' : 'Adhésion…') : (isEn ? 'Accept invitation' : 'Accepter l’invitation')}</button></div>}
         </div>}
       </section>
     </main>

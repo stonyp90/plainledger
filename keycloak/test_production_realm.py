@@ -33,6 +33,22 @@ class ProductionRealmTests(unittest.TestCase):
         self.assertNotIn('attributes', user)
         self.assertNotIn('realm-admin', user['clientRoles']['realm-management'])
 
+    def test_api_machine_preserves_reviewed_registration_permissions(self):
+        machine = self.realm['users'][0]
+        self.assertEqual(machine['clientRoles'], {
+            'realm-management': [
+                'manage-users', 'view-users', 'query-users', 'query-groups', 'view-realm',
+            ],
+        })
+
+    def test_development_machine_can_find_and_map_application_roles(self):
+        machines = [user for user in self.source['users']
+                    if user.get('serviceAccountClientId') == 'plainledger-api']
+        self.assertEqual(len(machines), 1)
+        roles = machines[0]['clientRoles']['realm-management']
+        self.assertTrue({'manage-users', 'view-realm'}.issubset(roles))
+        self.assertNotIn('realm-admin', roles)
+
     def test_no_development_mail_credentials_or_social_providers(self):
         self.assertEqual(self.realm['smtpServer'], {})
         self.assertEqual(self.realm['identityProviders'], [])

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { beginSignIn, sessionRequest, signIn } from './helpers/real-auth';
 import { keycloakAdminToken, openIsolatedDatabase } from './helpers/isolated-stack';
 import identity from '../fixtures/auth/isolated-e2e.json';
+import securityPages from '../fixtures/ui/account-security.json';
 
 interface InvitationResponse {
   id: string;
@@ -35,19 +36,20 @@ test('incorrect credentials remain on Keycloak and show an error', async ({ page
 
 test('real login, refresh, reload, tenant denial, and logout', async ({ page }) => {
   await signIn(page);
-  const identity = await page.evaluate(() => {
+  await expect(page.locator(`button[title="${identity.organizationName}"][aria-haspopup="listbox"]:visible`)).toBeVisible();
+  const subjects = await page.evaluate(() => {
     const keycloak = (window as unknown as { keycloak: { tokenParsed?: { sub?: string }; idTokenParsed?: { sub?: string } } }).keycloak;
     return { accessSubject: keycloak.tokenParsed?.sub, idSubject: keycloak.idTokenParsed?.sub };
   });
-  expect(identity.accessSubject).toBeTruthy();
-  expect(identity.accessSubject).toBe(identity.idSubject);
+  expect(subjects.accessSubject).toBeTruthy();
+  expect(subjects.accessSubject).toBe(subjects.idSubject);
   const refreshed = await page.evaluate(async () => {
     const keycloak = (window as unknown as { keycloak: { updateToken: (minValidity: number) => Promise<boolean>; authenticated: boolean; tokenParsed?: { sub?: string; organization?: string; aud?: string | string[] } } }).keycloak;
     await keycloak.updateToken(-1);
     return { authenticated: keycloak.authenticated, subject: keycloak.tokenParsed?.sub, organization: keycloak.tokenParsed?.organization, audience: keycloak.tokenParsed?.aud };
   });
   expect(refreshed.authenticated).toBe(true);
-  expect(refreshed.subject).toBe(identity.accessSubject);
+  expect(refreshed.subject).toBe(subjects.accessSubject);
   expect(refreshed.organization).toBeTruthy();
   expect([refreshed.audience].flat()).toContain('plainledger-api');
   const forbiddenStatus = await page.evaluate(async () => {
@@ -58,6 +60,7 @@ test('real login, refresh, reload, tenant denial, and logout', async ({ page }) 
   expect(forbiddenStatus).toBe(403);
   await page.reload();
   await expect.poll(() => page.evaluate(() => Boolean((window as unknown as { keycloak?: { authenticated: boolean } }).keycloak?.authenticated))).toBe(true);
+  await expect(page.locator(`button[title="${identity.organizationName}"][aria-haspopup="listbox"]:visible`)).toBeVisible();
   await page.evaluate(() => {
     const keycloak = (window as unknown as { keycloak: { logout: (options: { redirectUri: string }) => Promise<void> } }).keycloak;
     void keycloak.logout({ redirectUri: `${window.location.origin}/login` });
@@ -212,3 +215,39 @@ test.describe('disposable public registration', () => {
     }
   });
 });
+
+for (const security of securityPages) {
+  test(`${security.language} security settings open the signed-in Keycloak account`, async ({ page }) => {
+    await page.addInitScript(language => {
+      if (window.top === window && /^https?:$/.test(window.location.protocol)) {
+        localStorage.setItem('plainledger-language', language);
+      }
+    }, security.language);
+    await signIn(page);
+    await page.goto(security.settingsPath);
+    await expect(page.getByRole('heading', { name: security.heading, exact: true })).toBeVisible();
+    for (const status of security.unavailableStatuses) {
+      await expect(page.getByText(status, { exact: true })).toBeVisible();
+    }
+    await expect(page.locator('input[type="password"]')).toHaveCount(0);
+    const openAccount = page.getByRole('button', { name: security.openButton, exact: true });
+    await expect(openAccount).toBeEnabled();
+
+    const identityOrigin = new URL(process.env.KEYCLOAK_URL || 'http://localhost:8080').origin;
+    const accountPath = `/realms/${process.env.KEYCLOAK_REALM || 'plainledger'}/account/`;
+    const profile = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.origin === identityOrigin && url.pathname === accountPath &&
+        response.request().method() === 'GET' &&
+        (response.headers()['content-type'] || '').includes('application/json');
+    });
+    await openAccount.click();
+    await page.waitForURL(url => url.origin === identityOrigin && url.pathname.startsWith(accountPath));
+    const account = await profile;
+    expect(account.status()).toBe(200);
+    expect(await account.json()).toMatchObject({ id: identity.userId, email: identity.username });
+    // This is the real identity-provider UI and its authenticated profile response.
+    // No password, MFA, session, account-profile or email mutation is performed.
+    await expect(page.getByTestId('page-heading')).toContainText(/Personal info|Informations personnelles/i);
+  });
+}

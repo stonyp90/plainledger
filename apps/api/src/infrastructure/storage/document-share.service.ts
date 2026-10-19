@@ -205,6 +205,7 @@ export class DocumentShareService {
       (maxDownloads !== undefined && (!Number.isSafeInteger(maxDownloads) || maxDownloads < 1))) {
       throw new BadRequestException("Share expiration and download limit must be positive and within supported limits");
     }
+    // eslint-disable-next-line no-control-regex -- User filenames cannot contain path separators or control characters.
     if (typeof filename !== "string" || !filename.trim() || filename.length > 255 || /[\\/\x00-\x1f]/.test(filename)) {
       throw new BadRequestException("Invalid document filename");
     }

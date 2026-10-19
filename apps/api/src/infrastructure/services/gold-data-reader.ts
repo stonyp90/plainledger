@@ -224,7 +224,7 @@ export class GoldDataReader {
       }
       tokens.add(nextToken);
       token = nextToken;
-    } while (true);
+    } while (token !== undefined);
     return Array.from(objects.values());
   }
 
@@ -384,6 +384,7 @@ export class GoldDataReader {
       typeof path !== "string" ||
       !path ||
       path.length > 1024 ||
+      // eslint-disable-next-line no-control-regex -- Reject controls, whitespace and escape characters in storage keys.
       /[\\\x00-\x20\x7f%]/.test(path) ||
       path.startsWith("/") ||
       (prefix ? !path.endsWith("/") && !path.endsWith(".json") : !path.endsWith(".json")) ||

@@ -54,6 +54,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate deployment helpers
         run: python3 -m unittest discover -s deploy/oracle/tests -v
+      - name: Validate reviewed Keycloak realm imports
+        run: python3 keycloak/test_production_realm.py
 
   real-stack:
     name: Real Keycloak, PostgreSQL, Redis and browser flows
@@ -138,6 +140,7 @@ jobs:
           node e2e/seed-real-stack.cjs
       - name: Start real Keycloak with isolated test realm
         run: |
+          node --test e2e/prepare-real-stack.test.cjs
           node e2e/prepare-real-stack.cjs
           docker run -d --name plainledger-keycloak-e2e --network host \
             -e KC_DB=postgres \

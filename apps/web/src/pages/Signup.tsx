@@ -67,7 +67,7 @@ export default function Signup() {
     setCheckingInvitation(true);
     setInvitation(null);
     setError(null);
-    api.post<InvitationPreview>('/organizations/invitations/preview', { token: invitationToken }, { signal: controller.signal })
+    api.post<InvitationPreview>('/organizations/invitations/preview', { token: invitationToken }, { signal: controller.signal, authentication: 'none' })
       .then(({ data }) => {
         if (!data?.email || !data.organizationName || !Number.isFinite(Date.parse(data.expiresAt)) || Date.parse(data.expiresAt) <= Date.now()) {
           throw new Error(isEn ? 'This invitation is invalid or expired.' : 'Cette invitation est invalide ou expirée.');

@@ -7,11 +7,12 @@ import JoinOrganization from '../JoinOrganization';
 import { ApiException } from '../../lib/api';
 
 const state = vi.hoisted(() => ({
-  language: 'en', post: vi.fn(), login: vi.fn(), updateToken: vi.fn(),
+  language: 'en', tenantLoading: false, post: vi.fn(), login: vi.fn(), updateToken: vi.fn(),
   auth: { initialized: true, authenticated: false, authError: null as string | null, user: null as { email: string; emailVerified: boolean } | null },
 }));
 vi.mock('../../lib/api', async importOriginal => ({ ...await importOriginal<typeof import('../../lib/api')>(), default: { post: state.post } }));
 vi.mock('../../lib/keycloak', () => ({ useKeycloak: () => ({ ...state.auth, login: state.login, keycloak: { updateToken: state.updateToken } }) }));
+vi.mock('../../contexts/TenantContext', () => ({ useTenant: () => ({ isLoading: state.tenantLoading, currentTenant: null, error: 'No active membership' }) }));
 vi.mock('../../lib/i18n', () => ({ useI18n: () => ({ language: state.language }), LanguageToggle: () => null }));
 vi.mock('../../components/PublicHeader', () => ({ default: () => null }));
 vi.mock('../../components/ThemeToggle', () => ({ default: () => null }));
@@ -36,7 +37,7 @@ const signedInInvite = () => {
 };
 
 beforeEach(() => {
-  state.language = 'en'; state.post.mockReset(); state.login.mockReset().mockResolvedValue(undefined); state.updateToken.mockReset().mockResolvedValue(true);
+  state.language = 'en'; state.tenantLoading = false; state.post.mockReset(); state.login.mockReset().mockResolvedValue(undefined); state.updateToken.mockReset().mockResolvedValue(true);
   Object.assign(state.auth, { initialized: true, authenticated: false, authError: null, user: null });
   sessionStorage.clear(); window.history.replaceState(null, '', '/');
 });
@@ -108,6 +109,7 @@ describe('Public account registration', () => {
     fillSignup(true); submitSignup();
     await screen.findByRole('heading', { name: 'Your account is created' });
     expect(state.post.mock.calls[1]).toEqual(['/auth/register', { firstName: 'Taylor', lastName: 'Fixture', email: 'owner@example.test', password: 'ExamplePassword2026!', province: 'QC', invitationToken: 'fixture-invitation' }]);
+    expect(state.post.mock.calls[0][2]).toMatchObject({ authentication: 'none' });
     expect(sessionStorage.getItem('plainledger-pending-invitation')).toBeNull();
   });
 
@@ -173,6 +175,39 @@ describe('Secure sign-in states', () => {
 });
 
 describe('Invitation failure and expiry states', () => {
+  it('keeps the public preview when sign-in finishes and enables acceptance for the verified invitee', async () => {
+    sessionStorage.setItem('plainledger-pending-invitation', 'fixture-invitation');
+    state.auth.initialized = false;
+    state.post.mockResolvedValue({ data: preview() });
+    const view = mount(<JoinOrganization />);
+    await screen.findByText('Fixture organization');
+    expect(screen.getByRole('status')).toHaveTextContent('Checking your sign-in session');
+    state.auth.initialized = true; signedInInvite();
+    view.rerender(<MemoryRouter><JoinOrganization /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'Accept invitation' })).toBeEnabled();
+    expect(state.post).toHaveBeenCalledOnce();
+    expect(state.post.mock.calls[0][2]).toMatchObject({ authentication: 'none' });
+  });
+
+  it('waits for tenant initialization but allows the verified invitee to accept without an existing membership', async () => {
+    signedInInvite(); state.tenantLoading = true;
+    state.post.mockResolvedValueOnce({ data: preview() }).mockResolvedValueOnce({ data: { tenantId: 'fixture-tenant', refreshSession: true } });
+    const view = mount(<JoinOrganization />);
+    const accept = await screen.findByRole('button', { name: 'Accept invitation' });
+    expect(accept).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Checking your organization');
+    fireEvent.click(accept);
+    expect(state.post).toHaveBeenCalledOnce();
+    state.tenantLoading = false;
+    view.rerender(<MemoryRouter><JoinOrganization /></MemoryRouter>);
+    expect(accept).toBeEnabled();
+    fireEvent.click(accept);
+    await screen.findByText('You have joined Fixture organization.');
+    expect(state.post).toHaveBeenLastCalledWith('/organizations/invitations/accept', { token: 'fixture-invitation' });
+    expect(state.post).toHaveBeenCalledTimes(2);
+    expect(state.updateToken).toHaveBeenCalledExactlyOnceWith(-1);
+  });
+
   it('explains an incomplete invitation without making a request', () => {
     mount(<JoinOrganization />);
     expect(screen.getByRole('alert')).toHaveTextContent('invitation link is incomplete');

@@ -2,7 +2,7 @@ import { generateKeyPairSync, createSign } from "crypto";
 import { ConfigService } from "@nestjs/config";
 import * as KeycloakConnect from "keycloak-connect";
 
-const Keycloak = require("keycloak-connect") as new (
+const Keycloak = KeycloakConnect as unknown as new (
   stores: Record<string, never>, config: Record<string, unknown>,
 ) => KeycloakConnect.Keycloak;
 

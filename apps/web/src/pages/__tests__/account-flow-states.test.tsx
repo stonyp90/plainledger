@@ -12,6 +12,7 @@ const { post, auth } = vi.hoisted(() => ({
 }));
 vi.mock('../../lib/api', async importOriginal => ({ ...await importOriginal<typeof import('../../lib/api')>(), default: { post } }));
 vi.mock('../../lib/keycloak', () => ({ useKeycloak: () => auth }));
+vi.mock('../../contexts/TenantContext', () => ({ useTenant: () => ({ isLoading: false }) }));
 vi.mock('../../lib/i18n', () => ({ useI18n: () => ({ language: 'en' }) }));
 vi.mock('../../components/PublicHeader', () => ({ default: () => <header>PlainLedger</header> }));
 

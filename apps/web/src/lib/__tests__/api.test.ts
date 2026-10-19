@@ -103,4 +103,29 @@ describe('REST transport with a mocked Keycloak SDK and HTTP server', () => {
     resolve(json({ private: 'previous organization' }));
     await expect(pending).rejects.toMatchObject({ code: 'SESSION_CHANGED' });
   });
+
+  it('previews public invitation links independently of stale sign-in credentials and tenant selections', async () => {
+    client.updateToken.mockRejectedValue(new Error('Sign-in unavailable'));
+    selectRequestOrganization('stale-tenant');
+    await api.post('/organizations/invitations/preview', { token: 'one-time-invitation' }, {
+      authentication: 'none', credentials: 'include',
+      headers: { Authorization: 'Bearer caller-token', 'X-Organization-ID': 'stale-tenant', 'X-Tenant-ID': 'stale-tenant' },
+    });
+    expect(client.updateToken).not.toHaveBeenCalled();
+    expect(requestHeaders().has('authorization')).toBe(false);
+    expect(requestHeaders().has('x-organization-id')).toBe(false);
+    expect(requestHeaders().has('x-tenant-id')).toBe(false);
+    expect(fetchMock.mock.calls[0][1].credentials).toBe('omit');
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ token: 'one-time-invitation' });
+  });
+
+  it('keeps a public invitation preview usable while authentication changes in flight', async () => {
+    let finish!: (response: Response) => void;
+    fetchMock.mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
+    const pending = api.post('/organizations/invitations/preview', { token: 'one-time-invitation' }, { authentication: 'none' });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    invalidateRequestScope(true);
+    finish(json({ tenantId: 'invited-tenant', email: 'invitee@example.test' }));
+    await expect(pending).resolves.toEqual({ data: { tenantId: 'invited-tenant', email: 'invitee@example.test' } });
+  });
 });

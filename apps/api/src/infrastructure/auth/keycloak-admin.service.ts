@@ -245,6 +245,7 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
     // Email verification is handled by our custom flow via SES with branded templates.
     // Adding VERIFY_EMAIL would trigger Keycloak's unbranded email on login.
 
+    let createdUserId: string | undefined;
     try {
       // Create user WITHOUT password first (passwords must be set separately in Keycloak)
       // Including credentials in the create payload doesn't reliably set the password
@@ -254,39 +255,21 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
       });
 
       const userId = response.id;
+      createdUserId = userId;
       this.logger.log(`User created with ID: ${userId}`);
 
       // Set password separately if provided (this is the correct way in Keycloak)
       if (input.password) {
-        try {
-          await this.adminClient.users.resetPassword({
-            realm: this.realm,
-            id: userId,
-            credential: {
-              type: 'password',
-              value: input.password,
-              temporary: input.temporaryPassword ?? false,
-            },
-          });
-          this.logger.log(`Password set for user: ${userId}`);
-        } catch (passwordError) {
-          // If password setting fails, delete the user to avoid orphaned accounts
-          this.logger.error(
-            `Failed to set password for user ${userId}: ${passwordError.message}. Cleaning up user.`,
-          );
-          try {
-            await this.adminClient.users.del({
-              realm: this.realm,
-              id: userId,
-            });
-            this.logger.log(`Cleaned up user ${userId} after password setting failure`);
-          } catch (deleteError) {
-            this.logger.error(
-              `Failed to clean up user ${userId} after password error: ${deleteError.message}`,
-            );
-          }
-          throw new Error(`Failed to set password: ${passwordError.message}`);
-        }
+        await this.adminClient.users.resetPassword({
+          realm: this.realm,
+          id: userId,
+          credential: {
+            type: 'password',
+            value: input.password,
+            temporary: input.temporaryPassword ?? false,
+          },
+        });
+        this.logger.log(`Password set for user: ${userId}`);
       }
 
       // Assign roles if specified
@@ -309,12 +292,20 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
         attributes: input.attributes,
       };
     } catch (error) {
-      // Check if user already exists
-      if (error.response?.status === 409) {
-        this.logger.warn(`User already exists: ${input.email}`);
-        const existingUser = await this.findUserByEmail(input.email);
-        if (existingUser) {
-          return existingUser;
+      // The caller cannot compensate until createUser returns an ID. Clean up
+      // every failed post-create step here, including role lookup or assignment.
+      // Never adopt an existing identity after a duplicate-create response.
+      if (createdUserId) {
+        try {
+          await this.deleteUser(createdUserId);
+        } catch (cleanupError) {
+          this.logger.error(`Could not remove incomplete user ${createdUserId}: ${cleanupError.message}. Attempting to disable it.`);
+          try {
+            await this.disableUser(createdUserId);
+            this.logger.warn(`Incomplete user ${createdUserId} was disabled and still requires removal.`);
+          } catch (disableError) {
+            this.logger.error(`Incomplete user ${createdUserId} could not be removed or disabled; manual cleanup is required: ${disableError.message}`);
+          }
         }
       }
       this.logger.error(`Failed to create user: ${error.message}`);

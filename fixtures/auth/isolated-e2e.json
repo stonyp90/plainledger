@@ -24,5 +24,6 @@
     "organizationName": "Isolated Signup Company",
     "province": "QC",
     "emailDomain": "plainledger.test"
-  }
+  },
+  "organizationName": "Isolated Ledger A"
 }

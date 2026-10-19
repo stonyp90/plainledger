@@ -531,7 +531,8 @@
           "view-clients",
           "query-users",
           "query-clients",
-          "query-groups"
+          "query-groups",
+          "view-realm"
         ]
       }
     },

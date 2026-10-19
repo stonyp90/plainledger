@@ -114,11 +114,12 @@ export const apolloClient = new ApolloClient({
   devtools: { enabled: import.meta.env.DEV },
 });
 
-/** Select the tenant only after the application has verified membership. */
+/** Change the request scope and discard cached data from the previous tenant. */
 export async function setActiveOrganizationId(organizationId: string | null): Promise<void> {
   if (!selectRequestOrganization(organizationId)) return;
+  // TenantProvider disposes the previous page while loading membership. Refetching
+  // those observers can abort this bootstrap; the verified page fetches on mount.
   await apolloClient.clearStore();
-  if (organizationId) await apolloClient.reFetchObservableQueries();
 }
 
 // Tokens remain owned by Keycloak; callers can only invalidate cached authenticated data.

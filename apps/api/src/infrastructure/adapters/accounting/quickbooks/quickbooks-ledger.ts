@@ -50,6 +50,7 @@ function add(left: number, right: number): number {
   return value;
 }
 function text(value: unknown, max: number, allowEmpty = false): string {
+  // eslint-disable-next-line no-control-regex -- Reject unsafe source text controls while retaining tab, CR and LF.
   if (typeof value !== 'string' || value.length > max || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value) || (!allowEmpty && !value.trim())) reject('invalid source identifier or text');
   return value;
 }

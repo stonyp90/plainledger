@@ -1,0 +1,24 @@
+[
+  {
+    "language": "en",
+    "settingsPath": "/app/settings?tab=security",
+    "heading": "Account security",
+    "openButton": "Open sign-in account",
+    "unavailableStatuses": [
+      "Status unavailable",
+      "Session details unavailable",
+      "History unavailable"
+    ]
+  },
+  {
+    "language": "fr",
+    "settingsPath": "/app/settings?tab=security",
+    "heading": "Sécurité du compte",
+    "openButton": "Ouvrir le compte de connexion",
+    "unavailableStatuses": [
+      "État indisponible",
+      "Détails des sessions indisponibles",
+      "Historique indisponible"
+    ]
+  }
+]

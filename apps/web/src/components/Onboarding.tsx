@@ -10,17 +10,10 @@ import {
   Building2,
   ChevronRight,
   ChevronLeft,
-  Check,
   X,
-  ArrowRight,
-  Shield,
   BarChart3,
-  Upload,
-  Mail,
-  PartyPopper,
   Menu,
   ExternalLink,
-  AlertTriangle,
   UtensilsCrossed,
   Hotel,
   ShoppingBag,
@@ -30,8 +23,6 @@ import {
   Truck,
   Heart,
   GraduationCap,
-  Loader2,
-  UserPlus,
   Wheat,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -42,6 +33,8 @@ import { analytics, type OnboardingStep } from '../lib/analytics';
 import { crmService } from '../lib/crm';
 import { getAllIndustries, getIndustryTemplate } from '../lib/industries';
 import { getKPIsForIndustry } from '../lib/industryKPIs';
+import { useTenant, type Tenant } from '../contexts/TenantContext';
+import OnboardingCompletion, { type OnboardingResult, type OnboardingDestination } from './OnboardingCompletion';
 // =====================================================
 // TYPES
 // =====================================================
@@ -75,6 +68,9 @@ const INITIAL_DATA: OnboardingData = {
   teamEmails: [],
   skipTeam: false,
 };
+
+const BASE_STEPS: OnboardingStep[] = ['company_info', 'complete'];
+const INDUSTRY_STEPS: OnboardingStep[] = ['company_info', 'industry_preview', 'complete'];
 
 // =====================================================
 // STEP COMPONENTS
@@ -115,11 +111,13 @@ export function CompanyInfoStep({
   onChange,
   onNext,
   onBack,
+  readOnly = false,
 }: {
   data: OnboardingData;
   onChange: (data: Partial<OnboardingData>) => void;
   onNext: () => void;
   onBack?: () => void;
+  readOnly?: boolean;
 }) {
   const { language } = useI18n();
   const { resolvedTheme } = useTheme();
@@ -137,7 +135,7 @@ export function CompanyInfoStep({
     { value: '201+', label: '201+' },
   ];
 
-  const isValid = data.companyName.trim().length > 0;
+  const isValid = data.companyName.trim().length > 0 && data.companyName.length <= 255;
 
   return (
     <div className="max-w-xl mx-auto">
@@ -152,14 +150,21 @@ export function CompanyInfoStep({
         </p>
       </div>
 
-      <div className="space-y-6">
+      {readOnly && (
+        <p className="text-sm mb-4" style={{ color: 'rgb(var(--color-text-muted))' }}>
+          {isEn ? 'Only organization administrators can edit these details.' : 'Seuls les administrateurs de l’organisation peuvent modifier ces détails.'}
+        </p>
+      )}
+      <fieldset disabled={readOnly} className="space-y-6 min-w-0">
         {/* Company Name */}
         <div>
-          <label className="label">
+          <label className="label" htmlFor="onboarding-company-name">
             {isEn ? 'Company / Organization Name' : "Nom de l'entreprise / Organisation"} *
           </label>
           <input
+            id="onboarding-company-name"
             type="text"
+            maxLength={255}
             value={data.companyName}
             onChange={(e) => onChange({ companyName: e.target.value })}
             className="input"
@@ -266,8 +271,9 @@ export function CompanyInfoStep({
         {/* Fiscal Year & Currency */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">{isEn ? 'Fiscal Year End' : "Fin d'exercice"}</label>
+            <label className="label" htmlFor="onboarding-fiscal-year-end">{isEn ? 'Fiscal Year End' : "Fin d'exercice"}</label>
             <select
+              id="onboarding-fiscal-year-end"
               value={data.fiscalYearEnd}
               onChange={(e) => onChange({ fiscalYearEnd: parseInt(e.target.value) })}
               className="select"
@@ -282,8 +288,9 @@ export function CompanyInfoStep({
             </select>
           </div>
           <div>
-            <label className="label">{isEn ? 'Currency' : 'Devise'}</label>
+            <label className="label" htmlFor="onboarding-currency">{isEn ? 'Currency' : 'Devise'}</label>
             <select
+              id="onboarding-currency"
               value={data.currency}
               onChange={(e) => onChange({ currency: e.target.value })}
               className="select"
@@ -294,7 +301,7 @@ export function CompanyInfoStep({
             </select>
           </div>
         </div>
-      </div>
+      </fieldset>
 
       <div className="flex justify-between mt-8">
         {onBack && (
@@ -306,338 +313,6 @@ export function CompanyInfoStep({
         <div className={onBack ? '' : 'ml-auto'}>
           <button onClick={onNext} className="btn-primary" disabled={!isValid}>
             {isEn ? 'Continue' : 'Continuer'}
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Provider Logo Components for Onboarding
-const ProviderLogos: Record<string, React.JSX.Element> = {
-  quickbooks: (
-    <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="20" fill="#2CA01C" />
-      <circle cx="20" cy="16" r="8" stroke="white" strokeWidth="3" fill="none" />
-      <path d="M28 16v14" stroke="white" strokeWidth="3" strokeLinecap="round" />
-      <path
-        d="M12 10v16M12 22c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6"
-        stroke="white"
-        strokeWidth="3"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
-  ),
-  xero: (
-    <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="20" fill="#13B5EA" />
-      <text
-        x="20"
-        y="25"
-        textAnchor="middle"
-        fill="white"
-        fontFamily="Arial, sans-serif"
-        fontWeight="400"
-        fontSize="14"
-        letterSpacing="-0.5"
-      >
-        xero
-      </text>
-      <circle cx="33" cy="20" r="1.5" fill="white" />
-    </svg>
-  ),
-  sage: (
-    <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <circle cx="20" cy="20" r="20" fill="#1D1D1B" />
-      <text
-        x="20"
-        y="25"
-        textAnchor="middle"
-        fill="#00D639"
-        fontFamily="Arial, sans-serif"
-        fontWeight="400"
-        fontSize="12"
-      >
-        Sage
-      </text>
-    </svg>
-  ),
-  freshbooks: (
-    <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <rect width="40" height="40" rx="6" fill="#0075DD" />
-      <path d="M30 0C30 8 32 10 40 10V0H30Z" fill="white" />
-      <path d="M13 10h14v4H17v5h8v4h-8v9h-4V10z" fill="white" />
-    </svg>
-  ),
-  wave: (
-    <svg viewBox="0 0 40 40" className="w-8 h-8">
-      <path
-        d="M6 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v12z"
-        fill="#003D79"
-      />
-      <path
-        d="M16 32c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V8c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v24z"
-        fill="#2E77BC"
-      />
-      <path
-        d="M26 28c0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4V12c0-2.2-1.8-4-4-4-2.2 0-4 1.8-4 4v16z"
-        fill="#6AB8F7"
-      />
-    </svg>
-  ),
-};
-
-// Step 2: Connect Data Source
-function ConnectSourceStep({
-  data,
-  onChange,
-  onNext,
-  onBack,
-}: {
-  data: OnboardingData;
-  onChange: (data: Partial<OnboardingData>) => void;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const { language } = useI18n();
-  const isEn = language === 'en';
-
-  const sources = [
-    { id: 'quickbooks', name: 'QuickBooks Online', color: '#2CA01C' },
-    { id: 'xero', name: 'Xero', color: '#13B5EA' },
-    { id: 'sage', name: 'Sage', color: '#1D1D1B' },
-    { id: 'freshbooks', name: 'FreshBooks', color: '#0075DD' },
-    { id: 'wave', name: 'Wave', color: '#2E77BC' },
-    { id: 'csv', name: isEn ? 'Import CSV' : 'Importer CSV', color: '#6B7280' },
-  ];
-
-  const handleConnect = (sourceId: string) => {
-    onChange({ primarySource: sourceId });
-    // In production, this would initiate OAuth flow
-    // For now, simulate connection
-    setTimeout(() => {
-      onNext();
-    }, 500);
-  };
-
-  const handleSkip = () => {
-    onChange({ skipSource: true });
-    onNext();
-  };
-
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'Connect your accounting software' : 'Connectez votre logiciel comptable'}
-        </h2>
-        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn
-            ? "We'll securely sync your data in read-only mode"
-            : 'Nous synchroniserons vos données en mode lecture seule'}
-        </p>
-      </div>
-
-      {/* Security note */}
-      <div
-        className="p-4 rounded-xl mb-6 flex items-start gap-3"
-        style={{
-          backgroundColor: 'rgb(var(--color-success) / 0.1)',
-          border: '1px solid rgb(var(--color-success) / 0.2)',
-        }}
-      >
-        <Shield
-          className="w-5 h-5 flex-shrink-0 mt-0.5"
-          style={{ color: 'rgb(var(--color-success))' }}
-        />
-        <div className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Your data is secure' : 'Vos données sont sécurisées'}
-          </span>
-          <br />
-          {isEn
-            ? 'Read-only access • Bank-level encryption (AES-256) • Data stored in Canada'
-            : 'Accès lecture seule • Chiffrement bancaire (AES-256) • Données au Canada'}
-        </div>
-      </div>
-
-      {/* Data sources grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        {sources.map((source) => (
-          <button
-            key={source.id}
-            onClick={() => handleConnect(source.id)}
-            className="p-4 rounded-xl text-center transition-all hover:scale-105"
-            style={{
-              backgroundColor: 'rgb(var(--color-surface))',
-              border:
-                data.primarySource === source.id
-                  ? `2px solid ${source.color}`
-                  : '1px solid rgb(var(--color-border))',
-            }}
-          >
-            <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center overflow-hidden">
-              {source.id === 'csv' ? (
-                <div
-                  className="w-full h-full flex items-center justify-center rounded-xl"
-                  style={{ backgroundColor: source.color + '20' }}
-                >
-                  <Upload className="w-6 h-6" style={{ color: source.color }} />
-                </div>
-              ) : (
-                ProviderLogos[source.id]
-              )}
-            </div>
-            <span className="text-sm font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-              {source.name}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Skip Option - Prominent */}
-      <div
-        className="mt-8 p-4 rounded-xl text-center"
-        style={{
-          backgroundColor: 'rgb(var(--color-bg-muted))',
-          border: '1px solid rgb(var(--color-border))',
-        }}
-      >
-        <p className="text-sm mb-3" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn
-            ? "Don't have your accounting software ready? No problem!"
-            : "Vous n'avez pas votre logiciel comptable sous la main? Pas de problème!"}
-        </p>
-        <button onClick={handleSkip} className="btn-primary w-full">
-          {isEn ? 'Skip and connect later' : 'Passer et connecter plus tard'}
-          <ChevronRight className="w-4 h-4" />
-        </button>
-        <p className="text-xs mt-2" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn
-            ? 'You can always connect your software from Settings'
-            : 'Vous pourrez toujours connecter votre logiciel depuis les Paramètres'}
-        </p>
-      </div>
-
-      <div className="flex justify-start mt-6">
-        <button onClick={onBack} className="btn-ghost">
-          <ChevronLeft className="w-4 h-4" />
-          {isEn ? 'Back' : 'Retour'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// Step 5: Invite Team
-export function InviteTeamStep({
-  data,
-  onChange,
-  onNext,
-  onBack,
-}: {
-  data: OnboardingData;
-  onChange: (data: Partial<OnboardingData>) => void;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const { language } = useI18n();
-  const isEn = language === 'en';
-  const [email, setEmail] = useState('');
-
-  const addEmail = () => {
-    if (email && !data.teamEmails.includes(email)) {
-      onChange({ teamEmails: [...data.teamEmails, email] });
-      setEmail('');
-    }
-  };
-
-  const removeEmail = (emailToRemove: string) => {
-    onChange({ teamEmails: data.teamEmails.filter((e) => e !== emailToRemove) });
-  };
-
-  const handleSkip = () => {
-    onChange({ skipTeam: true });
-    onNext();
-  };
-
-  return (
-    <div className="max-w-xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'Invite your team' : 'Invitez votre équipe'}
-        </h2>
-        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn
-            ? 'Collaborate with your team on financial insights'
-            : 'Collaborez avec votre équipe sur les insights financiers'}
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        {/* Email input */}
-        <div>
-          <label className="label">{isEn ? 'Email addresses' : 'Adresses courriel'}</label>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addEmail()}
-              className="input flex-1"
-              placeholder={isEn ? 'colleague@company.com' : 'collegue@entreprise.com'}
-            />
-            <button onClick={addEmail} className="btn-primary" disabled={!email}>
-              <UserPlus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Added emails */}
-        {data.teamEmails.length > 0 && (
-          <div className="space-y-2">
-            {data.teamEmails.map((teamEmail) => (
-              <div
-                key={teamEmail}
-                className="flex items-center justify-between p-3 rounded-lg"
-                style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-              >
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4" style={{ color: 'rgb(var(--color-text-muted))' }} />
-                  <span style={{ color: 'rgb(var(--color-text))' }}>{teamEmail}</span>
-                </div>
-                <button
-                  onClick={() => removeEmail(teamEmail)}
-                  className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20"
-                >
-                  <X className="w-4 h-4" style={{ color: 'rgb(var(--color-error))' }} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Info */}
-        <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn
-            ? 'Team members will receive an invitation email to join your organization.'
-            : "Les membres de l'équipe recevront un courriel d'invitation pour rejoindre votre organisation."}
-        </p>
-      </div>
-
-      <div className="flex justify-between mt-8">
-        <button onClick={onBack} className="btn-ghost">
-          <ChevronLeft className="w-4 h-4" />
-          {isEn ? 'Back' : 'Retour'}
-        </button>
-        <div className="flex gap-3">
-          <button onClick={handleSkip} className="btn-secondary">
-            {isEn ? 'Skip' : 'Passer'}
-          </button>
-          <button onClick={onNext} className="btn-primary" disabled={data.teamEmails.length === 0}>
-            {isEn ? 'Send invites' : 'Envoyer les invitations'}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -669,11 +344,11 @@ export function IndustryPreviewStep({
   const industryTemplate = data.industry ? getIndustryTemplate(data.industry) : null;
   const kpis = industryTemplate ? getKPIsForIndustry(industryTemplate.id) : [];
 
-  if (!industryTemplate) {
-    // Skip this step if no industry selected
-    onNext();
-    return null;
-  }
+  useEffect(() => {
+    if (!industryTemplate) onNext();
+  }, [industryTemplate, onNext]);
+
+  if (!industryTemplate) return null;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -683,8 +358,8 @@ export function IndustryPreviewStep({
         </h2>
         <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
           {isEn
-            ? `We'll pre-configure these metrics for ${industryTemplate.name.en}`
-            : `Nous préconfigurerons ces métriques pour ${industryTemplate.name.fr}`}
+            ? `Explore metrics for ${industryTemplate.name.en}`
+            : `Découvrez les indicateurs pour ${industryTemplate.name.fr}`}
         </p>
       </div>
 
@@ -798,8 +473,8 @@ export function IndustryPreviewStep({
       >
         <p className="text-sm" style={{ color: 'rgb(var(--color-text))' }}>
           {isEn
-            ? 'These metrics will be automatically added to your financial model. You can customize them later.'
-            : 'Ces métriques seront automatiquement ajoutées à votre modèle financier. Vous pourrez les personnaliser plus tard.'}
+            ? 'You can select and customize these metrics in your financial model.'
+            : 'Vous pouvez sélectionner et personnaliser ces indicateurs dans votre modèle financier.'}
         </p>
       </div>
 
@@ -817,439 +492,50 @@ export function IndustryPreviewStep({
   );
 }
 
-// Step 6: Tour/Features
-function TourStep({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
-  const { language } = useI18n();
-  const isEn = language === 'en';
-
-  const features = [
-    {
-      icon: BarChart3,
-      title: isEn ? 'Smart Dashboard' : 'Tableau de bord intelligent',
-      description: isEn
-        ? 'Real-time financial health score, key metrics, and trends at a glance'
-        : 'Score de santé financière en temps réel, métriques clés et tendances',
-    },
-    {
-      icon: AlertTriangle,
-      title: isEn ? 'Anomaly Detection' : "Détection d'anomalies",
-      description: isEn
-        ? 'Intelligent alerts for unusual transactions and potential issues, powered by our AI'
-        : 'Alertes IA pour les transactions inhabituelles et problèmes potentiels',
-    },
-    {
-      icon: Building2,
-      title: isEn ? 'Financial Reports' : 'Rapports financiers',
-      description: isEn
-        ? 'Balance sheet, income statement, cash flow - ready to share'
-        : 'Bilan, compte de résultat, flux de trésorerie - prêts à partager',
-    },
-  ];
-
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? 'What you can do with PlainLedger' : 'Ce que vous pouvez faire avec PlainLedger'}
-        </h2>
-        <p style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn
-            ? "Here's a quick overview of your new superpowers"
-            : 'Voici un aperçu de vos nouveaux super pouvoirs'}
-        </p>
-      </div>
-
-      <div className="space-y-4 mb-8">
-        {features.map((feature, idx) => (
-          <div
-            key={idx}
-            className="p-5 rounded-xl flex items-start gap-4"
-            style={{
-              backgroundColor: 'rgb(var(--color-surface))',
-              border: '1px solid rgb(var(--color-border))',
-            }}
-          >
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-            >
-              <feature.icon
-                className="w-6 h-6"
-                style={{ color: 'rgb(var(--color-primary-500))' }}
-              />
-            </div>
-            <div>
-              <h3 className="font-semibold" style={{ color: 'rgb(var(--color-text))' }}>
-                {feature.title}
-              </h3>
-              <p className="text-sm mt-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-                {feature.description}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex justify-between">
-        <button onClick={onBack} className="btn-ghost">
-          <ChevronLeft className="w-4 h-4" />
-          {isEn ? 'Back' : 'Retour'}
-        </button>
-        <button onClick={onNext} className="btn-primary">
-          {isEn ? 'Complete setup' : 'Terminer la configuration'}
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// Step: Complete - Save onboarding data and launch dashboard
-function CompleteStep({
-  data,
-  onFinish,
-  user,
-}: {
-  data: OnboardingData;
-  onFinish: () => void;
-  user: { email?: string; name?: string; firstName?: string; lastName?: string } | null;
-}) {
-  const { language } = useI18n();
-  const isEn = language === 'en';
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationStep, setValidationStep] = useState<'idle' | 'saving' | 'success' | 'error'>(
-    'idle',
-  );
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const handleFinish = async () => {
-    setIsValidating(true);
-    setValidationStep('saving');
-    setErrorMessage(null);
-
-    try {
-      // Save onboarding data to backend (user is already authenticated via Keycloak)
-      const response = await fetch('/api/onboarding/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: user?.email,
-          companyName: data.companyName,
-          companySize: data.companySize,
-          industry: data.industry,
-          fiscalYearEnd: data.fiscalYearEnd,
-          currency: data.currency,
-          primarySource: data.primarySource,
-          skipSource: data.skipSource,
-          teamEmails: data.teamEmails,
-          skipTeam: data.skipTeam,
-        }),
-      });
-
-      if (!response.ok) {
-        console.warn('Failed to save onboarding data');
-      }
-
-      // Success - redirect to app
-      setValidationStep('success');
-
-      // Brief delay to show success state before redirecting
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      onFinish();
-    } catch (error) {
-      console.error('Error saving onboarding data:', error);
-      setValidationStep('error');
-
-      if (error instanceof Error) {
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-          setErrorMessage(
-            isEn
-              ? 'Network error. Please check your connection and try again.'
-              : 'Erreur réseau. Veuillez vérifier votre connexion et réessayer.',
-          );
-        } else {
-          setErrorMessage(error.message);
-        }
-      } else {
-        setErrorMessage(
-          isEn
-            ? 'An unexpected error occurred. Please try again.'
-            : "Une erreur inattendue s'est produite. Veuillez réessayer.",
-        );
-      }
-    } finally {
-      if (validationStep !== 'success') {
-        setIsValidating(false);
-      }
-    }
-  };
-
-  // Validation progress UI
-  if (isValidating) {
-    return (
-      <div className="text-center max-w-md mx-auto">
-        <div className="mb-8">
-          {validationStep === 'success' ? (
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ backgroundColor: 'rgb(var(--color-success) / 0.1)' }}
-            >
-              <Check className="w-10 h-10" style={{ color: 'rgb(var(--color-success))' }} />
-            </div>
-          ) : (
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-            >
-              <Loader2
-                className="w-10 h-10 animate-spin"
-                style={{ color: 'rgb(var(--color-primary-500))' }}
-              />
-            </div>
-          )}
-
-          <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {validationStep === 'success'
-              ? isEn
-                ? 'Setup Complete!'
-                : 'Configuration terminée!'
-              : isEn
-                ? 'Setting up your workspace...'
-                : 'Configuration de votre espace...'}
-          </h2>
-
-          <p className="mb-6" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            {validationStep === 'saving' &&
-              (isEn ? 'Configuring your workspace...' : 'Configuration de votre espace...')}
-            {validationStep === 'success' &&
-              (isEn
-                ? 'Redirecting to your dashboard...'
-                : 'Redirection vers votre tableau de bord...')}
-          </p>
-        </div>
-
-        {/* Progress steps */}
-        <div className="space-y-3">
-          <div
-            className="flex items-center gap-3 p-3 rounded-lg"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-            <span style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Account verified' : 'Compte vérifié'}
-            </span>
-          </div>
-
-          <div
-            className="flex items-center gap-3 p-3 rounded-lg"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            {validationStep === 'saving' ? (
-              <Loader2
-                className="w-5 h-5 animate-spin"
-                style={{ color: 'rgb(var(--color-primary-500))' }}
-              />
-            ) : (
-              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-            )}
-            <span style={{ color: 'rgb(var(--color-text))' }}>
-              {isEn ? 'Configuring workspace' : "Configuration de l'espace"}
-            </span>
-          </div>
-
-          <div
-            className="flex items-center gap-3 p-3 rounded-lg"
-            style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-          >
-            {validationStep === 'success' ? (
-              <Check className="w-5 h-5" style={{ color: 'rgb(var(--color-success))' }} />
-            ) : (
-              <div
-                className="w-5 h-5 rounded-full border-2"
-                style={{ borderColor: 'rgb(var(--color-border))' }}
-              />
-            )}
-            <span
-              style={{
-                color:
-                  validationStep === 'success'
-                    ? 'rgb(var(--color-text))'
-                    : 'rgb(var(--color-text-muted))',
-              }}
-            >
-              {isEn ? 'Launching dashboard' : 'Lancement du tableau de bord'}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (validationStep === 'error' && errorMessage) {
-    return (
-      <div className="text-center max-w-md mx-auto">
-        <div className="mb-8">
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-            style={{ backgroundColor: 'rgb(var(--color-error) / 0.1)' }}
-          >
-            <AlertTriangle className="w-10 h-10" style={{ color: 'rgb(var(--color-error))' }} />
-          </div>
-
-          <h2 className="text-2xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Setup Failed' : 'Échec de la configuration'}
-          </h2>
-
-          <div
-            className="p-4 rounded-xl mb-6"
-            style={{
-              backgroundColor: 'rgb(var(--color-error) / 0.1)',
-              border: '1px solid rgb(var(--color-error) / 0.2)',
-            }}
-          >
-            <p style={{ color: 'rgb(var(--color-error))' }}>{errorMessage}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <button onClick={handleFinish} className="btn-primary">
-            {isEn ? 'Try Again' : 'Réessayer'}
-            <ArrowRight className="w-5 h-5" />
-          </button>
-
-          <button onClick={onFinish} className="btn-secondary">
-            {isEn ? 'Skip and continue' : 'Passer et continuer'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Default: Ready to complete setup
-  return (
-    <div className="text-center max-w-xl mx-auto">
-      <div className="mb-8">
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-          style={{ backgroundColor: 'rgb(var(--color-primary-500) / 0.1)' }}
-        >
-          <PartyPopper className="w-10 h-10" style={{ color: 'rgb(var(--color-primary-500))' }} />
-        </div>
-        <h1 className="text-3xl font-bold mb-4" style={{ color: 'rgb(var(--color-text))' }}>
-          {isEn ? "You're all set!" : 'Vous êtes prêt!'}
-        </h1>
-        <p className="text-lg mb-2" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-          {isEn
-            ? `Let's launch ${data.companyName}'s dashboard.`
-            : `Lançons le tableau de bord de ${data.companyName}.`}
-        </p>
-        <p className="text-sm" style={{ color: 'rgb(var(--color-primary-600))' }}>
-          {isEn
-            ? 'Our clients save an average of $847K/year. Start seeing your ROI today.'
-            : "Nos clients économisent en moyenne 847 000$/an. Commencez à voir votre ROI dès aujourd'hui."}
-        </p>
-      </div>
-
-      {/* Account info */}
-      <div
-        className="mb-6 p-4 rounded-xl text-left"
-        style={{
-          backgroundColor: 'rgb(var(--color-primary-500) / 0.05)',
-          border: '1px solid rgb(var(--color-primary-500) / 0.2)',
-        }}
-      >
-        <div className="flex items-center gap-3 mb-2">
-          <Shield className="w-5 h-5" style={{ color: 'rgb(var(--color-primary-500))' }} />
-          <span className="font-medium" style={{ color: 'rgb(var(--color-text))' }}>
-            {isEn ? 'Your account' : 'Votre compte'}
-          </span>
-        </div>
-        <div className="ml-8 space-y-1">
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            <span className="font-medium">{isEn ? 'Email:' : 'Courriel:'}</span> {user?.email}
-          </p>
-          {user?.name && (
-            <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-              <span className="font-medium">{isEn ? 'Name:' : 'Nom:'}</span> {user.name}
-            </p>
-          )}
-          <p className="text-sm" style={{ color: 'rgb(var(--color-text-secondary))' }}>
-            <span className="font-medium">{isEn ? 'Organization:' : 'Organisation:'}</span>{' '}
-            {data.companyName}
-          </p>
-          <p
-            className="text-sm flex items-center gap-1"
-            style={{ color: 'rgb(var(--color-success))' }}
-          >
-            <Check className="w-3.5 h-3.5" />
-            {isEn ? 'Account verified' : 'Compte vérifié'}
-          </p>
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div
-        className="p-4 rounded-xl text-left mb-8"
-        style={{ backgroundColor: 'rgb(var(--color-bg-muted))' }}
-      >
-        <h4 className="text-sm font-medium mb-3" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {isEn ? 'Setup summary' : 'Résumé'}
-        </h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-            <span style={{ color: 'rgb(var(--color-text-secondary))' }}>{data.companyName}</span>
-          </div>
-          {data.industry && (
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-              <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn ? `Industry: ${data.industry}` : `Industrie: ${data.industry}`}
-              </span>
-            </div>
-          )}
-          {data.teamEmails.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4" style={{ color: 'rgb(var(--color-success))' }} />
-              <span style={{ color: 'rgb(var(--color-text-secondary))' }}>
-                {isEn
-                  ? `${data.teamEmails.length} team member(s) invited`
-                  : `${data.teamEmails.length} membre(s) invité(s)`}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <button onClick={handleFinish} className="btn-primary btn-lg">
-        {isEn ? 'Launch Dashboard' : 'Lancer le tableau de bord'}
-        <ArrowRight className="w-5 h-5" />
-      </button>
-    </div>
-  );
-}
-
 // =====================================================
 // MAIN ONBOARDING COMPONENT
 // =====================================================
 
 export default function Onboarding() {
+  const { user } = useAuth();
+  const { currentTenant, isLoading, error, refreshTenants } = useTenant();
+  const { language } = useI18n();
+  const isEn = language === 'en';
+
+  if (isLoading) {
+    return <main className="min-h-screen flex items-center justify-center p-6"><p role="status">{isEn ? 'Loading your organization…' : 'Chargement de votre organisation…'}</p></main>;
+  }
+  if (!currentTenant || error) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
+        <p role="alert">{isEn ? 'Your organization could not be loaded. Please try again.' : 'Votre organisation n’a pas pu être chargée. Veuillez réessayer.'}</p>
+        <button type="button" className="btn-secondary" onClick={() => { void refreshTenants().catch(() => {}); }}>{isEn ? 'Try again' : 'Réessayer'}</button>
+      </main>
+    );
+  }
+  return <OnboardingWizard key={`${user?.id}:${currentTenant.id}`} tenant={currentTenant} />;
+}
+
+function OnboardingWizard({ tenant }: { tenant: Tenant }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canManageSettings } = useTenant();
   const { language } = useI18n();
   const isEn = language === 'en';
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('company_info');
-  const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
+  const [data, setData] = useState<OnboardingData>(() => ({
+    ...INITIAL_DATA,
+    companyName: tenant.name,
+    industry: tenant.industry || '',
+    currency: tenant.settings.currency,
+    fiscalYearEnd: Number(tenant.settings.fiscalYearEnd.split('-')[0]),
+  }));
   const [startTime] = useState(Date.now());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Simplified steps - user is already authenticated via Keycloak
-  const steps: OnboardingStep[] = ['company_info', 'industry_preview', 'invite_team', 'complete'];
+  const steps = getIndustryTemplate(data.industry) ? INDUSTRY_STEPS : BASE_STEPS;
   const currentIndex = steps.indexOf(currentStep);
 
   // Track step views
@@ -1261,28 +547,19 @@ export default function Onboarding() {
   useEffect(() => {
     analytics.trackOnboardingStarted();
     if (user?.email) {
-      crmService.trackOnboardingProgress(user.email, 'company_info', false);
+      void crmService.trackOnboardingProgress(user.email, 'company_info', false).catch(() => {});
     }
   }, [user?.email]);
 
   const updateData = useCallback((newData: Partial<OnboardingData>) => {
-    setData((prev) => {
-      const updated = { ...prev, ...newData };
-      // Save to localStorage for FinancialModel to access
-      try {
-        localStorage.setItem('pl_onboarding_data', JSON.stringify(updated));
-      } catch (e) {
-        // Ignore errors
-      }
-      return updated;
-    });
+    setData(prev => ({ ...prev, ...newData }));
   }, []);
 
   const goToStep = useCallback(
     (step: OnboardingStep) => {
       analytics.trackOnboardingStep(currentStep, 'completed');
       if (user?.email) {
-        crmService.trackOnboardingProgress(user.email, currentStep, true);
+        void crmService.trackOnboardingProgress(user.email, currentStep, true).catch(() => {});
       }
       setCurrentStep(step);
     },
@@ -1303,31 +580,24 @@ export default function Onboarding() {
     }
   }, [currentIndex, steps]);
 
-  const handleFinish = useCallback(async () => {
+  const handleFinish = useCallback((result: OnboardingResult, destination: OnboardingDestination) => {
     const totalTime = Math.floor((Date.now() - startTime) / 1000);
+    const completion = { totalTime, sourceConnected: false, teamInvited: result.teamInvitationsSent > 0 };
 
-    // Track completion
-    analytics.trackOnboardingCompleted({
-      totalTime,
-      stepsCompleted: steps.length,
-      sourceConnected: !!data.primarySource && !data.skipSource,
-      teamInvited: data.teamEmails.length > 0 && !data.skipTeam,
-    });
-
-    // Update CRM
-    if (user?.email) {
-      await crmService.trackOnboardingCompleted(user.email, {
-        totalTime,
-        sourceConnected: !!data.primarySource && !data.skipSource,
-        teamInvited: data.teamEmails.length > 0 && !data.skipTeam,
-      });
+    // Only the confirmed server result reaches this callback. Telemetry must not block navigation.
+    try {
+      analytics.trackOnboardingCompleted({ ...completion, stepsCompleted: steps.length });
+      if (user?.email) void crmService.trackOnboardingCompleted(user.email, completion).catch(() => {});
+    } catch {
+      // A telemetry failure does not change the saved organization state.
     }
-
-    // Mark onboarding as complete in local storage
-    localStorage.setItem('pl_onboarding_completed', 'true');
-
-    // Navigate to dashboard
-    navigate('/app/dashboard');
+    try {
+      localStorage.setItem('pl_onboarding_data', JSON.stringify({ ...data, primarySource: '', teamEmails: [], skipSource: true, skipTeam: true, tenantId: result.tenantId }));
+      localStorage.setItem('pl_onboarding_completed', 'true');
+    } catch {
+      // Server-side completion is authoritative when browser storage is unavailable.
+    }
+    navigate(destination);
   }, [data, navigate, startTime, steps.length, user?.email]);
 
   // Progress indicator
@@ -1434,7 +704,7 @@ export default function Onboarding() {
             </Link>
 
             {/* Desktop Nav - opens in new tab to preserve onboarding progress */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-6">
               <a
                 href="/#features"
                 target="_blank"
@@ -1508,7 +778,9 @@ export default function Onboarding() {
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2"
+                className="lg:hidden p-2"
+                aria-expanded={mobileMenuOpen}
+                aria-label={isEn ? (mobileMenuOpen ? 'Close menu' : 'Open menu') : (mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu')}
                 style={{ color: 'rgb(var(--color-text))' }}
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -1519,7 +791,7 @@ export default function Onboarding() {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div
-              className="md:hidden py-4 border-t"
+              className="lg:hidden py-4 border-t"
               style={{ borderColor: 'rgb(var(--color-border))' }}
             >
               <nav className="flex flex-col gap-3">
@@ -1593,16 +865,13 @@ export default function Onboarding() {
       {/* Content */}
       <main className="flex-1 flex items-center justify-center p-6">
         {currentStep === 'company_info' && (
-          <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} />
+          <CompanyInfoStep data={data} onChange={updateData} onNext={goNext} readOnly={!canManageSettings} />
         )}
         {currentStep === 'industry_preview' && (
           <IndustryPreviewStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
         )}
-        {currentStep === 'invite_team' && (
-          <InviteTeamStep data={data} onChange={updateData} onNext={goNext} onBack={goBack} />
-        )}
         {currentStep === 'complete' && (
-          <CompleteStep data={data} onFinish={handleFinish} user={user} />
+          <OnboardingCompletion data={data} onFinish={handleFinish} onBack={goBack} />
         )}
       </main>
 

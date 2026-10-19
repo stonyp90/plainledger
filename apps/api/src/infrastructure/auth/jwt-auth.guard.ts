@@ -4,7 +4,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
-import { KEYCLOAK_INSTANCE } from "nest-keycloak-connect";
+import { KEYCLOAK_INSTANCE, META_SKIP_AUTH, META_UNPROTECTED } from "nest-keycloak-connect";
 import * as KeycloakConnect from "keycloak-connect";
 import { assertSelectedOrganization, extractBearerToken, isDevelopmentAuthBypass, verifyKeycloakAccessToken } from "./keycloak-token";
 
@@ -32,7 +32,13 @@ export class JwtAuthGuard implements CanActivate, OnModuleDestroy {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (this.reflector.getAllAndOverride<boolean>("isPublic", [context.getHandler(), context.getClass()])) {
+    const targets = [context.getHandler(), context.getClass()];
+    // The installed Keycloak decorator uses separate unprotected/skip-auth keys.
+    // Honor only an explicit public declaration; acceptance and tenant routes
+    // still verify bearer tokens and the selected organization below.
+    const keycloakPublic = this.reflector.getAllAndOverride<boolean>(META_UNPROTECTED, targets) === true &&
+      this.reflector.getAllAndOverride<boolean>(META_SKIP_AUTH, targets) === true;
+    if (this.reflector.getAllAndOverride<boolean>("isPublic", targets) === true || keycloakPublic) {
       return true;
     }
     const request = context.switchToHttp().getRequest();

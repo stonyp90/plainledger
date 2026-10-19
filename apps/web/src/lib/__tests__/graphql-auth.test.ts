@@ -60,15 +60,37 @@ describe('Apollo authentication and tenant isolation (HTTP and SDK mocked)', () 
     window.dispatchEvent(new Event('plainledger:auth-changed'));
     await vi.waitFor(() => expect(apolloClient.cache.readQuery({ query })).toBeNull());
   });
+  it('does not fail organization selection when a previous page disposes its query during loading', async () => {
+    await setActiveOrganizationId(null);
+    fetchMock.mockImplementation((_url, options) => new Promise<Response>((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')), { once: true });
+    }));
+    const subscription = apolloClient.watchQuery({ query, fetchPolicy: 'network-only' }).subscribe({ next: () => {}, error: () => {} });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    const selecting = setActiveOrganizationId('tenant-slug');
+    const disposal = setTimeout(() => subscription.unsubscribe(), 0);
+    try {
+      await expect(selecting).resolves.toBeUndefined();
+      expect(apolloClient.cache.readQuery({ query })).toBeNull();
+    } finally {
+      clearTimeout(disposal); subscription.unsubscribe();
+    }
+  });
+
   it('rejects an earlier organization result that completes after the scope changes', async () => {
     let resolve!: (response: Response) => void;
     fetchMock.mockImplementationOnce(() => new Promise<Response>(done => { resolve = done; }));
     const pending = runQuery();
     const rejection = expect(pending).rejects.toThrow(/Organization changed|Store reset/);
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
-    await setActiveOrganizationId(null);
+    client.tokenParsed.organization = 'next-tenant';
+    await setActiveOrganizationId('next-tenant');
+    fetchMock.mockResolvedValueOnce(response('new tenant secret'));
+    expect((await runQuery()).data).toEqual({ secret: 'new tenant secret' });
+    expect(new Headers(fetchMock.mock.calls[1][1].headers).get('x-organization-id')).toBe('next-tenant');
     resolve(response('old tenant secret'));
     await rejection;
-    expect(apolloClient.cache.readQuery({ query })).toBeNull();
+    await new Promise(done => setTimeout(done, 0));
+    expect(apolloClient.cache.readQuery({ query })).toEqual({ secret: 'new tenant secret' });
   });
 });

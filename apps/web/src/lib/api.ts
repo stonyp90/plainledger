@@ -1,7 +1,7 @@
 /**
  * API Service with Multi-Tenant Support
  * 
- * All API requests automatically include:
+ * Session-authenticated API requests automatically include:
  * - Authorization header with JWT token
  * - X-Organization-ID header for tenant isolation
  * - Content-Type header
@@ -32,6 +32,8 @@ export interface ApiError {
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   timeout?: number;
+  /** Explicitly public endpoints must not depend on the current sign-in session. */
+  authentication?: 'session' | 'none';
 }
 
 // API Error class
@@ -97,7 +99,7 @@ function normalizeResponse<T>(payload: unknown): ApiResponse<T> {
 }
 
 async function baseFetch<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
-  const { params, timeout = config.api.timeout, signal: callerSignal, ...fetchOptions } = options;
+  const { params, timeout = config.api.timeout, signal: callerSignal, authentication = 'session', ...fetchOptions } = options;
   const revision = getRequestScopeRevision();
   const controller = new AbortController();
   let timedOut = false;
@@ -110,7 +112,14 @@ async function baseFetch<T>(path: string, options: RequestOptions = {}): Promise
   }, timeout);
 
   try {
-    const headers = await getAuthenticatedRequestHeaders(fetchOptions.headers);
+    const headers = authentication === 'none'
+      ? new Headers(fetchOptions.headers)
+      : await getAuthenticatedRequestHeaders(fetchOptions.headers);
+    if (authentication === 'none') {
+      headers.delete('authorization');
+      headers.delete('x-tenant-id');
+      headers.delete('x-organization-id');
+    }
     const isForm = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
     if (isForm) headers.delete('Content-Type');
     else if (!headers.has('Content-Type') && fetchOptions.body !== undefined && fetchOptions.body !== null) {
@@ -120,12 +129,13 @@ async function baseFetch<T>(path: string, options: RequestOptions = {}): Promise
     headers.set('X-Request-ID', generateRequestId());
     let requestConfig: RequestInit & { url: string } = {
       ...fetchOptions, headers, url: buildUrl(path, params), signal: controller.signal,
+      ...(authentication === 'none' ? { credentials: 'omit' as const } : {}),
     };
     for (const interceptor of requestInterceptors) requestConfig = interceptor(requestConfig);
     if (controller.signal.aborted) throw new DOMException('The request was aborted.', 'AbortError');
     let response = await fetch(requestConfig.url, requestConfig);
     for (const interceptor of responseInterceptors) response = await interceptor(response);
-    if (revision !== getRequestScopeRevision()) {
+    if (authentication === 'session' && revision !== getRequestScopeRevision()) {
       throw new ApiException({ code: 'SESSION_CHANGED', message: 'Organization changed. Refresh the data.', statusCode: 0 });
     }
     if (!response.ok) {

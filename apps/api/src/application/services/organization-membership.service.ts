@@ -808,6 +808,7 @@ export class OrganizationMembershipService {
       typeof dto.name !== 'string' ||
       dto.name.trim().length < 2 ||
       dto.name.length > 255 ||
+      // eslint-disable-next-line no-control-regex -- Reject control characters in user-supplied organization names.
       /[\x00-\x1f\x7f]/.test(dto.name)
     ) {
       throw new BadRequestException('Organization name must contain 2-255 printable characters');
@@ -836,6 +837,7 @@ export class OrganizationMembershipService {
         (typeof value !== 'string' ||
           !value.trim() ||
           value.length > limit ||
+          // eslint-disable-next-line no-control-regex -- Organization metadata must contain printable characters only.
           /[\x00-\x1f\x7f]/.test(value))
       ) {
         throw new BadRequestException('Organization details contain an invalid field');
@@ -844,6 +846,7 @@ export class OrganizationMembershipService {
   }
 
   private validateMemberId(id: string) {
+    // eslint-disable-next-line no-control-regex -- Reject control characters and whitespace in identity selectors.
     if (typeof id !== 'string' || !id || id.length > 100 || /[\x00-\x20\x7f]/.test(id))
       throw new BadRequestException('Invalid member identifier');
   }
