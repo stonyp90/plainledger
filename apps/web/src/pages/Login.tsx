@@ -304,6 +304,7 @@ export default function Login() {
             {/* Success Alert */}
             {successMessage && (
               <motion.div
+                role="status"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 p-4 rounded-lg flex items-start gap-3"
@@ -325,6 +326,7 @@ export default function Login() {
             {/* Error Alert */}
             {(error || authError) && (
               <motion.div
+                role="alert"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 p-4 rounded-lg flex items-start gap-3"
@@ -342,6 +344,13 @@ export default function Login() {
                 </p>
               </motion.div>
             )}
+
+            {!initialized && !authError && <p role="status" className="mb-4 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Preparing secure sign-in…' : 'Préparation de la connexion sécurisée…'}
+            </p>}
+            {authError && <button type="button" onClick={() => window.location.reload()} className="btn-secondary mb-4">
+              {isEn ? 'Reload sign-in' : 'Recharger la connexion'}
+            </button>}
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">

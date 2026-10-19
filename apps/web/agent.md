@@ -518,6 +518,10 @@ lib/
 
 ### Styling Guidelines
 
+**Public navigation:** `PublicHeader` keeps the full desktop navigation at `lg` (1024px) because French navigation labels, the logo, theme and language selectors, and the primary action do not fit at 768px. Keep navigation, actions and the menu toggle on the same breakpoint. Verify the 768px layout in a real browser without hiding page overflow. The mobile menu exposes its expanded state, closes after navigation, supports Escape, and retains dashboard access for authenticated visitors.
+
+**Invitation state:** Clear a previous preview before retrying. An unsuccessful or expired preview must not leave an acceptance action enabled. Check expiry again before accepting, and stop preview requests after the server confirms membership.
+
 **DO:**
 - Use TailwindCSS utility classes
 - Use CSS variables for colors

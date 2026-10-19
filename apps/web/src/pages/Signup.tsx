@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Shield } from 'lucide-
 import PublicHeader from '../components/PublicHeader';
 import { useI18n } from '../lib/i18n';
 import api from '../lib/api';
+import { authRequestError } from '../lib/authFeedback';
 
 const CANADIAN_PROVINCES = [
   { code: 'AB', name: 'Alberta', nameFr: 'Alberta' },
@@ -61,9 +62,11 @@ export default function Signup() {
   }, []);
 
   useEffect(() => {
-    if (!invitationToken) return;
+    if (!invitationToken || result) return;
     const controller = new AbortController();
     setCheckingInvitation(true);
+    setInvitation(null);
+    setError(null);
     api.post<InvitationPreview>('/organizations/invitations/preview', { token: invitationToken }, { signal: controller.signal })
       .then(({ data }) => {
         if (!data?.email || !data.organizationName || !Number.isFinite(Date.parse(data.expiresAt)) || Date.parse(data.expiresAt) <= Date.now()) {
@@ -73,10 +76,10 @@ export default function Signup() {
         setInvitation(data);
         setForm(previous => ({ ...previous, email: data.email }));
       })
-      .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to check invitation.'); })
+      .catch(cause => { if (!controller.signal.aborted) setError(authRequestError(cause, isEn, isEn ? 'Unable to check invitation. Please try again.' : 'Impossible de vérifier l’invitation. Veuillez réessayer.')); })
       .finally(() => { if (!controller.signal.aborted) setCheckingInvitation(false); });
     return () => controller.abort();
-  }, [invitationToken, isEn]);
+  }, [invitationToken, isEn, result]);
 
   const validPassword = PASSWORD_RULES.every(rule => rule.check(form.password)) && form.password.length <= 1024;
   const canSubmit = form.firstName.trim().length >= 2 && form.lastName.trim().length >= 2 &&
@@ -103,7 +106,7 @@ export default function Signup() {
       setForm(previous => ({ ...previous, password: '', confirmPassword: '' }));
       try { sessionStorage.removeItem('plainledger-pending-invitation'); sessionStorage.removeItem('plainledger-invitation-preview'); } catch { /* Server has consumed the invitation. */ }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : (isEn ? 'Unable to create your account. Please try again.' : 'Impossible de créer votre compte. Veuillez réessayer.'));
+      setError(authRequestError(cause, isEn, isEn ? 'Unable to create your account. Please try again.' : 'Impossible de créer votre compte. Veuillez réessayer.'));
     } finally { setSubmitting(false); }
   };
   const resend = async () => {
@@ -112,9 +115,9 @@ export default function Signup() {
     setError(null);
     setResendMessage(null);
     try {
-      const { data } = await api.post<{ message?: string }>('/auth/resend-verification', { email: result.email });
-      setResendMessage(data.message || (isEn ? 'Verification requested. Check your inbox if email delivery is available.' : 'Vérification demandée. Consultez votre boîte de réception si l’envoi est disponible.'));
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to request verification.'); }
+      await api.post<{ message?: string }>('/auth/resend-verification', { email: result.email });
+      setResendMessage(isEn ? 'Verification requested. Check your inbox if email delivery is available.' : 'Vérification demandée. Consultez votre boîte de réception si l’envoi est disponible.');
+    } catch (cause) { setError(authRequestError(cause, isEn, isEn ? 'Unable to request verification. Please try again.' : 'Impossible de demander la vérification. Veuillez réessayer.')); }
     finally { setSubmitting(false); }
   };
   const inputClass = 'w-full min-w-0 rounded-lg border px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60';

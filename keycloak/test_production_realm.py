@@ -65,6 +65,22 @@ class ProductionRealmTests(unittest.TestCase):
             self.assertIn('organization', client['defaultClientScopes'])
             self.assertIn('plainledger-api-audience', client['defaultClientScopes'])
 
+    def test_every_client_has_an_enabled_subject_mapper(self):
+        # Keycloak 25+ requires explicit token inclusion. An empty mapper config
+        # produces validly signed access tokens without a subject or DB identity.
+        for realm in (self.source, self.realm):
+            scopes = {scope['name']: scope for scope in realm['clientScopes']}
+            for client in realm['clients']:
+                mappers = [
+                    mapper
+                    for name in client['defaultClientScopes']
+                    for mapper in scopes.get(name, {}).get('protocolMappers', [])
+                    if mapper['protocolMapper'] == 'oidc-sub-mapper'
+                ]
+                self.assertEqual(len(mappers), 1, client['clientId'])
+                self.assertEqual(mappers[0]['config'].get('access.token.claim'), 'true')
+                self.assertEqual(mappers[0]['config'].get('introspection.token.claim'), 'true')
+
     def test_registration_and_verification_require_application_tenant_provisioning(self):
         self.assertFalse(self.realm['registrationAllowed'])
         self.assertTrue(self.realm['verifyEmail'])

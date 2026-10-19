@@ -10,7 +10,7 @@ const { post, auth } = vi.hoisted(() => ({
     user: null as { email: string; emailVerified: boolean } | null,
     keycloak: { updateToken: vi.fn() } },
 }));
-vi.mock('../../lib/api', () => ({ default: { post } }));
+vi.mock('../../lib/api', async importOriginal => ({ ...await importOriginal<typeof import('../../lib/api')>(), default: { post } }));
 vi.mock('../../lib/keycloak', () => ({ useKeycloak: () => auth }));
 vi.mock('../../lib/i18n', () => ({ useI18n: () => ({ language: 'en' }) }));
 vi.mock('../../components/PublicHeader', () => ({ default: () => <header>PlainLedger</header> }));

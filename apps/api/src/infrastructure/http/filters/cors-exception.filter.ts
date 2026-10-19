@@ -59,6 +59,10 @@ export class CorsExceptionFilter implements ExceptionFilter {
   }
 
   catch(exception: unknown, host: ArgumentsHost) {
+    // GraphQL exceptions are returned to Apollo for its error conversion. Its
+    // arguments are resolver arguments, not Express request/response objects.
+    if (host.getType<string>() !== "http") return exception;
+
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();

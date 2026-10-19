@@ -1061,6 +1061,8 @@ npm run lint
 ### Authentication, tenant policy, and accounting snapshots (October 2026)
 
 - Import `AuthenticationModule` for the shared Keycloak verifier. Its global exports allow guards in feature modules to resolve `KEYCLOAK_INSTANCE`; do not register an independent verifier in each module.
+- Keycloak subject mappers must explicitly enable `access.token.claim` and `introspection.token.claim`. A valid signature and API audience do not establish user identity without `sub`; keep the verifier strict and assert the subject after real login and refresh.
+- Global exception filters must check the execution transport before using Express request/response objects. Return GraphQL errors to Apollo and register the catch-all before domain filters, since Nest evaluates filters in reverse registration order.
 - The signed `organizationId` claim and `X-Organization-ID` header carry the tenant slug. Resolve it through the active user's profile before accessing UUID-based database rows. Tenant role decisions come from current database membership; signed platform/client roles remain distinct.
 - New organizations, owner profiles, and organization feature configuration are one transaction. Plan entitlements and organization overrides are read through `OrganizationFeaturePolicyService`; missing policy is an error, never an invented free-plan or enabled-feature response.
 - OAuth state is tenant- and subject-bound, expires in Redis, and is consumed once. Accounting credentials use authenticated encryption with organization, connection, and token-kind binding. Check connection limits again under the organization lock before saving a callback.

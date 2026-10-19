@@ -23,12 +23,19 @@ test('incorrect credentials remain on Keycloak and show an error', async ({ page
 
 test('real login, refresh, reload, tenant denial, and logout', async ({ page }) => {
   await signIn(page);
+  const identity = await page.evaluate(() => {
+    const keycloak = (window as unknown as { keycloak: { tokenParsed?: { sub?: string }; idTokenParsed?: { sub?: string } } }).keycloak;
+    return { accessSubject: keycloak.tokenParsed?.sub, idSubject: keycloak.idTokenParsed?.sub };
+  });
+  expect(identity.accessSubject).toBeTruthy();
+  expect(identity.accessSubject).toBe(identity.idSubject);
   const refreshed = await page.evaluate(async () => {
-    const keycloak = (window as unknown as { keycloak: { updateToken: (minValidity: number) => Promise<boolean>; authenticated: boolean; tokenParsed?: { organization?: string; aud?: string | string[] } } }).keycloak;
+    const keycloak = (window as unknown as { keycloak: { updateToken: (minValidity: number) => Promise<boolean>; authenticated: boolean; tokenParsed?: { sub?: string; organization?: string; aud?: string | string[] } } }).keycloak;
     await keycloak.updateToken(-1);
-    return { authenticated: keycloak.authenticated, organization: keycloak.tokenParsed?.organization, audience: keycloak.tokenParsed?.aud };
+    return { authenticated: keycloak.authenticated, subject: keycloak.tokenParsed?.sub, organization: keycloak.tokenParsed?.organization, audience: keycloak.tokenParsed?.aud };
   });
   expect(refreshed.authenticated).toBe(true);
+  expect(refreshed.subject).toBe(identity.accessSubject);
   expect(refreshed.organization).toBeTruthy();
   expect([refreshed.audience].flat()).toContain('plainledger-api');
   const forbiddenStatus = await page.evaluate(async () => {

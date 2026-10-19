@@ -9,6 +9,7 @@ import {
   ExceptionFilter,
   Catch,
   ArgumentsHost,
+  HttpException,
   HttpStatus,
 } from "@nestjs/common";
 import { Response } from "express";
@@ -21,9 +22,6 @@ import {
 @Catch(DomainError)
 export class DomainExceptionFilter implements ExceptionFilter {
   catch(exception: DomainError, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-
     let status: number;
     let message: string;
 
@@ -38,6 +36,13 @@ export class DomainExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
+    // Apollo maps HttpException status codes to its standard GraphQL errors.
+    // Do not try to write to an HTTP response from a resolver execution context.
+    if (host.getType<string>() !== "http") {
+      return new HttpException({ statusCode: status, message }, status);
+    }
+
+    const response = host.switchToHttp().getResponse<Response>();
     response.status(status).json({
       statusCode: status,
       message,

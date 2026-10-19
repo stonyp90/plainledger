@@ -11,8 +11,8 @@
  * - custom: Provide your own menu items via customMenuItems prop
  */
 
-import { useState, ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { useAuth } from '../lib/keycloak';
@@ -76,12 +76,13 @@ export default function PublicHeader({
   className = '',
 }: PublicHeaderProps) {
   const { language } = useI18n();
-  const { authenticated, login, register } = useAuth();
+  const { authenticated, register } = useAuth();
   const { resolvedTheme } = useTheme();
-  const navigate = useNavigate();
   const isEn = language === 'en';
   const isDark = resolvedTheme === 'dark';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuId = useId();
+  const mobileMenuButton = useRef<HTMLButtonElement>(null);
 
   // Determine border color
   const borderColor = accentColor ? `${accentColor}20` : 'rgb(var(--color-border) / 0.5)';
@@ -96,18 +97,15 @@ export default function PublicHeader({
     }
   };
 
-  // Default action handler
-  const handleDefaultAction = () => {
-    if (authenticated) {
-      navigate('/app');
-    } else {
-      register();
-    }
-  };
-
   return (
     <header
       className={`sticky top-0 z-50 border-b backdrop-blur-md ${className}`}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && isMobileMenuOpen) {
+          setIsMobileMenuOpen(false);
+          mobileMenuButton.current?.focus();
+        }
+      }}
       style={{
         backgroundColor: isDark ? '#0f172a' : 'rgba(255, 255, 255, 0.95)',
         borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
@@ -227,12 +225,12 @@ export default function PublicHeader({
             )}
           </Link>
 
-          {/* Desktop Nav - Aligned breakpoints */}
+          {/* Keep the full bilingual navigation collapsed through tablet widths. */}
           {!minimal &&
             (customMenuItems ? (
               /* Custom menu items mode */
               <nav
-                className="hidden md:flex items-center gap-4 lg:gap-6"
+                className="hidden lg:flex items-center gap-6"
                 aria-label={isEn ? 'Main navigation' : 'Navigation principale'}
               >
                 {customMenuItems.map((item, index) =>
@@ -264,7 +262,7 @@ export default function PublicHeader({
             ) : fullMenu ? (
               /* Full menu mode - 3 main sections */
               <nav
-                className="hidden md:flex items-center gap-4 lg:gap-6"
+                className="hidden lg:flex items-center gap-6"
                 aria-label={isEn ? 'Main navigation' : 'Navigation principale'}
               >
                 <a
@@ -292,7 +290,7 @@ export default function PublicHeader({
             ) : (
               /* Reduced menu mode */
               <nav
-                className="hidden md:flex items-center gap-6"
+                className="hidden lg:flex items-center gap-6"
                 aria-label={isEn ? 'Main navigation' : 'Navigation principale'}
               >
                 <a
@@ -313,7 +311,7 @@ export default function PublicHeader({
             ))}
 
           {/* Desktop Actions - Aligned with nav breakpoints */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             {/* Progress indicator (if provided) */}
             {showProgress && (
               <div className="flex items-center gap-3 mr-2">
@@ -390,16 +388,20 @@ export default function PublicHeader({
           </div>
 
           {/* Mobile Menu Button - Show on mobile only, hide when nav shows */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="lg:hidden flex items-center gap-2">
             <ThemeToggle />
             {minimal ? (
               <LanguageToggle />
             ) : (
               <button
+                type="button"
+                ref={mobileMenuButton}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 style={{ color: isDark ? '#ffffff' : '#0f172a' }}
-                aria-label={isEn ? 'Toggle menu' : 'Ouvrir le menu'}
+                aria-label={isMobileMenuOpen ? (isEn ? 'Close menu' : 'Fermer le menu') : (isEn ? 'Open menu' : 'Ouvrir le menu')}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls={mobileMenuId}
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -410,7 +412,8 @@ export default function PublicHeader({
         {/* Mobile Menu Dropdown - Smooth slide animation */}
         {isMobileMenuOpen && !minimal && (
           <motion.div
-            className="md:hidden py-4 border-t"
+            id={mobileMenuId}
+            className="lg:hidden py-4 border-t"
             style={{
               borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
               backgroundColor: isDark ? '#0f172a' : 'rgba(255, 255, 255, 0.95)',
@@ -513,25 +516,27 @@ export default function PublicHeader({
                   </a>
 
                   {/* Mobile Auth Actions */}
-                  {!authenticated && (
+                  {authenticated ? (
+                    <Link to="/app" onClick={() => setIsMobileMenuOpen(false)} className="btn-primary mt-3">
+                      {isEn ? 'Go to Dashboard' : 'Ouvrir le tableau de bord'}
+                    </Link>
+                  ) : (
                     <div
                       className="flex flex-col gap-3 pt-4 mt-2 border-t"
                       style={{
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
                       }}
                     >
-                      <button
-                        onClick={() => {
-                          login();
-                          setIsMobileMenuOpen(false);
-                        }}
+                      <Link
+                        to="/login"
+                        onClick={() => setIsMobileMenuOpen(false)}
                         className="text-sm font-medium py-2.5 px-2 text-left rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                         style={{
                           color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
                         }}
                       >
                         {isEn ? 'Sign in' : 'Connexion'}
-                      </button>
+                      </Link>
                       <button
                         onClick={() => {
                           register();
@@ -567,14 +572,14 @@ export default function PublicHeader({
                     {isEn ? 'Pricing' : 'Tarifs'}
                   </a>
                   <Link
-                    to="/login"
+                    to={authenticated ? '/app' : '/login'}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="text-sm font-medium py-2.5 px-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                     style={{
                       color: isDark ? 'rgba(255, 255, 255, 0.75)' : 'rgba(15, 23, 42, 0.7)',
                     }}
                   >
-                    {isEn ? 'Sign in' : 'Connexion'}
+                    {authenticated ? (isEn ? 'Go to Dashboard' : 'Ouvrir le tableau de bord') : (isEn ? 'Sign in' : 'Connexion')}
                   </Link>
                 </>
               )}

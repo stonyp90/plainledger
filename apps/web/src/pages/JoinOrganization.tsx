@@ -5,6 +5,7 @@ import PublicHeader from '../components/PublicHeader';
 import { useI18n } from '../lib/i18n';
 import { useKeycloak } from '../lib/keycloak';
 import api from '../lib/api';
+import { authRequestError } from '../lib/authFeedback';
 
 const TOKEN_KEY = 'plainledger-pending-invitation';
 const PREVIEW_KEY = 'plainledger-invitation-preview';
@@ -42,27 +43,36 @@ export default function JoinOrganization() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || accepted) return;
     const controller = new AbortController();
     setLoading(true);
     setError(null);
+    setPreview(null);
     api.post<InvitationPreview>('/organizations/invitations/preview', { token }, { signal: controller.signal })
       .then(({ data }) => {
         if (!data?.tenantId || !data.organizationName || !data.email || !['admin', 'member', 'viewer'].includes(data.role) || !Number.isFinite(Date.parse(data.expiresAt))) {
           throw new Error(isEn ? 'The invitation response is incomplete.' : 'La réponse de l’invitation est incomplète.');
         }
+        if (Date.parse(data.expiresAt) <= Date.now()) {
+          throw new Error(isEn ? 'This invitation has expired. Ask your administrator for a new link.' : 'Cette invitation est expirée. Demandez un nouveau lien à votre administrateur.');
+        }
         if (controller.signal.aborted) return;
         setPreview(data);
         try { sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(data)); } catch { /* Preview remains usable. */ }
       })
-      .catch(cause => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load invitation.'); })
+      .catch(cause => { if (!controller.signal.aborted) setError(authRequestError(cause, isEn, isEn ? 'Unable to load invitation. Please try again.' : 'Impossible de charger l’invitation. Veuillez réessayer.')); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [token, attempt, isEn, initialized]);
+  }, [token, attempt, isEn, initialized, accepted]);
 
   const matchingEmail = Boolean(preview && user?.email?.trim().toLowerCase() === preview.email.toLowerCase());
   const accept = async () => {
-    if (!preview || !matchingEmail || !user?.emailVerified || accepting) return;
+    if (!preview || !matchingEmail || !user?.emailVerified || accepting || loading) return;
+    if (Date.parse(preview.expiresAt) <= Date.now()) {
+      setPreview(null);
+      setError(isEn ? 'This invitation has expired. Ask your administrator for a new link.' : 'Cette invitation est expirée. Demandez un nouveau lien à votre administrateur.');
+      return;
+    }
     setAccepting(true);
     setError(null);
     try {
@@ -72,7 +82,7 @@ export default function JoinOrganization() {
       try { sessionStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(PREVIEW_KEY); } catch { /* Already accepted server-side. */ }
       await keycloak.updateToken(-1);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : (isEn ? 'Unable to accept invitation.' : 'Impossible d’accepter l’invitation.'));
+      setError(authRequestError(cause, isEn, isEn ? 'Unable to accept invitation.' : 'Impossible d’accepter l’invitation.'));
     } finally { setAccepting(false); }
   };
 

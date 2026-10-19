@@ -42,7 +42,8 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping website deploy: set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets (docs/CLOUDFLARE_DEPLOYMENT.md)."
+            echo "::error::Website deployment is blocked: configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (docs/CLOUDFLARE_DEPLOYMENT.md)."
+            exit 1
           fi
 
   deploy:
@@ -117,6 +118,7 @@ jobs:
         run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy --config wrangler.www.jsonc --domain "www.${DOMAIN}"
 
       - name: Smoke test
+        id: smoke
         env:
           WORKERS_DEV_URL: ${{ steps.deploy.outputs.workers_dev_url }}
           ZONE_STATUS: ${{ steps.zone.outputs.status }}
@@ -136,10 +138,26 @@ jobs:
           }
           check_url "$WORKERS_DEV_URL/" 200 PlainLedger
           check_url "$WORKERS_DEV_URL/quebec" 200 PlainLedger
-          if [ -z "$API_ORIGIN" ]; then check_url "$WORKERS_DEV_URL/api/health" 503 SERVICE_UNAVAILABLE; fi
+          if [ -z "$API_ORIGIN" ]; then
+            check_url "$WORKERS_DEV_URL/api/health" 503 SERVICE_UNAVAILABLE
+            check_url "$WORKERS_DEV_URL/health/ready" 503 SERVICE_UNAVAILABLE
+          else
+            check_url "$WORKERS_DEV_URL/health/ready" 200
+            node -e 'const value=JSON.parse(require("node:fs").readFileSync("body.txt","utf8")); if(value.status!=="ready" || value.checks?.database!=="connected" || value.checks?.cache!=="connected") throw new Error("Backend readiness dependencies are not connected");'
+          fi
           if [ "$ZONE_STATUS" = "active" ]; then
-            # New custom domains can take a few minutes to get their certificate: warn only
-            check_url "https://${DOMAIN}/" 200 PlainLedger || echo "::warning::https://${DOMAIN} is not serving yet; re-check in a few minutes."
+            check_url "https://${DOMAIN}/" 200 PlainLedger
+            if [ -z "$API_ORIGIN" ]; then
+              check_url "https://${DOMAIN}/health/ready" 503 SERVICE_UNAVAILABLE
+            else
+              check_url "https://${DOMAIN}/health/ready" 200
+              node -e 'const value=JSON.parse(require("node:fs").readFileSync("body.txt","utf8")); if(value.status!=="ready" || value.checks?.database!=="connected" || value.checks?.cache!=="connected") throw new Error("Public readiness dependencies are not connected");'
+            fi
+            redirect_code=$(curl --fail-with-body --silent --show-error --max-time 20 \
+              --dump-header redirect-headers.txt --output /dev/null --write-out '%{http_code}' \
+              "https://www.${DOMAIN}/login?source=deployment-smoke")
+            test "$redirect_code" = '301'
+            node -e 'const headers=require("node:fs").readFileSync("redirect-headers.txt","utf8"); const location=headers.split(/\r?\n/).find(line=>/^location:/i.test(line))?.replace(/^location:\s*/i,"").trim(); if(location!=="https://plainledger.ca/login?source=deployment-smoke") throw new Error("WWW must redirect to the canonical site while preserving path and query");'
           fi
 
       - name: Summary
@@ -148,6 +166,8 @@ jobs:
           WORKERS_DEV_URL: ${{ steps.deploy.outputs.workers_dev_url }}
           ZONE_STATUS: ${{ steps.zone.outputs.status }}
           NAMESERVERS: ${{ steps.zone.outputs.nameservers }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          API_ORIGIN: ${{ vars.API_ORIGIN }}
         run: |
           {
             echo "## Website deploy (Cloudflare Workers)"
@@ -156,8 +176,15 @@ jobs:
             echo "|---|---|"
             echo "| workers.dev | ${WORKERS_DEV_URL:-n/a} |"
             echo "| Zone \`${DOMAIN}\` | ${ZONE_STATUS:-unknown} |"
-            if [ "$ZONE_STATUS" = "active" ]; then
-              echo "| Live at | https://${DOMAIN} (www redirects to it) |"
+            if [ "$ZONE_STATUS" = "active" ] && [ "$SMOKE_OUTCOME" = "success" ]; then
+              echo "| Website verified at | https://${DOMAIN} (www redirect checked) |"
+              if [ -z "$API_ORIGIN" ]; then
+                echo "| Account application | Unavailable: no backend origin configured |"
+              else
+                echo "| Backend readiness | Database and cache connectivity verified |"
+              fi
+            else
+              echo "| Deployment verification | Incomplete: inspect the failed or skipped steps |"
             fi
             echo ""
             if [ "$ZONE_STATUS" = "pending" ]; then

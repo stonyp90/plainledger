@@ -25,7 +25,7 @@ describe('Cash forecasts preserve the complete modeled cash position', () => {
   });
 
   it('does not skip February when starting on January 31', () => {
-    const result = calculateCashForecast(100, new Date('2026-01-31T12:00:00Z'), [], assumptions(0, 0), 3);
+    const result = calculateCashForecast(100, new Date(2026, 0, 31, 12), [], assumptions(0, 0), 3);
     expect(result.projected.map(point => new Date(point.date).getMonth())).toEqual([0, 1, 2]);
     expect(result.breakEvenDate).toBeUndefined();
   });
@@ -36,7 +36,7 @@ describe('Cash forecasts preserve the complete modeled cash position', () => {
       startDate: '2026-01-01', endDate: '2026-12-31', amount: 50,
       frequency: 'monthly', isLocked: false, confidence: 100,
     };
-    const projected = projectCashFlow(100, new Date('2026-01-31T12:00:00Z'), [expense], 0, 4);
+    const projected = projectCashFlow(100, new Date(2026, 0, 31, 12), [expense], 0, 4);
     expect(projected.map(point => point.cash)).toEqual([50, 0, -50, -100]);
     expect(projected.map(point => new Date(point.date).getMonth())).toEqual([0, 1, 2, 3]);
   });

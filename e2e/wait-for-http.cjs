@@ -7,10 +7,14 @@ async function main() {
   while (Date.now() < deadline) {
     try {
       const response = await fetch(target, { signal: AbortSignal.timeout(3000) });
-      if (response.ok) {
-        if (target.endsWith('/health/ready')) {
+      if (response.status === 200) {
+        // MinIO's /minio/health/ready intentionally returns an empty HTTP 200.
+        // Only the application's readiness routes have the JSON dependency contract.
+        if (['/health/ready', '/api/health/ready'].includes(new URL(target).pathname)) {
           const value = await response.json();
-          if (!['ok', 'ready', 'healthy'].includes(value.status)) throw new Error('Service is not ready');
+          if (value.status !== 'ready' || value.checks?.database !== 'connected' || value.checks?.cache !== 'connected') {
+            throw new Error('Required application dependencies are not ready');
+          }
         }
         console.log(`Ready: ${target}`);
         return;

@@ -38,11 +38,13 @@ export function FinancialChartPreview({ rows, fields, config = {}, isEn = true, 
   const last = rows[rows.length - 1];
   const fieldLabel = (field: PreviewField) => METRIC_INFO[field.id][isEn ? 'labelEn' : 'label'];
   const color = (field: PreviewField) => field.color || METRIC_INFO[field.id].color;
-  const format = (value: number, field = fields[0]) => {
+  const format = (value: number, field = fields[0], compact = false) => {
     const unit = METRIC_INFO[field.id].unit;
     return new Intl.NumberFormat(isEn ? 'en-CA' : 'fr-CA', {
       ...(unit === 'currency' ? { style: 'currency', currency } : {}),
-      notation: 'compact', maximumFractionDigits: 2,
+      notation: compact ? 'compact' : 'standard',
+      minimumFractionDigits: unit === 'currency' && !compact ? 2 : 0,
+      maximumFractionDigits: 2,
     }).format(value) + (unit === 'percentage' ? '%' : unit === 'days' ? (isEn ? ' days' : ' jours') : '');
   };
   const values = data.flatMap(row => fields.map(field => row.values[field.id]));
@@ -66,7 +68,7 @@ export function FinancialChartPreview({ rows, fields, config = {}, isEn = true, 
   const axes = <>
     {[0, .25, .5, .75, 1].map(fraction => <g key={fraction}>
       {config.showGrid !== false && <line x1={left} x2={width - right} y1={top + plotHeight * fraction} y2={top + plotHeight * fraction} stroke="currentColor" opacity=".12" />}
-      <text x={left - 7} y={top + plotHeight * fraction + 3} textAnchor="end" fontSize="9" fill="currentColor">{format(max - range * fraction)}</text>
+      <text x={left - 7} y={top + plotHeight * fraction + 3} textAnchor="end" fontSize="9" fill="currentColor">{format(max - range * fraction, fields[0], true)}</text>
     </g>)}
     <line x1={left} x2={width - right} y1={y(0)} y2={y(0)} stroke="currentColor" opacity=".35" />
     {type !== 'scatter' && data.map((row, index) => index % everyLabel === 0 || index === data.length - 1 ? <text key={row.period} x={type === 'bar' || type === 'waterfall' ? left + (index + .5) * plotWidth / data.length : x(index)} y={height - 13} textAnchor="middle" fontSize="9" fill="currentColor">{row.period}</text> : null)}

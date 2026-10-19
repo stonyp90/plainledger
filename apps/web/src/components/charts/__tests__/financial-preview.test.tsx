@@ -79,12 +79,23 @@ describe('Financial preview chart families', () => {
     const initial = container.innerHTML;
     rerender(<FinancialChartPreview rows={[row]} {...props('heatmap')} />);
     expect(container.innerHTML).toBe(initial);
-    expect(screen.getByText('$10')).toBeVisible();
+    expect(screen.getByText('$10.00')).toBeVisible();
+  });
+  it.each(['table', 'heatmap'] as const)('%s preserves cents and signed sub-dollar values in both languages', type => {
+    const rows = [{ ...row, values: { revenue: 10000.25, expenses: 0.01, profit: -0.02 } }];
+    const { rerender } = render(<FinancialChartPreview rows={rows} {...props(type)} />);
+    for (const amount of ['$10,000.25', '$0.01', '-$0.02']) {
+      expect(screen.getByRole('cell', { name: amount })).toBeVisible();
+    }
+    rerender(<FinancialChartPreview rows={rows} {...props(type)} isEn={false} />);
+    for (const amount of [/^10\s000,25\s\$$/, /^0,01\s\$$/, /^-0,02\s\$$/]) {
+      expect(screen.getByRole('cell', { name: amount })).toBeVisible();
+    }
   });
   it('waterfall uses actual changes, including a decline to zero', () => {
     const { container } = render(<FinancialChartPreview rows={[{ ...row, values: { revenue: 10 } }, { period: '2026-02', values: { revenue: 0 } }]} {...props('waterfall')} />);
-    expect(container.querySelector('svg')!.textContent).toContain('change -$10');
-    expect(container.querySelector('svg')!.textContent).toContain('value $0');
+    expect(container.querySelector('svg')!.textContent).toContain('change -$10.00');
+    expect(container.querySelector('svg')!.textContent).toContain('value $0.00');
     finite(container);
   });
   it('does not silently substitute a line for specialized planning charts', () => {

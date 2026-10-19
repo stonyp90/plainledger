@@ -355,7 +355,10 @@
           "protocol": "openid-connect",
           "protocolMapper": "oidc-sub-mapper",
           "consentRequired": false,
-          "config": {}
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
         }
       ]
     },

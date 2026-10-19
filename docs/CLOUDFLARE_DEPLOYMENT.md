@@ -6,7 +6,7 @@ static asset requests are free and unlimited, and DNS is free. The only cost is 
 | Hostname                           | Served by                         | Behaviour                                                                                                            |
 | ---------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `plainledger.ca`                   | Worker `plainledger-web`          | The Vite build (all pages, deep links via SPA fallback)                                                              |
-| `plainledger.ca/api/*`, `/graphql` | same Worker, `worker/index.ts`    | Proxied to `API_ORIGIN` when set; otherwise a JSON 503 that the login/signup pages show as "temporarily unavailable" |
+| `plainledger.ca/api/*`, `/graphql`, `/health/*` | same Worker, `worker/index.ts` | Proxied to `API_ORIGIN` when set; otherwise a JSON 503. Health checks never use the HTML SPA fallback. |
 | `www.plainledger.ca`               | Worker `plainledger-www-redirect` | 301 to `https://plainledger.ca` (same path and query)                                                                |
 
 Without a backend the app runs in **guest mode**: every public page works, and `/app/*` sends visitors to the login page.
@@ -36,7 +36,8 @@ Without a backend the app runs in **guest mode**: every public page works, and `
 3. `wrangler deploy` (adds `--domain plainledger.ca` once the zone is active), then deploys the www redirect.
 4. Smoke-tests the deployment and writes a summary.
 
-Without the Cloudflare secrets the workflow skips with a warning instead of failing.
+Without the Cloudflare secrets the deployment fails at preflight and reports the missing configuration.
+The summary marks the website verified only after the public site, readiness response and www redirect checks pass.
 
 Optional repository **variables** (_Settings_ → _Secrets and variables_ → _Actions_ → _Variables_):
 
@@ -52,6 +53,10 @@ Optional repository **variables** (_Settings_ → _Secrets and variables_ → _A
 
 Host the backend stack (API, Keycloak, PostgreSQL, Redis), set `API_ORIGIN` and `VITE_KEYCLOAK_URL`, and re-run the workflow.
 The web app keeps calling the same-origin `/api` and `/graphql` URLs, so no code changes are needed.
+
+Production readiness requires `/health/ready` to return HTTP 200 **JSON** with connected database and cache.
+An HTTP 200 website page, a guest-mode frontend, or a 503 from an unconfigured backend does not qualify.
+Keep the health paths in both the Worker route classifier and `assets.run_worker_first`.
 
 ## Local testing
 
