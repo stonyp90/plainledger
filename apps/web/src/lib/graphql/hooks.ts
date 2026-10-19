@@ -5,6 +5,11 @@
  * Provides type-safe data fetching with loading and error states.
  */
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client/react';
+import type {
+  DashboardSummaryResult, FinancialTrendResult, AccountResult, PageResult,
+  TransactionResult, BalanceSheetResult, IncomeStatementResult, DataSourceResult,
+  ProviderResult, OperationResult, SyncStats, BenchmarkRefreshStatus,
+} from './responseTypes';
 import {
   GET_DASHBOARD_SUMMARY,
   GET_FINANCIAL_TRENDS,
@@ -51,7 +56,7 @@ export interface DashboardFilter {
 }
 
 export function useDashboardSummary(options?: { filter?: DashboardFilter; skip?: boolean }) {
-  return useQuery(GET_DASHBOARD_SUMMARY, {
+  return useQuery<{ dashboardSummary: DashboardSummaryResult }>(GET_DASHBOARD_SUMMARY, {
     variables: { filter: options?.filter },
     pollInterval: 5 * 60 * 1000, // Refresh every 5 minutes
     skip: options?.skip,
@@ -62,7 +67,7 @@ export function useFinancialTrends(
   metrics: string[],
   options?: { dateRange?: { startDate: Date; endDate: Date }; skip?: boolean },
 ) {
-  return useQuery(GET_FINANCIAL_TRENDS, {
+  return useQuery<{ financialTrends: FinancialTrendResult[] }>(GET_FINANCIAL_TRENDS, {
     variables: { metrics, dateRange: options?.dateRange },
     skip: metrics.length === 0 || options?.skip,
   });
@@ -89,21 +94,21 @@ export function useAccounts(
   pagination?: PaginationInput,
   options?: { skip?: boolean },
 ) {
-  return useQuery(GET_ACCOUNTS, {
+  return useQuery<{ accounts: PageResult<AccountResult> }>(GET_ACCOUNTS, {
     variables: { filter, pagination },
     skip: options?.skip,
   });
 }
 
 export function useAccount(id: string) {
-  return useQuery(GET_ACCOUNT, {
+  return useQuery<{ account: AccountResult }>(GET_ACCOUNT, {
     variables: { id },
     skip: !id,
   });
 }
 
 export function useLazyAccount() {
-  return useLazyQuery(GET_ACCOUNT);
+  return useLazyQuery<{ account: AccountResult }>(GET_ACCOUNT);
 }
 
 // =====================================================
@@ -124,7 +129,7 @@ export interface TransactionFilter {
 }
 
 export function useTransactions(filter?: TransactionFilter, pagination?: PaginationInput) {
-  return useQuery(GET_TRANSACTIONS, {
+  return useQuery<{ transactions: PageResult<TransactionResult> }>(GET_TRANSACTIONS, {
     variables: { filter, pagination },
   });
 }
@@ -134,14 +139,14 @@ export function useTransactions(filter?: TransactionFilter, pagination?: Paginat
 // =====================================================
 
 export function useBalanceSheet(asOfDate?: Date, options?: { skip?: boolean }) {
-  return useQuery(GET_BALANCE_SHEET, {
+  return useQuery<{ balanceSheet: BalanceSheetResult }>(GET_BALANCE_SHEET, {
     variables: { asOfDate: asOfDate?.toISOString() },
     skip: options?.skip,
   });
 }
 
 export function useIncomeStatement(startDate: Date, endDate: Date, options?: { skip?: boolean }) {
-  return useQuery(GET_INCOME_STATEMENT, {
+  return useQuery<{ incomeStatement: IncomeStatementResult }>(GET_INCOME_STATEMENT, {
     variables: {
       dateRange: {
         startDate: startDate.toISOString(),
@@ -169,39 +174,39 @@ export function useOrganizationFeatures() {
 // =====================================================
 
 export function useDataSources() {
-  return useQuery(GET_DATA_SOURCES, {
+  return useQuery<{ dataSources: DataSourceResult[] }>(GET_DATA_SOURCES, {
     pollInterval: 30 * 1000, // Refresh every 30 seconds
   });
 }
 
 export function useAvailableProviders() {
-  return useQuery(GET_AVAILABLE_PROVIDERS);
+  return useQuery<{ availableProviders: ProviderResult[] }>(GET_AVAILABLE_PROVIDERS);
 }
 
 export function useInitiateOAuth() {
-  return useMutation(INITIATE_OAUTH);
+  return useMutation<{ initiateOAuth: { url: string; state: string; provider: string } }>(INITIATE_OAUTH);
 }
 
 export function useCompleteOAuth() {
-  return useMutation(COMPLETE_OAUTH, {
+  return useMutation<{ completeOAuth: DataSourceResult }>(COMPLETE_OAUTH, {
     refetchQueries: [{ query: GET_DATA_SOURCES }],
   });
 }
 
 export function useSyncDataSource() {
-  return useMutation(SYNC_DATA_SOURCE, {
+  return useMutation<{ syncDataSource: OperationResult & { stats: SyncStats; syncedAt: string; warnings: string[] } }>(SYNC_DATA_SOURCE, {
     refetchQueries: [{ query: GET_DATA_SOURCES }],
   });
 }
 
 export function useDisconnectDataSource() {
-  return useMutation(DISCONNECT_DATA_SOURCE, {
+  return useMutation<{ disconnectDataSource: OperationResult }>(DISCONNECT_DATA_SOURCE, {
     refetchQueries: [{ query: GET_DATA_SOURCES }],
   });
 }
 
 export function useDeleteDataSource() {
-  return useMutation(DELETE_DATA_SOURCE, {
+  return useMutation<{ deleteDataSource: OperationResult }>(DELETE_DATA_SOURCE, {
     refetchQueries: [{ query: GET_DATA_SOURCES }],
   });
 }
@@ -262,7 +267,7 @@ export interface OrganizationComparison {
  * Hook to fetch benchmark data for a specific industry
  */
 export function useIndustryBenchmark(industry: string, revenueRange?: RevenueRange) {
-  return useQuery(GET_INDUSTRY_BENCHMARK, {
+  return useQuery<{ industryBenchmark: IndustryBenchmark }>(GET_INDUSTRY_BENCHMARK, {
     variables: { industry, revenueRange },
     skip: !industry,
   });
@@ -272,7 +277,7 @@ export function useIndustryBenchmark(industry: string, revenueRange?: RevenueRan
  * Hook to fetch benchmark data for all industries
  */
 export function useAllIndustryBenchmarks(revenueRange?: RevenueRange) {
-  return useQuery(GET_ALL_INDUSTRY_BENCHMARKS, {
+  return useQuery<{ allIndustryBenchmarks: IndustryBenchmark[] }>(GET_ALL_INDUSTRY_BENCHMARKS, {
     variables: { revenueRange },
   });
 }
@@ -292,7 +297,7 @@ export function useOrganizationComparison(
   },
   revenueRange?: RevenueRange,
 ) {
-  return useQuery(GET_ORGANIZATION_COMPARISON, {
+  return useQuery<{ organizationComparison: OrganizationComparison }>(GET_ORGANIZATION_COMPARISON, {
     variables: {
       organizationId,
       industry,
@@ -307,7 +312,7 @@ export function useOrganizationComparison(
  * Hook to fetch benchmark data refresh status
  */
 export function useBenchmarkRefreshStatus() {
-  return useQuery(GET_BENCHMARK_REFRESH_STATUS, {
+  return useQuery<{ benchmarkRefreshStatus: BenchmarkRefreshStatus }>(GET_BENCHMARK_REFRESH_STATUS, {
     pollInterval: 60 * 1000, // Refresh every minute
   });
 }

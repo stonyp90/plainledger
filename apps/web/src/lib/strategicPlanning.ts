@@ -444,6 +444,8 @@ export function calculateCashForecast(
   
   for (let i = 0; i < months; i++) {
     const monthDate = new Date(currentDate);
+    // Anchor monthly buckets before advancing to avoid Jan 31 skipping February.
+    monthDate.setDate(1);
     monthDate.setMonth(monthDate.getMonth() + i);
     
     // Base revenue and expenses
@@ -484,21 +486,18 @@ export function calculateCashForecast(
     
     projected.push({
       date: monthDate.toISOString(),
-      cash: Math.max(0, runningCash),
+      cash: runningCash,
       revenue: monthRevenue,
       expenses: monthExpenses,
       confidence: Math.min(1, confidence),
     });
     
-    // Check for break-even
-    if (runningCash <= 0 && projected.length > 1) {
-      break;
-    }
   }
   
-  // Find break-even date
-  const breakEvenIndex = projected.findIndex(p => p.cash > 0 && 
-    projected[Math.max(0, p.date === projected[0].date ? 1 : 0)]?.cash <= 0);
+  // Operating break-even is the first modeled month whose revenue covers its
+  // expenses. A positive opening cash balance alone does not imply break-even.
+  const breakEvenIndex = projected.findIndex(point =>
+    point.revenue >= point.expenses && (point.revenue > 0 || point.expenses > 0));
   
   return {
     historical: [],

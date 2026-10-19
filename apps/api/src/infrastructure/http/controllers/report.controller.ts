@@ -12,6 +12,7 @@ import {
   NotFoundException,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -21,8 +22,11 @@ import {
   ApiQuery,
   ApiBody,
 } from "@nestjs/swagger";
+import { TenantGuard } from "../../auth/tenant.guard";
 import { Roles, Public } from "nest-keycloak-connect";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
+import { GenerateIncomeStatementUseCase } from "@application/use-cases/generate-income-statement.use-case";
+import { parseReportDate } from "../../graphql/validation/financial-query-validation";
 import { DomainError, EntityNotFoundError } from "@domain/errors/DomainError";
 import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 import { Inject } from "@nestjs/common";
@@ -33,11 +37,13 @@ import { Inject } from "@nestjs/common";
 export class ReportController {
   constructor(
     private readonly generateBalanceSheetUseCase: GenerateBalanceSheetUseCase,
+    private readonly generateIncomeStatementUseCase: GenerateIncomeStatementUseCase,
     @Inject("IDatalakeDataService")
     private readonly datalakeDataService: IDatalakeDataService,
   ) {}
 
   @Get(":tenantId/balance-sheet")
+  @UseGuards(TenantGuard)
   @Roles({ roles: ["admin", "owner", "accountant", "viewer"] })
   @ApiOperation({ summary: "Generate balance sheet report" })
   @ApiQuery({
@@ -57,22 +63,9 @@ export class ReportController {
     @Query("locale") locale?: "en" | "fr",
   ) {
     try {
-      const asOfDateParsed = new Date(asOfDate);
-      if (isNaN(asOfDateParsed.getTime())) {
-        throw new BadRequestException(
-          "Invalid asOfDate format. Use YYYY-MM-DD",
-        );
-      }
-
-      let comparisonDateParsed: Date | undefined;
-      if (comparisonDate) {
-        comparisonDateParsed = new Date(comparisonDate);
-        if (isNaN(comparisonDateParsed.getTime())) {
-          throw new BadRequestException(
-            "Invalid comparisonDate format. Use YYYY-MM-DD",
-          );
-        }
-      }
+      const asOfDateParsed = parseReportDate(asOfDate);
+      const comparisonDateParsed = comparisonDate ? parseReportDate(comparisonDate) : undefined;
+      if (locale && locale !== "en" && locale !== "fr") throw new BadRequestException("Invalid report locale");
 
       return await this.generateBalanceSheetUseCase.execute({
         tenantId,
@@ -92,8 +85,9 @@ export class ReportController {
   }
 
   @Get(":tenantId/income-statement")
+  @UseGuards(TenantGuard)
   @Roles({ roles: ["admin", "owner", "accountant", "viewer"] })
-  @ApiOperation({ summary: "Generate income statement report (placeholder)" })
+  @ApiOperation({ summary: "Generate income statement from posted journal entries" })
   @ApiQuery({ name: "startDate", required: true, type: String })
   @ApiQuery({ name: "endDate", required: true, type: String })
   @ApiQuery({ name: "locale", required: false, enum: ["en", "fr"] })
@@ -104,17 +98,13 @@ export class ReportController {
     @Query("endDate") endDate: string,
     @Query("locale") locale?: "en" | "fr",
   ) {
-    // Placeholder - would implement similar to balance sheet
-    return {
-      message: "Income Statement report - Coming soon",
-      tenantId,
-      startDate,
-      endDate,
-      locale: locale || "fr",
-    };
+    return this.generateIncomeStatementUseCase.execute({
+      tenantId, startDate: parseReportDate(startDate), endDate: parseReportDate(endDate), locale,
+    });
   }
 
   @Get(":tenantId/cash-flow")
+  @UseGuards(TenantGuard)
   @Roles({ roles: ["admin", "owner", "accountant", "viewer"] })
   @ApiOperation({
     summary: "Generate cash flow statement report (placeholder)",

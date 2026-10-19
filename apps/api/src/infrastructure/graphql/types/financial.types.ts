@@ -254,6 +254,9 @@ export class BalanceSheetLine {
   @Field(() => AccountType)
   accountType: AccountType;
 
+  @Field({ nullable: true })
+  accountSubType?: string;
+
   @Field(() => Float)
   balance: number;
 
@@ -301,6 +304,9 @@ export class IncomeStatementLine {
 
   @Field()
   accountName: string;
+
+  @Field({ nullable: true })
+  accountSubType?: string;
 
   @Field(() => Float)
   amount: number;

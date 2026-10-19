@@ -863,6 +863,8 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
    * Called automatically on module initialization
    */
   private async ensureDirectAccessGrantsEnabled(): Promise<void> {
+    // Production authentication policy is managed by the realm, never changed at startup.
+    if (this.configService.get<string>('NODE_ENV') !== 'development') return;
     try {
       const clients = await this.adminClient.clients.find({
         realm: this.realm,

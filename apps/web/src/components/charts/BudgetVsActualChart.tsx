@@ -22,6 +22,8 @@ import {
   Settings2,
 } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
+import { ChartDataState } from './ChartDataState';
+import { getChartDataIssue, isChartLabel, isFiniteNumber } from '../../lib/chartDataValidation';
 import { useGraphConfig } from '../../hooks/useGraphConfig';
 import { formatCurrencyValue, formatPercentageValue } from '../../lib/graphConfig';
 import GraphConfigPanel from './GraphConfigPanel';
@@ -59,7 +61,7 @@ interface BudgetVsActualChartProps {
 }
 
 export default function BudgetVsActualChart({
-  data,
+  data: inputData,
   title,
   titleEn,
   showPriorYear: propShowPriorYear,
@@ -70,6 +72,10 @@ export default function BudgetVsActualChart({
   ibcsMode: propIBCSMode = false,
   showIBCSLegend: propShowIBCSLegend = true,
 }: BudgetVsActualChartProps) {
+  const issue = getChartDataIssue(inputData, item =>
+    isChartLabel(item.category) && isFiniteNumber(item.actual) && isFiniteNumber(item.budget)
+    && (item.priorYear == null || isFiniteNumber(item.priorYear)));
+  const data = issue ? [] : inputData;
   // Get graph configuration (must be called before any early returns)
   const graphConfig = useGraphConfig(chartId, {
     budgetVsActual: {
@@ -148,7 +154,7 @@ export default function BudgetVsActualChart({
         else unfavorable++;
       }
       
-      maxVal = Math.max(maxVal, item.actual, item.budget, item.priorYear || 0);
+      maxVal = Math.max(maxVal, Math.abs(actual), Math.abs(budget), Math.abs(priorYear));
       
       return {
         ...item,
@@ -165,6 +171,8 @@ export default function BudgetVsActualChart({
     // Sort by variance if selected
     if (sortBy === 'variance') {
       processed.sort((a, b) => Math.abs(b.variancePct) - Math.abs(a.variancePct));
+    } else {
+      processed.sort((a, b) => a.category.localeCompare(b.category));
     }
     
     // Calculate totals
@@ -183,15 +191,15 @@ export default function BudgetVsActualChart({
           ? ((totalActual - totalBudget) / Math.abs(totalBudget)) * 100 
           : 0,
       },
-      maxValue: maxVal * 1.1,
+      maxValue: maxVal > 0 ? maxVal : 1,
       favorableCount: favorable,
       unfavorableCount: unfavorable,
     };
   }, [data, varianceThreshold, sortBy]);
 
   // Early return - hide chart completely if no data (after all hooks)
-  if (!data || data.length === 0) {
-    return null;
+  if (issue || ![totals.actual, totals.budget, totals.variance].every(isFiniteNumber)) {
+    return <ChartDataState title={isEn && titleEn ? titleEn : title} issue={issue || 'invalid'} isEn={isEn} />;
   }
 
   const toggleRow = (category: string) => {
@@ -205,7 +213,7 @@ export default function BudgetVsActualChart({
   };
 
   const getBarWidth = (value: number) => {
-    return Math.max(2, (Math.abs(value) / maxValue) * 100);
+    return value === 0 ? 0 : Math.min(100, Math.max(2, (Math.abs(value) / maxValue) * 100));
   };
 
   return (

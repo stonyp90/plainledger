@@ -28,6 +28,7 @@ describe('IntelligenceRecommendation Entity', () => {
     ],
     successRates: {
       overallSuccessRate: 85,
+      avgVariance: 5,
       byAction: {
         reduce_costs: 85,
         increase_prices: 70,
@@ -127,7 +128,7 @@ describe('IntelligenceRecommendation Entity', () => {
 
   it('should get strongest supporting pattern', () => {
     const strongPattern = IndustryPattern.create({
-      ...mockPattern.toJSON(),
+      ...mockPattern,
       statisticalSignificance: 0.95,
       sampleSize: 100,
     });

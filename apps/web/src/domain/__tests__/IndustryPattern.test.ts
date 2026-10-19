@@ -35,6 +35,7 @@ describe('IndustryPattern Entity', () => {
     ],
     successRates: {
       overallSuccessRate: 85,
+      avgVariance: 5,
       byAction: {
         reduce_costs: 90,
         increase_prices: 75,

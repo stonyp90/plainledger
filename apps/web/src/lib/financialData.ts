@@ -50,12 +50,15 @@ export interface BalanceSheetData {
     currentAssets: AccountBalanceExtended[];
     fixedAssets: AccountBalanceExtended[];
     otherAssets?: AccountBalanceExtended[];
+    unclassifiedAssets?: AccountBalanceExtended[];
   };
   liabilities: {
     currentLiabilities: AccountBalanceExtended[];
     longTermLiabilities: AccountBalanceExtended[];
+    unclassifiedLiabilities?: AccountBalanceExtended[];
   };
   equity: AccountBalanceExtended[];
+  hasComparison?: boolean;
 }
 
 export interface IncomeStatementData {
@@ -70,6 +73,9 @@ export interface IncomeStatementData {
   operatingExpenses: AccountBalanceExtended[];
   otherIncome: AccountBalanceExtended[];
   otherExpenses: AccountBalanceExtended[];
+  /** Source lines for which the provider does not expose an expense subtype. */
+  unclassifiedExpenses?: AccountBalanceExtended[];
+  hasComparison?: boolean;
 }
 
 export interface CashFlowData {
@@ -179,6 +185,8 @@ export interface TrialBalanceEntry {
 }
 
 export interface DashboardSummary {
+  hasBudget?: boolean;
+  budgetYear?: number;
   revenue: {
     current: number;
     prior: number;
@@ -276,10 +284,11 @@ export interface DemoAnomalyData {
 }
 
 export interface FinancialDataResponse {
-  balanceSheet: BalanceSheetData;
+  /** Dashboard queries do not include a complete report or ratio dataset. */
+  balanceSheet?: BalanceSheetData;
   incomeStatement?: IncomeStatementData;
   cashFlow?: CashFlowData;
-  metrics: FinancialMetrics;
+  metrics?: FinancialMetrics;
   summary: DashboardSummary;
   trends: {
     revenue: TrendDataset;

@@ -142,6 +142,8 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'X-Tenant-ID',
+      'X-Organization-ID',
+      'Apollo-Require-Preflight',
       'X-Request-ID',
       'Accept',
       'Origin',

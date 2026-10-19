@@ -39,7 +39,7 @@ interface JoinTypeOption {
   labelFr: string;
   descriptionEn: string;
   descriptionFr: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 const JOIN_TYPES: JoinTypeOption[] = [

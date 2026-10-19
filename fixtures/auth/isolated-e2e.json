@@ -1,0 +1,9 @@
+{
+  "description": "Synthetic credentials for disposable local/CI Keycloak only. Never import into a production realm.",
+  "username": "e2e-owner@plainledger.test",
+  "userId": "00000000-0000-4000-8000-000000000001",
+  "organizationId": "00000000-0000-4000-8000-000000000100",
+  "password": "PlainLedger-E2E-Only-2026!",
+  "organization": "e2e-org-a",
+  "apiSecret": "plainledger-e2e-disposable-api-secret"
+}

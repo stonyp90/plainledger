@@ -34,6 +34,7 @@ export function projectCashFlow(
   
   for (let i = 0; i < months; i++) {
     const monthDate = new Date(currentDate);
+    monthDate.setDate(1);
     monthDate.setMonth(monthDate.getMonth() + i);
     
     let monthExpenses = 0;
@@ -61,16 +62,12 @@ export function projectCashFlow(
     
     projected.push({
       date: monthDate.toISOString(),
-      cash: Math.max(0, runningCash),
+      cash: runningCash,
       revenue: monthRevenue,
       expenses: monthExpenses,
       confidence: Math.min(1, confidence),
     });
     
-    // Stop if we hit zero
-    if (runningCash <= 0 && i > 0) {
-      break;
-    }
   }
   
   return projected;

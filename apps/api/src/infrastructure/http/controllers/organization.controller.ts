@@ -6,6 +6,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -14,17 +15,38 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from "@nestjs/swagger";
+import { IsString, IsOptional, Length, IsInt, Min, Max, Matches } from "class-validator";
+import { CreateClaimedTenant, TenantGuard } from "../../auth/tenant.guard";
 import { Roles } from "nest-keycloak-connect";
 import { CreateOrganizationUseCase } from "@application/use-cases/create-organization.use-case";
 import { GetOrganizationUseCase } from "@application/use-cases/get-organization.use-case";
 
 class CreateOrganizationDto {
+  @IsString()
+  @Length(1, 100)
   tenantId: string;
+  @IsString()
+  @Length(1, 255)
   name: string;
+  @IsOptional()
+  @IsString()
+  @Length(1, 255)
   legalName?: string;
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
   taxNumber?: string;
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
   fiscalYearEndMonth?: number;
+  @IsOptional()
+  @Matches(/^[A-Z]{3}$/)
   currency?: string;
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
   industry?: string;
 }
 
@@ -38,6 +60,8 @@ export class OrganizationController {
   ) {}
 
   @Post()
+  @UseGuards(TenantGuard)
+  @CreateClaimedTenant()
   @Roles({ roles: ["admin", "owner"] })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Create a new organization" })
@@ -53,6 +77,7 @@ export class OrganizationController {
   }
 
   @Get(":tenantId")
+  @UseGuards(TenantGuard)
   @Roles({ roles: ["admin", "owner", "accountant", "viewer"] })
   @ApiOperation({ summary: "Get organization by tenant ID" })
   @ApiResponse({ status: 200, description: "Organization found" })

@@ -1,9 +1,11 @@
-import { Controller, Get, Logger } from "@nestjs/common";
+import { Controller, Get, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { Public } from "nest-keycloak-connect";
 import { IAIService } from "@application/ports/outbound/IAIService";
 import { IDatalakeDataService } from "@application/ports/outbound/IDatalakeDataService";
 import { Inject, Optional } from "@nestjs/common";
+import { DataSource } from "typeorm";
+import { CacheService } from "@infrastructure/cache/cache.service";
 
 @Controller("health")
 @ApiTags("health")
@@ -15,7 +17,9 @@ export class HealthController {
     private readonly aiService: IAIService,
     @Optional()
     @Inject("IDatalakeDataService")
-    private readonly datalakeService?: IDatalakeDataService,
+    private readonly datalakeService: IDatalakeDataService | undefined,
+    private readonly database: DataSource,
+    private readonly cache: CacheService,
   ) {}
   @Get()
   @Public()
@@ -34,16 +38,35 @@ export class HealthController {
   @Public()
   @ApiOperation({ summary: "Readiness check endpoint" })
   @ApiResponse({ status: 200, description: "Service is ready" })
-  ready() {
-    // In a real app, check database connectivity, etc.
-    return {
-      status: "ready",
-      timestamp: new Date().toISOString(),
-      checks: {
-        database: "connected",
-        cache: "connected",
-      },
+  @ApiResponse({ status: 503, description: "A required dependency is unavailable" })
+  async ready() {
+    const checks = { database: "disconnected", cache: "disconnected" };
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const databaseCheck = async () => {
+      if (!this.database.isInitialized) return false;
+      try {
+        await Promise.race([
+          this.database.query("SELECT 1"),
+          new Promise((_, reject) => {
+            timeout = setTimeout(() => reject(new Error("Readiness timeout")), 2000);
+          }),
+        ]);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        if (timeout) clearTimeout(timeout);
+      }
     };
+    const [databaseReady, cacheReady] = await Promise.all([databaseCheck(), this.cache.healthCheck()]);
+    if (databaseReady) checks.database = "connected";
+    if (cacheReady) checks.cache = "connected";
+    const response = {
+      status: databaseReady && cacheReady ? "ready" : "not_ready",
+      timestamp: new Date().toISOString(), checks,
+    };
+    if (!databaseReady || !cacheReady) throw new ServiceUnavailableException(response);
+    return response;
   }
 
   @Get("ai")

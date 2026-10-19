@@ -470,6 +470,7 @@ export function createDemoConnection(
     syncConfig: {
       enabled: true,
       frequency: 'manual',
+      syncWindow: {},
       lastSyncAt: now,
       entities: {
         accounts: true,

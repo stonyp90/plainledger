@@ -88,14 +88,14 @@ export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
     type: 'chart',
     visible: true,
     position: 5,
-    size: 'half',
+    size: 'medium',
   },
   {
     id: 'cashflow-chart',
     type: 'chart',
     visible: true,
     position: 6,
-    size: 'half',
+    size: 'medium',
   },
   {
     id: 'cashflow-waterfall',

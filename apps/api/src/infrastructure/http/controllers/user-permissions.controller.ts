@@ -12,6 +12,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { AuthenticatedUser } from '../../auth/keycloak-token';
 import { UserPermissionsService, UserPermissions } from '@application/services/user-permissions.service';
 
 /**
@@ -83,65 +84,9 @@ export class UserPermissionsController {
     status: 401,
     description: 'Unauthorized',
   })
-  async getMyPermissions(@Request() req: any): Promise<UserPermissions> {
-    const user = req.user;
-    const userId = user.sub || user.id;
-    const organizationId = user.organizationId || user.organization;
-
-    // Handle demo users or users without organization
-    if (!organizationId || organizationId === 'demo-signup') {
-      this.logger.log(`Returning default permissions for demo user: ${userId}`);
-      // Return default free tier permissions for demo users
-      return {
-        entitlements: [], // No entitlements for free/demo users
-        permissions: ['view'], // Basic view permission
-        limits: {
-          maxDataSources: 0,
-          maxReportsPerMonth: 5,
-          maxStorageGB: 0,
-        },
-        overrides: [],
-        role: {
-          id: 'viewer',
-          name: 'Viewer',
-          tierLevel: 1,
-        },
-        plan: {
-          id: 'free',
-          name: 'Free',
-        },
-      };
-    }
-
-    try {
-      return await this.userPermissionsService.getUserPermissions(
-        userId,
-        organizationId,
-      );
-    } catch (error) {
-      this.logger.warn(
-        `Failed to get permissions for user ${userId}, returning defaults: ${error.message}`,
-      );
-      // Return default permissions on error (graceful degradation)
-      return {
-        entitlements: [],
-        permissions: ['view'],
-        limits: {
-          maxDataSources: 0,
-          maxReportsPerMonth: 5,
-          maxStorageGB: 0,
-        },
-        overrides: [],
-        role: {
-          id: 'viewer',
-          name: 'Viewer',
-          tierLevel: 1,
-        },
-        plan: {
-          id: 'free',
-          name: 'Free',
-        },
-      };
-    }
+  async getMyPermissions(@Request() req: { user: AuthenticatedUser }): Promise<UserPermissions> {
+    // The service resolves the signed tenant claim to the active profile's UUID.
+    // A failed permissions read is an error, never a successful fabricated role.
+    return this.userPermissionsService.getUserPermissions(req.user.sub, req.user.organizationId);
   }
 }

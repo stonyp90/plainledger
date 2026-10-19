@@ -1,0 +1,63 @@
+{
+	email {$TLS_EMAIL}
+	admin off
+}
+
+# This listener is reachable only inside the container network, never published.
+http://:8081 {
+	respond /ready "ready" 200
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+{$APP_DOMAIN} {
+	import common
+	handle /__deployment/release {
+		header Cache-Control no-store
+		respond "{$RELEASE_SHA}" 200
+	}
+	@api path /api /api/* /graphql /graphql/* /health /health/*
+	handle @api {
+		reverse_proxy api:3000 {
+			health_uri /health/ready
+			health_status 200
+			health_interval 15s
+			health_timeout 5s
+		}
+	}
+	handle {
+		reverse_proxy web:80
+	}
+}
+
+{$ADMIN_DOMAIN} {
+	import common
+	reverse_proxy admin:3001
+}
+
+{$AUTH_DOMAIN} {
+	import common
+	# Do not publish Keycloak management endpoints. The application needs the
+	# authenticated Admin REST API for registration; it is not anonymous access.
+	@management path /health /health/* /metrics /metrics/*
+	respond @management 404
+	reverse_proxy keycloak:8080 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host {host}
+	}
+}
+
+{$STORAGE_DOMAIN} {
+	# Expose only MinIO's S3 data API. The console has no published route or port.
+	header -Server
+	@management path /minio /minio/*
+	respond @management 404
+	reverse_proxy minio:9000
+}

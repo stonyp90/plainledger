@@ -107,12 +107,12 @@ describe("OrganizationResolver", () => {
       expect(result?.id).toBe("org-123");
     });
 
-    it("should allow admin access to any organization", async () => {
+    it("should allow platform-admin access to any organization", async () => {
       const adminContext = {
         req: {
           user: {
             organizationId: "different-org",
-            roles: ["admin"],
+            roles: ["platform-admin"],
           },
         },
       };

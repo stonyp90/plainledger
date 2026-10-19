@@ -86,8 +86,8 @@ export class OrganizationResolver {
     @Context()
     context: { req: { user: { roles: string[]; organizationId: string } } },
   ): Promise<Organization | null> {
-    // Security: Only allow access to own org or if admin
-    const isAdmin = context.req.user.roles?.includes("admin");
+    // Tenant administrators manage their own organization only.
+    const isAdmin = context.req.user.roles?.some((role) => ["platform-admin", "super-admin"].includes(role));
     const isOwnOrg = context.req.user.organizationId === id;
 
     if (!isAdmin && !isOwnOrg) {

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
@@ -50,15 +50,20 @@ export class UserPermissionsService {
     userId: string,
     organizationId: string,
   ): Promise<UserPermissions> {
-    // Fetch user profile with organization
+    if (typeof userId !== 'string' || !userId.trim() || typeof organizationId !== 'string' || !organizationId.trim()) {
+      throw new ForbiddenException('An authenticated user and organization are required');
+    }
+    // Fetch active membership first; the JWT may carry its tenant slug rather than UUID.
     const userProfile = await this.userProfileRepository.findOne({
-      where: { id: userId, organizationId },
+      where: { id: userId, isActive: true },
       relations: ['organization'],
     });
 
-    if (!userProfile) {
-      throw new Error(`User ${userId} not found in organization ${organizationId}`);
+    if (!userProfile?.organization || userProfile.organization.deletedAt ||
+      ![userProfile.organizationId, userProfile.organization.tenantId].includes(organizationId)) {
+      throw new ForbiddenException('Active membership in the authenticated organization is required');
     }
+    organizationId = userProfile.organizationId!;
 
     // Get user's role (default to 'viewer' if not set)
     const roleId = userProfile.role || 'viewer';

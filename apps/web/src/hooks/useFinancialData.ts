@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useDemoMode } from '../contexts/DemoModeContext';
 import { isMockAuthEnabled } from '../lib/keycloak';
+import { adaptBalanceSheet, adaptIncomeStatement, createEmptyDashboardSummary } from '../lib/financialAdapters';
 import {
   useDashboardSummary,
   useFinancialTrends,
@@ -335,7 +336,7 @@ export function useFinancialData(
       return generateMockFinancialData(
         currentTenant.id,
         currentTenant.name,
-        currentTenant.currency || 'CAD',
+        currentTenant.settings.currency || 'CAD',
         new Date().toISOString().split('T')[0],
         currentTenant.industry || 'real_estate',
       );
@@ -383,36 +384,38 @@ export function useFinancialData(
         }));
       };
 
-      // Build response with ONLY real data - no mock fallbacks
+      // Initialize absent dashboard sections without inventing account data or ratios.
+      const emptySummary = createEmptyDashboardSummary();
       return {
         summary: {
+          ...emptySummary,
           revenue: {
+            ...emptySummary.revenue,
             current: summary?.totalRevenue?.amount || 0,
             prior: 0,
-            change: 0,
             ytd: summary?.totalRevenue?.amount || 0,
           },
           expenses: {
+            ...emptySummary.expenses,
             current: summary?.totalExpenses?.amount || 0,
             prior: 0,
-            change: 0,
             ytd: summary?.totalExpenses?.amount || 0,
           },
           netIncome: {
+            ...emptySummary.netIncome,
             current: summary?.netIncome?.amount || 0,
             prior: 0,
-            change: 0,
             ytd: summary?.netIncome?.amount || 0,
           },
           cash: {
+            ...emptySummary.cash,
             current: summary?.cashOnHand?.amount || 0,
             prior: 0,
-            change: 0,
           },
           receivables: {
+            ...emptySummary.receivables,
             current: summary?.accountsReceivable?.amount || 0,
             prior: 0,
-            change: 0,
             hasData: arAgingData?.hasData ?? false,
             ...(arAgingData?.hasData
               ? {
@@ -421,6 +424,7 @@ export function useFinancialData(
                     labelEn: b.labelEn,
                     amount: b.amount,
                     count: b.count,
+                    percentage: arAgingData.total > 0 ? (b.amount / arAgingData.total) * 100 : 0,
                   })),
                   totalOverdue: arAgingData.totalOverdue,
                   averageDaysOutstanding: arAgingData.averageDays,
@@ -428,9 +432,9 @@ export function useFinancialData(
               : {}),
           },
           payables: {
+            ...emptySummary.payables,
             current: summary?.accountsPayable?.amount || 0,
             prior: 0,
-            change: 0,
             hasData: apAgingData?.hasData ?? false,
             ...(apAgingData?.hasData
               ? {
@@ -439,6 +443,7 @@ export function useFinancialData(
                     labelEn: b.labelEn,
                     amount: b.amount,
                     count: b.count,
+                    percentage: apAgingData.total > 0 ? (b.amount / apAgingData.total) * 100 : 0,
                   })),
                   totalOverdue: apAgingData.totalOverdue,
                   averageDaysPayable: apAgingData.averageDays,
@@ -473,13 +478,13 @@ export function useFinancialData(
                 description: d.description,
                 dueDate: d.dueDate?.split('T')[0] || new Date().toISOString().split('T')[0],
                 daysRemaining: d.daysRemaining,
-                status: d.status as 'upcoming' | 'urgent' | 'overdue',
-                category: d.category as 'tax' | 'filing' | 'payroll' | 'other',
+                status: d.status === 'overdue' ? 'overdue' as const : 'upcoming' as const,
+                type: 'tax' as const,
               }))
             : [],
           hasBudget: budgetData?.hasBudget ?? false,
           budgetYear: budgetData?.year,
-          cashBalance: summary?.cashOnHand?.amount || 0,
+          cashFlow: { ...emptySummary.cashFlow, net: summary?.cashFlow?.netCashFlow?.amount ?? 0 },
         },
         trends: {
           revenue: {
@@ -560,7 +565,7 @@ export function useFinancialData(
           return generateMockFinancialData(
             currentTenant.id,
             currentTenant.name,
-            currentTenant.currency || 'CAD',
+            currentTenant.settings.currency || 'CAD',
             new Date().toISOString().split('T')[0],
             currentTenant.industry || 'real_estate',
           );
@@ -579,18 +584,7 @@ export function useFinancialData(
         },
       );
       return {
-        summary: {
-          revenue: { current: 0, prior: 0, change: 0, ytd: 0 },
-          expenses: { current: 0, prior: 0, change: 0, ytd: 0 },
-          netIncome: { current: 0, prior: 0, change: 0, ytd: 0 },
-          cash: { current: 0, prior: 0, change: 0 },
-          receivables: { current: 0, prior: 0, change: 0, hasData: false },
-          payables: { current: 0, prior: 0, change: 0, hasData: false },
-          trialBalance: { totalDebits: 0, totalCredits: 0, isBalanced: true, entries: [] },
-          upcomingDeadlines: [],
-          hasBudget: false,
-          cashBalance: 0,
-        },
+        summary: createEmptyDashboardSummary(),
         trends: {
           revenue: { label: 'Revenus', labelEn: 'Revenue', data: [], budget: [] },
           expenses: { label: 'Dépenses', labelEn: 'Expenses', data: [] },
@@ -615,7 +609,7 @@ export function useFinancialData(
       return generateMockFinancialData(
         currentTenant.id,
         currentTenant.name,
-        currentTenant.currency || 'CAD',
+        currentTenant.settings.currency || 'CAD',
         new Date().toISOString().split('T')[0],
         currentTenant.industry || 'real_estate',
       );
@@ -775,7 +769,7 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
         const mockData = generateMockFinancialData(
           currentTenant.id,
           currentTenant.name,
-          currentTenant.currency || 'CAD',
+          currentTenant.settings.currency || 'CAD',
           asOfDate,
         );
         return mockData.balanceSheet;
@@ -784,75 +778,7 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
       return null;
     }
 
-    const bs = queryData.balanceSheet;
-    return {
-      asOfDate: bs.asOfDate,
-      assets: {
-        current:
-          bs.assets
-            ?.filter((a: { balance: number; level: number }) => a.level <= 2)
-            .map(
-              (a: {
-                accountCode: string;
-                accountName: string;
-                balance: number;
-                isSubtotal?: boolean;
-              }) => ({
-                code: a.accountCode || '',
-                name: a.accountName,
-                nameEn: a.accountName,
-                current: a.balance || 0,
-                prior: 0,
-                isHeader: a.isSubtotal || false,
-              }),
-            ) || [],
-        fixed: [],
-        total: bs.totalAssets || 0,
-      },
-      liabilities: {
-        current:
-          bs.liabilities
-            ?.filter((l: { balance: number; level: number }) => l.level <= 2)
-            .map(
-              (l: {
-                accountCode: string;
-                accountName: string;
-                balance: number;
-                isSubtotal?: boolean;
-              }) => ({
-                code: l.accountCode || '',
-                name: l.accountName,
-                nameEn: l.accountName,
-                current: l.balance || 0,
-                prior: 0,
-                isHeader: l.isSubtotal || false,
-              }),
-            ) || [],
-        longTerm: [],
-        total: bs.totalLiabilities || 0,
-      },
-      equity: {
-        items:
-          bs.equity?.map(
-            (e: {
-              accountCode: string;
-              accountName: string;
-              balance: number;
-              isSubtotal?: boolean;
-            }) => ({
-              code: e.accountCode || '',
-              name: e.accountName,
-              nameEn: e.accountName,
-              current: e.balance || 0,
-              prior: 0,
-              isHeader: e.isSubtotal || false,
-            }),
-          ) || [],
-        total: bs.totalEquity || 0,
-      },
-      totalLiabilitiesAndEquity: (bs.totalLiabilities || 0) + (bs.totalEquity || 0),
-      currency: bs.currency || 'CAD',
-    };
+    return adaptBalanceSheet(queryData.balanceSheet, currentTenant.id);
   }, [queryData, currentTenant, asOfDate, shouldUseMockData]);
 
   const error = queryError ? new Error(queryError.message) : null;
@@ -933,7 +859,7 @@ export function useIncomeStatement(startDate: string, endDate: string): UseIncom
         const mockData = generateMockFinancialData(
           currentTenant.id,
           currentTenant.name,
-          currentTenant.currency || 'CAD',
+          currentTenant.settings.currency || 'CAD',
           endDate,
         );
         return mockData.incomeStatement;
@@ -942,53 +868,7 @@ export function useIncomeStatement(startDate: string, endDate: string): UseIncom
       return null;
     }
 
-    const is = queryData.incomeStatement;
-    return {
-      periodStart: is.startDate,
-      periodEnd: is.endDate,
-      revenue: {
-        items:
-          is.revenue?.map(
-            (r: {
-              accountCode: string;
-              accountName: string;
-              amount: number;
-              budget?: number;
-              variance?: number;
-            }) => ({
-              code: r.accountCode || '',
-              name: r.accountName,
-              nameEn: r.accountName,
-              current: r.amount || 0,
-              budget: r.budget || 0,
-              variance: r.variance || 0,
-            }),
-          ) || [],
-        total: is.grossRevenue || 0,
-      },
-      expenses: {
-        items:
-          is.expenses?.map(
-            (e: {
-              accountCode: string;
-              accountName: string;
-              amount: number;
-              budget?: number;
-              variance?: number;
-            }) => ({
-              code: e.accountCode || '',
-              name: e.accountName,
-              nameEn: e.accountName,
-              current: e.amount || 0,
-              budget: e.budget || 0,
-              variance: e.variance || 0,
-            }),
-          ) || [],
-        total: is.totalExpenses || 0,
-      },
-      netIncome: is.netIncome || 0,
-      currency: is.currency || 'CAD',
-    };
+    return adaptIncomeStatement(queryData.incomeStatement, currentTenant.id);
   }, [queryData, currentTenant, endDate, shouldUseMockData]);
 
   const error = queryError ? new Error(queryError.message) : null;

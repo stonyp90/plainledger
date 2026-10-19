@@ -615,7 +615,7 @@ export default function SmartSpreadsheet() {
         const newData: Record<string, CellValue> = {};
         
         lines.forEach((line, rowIndex) => {
-          const cells = line.match(/("([^"]|"")*"|[^,]*)/g) || [];
+          const cells: string[] = line.match(/("([^"]|"")*"|[^,]*)/g) || [];
           cells.forEach((cell, colIndex) => {
             const value = cell.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
             if (value) {

@@ -236,20 +236,8 @@ function App() {
     }
   }, [initialized]);
 
-  // Show loading while Keycloak initializes (only for initial load)
-  if (!initialized) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'rgb(var(--color-bg-subtle))' }}
-      >
-        <div className="text-center">
-          <div className="w-12 h-12 mx-auto mb-4 loading-spinner"></div>
-          <p style={{ color: 'rgb(var(--color-text-secondary))' }}>Chargement...</p>
-        </div>
-      </div>
-    );
-  }
+  // Public content is independent of the identity provider. Protected route
+  // wrappers wait for initialization before making any access decision.
 
   return (
     <ApolloProvider client={apolloClient}>

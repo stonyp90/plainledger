@@ -24,7 +24,10 @@
   "accountTheme": "keycloak.v2",
   "emailTheme": "plainledger",
   "internationalizationEnabled": true,
-  "supportedLocales": ["en", "fr"],
+  "supportedLocales": [
+    "en",
+    "fr"
+  ],
   "defaultLocale": "en",
   "smtpServer": {
     "host": "${SMTP_HOST:email-smtp.us-east-1.amazonaws.com}",
@@ -147,8 +150,22 @@
         "https://app.plainledger.ca",
         "+"
       ],
-      "defaultClientScopes": ["openid", "web-origins", "acr", "profile", "roles", "email"],
-      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
+      "defaultClientScopes": [
+        "openid",
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "organization",
+        "plainledger-api-audience"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5176/*##https://plainledger.ca/*##https://www.plainledger.ca/*##https://app.plainledger.ca/*"
@@ -165,10 +182,33 @@
       "serviceAccountsEnabled": true,
       "protocol": "openid-connect",
       "secret": "${API_CLIENT_SECRET:change-me-in-production}",
-      "redirectUris": ["http://localhost:3000/*", "http://localhost:3001/*", "https://api.plainledger.ca/*"],
-      "webOrigins": ["http://localhost:3000", "http://localhost:3001", "https://api.plainledger.ca", "+"],
-      "defaultClientScopes": ["openid", "web-origins", "acr", "profile", "roles", "email"],
-      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:3001/*",
+        "https://api.plainledger.ca/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://api.plainledger.ca",
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "organization",
+        "plainledger-api-audience"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
       "attributes": {
         "access.token.lifespan": "300",
         "client.secret.creation.time": "0"
@@ -186,10 +226,33 @@
       "protocol": "openid-connect",
       "rootUrl": "${ADMIN_URL:https://admin.plainledger.ca}",
       "baseUrl": "/",
-      "redirectUris": ["http://localhost:3001/*", "http://127.0.0.1:3001/*", "https://admin.plainledger.ca/*"],
-      "webOrigins": ["http://localhost:3001", "http://127.0.0.1:3001", "https://admin.plainledger.ca", "+"],
-      "defaultClientScopes": ["openid", "web-origins", "acr", "profile", "roles", "email"],
-      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
+      "redirectUris": [
+        "http://localhost:3001/*",
+        "http://127.0.0.1:3001/*",
+        "https://admin.plainledger.ca/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "https://admin.plainledger.ca",
+        "+"
+      ],
+      "defaultClientScopes": [
+        "openid",
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "organization",
+        "plainledger-api-audience"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:3001/*##https://admin.plainledger.ca/*"
@@ -224,23 +287,33 @@
       }
     ]
   },
-  "defaultRoles": ["viewer"],
+  "defaultRoles": [
+    "viewer"
+  ],
   "groups": [
     {
       "name": "Administrators",
-      "realmRoles": ["admin"]
+      "realmRoles": [
+        "admin"
+      ]
     },
     {
       "name": "Accountants",
-      "realmRoles": ["accountant"]
+      "realmRoles": [
+        "accountant"
+      ]
     },
     {
       "name": "Viewers",
-      "realmRoles": ["viewer"]
+      "realmRoles": [
+        "viewer"
+      ]
     },
     {
       "name": "Platform Admins",
-      "realmRoles": ["platform_admin"]
+      "realmRoles": [
+        "platform_admin"
+      ]
     }
   ],
   "users": [
@@ -258,11 +331,20 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["admin", "owner"],
-      "groups": ["Administrators"],
+      "realmRoles": [
+        "admin",
+        "owner"
+      ],
+      "groups": [
+        "Administrators"
+      ],
       "attributes": {
-        "organization": ["demo-org"],
-        "locale": ["en"]
+        "organization": [
+          "demo-org"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -279,11 +361,19 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["accountant"],
-      "groups": ["Accountants"],
+      "realmRoles": [
+        "accountant"
+      ],
+      "groups": [
+        "Accountants"
+      ],
       "attributes": {
-        "organization": ["demo-org"],
-        "locale": ["en"]
+        "organization": [
+          "demo-org"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -300,13 +390,25 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["viewer"],
-      "groups": ["Viewers"],
+      "realmRoles": [
+        "viewer"
+      ],
+      "groups": [
+        "Viewers"
+      ],
       "attributes": {
-        "organization": ["demo-free"],
-        "organizationName": ["Demo Free Co."],
-        "subscriptionPlan": ["free"],
-        "locale": ["en"]
+        "organization": [
+          "demo-free"
+        ],
+        "organizationName": [
+          "Demo Free Co."
+        ],
+        "subscriptionPlan": [
+          "free"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -323,13 +425,25 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["owner"],
-      "groups": ["Administrators"],
+      "realmRoles": [
+        "owner"
+      ],
+      "groups": [
+        "Administrators"
+      ],
       "attributes": {
-        "organization": ["demo-pro"],
-        "organizationName": ["Demo Professional Corp"],
-        "subscriptionPlan": ["professional"],
-        "locale": ["en"]
+        "organization": [
+          "demo-pro"
+        ],
+        "organizationName": [
+          "Demo Professional Corp"
+        ],
+        "subscriptionPlan": [
+          "professional"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -346,13 +460,25 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["owner"],
-      "groups": ["Administrators"],
+      "realmRoles": [
+        "owner"
+      ],
+      "groups": [
+        "Administrators"
+      ],
       "attributes": {
-        "organization": ["demo-org"],
-        "organizationName": ["Demo Enterprise Inc."],
-        "subscriptionPlan": ["enterprise"],
-        "locale": ["en"]
+        "organization": [
+          "demo-org"
+        ],
+        "organizationName": [
+          "Demo Enterprise Inc."
+        ],
+        "subscriptionPlan": [
+          "enterprise"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -360,7 +486,15 @@
       "enabled": true,
       "serviceAccountClientId": "plainledger-api",
       "clientRoles": {
-        "realm-management": ["manage-users", "view-users", "manage-clients", "view-clients", "query-users", "query-clients", "query-groups"]
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "manage-clients",
+          "view-clients",
+          "query-users",
+          "query-clients",
+          "query-groups"
+        ]
       }
     },
     {
@@ -370,10 +504,19 @@
       "lastName": "Administrator",
       "enabled": true,
       "emailVerified": true,
-      "realmRoles": ["platform_admin", "admin", "owner"],
-      "groups": ["Platform Admins", "Administrators"],
+      "realmRoles": [
+        "platform_admin",
+        "admin",
+        "owner"
+      ],
+      "groups": [
+        "Platform Admins",
+        "Administrators"
+      ],
       "attributes": {
-        "locale": ["en"]
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -390,11 +533,22 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["platform_admin", "admin", "owner"],
-      "groups": ["Platform Admins", "Administrators"],
+      "realmRoles": [
+        "platform_admin",
+        "admin",
+        "owner"
+      ],
+      "groups": [
+        "Platform Admins",
+        "Administrators"
+      ],
       "attributes": {
-        "organization": ["demo-org"],
-        "locale": ["en"]
+        "organization": [
+          "demo-org"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     },
     {
@@ -411,11 +565,22 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["platform_admin", "admin", "owner"],
-      "groups": ["Platform Admins", "Administrators"],
+      "realmRoles": [
+        "platform_admin",
+        "admin",
+        "owner"
+      ],
+      "groups": [
+        "Platform Admins",
+        "Administrators"
+      ],
       "attributes": {
-        "organization": ["demo-org"],
-        "locale": ["en"]
+        "organization": [
+          "demo-org"
+        ],
+        "locale": [
+          "en"
+        ]
       }
     }
   ],
@@ -651,16 +816,52 @@
           }
         }
       ]
+    },
+    {
+      "name": "plainledger-api-audience",
+      "description": "Restrict API access tokens to the PlainLedger API",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "plainledger-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "plainledger-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     }
   ],
   "scopeMappings": [
     {
       "clientScope": "offline_access",
-      "roles": ["offline_access"]
+      "roles": [
+        "offline_access"
+      ]
     }
   ],
-  "defaultDefaultClientScopes": ["openid", "profile", "email", "roles", "web-origins", "acr"],
-  "defaultOptionalClientScopes": ["offline_access", "address", "phone", "microprofile-jwt"],
+  "defaultDefaultClientScopes": [
+    "openid",
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    "acr"
+  ],
+  "defaultOptionalClientScopes": [
+    "offline_access",
+    "address",
+    "phone",
+    "microprofile-jwt"
+  ],
   "identityProviders": [
     {
       "alias": "google",

@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { TrendingDown, AlertTriangle } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { ChartTooltip } from '../charts/ChartTooltip';
+import { ChartDataState } from '../charts/ChartDataState';
+import { chartExtent, getChartDataIssue, isChartDate, isFiniteNumber } from '../../lib/chartDataValidation';
 
 interface BurnRateDataPoint {
   date: string;
@@ -25,8 +27,8 @@ interface BurnRateChartProps {
 }
 
 export default function BurnRateChart({
-  historical,
-  projected,
+  historical: inputHistorical,
+  projected: inputProjected,
   onPointHover,
 }: BurnRateChartProps) {
   // Hooks must be called before any early returns (rules of hooks)
@@ -34,15 +36,22 @@ export default function BurnRateChart({
   const isEn = language === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const validPoint = (point: BurnRateDataPoint) => isChartDate(point.date)
+    && [point.grossBurn, point.netBurn, point.revenue, point.expenses].every(isFiniteNumber);
+  const historicalIssue = getChartDataIssue(inputHistorical, validPoint);
+  const projectedIssue = getChartDataIssue(inputProjected, validPoint);
+  const issue = historicalIssue === 'invalid' || projectedIssue === 'invalid' ? 'invalid'
+    : historicalIssue === 'empty' && projectedIssue === 'empty' ? 'empty' : null;
+  const historical = inputHistorical ?? [];
+  const projected = inputProjected ?? [];
 
   // Early return - hide chart completely if no data (after all hooks)
-  if ((!historical || historical.length === 0) && (!projected || projected.length === 0)) {
-    return null;
+  if (issue) {
+    return <ChartDataState title={isEn ? 'Burn Rate Analysis' : 'Analyse du taux de brûlage'} issue={issue} isEn={isEn} />;
   }
 
   const allData = [...historical, ...projected];
-  const maxBurn = allData.length > 0 ? Math.max(...allData.map(d => Math.abs(d.netBurn ?? 0))) : 0;
-  const minBurn = allData.length > 0 ? Math.min(...allData.map(d => Math.abs(d.netBurn ?? 0))) : 0;
+  const { min: minBurn, max: maxBurn } = chartExtent(allData.map(point => point.netBurn), true);
   const range = maxBurn - minBurn || 1;
 
   const formatCurrency = (value: number) => {
@@ -55,8 +64,8 @@ export default function BurnRateChart({
   };
 
   const getPointPosition = (index: number) => {
-    const x = (index / (allData.length - 1)) * 800;
-    const y = 200 - ((Math.abs(allData[index].netBurn) - minBurn) / range) * 180;
+    const x = allData.length === 1 ? 400 : (index / (allData.length - 1)) * 800;
+    const y = 200 - ((allData[index].netBurn - minBurn) / range) * 180;
     return { x, y };
   };
 
@@ -226,7 +235,7 @@ export default function BurnRateChart({
         </svg>
 
         {/* Tooltip */}
-        {hoveredIndex !== null && (
+        {hoveredIndex !== null && allData[hoveredIndex] && (
           <ChartTooltip visible={true} position={tooltipPosition}>
             <div className="min-w-[200px]">
               <p className="text-gray-400 text-xs mb-2">
@@ -242,7 +251,7 @@ export default function BurnRateChart({
                 <div className="flex justify-between">
                   <span className="text-gray-400">{isEn ? 'Net Burn' : 'Brûlage net'}</span>
                   <span className="text-white font-medium">
-                    {formatCurrency(Math.abs(allData[hoveredIndex].netBurn))}
+                    {formatCurrency(allData[hoveredIndex].netBurn)}
                   </span>
                 </div>
                 <div className="flex justify-between">

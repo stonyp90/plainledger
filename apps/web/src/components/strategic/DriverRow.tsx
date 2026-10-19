@@ -138,7 +138,7 @@ export default function DriverRow({
   // Subscribe to drag state
   useEffect(() => {
     const unsubscribe = dragManager.subscribe(setDragState);
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, []);
   
   // Global mouse up handler to stop selection

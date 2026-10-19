@@ -1,0 +1,72 @@
+name: Deploy Oracle candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Prepare private services, or activate after origin HTTPS and public DNS verification'
+        type: choice
+        options: [prepare, activate]
+        default: prepare
+        required: true
+      initialize_empty_database:
+        description: 'Run guarded first-install schema bootstrap; rejects every non-empty database'
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plainledger-oracle-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Prepare or activate the explicitly configured OCI VM
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 75
+    env:
+      ORACLE_DEPLOY_ENABLED: ${{ vars.ORACLE_DEPLOY_ENABLED }}
+      ORACLE_HOST: ${{ vars.ORACLE_HOST }}
+      ORACLE_SSH_USER: ${{ vars.ORACLE_SSH_USER }}
+      ORACLE_SSH_PORT: ${{ vars.ORACLE_SSH_PORT || '22' }}
+      ORACLE_BASE_DIR: ${{ vars.ORACLE_BASE_DIR }}
+      DEPLOY_PHASE: ${{ inputs.phase }}
+      INITIALIZE_EMPTY_DATABASE: ${{ inputs.initialize_empty_database }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate the deployment implementation
+        run: python3 -m unittest discover -s deploy/oracle/tests -v
+      - name: Require successful verification of this exact main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo '::error::Oracle deployment is restricted to main.'
+            exit 1
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/verify.yml/runs?branch=main&head_sha=${GITHUB_SHA}&per_page=100" \
+            --jq '.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | .head_sha' \
+            | grep -Fxq "$GITHUB_SHA" || {
+              echo '::error::The exact source commit has no successful verify.yml run. Deployment remains blocked.'
+              exit 1
+            }
+      - name: Deploy with pinned SSH identity and fail-loud preflight
+        env:
+          ORACLE_SSH_PRIVATE_KEY: ${{ secrets.ORACLE_SSH_PRIVATE_KEY }}
+          ORACLE_SSH_KNOWN_HOSTS: ${{ secrets.ORACLE_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--phase "$DEPLOY_PHASE")
+          if [[ "$INITIALIZE_EMPTY_DATABASE" == 'true' ]]; then
+            args+=(--initialize-empty-database)
+          fi
+          python3 deploy/oracle/scripts/remote_runner.py "${args[@]}"

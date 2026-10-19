@@ -8,9 +8,12 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from "@nestjs/common";
-import { AuthGuard, Roles } from "nest-keycloak-connect";
+import { Roles } from "nest-keycloak-connect";
+import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
+import { AuthenticatedUser } from "../../auth/keycloak-token";
 import { SettingsService } from "@infrastructure/services/settings.service";
 import { PostgresOrganizationSettingsRepository } from "@infrastructure/persistence/postgres/postgres-organization-settings.repository";
 import { PostgresUserSettingsRepository } from "@infrastructure/persistence/postgres/postgres-user-settings.repository";
@@ -21,7 +24,7 @@ import { PostgresUserProfileRepository } from "@infrastructure/persistence/postg
  * Handles all settings-related API endpoints
  */
 @Controller("v1/settings")
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard)
 export class SettingsController {
   private readonly logger = new Logger(SettingsController.name);
 
@@ -35,18 +38,22 @@ export class SettingsController {
   /**
    * Helper to get organization ID from user
    */
-  private async getOrganizationIdFromUser(req: any): Promise<string> {
-    const userId = req.user?.sub || req.user?.id;
+  private async getOrganizationIdFromUser(req: { user?: AuthenticatedUser }, requireWrite = false): Promise<string> {
+    const userId = req.user?.sub;
+    if (requireWrite && !req.user?.roles.some((role) => ["owner", "admin"].includes(role))) {
+      throw new ForbiddenException("Organization administrator access required");
+    }
     if (!userId) {
       throw new BadRequestException("User ID not found in token");
     }
 
     // Get user profile to find organization ID
-    const userProfile = await this.userProfileRepo.findById(userId);
-    if (!userProfile?.organizationId) {
+    const userProfile = await this.userProfileRepo.findActiveWithOrganization(userId);
+    if (!userProfile?.organizationId || !userProfile.organization || userProfile.organization.deletedAt ||
+      ![userProfile.organizationId, userProfile.organization.tenantId].includes(req.user?.organizationId || "")) {
       this.logger.warn(`User ${userId} has no organizationId`);
-      throw new BadRequestException(
-        "User is not associated with an organization",
+      throw new ForbiddenException(
+        "Active membership in the authenticated organization is required",
       );
     }
 
@@ -62,7 +69,7 @@ export class SettingsController {
    * GET /api/v1/settings/organization
    */
   @Get("organization")
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["user", "viewer", "accountant", "admin", "owner"] })
   async getOrganizationSettings(@Request() req: any) {
     try {
       const organizationId = await this.getOrganizationIdFromUser(req);
@@ -83,10 +90,10 @@ export class SettingsController {
    */
   @Put("organization")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["admin", "owner"] })
   async updateOrganizationSettings(@Request() req: any, @Body() body: any) {
     try {
-      const organizationId = await this.getOrganizationIdFromUser(req);
+      const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated = await this.settingsService.updateOrganizationSettings(
         organizationId,
         body,
@@ -106,13 +113,13 @@ export class SettingsController {
    */
   @Put("organization/thresholds")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["admin", "owner"] })
   async updateOrganizationThresholds(
     @Request() req: any,
     @Body() thresholds: any,
   ) {
     try {
-      const organizationId = await this.getOrganizationIdFromUser(req);
+      const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated = await this.settingsService.updateOrganizationThresholds(
         organizationId,
         thresholds,
@@ -130,10 +137,10 @@ export class SettingsController {
    */
   @Put("organization/branding")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["admin", "owner"] })
   async updateOrganizationBranding(@Request() req: any, @Body() branding: any) {
     try {
-      const organizationId = await this.getOrganizationIdFromUser(req);
+      const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated = await this.settingsService.updateOrganizationBranding(
         organizationId,
         branding,
@@ -151,13 +158,13 @@ export class SettingsController {
    */
   @Put("organization/notifications")
   @HttpCode(HttpStatus.OK)
-  @Roles({ roles: ["user"] })
+  @Roles({ roles: ["admin", "owner"] })
   async updateOrganizationNotificationIntegrations(
     @Request() req: any,
     @Body() integrations: any,
   ) {
     try {
-      const organizationId = await this.getOrganizationIdFromUser(req);
+      const organizationId = await this.getOrganizationIdFromUser(req, true);
       const updated =
         await this.settingsService.updateOrganizationNotificationIntegrations(
           organizationId,
@@ -194,11 +201,10 @@ export class SettingsController {
       // Return empty object if no settings found (for demo users)
       return settings || {};
     } catch (error) {
-      // For demo users or users without settings, return empty object instead of error
       this.logger.warn(
-        `Failed to get user settings for ${req.user?.sub || 'unknown'}, returning defaults: ${error.message}`,
+        `Failed to get user settings for ${req.user?.sub || 'unknown'}: ${error.message}`,
       );
-      return {};
+      throw error;
     }
   }
 

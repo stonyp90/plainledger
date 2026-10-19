@@ -39,12 +39,14 @@ export interface FileUploadOptions {
 export class FileStorageService {
   private readonly logger = new Logger(FileStorageService.name);
   private readonly s3Client: S3Client;
+  private readonly signingClient: S3Client;
   private readonly bucket: string;
   private readonly isLocalDev: boolean;
   private readonly publicBaseUrl: string;
 
   constructor(private readonly configService: ConfigService) {
     const s3Endpoint = this.configService.get<string>("S3_ENDPOINT");
+    const publicEndpoint = this.configService.get<string>("S3_PUBLIC_ENDPOINT")?.replace(/\/$/, "");
     const s3Region =
       this.configService.get<string>("S3_REGION") || "ca-central-1";
     const accessKeyId =
@@ -69,9 +71,15 @@ export class FileStorageService {
       forcePathStyle: this.isLocalDev, // Required for LocalStack/MinIO
     });
 
+    this.signingClient = publicEndpoint ? new S3Client({
+      endpoint: publicEndpoint, region: s3Region, credentials: { accessKeyId, secretAccessKey }, forcePathStyle: true,
+    }) : this.s3Client;
+
     // Public URL base for serving files
     // In local dev, use LocalStack URL; in prod, use CloudFront or S3 URL
-    if (this.isLocalDev) {
+    if (publicEndpoint) {
+      this.publicBaseUrl = `${publicEndpoint}/${this.bucket}`;
+    } else if (this.isLocalDev) {
       // LocalStack exposes files at http://localhost:4566/{bucket}/{key}
       this.publicBaseUrl = `${s3Endpoint}/${this.bucket}`;
     } else {
@@ -275,7 +283,7 @@ export class FileStorageService {
       Key: key,
     });
 
-    return getSignedUrl(this.s3Client, command, { expiresIn });
+    return getSignedUrl(this.signingClient, command, { expiresIn });
   }
 
   /**

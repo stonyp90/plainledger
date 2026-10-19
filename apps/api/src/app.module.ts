@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
+import { TenantGuard } from '@infrastructure/auth/tenant.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { GqlThrottlerGuard } from '@infrastructure/http/guards/gql-throttler.guard';
@@ -130,6 +131,8 @@ import { GqlAuthGuard } from '@infrastructure/graphql/guards/gql-auth.guard';
 import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
 import { GetOrganizationUseCase } from '@application/use-cases/get-organization.use-case';
 import { GenerateBalanceSheetUseCase } from '@application/use-cases/generate-balance-sheet.use-case';
+import { GenerateIncomeStatementUseCase } from '@application/use-cases/generate-income-statement.use-case';
+import { LedgerReportRepository } from '@infrastructure/persistence/postgres/ledger-report.repository';
 import { GetEmbedConfigUseCase } from '@application/use-cases/get-embed-config.use-case';
 import { ListAnalyticsReportsUseCase } from '@application/use-cases/list-analytics-reports.use-case';
 import { UpdateOrgFeaturesUseCase } from '@application/use-cases/update-org-features.use-case';
@@ -235,9 +238,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
           OnboardingProgressEntity,
           CommunicationLogEntity,
         ],
-        // Enable synchronize if SYNC_DB=true or in development (SYNC_DB=false overrides)
+        // Production schema changes run only through the explicit bootstrap/migration job.
         synchronize:
-          process.env.SYNC_DB === 'false'
+          process.env.NODE_ENV === 'production' || process.env.SYNC_DB === 'false'
             ? false
             : process.env.SYNC_DB === 'true' || process.env.NODE_ENV !== 'production',
         logging: process.env.NODE_ENV !== 'production' || process.env.SYNC_DB === 'true',
@@ -252,6 +255,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
       // Create schemas before TypeORM synchronize
       async dataSourceFactory(options) {
         const { DataSource } = await import('typeorm');
+        if (process.env.NODE_ENV === 'production') {
+          return new DataSource({ ...options!, synchronize: false });
+        }
         const { Client } = await import('pg');
 
         // Create schemas using raw PostgreSQL client before TypeORM initializes
@@ -466,6 +472,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
         clientId: configService.get<string>('KEYCLOAK_CLIENT_ID') || 'plainledger-api',
         secret: configService.get<string>('KEYCLOAK_CLIENT_SECRET') || 'change-me-in-production',
         bearerOnly: true,
+        verifyTokenAudience: true,
       }),
       inject: [ConfigService],
     }),
@@ -496,7 +503,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
       useFactory: (configService: ConfigService) => ({
         throttlers: [
           {
-            ttl: 60, // Time window in seconds
+            ttl: 60000, // Nest throttler v6 uses milliseconds
             limit: configService.get<number>('RATE_LIMIT_REQUESTS', 100), // Max requests per window
           },
         ],
@@ -539,7 +546,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
   providers: [
     // Guards - conditionally register Keycloak guards based on SKIP_AUTH
     // In development with SKIP_AUTH=true, we skip these guards to allow unauthenticated access
-    ...(process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production'
+    ...(process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV === 'development'
       ? []
       : [
           {
@@ -561,11 +568,14 @@ import { PlatformAdminModule } from './modules/platform-admin';
       useClass: GqlThrottlerGuard,
     },
     CPAAdminGuard,
+    TenantGuard,
 
     // Use Cases
     CreateOrganizationUseCase,
     GetOrganizationUseCase,
     GenerateBalanceSheetUseCase,
+    GenerateIncomeStatementUseCase,
+    { provide: 'ILedgerReportRepository', useClass: LedgerReportRepository },
     GetEmbedConfigUseCase,
     ListAnalyticsReportsUseCase,
     UpdateOrgFeaturesUseCase,
@@ -612,7 +622,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
     },
     {
       provide: 'IDatalakeDataService',
-      useClass: DatalakeDataService,
+      useExisting: DatalakeDataService,
     },
     {
       provide: 'IPowerBIDatalakeService',

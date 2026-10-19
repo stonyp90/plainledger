@@ -18,7 +18,8 @@ import {
   FinancialDataPoint,
 } from '../../lib/anomalyDetection';
 import { ChartTooltip, DataPointTooltip } from './ChartTooltip';
-import { ChartEmptyState } from '../EmptyDataState';
+import { ChartDataState } from './ChartDataState';
+import { chartExtent, getChartDataIssue, isChartLabel, isFiniteNumber } from '../../lib/chartDataValidation';
 import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
 import { useGraphConfig, saveChartSettings } from '../../hooks/useGraphConfig';
 import { useChartResponsive } from '../../hooks/useChartResponsive';
@@ -208,7 +209,7 @@ interface TrendChartProps {
 }
 
 export default function TrendChart({
-  data,
+  data: inputData,
   title,
   titleEn,
   subtitle,
@@ -235,6 +236,11 @@ export default function TrendChart({
   metricType = 'revenue',
   benchmarkValue,
 }: TrendChartProps) {
+  const dataIssue = getChartDataIssue(inputData, point => isChartLabel(point.period) && isFiniteNumber(point.value));
+  const invalidOverlay = [budget, planData, forecastData].some(series =>
+    series != null && (!Array.isArray(series) || !series.every(isFiniteNumber)));
+  const issue = invalidOverlay || (baseline != null && !isFiniteNumber(baseline)) ? 'invalid' : dataIssue;
+  const data = issue ? [] : inputData;
   // Get graph configuration
   const graphConfig = useGraphConfig(chartId, {
     visual: {
@@ -279,7 +285,8 @@ export default function TrendChart({
   const thresholds = propThresholds || graphConfig.cpa.thresholds;
   const showThresholdBands = propShowThresholdBands ?? graphConfig.visual.showThresholdBands;
   const showMovingAverage = propShowMovingAverage ?? graphConfig.visual.showMovingAverage;
-  const movingAveragePeriod = propMovingAveragePeriod ?? graphConfig.visual.movingAveragePeriod;
+  const requestedMAPeriod = propMovingAveragePeriod ?? graphConfig.visual.movingAveragePeriod;
+  const movingAveragePeriod = isFiniteNumber(requestedMAPeriod) && requestedMAPeriod >= 1 ? Math.floor(requestedMAPeriod) : 3;
   
   // Convert CSS variable color to actual hex color for SVG gradients
   // SVG gradients don't support CSS variables, so we need actual color values
@@ -528,32 +535,30 @@ export default function TrendChart({
       };
     }
     
-    const values = data.map(d => d.value ?? 0);
-    const min = values.length > 0 ? Math.min(...values) : 0;
-    const max = values.length > 0 ? Math.max(...values) : 0;
+    const values = data.map(d => d.value);
+    const { min, max } = chartExtent(values);
     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    const base = baseline || avg;
+    const base = baseline ?? avg;
     
     // Calculate bands
-    const warningLow = base * (1 - thresholds.varianceWarning / 100);
-    const warningHigh = base * (1 + thresholds.varianceWarning / 100);
-    const criticalLow = base * (1 - thresholds.varianceCritical / 100);
-    const criticalHigh = base * (1 + thresholds.varianceCritical / 100);
+    const warningLow = base - Math.abs(base) * thresholds.varianceWarning / 100;
+    const warningHigh = base + Math.abs(base) * thresholds.varianceWarning / 100;
+    const criticalLow = base - Math.abs(base) * thresholds.varianceCritical / 100;
+    const criticalHigh = base + Math.abs(base) * thresholds.varianceCritical / 100;
     
     // Calculate moving average
     const ma: number[] = [];
+    let windowSum = 0;
     for (let i = 0; i < values.length; i++) {
-      if (i < movingAveragePeriod - 1) {
-        ma.push(values.slice(0, i + 1).reduce((a, b) => a + b, 0) / (i + 1));
-      } else {
-        ma.push(values.slice(i - movingAveragePeriod + 1, i + 1).reduce((a, b) => a + b, 0) / movingAveragePeriod);
-      }
+      windowSum += values[i];
+      if (i >= movingAveragePeriod) windowSum -= values[i - movingAveragePeriod];
+      ma.push(windowSum / Math.min(i + 1, movingAveragePeriod));
     }
     
     // Calculate volatility (standard deviation)
     const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
     const stdDev = Math.sqrt(variance);
-    const volatilityPct = (stdDev / avg) * 100;
+    const volatilityPct = avg !== 0 ? (stdDev / Math.abs(avg)) * 100 : 0;
     
     // Detect outliers
     const detectedOutliers = detectOutliers(data, title);
@@ -561,10 +566,11 @@ export default function TrendChart({
     
     // Calculate trend
     let trendDirection: 'up' | 'down' | 'stable' = 'stable';
-    if (data.length >= 3) {
-      const recentAvg = values.slice(-3).reduce((a, b) => a + b, 0) / 3;
-      const olderAvg = values.slice(0, -3).reduce((a, b) => a + b, 0) / Math.max(1, values.length - 3);
-      const trendChange = olderAvg !== 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
+    if (data.length >= 2) {
+      const window = Math.min(3, Math.floor(values.length / 2));
+      const recentAvg = values.slice(-window).reduce((a, b) => a + b, 0) / window;
+      const olderAvg = values.slice(0, window).reduce((a, b) => a + b, 0) / window;
+      const trendChange = olderAvg !== 0 ? ((recentAvg - olderAvg) / Math.abs(olderAvg)) * 100 : 0;
       if (trendChange > 5) trendDirection = 'up';
       else if (trendChange < -5) trendDirection = 'down';
     }
@@ -572,7 +578,7 @@ export default function TrendChart({
     // Calculate period-over-period change
     const firstValue = values[0];
     const lastValue = values[values.length - 1];
-    const pctChange = firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+    const pctChange = firstValue !== 0 ? ((lastValue - firstValue) / Math.abs(firstValue)) * 100 : 0;
     
     // Process data with status
     const processed = data.map((point, i) => {
@@ -594,16 +600,10 @@ export default function TrendChart({
     });
     
     // Extend range for bands and budget
-    let rangeMin = Math.min(min, criticalLow) * 0.95;
-    let rangeMax = Math.max(max, criticalHigh) * 1.05;
-    
-    if (budget && budget.length > 0) {
-      const budgetValues = budget.filter(b => b != null && !isNaN(b));
-      if (budgetValues.length > 0) {
-        rangeMin = Math.min(rangeMin, ...budgetValues) * 0.95;
-        rangeMax = Math.max(rangeMax, ...budgetValues) * 1.05;
-      }
-    }
+    const extent = chartExtent([min, max, criticalLow, criticalHigh, ...(budget ?? []), ...(planData ?? []), ...(forecastData ?? [])]);
+    const padding = (extent.max - extent.min || Math.abs(extent.max) || 1) * 0.05;
+    const rangeMin = extent.min - padding;
+    const rangeMax = extent.max + padding;
     
     return {
       processedData: processed,
@@ -618,7 +618,7 @@ export default function TrendChart({
       percentChange: pctChange,
       volatility: volatilityPct,
     };
-  }, [data, baseline, budget, thresholds, title, movingAveragePeriod]);
+  }, [data, baseline, budget, planData, forecastData, thresholds, title, movingAveragePeriod]);
 
   // Combine refs for capture and responsive sizing - MUST be before early return (hooks rules)
   const setRefs = useCallback((node: HTMLDivElement | null) => {
@@ -629,12 +629,12 @@ export default function TrendChart({
   }, [chartRef, responsiveRef]);
 
   // Early return - hide chart completely if no data
-  if (!data || data.length === 0) {
-    return null;
+  if (issue || ![minValue, maxValue, avgValue, percentChange, volatility].every(isFiniteNumber)) {
+    return <ChartDataState title={isEn && titleEn ? titleEn : title} issue={issue || 'invalid'} isEn={isEn} />;
   }
 
   // Dynamic height for fullscreen mode
-  const chartHeight = isFullscreen ? Math.min(window.innerHeight - 300, 600) : height;
+  const chartHeight = isFullscreen ? Math.max(160, Math.min(window.innerHeight - 300, 600)) : height;
 
   const getYPosition = (value: number, customHeight?: number) => {
     const h = customHeight ?? chartHeight;
@@ -646,14 +646,17 @@ export default function TrendChart({
     return h - ((value - minValue) / range) * h;
   };
 
+  const pointCount = Math.max(data.length, budget?.length ?? 0, planData?.length ?? 0, data.length + Math.max(0, (forecastData?.length ?? 0) - 1));
+  const markerStride = Math.max(1, Math.ceil(data.length / 150));
+  const labelStride = Math.max(1, Math.ceil((data.length - 1) / 5));
   const getXPosition = (index: number) => {
     const padding = 40;
     const width = 100 - padding;
     // Handle case where there's only one data point
-    if (data.length <= 1) {
+    if (pointCount <= 1) {
       return 50; // Center the single point
     }
-    return padding / 2 + (index / (data.length - 1)) * width;
+    return padding / 2 + (index / (pointCount - 1)) * width;
   };
 
   const getPointColor = (status: string) => {
@@ -1011,6 +1014,16 @@ export default function TrendChart({
         className={`relative ${isFullscreen ? 'flex-1' : ''}`}
         style={{ height: isFullscreen ? undefined : `${chartHeight}px`, minHeight: isFullscreen ? '400px' : undefined }}
         onMouseLeave={handleChartLeave}
+        onMouseMove={(event) => {
+          // Keep every observation inspectable without thousands of overlapping hit areas.
+          if (data.length <= 150) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (bounds.width <= 0) return;
+          const xPercent = ((event.clientX - bounds.left) / bounds.width) * 100;
+          const index = Math.round(((xPercent - 20) / 60) * (pointCount - 1));
+          if (index >= 0 && index < data.length) handlePointEnter(index, event);
+          else setHoveredPointIndex(null);
+        }}
       >
         <svg 
           viewBox={`0 0 100 ${chartHeight}`} 
@@ -1182,6 +1195,7 @@ export default function TrendChart({
 
         {/* Data points - rendered as HTML elements to avoid SVG stretching */}
         {processedData.map((point, i) => {
+          if (i % markerStride !== 0 && i !== processedData.length - 1 && i !== hoveredPointIndex) return null;
           const xPercent = getXPosition(i);
           const yPercent = (getYPosition(point.value) / chartHeight) * 100;
           const isAnomaly = point.status !== 'normal';
@@ -1191,7 +1205,8 @@ export default function TrendChart({
           
           return (
             <div
-              key={point.period}
+              key={`${point.period}-${i}`}
+              data-chart-point={i}
               className="absolute cursor-pointer group"
               style={{
                 left: `${xPercent}%`,
@@ -1318,13 +1333,16 @@ export default function TrendChart({
       </div>
 
       {/* X-axis labels */}
-      <div className="flex justify-between mt-2">
-        {processedData.map((point, i) => (
+      <div className="relative h-8 mt-2">
+        {processedData.map((point, i) => (i % labelStride === 0 || i === processedData.length - 1) && (
           <div 
-            key={point.period}
-            className="text-center"
+            key={`${point.period}-${i}`}
+            data-chart-label={i}
+            title={point.period}
+            className="absolute text-center max-w-[18%] truncate"
             style={{ 
-              width: `${100 / data.length}%`,
+              left: `${getXPosition(i)}%`,
+              transform: 'translateX(-50%)',
               color: point.status !== 'normal' 
                 ? getPointColor(point.status) 
                 : 'rgb(var(--color-text-muted))'

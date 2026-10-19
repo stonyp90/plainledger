@@ -33,6 +33,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/scripts ./scripts
 
 # Copy email templates (not compiled by TypeScript)
 COPY --from=builder /app/src/templates ./dist/infrastructure/templates
@@ -42,6 +43,6 @@ USER nestjs
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health/ready || exit 1
 
 CMD ["node", "dist/main"]

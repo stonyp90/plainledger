@@ -188,7 +188,7 @@ export class SelectionManager {
 
   subscribe(listener: (selection: Selection | null) => void) {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => { this.listeners.delete(listener); };
   }
 
   private notifyListeners() {

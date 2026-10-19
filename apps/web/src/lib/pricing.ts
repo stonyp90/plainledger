@@ -566,7 +566,7 @@ export class PricingCalculator {
     needsAI: boolean;
     needsAPI: boolean;
     budget?: number;
-  }): PricingTier {
+  }): PricingTier | 'free' {
     const { users, monthlyReports, connections, needsAI, needsAPI, budget } = params;
 
     // Enterprise for large organizations

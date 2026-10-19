@@ -354,7 +354,7 @@ class JamesAIService {
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
         // Prune context based on query intent
-        const history = this.conversationHistory.slice(0, -1); // Exclude the message we just added
+        const history = this.conversationHistory.slice(0, -1).filter((message): message is ChatMessage & { role: 'user' | 'assistant' } => message.role === 'user' || message.role === 'assistant'); // Exclude the message we just added
         const prunedContext = pruneContext(userMessage, context, history, intent);
         
         // Build prompt based on type with pruned context

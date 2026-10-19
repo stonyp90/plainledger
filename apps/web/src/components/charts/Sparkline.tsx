@@ -6,6 +6,7 @@
 
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { chartExtent, getChartDataIssue, isFiniteNumber } from '../../lib/chartDataValidation';
 
 interface SparklineProps {
   data: number[];
@@ -20,7 +21,7 @@ interface SparklineProps {
 }
 
 export default function Sparkline({
-  data,
+  data: inputData,
   width = 80,
   height = 24,
   showTrend = true,
@@ -30,6 +31,8 @@ export default function Sparkline({
   highlightAnomalies = true,
   anomalyThreshold = 2,
 }: SparklineProps) {
+  const issue = getChartDataIssue(inputData, isFiniteNumber);
+  const data = issue ? [] : inputData;
   // Hooks must be called before any early returns (rules of hooks)
   const {
     normalizedData,
@@ -56,8 +59,7 @@ export default function Sparkline({
       };
     }
 
-    const minVal = data.length > 0 ? Math.min(...data) : 0;
-    const maxVal = data.length > 0 ? Math.max(...data) : 0;
+    const { min: minVal, max: maxVal } = chartExtent(data);
     const range = maxVal - minVal || 1;
     
     // Calculate mean and standard deviation for anomaly detection
@@ -88,7 +90,7 @@ export default function Sparkline({
     const changePercent = firstValue !== 0 ? (changeVal / Math.abs(firstValue)) * 100 : 0;
     
     return {
-      normalizedData: data.map(v => ((v - minVal) / range)),
+      normalizedData: data.map(v => maxVal === minVal ? 0.5 : ((v - minVal) / range)),
       min: minVal,
       max: maxVal,
       trend: trendDirection,
@@ -101,10 +103,12 @@ export default function Sparkline({
   }, [data, anomalyThreshold]);
 
   // Early return - hide chart completely if no data (after all hooks)
-  if (!data || data.length === 0) {
+  if (issue) {
     return (
       <span 
         className="text-xs"
+        role="status"
+        aria-label={issue === 'invalid' ? 'Invalid chart data' : 'No chart data'}
         style={{ color: 'rgb(var(--color-text-muted))' }}
       >
         —
@@ -113,7 +117,7 @@ export default function Sparkline({
   }
 
   const points = normalizedData.map((y, i) => {
-    const x = (i / (data.length - 1)) * width;
+    const x = data.length === 1 ? width / 2 : (i / (data.length - 1)) * width;
     const yPos = height - (y * height * 0.8) - height * 0.1; // 10% padding
     return `${x},${yPos}`;
   }).join(' ');
@@ -145,7 +149,7 @@ export default function Sparkline({
         
         {/* Anomaly dots */}
         {highlightAnomalies && anomalies.map(index => {
-          const x = (index / (data.length - 1)) * width;
+          const x = data.length === 1 ? width / 2 : (index / (data.length - 1)) * width;
           const yPos = height - (normalizedData[index] * height * 0.8) - height * 0.1;
           return (
             <circle
@@ -160,7 +164,7 @@ export default function Sparkline({
         
         {/* End point */}
         <circle
-          cx={width}
+          cx={data.length === 1 ? width / 2 : width}
           cy={height - (normalizedData[normalizedData.length - 1] * height * 0.8) - height * 0.1}
           r="2.5"
           fill={trendColor}
@@ -216,16 +220,20 @@ export function MiniBar({
   width = 60,
   height = 20,
 }: MiniBarProps) {
-  const max = propMax || Math.max(current, prior) * 1.1;
-  const currentWidth = (Math.abs(current) / max) * width;
-  const priorWidth = (Math.abs(prior) / max) * width;
+  if (![current, prior].every(isFiniteNumber)) {
+    return <span role="status" aria-label="Invalid chart data">—</span>;
+  }
+  const max = Math.max(isFiniteNumber(propMax) && propMax > 0 ? propMax : 0, Math.abs(current), Math.abs(prior), 1);
+  const availableWidth = Math.max(0, width - 16);
+  const currentWidth = (Math.abs(current) / max) * availableWidth;
+  const priorWidth = (Math.abs(prior) / max) * availableWidth;
   const isPositive = current >= prior;
 
   return (
     <div className="inline-flex items-center gap-1.5" style={{ width }}>
       <div 
         className="flex flex-col gap-0.5"
-        style={{ width: width - 16 }}
+        style={{ width: availableWidth }}
       >
         <div 
           className="h-2 rounded"
@@ -271,6 +279,9 @@ export function PercentageBar({
   height = 8,
   label,
 }: PercentageBarProps) {
+  if (!isFiniteNumber(value)) {
+    return <span role="status" aria-label="Invalid chart data">—</span>;
+  }
   const clampedValue = Math.max(0, Math.min(100, value));
   const barColor = value >= thresholds.critical 
     ? 'rgb(var(--color-error))'

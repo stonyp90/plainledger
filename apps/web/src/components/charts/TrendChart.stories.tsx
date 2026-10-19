@@ -49,7 +49,7 @@ const generateMockData = (months: number = 12): FinancialDataPoint[] => {
     const value = baseValue * (1 + variance + (i / months) * 0.1);
     
     data.push({
-      date: date.toISOString(),
+      period: date.toISOString(),
       value,
       label: date.toLocaleDateString('en-CA', { month: 'short', year: 'numeric' }),
     });

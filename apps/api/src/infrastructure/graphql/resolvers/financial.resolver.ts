@@ -49,6 +49,8 @@ import {
   FactTransaction,
 } from "@infrastructure/services/datalake-data.service";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
+import { GenerateIncomeStatementUseCase } from "@application/use-cases/generate-income-statement.use-case";
+import { reportPagination, authenticatedOrganization, validateFinancialFilter } from "../validation/financial-query-validation";
 
 // Paginated response wrapper
 import { ObjectType, Field } from "@nestjs/graphql";
@@ -90,6 +92,7 @@ export class FinancialResolver {
     @Inject("IDatalakeDataService")
     private readonly datalakeService: IDatalakeDataService,
     private readonly balanceSheetUseCase: GenerateBalanceSheetUseCase,
+    private readonly incomeStatementUseCase: GenerateIncomeStatementUseCase,
   ) {}
 
   // =====================================================
@@ -104,7 +107,7 @@ export class FinancialResolver {
     @Args("filter", { nullable: true }) filter?: DashboardFilterInput,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<DashboardSummary> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching dashboard summary for org: ${organizationId}`);
 
     try {
@@ -154,7 +157,7 @@ export class FinancialResolver {
     @Args("dateRange", { nullable: true }) dateRange?: DateRangeInput,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<FinancialTrend[]> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(
       `Fetching trends for org: ${organizationId}, metrics: ${metrics.join(", ")}`,
     );
@@ -209,9 +212,9 @@ export class FinancialResolver {
     @Args("pagination", { nullable: true }) pagination?: PaginationInput,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<AccountsConnection> {
-    const organizationId = context?.req?.user?.organizationId || "default";
-    const page = pagination?.page || 1;
-    const pageSize = pagination?.pageSize || 20;
+    const organizationId = authenticatedOrganization(context);
+    const { page, pageSize } = reportPagination(pagination);
+    validateFinancialFilter(filter);
 
     this.logger.log(`Fetching accounts for org: ${organizationId}`);
 
@@ -279,7 +282,7 @@ export class FinancialResolver {
     @Args("id") id: string,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<Account | null> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching account ${id} for org: ${organizationId}`);
 
     try {
@@ -318,9 +321,9 @@ export class FinancialResolver {
     @Args("pagination", { nullable: true }) pagination?: PaginationInput,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<TransactionsConnection> {
-    const organizationId = context?.req?.user?.organizationId || "default";
-    const page = pagination?.page || 1;
-    const pageSize = pagination?.pageSize || 20;
+    const organizationId = authenticatedOrganization(context);
+    const { page, pageSize } = reportPagination(pagination);
+    validateFinancialFilter(filter);
 
     this.logger.log(`Fetching transactions for org: ${organizationId}`);
 
@@ -401,7 +404,7 @@ export class FinancialResolver {
     @Args("asOfDate", { nullable: true }) asOfDate?: Date,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<BalanceSheet> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     const reportDate = asOfDate || new Date();
 
     this.logger.log(`Generating balance sheet for org: ${organizationId}`);
@@ -418,6 +421,7 @@ export class FinancialResolver {
           items: Array<{
             accountCode: string;
             accountName: string;
+            accountSubtype?: string;
             currentBalance: number;
           }>;
         },
@@ -426,6 +430,7 @@ export class FinancialResolver {
         return section.items.map((item) => ({
           accountCode: item.accountCode,
           accountName: item.accountName,
+          accountSubType: item.accountSubtype,
           accountType,
           balance: item.currentBalance,
           level: 0,
@@ -439,6 +444,7 @@ export class FinancialResolver {
         assets: [
           ...flattenSection(result.assets.currentAssets, AccountType.ASSET),
           ...flattenSection(result.assets.fixedAssets, AccountType.ASSET),
+          ...flattenSection(result.assets.otherAssets || { items: [] }, AccountType.ASSET),
         ],
         liabilities: [
           ...flattenSection(
@@ -449,11 +455,13 @@ export class FinancialResolver {
             result.liabilities.longTermLiabilities,
             AccountType.LIABILITY,
           ),
+          ...flattenSection(result.liabilities.otherLiabilities || { items: [] }, AccountType.LIABILITY),
         ],
         equity: result.equity.items.map((item) => ({
           accountCode: item.accountCode,
           accountName: item.accountName,
           accountType: AccountType.EQUITY,
+          accountSubType: item.accountSubtype,
           balance: item.currentBalance,
           level: 0,
           isSubtotal: false,
@@ -477,43 +485,11 @@ export class FinancialResolver {
     @Args("dateRange") dateRange: DateRangeInput,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<IncomeStatement> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
 
     this.logger.log(`Generating income statement for org: ${organizationId}`);
 
-    try {
-      const data = await this.datalakeService.getDashboardData(organizationId);
-      const summary = data.summary;
-
-      return {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-        organizationName: data.organizationName,
-        revenue: [
-          {
-            accountCode: "4000",
-            accountName: "Total Revenue",
-            amount: summary.totalRevenue,
-            level: 0,
-          },
-        ],
-        expenses: [
-          {
-            accountCode: "5000",
-            accountName: "Total Expenses",
-            amount: summary.totalExpenses,
-            level: 0,
-          },
-        ],
-        grossRevenue: summary.totalRevenue,
-        totalExpenses: summary.totalExpenses,
-        netIncome: summary.netIncome,
-        currency: "CAD",
-      };
-    } catch (error) {
-      this.logger.error(`Failed to generate income statement: ${error}`);
-      throw error;
-    }
+    return this.incomeStatementUseCase.execute({ tenantId: organizationId, ...dateRange });
   }
 
   // =====================================================
@@ -529,7 +505,7 @@ export class FinancialResolver {
     @Args("dateRange", { nullable: true }) dateRange?: DateRangeInput,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<IndustryKPIsResponse> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(
       `Fetching industry KPIs for org: ${organizationId}, industry: ${industryId}`,
     );
@@ -638,7 +614,7 @@ export class FinancialResolver {
   async getTrialBalance(
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<TrialBalance> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching trial balance for org: ${organizationId}`);
 
     try {
@@ -667,7 +643,7 @@ export class FinancialResolver {
     @Args("endDate", { nullable: true }) endDate?: string,
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<WaterfallItem[]> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching cash flow waterfall for org: ${organizationId}`);
 
     try {
@@ -696,7 +672,7 @@ export class FinancialResolver {
   async getReceivablesAging(
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<AgingReport> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching AR aging for org: ${organizationId}`);
 
     try {
@@ -725,7 +701,7 @@ export class FinancialResolver {
   async getPayablesAging(
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<AgingReport> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching AP aging for org: ${organizationId}`);
 
     try {
@@ -757,7 +733,7 @@ export class FinancialResolver {
   async getBudgetSettings(
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<BudgetSettings> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching budget settings for org: ${organizationId}`);
 
     // TODO: Fetch from database when OrganizationSettingsRepository is available
@@ -783,7 +759,7 @@ export class FinancialResolver {
     @Context()
     context?: { req: { user: { organizationId: string; email: string } } },
   ): Promise<BudgetSettings> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     const userEmail = context?.req?.user?.email || "unknown";
     this.logger.log(`Saving budget for org: ${organizationId}`);
 
@@ -810,7 +786,7 @@ export class FinancialResolver {
   async getTaxDeadlines(
     @Context() context?: { req: { user: { organizationId: string } } },
   ): Promise<TaxDeadlinesResponse> {
-    const organizationId = context?.req?.user?.organizationId || "default";
+    const organizationId = authenticatedOrganization(context);
     this.logger.log(`Fetching tax deadlines for org: ${organizationId}`);
 
     // TODO: Get fiscal year end and province from OrganizationSettings

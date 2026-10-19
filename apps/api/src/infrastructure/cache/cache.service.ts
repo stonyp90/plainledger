@@ -34,7 +34,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     
     // Enable TLS for production (ElastiCache with transit encryption)
     const isProduction = process.env.NODE_ENV === "production";
-    const useTls = isProduction && !redisHost.includes("localhost");
+    const tlsSetting = this.configService.get<string>("REDIS_TLS");
+    const useTls = tlsSetting === undefined
+      ? isProduction && !redisHost.includes("localhost")
+      : tlsSetting === "true";
 
     this.logger.log(`[onModuleInit] CacheService connecting to ${redisHost}:${redisPort} (TLS: ${useTls}, auth: ${!!redisPassword})`);
 
@@ -98,6 +101,22 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    */
   isAvailable(): boolean {
     return this.redis !== null && this.redis.status === "ready";
+  }
+
+  /** Check the actual Redis connection without allowing readiness to hang. */
+  async healthCheck(): Promise<boolean> {
+    if (!this.isAvailable()) return false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        this.redis!.ping().then((response) => response === "PONG"),
+        new Promise<boolean>((resolve) => { timer = setTimeout(() => resolve(false), 2000); }),
+      ]);
+    } catch {
+      return false;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   /**

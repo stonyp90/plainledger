@@ -15,6 +15,8 @@ import {
   Observable,
 } from '@apollo/client';
 import { isMockAuthEnabled } from '../keycloak';
+import { SetContextLink } from '@apollo/client/link/context';
+import { getAuthenticatedRequestHeaders, getRequestScopeRevision, invalidateRequestScope, selectRequestOrganization } from '../authRequestContext';
 
 // Get the GraphQL endpoint from environment or default
 const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
@@ -29,24 +31,28 @@ const httpLink = createHttpLink({
   credentials: 'include', // Include cookies for session auth
 });
 
-// Auth Link - adds the JWT token and CSRF prevention headers to requests
-const authLink = new ApolloLink((operation, forward) => {
-  // Get the authentication token from the Keycloak instance first (primary source),
-  // then fall back to sessionStorage/localStorage (during login transition)
-  const keycloak = (window as unknown as { keycloak?: { token?: string } }).keycloak;
-  const token = keycloak?.token || sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token');
+// Read only adapter-managed, refreshed credentials. Never hydrate browser storage tokens.
+const authLink = new SetContextLink(async ({ headers = {} }) => {
+  const requestHeaders = await getAuthenticatedRequestHeaders(headers);
+  requestHeaders.set('apollo-require-preflight', 'true');
+  requestHeaders.set('content-type', 'application/json');
+  return { headers: Object.fromEntries(requestHeaders.entries()) };
+});
 
-  operation.setContext(({ headers = {} }) => ({
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : '',
-      // Required for Apollo Server 4 CSRF protection
-      'apollo-require-preflight': 'true',
-      'content-type': 'application/json',
-    },
-  }));
-
-  return forward(operation);
+// Do not allow an earlier organization's in-flight result to enter the next cache.
+const scopeLink = new ApolloLink((operation, forward) => {
+  const requestRevision = getRequestScopeRevision();
+  return new Observable(observer => {
+    const subscription = forward(operation).subscribe({
+      next: result => {
+        if (requestRevision !== getRequestScopeRevision()) observer.error(new Error('Organization changed. Refresh the data.'));
+        else observer.next(result);
+      },
+      error: error => observer.error(error),
+      complete: () => observer.complete(),
+    });
+    return () => subscription.unsubscribe();
+  });
 });
 
 // Mock Link - short-circuits GraphQL requests when mock auth is enabled
@@ -66,37 +72,15 @@ const mockLink = new ApolloLink((operation, forward) => {
 // When mock auth is enabled, mockLink intercepts and returns empty data
 // Otherwise, requests flow through authLink → httpLink as normal
 export const apolloClient = new ApolloClient({
-  link: from([mockLink, authLink, httpLink]),
+  link: from([mockLink, scopeLink, authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {
         fields: {
-          // Configure cache behavior for specific queries
-          accounts: {
-            // Merge paginated results
-            keyArgs: ['filter'],
-            merge(existing, incoming, { args }) {
-              if (!args?.pagination?.page || args.pagination.page === 1) {
-                return incoming;
-              }
-              return {
-                ...incoming,
-                nodes: [...(existing?.nodes || []), ...incoming.nodes],
-              };
-            },
-          },
-          transactions: {
-            keyArgs: ['filter'],
-            merge(existing, incoming, { args }) {
-              if (!args?.pagination?.page || args.pagination.page === 1) {
-                return incoming;
-              }
-              return {
-                ...incoming,
-                nodes: [...(existing?.nodes || []), ...incoming.nodes],
-              };
-            },
-          },
+          // Pages are independent query results. Appending on every cache write
+          // duplicated page 2 after refetch and reused data across page sizes.
+          accounts: { keyArgs: ['filter', 'pagination'], merge: false },
+          transactions: { keyArgs: ['filter', 'pagination'], merge: false },
         },
       },
       Organization: {
@@ -127,25 +111,25 @@ export const apolloClient = new ApolloClient({
       errorPolicy: 'all',
     },
   },
-  connectToDevTools: import.meta.env.DEV,
+  devtools: { enabled: import.meta.env.DEV },
 });
 
-// Export a function to update the auth token
-export function updateAuthToken(token: string | null): void {
-  if (token) {
-    sessionStorage.setItem('kc_token', token);
-  } else {
-    sessionStorage.removeItem('kc_token');
-  }
-
-  // Clear the Apollo cache to refetch with new auth
-  apolloClient.clearStore();
+/** Select the tenant only after the application has verified membership. */
+export async function setActiveOrganizationId(organizationId: string | null): Promise<void> {
+  if (!selectRequestOrganization(organizationId)) return;
+  await apolloClient.clearStore();
+  if (organizationId) await apolloClient.reFetchObservableQueries();
 }
 
-// Export a function to reset the client (for logout)
-export function resetApolloClient(): Promise<unknown[]> {
-  sessionStorage.removeItem('kc_token');
-  sessionStorage.removeItem('kc_refresh_token');
-  sessionStorage.removeItem('kc_id_token');
-  return apolloClient.resetStore();
+// Tokens remain owned by Keycloak; callers can only invalidate cached authenticated data.
+export function updateAuthToken(_token: string | null): void {
+  invalidateRequestScope();
+  void apolloClient.clearStore();
 }
+
+export async function resetApolloClient(): Promise<void> {
+  invalidateRequestScope(true);
+  await apolloClient.clearStore();
+}
+
+window.addEventListener('plainledger:auth-changed', () => { void resetApolloClient(); });
