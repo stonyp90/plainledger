@@ -12,11 +12,11 @@ This is a map of the checked-in verification scope, not a record of passing runs
 | `oracle-config` | Python tests for the Oracle deployment helpers. | Archive, configuration, SSH and response-validation fixtures. Does not contact or provision an Oracle host. |
 | `real-stack` | Empty-database bootstrap and repeat-bootstrap rejection, real PostgreSQL, Redis and Keycloak, production API/web builds, strict browser suite, and real S3 storage harness. | Disposable loopback infrastructure and synthetic tenants. `NODE_ENV=production` is an application mode, not a production deployment. |
 
-The real stack creates one human owner in Keycloak and two organizations in PostgreSQL. Registration and email verification are disabled in the generated test realm, SMTP is empty, and invitation email delivery is disabled. Mock authentication and TypeORM schema synchronization remain disabled.
+The real stack imports one owner and two verified, unassigned invitees into Keycloak (the second invitee is reserved for a browser retry), and seeds two organizations in PostgreSQL. The account tests also create two synthetic users through the public registration API. Keycloak's self-registration is disabled. Newly registered API users remain unverified with `VERIFY_EMAIL` required, while the pre-created test users can sign in without email delivery. SMTP is empty, registration must return `verificationEmailSent: false`, and invitation delivery must remain `unsent`. Mock authentication and TypeORM schema synchronization remain disabled.
 
 ## Strict browser coverage
 
-[`playwright.strict.config.ts`](../playwright.strict.config.ts) selects only `*.public.spec.ts`, `keycloak-auth.spec.ts` and `real-ledger.spec.ts`. The current selection expands to 14 browser/API tests. Both projects use Chromium. Public-page tests change viewport dimensions but do not run Safari, Firefox or device-specific browser engines.
+[`playwright.strict.config.ts`](../playwright.strict.config.ts) selects only `*.public.spec.ts`, `keycloak-auth.spec.ts` and `real-ledger.spec.ts`. The current selection expands to 16 browser/API tests. Both projects use Chromium. Public-page tests change viewport dimensions but do not run Safari, Firefox or device-specific browser engines.
 
 | Actor and workflow | Assertions in the selected suite | Evidence source |
 | --- | --- | --- |
@@ -27,9 +27,11 @@ The real stack creates one human owner in Keycloak and two organizations in Post
 | Owner reading financial reports | GraphQL income statements and balance sheets reconcile to dated posted SQL fixtures for two periods and an empty period. Draft/foreign amounts are excluded. Reversed date ranges and oversized pagination are rejected. | `real-ledger.spec.ts`, [`isolated-ledger.sql`](../fixtures/accounting/isolated-ledger.sql) |
 | Owner changing organization settings | General/threshold settings persist and read back. Invalid thresholds and foreign organization writes fail. Feature output is tenant scoped. | `real-ledger.spec.ts` |
 | Owner managing membership and invitations | Member listing, last-owner demotion/removal protection, invitation creation/preview, wrong-account acceptance rejection, resend token rotation and revocation. Delivery explicitly remains `unsent`. | `real-ledger.spec.ts` |
+| Invited viewer and temporary organization administrator | Real PKCE login and acceptance through the invitation page, refreshed tenant claim, persisted membership and one-time token consumption. Viewer reads and denied writes, owner promotion/demotion, permitted administrator invitations, restricted privilege grants and immediate removal denial use the same signed session. | `keycloak-auth.spec.ts`, [`isolated-e2e.json`](../fixtures/auth/isolated-e2e.json) |
+| New owner and invited signup | Public registration creates the actual Keycloak identity and matching PostgreSQL organization/profile/features. Duplicate email and mismatched invitation fail without extra profiles. Invited signup joins the target tenant without creating a personal tenant. Verification remains required and delivery explicitly fails; weak passwords are rejected. | `keycloak-auth.spec.ts`, [`helpers/isolated-stack.ts`](helpers/isolated-stack.ts) |
 | Owner viewing accounting connections | Empty connections are returned. Unconfigured providers are marked unsupported and QuickBooks connection initiation fails explicitly. | `real-ledger.spec.ts` |
 
-The report, settings and invitation assertions make authenticated HTTP requests using a token from a real browser login. They do not click through every corresponding application screen. Public locale coverage establishes rendering under each setting, not completeness of every translation or accessibility requirement.
+The report, settings and permission assertions make authenticated HTTP requests using a token from a real browser login. Successful invitation acceptance clicks the actual invitation screen; registration calls the public API and reads the resulting Keycloak/PostgreSQL state. These checks do not click through every corresponding application screen. Public locale coverage establishes rendering under each setting, not completeness of every translation or accessibility requirement.
 
 ## Actual storage and accounting synchronization
 
@@ -45,8 +47,8 @@ The harness refuses non-CI execution, non-loopback dependencies, a database with
 
 | Capability | Why the present gate does not establish it |
 | --- | --- |
-| New account, email verification, password reset and completed onboarding | The strict realm starts with a pre-created, verified owner and disables registration and SMTP. Onboarding unit tests do not complete a new-user journey against deployed identity and email services. |
-| Successful invited-user acceptance and the role matrix | The selected suite creates an invitation but attempts acceptance only from the wrong account. No invited viewer, accountant or organization administrator logs in. Membership unit tests cover several permission rules with dependency doubles. |
+| Complete signup, email verification, password reset and onboarding journey | Registration API persistence is exercised, but SMTP is empty and the newly created accounts intentionally remain unverified. The suite does not deliver or consume an email action, submit the signup screen, or complete new-user onboarding against deployed identity/email services. |
+| Complete role matrix | Invited viewer acceptance, temporary administrator permissions, owner restrictions and immediate membership changes are selected. Accountant-specific and platform privileges, every application action, and all role combinations remain outside this browser selection. |
 | Platform administration | The admin app is compiled and type checked. It is not started or navigated in the strict job, and no platform administrator identity is exercised there. |
 | Real accounting-provider authorization and synchronization | Strict CI supplies no QuickBooks OAuth configuration, and the storage harness supplies fixture provider responses. Live authorization, callback, token renewal, source reconciliation and disconnect still need a dedicated provider tenant. `AccountingConnectionsService` currently marks Xero, Sage, FreshBooks and Wave unsupported. |
 | Stripe and transactional messages | The strict workflow supplies no Stripe credentials/webhook secret and asserts no payment or subscription lifecycle. Invitations stay unsent and no contact, verification or reset message delivery is asserted. |
@@ -82,7 +84,7 @@ BASE_URL=http://localhost:5173 npx --no-install playwright test --config playwri
 npx --no-install playwright test --config playwright.strict.config.ts
 ```
 
-The authenticated tests require `E2E_USERNAME` and `E2E_PASSWORD`. `real-ledger.spec.ts` changes settings and invitations in the expected fixture tenant. Do not substitute a customer account or run this write-capable suite against production as a generic smoke test.
+The authenticated tests require `E2E_USERNAME` and `E2E_PASSWORD`. `real-ledger.spec.ts` changes settings and invitations in the expected fixture tenant. The account-creation/membership tests additionally require exact loopback URLs, disposable database credentials, synthetic identity credentials and the bootstrap marker; they refuse other targets. The registration test reports a failure without an automatic retry so its five registration requests are not repeated within the rate-limit window. Do not substitute a customer account or run this write-capable suite against production as a generic smoke test.
 
 ## Deployment gates and retained evidence
 

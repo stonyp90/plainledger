@@ -179,9 +179,6 @@ jobs:
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
-      - name: Ensure Rollup Linux bindings (npm bug workaround)
-        run: npm install @rollup/rollup-linux-x64-gnu --no-save --package-lock=false
-        working-directory: apps/web
       - run: npm run test:run
         working-directory: apps/web
       - name: Check test coverage
@@ -730,8 +727,6 @@ jobs:
           if [ ! -d "node_modules" ]; then
             npm ci --include=optional
           fi
-          # Ensure Rollup Linux bindings (npm bug workaround)
-          npm install @rollup/rollup-linux-x64-gnu --save-optional 2>/dev/null || true
         working-directory: apps/web
 
       - name: Build Storybook

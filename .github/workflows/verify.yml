@@ -99,7 +99,8 @@ jobs:
       # Generated links use a reserved HTTPS hostname; no test mail leaves this stack.
       WEB_URL: https://plainledger.e2e.invalid
       TEAM_INVITATIONS_EMAIL_ENABLED: 'false'
-      S3_ENDPOINT: http://127.0.0.1:9000
+      # Keycloak's health management listener occupies host port 9000.
+      S3_ENDPOINT: http://127.0.0.1:19000
       S3_BUCKET_GOLD: plainledger-e2e
       S3_REGION: us-east-1
       AWS_ACCESS_KEY_ID: plainledger-e2e-storage
@@ -191,11 +192,14 @@ jobs:
             sha256sum "$s3_runtime/bin/minio"
           } > test-results/runtime/s3-build.txt
           MINIO_ROOT_USER="$AWS_ACCESS_KEY_ID" MINIO_ROOT_PASSWORD="$AWS_SECRET_ACCESS_KEY" MINIO_BROWSER=off \
-            "$s3_runtime/bin/minio" server "$s3_runtime/data" --address 127.0.0.1:9000 \
+            "$s3_runtime/bin/minio" server "$s3_runtime/data" --address 127.0.0.1:19000 \
             > /tmp/plainledger-s3.log 2>&1 &
           s3_pid=$!
           trap 'kill "$s3_pid" 2>/dev/null || true; wait "$s3_pid" 2>/dev/null || true' EXIT
-          node e2e/wait-for-http.cjs http://127.0.0.1:9000/minio/health/ready
+          if ! node e2e/wait-for-http.cjs "$S3_ENDPOINT/minio/health/ready"; then
+            cat /tmp/plainledger-s3.log
+            exit 1
+          fi
           node e2e/datalake-real-storage.cjs
       - name: Collect runtime logs
         if: always()

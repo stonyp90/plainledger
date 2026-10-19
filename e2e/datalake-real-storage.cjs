@@ -24,7 +24,7 @@ let database, cache, s3, syncService;
 function guard() {
   if (process.env.CI !== 'true' || !['localhost', '127.0.0.1'].includes(process.env.DATABASE_HOST) ||
       process.env.DATABASE_PASSWORD !== 'isolated-e2e-only' || !['localhost', '127.0.0.1'].includes(process.env.REDIS_HOST) ||
-      process.env.S3_ENDPOINT !== 'http://127.0.0.1:9000' || process.env.S3_BUCKET_GOLD !== 'plainledger-e2e' ||
+      process.env.S3_ENDPOINT !== 'http://127.0.0.1:19000' || process.env.S3_BUCKET_GOLD !== 'plainledger-e2e' ||
       !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
     throw new Error('Refusing storage fixtures outside the disposable CI database, Redis and loopback S3 endpoint.');
   }

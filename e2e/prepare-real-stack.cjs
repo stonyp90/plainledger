@@ -16,6 +16,16 @@ realm.users = [
     attributes: { organization: [fixture.organization], locale: ['en'] },
     realmRoles: ['owner', 'user'],
   },
+  // Separate first-attempt/retry identities prevent a consumed invitation or
+  // deactivated membership from being reused by a browser retry.
+  ...fixture.invitees.map((invitee, index) => ({
+    id: invitee.userId, username: invitee.username, email: invitee.username,
+    enabled: true, emailVerified: true, firstName: 'Invited', lastName: `Test ${index}`,
+    requiredActions: [],
+    credentials: [{ type: 'password', value: fixture.password, temporary: false }],
+    attributes: { organization: [invitee.organization], locale: ['en'] },
+    realmRoles: ['user'],
+  })),
   ...realm.users.filter(user => user.serviceAccountClientId === 'plainledger-api'),
 ];
 for (const client of realm.clients) {
@@ -27,4 +37,4 @@ for (const client of realm.clients) {
   }
 }
 fs.writeFileSync(path.join(directory, 'plainledger-realm.json'), JSON.stringify(realm, null, 2));
-console.log('Prepared isolated Keycloak realm with one synthetic test user.');
+console.log(`Prepared isolated Keycloak realm with one owner and ${fixture.invitees.length} unassigned synthetic invitees.`);

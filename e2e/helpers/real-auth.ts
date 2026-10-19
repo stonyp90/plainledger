@@ -21,12 +21,26 @@ export async function beginSignIn(page: Page) {
   await expect(page.locator('#password')).toBeVisible();
 }
 
-export async function signIn(page: Page) {
-  const { username, password } = credentials();
+export async function signIn(page: Page, account = credentials()) {
+  const { username, password } = account;
   await beginSignIn(page);
   await page.locator('#username').fill(username);
   await page.locator('#password').fill(password);
   await page.locator('#kc-login').click();
   await page.waitForURL(url => !url.pathname.includes('/realms/') && /^\/(app|onboarding)/.test(url.pathname));
   await expect.poll(() => page.evaluate(() => Boolean((window as unknown as { keycloak?: { authenticated: boolean } }).keycloak?.authenticated))).toBe(true);
+}
+
+/** The request uses the real current token, including its current tenant claim. */
+export async function sessionRequest<T = Record<string, unknown>>(page: Page, path: string, method = 'GET', body?: unknown): Promise<{ status: number; body: T }> {
+  return page.evaluate(async ({ path, method, body }) => {
+    const keycloak = (window as unknown as { keycloak: { token: string; tokenParsed?: { organization?: string } } }).keycloak;
+    const response = await fetch(path, {
+      method,
+      headers: { Authorization: `Bearer ${keycloak.token}`, 'Content-Type': 'application/json', 'x-organization-id': keycloak.tokenParsed?.organization || '' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    const text = await response.text();
+    return { status: response.status, body: text ? JSON.parse(text) : null };
+  }, { path, method, body });
 }
