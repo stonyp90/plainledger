@@ -26,7 +26,7 @@ describe('website worker', () => {
     expect(response).toBe(assetResponse);
   });
 
-  it.each(['/api', '/api/auth/login', '/graphql', '/graphql/subscriptions'])(
+  it.each(['/api', '/api/auth/login', '/graphql', '/graphql/subscriptions', '/health', '/health/ready', '/api/health/ready'])(
     'returns a JSON 503 for %s when no backend is configured',
     async (path) => {
       const env = makeEnv();
@@ -44,6 +44,32 @@ describe('website worker', () => {
       expect(env.ASSETS.fetch).not.toHaveBeenCalled();
     },
   );
+
+  it('returns unavailable JSON for readiness instead of a successful HTML website', async () => {
+    const env = makeEnv();
+    const response = await worker.fetch(new Request('https://plainledger.ca/health/ready'), env);
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Content-Type')).toContain('application/json');
+    expect(await response.json()).toMatchObject({ statusCode: 503, error: 'SERVICE_UNAVAILABLE' });
+    expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+  });
+
+  it('preserves an unhealthy backend readiness response', async () => {
+    const env = makeEnv('https://api-origin.plainledger.ca');
+    const upstream = new Response(JSON.stringify({ status: 'unhealthy', database: false, cache: false }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(upstream);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(new Request('https://plainledger.ca/health/ready'), env);
+
+    expect(response).toBe(upstream);
+    expect(fetchMock.mock.calls[0][0].url).toBe('https://api-origin.plainledger.ca/health/ready');
+    expect(env.ASSETS.fetch).not.toHaveBeenCalled();
+  });
 
   it('proxies API requests to API_ORIGIN, keeping path, query, method and headers', async () => {
     const upstream = new Response('{"ok":true}', { status: 201 });

@@ -3,15 +3,15 @@
 name: Deploy Website (Cloudflare)
 
 on:
-  push:
+  workflow_run:
+    workflows: ['PlainLedger verification', 'CI/CD Pipeline']
+    types: [completed]
     branches: [main]
-    paths:
-      - 'apps/web/**'
-      - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deploy-website
@@ -28,11 +28,63 @@ env:
 
 jobs:
   preflight:
-    name: Check Cloudflare credentials
+    name: Require verified current main and Cloudflare credentials
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.head_branch == 'main' &&
+       (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       ready: ${{ steps.creds.outputs.ready }}
+      source_sha: ${{ steps.verify.outputs.source_sha }}
+      verification_url: ${{ steps.verify.outputs.verification_url }}
+      quality_url: ${{ steps.verify.outputs.quality_url }}
     steps:
+      - name: Select trusted current main source before checkout
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = 'workflow_run' ]; then
+            jq -e --arg repository "$GITHUB_REPOSITORY" '
+              .workflow_run |
+              .head_repository.full_name == $repository and .head_branch == "main" and
+              (.event == "push" or .event == "workflow_dispatch") and
+              (.path == ".github/workflows/verify.yml" or .path == ".github/workflows/ci.yml") and
+              .status == "completed" and .conclusion == "success"
+            ' "$GITHUB_EVENT_PATH" > /dev/null
+            source_sha=$(jq -er '.workflow_run.head_sha' "$GITHUB_EVENT_PATH")
+          elif [ "$GITHUB_EVENT_NAME" = 'workflow_dispatch' ] && [ "$GITHUB_REF" = 'refs/heads/main' ]; then
+            source_sha="$GITHUB_SHA"
+          else
+            echo '::error::Website deployment requires a trusted main workflow completion or manual main dispatch.'
+            exit 1
+          fi
+          [[ "$source_sha" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          current_main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          if [ "$source_sha" != "$current_main_sha" ]; then
+            echo '::error::Main has advanced; this deployment source is stale.'
+            exit 1
+          fi
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.source_sha }}
+          persist-credentials: false
+      - name: Require verification and existing CI quality gates for the exact source
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA" --github-output "$GITHUB_OUTPUT"
       - id: creds
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -42,7 +94,8 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping website deploy: set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets (docs/CLOUDFLARE_DEPLOYMENT.md)."
+            echo "::error::Website deployment is blocked: configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (docs/CLOUDFLARE_DEPLOYMENT.md)."
+            exit 1
           fi
 
   deploy:
@@ -52,10 +105,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v6
         with:
@@ -65,10 +120,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: apps/web
-        run: |
-          npm ci --include=optional
-          # package-lock.json lacks the Linux Rollup binary (npm optional-deps bug)
-          npm install --no-save "@rollup/rollup-linux-x64-gnu@$(node -p "require('rollup/package.json').version")"
+        run: npm ci --include=optional
 
       - name: Build website
         working-directory: apps/web
@@ -84,8 +136,11 @@ jobs:
 
       - name: Check Cloudflare zone status
         id: zone
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          code=$(curl -sS -o zone.json -w '%{http_code}' \
+          code=$(curl --connect-timeout 5 --max-time 20 -sS -o zone.json -w '%{http_code}' \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}&account.id=${CLOUDFLARE_ACCOUNT_ID}" || true)
           if [ "$code" != "200" ]; then
@@ -97,10 +152,21 @@ jobs:
           echo "nameservers=$nameservers" >> "$GITHUB_OUTPUT"
           echo "Zone ${DOMAIN}: ${status} ${nameservers:+(Cloudflare nameservers: $nameservers)}"
 
+      - name: Recheck current main and both quality gates immediately before publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA"
+
       - name: Deploy website Worker
         id: deploy
         working-directory: apps/web
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ZONE_STATUS: ${{ steps.zone.outputs.status }}
           API_ORIGIN: ${{ vars.API_ORIGIN }}
         run: |
@@ -111,35 +177,86 @@ jobs:
           npx --yes "wrangler@${WRANGLER_VERSION}" deploy "${args[@]}" | tee deploy.log
           echo "workers_dev_url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)" >> "$GITHUB_OUTPUT"
 
+      - name: Recheck quality gates immediately before publishing the www redirect
+        if: steps.zone.outputs.status == 'active'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA"
+
       - name: Deploy www redirect Worker
         if: steps.zone.outputs.status == 'active'
         working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes "wrangler@${WRANGLER_VERSION}" deploy --config wrangler.www.jsonc --domain "www.${DOMAIN}"
 
       - name: Smoke test
+        id: smoke
         env:
           WORKERS_DEV_URL: ${{ steps.deploy.outputs.workers_dev_url }}
           ZONE_STATUS: ${{ steps.zone.outputs.status }}
           API_ORIGIN: ${{ vars.API_ORIGIN }}
         run: |
-          # usage: check_url <url> <status> [body-substring]; retries while the edge picks up the deploy
+          # Retry the complete response contract while the edge picks up the deploy.
+          response_body_matches() {
+            case "$1" in
+              page) grep -Fq PlainLedger body.txt ;;
+              unavailable) jq -e '.statusCode == 503 and .error == "SERVICE_UNAVAILABLE"' body.txt > /dev/null 2>&1 ;;
+              ready) jq -e '.status == "ready" and .checks.database == "connected" and .checks.cache == "connected"' body.txt > /dev/null 2>&1 ;;
+              *) return 1 ;;
+            esac
+          }
+          # usage: check_url <url> <status> <page|unavailable|ready>
           check_url() {
-            local code
-            for _ in $(seq 1 12); do
-              code=$(curl -sS -o body.txt -w '%{http_code}' "$1" || true)
-              if [ "$code" = "$2" ] && { [ -z "${3:-}" ] || grep -q "$3" body.txt; }; then
+            local code attempt
+            for ((attempt=1; attempt<=12; attempt++)); do
+              code=$(curl --connect-timeout 5 --max-time 20 -sS -o body.txt -w '%{http_code}' "$1" || true)
+              if [ "$code" = "$2" ] && response_body_matches "$3"; then
                 echo "OK   $1 -> $code"; return 0
               fi
-              sleep 10
+              if [ "$attempt" -lt 12 ]; then sleep 10; fi
             done
-            echo "FAIL $1 -> $code (expected $2${3:+ containing \"$3\"})"; return 1
+            echo "FAIL $1 -> $code (expected $2 with $3 response)"; return 1
           }
-          check_url "$WORKERS_DEV_URL/" 200 PlainLedger
-          check_url "$WORKERS_DEV_URL/quebec" 200 PlainLedger
-          if [ -z "$API_ORIGIN" ]; then check_url "$WORKERS_DEV_URL/api/health" 503 SERVICE_UNAVAILABLE; fi
+          # Do not follow redirects: the first response must preserve both path and query.
+          check_redirect() {
+            local code attempt
+            for ((attempt=1; attempt<=12; attempt++)); do
+              code=$(curl --connect-timeout 5 --max-time 20 -sS \
+                --dump-header redirect-headers.txt --output /dev/null --write-out '%{http_code}' "$1" || true)
+              if [ "$code" = '301' ] && node -e 'const headers=require("node:fs").readFileSync("redirect-headers.txt","utf8"); const locations=headers.split(/\r?\n/).filter(line=>/^location:/i.test(line)).map(line=>line.replace(/^location:\s*/i,"").trim()); if(locations.length!==1 || locations[0]!==process.argv[1]) process.exit(1);' "$2"; then
+                echo "OK   $1 -> 301 $2"; return 0
+              fi
+              if [ "$attempt" -lt 12 ]; then sleep 10; fi
+            done
+            echo "FAIL $1 -> $code (expected 301 to $2)"; return 1
+          }
+          if [[ ! "$WORKERS_DEV_URL" =~ ^https://[a-z0-9.-]+\.workers\.dev$ ]]; then
+            echo '::error::The deployment did not report a valid workers.dev URL.'
+            exit 1
+          fi
+          check_url "$WORKERS_DEV_URL/" 200 page
+          check_url "$WORKERS_DEV_URL/quebec" 200 page
+          if [ -z "$API_ORIGIN" ]; then
+            check_url "$WORKERS_DEV_URL/api/health" 503 unavailable
+            check_url "$WORKERS_DEV_URL/health/ready" 503 unavailable
+          else
+            check_url "$WORKERS_DEV_URL/health/ready" 200 ready
+          fi
           if [ "$ZONE_STATUS" = "active" ]; then
-            # New custom domains can take a few minutes to get their certificate: warn only
-            check_url "https://${DOMAIN}/" 200 PlainLedger || echo "::warning::https://${DOMAIN} is not serving yet; re-check in a few minutes."
+            check_url "https://${DOMAIN}/" 200 page
+            if [ -z "$API_ORIGIN" ]; then
+              check_url "https://${DOMAIN}/health/ready" 503 unavailable
+            else
+              check_url "https://${DOMAIN}/health/ready" 200 ready
+            fi
+            check_redirect "https://www.${DOMAIN}/login?source=deployment-smoke" \
+              "https://${DOMAIN}/login?source=deployment-smoke"
           fi
 
       - name: Summary
@@ -148,16 +265,30 @@ jobs:
           WORKERS_DEV_URL: ${{ steps.deploy.outputs.workers_dev_url }}
           ZONE_STATUS: ${{ steps.zone.outputs.status }}
           NAMESERVERS: ${{ steps.zone.outputs.nameservers }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          VERIFICATION_URL: ${{ needs.preflight.outputs.verification_url }}
+          QUALITY_URL: ${{ needs.preflight.outputs.quality_url }}
+          API_ORIGIN: ${{ vars.API_ORIGIN }}
         run: |
           {
             echo "## Website deploy (Cloudflare Workers)"
             echo ""
             echo "| | |"
             echo "|---|---|"
+            echo "| Verified source | \`${SOURCE_SHA}\` |"
+            echo "| Verification run | ${VERIFICATION_URL} |"
+            echo "| CI lint and coverage run | ${QUALITY_URL} |"
             echo "| workers.dev | ${WORKERS_DEV_URL:-n/a} |"
             echo "| Zone \`${DOMAIN}\` | ${ZONE_STATUS:-unknown} |"
-            if [ "$ZONE_STATUS" = "active" ]; then
-              echo "| Live at | https://${DOMAIN} (www redirects to it) |"
+            if [ "$ZONE_STATUS" = "active" ] && [ "$SMOKE_OUTCOME" = "success" ]; then
+              echo "| Website verified at | https://${DOMAIN} (www redirect checked) |"
+              if [ -z "$API_ORIGIN" ]; then
+                echo "| Account application | Unavailable: no backend origin configured |"
+              else
+                echo "| Backend readiness | Database and cache connectivity verified |"
+              fi
+            else
+              echo "| Deployment verification | Incomplete: inspect the failed or skipped steps |"
             fi
             echo ""
             if [ "$ZONE_STATUS" = "pending" ]; then

@@ -1,240 +1,104 @@
-# E2E Testing Guide
+# Verification and E2E Coverage
 
-Enterprise-grade end-to-end testing for PlainLedger with real QuickBooks sandbox integration.
+This is a map of the checked-in verification scope, not a record of passing runs or a production certification. Associate any result with its exact Git commit, workflow URL, target environment and retained artifacts. A successful public website deployment does not establish that customer accounts, accounting providers or billing work.
 
-## Prerequisites
+## Required verification workflow
 
-1. **Docker Desktop** running
-2. **QuickBooks Sandbox** credentials configured
-3. **Node.js** 18+ installed
+[`.github/workflows/verify.yml`](../.github/workflows/verify.yml) runs on pushes to `main` and `fix/plainledger-*`, pull requests to `main`, and manual dispatch. It has no nightly schedule.
 
-## Quick Start
+| Job | What it executes | Boundary |
+| --- | --- | --- |
+| `quality` | Locked installs, TypeScript checks and builds for API, web and admin. API and web unit tests. | Admin has build/type verification, not an admin browser suite. Unit tests may use dependency doubles. |
+| `oracle-config` | Boundary tests for Oracle deployment helpers, reviewed Keycloak realm imports, and storage qualification/publication helpers. | Archive, configuration, SSH, response-validation, realm and artifact fixtures. Does not contact or provision an Oracle host. |
+| `real-stack` | Empty-database bootstrap and repeat-bootstrap rejection, real PostgreSQL, Redis and Keycloak, production API/web builds, the strict browser suite, and native AMD64 storage image qualification with the real accounting harness. | Disposable loopback infrastructure and synthetic tenants. `NODE_ENV=production` is an application mode, not a production deployment. |
+| `storage-arm64` | Native ARM64 builds of both pinned storage images, production initializer and permission/persistence checks, and the same real S3/PostgreSQL/Redis accounting harness. | Uses a separate disposable stack. Retains exact image artifacts only after qualification succeeds; it does not publish or deploy them. |
 
-### Option 1: Using docker-compose (Recommended for Local Dev)
+The real stack imports one owner and two verified, unassigned invitees into Keycloak (the second invitee is reserved for a browser retry), and seeds two organizations in PostgreSQL. The account tests also create two synthetic users through the public registration API. Keycloak's self-registration is disabled. Newly registered API users remain unverified with `VERIFY_EMAIL` required, while the pre-created test users can sign in without email delivery. SMTP is empty, registration must return `verificationEmailSent: false`, and invitation delivery must remain `unsent`. Mock authentication and TypeORM schema synchronization remain disabled.
 
-```bash
-# 1. Start all services
-docker-compose up -d
+Imported synthetic humans explicitly receive the standard `account` client roles `manage-account` and `view-profile`; [Keycloak 26.8.1 realm import](https://github.com/keycloak/keycloak/blob/26.8.1/model/storage-private/src/main/java/org/keycloak/storage/datastore/DefaultExportImportManager.java#L1020) skips default-role assignment for imported users. This fixture override leaves the reviewed API machine and production realm unchanged. The registration test separately checks the effective own-account roles granted to newly created users by the real identity server.
 
-# 2. Get QuickBooks tokens (first time only)
-npx tsx scripts/providers/quickbooks/get-token.ts
+## Strict browser coverage
 
-# 3. Sync QuickBooks data to S3
-npx tsx scripts/providers/quickbooks/sync-to-gold.ts
+[`playwright.strict.config.ts`](../playwright.strict.config.ts) selects only `*.public.spec.ts`, `keycloak-auth.spec.ts` and `real-ledger.spec.ts`. The current selection expands to 18 browser/API tests. Both projects use Chromium. Public-page tests change viewport dimensions but do not run Safari, Firefox or device-specific browser engines.
 
-# 4. Run E2E tests
-npm run test:e2e
-```
+| Actor and workflow | Assertions in the selected suite | Evidence source |
+| --- | --- | --- |
+| Anonymous visitor | Seven fixture pages at 360, 768 and 1440 pixels in EN and FR settings. Visible expected headings, no document overflow, no invalid SVG coordinates and no uncaught page errors. | [`public-states.public.spec.ts`](public-states.public.spec.ts), [`public-pages.json`](../fixtures/ui/public-pages.json) |
+| Anonymous visitor at protected pages | `/app/reports` redirects to sign-in. The application does not collect a password. Empty/malformed contact fields do not submit. | `public-states.public.spec.ts` |
+| Owner signing in | Actual Keycloak authorization-code flow with S256 PKCE, invalid-password feedback, access/ID subject consistency, token refresh, expected API audience, reload persistence, verified organization-switcher rendering after login/reload, and logout. | [`keycloak-auth.spec.ts`](keycloak-auth.spec.ts), [`helpers/real-auth.ts`](helpers/real-auth.ts) |
+| Anonymous or forged identity | Protected REST rejects absent/unsigned tokens. GraphQL rejects anonymous access. Authenticated requests targeting the other tenant are forbidden. | `keycloak-auth.spec.ts`, [`real-ledger.spec.ts`](real-ledger.spec.ts) |
+| Owner reading financial reports | GraphQL income statements and balance sheets reconcile to dated posted SQL fixtures for two periods and an empty period. Draft/foreign amounts are excluded. Reversed date ranges and oversized pagination are rejected. | `real-ledger.spec.ts`, [`isolated-ledger.sql`](../fixtures/accounting/isolated-ledger.sql) |
+| Owner changing organization settings | General/threshold settings persist and read back. Invalid thresholds and foreign organization writes fail. Feature output is tenant scoped. | `real-ledger.spec.ts` |
+| Owner managing membership and invitations | Member listing, last-owner demotion/removal protection, invitation creation/preview, wrong-account acceptance rejection, resend token rotation and revocation. Delivery explicitly remains `unsent`. | `real-ledger.spec.ts` |
+| Invited viewer and temporary organization administrator | Real PKCE login and acceptance through the invitation page, refreshed tenant claim, persisted membership and one-time token consumption. Keycloak self-service rejects edits to managed tenant fields; an independent machine read and forced token refresh confirm the authorized tenant is unchanged. Viewer reads and denied writes, owner promotion/demotion, permitted administrator invitations, restricted privilege grants and immediate removal denial use the same signed session. | `keycloak-auth.spec.ts`, [`isolated-e2e.json`](../fixtures/auth/isolated-e2e.json) |
+| Owner opening account security | EN and FR application security screens show explicit unavailable states for data the app cannot read. The real account-management button follows Keycloak’s account-console authorization flow. Its profile request must return HTTP 200 with the expected owner identity, and the actual personal-information page heading must render. No password, MFA, session or profile mutation is performed. | `keycloak-auth.spec.ts`, [`account-security.json`](../fixtures/ui/account-security.json) |
+| New owner and invited signup | Public registration creates the actual Keycloak identity and matching PostgreSQL organization/profile/features. Duplicate email and mismatched invitation fail without extra profiles. Invited signup joins the target tenant without creating a personal tenant. Effective Keycloak account roles include `manage-account` and `view-profile` for both newly registered users. Verification remains required and delivery explicitly fails; weak passwords are rejected. | `keycloak-auth.spec.ts`, [`helpers/isolated-stack.ts`](helpers/isolated-stack.ts) |
+| Owner viewing accounting connections | Empty connections are returned. Unconfigured providers are marked unsupported and QuickBooks connection initiation fails explicitly. | `real-ledger.spec.ts` |
 
-### Option 2: Using Testcontainers (Recommended for CI/CD)
+The security navigation and invitation acceptance use the actual application controls. The report, organization settings and permission assertions make authenticated HTTP requests using a token from a real browser login. Successful invitation acceptance clicks the actual invitation screen; registration calls the public API and reads the resulting Keycloak/PostgreSQL state. These checks do not click through every corresponding application screen. Public locale coverage establishes rendering under each setting, not completeness of every translation or accessibility requirement.
 
-Testcontainers automatically manages Docker containers for isolated test environments.
+## Actual storage and accounting synchronization
 
-```bash
-# Tests will automatically start containers
-npm run test:e2e
-```
+[`datalake-real-storage.cjs`](datalake-real-storage.cjs) exercises 14 named checks using real loopback S3, PostgreSQL and Redis. QuickBooks responses are synthetic fixtures. The harness never imports the full application module or calls an accounting provider.
 
-## Test Suites
+Its assertions cover empty/missing files, pagination across 1,005 partitions, file/row/object limits, snapshot replacement and deletion, duplicate keys, tenant scoping, malformed payloads, balanced SQL journals, immutable committed S3 snapshots, negative balances and reversals, deterministic repeated synchronization, independent tenant snapshots, partial S3 staging failure, SQL transaction rollback and cache invalidation after an empty replacement.
 
-### 1. QuickBooks Real Data Tests
-Tests the complete flow with real QuickBooks sandbox data.
+The accounting harness alone verifies storage compatibility. The complete image-qualification workflow additionally builds the MinIO server and client from the reviewed source/compiler/runtime pins on native AMD64 and ARM64. On each architecture, [`qualify.py`](../deploy/storage/qualify.py) requires two runtime checks, including running the production [`storage.sh`](../deploy/oracle/init/storage.sh) unchanged twice; nine application-permission, private/public-access and restart-persistence checks; and all 14 core accounting harness checks.
 
-```bash
-npx playwright test e2e/quickbooks-real-data.spec.ts
-```
+Successful qualification archives the exact tested image bytes, image IDs, source revision, pins and archive hashes, workflow run/attempt, licenses and compiler/module provenance. These archives are candidates for the separately gated publication process described in the [storage guide](../deploy/storage/README.md). Image qualification establishes the retained package’s behavior under the tested synthetic conditions. It does not certify provider accounts, deployed credentials/data, cloud networking or production operation.
 
-**What it tests:**
-- QuickBooks sandbox sync to S3
-- Real data display in dashboard
-- Accounts and transactions from QuickBooks
-- Connection status
-- Cache invalidation
+The harness refuses non-CI execution, non-loopback dependencies, a database without the expected bootstrap marker, an occupied storage bucket or existing fixture identities. Do not aim it at production or weaken those guards to reuse customer data.
 
-### 2. Industry-Specific Tests
-Tests that each industry displays appropriate data and graphs.
+## Concrete gaps before a full production claim
 
-```bash
-npx playwright test e2e/industry-data.spec.ts
-```
+| Capability | Why the present gate does not establish it |
+| --- | --- |
+| Complete signup, email verification, password reset and onboarding journey | Registration API persistence is exercised, but SMTP is empty and the newly created accounts intentionally remain unverified. The suite does not deliver or consume an email action, submit the signup screen, or complete new-user onboarding against deployed identity/email services. |
+| Complete account-security lifecycle | Account-console navigation and profile loading are selected. Password updates, MFA enrollment/recovery and revocation of another session are not exercised. |
+| Complete role matrix | Invited viewer acceptance, temporary administrator permissions, owner restrictions and immediate membership changes are selected. Accountant-specific and platform privileges, every application action, and all role combinations remain outside this browser selection. |
+| Platform administration | The admin app is compiled and type checked. It is not started or navigated in the strict job, and no platform administrator identity is exercised there. |
+| Real accounting-provider authorization and synchronization | Strict CI supplies no QuickBooks OAuth configuration, and the storage harness supplies fixture provider responses. Live authorization, callback, token renewal, source reconciliation and disconnect still need a dedicated provider tenant. `AccountingConnectionsService` currently marks Xero, Sage, FreshBooks and Wave unsupported. |
+| Stripe and transactional messages | The strict workflow supplies no Stripe credentials/webhook secret and asserts no payment or subscription lifecycle. Invitations stay unsent and no contact, verification or reset message delivery is asserted. |
+| Remaining product screens and outputs | Strict assertions target balance sheet/income statement API results and selected organization APIs. Cash-flow UI, report exports/downloads, document uploads/sharing, Power BI, AI outputs and the older dashboard/industry/settings browser suites are outside this selection. |
+| Production operation | A healthy loopback stack does not exercise Cloudflare origin routing, public OIDC, deployed storage credentials/data/policies, backup restoration, monitoring alert delivery, or load/scaling behavior. These require the deployed services and their own evidence. |
 
-**Industries tested:**
-- Real Estate
-- Retail
-- Professional Services
-- Manufacturing
-- Healthcare
+Some boundaries also have API or web unit coverage. Count that as the corresponding unit coverage, not as a completed browser, external-service or production journey.
 
-### 3. Premium Member Full Flow
-Complete user journey for premium members.
+## Legacy suites and their limits
 
-```bash
-npx playwright test e2e/full-flow-premium.spec.ts
-```
+`npm run test:e2e` uses [`playwright.config.ts`](../playwright.config.ts), not the strict configuration. Testcontainers are enabled only when `USE_TESTCONTAINERS=true` or `npm run test:e2e:containers` is used.
 
-**What it tests:**
-- Data verification checklist (4/4 items)
-- Dashboard with real data
-- All report sections
-- Connections management
-- Settings and subscription
-- Empty states with CTAs
+Older files such as `quickbooks-real-data.spec.ts`, `full-flow-premium.spec.ts`, `etl-flow.spec.ts`, `accessibility.spec.ts` and `performance.spec.ts` are not selected by `verify.yml`'s strict command. Review their prerequisites and assertions before treating them as a gate:
 
-### 4. ETL Flow Tests
-Tests the complete ETL pipeline.
+- `quickbooks-real-data.spec.ts` skips without refresh-token/realm configuration. Some assertions accept an empty state or run only when a response is successful. A present filename or a skipped run cannot prove live QuickBooks integration.
+- `full-flow-premium.spec.ts` writes `mock_auth_user` and plan/tenant values into local storage. It does not establish real authentication or provider data correctness.
+- Accessibility and performance files are outside the strict selection. The public rendering test checks specific geometry/runtime problems, not a complete accessibility audit or performance benchmark.
+
+Keep provider credentials outside checked-in documentation and fixtures. Use only a dedicated, authorized sandbox when intentionally running an external-service suite.
+
+## Running the selected checks
+
+Use the workflow for the complete disposable stack. It records the exact dependency setup, bootstrap, realm generation, builds and runtime checks. Running Playwright alone does not create these dependencies.
 
 ```bash
-npx playwright test e2e/etl-flow.spec.ts
+# Dependency-free readiness response regressions
+node --test e2e/wait-for-http.test.cjs
+
+# Public-only checks against an explicitly selected, already running target
+BASE_URL=http://localhost:5173 npx --no-install playwright test --config playwright.strict.config.ts --project=public
+
+# Entire strict suite after provisioning the disposable stack and its dedicated identity
+npx --no-install playwright test --config playwright.strict.config.ts
 ```
 
-## Running Tests
+The authenticated tests require `E2E_USERNAME` and `E2E_PASSWORD`. `real-ledger.spec.ts` changes settings and invitations in the expected fixture tenant. The account-creation/membership tests additionally require exact loopback URLs, disposable database credentials, synthetic identity credentials and the bootstrap marker; they refuse other targets. The registration test reports a failure without an automatic retry so its five registration requests are not repeated within the rate-limit window. Do not substitute a customer account or run this write-capable suite against production as a generic smoke test.
 
-### Run All Tests
-```bash
-npm run test:e2e
-```
+## Deployment gates and retained evidence
 
-### Run Specific Suite
-```bash
-npx playwright test e2e/quickbooks-real-data.spec.ts
-```
+Cloudflare website delivery requires the workflow-accessible `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Missing values fail deployment preflight. An active DNS zone or signed-in dashboard does not supply those workflow credentials. Customer sign-in additionally needs a real API origin, public identity provider and the corresponding build variables. See [`CLOUDFLARE_DEPLOYMENT.md`](../docs/CLOUDFLARE_DEPLOYMENT.md).
 
-### Run in UI Mode (Debug)
-```bash
-npm run test:e2e:ui
-```
+The Oracle candidate requires an existing authorized host, protected host configuration, reviewed image pins, deployment identity/host verification and a successful verification run for the exact commit. Its activation phase checks public routing, expected release, real readiness, OIDC and storage boundaries. See [`deploy/oracle/README.md`](../deploy/oracle/README.md).
 
-### Run Headed (See Browser)
-```bash
-npm run test:e2e:headed
-```
+Review the workflow conclusion and every job, including failures/skips. The `real-stack-browser-results` artifact retains `playwright-report/`, `test-results/e2e-results.xml`, runtime logs and the storage harness result JSON when completed. Failed browser cases retain traces/screenshots; `storage-arm64-results` retains the separate architecture’s available runtime/test results.
 
-### Run with Debug
-```bash
-npm run test:e2e:debug
-```
-
-## Test Configuration
-
-### Environment Variables
-
-Create `.env.local` with:
-
-```env
-# QuickBooks Sandbox
-QUICKBOOKS_REFRESH_TOKEN=your_refresh_token
-QUICKBOOKS_REALM_ID=your_realm_id
-QUICKBOOKS_CLIENT_ID=ABfRcpxnLneahacnWuQr29sTeIIZuBdMlXqaUYWT1UkyNFT6to
-QUICKBOOKS_CLIENT_SECRET=DWyhuILmup8OWkeMRUoOhfZ44QYQdGKiNlmPS45z
-
-# API Configuration
-API_URL=http://localhost:3000
-BASE_URL=http://localhost:5173
-INTERNAL_API_TOKEN=change-me
-
-# S3 (LocalStack)
-S3_ENDPOINT=http://localhost:4566
-S3_REGION=us-east-1
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
-```
-
-### Playwright Configuration
-
-See `playwright.config.ts` for:
-- Test directories
-- Browser configurations
-- Retry strategies
-- Screenshot/video settings
-
-## Test Architecture
-
-### Clean Architecture Compliance
-
-```
-e2e/
-├── quickbooks-real-data.spec.ts    # Infrastructure layer tests
-├── industry-data.spec.ts           # Domain layer tests
-├── full-flow-premium.spec.ts       # Application layer tests
-├── etl-flow.spec.ts                # Integration tests
-└── testcontainers-setup.ts         # Test infrastructure
-```
-
-### Test Isolation
-
-- Each test suite is independent
-- Testcontainers provide isolated environments
-- No shared state between tests
-- Cleanup after each test run
-
-## Debugging Failed Tests
-
-### 1. Check Test Reports
-```bash
-npm run test:e2e:report
-```
-
-### 2. View Screenshots
-Screenshots are saved in `test-results/` on failure.
-
-### 3. View Videos
-Videos are saved in `test-results/` on failure.
-
-### 4. Check Logs
-```bash
-docker logs plainledger-api
-docker logs plainledger-web
-```
-
-## CI/CD Integration
-
-### GitHub Actions
-
-Tests run automatically on:
-- Pull requests
-- Push to main
-- Scheduled nightly runs
-
-### Testcontainers Benefits
-
-- ✅ Isolated test environments
-- ✅ No manual setup required
-- ✅ Consistent across developers
-- ✅ Works in CI/CD pipelines
-- ✅ Automatic cleanup
-
-## Troubleshooting
-
-### Tests Fail with "Connection Refused"
-
-1. Ensure Docker is running
-2. Start services: `docker-compose up -d`
-3. Wait for services to be healthy: `docker ps`
-
-### QuickBooks Tests Skip
-
-1. Check `.env.local` has QuickBooks credentials
-2. Run: `npx tsx scripts/providers/quickbooks/get-token.ts`
-3. Verify tokens are valid
-
-### Tests Timeout
-
-1. Increase timeout in `playwright.config.ts`
-2. Check service health: `curl http://localhost:3000/health`
-3. Verify network connectivity
-
-## Best Practices
-
-1. **Always use Testcontainers in CI/CD** - Ensures consistency
-2. **Use docker-compose for local dev** - Faster iteration
-3. **Test with real QuickBooks data** - Catches integration issues
-4. **Test empty states** - Ensures proper UX when data is missing
-5. **Test all industries** - Validates industry-specific features
-6. **Clean up after tests** - Prevents state leakage
-
-## Next Steps
-
-1. Add more industry-specific test data
-2. Add performance tests
-3. Add accessibility tests
-4. Add visual regression tests
+Successful storage qualification steps additionally upload `qualified-storage-amd64-attempt-N` and `qualified-storage-arm64-attempt-N`. Each includes the exact image archive, `qualification.json`, pins, accounting results, licenses and compiler/module provenance. Match both artifacts to the selected source SHA, workflow run and attempt. Build provenance or an incomplete harness is not a passing image qualification, and an artifact’s existence does not make the entire workflow successful.

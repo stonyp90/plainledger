@@ -43,7 +43,7 @@ export function useChartCapture<T extends HTMLElement = HTMLDivElement>() {
               typeof className === 'string' &&
               (className.includes('tooltip') ||
                 className.includes('chart-tooltip') ||
-                (element.style?.position === 'absolute' &&
+                (element instanceof HTMLElement && element.style?.position === 'absolute' &&
                   element.style?.zIndex &&
                   parseInt(element.style.zIndex) > 100))
             );

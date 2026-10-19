@@ -80,6 +80,7 @@ export interface ShareInfo {
 export class DocumentShareService {
   private readonly logger = new Logger(DocumentShareService.name);
   private readonly s3Client: S3Client;
+  private readonly signingClient: S3Client;
   private readonly bucket: string;
   private readonly isLocalDev: boolean;
   private readonly baseUrl: string;
@@ -90,6 +91,7 @@ export class DocumentShareService {
     private readonly sharedDocumentRepo: Repository<SharedDocumentEntity>,
   ) {
     const s3Endpoint = this.configService.get<string>("S3_ENDPOINT");
+    const publicEndpoint = this.configService.get<string>("S3_PUBLIC_ENDPOINT")?.replace(/\/$/, "");
     const s3Region =
       this.configService.get<string>("S3_REGION") || "ca-central-1";
     const accessKeyId =
@@ -125,6 +127,10 @@ export class DocumentShareService {
       credentials,
       forcePathStyle: this.isLocalDev,
     });
+
+    this.signingClient = publicEndpoint ? new S3Client({
+      endpoint: publicEndpoint, region: s3Region, credentials, forcePathStyle: true,
+    }) : this.s3Client;
 
     this.logger.log(
       `DocumentShareService initialized - Bucket: ${this.bucket}, LocalDev: ${this.isLocalDev}`,
@@ -187,13 +193,21 @@ export class DocumentShareService {
 
     // Validate file size (max 100MB)
     const maxFileSize = 100 * 1024 * 1024;
-    if (file.length > maxFileSize) {
+    if (!Buffer.isBuffer(file) || file.length === 0 || file.length > maxFileSize) {
       throw new BadRequestException("File size exceeds 100MB limit");
     }
 
     // Validate password strength
-    if (password.length < 6) {
+    if (typeof password !== "string" || password.length < 6 || password.length > 1024) {
       throw new BadRequestException("Password must be at least 6 characters");
+    }
+    if (!Number.isFinite(expiresInHours) || expiresInHours <= 0 || expiresInHours > 8760 ||
+      (maxDownloads !== undefined && (!Number.isSafeInteger(maxDownloads) || maxDownloads < 1))) {
+      throw new BadRequestException("Share expiration and download limit must be positive and within supported limits");
+    }
+    // eslint-disable-next-line no-control-regex -- User filenames cannot contain path separators or control characters.
+    if (typeof filename !== "string" || !filename.trim() || filename.length > 255 || /[\\/\x00-\x1f]/.test(filename)) {
+      throw new BadRequestException("Invalid document filename");
     }
 
     // Generate unique identifiers
@@ -268,6 +282,9 @@ export class DocumentShareService {
    */
   async accessShare(options: AccessShareOptions): Promise<DownloadResult> {
     const { shareToken, password, clientIp } = options;
+    if (typeof shareToken !== "string" || !/^[a-f0-9]{64}$/.test(shareToken) || typeof password !== "string" || password.length > 1024) {
+      throw new BadRequestException("Invalid share access request");
+    }
 
     // Find the share
     const share = await this.sharedDocumentRepo.findOne({
@@ -284,12 +301,12 @@ export class DocumentShareService {
     }
 
     // Check expiration
-    if (new Date() > share.expiresAt) {
+    if (new Date() >= share.expiresAt) {
       throw new GoneException("This share has expired");
     }
 
     // Check download limit
-    if (share.maxDownloads && share.downloadCount >= share.maxDownloads) {
+    if (share.maxDownloads !== null && share.maxDownloads !== undefined && share.downloadCount >= share.maxDownloads) {
       throw new GoneException("Download limit reached for this share");
     }
 
@@ -297,7 +314,9 @@ export class DocumentShareService {
     const [salt, storedHash] = share.passwordHash.split(":");
     const providedHash = this.hashPassword(password, salt);
 
-    if (providedHash !== storedHash) {
+    const expected = Buffer.from(storedHash || "", "hex");
+    const actual = Buffer.from(providedHash, "hex");
+    if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
       throw new UnauthorizedException("Invalid password");
     }
 
@@ -309,16 +328,19 @@ export class DocumentShareService {
       ResponseContentDisposition: `attachment; filename="${encodeURIComponent(share.originalFilename)}"`,
     });
 
-    const downloadUrl = await getSignedUrl(this.s3Client, command, {
+    const downloadUrl = await getSignedUrl(this.signingClient, command, {
       expiresIn: expiresInSeconds,
     });
 
-    // Update access stats
-    await this.sharedDocumentRepo.update(share.id, {
-      downloadCount: share.downloadCount + 1,
-      lastAccessedAt: new Date(),
-      lastAccessedIp: clientIp,
-    });
+    // Reserve a download atomically so simultaneous requests cannot exceed the
+    // limit or access a share that was revoked after the initial read.
+    const reserved = await this.sharedDocumentRepo.createQueryBuilder()
+      .update(SharedDocumentEntity)
+      .set({ downloadCount: () => '"download_count" + 1', lastAccessedAt: new Date(), lastAccessedIp: clientIp })
+      .where('"id" = :id AND "is_active" = true AND "expires_at" > :now', { id: share.id, now: new Date() })
+      .andWhere('("max_downloads" IS NULL OR "download_count" < "max_downloads")')
+      .execute();
+    if (reserved.affected !== 1) throw new GoneException("This share is no longer available or its download limit was reached");
 
     this.logger.log(
       `Document share accessed: ${share.id}, downloads: ${share.downloadCount + 1}`,

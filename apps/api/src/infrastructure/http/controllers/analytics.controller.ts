@@ -11,6 +11,7 @@ import {
   UseGuards,
   Request,
   UnauthorizedException,
+  ForbiddenException,
   Inject,
 } from "@nestjs/common";
 import {
@@ -28,29 +29,38 @@ import { PowerBIThemeAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi
 import { PowerBIAdapter } from "@infrastructure/adapters/bi/powerbi/powerbi.adapter";
 import { CPAAdminGuard } from "@infrastructure/http/guards/cpa-admin.guard";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
+import { OrganizationFeaturePolicyService } from '@application/services/organization-feature-policy.service';
+import { JwtAuthGuard } from '@infrastructure/auth/jwt-auth.guard';
+import { AuthenticatedUser } from '@infrastructure/auth/keycloak-token';
+import { ArrayMaxSize, IsArray, IsBoolean, IsOptional, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 class GetEmbedConfigDto {
+  @IsString() @MaxLength(100)
   reportId: string;
+  @IsOptional() @IsString() @MaxLength(100)
   businessUnitId?: string;
 }
 
+class AnalyticsSectionDto {
+  @IsOptional() @IsBoolean() enabled?: boolean;
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) @MaxLength(100, { each: true }) visibleToRoles?: string[];
+}
+class AnalyticsVisibilityDto {
+  @IsOptional() @ValidateNested() @Type(() => AnalyticsSectionDto) plainledger?: AnalyticsSectionDto;
+  @IsOptional() @ValidateNested() @Type(() => AnalyticsSectionDto) powerbi?: AnalyticsSectionDto;
+}
 class UpdateOrgFeaturesDto {
+  @IsUUID()
   organizationId: string;
-  analytics?: {
-    plainledger?: {
-      enabled?: boolean;
-      visibleToRoles?: string[];
-    };
-    powerbi?: {
-      enabled?: boolean;
-      visibleToRoles?: string[];
-    };
-  };
+  @IsOptional() @ValidateNested() @Type(() => AnalyticsVisibilityDto)
+  analytics?: AnalyticsVisibilityDto;
 }
 
 @Controller("analytics")
 @ApiTags("analytics")
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class AnalyticsController {
   constructor(
     private readonly getEmbedConfigUseCase: GetEmbedConfigUseCase,
@@ -60,11 +70,12 @@ export class AnalyticsController {
     private readonly powerBIService: PowerBIAdapter,
     @Inject("IOrganizationFeaturesRepository")
     private readonly featuresRepository: IOrganizationFeaturesRepository,
+    private readonly policy: OrganizationFeaturePolicyService,
   ) {}
 
   @Get("reports")
   @Roles({
-    roles: ["plainledger_user", "organization_admin", "business_unit_admin"],
+    roles: ["user"],
   })
   @ApiOperation({ summary: "List available analytics reports" })
   @ApiQuery({ name: "organizationId", required: true })
@@ -74,10 +85,11 @@ export class AnalyticsController {
     @Query("businessUnitId") businessUnitId: string | undefined,
     @Request() req: any,
   ) {
-    const userRoles = req.user?.realm_access?.roles || [];
+    const { profile, policy } = await this.policy.readForActor(req.user, organizationId);
+    const userRoles = [profile.role, 'user'].filter((role): role is string => !!role);
 
     return this.listAnalyticsReportsUseCase.execute({
-      organizationId,
+      organizationId: policy.organization.id,
       businessUnitId,
       userRoles,
     });
@@ -85,7 +97,7 @@ export class AnalyticsController {
 
   @Post("embed")
   @Roles({
-    roles: ["plainledger_user", "organization_admin", "business_unit_admin"],
+    roles: ["user"],
   })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Get Power BI embed configuration" })
@@ -93,9 +105,11 @@ export class AnalyticsController {
   @ApiResponse({ status: 401, description: "Unauthorized" })
   @ApiResponse({ status: 404, description: "Report not found" })
   async getEmbedConfig(@Body() dto: GetEmbedConfigDto, @Request() req: any) {
-    const organizationId = req.user?.organization_id;
+    const { profile, policy } = await this.policy.readForActor(req.user);
+    if (!this.policy.analytics(policy).analytics.powerbi.enabled) throw new ForbiddenException('Power BI is not enabled in the organization feature policy and subscription');
+    const organizationId = profile.organizationId;
     const businessUnitId = req.user?.business_unit_id || dto.businessUnitId;
-    const userRoles = req.user?.realm_access?.roles || [];
+    const userRoles = [profile.role, 'user'].filter((role): role is string => !!role);
 
     if (!organizationId) {
       throw new UnauthorizedException("Organization ID not found in token");
@@ -111,7 +125,7 @@ export class AnalyticsController {
 
   @Get("theme")
   @Roles({
-    roles: ["plainledger_user", "organization_admin", "business_unit_admin"],
+    roles: ["user"],
   })
   @ApiOperation({ summary: "Get Power BI theme for organization" })
   @ApiQuery({ name: "organizationId", required: true })
@@ -121,7 +135,7 @@ export class AnalyticsController {
   ) {
     // Get organization branding colors (from organization entity)
     // For now, return default theme
-    const tenantName = req.user?.organization_name || "PlainLedger";
+    const tenantName = (await this.policy.authorize(req.user, organizationId)).organization.name;
     const colors = {
       primary: "#1a1a2e",
       secondary: "#16213e",
@@ -138,41 +152,15 @@ export class AnalyticsController {
   }
 
   @Get("org-features")
-  @Roles({ roles: ["plainledger_cpa_admin", "organization_admin"] })
+  @Roles({ roles: ["user"] })
   @ApiOperation({ summary: "Get organization analytics features" })
   @ApiQuery({ name: "organizationId", required: true })
-  async getOrgFeatures(@Query("organizationId") organizationId: string) {
-    const features =
-      await this.featuresRepository.findByOrganizationId(organizationId);
-    if (features) {
-      return features.toJSON();
-    }
-    // Return defaults if not found
-    return {
-      id: "",
-      organizationId,
-      analytics: {
-        plainledger: {
-          enabled: true,
-          visibleToRoles: [
-            "plainledger_user",
-            "organization_admin",
-            "business_unit_admin",
-          ],
-        },
-        powerbi: {
-          enabled: false,
-          visibleToRoles: ["organization_admin", "business_unit_admin"],
-        },
-      },
-      updatedBy: "",
-      updatedAt: new Date().toISOString(),
-    };
+  async getOrgFeatures(@Query("organizationId") organizationId: string, @Request() req: { user: AuthenticatedUser }) {
+    return this.policy.analytics((await this.policy.readForActor(req.user, organizationId)).policy);
   }
 
   @Put("org-features")
-  @UseGuards(CPAAdminGuard)
-  @Roles({ roles: ["plainledger_cpa_admin"] })
+  @Roles({ roles: ["realm:platform_admin", "realm:super_admin"] })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: "Update organization analytics features (CPA Admin only)",
@@ -183,15 +171,11 @@ export class AnalyticsController {
     @Body() dto: UpdateOrgFeaturesDto,
     @Request() req: any,
   ) {
-    return this.updateOrgFeaturesUseCase.execute({
-      organizationId: dto.organizationId,
-      analytics: dto.analytics,
-      updatedBy: req.user?.sub || "system",
-    });
+    return this.policy.analytics(await this.policy.update(req.user, dto.organizationId, dto.analytics));
   }
 
   @Post("refresh/:datasetId")
-  @Roles({ roles: ["organization_admin"] })
+  @Roles({ roles: ["realm:platform_admin", "realm:super_admin"] })
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: "Trigger Power BI dataset refresh" })
   @ApiQuery({ name: "workspaceId", required: true })

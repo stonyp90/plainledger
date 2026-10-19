@@ -291,7 +291,7 @@ function CreateNotificationModal({
                     color: formData.targetType === target.value 
                       ? 'rgb(var(--color-primary-600))' 
                       : 'rgb(var(--color-text))',
-                    ringColor: 'rgb(var(--color-primary-500) / 0.2)',
+                    boxShadow: '0 0 0 2px rgb(var(--color-primary-500) / 0.2)',
                   }}
                 >
                   <target.icon className="w-4 h-4" />

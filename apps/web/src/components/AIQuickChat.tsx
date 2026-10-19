@@ -12,7 +12,7 @@ interface AIQuickChatProps {
 
 interface QuickAction {
   id: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   labelEn: string;
   labelFr: string;
   queryEn: string;

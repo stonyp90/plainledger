@@ -20,6 +20,7 @@ import { TrendingUp, TrendingDown, Target, CheckCircle, AlertCircle, DollarSign,
 import { LabelTooltip } from './Tooltip';
 import { VariancePinCompact } from './charts/ibcs/VariancePin';
 import { IBCSColors } from '../lib/ibcs';
+import { chartExtent, getChartDataIssue, isFiniteNumber } from '../lib/chartDataValidation';
 
 // Mini sparkline component for KPI cards with optional animation
 interface SparklineProps {
@@ -63,16 +64,18 @@ function MiniSparkline({
     return () => cancelAnimationFrame(animationId);
   }, [isVisible, animate]);
 
-  if (!data || data.length < 2) return null;
+  const issue = getChartDataIssue(data, isFiniteNumber);
+  const benchmarkIssue = benchmarkData === undefined ? null : getChartDataIssue(benchmarkData, isFiniteNumber);
+  if (issue || benchmarkIssue === 'invalid') return <span role={issue === 'invalid' || benchmarkIssue === 'invalid' ? 'alert' : 'status'} aria-label="Chart data unavailable">—</span>;
   
   // Calculate min/max across both datasets for consistent scale
   const allData = benchmarkData ? [...data, ...benchmarkData] : data;
-  const max = allData.length > 0 ? Math.max(...allData) : 0;
-  const min = allData.length > 0 ? Math.min(...allData) : 0;
+  const { max, min } = chartExtent(allData);
   const range = max - min || 1;
+  if (!Number.isFinite(range) || !Number.isFinite(height) || height < 8) return <span role="alert" aria-label="Chart data unavailable">—</span>;
   
   const getPoints = (values: number[]) => values.map((v, i) => {
-    const x = (i / (values.length - 1)) * 100;
+    const x = values.length === 1 ? 50 : (i / (values.length - 1)) * 100;
     const y = height - ((v - min) / range) * (height - 8) - 4;
     return `${x},${y}`;
   });
@@ -87,7 +90,7 @@ function MiniSparkline({
   const showEndPoints = !animate || progress > 0.8;
   
   return (
-    <svg width="100%" height={height} className="overflow-visible">
+    <svg width="100%" height={height} viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="overflow-visible">
       {/* Industry benchmark line (dashed, behind) */}
       {benchmarkData && visibleBenchmarkPoints.length > 1 && (
         <polyline

@@ -1,7 +1,6 @@
 /**
  * Login Page
- * Custom login form that authenticates via backend API
- * Maintains our UI/UX while using Keycloak securely
+ * Starts the Keycloak authorization-code flow with PKCE.
  */
 
 import { useState, useEffect } from 'react';
@@ -35,12 +34,10 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const { language } = useI18n();
   const isEn = language === 'en';
-  const { keycloak } = useKeycloak();
+  const { login, initialized, authError } = useKeycloak();
 
   // Form state
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -81,119 +78,17 @@ export default function Login() {
     analytics.page('login');
   }, []);
 
-  // Handle form submission
+  // Passwords, MFA, recovery, and identity providers are handled by Keycloak.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || isSubmitting) return;
-
+    if (isSubmitting || !initialized) return;
     setIsSubmitting(true);
     setError(null);
-
     try {
-      analytics.track('login_attempt', { email: email.toLowerCase() });
-
-      // Authenticate via backend API endpoint
-      // This maintains our custom UI while using Keycloak securely
-      // The backend uses Direct Access Grants with the API client credentials
-      // Use relative URL to align with ALB routing rules (/api/* routes to API service)
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password: password,
-        }),
-      });
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type');
-      const isJsonResponse = contentType && contentType.includes('application/json');
-
-      if (!response.ok) {
-        // Try to parse error response, but handle non-JSON gracefully
-        let errorData: any = {};
-        if (isJsonResponse) {
-          try {
-            errorData = await response.json();
-          } catch {
-            // JSON parse failed, use empty object
-          }
-        }
-
-        // Handle EMAIL_NOT_VERIFIED error - redirect to verify-email page
-        if (errorData.error === 'EMAIL_NOT_VERIFIED') {
-          analytics.track('login_email_not_verified', { email: email.toLowerCase() });
-          navigate(
-            `/verify-email?email=${encodeURIComponent(errorData.email || email.toLowerCase())}`,
-          );
-          return;
-        }
-
-        // Handle server errors (502, 503, etc.) with user-friendly message
-        if (response.status >= 500 || !isJsonResponse) {
-          throw new Error(
-            isEn
-              ? 'Server error. Please try again later.'
-              : 'Erreur du serveur. Veuillez réessayer plus tard.',
-          );
-        }
-
-        const errorMsg =
-          errorData.message ||
-          errorData.error ||
-          (isEn ? 'Invalid email or password' : 'Courriel ou mot de passe invalide');
-        throw new Error(errorMsg);
-      }
-
-      // Safely parse success response
-      let data;
-      if (!isJsonResponse) {
-        throw new Error(
-          isEn
-            ? 'Server error. Please try again later.'
-            : 'Erreur du serveur. Veuillez réessayer plus tard.',
-        );
-      }
-      try {
-        data = await response.json();
-      } catch {
-        throw new Error(
-          isEn
-            ? 'Server error. Please try again later.'
-            : 'Erreur du serveur. Veuillez réessayer plus tard.',
-        );
-      }
-
-      if (data.accessToken && data.user) {
-        analytics.track('login_success', { userId: data.user.id });
-
-        // Store tokens in sessionStorage for Keycloak client to pick up
-        // The Keycloak provider will detect these on next render/initialization
-        sessionStorage.setItem('kc_token', data.accessToken);
-        sessionStorage.setItem('kc_refresh_token', data.refreshToken || '');
-        if (data.idToken) {
-          sessionStorage.setItem('kc_id_token', data.idToken);
-        }
-
-        // Store user info temporarily for Keycloak provider to use
-        sessionStorage.setItem('kc_user', JSON.stringify(data.user));
-
-        // Force Keycloak provider to re-initialize with stored tokens
-        // by triggering a page reload - this ensures proper session establishment
-        const redirectTo = searchParams.get('redirect') || '/app';
-
-        // Use window.location to ensure Keycloak provider picks up tokens on reload
-        // The provider checks sessionStorage on initialization
-        window.location.href = redirectTo;
-      } else {
-        throw new Error('Invalid response from server');
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
-      setError(message);
-      analytics.track('login_error', { error: message });
+      analytics.track('login_attempt', { method: 'keycloak' });
+      await login(email.trim() || undefined);
+    } catch {
+      setError(isEn ? 'Secure sign-in is unavailable. Please reload the page and try again.' : 'La connexion sécurisée est indisponible. Rechargez la page et réessayez.');
     } finally {
       setIsSubmitting(false);
     }
@@ -401,14 +296,15 @@ export default function Login() {
               </h1>
               <p className="text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
                 {isEn
-                  ? 'Enter your email and password to continue'
-                  : 'Entrez votre courriel et mot de passe pour continuer'}
+                  ? 'Continue to secure sign-in. You can use your password, SSO, or recovery options there.'
+                  : 'Continuez vers la connexion sécurisée pour utiliser votre mot de passe, le SSO ou les options de récupération.'}
               </p>
             </div>
 
             {/* Success Alert */}
             {successMessage && (
               <motion.div
+                role="status"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 p-4 rounded-lg flex items-start gap-3"
@@ -428,8 +324,9 @@ export default function Login() {
             )}
 
             {/* Error Alert */}
-            {error && (
+            {(error || authError) && (
               <motion.div
+                role="alert"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 p-4 rounded-lg flex items-start gap-3"
@@ -443,20 +340,28 @@ export default function Login() {
                   style={{ color: 'rgb(var(--color-error))' }}
                 />
                 <p className="text-sm" style={{ color: 'rgb(var(--color-error))' }}>
-                  {error}
+                  {error || (isEn ? 'Secure sign-in is unavailable. Please reload the page and try again.' : 'La connexion sécurisée est indisponible. Rechargez la page et réessayez.')}
                 </p>
               </motion.div>
             )}
+
+            {!initialized && !authError && <p role="status" className="mb-4 text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Preparing secure sign-in…' : 'Préparation de la connexion sécurisée…'}
+            </p>}
+            {authError && <button type="button" onClick={() => window.location.reload()} className="btn-secondary mb-4">
+              {isEn ? 'Reload sign-in' : 'Recharger la connexion'}
+            </button>}
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div>
                 <label
+                  htmlFor="login-email"
                   className="block text-sm font-medium mb-1.5"
                   style={{ color: 'rgb(var(--color-text))' }}
                 >
-                  {isEn ? 'Email' : 'Courriel'} *
+                  {isEn ? 'Email (optional)' : 'Courriel (facultatif)'}
                 </label>
                 <div className="relative">
                   <Mail
@@ -464,6 +369,7 @@ export default function Login() {
                     style={{ color: 'rgb(var(--color-text-muted))' }}
                   />
                   <input
+                    id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => {
@@ -477,77 +383,24 @@ export default function Login() {
                       borderColor: 'rgb(var(--color-border))',
                       color: 'rgb(var(--color-text))',
                     }}
-                    required
                     autoFocus
                     autoComplete="email"
                   />
                 </div>
               </div>
 
-              {/* Password */}
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: 'rgb(var(--color-text))' }}
-                >
-                  {isEn ? 'Password' : 'Mot de passe'} *
-                </label>
-                <div className="relative">
-                  <Lock
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder={isEn ? 'Enter your password' : 'Entrez votre mot de passe'}
-                    className="w-full pl-10 pr-12 py-2.5 rounded-lg border transition-colors"
-                    style={{
-                      backgroundColor: 'rgb(var(--color-bg-subtle))',
-                      borderColor: 'rgb(var(--color-border))',
-                      color: 'rgb(var(--color-text))',
-                    }}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: 'rgb(var(--color-text-muted))' }}
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Forgot Password Link */}
-              <div className="flex items-center justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium"
-                  style={{ color: 'rgb(var(--color-primary-500))' }}
-                >
-                  {isEn ? 'Forgot password?' : 'Mot de passe oublié?'}
-                </Link>
-              </div>
-
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={!email || !password || isSubmitting}
+                disabled={!initialized || isSubmitting}
                 className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor:
-                    email && password && !isSubmitting
+                    initialized && !isSubmitting
                       ? 'rgb(var(--color-primary-500))'
                       : 'rgb(var(--color-bg-muted))',
                   color:
-                    email && password && !isSubmitting ? 'white' : 'rgb(var(--color-text-muted))',
+                    initialized && !isSubmitting ? 'white' : 'rgb(var(--color-text-muted))',
                 }}
               >
                 {isSubmitting ? (
@@ -556,9 +409,9 @@ export default function Login() {
                     {isEn ? 'Signing in...' : 'Connexion...'}
                   </>
                 ) : isEn ? (
-                  'Sign in'
+                  'Continue to sign in'
                 ) : (
-                  'Se connecter'
+                  'Continuer la connexion'
                 )}
               </button>
             </form>
@@ -606,8 +459,8 @@ export default function Login() {
               <Shield className="w-4 h-4" />
               <span>
                 {isEn
-                  ? 'Your data is encrypted and secure'
-                  : 'Vos données sont chiffrées et sécurisées'}
+                  ? 'Protected sign-in with optional multi-factor authentication'
+                  : 'Connexion protégée avec authentification multifacteur facultative'}
               </span>
             </div>
           </motion.div>

@@ -5,7 +5,7 @@
  */
 
 // Client
-export { apolloClient, updateAuthToken, resetApolloClient } from "./client";
+export { apolloClient, updateAuthToken, resetApolloClient, setActiveOrganizationId } from "./client";
 
 // Queries
 export * from "./queries";

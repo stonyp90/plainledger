@@ -865,7 +865,7 @@ export async function runAIAnalysis(
       
       // Determine thresholds based on ratio type
       const ratioName = ratioHistory[0].ratioName;
-      let thresholds = { warning: 1.0, critical: 0.8, direction: 'below' as const };
+      let thresholds: { warning: number; critical: number; direction: 'below' | 'above' } = { warning: 1.0, critical: 0.8, direction: 'below' };
       
       if (ratioName.includes('Debt') || ratioName.includes('dette')) {
         thresholds = { warning: 2.0, critical: 3.0, direction: 'above' };

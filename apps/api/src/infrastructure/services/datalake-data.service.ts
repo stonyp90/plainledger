@@ -5,7 +5,14 @@
  * for use in dashboards, reports, and analytics.
  */
 
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException, UnprocessableEntityException } from "@nestjs/common";
+import { DataSource } from 'typeorm';
+import { OrganizationEntity } from '@infrastructure/persistence/postgres/entities/organization.entity';
+import { CommittedAccountingSnapshot, getCommittedAccountingSnapshot, readCommittedAccountingDataset } from './committed-accounting-snapshot';
+import { summarizeLedger, ledgerTrends, cashMovements, cashWaterfall, accountLookup, debitNet, ledgerCurrency } from './datalake-financial-calculations';
+import { GoldDataReader } from "./gold-data-reader";
+import { validateGoldAccounts, validateGoldTransactions, validateGoldBalances } from "./datalake-record-validation";
+import { validateReportDates } from "@application/use-cases/financial-report-validation";
 import { ConfigService } from "@nestjs/config";
 import {
   S3Client,
@@ -193,7 +200,10 @@ export interface DashboardData {
   organizationName: string;
   asOfDate: string;
   dataSource: string;
-  lastUpdated: string;
+  lastUpdated: string | null;
+  currency?: string;
+  cashMovements?: ReturnType<typeof cashMovements>;
+  periodStart?: string;
   accounts: DimAccount[];
   contacts: DimContact[];
   transactions: FactTransaction[];
@@ -225,10 +235,12 @@ export class DatalakeDataService implements IDatalakeDataService {
   private goldBucket: string;
   private readonly appConfig: AppConfig;
   private readonly cacheTtl: number;
+  private readonly goldReader: GoldDataReader;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
+    private readonly database: DataSource,
   ) {
     this.appConfig = createAppConfig(configService);
     this.cacheTtl = this.appConfig.cacheTtlGoldSeconds;
@@ -263,6 +275,14 @@ export class DatalakeDataService implements IDatalakeDataService {
     });
 
     this.goldBucket = this.appConfig.s3GoldBucket;
+    const limit = (name: string) => {
+      const value = configService.get<string>(name);
+      return value === undefined || value === '' ? undefined : Number(value);
+    };
+    this.goldReader = new GoldDataReader(this.s3Client, this.goldBucket, {
+      maxFiles: limit('DATALAKE_MAX_FILES'), maxObjectBytes: limit('DATALAKE_MAX_OBJECT_BYTES'),
+      maxRows: limit('DATALAKE_MAX_ROWS'), maxDatasetBytes: limit('DATALAKE_MAX_DATASET_BYTES'),
+    });
 
     this.logger.log(
       `DatalakeDataService initialized - Bucket: ${this.goldBucket}, Region: ${s3Region}, Endpoint: ${s3Endpoint || "AWS default"}`,
@@ -276,6 +296,7 @@ export class DatalakeDataService implements IDatalakeDataService {
     organizationId: string,
     asOfDate?: Date,
     industryId?: string,
+    startDate?: Date,
   ): Promise<DashboardData> {
     this.logger.log(
       `[S3 Gold] Fetching dashboard data for organization: ${organizationId}${industryId ? `, industry: ${industryId}` : ""} from bucket: ${this.goldBucket}`,
@@ -286,28 +307,38 @@ export class DatalakeDataService implements IDatalakeDataService {
       this.logger.log(
         `[S3 Gold] Fetching accounts, contacts, and transactions from S3...`,
       );
-      const [accounts, contacts, transactions] = await Promise.all([
-        this.fetchAccounts(organizationId),
-        this.fetchContacts(organizationId),
-        this.fetchTransactions(organizationId),
+      const cutoff = (asOfDate || new Date()).toISOString().slice(0, 10);
+      validateReportDates(asOfDate || new Date(), startDate);
+      const snapshot = await getCommittedAccountingSnapshot(this.database, organizationId);
+      const organization = await this.database.getRepository(OrganizationEntity).findOne({ where: { tenantId: organizationId } });
+      if (!organization || organization.deletedAt) throw new NotFoundException('Organization not found');
+      const [accounts, contacts, allTransactions, balances] = await Promise.all([
+        snapshot ? this.snapshotAccounts(snapshot) : this.fetchAccounts(organizationId),
+        snapshot ? Promise.resolve([] as DimContact[]) : this.fetchContacts(organizationId),
+        snapshot ? this.snapshotTransactions(snapshot) : this.fetchTransactions(organizationId),
+        snapshot ? Promise.resolve([] as FactAccountBalance[]) : this.getAccountBalances(organizationId, asOfDate),
       ]);
+      const transactions = allTransactions.filter((transaction) => transaction.transaction_date.slice(0, 10) <= cutoff);
+      const periodStart = startDate?.toISOString().slice(0, 10);
+      const periodTransactions = periodStart ? transactions.filter((transaction) => transaction.transaction_date.slice(0, 10) >= periodStart) : transactions;
+      const currency = ledgerCurrency(transactions, snapshot?.currency || organization.currency);
 
       this.logger.log(
         `[S3 Gold] Fetched ${accounts.length} accounts, ${contacts.length} contacts, ${transactions.length} transactions from S3 Gold bucket`,
       );
 
       // Calculate summary metrics
-      const summary = this.calculateSummary(accounts, transactions);
+      const summary = summarizeLedger(accounts, transactions, periodStart);
 
       // Calculate trends
-      const trends = this.calculateTrends(transactions);
+      const trends = ledgerTrends(accounts, periodTransactions);
 
       // Calculate industry-specific KPIs if industry is specified
       let industryKPIs: IndustryKPIs | undefined;
       if (industryId) {
         industryKPIs = this.calculateIndustryKPIs(
           accounts,
-          transactions,
+          periodTransactions,
           industryId,
         );
       }
@@ -317,29 +348,29 @@ export class DatalakeDataService implements IDatalakeDataService {
         accounts,
         transactions,
         trends,
+        snapshot?.createdAt,
       );
 
       return {
         organizationId,
-        organizationName: `Organization ${organizationId}`,
-        asOfDate: new Date().toISOString().split("T")[0],
+        organizationName: organization.name,
+        asOfDate: (asOfDate || new Date()).toISOString().split("T")[0],
         dataSource: "gold_layer",
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: snapshot?.createdAt || null,
+        currency, periodStart,
+        cashMovements: transactions.length ? cashMovements(accounts, transactions, periodStart, cutoff) : undefined,
         accounts,
         contacts,
         transactions,
-        balances: [],
+        balances,
         summary,
         trends,
         industryKPIs,
         completeness,
       };
     } catch (error) {
-      this.logger.warn(
-        `Failed to fetch from Gold layer, using fallback: ${error}`,
-      );
-      // Return empty data structure (no fake values)
-      return this.getEmptyDashboardData(organizationId);
+      this.logger.warn(`Failed to fetch Gold data for this organization: ${error}`);
+      throw error;
     }
   }
 
@@ -365,12 +396,13 @@ export class DatalakeDataService implements IDatalakeDataService {
     startDate?: Date,
     endDate?: Date,
   ): Promise<FactTransaction[]> {
+    if (startDate || endDate) validateReportDates(endDate || new Date(), startDate);
     const transactions = await this.fetchTransactions(organizationId);
     if (startDate || endDate) {
       return transactions.filter((txn) => {
-        const txnDate = new Date(txn.transaction_date);
-        if (startDate && txnDate < startDate) return false;
-        if (endDate && txnDate > endDate) return false;
+        const txnDate = txn.transaction_date.slice(0, 10);
+        if (startDate && txnDate < startDate.toISOString().slice(0, 10)) return false;
+        if (endDate && txnDate > endDate.toISOString().slice(0, 10)) return false;
         return true;
       });
     }
@@ -380,396 +412,98 @@ export class DatalakeDataService implements IDatalakeDataService {
   /**
    * Get account balances for an organization
    */
-  async getAccountBalances(
-    _organizationId: string,
-    _asOfDate?: Date,
-  ): Promise<FactAccountBalance[]> {
-    // TODO: Implement when FactAccountBalance data is available in Gold layer
-    return [];
+  async getAccountBalances(organizationId: string, asOfDate?: Date): Promise<FactAccountBalance[]> {
+    if (asOfDate) validateReportDates(asOfDate);
+    if (await getCommittedAccountingSnapshot(this.database, organizationId)) return [];
+    const rows = await this.cacheService.getOrFetch(
+      this.cacheService.getDatalakeKey(organizationId, "balances:v2"),
+      async () => validateGoldBalances(await this.readSnapshot<FactAccountBalance>("fact_account_balance", organizationId)), this.cacheTtl,
+    );
+    const cutoff = (asOfDate || new Date()).toISOString().slice(0, 10);
+    const latestByAccount = new Map<string, FactAccountBalance>();
+    for (const row of rows) {
+      // Period movements are not a substitute for a cumulative closing balance.
+      if (row.balance_type !== "CUMULATIVE" || row.as_of_date.slice(0, 10) > cutoff) continue;
+      const previous = latestByAccount.get(row.account_key);
+      if (!previous || row.as_of_date > previous.as_of_date) latestByAccount.set(row.account_key, row);
+    }
+    return [...latestByAccount.values()];
   }
 
-  /**
-   * Fetch accounts from Gold layer (with caching)
-   */
+  private async readSnapshot<T extends { organization_key?: string }>(kind: string, organizationId: string): Promise<T[]> {
+    const snapshot = await getCommittedAccountingSnapshot(this.database, organizationId);
+    if (snapshot) throw new UnprocessableEntityException(`The committed ledger does not include a verified ${kind} dataset`);
+    const canonical = await this.goldReader.readTenantFile<T>(`${organizationId}/${kind}.json`, organizationId);
+    if (canonical !== null) return canonical;
+    return this.goldReader.readTenantSnapshot<T>(`${kind}/${organizationId}/`, organizationId);
+  }
+
+  private async snapshotAccounts(snapshot: CommittedAccountingSnapshot): Promise<DimAccount[]> {
+    return this.cacheService.getOrFetch(this.cacheService.getDatalakeKey(snapshot.tenantId, `accounts:${snapshot.runId}`),
+      async () => validateGoldAccounts(await readCommittedAccountingDataset<DimAccount>(this.goldReader, snapshot, 'dim_account')), this.cacheTtl);
+  }
+
+  private async snapshotTransactions(snapshot: CommittedAccountingSnapshot): Promise<FactTransaction[]> {
+    return this.cacheService.getOrFetch(this.cacheService.getDatalakeKey(snapshot.tenantId, `transactions:${snapshot.runId}`),
+      async () => validateGoldTransactions(await readCommittedAccountingDataset<FactTransaction>(this.goldReader, snapshot, 'fact_transaction')), this.cacheTtl);
+  }
+
   private async fetchAccounts(organizationId: string): Promise<DimAccount[]> {
-    const cacheKey = this.cacheService.getDatalakeKey(
-      organizationId,
-      "accounts",
-    );
-
+    const snapshot = await getCommittedAccountingSnapshot(this.database, organizationId);
+    if (snapshot) return this.snapshotAccounts(snapshot);
     return this.cacheService.getOrFetch(
-      cacheKey,
-      async () => {
-        try {
-          const prefix = `dim_account/${organizationId}/`;
-          this.logger.log(
-            `[S3 Gold] Listing accounts files at prefix: ${prefix}`,
-          );
-          const files = await this.listFiles(prefix);
-
-          if (files.length === 0) {
-            this.logger.log(
-              `[S3 Gold] No accounts found for org: ${organizationId} at ${prefix}, trying e2e test data`,
-            );
-            // Try the e2e test data
-            const e2eFiles = await this.listFiles(
-              `dim_account/${this.appConfig.e2eOrgId}/`,
-            );
-            if (e2eFiles.length > 0) {
-              this.logger.log(
-                `[S3 Gold] Using e2e test data: ${e2eFiles[e2eFiles.length - 1]}`,
-              );
-              return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
-            }
-            this.logger.log(
-              `[S3 Gold] No accounts data found in S3 for org: ${organizationId}`,
-            );
-            return [];
-          }
-
-          if (files.length > 0) {
-            const latestFile = files[files.length - 1];
-            this.logger.log(
-              `[S3 Gold] Found ${files.length} account file(s), using latest: ${latestFile} for org: ${organizationId}`,
-            );
-            const accounts = await this.fetchJsonFile<DimAccount[]>(latestFile);
-            this.logger.log(
-              `[S3 Gold] Loaded ${accounts.length} accounts from S3`,
-            );
-            return accounts;
-          }
-          return [];
-        } catch (error) {
-          this.logger.error(`[S3 Gold] Failed to fetch accounts: ${error}`);
-          return [];
-        }
-      },
-      this.cacheTtl,
+      this.cacheService.getDatalakeKey(organizationId, "accounts:v2"),
+      async () => validateGoldAccounts(await this.readSnapshot<DimAccount>("dim_account", organizationId)), this.cacheTtl,
     );
   }
 
-  /**
-   * Fetch contacts from Gold layer (with caching)
-   */
   private async fetchContacts(organizationId: string): Promise<DimContact[]> {
-    const cacheKey = this.cacheService.getDatalakeKey(
-      organizationId,
-      "contacts",
-    );
-
     return this.cacheService.getOrFetch(
-      cacheKey,
-      async () => {
-        try {
-          const files = await this.listFiles(`dim_contact/${organizationId}/`);
-          if (files.length === 0) {
-            const e2eFiles = await this.listFiles(
-              `dim_contact/${this.appConfig.e2eOrgId}/`,
-            );
-            if (e2eFiles.length > 0) {
-              return this.fetchJsonFile(e2eFiles[e2eFiles.length - 1]);
-            }
-          }
-          if (files.length > 0) {
-            return this.fetchJsonFile(files[files.length - 1]);
-          }
-          return [];
-        } catch (error) {
-          this.logger.warn(`Failed to fetch contacts: ${error}`);
-          return [];
-        }
-      },
-      this.cacheTtl,
+      this.cacheService.getDatalakeKey(organizationId, "contacts:v2"),
+      () => this.readSnapshot<DimContact>("dim_contact", organizationId), this.cacheTtl,
     );
   }
 
-  /**
-   * Fetch transactions from Gold layer (with caching)
-   */
-  private async fetchTransactions(
-    organizationId: string,
-  ): Promise<FactTransaction[]> {
-    const cacheKey = this.cacheService.getDatalakeKey(
-      organizationId,
-      "transactions",
-    );
-
+  private async fetchTransactions(organizationId: string): Promise<FactTransaction[]> {
+    const snapshot = await getCommittedAccountingSnapshot(this.database, organizationId);
+    if (snapshot) return this.snapshotTransactions(snapshot);
     return this.cacheService.getOrFetch(
-      cacheKey,
+      this.cacheService.getDatalakeKey(organizationId, "transactions:v2"),
       async () => {
-        try {
-          this.logger.log(
-            `[S3 Gold] Fetching transactions for org: ${organizationId}`,
-          );
-
-          // Check direct organization path first (QuickBooks format)
-          let files = await this.listFiles(
-            `fact_transaction/${organizationId}/`,
-          );
-          this.logger.log(
-            `[S3 Gold] Found ${files.length} transaction file(s) at fact_transaction/${organizationId}/`,
-          );
-
-          // Try partition structure if direct path is empty
-          if (files.length === 0) {
-            files = await this.listFiles(
-              `fact_transaction/organization_id=${organizationId}/`,
-            );
-            this.logger.log(
-              `[S3 Gold] Found ${files.length} transaction file(s) at partition path`,
-            );
-          }
-
-          // Fallback to e2e test data
-          if (files.length === 0) {
-            files = await this.listFiles(
-              `fact_transaction/${this.appConfig.e2eOrgId}/`,
-            );
-            this.logger.log(
-              `[S3 Gold] Using e2e test data: ${files.length} file(s)`,
-            );
-          }
-
-          // Also check partition structure with fallback org
-          if (files.length === 0) {
-            files = await this.listFiles(
-              `fact_transaction/organization_id=${this.appConfig.fallbackOrgId}/`,
-            );
-            this.logger.log(
-              `[S3 Gold] Using ${this.appConfig.fallbackOrgId} partition: ${files.length} file(s)`,
-            );
-          }
-
-          if (files.length === 0) {
-            this.logger.log(
-              `[S3 Gold] No transaction data found in S3 for org: ${organizationId}`,
-            );
-            return [];
-          }
-
-          const allTransactions: FactTransaction[] = [];
-          const filesToLoad = files.slice(-this.appConfig.maxTransactionFiles);
-          this.logger.log(
-            `[S3 Gold] Loading transactions from ${filesToLoad.length} file(s): ${filesToLoad.map((f) => f.split("/").pop()).join(", ")}`,
-          );
-
-          for (const file of filesToLoad) {
-            const data = await this.fetchJsonFile<FactTransaction[]>(file);
-            allTransactions.push(...data);
-          }
-
-          this.logger.log(
-            `[S3 Gold] Successfully loaded ${allTransactions.length} transactions from S3 Gold bucket for org: ${organizationId}`,
-          );
-          return allTransactions;
-        } catch (error) {
-          this.logger.error(`[S3 Gold] Failed to fetch transactions: ${error}`);
-          return [];
+        const canonical = await this.goldReader.readTenantFile<FactTransaction>(`${organizationId}/fact_transaction.json`, organizationId);
+        if (canonical !== null) return validateGoldTransactions(canonical);
+        const directPrefix = `fact_transaction/${organizationId}/`;
+        // Distinguish a present empty snapshot from an absent layout. Never resurrect old data.
+        if ((await this.goldReader.listFiles(directPrefix)).length) {
+          return validateGoldTransactions(await this.goldReader.readTenantTransactions<FactTransaction>(directPrefix, organizationId));
         }
-      },
-      this.cacheTtl,
+        return validateGoldTransactions(await this.goldReader.readTenantTransactions<FactTransaction>(
+          `fact_transaction/organization_id=${organizationId}/`, organizationId,
+        ));
+      }, this.cacheTtl,
     );
   }
 
-  /**
-   * Fetch invoices from Gold layer (for AR aging)
-   */
   private async fetchInvoices(organizationId: string): Promise<FactInvoice[]> {
-    try {
-      const files = await this.listFiles(`fact_invoice/${organizationId}/`);
-      if (files.length === 0) {
-        this.logger.debug(`No invoice data found for org: ${organizationId}`);
-        return [];
-      }
-      // Get the most recent invoice file
-      const data = await this.fetchJsonFile<FactInvoice[]>(
-        files[files.length - 1],
-      );
-      this.logger.log(
-        `Fetched ${data.length} invoices for org: ${organizationId}`,
-      );
-      return data;
-    } catch (error) {
-      this.logger.warn(`Failed to fetch invoices: ${error}`);
-      return [];
-    }
+    return this.readSnapshot<FactInvoice>("fact_invoice", organizationId);
   }
 
-  /**
-   * Fetch bills from Gold layer (for AP aging)
-   */
   private async fetchBills(organizationId: string): Promise<FactBill[]> {
-    try {
-      const files = await this.listFiles(`fact_bill/${organizationId}/`);
-      if (files.length === 0) {
-        this.logger.debug(`No bill data found for org: ${organizationId}`);
-        return [];
-      }
-      // Get the most recent bill file
-      const data = await this.fetchJsonFile<FactBill[]>(
-        files[files.length - 1],
-      );
-      this.logger.log(
-        `Fetched ${data.length} bills for org: ${organizationId}`,
-      );
-      return data;
-    } catch (error) {
-      this.logger.warn(`Failed to fetch bills: ${error}`);
-      return [];
-    }
+    return this.readSnapshot<FactBill>("fact_bill", organizationId);
   }
 
-  /**
-   * List files in a Gold layer prefix
-   */
   private async listFiles(prefix: string): Promise<string[]> {
-    try {
-      const response = await this.s3Client.send(
-        new ListObjectsV2Command({
-          Bucket: this.goldBucket,
-          Prefix: prefix,
-        }),
-      );
-
-      return (
-        response.Contents?.filter(
-          (obj: { Key?: string }) => obj.Key && !obj.Key.endsWith("/"),
-        )
-          .map((obj: { Key: string }) => obj.Key)
-          .sort() || []
-      );
-    } catch (error) {
-      this.logger.warn(`Failed to list files at ${prefix}: ${error}`);
-      return [];
-    }
+    return this.goldReader.listFiles(prefix);
   }
 
-  /**
-   * Fetch and parse a JSON file from S3
-   */
   private async fetchJsonFile<T>(key: string): Promise<T> {
-    const response = await this.s3Client.send(
-      new GetObjectCommand({
-        Bucket: this.goldBucket,
-        Key: key,
-      }),
-    );
-
-    const body = await response.Body?.transformToString();
-    return body ? JSON.parse(body) : ([] as T);
+    return this.goldReader.fetchJsonFile<T>(key);
   }
 
   /**
    * Calculate summary metrics from accounts and transactions
    * Joins transactions with accounts to properly categorize by account type
    */
-  private calculateSummary(
-    accounts: DimAccount[],
-    transactions: FactTransaction[],
-  ): DashboardData["summary"] {
-    // Create account lookup maps
-    const accountByKey = new Map<string, DimAccount>();
-    const accountBySourceId = new Map<string, DimAccount>();
-    for (const account of accounts) {
-      accountByKey.set(account.account_key, account);
-      accountBySourceId.set(account.source_account_id, account);
-    }
-
-    // Initialize totals by account type
-    let totalAssets = 0;
-    let totalLiabilities = 0;
-    let totalEquity = 0;
-    let totalRevenue = 0;
-    let totalExpenses = 0;
-    let cashBalance = 0;
-    let accountsReceivable = 0;
-    let accountsPayable = 0;
-
-    // Process each transaction and categorize by account type
-    for (const txn of transactions) {
-      // Find the account for this transaction
-      const account =
-        accountByKey.get(txn.account_key) ||
-        accountBySourceId.get(txn.account_key);
-
-      if (!account) {
-        // If no account match, use transaction_type_key as hint
-        if (txn.transaction_type_key?.includes("invoice")) {
-          totalRevenue += txn.credit_amount || 0;
-          accountsReceivable += txn.debit_amount || 0;
-        }
-        continue;
-      }
-
-      const accountNameLower = account.account_name.toLowerCase();
-
-      switch (account.account_type) {
-        case "ASSET":
-          // Net change for assets (debit increases, credit decreases)
-          totalAssets += txn.debit_amount - txn.credit_amount;
-          // Check for specific asset types
-          if (
-            accountNameLower.includes("cash") ||
-            accountNameLower.includes("bank") ||
-            accountNameLower.includes("checking")
-          ) {
-            cashBalance += txn.debit_amount - txn.credit_amount;
-          }
-          if (
-            accountNameLower.includes("receivable") ||
-            accountNameLower.includes("a/r")
-          ) {
-            accountsReceivable += txn.debit_amount - txn.credit_amount;
-          }
-          break;
-
-        case "LIABILITY":
-          // Net change for liabilities (credit increases, debit decreases)
-          totalLiabilities += txn.credit_amount - txn.debit_amount;
-          if (
-            accountNameLower.includes("payable") ||
-            accountNameLower.includes("a/p")
-          ) {
-            accountsPayable += txn.credit_amount - txn.debit_amount;
-          }
-          break;
-
-        case "EQUITY":
-          totalEquity += txn.credit_amount - txn.debit_amount;
-          break;
-
-        case "REVENUE":
-          // Revenue typically has credit entries
-          totalRevenue += txn.credit_amount || 0;
-          break;
-
-        case "EXPENSE":
-          // Expenses typically have debit entries
-          totalExpenses += txn.debit_amount || 0;
-          break;
-      }
-    }
-
-    // Calculate net income
-    const netIncome = totalRevenue - totalExpenses;
-
-    this.logger.debug(
-      `Summary calculated - Revenue: ${totalRevenue}, Expenses: ${totalExpenses}, NetIncome: ${netIncome}`,
-    );
-
-    return {
-      totalAssets: Math.abs(totalAssets) || 0,
-      totalLiabilities: Math.abs(totalLiabilities) || 0,
-      totalEquity: Math.abs(totalEquity) || 0,
-      totalRevenue: Math.abs(totalRevenue) || 0,
-      totalExpenses: Math.abs(totalExpenses) || 0,
-      netIncome,
-      cashBalance: Math.abs(cashBalance) || 0,
-      accountsReceivable: Math.abs(accountsReceivable) || 0,
-      accountsPayable: Math.abs(accountsPayable) || 0,
-    };
-  }
-
   /**
    * Calculate industry-specific KPIs from accounts and transactions
    */
@@ -809,14 +543,14 @@ export class DatalakeDataService implements IDatalakeDataService {
 
     // Calculate category totals
     const categoryTotals = new Map<string, number>();
+    const accountFor = accountLookup(accounts);
     for (const txn of transactions) {
-      const category =
-        accountCategories.get(txn.account_key) ||
-        accountCategories.get(txn.source_transaction_id);
+      const category = accountCategories.get(txn.account_key);
       if (category) {
         const current = categoryTotals.get(category) || 0;
-        // Use absolute amount for aggregation
-        categoryTotals.set(category, current + Math.abs(txn.amount || 0));
+        const account = accountFor(txn);
+        const normalAmount = debitNet(txn) / 100 * (['ASSET', 'EXPENSE'].includes(account.account_type) ? 1 : -1);
+        categoryTotals.set(category, current + normalAmount);
       }
     }
 
@@ -987,250 +721,10 @@ export class DatalakeDataService implements IDatalakeDataService {
    * Calculate Cash Flow Waterfall from transactions
    * Groups transactions by category (Operating, Investing, Financing)
    */
-  calculateCashFlowWaterfall(
-    accounts: DimAccount[],
-    transactions: FactTransaction[],
-    startDate?: string,
-    endDate?: string,
-  ): WaterfallItem[] {
-    // Create account lookup
-    const accountByKey = new Map<string, DimAccount>();
-    for (const account of accounts) {
-      accountByKey.set(account.account_key, account);
-      accountByKey.set(account.source_account_id, account);
-    }
-
-    // Filter transactions by date range if provided
-    let filteredTxns = transactions;
-    if (startDate || endDate) {
-      filteredTxns = transactions.filter((txn) => {
-        const txnDate = new Date(txn.transaction_date);
-        if (startDate && txnDate < new Date(startDate)) return false;
-        if (endDate && txnDate > new Date(endDate)) return false;
-        return true;
-      });
-    }
-
-    // Categorize transactions
-    let operatingInflows = 0; // Revenue, AR collections
-    let operatingOutflows = 0; // Operating expenses (salaries, rent, etc.)
-    let investingInflows = 0; // Asset sales
-    let investingOutflows = 0; // Asset purchases (equipment, etc.)
-    let financingInflows = 0; // Loans received, equity issued
-    let financingOutflows = 0; // Loan payments, dividends
-
-    // Find opening cash balance (from Cash/Bank accounts)
-    let openingCash = 0;
-
-    for (const txn of filteredTxns) {
-      const account =
-        accountByKey.get(txn.account_key) ||
-        accountByKey.get(txn.source_transaction_id);
-
-      if (!account) continue;
-
-      const accountName = account.account_name.toLowerCase();
-      const accountSubtype = account.account_subtype?.toLowerCase() || "";
-      const netAmount = txn.credit_amount - txn.debit_amount;
-
-      // Categorize based on account type and subtype
-      switch (account.account_type) {
-        case "ASSET":
-          // Cash/Bank accounts - track opening balance
-          if (
-            accountName.includes("cash") ||
-            accountName.includes("bank") ||
-            accountName.includes("checking")
-          ) {
-            openingCash += txn.debit_amount - txn.credit_amount;
-          }
-          // Fixed assets - Investing
-          else if (
-            accountSubtype.includes("fixed") ||
-            accountName.includes("equipment") ||
-            accountName.includes("vehicle") ||
-            accountName.includes("property")
-          ) {
-            if (netAmount > 0) investingInflows += netAmount;
-            else investingOutflows += Math.abs(netAmount);
-          }
-          // AR collections - Operating
-          else if (
-            accountName.includes("receivable") ||
-            accountName.includes("a/r")
-          ) {
-            if (txn.credit_amount > 0) operatingInflows += txn.credit_amount;
-          }
-          break;
-
-        case "LIABILITY":
-          // Loans - Financing
-          if (
-            accountName.includes("loan") ||
-            accountName.includes("debt") ||
-            accountName.includes("mortgage")
-          ) {
-            if (netAmount > 0) financingInflows += netAmount;
-            else financingOutflows += Math.abs(netAmount);
-          }
-          // AP payments - Operating
-          else if (
-            accountName.includes("payable") ||
-            accountName.includes("a/p")
-          ) {
-            if (txn.debit_amount > 0) operatingOutflows += txn.debit_amount;
-          }
-          break;
-
-        case "EQUITY":
-          // Equity transactions - Financing
-          if (netAmount > 0) financingInflows += netAmount;
-          else financingOutflows += Math.abs(netAmount);
-          break;
-
-        case "REVENUE":
-          // Revenue - Operating inflows
-          operatingInflows += txn.credit_amount || 0;
-          break;
-
-        case "EXPENSE":
-          // Categorize expenses
-          if (
-            accountName.includes("depreciation") ||
-            accountName.includes("amortization")
-          ) {
-            // Non-cash expense - skip for cash flow
-          } else if (accountName.includes("interest")) {
-            // Interest - Financing
-            financingOutflows += txn.debit_amount || 0;
-          } else {
-            // Operating expenses
-            operatingOutflows += txn.debit_amount || 0;
-          }
-          break;
-      }
-    }
-
-    // Calculate subtotals
-    const operatingNet = operatingInflows - operatingOutflows;
-    const investingNet = investingInflows - investingOutflows;
-    const financingNet = financingInflows - financingOutflows;
-    const closingCash =
-      openingCash + operatingNet + investingNet + financingNet;
-
-    // Build waterfall items
-    const items: WaterfallItem[] = [
-      {
-        label: "Ouverture",
-        labelEn: "Opening Cash",
-        value:
-          Math.round(openingCash * this.appConfig.financialRoundingPrecision) /
-          this.appConfig.financialRoundingPrecision,
-        type: "start",
-        category: "opening",
-      },
-      // Operating section
-      {
-        label: "Ventes",
-        labelEn: "Sales/Collections",
-        value:
-          Math.round(
-            operatingInflows * this.appConfig.financialRoundingPrecision,
-          ) / this.appConfig.financialRoundingPrecision,
-        type: "increase",
-        category: "operating",
-      },
-      {
-        label: "Salaires",
-        labelEn: "Salaries",
-        value:
-          -Math.round(
-            operatingOutflows *
-              this.appConfig.cashFlowSalaryPercentage *
-              this.appConfig.financialRoundingPrecision,
-          ) / this.appConfig.financialRoundingPrecision,
-        type: "decrease",
-        category: "operating",
-      },
-      {
-        label: "Fournisseurs",
-        labelEn: "Suppliers",
-        value:
-          -Math.round(
-            operatingOutflows *
-              this.appConfig.cashFlowSupplierPercentage *
-              this.appConfig.financialRoundingPrecision,
-          ) / this.appConfig.financialRoundingPrecision,
-        type: "decrease",
-        category: "operating",
-      },
-      {
-        label: "Loyer",
-        labelEn: "Rent/Lease",
-        value:
-          -Math.round(
-            operatingOutflows *
-              this.appConfig.cashFlowRentPercentage *
-              this.appConfig.financialRoundingPrecision,
-          ) / this.appConfig.financialRoundingPrecision,
-        type: "decrease",
-        category: "operating",
-      },
-      {
-        label: "Op. Total",
-        labelEn: "Operating Total",
-        value:
-          Math.round(operatingNet * this.appConfig.financialRoundingPrecision) /
-          this.appConfig.financialRoundingPrecision,
-        type: "subtotal",
-        category: "operating",
-      },
-      // Investing section
-      {
-        label: "Équipement",
-        labelEn: "Equipment",
-        value: Math.round((investingInflows - investingOutflows) * 100) / 100,
-        type: investingNet >= 0 ? "increase" : "decrease",
-        category: "investing",
-      },
-      // Financing section
-      {
-        label: "Dette",
-        labelEn: "Debt",
-        value:
-          Math.round((financingInflows * 0.7 - financingOutflows * 0.7) * 100) /
-          100,
-        type: financingNet >= 0 ? "increase" : "decrease",
-        category: "financing",
-      },
-      {
-        label: "Dividendes",
-        labelEn: "Dividends",
-        value:
-          -Math.round(
-            financingOutflows *
-              this.appConfig.cashFlowDividendPercentage *
-              this.appConfig.financialRoundingPrecision,
-          ) / this.appConfig.financialRoundingPrecision,
-        type: "decrease",
-        category: "financing",
-      },
-      {
-        label: "Clôture",
-        labelEn: "Closing Cash",
-        value:
-          Math.round(closingCash * this.appConfig.financialRoundingPrecision) /
-          this.appConfig.financialRoundingPrecision,
-        type: "end",
-        category: "closing",
-      },
-    ];
-
-    this.logger.debug(
-      `Cash flow waterfall calculated: Opening=${openingCash}, Closing=${closingCash}`,
-    );
-
-    return items;
+  calculateCashFlowWaterfall(accounts: DimAccount[], transactions: FactTransaction[], startDate?: string, endDate?: string): WaterfallItem[] {
+    const cutoff = endDate ? new Date(endDate) : new Date();
+    validateReportDates(cutoff, startDate ? new Date(startDate) : undefined);
+    return cashWaterfall(accounts, transactions, startDate?.slice(0, 10), cutoff.toISOString().slice(0, 10));
   }
 
   /**
@@ -1601,146 +1095,17 @@ export class DatalakeDataService implements IDatalakeDataService {
   /**
    * Calculate trend data from transactions
    */
-  private calculateTrends(
-    transactions: FactTransaction[],
-  ): DashboardData["trends"] {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    // Group transactions by month
-    const monthlyData = new Map<
-      string,
-      { revenue: number; expenses: number; cashFlow: number }
-    >();
-
-    for (const txn of transactions) {
-      const date = new Date(txn.transaction_date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-      if (!monthlyData.has(monthKey)) {
-        monthlyData.set(monthKey, { revenue: 0, expenses: 0, cashFlow: 0 });
-      }
-
-      const data = monthlyData.get(monthKey)!;
-      if (txn.credit_amount > 0) {
-        data.revenue += txn.credit_amount;
-      }
-      if (txn.debit_amount > 0) {
-        data.expenses += txn.debit_amount;
-      }
-      data.cashFlow = data.revenue - data.expenses;
-    }
-
-    // If no transaction data, generate sample trends
-    if (monthlyData.size === 0) {
-      return {
-        revenue: months.map((m, i) => ({
-          period: m,
-          value: 125000 + i * 6000 + Math.floor(Math.random() * 10000),
-        })),
-        expenses: months.map((m, i) => ({
-          period: m,
-          value: 95000 + i * 3000 + Math.floor(Math.random() * 5000),
-        })),
-        cashFlow: months.map((m, i) => ({
-          period: m,
-          value: 30000 + i * 3000 + Math.floor(Math.random() * 5000),
-        })),
-      };
-    }
-
-    // Convert to arrays sorted by date
-    const sortedMonths = Array.from(monthlyData.entries()).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
-
-    return {
-      revenue: sortedMonths.map(([key, data]) => ({
-        period: months[parseInt(key.split("-")[1]) - 1],
-        value: data.revenue,
-      })),
-      expenses: sortedMonths.map(([key, data]) => ({
-        period: months[parseInt(key.split("-")[1]) - 1],
-        value: data.expenses,
-      })),
-      cashFlow: sortedMonths.map(([key, data]) => ({
-        period: months[parseInt(key.split("-")[1]) - 1],
-        value: data.cashFlow,
-      })),
-    };
-  }
-
   /**
    * Calculate data completeness information
    */
-  private calculateCompleteness(
-    accounts: DimAccount[],
-    transactions: FactTransaction[],
-    trends: DashboardData["trends"],
-  ): DataCompleteness {
-    const hasAccounts = accounts.length > 0;
-    const hasTransactions = transactions.length > 0;
-
-    // Check if data is recent (within 24 hours)
-    let lastSyncAt: string | null = null;
-    let hasRecentData = false;
-    if (transactions.length > 0) {
-      // Find latest transaction date for freshness tracking
-      const _latestTxn = transactions.reduce((latest, txn) => {
-        return new Date(txn.posting_date) > new Date(latest.posting_date)
-          ? txn
-          : latest;
-      }, transactions[0]);
-      lastSyncAt = new Date().toISOString(); // Assume current sync for now
-      const hoursSinceLastSync = 0; // Data is fresh on fetch
-      hasRecentData = hoursSinceLastSync < this.appConfig.dataRecencyHours;
-    }
-
-    // Check for missing periods
-    const allMonths = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const presentMonths = new Set(trends.revenue.map((t) => t.period));
-    const missingPeriods = allMonths.filter((m) => !presentMonths.has(m));
-
-    // Determine data source type
-    let dataSource: DataCompleteness["dataSource"] = "empty";
-    if (hasAccounts && hasTransactions && missingPeriods.length === 0) {
-      dataSource = "real";
-    } else if (hasAccounts || hasTransactions) {
-      dataSource = "partial";
-    }
-
-    return {
-      hasAccounts,
-      hasTransactions,
-      hasRecentData,
-      lastSyncAt,
-      dataSource,
-      missingPeriods,
+  private calculateCompleteness(accounts: DimAccount[], transactions: FactTransaction[], _trends: DashboardData['trends'], syncedAt?: string): DataCompleteness {
+    const hasAccounts = accounts.length > 0, hasTransactions = transactions.length > 0;
+    const timestamp = syncedAt ? Date.parse(syncedAt) : NaN;
+    const hasRecentData = Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp < this.appConfig.dataRecencyHours * 3_600_000;
+    return { hasAccounts, hasTransactions, hasRecentData, lastSyncAt: syncedAt || null,
+      dataSource: syncedAt ? 'real' : hasAccounts || hasTransactions ? 'partial' : 'empty',
+      // Months without postings are not evidence of missing data. Only source coverage can establish a gap.
+      missingPeriods: [],
     };
   }
 
@@ -1754,7 +1119,7 @@ export class DatalakeDataService implements IDatalakeDataService {
       organizationName: `Organization ${organizationId}`,
       asOfDate: new Date().toISOString().split("T")[0],
       dataSource: "empty",
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: null,
       accounts: [],
       contacts: [],
       transactions: [],

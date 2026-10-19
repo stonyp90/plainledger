@@ -1,13 +1,14 @@
 /**
  * API Service with Multi-Tenant Support
  * 
- * All API requests automatically include:
+ * Session-authenticated API requests automatically include:
  * - Authorization header with JWT token
- * - X-Tenant-ID header for tenant isolation
+ * - X-Organization-ID header for tenant isolation
  * - Content-Type header
  */
 
 import config from './config';
+import { getAuthenticatedRequestHeaders, getRequestScopeRevision } from './authRequestContext';
 
 // Types
 export interface ApiResponse<T = unknown> {
@@ -31,11 +32,9 @@ export interface ApiError {
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
   timeout?: number;
+  /** Explicitly public endpoints must not depend on the current sign-in session. */
+  authentication?: 'session' | 'none';
 }
-
-// Storage keys (Keycloak stores token as kc_token in sessionStorage)
-const TOKEN_KEY = 'kc_token';
-const TENANT_KEY = 'plainledger-current-tenant';
 
 // API Error class
 export class ApiException extends Error {
@@ -77,132 +76,102 @@ export function addResponseInterceptor(interceptor: ResponseInterceptor) {
   };
 }
 
-// Build URL with query params
+// Every REST controller lives below /api. Accept either an API origin or /api base.
 function buildUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
-  const baseUrl = config.api.baseUrl.replace(/\/$/, '');
-  const url = new URL(path.startsWith('/') ? `${baseUrl}${path}` : `${baseUrl}/${path}`);
-  
+  const base = new URL(config.api.baseUrl || '/', window.location.origin);
+  const basePath = base.pathname.replace(/\/$/, '').replace(/\/api$/, '');
+  const requestPath = path.replace(/^\//, '').replace(/^api(?:\/|$)/, '');
+  const url = new URL(`${basePath}/api/${requestPath}`, base.origin);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) {
-        url.searchParams.append(key, String(value));
-      }
+      if (value !== undefined) url.searchParams.set(key, String(value));
     });
   }
-  
   return url.toString();
 }
 
-// Get auth token
-function getAuthToken(): string | null {
-  // Try to get from Keycloak instance first (if available)
-  if (typeof window !== 'undefined' && (window as unknown as { keycloak?: { token?: string } }).keycloak?.token) {
-    return (window as unknown as { keycloak: { token: string } }).keycloak.token;
+function normalizeResponse<T>(payload: unknown): ApiResponse<T> {
+  if (payload !== null && typeof payload === 'object' && !Array.isArray(payload) && 'data' in payload) {
+    return payload as ApiResponse<T>;
   }
-  // Fall back to sessionStorage where Keycloak stores tokens
-  return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+  // Nest controllers return raw DTOs/arrays; retain the public api.get().data contract.
+  return { data: payload as T };
 }
 
-// Get current tenant ID
-function getCurrentTenantId(): string | null {
-  return localStorage.getItem(TENANT_KEY);
-}
-
-// Base fetch with interceptors
-async function baseFetch<T>(
-  path: string,
-  options: RequestOptions = {}
-): Promise<ApiResponse<T>> {
-  const { params, timeout = config.api.timeout, ...fetchOptions } = options;
-  
-  // Build URL
-  const url = buildUrl(path, params);
-  
-  // Prepare headers
-  const headers = new Headers(fetchOptions.headers);
-  
-  // Add default headers
-  if (!headers.has('Content-Type') && fetchOptions.body) {
-    headers.set('Content-Type', 'application/json');
-  }
-  headers.set('Accept', 'application/json');
-  
-  // Add auth token
-  const token = getAuthToken();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-  
-  // Add tenant ID for multi-tenant isolation
-  const tenantId = getCurrentTenantId();
-  if (tenantId) {
-    headers.set('X-Tenant-ID', tenantId);
-  }
-  
-  // Add request ID for tracing
-  headers.set('X-Request-ID', generateRequestId());
-  
-  // Prepare config
-  let requestConfig: RequestInit & { url: string } = {
-    ...fetchOptions,
-    headers,
-    url,
-  };
-  
-  // Apply request interceptors
-  for (const interceptor of requestInterceptors) {
-    requestConfig = interceptor(requestConfig);
-  }
-  
-  // Create abort controller for timeout
+async function baseFetch<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
+  const { params, timeout = config.api.timeout, signal: callerSignal, authentication = 'session', ...fetchOptions } = options;
+  const revision = getRequestScopeRevision();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+  let timedOut = false;
+  const abortFromCaller = () => controller.abort(callerSignal?.reason);
+  if (callerSignal?.aborted) abortFromCaller();
+  else callerSignal?.addEventListener('abort', abortFromCaller, { once: true });
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout);
+
   try {
-    let response = await fetch(requestConfig.url, {
-      ...requestConfig,
-      signal: controller.signal,
-    });
-    
-    // Apply response interceptors
-    for (const interceptor of responseInterceptors) {
-      response = await interceptor(response);
+    const headers = authentication === 'none'
+      ? new Headers(fetchOptions.headers)
+      : await getAuthenticatedRequestHeaders(fetchOptions.headers);
+    if (authentication === 'none') {
+      headers.delete('authorization');
+      headers.delete('x-tenant-id');
+      headers.delete('x-organization-id');
     }
-    
-    // Handle non-OK responses
+    const isForm = typeof FormData !== 'undefined' && fetchOptions.body instanceof FormData;
+    if (isForm) headers.delete('Content-Type');
+    else if (!headers.has('Content-Type') && fetchOptions.body !== undefined && fetchOptions.body !== null) {
+      headers.set('Content-Type', 'application/json');
+    }
+    headers.set('Accept', 'application/json');
+    headers.set('X-Request-ID', generateRequestId());
+    let requestConfig: RequestInit & { url: string } = {
+      ...fetchOptions, headers, url: buildUrl(path, params), signal: controller.signal,
+      ...(authentication === 'none' ? { credentials: 'omit' as const } : {}),
+    };
+    for (const interceptor of requestInterceptors) requestConfig = interceptor(requestConfig);
+    if (controller.signal.aborted) throw new DOMException('The request was aborted.', 'AbortError');
+    let response = await fetch(requestConfig.url, requestConfig);
+    for (const interceptor of responseInterceptors) response = await interceptor(response);
+    if (authentication === 'session' && revision !== getRequestScopeRevision()) {
+      throw new ApiException({ code: 'SESSION_CHANGED', message: 'Organization changed. Refresh the data.', statusCode: 0 });
+    }
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const payload = await response.json().catch(() => ({}));
+      const errorData = payload && typeof payload === 'object' ? payload : {};
+      const message = Array.isArray(errorData.message) ? errorData.message.join('; ') : errorData.message;
       throw new ApiException({
-        code: errorData.code || 'UNKNOWN_ERROR',
-        message: errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+        code: typeof errorData.code === 'string' ? errorData.code : 'HTTP_ERROR',
+        message: typeof message === 'string' ? message : `HTTP ${response.status}: ${response.statusText}`,
         details: errorData.details,
         statusCode: response.status,
       });
     }
-    
-    // Parse response
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    if (error instanceof ApiException) {
-      throw error;
+    if (response.status === 204 || response.status === 205) return { data: undefined as T };
+    try {
+      return normalizeResponse<T>(await response.json());
+    } catch {
+      throw new ApiException({ code: 'INVALID_RESPONSE', message: 'The server returned an invalid response.', statusCode: response.status });
     }
-    
-    if (error instanceof DOMException && error.name === 'AbortError') {
+  } catch (error) {
+    if (error instanceof ApiException) throw error;
+    if (controller.signal.aborted) {
       throw new ApiException({
-        code: 'TIMEOUT',
-        message: 'La requête a expiré',
-        statusCode: 408,
+        code: timedOut ? 'TIMEOUT' : 'ABORTED',
+        message: timedOut ? 'The request timed out.' : 'The request was cancelled.',
+        statusCode: timedOut ? 408 : 0,
       });
     }
-    
     throw new ApiException({
       code: 'NETWORK_ERROR',
-      message: error instanceof Error ? error.message : 'Erreur réseau',
+      message: error instanceof Error ? error.message : 'Network error',
       statusCode: 0,
     });
   } finally {
     clearTimeout(timeoutId);
+    callerSignal?.removeEventListener('abort', abortFromCaller);
   }
 }
 
@@ -223,7 +192,7 @@ export const api = {
     return baseFetch<T>(path, {
       ...options,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data !== undefined ? JSON.stringify(data) : undefined,
     });
   },
   
@@ -232,7 +201,7 @@ export const api = {
     return baseFetch<T>(path, {
       ...options,
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data !== undefined ? JSON.stringify(data) : undefined,
     });
   },
   
@@ -241,7 +210,7 @@ export const api = {
     return baseFetch<T>(path, {
       ...options,
       method: 'PATCH',
-      body: data ? JSON.stringify(data) : undefined,
+      body: data !== undefined ? JSON.stringify(data) : undefined,
     });
   },
   
@@ -261,29 +230,7 @@ export const api = {
       });
     }
     
-    // Don't set Content-Type - let browser set it with boundary
-    const headers = new Headers();
-    const token = getAuthToken();
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-    const tenantId = getCurrentTenantId();
-    if (tenantId) headers.set('X-Tenant-ID', tenantId);
-    
-    const response = await fetch(buildUrl(path), {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new ApiException({
-        code: errorData.code || 'UPLOAD_ERROR',
-        message: errorData.message || 'Échec du téléchargement',
-        statusCode: response.status,
-      });
-    }
-    
-    return response.json();
+    return baseFetch<T>(path, { method: 'POST', body: formData });
   },
 };
 

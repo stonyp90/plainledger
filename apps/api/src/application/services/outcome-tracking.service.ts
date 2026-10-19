@@ -5,7 +5,7 @@
  * Part of the Context Intelligence Platform.
  */
 
-import { Injectable, Logger, Inject } from "@nestjs/common";
+import { Injectable, Logger, Inject, NotFoundException } from "@nestjs/common";
 import {
   IDecisionRepository,
   DECISION_REPOSITORY_TOKEN,
@@ -19,6 +19,8 @@ import { Money } from "@domain/value-objects/Money";
 
 export interface RecordOutcomeInput {
   decisionId: string;
+  /** Required by tenant-scoped entry points. */
+  organizationId?: string;
   actualImpact: number;
   success: boolean;
   measuredAt?: Date;
@@ -44,8 +46,8 @@ export class OutcomeTrackingService {
 
     // Find the decision
     const decision = await this.decisionRepository.findById(input.decisionId);
-    if (!decision) {
-      throw new Error(`Decision ${input.decisionId} not found`);
+    if (!decision || (input.organizationId !== undefined && decision.organizationId !== input.organizationId)) {
+      throw new NotFoundException('Decision not found');
     }
 
     // Calculate variance

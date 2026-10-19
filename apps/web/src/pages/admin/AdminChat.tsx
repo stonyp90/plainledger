@@ -85,7 +85,7 @@ function SessionItem({
       }`}
       style={{
         backgroundColor: isSelected ? 'rgb(var(--color-primary-500) / 0.05)' : 'transparent',
-        ringColor: isSelected ? 'rgb(var(--color-primary-500))' : 'transparent',
+        boxShadow: isSelected ? '0 0 0 2px rgb(var(--color-primary-500))' : 'none',
       }}
     >
       <div className="relative flex-shrink-0">

@@ -3,8 +3,8 @@
  *
  * The Vite build in ./dist is served directly by Cloudflare static assets, so page and
  * asset requests never reach this script. It only runs for the paths listed in
- * `assets.run_worker_first` (wrangler.jsonc): the same-origin /api and /graphql endpoints
- * the web app calls.
+ * `assets.run_worker_first` (wrangler.jsonc): the same-origin /api, /graphql and /health
+ * endpoints. Health requests must never fall through to a successful HTML SPA response.
  *
  * - API_ORIGIN set (e.g. https://api-origin.plainledger.ca): requests are proxied to the
  *   backend, keeping the /api and /graphql URLs the ALB used to route.
@@ -20,7 +20,7 @@ interface Env {
   API_ORIGIN?: string;
 }
 
-const API_PREFIXES = ['/api', '/graphql'];
+const API_PREFIXES = ['/api', '/graphql', '/health'];
 
 const API_UNAVAILABLE_MESSAGE =
   'PlainLedger accounts are temporarily unavailable. Contact support@plainledger.ca. / ' +

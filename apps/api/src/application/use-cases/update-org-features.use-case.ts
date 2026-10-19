@@ -1,5 +1,5 @@
 import { Injectable, Inject } from "@nestjs/common";
-import { OrganizationFeatures } from "@domain/entities/OrganizationFeatures";
+import { OrganizationFeatures, OrganizationFeatureOverrides } from "@domain/entities/OrganizationFeatures";
 import { IOrganizationFeaturesRepository } from "@application/ports/outbound/IOrganizationFeaturesRepository";
 
 export interface UpdateOrgFeaturesRequest {
@@ -15,6 +15,7 @@ export interface UpdateOrgFeaturesRequest {
     };
   };
   updatedBy: string;
+  overrides?: OrganizationFeatureOverrides;
 }
 
 export interface UpdateOrgFeaturesResponse {
@@ -81,6 +82,7 @@ export class UpdateOrgFeaturesUseCase {
       }
     }
 
+    if (request.overrides) features.updateOverrides(request.overrides, request.updatedBy);
     // Save changes
     const saved = await this.featuresRepository.save(features);
 

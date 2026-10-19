@@ -1,0 +1,145 @@
+name: Read-only production diagnostics
+
+# Manual diagnostic, plus one run when this workflow changes on the recovery branch.
+# No schedule, deployment, production secrets, repository checkout, or account changes.
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/plainledger-production-20261019]
+    paths: [.github/workflows/diagnose-production.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  diagnose:
+    name: GitHub CLI and public readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify GitHub CLI and read current recovery checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_BRANCH: fix/plainledger-production-20261019
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh --version
+          gh api "repos/${GITHUB_REPOSITORY}" --jq '{repository: .full_name, default_branch: .default_branch}'
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs?branch=${AUDIT_BRANCH}&per_page=10" \
+            --jq '[.workflow_runs[] | {id, name, status, conclusion, head_sha}]'
+          echo 'GitHub CLI authenticated read succeeded. Oracle and local Mac access are not established by this check.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Reject false-positive readiness and probe production
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          python3 - <<'PY_DIAGNOSTIC'
+          import datetime
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          # Fixed public endpoints only. No login, customer data, writes, or redirects.
+          TARGETS = (
+              ('https://plainledger.ca/', 'html'),
+              ('https://plainledger.ca/api/health/ready', 'ready'),
+              ('https://plainledger.ca/health/ready', 'ready'),
+          )
+          MAX_BYTES = 65536
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def classify(status, content_type, body, contract):
+              if status != 200:
+                  return False, 'HTTP_' + str(status)
+              media_type = content_type.split(';', 1)[0].strip().lower()
+              if contract == 'html':
+                  return (True, 'MARKETING_ONLY') if media_type == 'text/html' else (False, 'UNEXPECTED_CONTENT_TYPE')
+              if media_type != 'application/json' and not media_type.endswith('+json'):
+                  return False, 'NOT_JSON_READINESS'
+              try:
+                  value = json.loads(body)
+              except (ValueError, UnicodeDecodeError):
+                  return False, 'INVALID_JSON'
+              if not isinstance(value, dict) or not isinstance(value.get('checks'), dict):
+                  return False, 'INVALID_READINESS_SHAPE'
+              if value.get('status') != 'ready':
+                  return False, 'APPLICATION_NOT_READY'
+              if value['checks'].get('database') != 'connected' or value['checks'].get('cache') != 'connected':
+                  return False, 'DEPENDENCY_NOT_CONNECTED'
+              return True, 'DATABASE_AND_CACHE_READY'
+
+          def self_test():
+              good = json.dumps({'status':'ready','checks':{'database':'connected','cache':'connected'}}).encode()
+              cases = [
+                  (200, 'application/json', good, 'ready', True),
+                  (200, 'application/json; charset=utf-8', good, 'ready', True),
+                  (200, 'application/problem+json', good, 'ready', True),
+                  (503, 'application/json', good, 'ready', False),
+                  (200, 'text/html', b'<html>Marketing</html>', 'ready', False),
+                  (204, 'application/json', b'', 'ready', False),
+                  (200, 'application/json', b'{', 'ready', False),
+                  (200, 'application/json', b'[]', 'ready', False),
+                  (200, 'application/json', b'{"status":"ready"}', 'ready', False),
+                  (200, 'application/json', b'{"status":"ready","checks":{"database":"connected","cache":"disconnected"}}', 'ready', False),
+                  (200, 'application/json', b'{"status":"ready","checks":{"database":"disconnected","cache":"connected"}}', 'ready', False),
+                  (200, 'application/json', b'{"status":"ok","checks":{"database":"connected","cache":"connected"}}', 'ready', False),
+                  (302, 'text/html', b'', 'html', False),
+                  (200, 'text/html', b'<html>Marketing</html>', 'html', True),
+              ]
+              for index, (status, mime, body, contract, expected) in enumerate(cases, 1):
+                  actual, reason = classify(status, mime, body, contract)
+                  if actual is not expected:
+                      raise AssertionError(f'Classifier case {index} failed: {reason}')
+              print(f'PASS: {len(cases)} diagnostic classifier cases. Not production acceptance.')
+
+          def main():
+              self_test()
+              if '--self-test-only' in sys.argv:
+                  return 0
+              opener = urllib.request.build_opener(NoRedirect)
+              results = []
+              for url, contract in TARGETS:
+                  result = {'url':url, 'contract':contract, 'checked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+                  try:
+                      request = urllib.request.Request(url, headers={'User-Agent':'PlainLedger-ReadOnly-Readiness/1.0','Cache-Control':'no-cache','Accept':'application/json' if contract == 'ready' else 'text/html'})
+                      try:
+                          response = opener.open(request, timeout=12)
+                      except urllib.error.HTTPError as error:
+                          response = error
+                      with response:
+                          body = response.read(MAX_BYTES + 1)
+                          result['status'] = response.status
+                          result['content_type'] = response.headers.get('Content-Type','')
+                          if len(body) > MAX_BYTES:
+                              result.update(passed=False, reason='RESPONSE_TOO_LARGE')
+                          else:
+                              passed, reason = classify(response.status, result['content_type'], body, contract)
+                              result.update(passed=passed, reason=reason)
+                  except Exception as error:
+                      # A runner DNS/network failure is not an observed origin HTTP 5xx.
+                      result.update(passed=False, reason='UNREACHABLE_FROM_RUNNER', error_type=type(error).__name__)
+                  results.append(result)
+              report = {'scope':'Read-only public readiness, not complete production acceptance', 'source_sha':os.environ.get('GITHUB_SHA'), 'results':results}
+              destination = Path(os.environ.get('RUNNER_TEMP','/tmp')) / 'plainledger-production-readiness.json'
+              destination.write_text(json.dumps(report, indent=2) + '\n')
+              print(json.dumps(report, indent=2))
+              summary = os.environ.get('GITHUB_STEP_SUMMARY')
+              if summary:
+                  with open(summary, 'a') as out:
+                      out.write('\n## Fresh public readiness checks\n\n')
+                      out.write('| URL | HTTP status | Result |\n| --- | --- | --- |\n')
+                      for row in results:
+                          out.write(f"| {row['url']} | {row.get('status','not observed')} | {row['reason']} |\n")
+                      out.write('\nA working marketing page is not application readiness. No Oracle, Cloudflare, authentication, or customer records were changed.\n')
+              return 0 if all(row['passed'] for row in results) else 1
+
+          if __name__ == '__main__':
+              raise SystemExit(main())
+          PY_DIAGNOSTIC

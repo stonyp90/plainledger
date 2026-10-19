@@ -13,6 +13,7 @@ export class DatabaseInitializerService implements OnModuleInit {
   constructor(private readonly dataSource: DataSource) {}
 
   async onModuleInit() {
+    if (process.env.NODE_ENV === 'production') return;
     this.logger.log("[onModuleInit] DatabaseInitializerService starting...");
     await this.createSchemas();
     this.logger.log("[onModuleInit] DatabaseInitializerService completed");

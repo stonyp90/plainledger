@@ -56,7 +56,7 @@ interface UpdateJobRequest {
 @ApiBearerAuth()
 @Controller("admin/jobs")
 @UseGuards(AuthGuard, RoleGuard)
-@Roles({ roles: ["realm:admin", "realm:super_admin"] })
+@Roles({ roles: ["realm:platform_admin", "realm:super_admin"] })
 export class JobsController {
   private readonly logger = new Logger(JobsController.name);
 

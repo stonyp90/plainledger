@@ -7,6 +7,8 @@ import {
   ThresholdConfig 
 } from '../../lib/anomalyDetection';
 import { ChartTooltip } from './ChartTooltip';
+import { ChartDataState } from './ChartDataState';
+import { getChartDataIssue, isChartLabel, isFiniteNumber } from '../../lib/chartDataValidation';
 
 interface DataPoint {
   label: string;
@@ -24,12 +26,14 @@ interface VarianceChartProps {
 }
 
 export default function VarianceChart({
-  data,
+  data: inputData,
   title,
   thresholds = DEFAULT_THRESHOLDS,
   showThresholdLines = true,
   maxValue: propMaxValue,
 }: VarianceChartProps) {
+  const issue = getChartDataIssue(inputData, item => isChartLabel(item.label) && isFiniteNumber(item.current) && isFiniteNumber(item.prior));
+  const data = issue ? [] : inputData;
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
@@ -42,7 +46,7 @@ export default function VarianceChart({
         processedData: [],
       };
     }
-    let max = propMaxValue || 0;
+    let max = isFiniteNumber(propMaxValue) && propMaxValue > 0 ? propMaxValue : 0;
     let anomalyCount = 0;
     
     const processed = data.map(item => {
@@ -75,15 +79,15 @@ export default function VarianceChart({
     });
     
     return {
-      maxValue: max * 1.1,
+      maxValue: max > 0 ? max : 1,
       hasAnomalies: anomalyCount > 0,
       processedData: processed,
     };
   }, [data, thresholds, propMaxValue]);
 
   // Early return - hide chart completely if no data (after all hooks)
-  if (!data || data.length === 0) {
-    return null;
+  if (issue) {
+    return <ChartDataState title={title} issue={issue} />;
   }
 
   const getBarColor = (status: 'normal' | 'warning' | 'critical', isPrior: boolean) => {

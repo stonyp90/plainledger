@@ -1,3 +1,4 @@
+import { isProjectionRequestValid, isInitiativeValid, isAssumptionValid } from './planningValidation';
 /**
  * Strategic Planning Types and Calculation Engine
  * 
@@ -192,18 +193,18 @@ export function getExpenseCashImpact(
   monthDate: Date
 ): number {
   const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const nextMonthStart = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
   const expStart = new Date(expense.startDate);
   const expEnd = new Date(expense.endDate);
   
   // Check if expense is active in this month
-  if (expStart > monthEnd || expEnd < monthStart) {
+  if (expStart >= nextMonthStart || expEnd < monthStart) {
     return 0;
   }
   
   if (expense.frequency === 'one_time') {
     // One-time impact only in the first month
-    if (expStart >= monthStart && expStart <= monthEnd) {
+    if (expStart >= monthStart && expStart < nextMonthStart) {
       return -expense.amount; // Negative = outflow
     }
     return 0;
@@ -377,18 +378,18 @@ export function getInitiativeCashImpact(
   monthDate: Date
 ): number {
   const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const nextMonthStart = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
   const initStart = new Date(initiative.startDate);
   const initEnd = new Date(initiative.endDate);
   
   // Check if initiative is active in this month
-  if (initStart > monthEnd || initEnd < monthStart) {
+  if (initStart >= nextMonthStart || initEnd < monthStart) {
     return 0;
   }
   
   if (initiative.cashImpact.type === 'one_time') {
     // One-time impact only in the first month
-    if (initStart >= monthStart && initStart <= monthEnd) {
+    if (initStart >= monthStart && initStart < nextMonthStart) {
       return initiative.cashImpact.amount;
     }
     return 0;
@@ -429,6 +430,10 @@ export function calculateCashForecast(
   assumptions: Assumption[],
   months: number = 24
 ): CashForecast {
+  if (!isProjectionRequestValid(currentCash, currentDate, months) || !Array.isArray(initiatives) ||
+      !initiatives.every(isInitiativeValid) || !Array.isArray(assumptions) || !assumptions.every(isAssumptionValid)) {
+    throw new RangeError('Forecast requires valid amounts, dates, and a horizon from 0 to 1200 months.');
+  }
   const projected: CashForecast['projected'] = [];
   
   // Extract base assumptions
@@ -444,6 +449,8 @@ export function calculateCashForecast(
   
   for (let i = 0; i < months; i++) {
     const monthDate = new Date(currentDate);
+    // Anchor monthly buckets before advancing to avoid Jan 31 skipping February.
+    monthDate.setDate(1);
     monthDate.setMonth(monthDate.getMonth() + i);
     
     // Base revenue and expenses
@@ -482,23 +489,23 @@ export function calculateCashForecast(
       return acc;
     }, 0.85);
     
+    if (![runningCash, monthRevenue, monthExpenses, confidence].every(Number.isFinite)) {
+      throw new RangeError('Forecast amounts exceed the supported numeric range.');
+    }
     projected.push({
       date: monthDate.toISOString(),
-      cash: Math.max(0, runningCash),
+      cash: runningCash,
       revenue: monthRevenue,
       expenses: monthExpenses,
       confidence: Math.min(1, confidence),
     });
     
-    // Check for break-even
-    if (runningCash <= 0 && projected.length > 1) {
-      break;
-    }
   }
   
-  // Find break-even date
-  const breakEvenIndex = projected.findIndex(p => p.cash > 0 && 
-    projected[Math.max(0, p.date === projected[0].date ? 1 : 0)]?.cash <= 0);
+  // Operating break-even is the first modeled month whose revenue covers its
+  // expenses. A positive opening cash balance alone does not imply break-even.
+  const breakEvenIndex = projected.findIndex(point =>
+    point.revenue >= point.expenses && (point.revenue > 0 || point.expenses > 0));
   
   return {
     historical: [],

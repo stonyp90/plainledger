@@ -52,7 +52,7 @@ function useKnowledgeBaseSEO(title: string, description: string) {
     
     // Add structured data for the article/page
     const scriptId = 'kb-structured-data';
-    let script = document.getElementById(scriptId);
+    let script = document.querySelector<HTMLScriptElement>(`script[id="${scriptId}"]`);
     if (!script) {
       script = document.createElement('script');
       script.id = scriptId;

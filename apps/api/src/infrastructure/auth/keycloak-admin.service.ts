@@ -14,7 +14,7 @@
  *   - Password reset: /reset-password?token=...
  *   - Email verification: /verify-email?token=...
  * - This ensures consistent branding and user experience instead of Keycloak's default action pages
- * - Keycloak's executeActionsEmail API is NOT used - we bypass it entirely
+ * - Production uses Keycloak action emails via its configured SMTP server.
  */
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
@@ -22,6 +22,7 @@ import { ConfigService } from '@nestjs/config';
 import { IKeycloakAdminService } from '@application/ports/outbound/IKeycloakAdminService';
 import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
 import * as crypto from 'crypto';
+import { authEmailProvider, issueAuthAction } from './action-token';
 
 // Dynamic import for ESM module compatibility
 // The @keycloak/keycloak-admin-client v26+ is ESM-only
@@ -44,6 +45,7 @@ export interface CreateUserInput {
   attributes?: Record<string, string[]>;
   roles?: string[];
   sendVerificationEmail?: boolean;
+  requiredActions?: string[];
 }
 
 export interface UpdateUserAttributesInput {
@@ -231,18 +233,19 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
       enabled: true,
       emailVerified: input.emailVerified ?? false,
       attributes: input.attributes || {},
-      requiredActions: [],
+      requiredActions: input.requiredActions || [],
     };
 
     // If no password provided, user will need to set password via email
     if (!input.password) {
-      userRep.requiredActions = ['UPDATE_PASSWORD'];
+      userRep.requiredActions = [...new Set([...(userRep.requiredActions || []), 'UPDATE_PASSWORD'])];
     }
 
     // NOTE: We do NOT add VERIFY_EMAIL required action here.
     // Email verification is handled by our custom flow via SES with branded templates.
     // Adding VERIFY_EMAIL would trigger Keycloak's unbranded email on login.
 
+    let createdUserId: string | undefined;
     try {
       // Create user WITHOUT password first (passwords must be set separately in Keycloak)
       // Including credentials in the create payload doesn't reliably set the password
@@ -252,39 +255,21 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
       });
 
       const userId = response.id;
+      createdUserId = userId;
       this.logger.log(`User created with ID: ${userId}`);
 
       // Set password separately if provided (this is the correct way in Keycloak)
       if (input.password) {
-        try {
-          await this.adminClient.users.resetPassword({
-            realm: this.realm,
-            id: userId,
-            credential: {
-              type: 'password',
-              value: input.password,
-              temporary: input.temporaryPassword ?? false,
-            },
-          });
-          this.logger.log(`Password set for user: ${userId}`);
-        } catch (passwordError) {
-          // If password setting fails, delete the user to avoid orphaned accounts
-          this.logger.error(
-            `Failed to set password for user ${userId}: ${passwordError.message}. Cleaning up user.`,
-          );
-          try {
-            await this.adminClient.users.del({
-              realm: this.realm,
-              id: userId,
-            });
-            this.logger.log(`Cleaned up user ${userId} after password setting failure`);
-          } catch (deleteError) {
-            this.logger.error(
-              `Failed to clean up user ${userId} after password error: ${deleteError.message}`,
-            );
-          }
-          throw new Error(`Failed to set password: ${passwordError.message}`);
-        }
+        await this.adminClient.users.resetPassword({
+          realm: this.realm,
+          id: userId,
+          credential: {
+            type: 'password',
+            value: input.password,
+            temporary: input.temporaryPassword ?? false,
+          },
+        });
+        this.logger.log(`Password set for user: ${userId}`);
       }
 
       // Assign roles if specified
@@ -307,12 +292,20 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
         attributes: input.attributes,
       };
     } catch (error) {
-      // Check if user already exists
-      if (error.response?.status === 409) {
-        this.logger.warn(`User already exists: ${input.email}`);
-        const existingUser = await this.findUserByEmail(input.email);
-        if (existingUser) {
-          return existingUser;
+      // The caller cannot compensate until createUser returns an ID. Clean up
+      // every failed post-create step here, including role lookup or assignment.
+      // Never adopt an existing identity after a duplicate-create response.
+      if (createdUserId) {
+        try {
+          await this.deleteUser(createdUserId);
+        } catch (cleanupError) {
+          this.logger.error(`Could not remove incomplete user ${createdUserId}: ${cleanupError.message}. Attempting to disable it.`);
+          try {
+            await this.disableUser(createdUserId);
+            this.logger.warn(`Incomplete user ${createdUserId} was disabled and still requires removal.`);
+          } catch (disableError) {
+            this.logger.error(`Incomplete user ${createdUserId} could not be removed or disabled; manual cleanup is required: ${disableError.message}`);
+          }
         }
       }
       this.logger.error(`Failed to create user: ${error.message}`);
@@ -430,9 +423,18 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
         ...input.attributes,
       };
 
+      // Keycloak 26 validates the submitted profile when attributes are present;
+      // an attributes-only PUT omits required names/email. Preserve the profile
+      // returned by the read without resending credentials or security flags.
       await this.adminClient.users.update(
         { realm: this.realm, id: input.userId },
-        { attributes: mergedAttributes },
+        {
+          username: existingUser.username,
+          email: existingUser.email,
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName,
+          attributes: mergedAttributes,
+        },
       );
 
       this.logger.log(`Attributes updated for user: ${input.userId}`);
@@ -488,42 +490,12 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   /**
    * Get token secret for signing tokens
    */
-  private getTokenSecret(): string {
-    return (
-      this.configService.get<string>('TOKEN_SECRET') ||
-      this.configService.get<string>('KEYCLOAK_CLIENT_SECRET') ||
-      'plainledger-default-secret-change-me'
-    );
-  }
-
-  /**
-   * Generate a secure email verification token
-   * Format: base64url(verify:userId:email:expiry).signature
-   * Expiry: 24 hours
-   */
   private generateVerificationToken(userId: string, email: string): string {
-    const secret = this.getTokenSecret();
-    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString('base64url');
-
-    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
-
-    return `${payload}.${signature}`;
+    return issueAuthAction(this.configService, 'verify', userId, email);
   }
 
-  /**
-   * Generate a secure password reset token
-   * Format: base64url(reset:userId:email:expiry).signature
-   * Expiry: 15 minutes
-   */
   private generateResetToken(userId: string, email: string): string {
-    const secret = this.getTokenSecret();
-    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
-    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString('base64url');
-
-    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
-
-    return `${payload}.${signature}`;
+    return issueAuthAction(this.configService, 'reset', userId, email);
   }
 
   /**
@@ -534,6 +506,15 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   async sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
       throw new Error('Keycloak Admin Service not configured');
+    }
+
+    if (authEmailProvider(this.configService) === 'keycloak') {
+      const webUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('WEB_URL');
+      await this.adminClient.users.executeActionsEmail({
+        realm: this.realm, id: userId, clientId: 'plainledger-web', actions: ['VERIFY_EMAIL'], lifespan: 86400,
+        ...(redirectUri || webUrl ? { redirectUri: redirectUri || webUrl } : {}),
+      });
+      return;
     }
 
     try {
@@ -613,6 +594,15 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
   async sendPasswordResetEmail(userId: string, redirectUri?: string): Promise<void> {
     if (!this.isConfigured) {
       throw new Error('Keycloak Admin Service not configured');
+    }
+
+    if (authEmailProvider(this.configService) === 'keycloak') {
+      const webUrl = this.configService.get<string>('FRONTEND_URL') || this.configService.get<string>('WEB_URL');
+      await this.adminClient.users.executeActionsEmail({
+        realm: this.realm, id: userId, clientId: 'plainledger-web', actions: ['UPDATE_PASSWORD'], lifespan: 900,
+        ...(redirectUri || webUrl ? { redirectUri: redirectUri || webUrl } : {}),
+      });
+      return;
     }
 
     try {
@@ -863,6 +853,8 @@ export class KeycloakAdminService implements IKeycloakAdminService, OnModuleInit
    * Called automatically on module initialization
    */
   private async ensureDirectAccessGrantsEnabled(): Promise<void> {
+    // Production authentication policy is managed by the realm, never changed at startup.
+    if (this.configService.get<string>('NODE_ENV') !== 'development') return;
     try {
       const clients = await this.adminClient.clients.find({
         realm: this.realm,

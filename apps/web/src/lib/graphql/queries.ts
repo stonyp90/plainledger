@@ -182,6 +182,7 @@ export const GET_BALANCE_SHEET = gql`
       assets {
         accountCode
         accountName
+        accountSubType
         accountType
         balance
         level
@@ -190,6 +191,7 @@ export const GET_BALANCE_SHEET = gql`
       liabilities {
         accountCode
         accountName
+        accountSubType
         accountType
         balance
         level
@@ -198,6 +200,7 @@ export const GET_BALANCE_SHEET = gql`
       equity {
         accountCode
         accountName
+        accountSubType
         accountType
         balance
         level
@@ -220,6 +223,7 @@ export const GET_INCOME_STATEMENT = gql`
       revenue {
         accountCode
         accountName
+        accountSubType
         amount
         budget
         variance
@@ -228,6 +232,7 @@ export const GET_INCOME_STATEMENT = gql`
       expenses {
         accountCode
         accountName
+        accountSubType
         amount
         budget
         variance

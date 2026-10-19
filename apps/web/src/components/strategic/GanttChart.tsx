@@ -12,6 +12,8 @@ import {
 import { useI18n } from '../../lib/i18n';
 import { LabelTooltip } from '../Tooltip';
 import { Initiative, generatePlanningId } from '../../lib/strategicPlanning';
+import { isInitiativeValid } from '../../lib/planningValidation';
+import { ChartDataState } from '../charts/ChartDataState';
 
 interface GanttChartProps {
   initiatives: Initiative[];
@@ -35,7 +37,7 @@ const CATEGORY_COLORS: Record<Initiative['category'], string> = {
 const CATEGORIES: Initiative['category'][] = ['growth', 'operations', 'product', 'people', 'infrastructure'];
 
 export default function GanttChart({
-  initiatives,
+  initiatives: inputInitiatives,
   startDate,
   endDate,
   onInitiativeUpdate,
@@ -46,6 +48,11 @@ export default function GanttChart({
 }: GanttChartProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const validRange = startDate instanceof Date && endDate instanceof Date &&
+    Number.isFinite(startDate.getTime()) && Number.isFinite(endDate.getTime()) && startDate <= endDate;
+  const invalidData = !validRange || !Array.isArray(inputInitiatives) || !inputInitiatives.every(isInitiativeValid);
+  const initiatives = invalidData ? [] : inputInitiatives;
+
   
   // State
   const [selectedInitiative, setSelectedInitiative] = useState<string | null>(null);
@@ -72,7 +79,12 @@ export default function GanttChart({
   // Generate time periods
   const periods = useMemo(() => {
     const result: Array<{ start: Date; end: Date; label: string; isCurrentMonth: boolean }> = [];
+    if (!validRange) return result;
     const current = new Date(startDate);
+    current.setDate(1);
+    const years = endDate.getFullYear() - startDate.getFullYear();
+    const effectiveMode = years > 10 ? 'year' : viewMode;
+    const yearStep = Math.max(1, Math.ceil((years + 1) / 120));
     const now = new Date();
     
     while (current <= endDate) {
@@ -81,33 +93,33 @@ export default function GanttChart({
       let label: string;
       const isCurrentMonth = current.getMonth() === now.getMonth() && current.getFullYear() === now.getFullYear();
       
-      if (viewMode === 'month') {
+      if (effectiveMode === 'month') {
         periodEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0);
         label = periodStart.toLocaleDateString(isEn ? 'en-CA' : 'fr-CA', { month: 'short' });
         if (current.getMonth() === 0 || result.length === 0) {
           label += ` '${String(current.getFullYear()).slice(2)}`;
         }
         current.setMonth(current.getMonth() + 1);
-      } else if (viewMode === 'quarter') {
+      } else if (effectiveMode === 'quarter') {
         const quarter = Math.floor(current.getMonth() / 3);
         periodEnd = new Date(current.getFullYear(), (quarter + 1) * 3, 0);
         label = `Q${quarter + 1} ${current.getFullYear()}`;
         current.setMonth((quarter + 1) * 3);
       } else {
-        periodEnd = new Date(current.getFullYear(), 11, 31);
-        label = current.getFullYear().toString();
-        current.setFullYear(current.getFullYear() + 1);
+        periodEnd = new Date(current.getFullYear() + yearStep - 1, 11, 31);
+        label = yearStep === 1 ? current.getFullYear().toString() : `${current.getFullYear()}–${current.getFullYear() + yearStep - 1}`;
+        current.setFullYear(current.getFullYear() + yearStep);
       }
       
       result.push({ start: periodStart, end: periodEnd, label, isCurrentMonth });
     }
     
     return result;
-  }, [startDate, endDate, viewMode, isEn]);
+  }, [startDate, endDate, viewMode, isEn, validRange]);
 
   const totalDays = useMemo(() => {
-    return (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-  }, [startDate, endDate]);
+    return validRange ? Math.max(1, (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) : 1;
+  }, [startDate, endDate, validRange]);
 
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
@@ -118,12 +130,15 @@ export default function GanttChart({
   const getInitiativePosition = useCallback((init: Initiative) => {
     const initStart = new Date(init.startDate);
     const initEnd = new Date(init.endDate);
-    const startOffset = (initStart.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-    const duration = (initEnd.getTime() - initStart.getTime()) / (1000 * 60 * 60 * 24);
-    const leftPercent = Math.max(0, (startOffset / totalDays) * 100);
-    const widthPercent = Math.min(100 - leftPercent, Math.max(3, (duration / totalDays) * 100));
+    if (initEnd < startDate || initStart > endDate) return { leftPercent: 0, widthPercent: 0 };
+    const clippedStart = Math.max(initStart.getTime(), startDate.getTime());
+    const clippedEnd = Math.min(initEnd.getTime(), endDate.getTime());
+    const startOffset = (clippedStart - startDate.getTime()) / (1000 * 60 * 60 * 24);
+    const duration = (clippedEnd - clippedStart) / (1000 * 60 * 60 * 24);
+    const leftPercent = Math.min(100, Math.max(0, (startOffset / totalDays) * 100));
+    const widthPercent = Math.max(0, Math.min(100 - leftPercent, Math.max(0.5, (duration / totalDays) * 100)));
     return { leftPercent, widthPercent };
-  }, [startDate, totalDays]);
+  }, [startDate, endDate, totalDays]);
 
   const positionToDate = useCallback((xPercent: number) => {
     const days = (xPercent / 100) * totalDays;
@@ -156,6 +171,7 @@ export default function GanttChart({
     if (!initiative) return;
 
     const rect = timelineRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
     const deltaX = clientX - dragState.startX;
     const deltaPercent = (deltaX / rect.width) * 100;
     const deltaDays = (deltaPercent / 100) * totalDays;
@@ -276,6 +292,7 @@ export default function GanttChart({
       },
       confidence: 50,
       dependencies: [],
+      milestones: [],
     };
 
     onInitiativeAdd(initiative);
@@ -288,7 +305,8 @@ export default function GanttChart({
     if (!onInitiativeAdd || !timelineRef.current) return;
     
     const rect = timelineRef.current.getBoundingClientRect();
-    const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+    if (rect.width <= 0) return;
+    const xPercent = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
     const clickDate = positionToDate(xPercent);
     const endDate = new Date(clickDate);
     endDate.setMonth(endDate.getMonth() + 2);
@@ -305,6 +323,7 @@ export default function GanttChart({
       cashImpact: { type: 'one_time', amount: 0 },
       confidence: 50,
       dependencies: [],
+      milestones: [],
     };
 
     onInitiativeAdd(initiative);
@@ -330,6 +349,8 @@ export default function GanttChart({
   };
 
   const selectedInit = selectedInitiative ? initiatives.find(i => i.id === selectedInitiative) : null;
+
+  if (invalidData) return <ChartDataState title={isEn ? 'Timeline' : 'Chronologie'} issue="invalid" isEn={isEn} />;
 
   return (
     <div className="space-y-4">
@@ -512,6 +533,7 @@ export default function GanttChart({
         </div>
       )}
 
+      {initiatives.length === 0 && <p role="status" className="text-sm text-muted">{isEn ? 'No initiatives in this plan yet.' : 'Aucune initiative dans ce plan.'}</p>}
       {/* Timeline Header */}
       <div 
         className="relative rounded-lg overflow-hidden"
@@ -604,6 +626,7 @@ export default function GanttChart({
                 {/* Bars */}
                 {categoryInitiatives.map((initiative, index) => {
                   const { leftPercent, widthPercent } = getInitiativePosition(initiative);
+                  if (widthPercent === 0) return null;
                   const isPositive = initiative.cashImpact.amount >= 0;
                   const isSelected = selectedInitiative === initiative.id;
                   const isDragging = dragState?.id === initiative.id;
@@ -618,7 +641,7 @@ export default function GanttChart({
                         left: `${leftPercent}%`,
                         width: `${widthPercent}%`,
                         height: '36px',
-                        minWidth: '60px',
+                        minWidth: 0,
                         zIndex: isSelected || isDragging ? 20 : 1,
                       }}
                     >
@@ -627,7 +650,7 @@ export default function GanttChart({
                         style={{
                           backgroundColor: isSelected ? CATEGORY_COLORS[category] : `${CATEGORY_COLORS[category]}20`,
                           border: `2px solid ${CATEGORY_COLORS[category]}`,
-                          ringColor: isDragging ? CATEGORY_COLORS[category] : 'transparent',
+                          boxShadow: isDragging ? `0 0 0 2px ${CATEGORY_COLORS[category]}` : undefined,
                           transform: isDragging ? 'scale(1.02)' : undefined,
                         }}
                         onClick={() => !isDragging && setSelectedInitiative(isSelected ? null : initiative.id)}

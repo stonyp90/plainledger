@@ -418,8 +418,8 @@ export default function Canada() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* PlainLedger Card */}
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="p-8 rounded-2xl"
               style={{ 
@@ -460,8 +460,8 @@ export default function Canada() {
 
             {/* US Competitors Card */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="p-8 rounded-2xl"
               style={{ 

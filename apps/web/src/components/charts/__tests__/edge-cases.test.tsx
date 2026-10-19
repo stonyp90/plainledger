@@ -9,7 +9,7 @@
  * - Zero values
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from '../../../test/test-utils';
 import { VariancePin } from '../ibcs/VariancePin';
 
@@ -85,8 +85,8 @@ describe('Chart Edge Cases', () => {
       
       // Should render if difference is meaningful
       const group = container.querySelector('g.variance-pin');
-      // May or may not render depending on threshold
-      expect(group !== null || group === null).toBeTruthy();
+      // The indicator deliberately skips differences below one SVG unit.
+      expect(group).toBeNull();
     });
   });
 });

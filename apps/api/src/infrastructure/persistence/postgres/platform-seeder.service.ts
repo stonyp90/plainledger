@@ -17,6 +17,8 @@ export class PlatformSeederService implements OnModuleInit {
   constructor(private readonly dataSource: DataSource) {}
 
   async onModuleInit() {
+    // Production initialization is performed once by the reviewed bootstrap job.
+    if (process.env.NODE_ENV === 'production') return;
     await this.seedPlatformData();
   }
 

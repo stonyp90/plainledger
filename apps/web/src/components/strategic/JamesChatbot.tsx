@@ -544,7 +544,7 @@ export default function JamesChatbot({
   // Enhanced markdown rendering
   const renderMessageContent = (content: string) => {
     const lines = content.split('\n');
-    const elements: JSX.Element[] = [];
+    const elements: React.JSX.Element[] = [];
     let inCodeBlock = false;
     let codeContent = '';
     let codeLanguage = '';

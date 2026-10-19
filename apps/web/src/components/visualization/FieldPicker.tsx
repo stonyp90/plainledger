@@ -59,7 +59,7 @@ import { getDataSource } from '../../lib/goldSchema';
 // FIELD TYPE ICONS
 // =====================================================
 
-const FIELD_TYPE_ICONS: Record<FieldType, React.ComponentType<{ className?: string }>> = {
+const FIELD_TYPE_ICONS: Record<FieldType, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   STRING: Type,
   NUMBER: Hash,
   CURRENCY: DollarSign,

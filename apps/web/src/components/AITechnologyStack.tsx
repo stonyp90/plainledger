@@ -89,7 +89,7 @@ export default function AITechnologyStack({ theme, isDark }: AITechnologyStackPr
                   ? theme.gold 
                   : isDark ? 'rgba(71, 85, 105, 0.4)' : 'rgba(229, 231, 235, 0.8)'
               }`,
-              ringColor: provider.type === 'proprietary' ? theme.gold : 'transparent',
+              boxShadow: `0 0 0 2px ${provider.type === 'proprietary' ? theme.gold : 'transparent'}`,
             }}
           >
             {provider.type === 'proprietary' && (

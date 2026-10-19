@@ -143,7 +143,7 @@ export class ChartErrorBoundary extends Component<Props, State> {
           </p>
 
           {/* Error Details (Development Only) */}
-          {process.env.NODE_ENV === 'development' && error && (
+          {import.meta.env.DEV && error && (
             <details className="mb-4 w-full max-w-md">
               <summary 
                 className="text-xs cursor-pointer flex items-center gap-1 justify-center"

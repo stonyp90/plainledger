@@ -62,7 +62,7 @@ class AIAnalytics {
     }
 
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('[AI Analytics]', event.type, event.metadata);
     }
   }
@@ -186,7 +186,7 @@ class AIAnalytics {
       });
     } catch (error) {
       // Silently fail - feedback is best-effort
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.warn('[AI Analytics] Failed to send feedback to backend:', error);
       }
     }
@@ -245,7 +245,7 @@ class AIAnalytics {
       // Reset retry count on success
       this.retryCount = 0;
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log(`[AI Analytics] Flushed ${eventsToFlush.length} events to backend`);
       }
     } catch (error) {
@@ -261,12 +261,12 @@ class AIAnalytics {
           this.flush();
         }, delay);
         
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.warn(`[AI Analytics] Flush failed, retrying in ${delay}ms (attempt ${this.retryCount}/${this.MAX_RETRIES})`);
         }
       } else {
         // Max retries reached, keep events for next flush
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.error('[AI Analytics] Failed to flush events after max retries');
         }
         

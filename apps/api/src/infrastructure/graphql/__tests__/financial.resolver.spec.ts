@@ -1,3 +1,6 @@
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { UserProfileEntity } from '../../persistence/postgres/entities/user-profile.entity';
+import { KEYCLOAK_INSTANCE } from "nest-keycloak-connect";
 /**
  * Financial Resolver Tests
  *
@@ -8,6 +11,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { ConfigService } from "@nestjs/config";
 import { FinancialResolver } from "../resolvers/financial.resolver";
 import { GenerateBalanceSheetUseCase } from "@application/use-cases/generate-balance-sheet.use-case";
+import { GenerateIncomeStatementUseCase } from "@application/use-cases/generate-income-statement.use-case";
 import { TrendDirection, AccountType } from "../types";
 
 // Mock the DatalakeDataService
@@ -17,6 +21,8 @@ jest.mock("@infrastructure/services/datalake-data.service", () => {
       getDashboardData: jest.fn().mockResolvedValue({
         organizationId: "org-123",
         organizationName: "Test Company",
+        currency: "CAD",
+        cashMovements: { inflows: 40000, outflows: 15000, netCashFlow: 25000, opening: 20000, closing: 45000, classified: true, categories: { operating: 25000, investing: 0, financing: 0 } },
         asOfDate: "2026-01-27",
         dataSource: "test",
         lastUpdated: "2026-01-27T12:00:00Z",
@@ -177,6 +183,8 @@ describe("FinancialResolver", () => {
       getDashboardData: jest.fn().mockResolvedValue({
         organizationId: "org-123",
         organizationName: "Test Company",
+        currency: "CAD",
+        cashMovements: { inflows: 40000, outflows: 15000, netCashFlow: 25000, opening: 20000, closing: 45000, classified: true, categories: { operating: 25000, investing: 0, financing: 0 } },
         asOfDate: "2026-01-27",
         dataSource: "test",
         lastUpdated: "2026-01-27T12:00:00Z",
@@ -282,6 +290,11 @@ describe("FinancialResolver", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FinancialResolver,
+        { provide: GenerateIncomeStatementUseCase, useValue: { execute: jest.fn().mockImplementation(async (input) => ({
+          ...input, organizationName: "Test Company", currency: "CAD", revenue: [], expenses: [], grossRevenue: 150000, totalExpenses: 95000, netIncome: 55000,
+        })) } },
+        { provide: getRepositoryToken(UserProfileEntity), useValue: { findOne: jest.fn().mockRejectedValue(new Error("Not an authentication test")) } },
+        { provide: KEYCLOAK_INSTANCE, useValue: { grantManager: { createGrant: jest.fn().mockRejectedValue(new Error("Not an authentication test")), validateAccessToken: jest.fn().mockResolvedValue(false) } } },
         {
           provide: ConfigService,
           useValue: mockConfigService,
@@ -316,9 +329,9 @@ describe("FinancialResolver", () => {
       const result = await resolver.getDashboardSummary(undefined, mockContext);
 
       expect(result.cashFlow).toBeDefined();
-      expect(result.cashFlow.inflows.amount).toBe(150000);
-      expect(result.cashFlow.outflows.amount).toBe(95000);
-      expect(result.cashFlow.netCashFlow.amount).toBe(55000);
+      expect(result.cashFlow?.inflows.amount).toBe(40000);
+      expect(result.cashFlow?.outflows.amount).toBe(15000);
+      expect(result.cashFlow?.netCashFlow.amount).toBe(25000);
     });
 
     it("should include key metrics", async () => {
@@ -330,12 +343,7 @@ describe("FinancialResolver", () => {
 
     it("should handle missing organization gracefully", async () => {
       const contextWithoutOrg = { req: { user: {} } } as any;
-      const result = await resolver.getDashboardSummary(
-        undefined,
-        contextWithoutOrg,
-      );
-
-      expect(result).toBeDefined();
+      await expect(resolver.getDashboardSummary(undefined, contextWithoutOrg)).rejects.toMatchObject({ status: 401 });
     });
   });
 
@@ -577,6 +585,8 @@ describe("FinancialResolver Security", () => {
       getDashboardData: jest.fn().mockResolvedValue({
         organizationId: "org-123",
         organizationName: "Test Company",
+        currency: "CAD",
+        cashMovements: { inflows: 40000, outflows: 15000, netCashFlow: 25000, opening: 20000, closing: 45000, classified: true, categories: { operating: 25000, investing: 0, financing: 0 } },
         asOfDate: "2026-01-27",
         dataSource: "test",
         lastUpdated: "2026-01-27T12:00:00Z",
@@ -606,6 +616,11 @@ describe("FinancialResolver Security", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FinancialResolver,
+        { provide: GenerateIncomeStatementUseCase, useValue: { execute: jest.fn().mockImplementation(async (input) => ({
+          ...input, organizationName: "Test Company", currency: "CAD", revenue: [], expenses: [], grossRevenue: 150000, totalExpenses: 95000, netIncome: 55000,
+        })) } },
+        { provide: getRepositoryToken(UserProfileEntity), useValue: { findOne: jest.fn().mockRejectedValue(new Error("Not an authentication test")) } },
+        { provide: KEYCLOAK_INSTANCE, useValue: { grantManager: { createGrant: jest.fn().mockRejectedValue(new Error("Not an authentication test")), validateAccessToken: jest.fn().mockResolvedValue(false) } } },
         {
           provide: ConfigService,
           useValue: mockConfigService,
@@ -636,11 +651,6 @@ describe("FinancialResolver Security", () => {
   it("should handle malformed context gracefully", async () => {
     const malformedContext = { req: {} } as any;
 
-    // Should not throw, should use default values
-    const result = await resolver.getDashboardSummary(
-      undefined,
-      malformedContext,
-    );
-    expect(result).toBeDefined();
+    await expect(resolver.getDashboardSummary(undefined, malformedContext)).rejects.toMatchObject({ status: 401 });
   });
 });

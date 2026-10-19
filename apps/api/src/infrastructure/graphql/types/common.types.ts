@@ -154,11 +154,11 @@ export class MetricWithTrend {
   @Field(() => Float, { nullable: true })
   previousValue?: number;
 
-  @Field(() => TrendDirection)
-  direction: TrendDirection;
+  @Field(() => TrendDirection, { nullable: true })
+  direction?: TrendDirection;
 
-  @Field(() => Float)
-  changePercent: number;
+  @Field(() => Float, { nullable: true })
+  changePercent?: number;
 
   @Field(() => [TrendPoint], { nullable: true })
   history?: TrendPoint[];

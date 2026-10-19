@@ -4,8 +4,9 @@
  */
 
 import config from './config';
+import { getAuthenticatedRequestHeaders } from './authRequestContext';
 
-const API_BASE = `${config.api.baseUrl}/api/v1`;
+const API_BASE = `${config.api.baseUrl.replace(/\/+$/, '').replace(/\/api$/, '')}/api/v1`;
 
 /**
  * Safely parse JSON response, handling non-JSON responses (e.g., 502 HTML error pages)
@@ -31,38 +32,8 @@ async function safeJsonParse(response: Response): Promise<any> {
  * Get authentication headers
  * Gets token from Keycloak instance (exposed on window.keycloak)
  */
-async function getAuthHeaders(): Promise<HeadersInit> {
-  let token: string | undefined = undefined;
-
-  if (typeof window !== 'undefined') {
-    // Get token from Keycloak instance (exposed by keycloak.tsx)
-    const keycloakInstance = (window as any).keycloak;
-    if (keycloakInstance?.token) {
-      token = keycloakInstance.token;
-    } else if (keycloakInstance?.getToken) {
-      // If token needs refresh, get fresh token
-      try {
-        token = await keycloakInstance.getToken();
-      } catch (error) {
-        console.warn('Failed to get Keycloak token:', error);
-      }
-    }
-
-    // Fallback: Check sessionStorage (where Keycloak stores tokens)
-    if (!token) {
-      token = sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token') || undefined;
-    }
-  }
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  return headers;
+async function getAuthHeaders(): Promise<Headers> {
+  return getAuthenticatedRequestHeaders({ 'Content-Type': 'application/json' });
 }
 
 /**
@@ -89,8 +60,7 @@ export const organizationSettingsApi = {
 
       return safeJsonParse(response);
     } catch (error) {
-      // Network errors - return empty object silently for demo/free tier users
-      return {};
+      throw error;
     }
   },
 
@@ -193,12 +163,7 @@ export const userSettingsApi = {
 
       return safeJsonParse(response);
     } catch (error) {
-      // Network errors, JSON parse errors, or other issues - silently return empty object
-      // This is expected during initial load or for users without full permissions
-      return {
-        notificationPreferences: undefined,
-        uiPreferences: undefined,
-      };
+      throw error;
     }
   },
 

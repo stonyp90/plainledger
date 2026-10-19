@@ -69,7 +69,7 @@ export class NotificationService {
   private emailTemplates: Map<string, Handlebars.TemplateDelegate> = new Map();
 
   constructor() {
-    this.templatesDir = path.join(__dirname, "../templates/emails");
+    this.templatesDir = path.join(__dirname, "../../templates/emails");
     this.loadTemplates();
   }
 

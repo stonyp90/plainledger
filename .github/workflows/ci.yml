@@ -112,7 +112,7 @@ jobs:
         with:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
-      - run: npm run lint || true
+      - run: npx --no-install eslint "{src,apps,libs,test}/**/*.ts"
         working-directory: apps/api
       - name: Check class sizes
         run: npm run check:class-sizes || echo "⚠️ Some classes exceed 1000 lines - will refactor incrementally"
@@ -135,7 +135,7 @@ jobs:
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
       - name: Check design tokens are generated from design-system/tokens.json
         run: node design-system/build-tokens.mjs --check
-      - run: npx tsc --noEmit || echo "⚠️ TypeScript warnings - will fix incrementally"
+      - run: npx --no-install tsc --noEmit
         working-directory: apps/web
 
   # ==========================================================================
@@ -157,23 +157,12 @@ jobs:
           path: apps/api/node_modules
           key: api-deps-${{ runner.os }}-${{ hashFiles('apps/api/package-lock.json') }}
       - name: Run all tests (REST + GraphQL)
-        run: npm test || echo "No tests configured"
+        run: npm test -- --runInBand
         working-directory: apps/api
       - name: Check test coverage
         run: |
-          npm run test:cov -- --coverageThreshold='{"global":{"branches":50,"functions":50,"lines":50,"statements":50}}' || echo "⚠️ Coverage below threshold - will improve incrementally"
+          npm run test:cov -- --runInBand
         working-directory: apps/api
-        continue-on-error: true
-      - name: GraphQL Test Summary
-        if: always()
-        run: |
-          echo "### GraphQL Tests" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Financial Resolver | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "| Organization Resolver | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "| DataSource Resolver | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "| GqlAuthGuard | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
 
   test-web:
     name: Test Web
@@ -190,16 +179,12 @@ jobs:
         with:
           path: apps/web/node_modules
           key: web-deps-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
-      - name: Ensure Rollup Linux bindings (npm bug workaround)
-        run: npm install @rollup/rollup-linux-x64-gnu --save-optional || true
-        working-directory: apps/web
-      - run: npm run test:run || echo "No tests configured"
+      - run: npm run test:run
         working-directory: apps/web
       - name: Check test coverage
         run: |
-          npm run test:coverage -- --coverage.threshold.branches=50 --coverage.threshold.functions=50 --coverage.threshold.lines=50 --coverage.threshold.statements=50 || echo "⚠️ Coverage below threshold - will improve incrementally"
+          npm run test:coverage
         working-directory: apps/web
-        continue-on-error: true
 
   # ==========================================================================
   # Stage 3b: Datalake Integration Tests (Manual Trigger Only)
@@ -289,8 +274,8 @@ jobs:
 
       - name: Initialize Database Schema
         run: |
-          PGPASSWORD=plainledger_secret psql -h localhost -U plainledger -d plainledger -f local-dev/init-db.sql || true
-          PGPASSWORD=plainledger_secret psql -h localhost -U plainledger -d plainledger -f local-dev/init-datalake.sql || true
+          PGPASSWORD=plainledger_secret psql -v ON_ERROR_STOP=1 -h localhost -U plainledger -d plainledger -f local-dev/init-db.sql
+          PGPASSWORD=plainledger_secret psql -v ON_ERROR_STOP=1 -h localhost -U plainledger -d plainledger -f local-dev/init-datalake.sql
         env:
           PGHOST: localhost
           PGUSER: plainledger
@@ -314,18 +299,6 @@ jobs:
           DB_USERNAME: plainledger
           DB_PASSWORD: plainledger_secret
 
-      - name: Datalake Test Summary
-        if: always()
-        run: |
-          echo "## 🗃️ Datalake Integration Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Layer | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Bronze (Raw) | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "| Silver (Cleansed) | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "| Gold (Analytics) | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**LocalStack Services:** S3 (core only)" >> $GITHUB_STEP_SUMMARY
 
   # ==========================================================================
   # Stage 4: Build Docker Images and Push to ECR
@@ -754,8 +727,6 @@ jobs:
           if [ ! -d "node_modules" ]; then
             npm ci --include=optional
           fi
-          # Ensure Rollup Linux bindings (npm bug workaround)
-          npm install @rollup/rollup-linux-x64-gnu --save-optional 2>/dev/null || true
         working-directory: apps/web
 
       - name: Build Storybook

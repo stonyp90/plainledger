@@ -350,7 +350,7 @@ export function ChartPreview({
     );
   }, [config.sources, config.fields, config.chartType]);
 
-  const hasData = (config.sources?.length ?? 0) > 0 && (config.fields?.length ?? 0) > 0;
+  const hasData = (config.sources?.length ?? 0) > 0 && (config.fields?.some(field => field.enabled) ?? false);
   const showLoading = isLoading || localLoading;
 
   // Render appropriate chart based on type
@@ -389,7 +389,7 @@ export function ChartPreview({
             className="text-sm font-medium"
             style={{ color: 'rgb(var(--color-text))' }}
           >
-            {isEn ? 'Preview' : 'Aperçu'}
+            {isEn ? 'Preview · Sample data' : 'Aperçu · Données d’exemple'}
           </span>
           {showLoading && (
             <Loader2 
@@ -402,6 +402,7 @@ export function ChartPreview({
           <button
             onClick={onRefresh}
             disabled={showLoading}
+            aria-label={isEn ? 'Refresh preview' : 'Actualiser l’aperçu'}
             className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <RefreshCw 

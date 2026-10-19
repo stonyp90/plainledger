@@ -5,10 +5,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [
-    react({
-      // Enable Fast Refresh for instant updates
-      fastRefresh: true,
-    }),
+    react(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg', 'logo.svg'],
@@ -18,14 +15,6 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\.plainledger\.io\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-            },
-          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -84,12 +73,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },
       '/graphql': {
-        target: 'http://localhost:3001',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
         ws: true, // Enable WebSocket proxy for subscriptions

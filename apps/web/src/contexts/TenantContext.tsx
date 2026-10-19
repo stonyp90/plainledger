@@ -5,13 +5,18 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useRef,
 } from 'react';
-import { useAuth } from '../lib/keycloak';
+import { useAuth, isMockAuthEnabled } from '../lib/keycloak';
+import { setActiveOrganizationId } from '../lib/graphql/client';
 import api from '../lib/api';
 
 // Types
 export interface Tenant {
+  /** Stable, verified tenant slug used for request and data-lake scoping. */
   id: string;
+  /** Database organization UUID. Never substitute it for the tenant claim. */
+  organizationId?: string;
   name: string;
   slug: string;
   logo?: string;
@@ -26,6 +31,7 @@ export interface Tenant {
   // Organization market/industry information
   industry?: string;
   region?: string; // e.g., 'canada', 'quebec', 'ontario'
+  province?: string;
 }
 
 export interface TenantSettings {
@@ -95,6 +101,10 @@ export interface TenantInvitation {
   invitedAt: string;
   expiresAt: string;
   status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  /** Only returned when an invitation link is created or rotated. */
+  inviteUrl?: string;
+  deliveryStatus?: 'unsent' | 'queued' | 'failed';
+  deliveryMessage?: string;
 }
 
 interface TenantContextType {
@@ -122,7 +132,7 @@ interface TenantContextType {
   // Invitation operations
   getInvitations: () => Promise<TenantInvitation[]>;
   revokeInvitation: (invitationId: string) => Promise<void>;
-  resendInvitation: (invitationId: string) => Promise<void>;
+  resendInvitation: (invitationId: string) => Promise<TenantInvitation>;
 
   // Permission checks
   hasPermission: (permission: Permission) => boolean;
@@ -393,6 +403,15 @@ interface UserPermissionsData {
   };
 }
 
+interface OrganizationResponse {
+  id: string; tenantId: string; name: string; currency: string;
+  fiscalYearEndMonth: number; industry?: string; createdAt: string;
+}
+interface OrganizationSettingsResponse {
+  generalSettings?: Partial<TenantSettings> & { province?: string; industry?: string; fiscalYearEndMonth?: number };
+  brandingSettings?: { logo?: string; primaryColor?: string; secondaryColor?: string };
+}
+
 export function TenantProvider({ children }: TenantProviderProps) {
   const { authenticated, user } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -400,378 +419,198 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userPermissions, setUserPermissions] = useState<UserPermissionsData | null>(null);
+  const generation = useRef(0);
+  const userId = user?.id;
+  const claimedTenant = user?.organization;
+  const rolesKey = (user?.roles ?? []).join(',');
+  const mockMode = isMockAuthEnabled();
 
-  // Load tenants on auth
-  useEffect(() => {
-    if (authenticated) {
-      loadTenants();
-      loadUserPermissions();
-    } else {
-      setTenants([]);
-      setCurrentTenantState(null);
-      setUserPermissions(null);
-      setIsLoading(false);
-    }
-  }, [authenticated]);
-
-  // Reload permissions when tenant changes
-  useEffect(() => {
-    if (authenticated && currentTenant) {
-      loadUserPermissions();
-    }
-  }, [authenticated, currentTenant?.id]);
-
-  // Load user permissions from API
-  const loadUserPermissions = async () => {
-    try {
-      const response = await api.get<UserPermissionsData>('/api/users/me/permissions');
-      setUserPermissions(response.data);
-    } catch (err: any) {
-      // When the API is unavailable, leave userPermissions as null
-      // so hasPermission falls back to ROLE_PERMISSIONS based on tenant role
-      console.warn('Failed to load user permissions, using role-based fallback:', err.message);
-      setUserPermissions(null);
-    }
-  };
-
-  // Load tenants from API
-  const loadTenants = async () => {
+  const loadTenants = useCallback(async (): Promise<Tenant | null> => {
+    const requestGeneration = ++generation.current;
     setIsLoading(true);
     setError(null);
-
+    setCurrentTenantState(null);
+    setTenants([]);
+    setUserPermissions(null);
     try {
-      // Check if user is in demo-signup organization
-      const isDemoSignupUser = user?.organization === 'demo-signup';
-
-      if (isDemoSignupUser) {
-        // Create locked demo tenant for new signups (free users only see demo data)
-        const demoSignupTenant: Tenant = {
-          id: 'demo-signup',
-          name: 'Demo Account',
-          slug: 'demo-signup',
-          plan: 'free',
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          settings: {
-            ...DEFAULT_SETTINGS,
-            features: FREE_FEATURES, // All features locked
-            demoMode: true, // Demo mode enabled - free users only see demo data
-          },
-          limits: {
-            ...PLAN_LIMITS.free,
-            currentUsage: { users: 1, connections: 0, reports: 0, storage: 0, apiCalls: 0 },
-          },
-          members: 1,
-          role: 'viewer',
-        };
-
-        setTenants([demoSignupTenant]);
-        setCurrentTenantState(demoSignupTenant);
-        setIsLoading(false);
-        return;
+      if (!authenticated) {
+        await setActiveOrganizationId(null);
+        return null;
       }
-
-      // In production, fetch from API
-      // const response = await api.get('/tenants');
-      // const data = response.data;
-
-      // For now, use mock data
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate API delay
-      setTenants(MOCK_TENANTS);
-
-      // First try to find tenant matching user's organization
-      const userOrgTenant = user?.organization
-        ? MOCK_TENANTS.find((t) => t.id === user.organization)
-        : null;
-
-      // Then try to restore last selected tenant
-      const savedTenantId = localStorage.getItem(STORAGE_KEY);
-      const savedTenant = savedTenantId ? MOCK_TENANTS.find((t) => t.id === savedTenantId) : null;
-
-      // Priority: user's org tenant > saved tenant > first tenant
-      setCurrentTenantState(userOrgTenant || savedTenant || MOCK_TENANTS[0] || null);
-    } catch (err) {
-      setError('Impossible de charger les organisations');
-      console.error('Failed to load tenants:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Set current tenant
-  const setCurrentTenant = useCallback((tenant: Tenant | null) => {
-    setCurrentTenantState(tenant);
-    if (tenant) {
-      localStorage.setItem(STORAGE_KEY, tenant.id);
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, []);
-
-  // Switch tenant
-  const switchTenant = useCallback(
-    async (tenantId: string) => {
-      const tenant = tenants.find((t) => t.id === tenantId);
-      if (tenant) {
-        setCurrentTenant(tenant);
-        // In production, you might want to refresh data for the new tenant
-        // await refreshTenantData();
+      if (mockMode) {
+        const allowed = MOCK_TENANTS.filter(tenant => tenant.id === claimedTenant);
+        const selected = allowed[0] ?? null;
+        await setActiveOrganizationId(selected?.id ?? null);
+        if (requestGeneration !== generation.current) return null;
+        setTenants(allowed);
+        setCurrentTenantState(selected);
+        return selected;
       }
-    },
-    [tenants, setCurrentTenant],
-  );
-
-  // Refresh tenants list
-  const refreshTenants = useCallback(async () => {
-    await loadTenants();
-  }, []);
-
-  // Create new tenant
-  const createTenant = useCallback(
-    async (data: CreateTenantData): Promise<Tenant> => {
-      // In production, call API
-      // const response = await api.post('/tenants', data);
-
-      const newTenant: Tenant = {
-        id: `tenant-${Date.now()}`,
-        name: data.name,
-        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
-        plan: 'free',
-        status: 'active',
-        createdAt: new Date().toISOString(),
+      if (!claimedTenant) throw new Error('No organization is assigned to this account. Complete account setup before continuing.');
+      await setActiveOrganizationId(claimedTenant);
+      const [organizationResult, settingsResult, permissionsResult] = await Promise.all([
+        api.get<OrganizationResponse>(`/api/organizations/${encodeURIComponent(claimedTenant)}`),
+        api.get<OrganizationSettingsResponse>('/api/v1/settings/organization'),
+        api.get<UserPermissionsData>('/api/users/me/permissions'),
+      ]);
+      if (requestGeneration !== generation.current) return null;
+      const organization = organizationResult.data;
+      if (!organization || organization.tenantId !== claimedTenant || !organization.id) {
+        throw new Error('The organization response does not match this signed-in account.');
+      }
+      const permissions = permissionsResult.data;
+      const sourceSettings = settingsResult.data;
+      const general = sourceSettings.generalSettings ?? {};
+      const plan: Tenant['plan'] = permissions.plan.id === 'enterprise' ? 'enterprise'
+        : ['professional', 'pro'].includes(permissions.plan.id) ? 'professional' : 'free';
+      const entitled = (name: string) => permissions.entitlements.includes(name) || permissions.overrides.includes(name);
+      const role: Tenant['role'] = ['owner', 'admin', 'member', 'viewer'].includes(permissions.role.id)
+        ? permissions.role.id as Tenant['role'] : 'viewer';
+      const selected: Tenant = {
+        id: organization.tenantId, organizationId: organization.id,
+        name: organization.name, slug: organization.tenantId, createdAt: organization.createdAt,
+        plan, role, status: 'active', members: 0,
+        industry: general.industry || organization.industry,
+        province: general.province, region: general.province,
         settings: {
-          ...DEFAULT_SETTINGS,
-          ...data.settings,
-          features: FREE_FEATURES,
-          demoMode: true,
+          ...DEFAULT_SETTINGS, ...general,
+          currency: general.currency || organization.currency,
+          fiscalYearEnd: general.fiscalYearEnd || `${String(organization.fiscalYearEndMonth).padStart(2, '0')}-${new Date(Date.UTC(2001, organization.fiscalYearEndMonth, 0)).getUTCDate()}`,
+          demoMode: false,
+          features: {
+            powerBI: entitled('feature:power-bi'), aiInsights: entitled('feature:ai-insights'),
+            customReports: entitled('feature:custom-reports'), apiAccess: entitled('feature:api-access'),
+            auditLogs: entitled('feature:audit-logs'), webhooks: entitled('feature:webhooks'),
+            sso: entitled('feature:sso'), decisionCapture: entitled('feature:decision-capture'),
+          },
+          notifications: { ...DEFAULT_SETTINGS.notifications, ...general.notifications },
+          branding: sourceSettings.brandingSettings ? {
+            logo: sourceSettings.brandingSettings.logo,
+            primaryColor: sourceSettings.brandingSettings.primaryColor,
+            accentColor: sourceSettings.brandingSettings.secondaryColor,
+          } : undefined,
         },
         limits: {
-          ...PLAN_LIMITS.free,
-          currentUsage: { users: 1, connections: 0, reports: 0, storage: 0, apiCalls: 0 },
+          ...PLAN_LIMITS[plan],
+          users: permissions.limits.users ?? PLAN_LIMITS[plan].users,
+          connections: permissions.limits.connections ?? PLAN_LIMITS[plan].connections,
+          reports: permissions.limits.reports ?? PLAN_LIMITS[plan].reports,
+          storage: permissions.limits.storage ?? PLAN_LIMITS[plan].storage,
+          apiCalls: permissions.limits.apiCalls ?? PLAN_LIMITS[plan].apiCalls,
+          currentUsage: { users: 0, connections: 0, reports: 0, storage: 0, apiCalls: 0 },
         },
-        members: 1,
-        role: 'owner',
       };
+      setUserPermissions(permissions);
+      setTenants([selected]);
+      setCurrentTenantState(selected);
+      localStorage.setItem(STORAGE_KEY, selected.id);
+      return selected;
+    } catch (cause) {
+      if (requestGeneration !== generation.current) return null;
+      setError(cause instanceof Error ? cause.message : 'Unable to load your organization.');
+      setCurrentTenantState(null);
+      setTenants([]);
+      await setActiveOrganizationId(null);
+      return null;
+    } finally {
+      if (requestGeneration === generation.current) setIsLoading(false);
+    }
+  }, [authenticated, claimedTenant, mockMode, userId, rolesKey]);
 
-      setTenants((prev) => [...prev, newTenant]);
-      setCurrentTenant(newTenant);
+  useEffect(() => {
+    void loadTenants();
+    return () => { generation.current += 1; };
+  }, [loadTenants]);
 
-      return newTenant;
-    },
-    [setCurrentTenant],
-  );
+  const setCurrentTenant = useCallback(async (tenant: Tenant | null) => {
+    if (tenant && !tenants.some(allowed => allowed.id === tenant.id)) {
+      throw new Error('This organization is not available to your account.');
+    }
+    await setActiveOrganizationId(tenant?.id ?? null);
+    setCurrentTenantState(tenant);
+    if (tenant) localStorage.setItem(STORAGE_KEY, tenant.id);
+    else localStorage.removeItem(STORAGE_KEY);
+  }, [tenants]);
+  const switchTenant = useCallback(async (tenantId: string) => {
+    const tenant = tenants.find(item => item.id === tenantId);
+    if (!tenant) throw new Error('This organization is not available to your account.');
+    await setCurrentTenant(tenant);
+  }, [tenants, setCurrentTenant]);
+  const refreshTenants = useCallback(async () => { await loadTenants(); }, [loadTenants]);
 
-  // Update tenant settings
-  const updateTenantSettings = useCallback(
-    async (settings: Partial<TenantSettings>) => {
-      if (!currentTenant) throw new Error('No tenant selected');
+  const createTenant = useCallback(async (data: CreateTenantData): Promise<Tenant> => {
+    if (!claimedTenant || currentTenant) throw new Error('A new organization requires an assigned account and completed organization setup.');
+    await api.post<OrganizationResponse>('/api/organizations', {
+      tenantId: claimedTenant, name: data.name, currency: data.settings?.currency || 'CAD',
+    });
+    const created = await loadTenants();
+    if (!created) throw new Error('Organization was saved, but could not be loaded. Reload your account before continuing.');
+    return created;
+  }, [claimedTenant, currentTenant, loadTenants]);
 
-      // In production, call API
-      // await api.patch(`/tenants/${currentTenant.id}/settings`, settings);
+  const updateTenantSettings = useCallback(async (settings: Partial<TenantSettings>) => {
+    if (!currentTenant) throw new Error('No organization selected.');
+    if (!mockMode) {
+      if (!userPermissions?.permissions.includes('manage:settings')) throw new Error('You do not have permission to manage organization settings.');
+      if (settings.features || settings.demoMode !== undefined) throw new Error('Feature access is controlled by your organization subscription.');
+      const { branding, ...generalSettings } = settings;
+      await api.put('/api/v1/settings/organization', {
+        generalSettings: { ...currentTenant.settings, ...generalSettings, features: undefined, branding: undefined, demoMode: undefined },
+        ...(branding ? { brandingSettings: { logo: branding.logo, primaryColor: branding.primaryColor, secondaryColor: branding.accentColor } } : {}),
+      });
+      await loadTenants();
+      return;
+    }
+    const updated = { ...currentTenant, settings: { ...currentTenant.settings, ...settings } };
+    setTenants(previous => previous.map(tenant => tenant.id === updated.id ? updated : tenant));
+    setCurrentTenantState(updated);
+  }, [currentTenant, mockMode, userPermissions, loadTenants]);
 
-      const updatedTenant = {
-        ...currentTenant,
-        settings: { ...currentTenant.settings, ...settings },
-      };
-
-      setTenants((prev) => prev.map((t) => (t.id === currentTenant.id ? updatedTenant : t)));
-      setCurrentTenantState(updatedTenant);
-    },
-    [currentTenant],
-  );
-
-  // Get members
-  const getMembers = useCallback(async (): Promise<TenantMember[]> => {
-    if (!currentTenant) return [];
-
-    // In production, fetch from API
-    // const response = await api.get(`/tenants/${currentTenant.id}/members`);
-
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return MOCK_MEMBERS;
+  const memberPath = useCallback(() => {
+    if (!currentTenant) throw new Error('No organization selected.');
+    return `/api/organizations/${encodeURIComponent(currentTenant.id)}`;
   }, [currentTenant]);
+  // These methods complete only when the API confirms the durable change.
+  const getMembers = useCallback(async (): Promise<TenantMember[]> => mockMode
+    ? MOCK_MEMBERS : (await api.get<TenantMember[]>(`${memberPath()}/members`)).data, [memberPath, mockMode]);
+  const inviteMember = useCallback(async (email: string, role: TenantMember['role']): Promise<TenantInvitation> =>
+    (await api.post<TenantInvitation>(`${memberPath()}/invitations`, { email, role })).data, [memberPath]);
+  const updateMemberRole = useCallback(async (memberId: string, role: TenantMember['role']) => {
+    await api.patch(`${memberPath()}/members/${encodeURIComponent(memberId)}`, { role });
+  }, [memberPath]);
+  const removeMember = useCallback(async (memberId: string) => {
+    await api.delete(`${memberPath()}/members/${encodeURIComponent(memberId)}`);
+  }, [memberPath]);
+  const getInvitations = useCallback(async (): Promise<TenantInvitation[]> =>
+    (await api.get<TenantInvitation[]>(`${memberPath()}/invitations`)).data, [memberPath]);
+  const revokeInvitation = useCallback(async (invitationId: string) => {
+    await api.delete(`${memberPath()}/invitations/${encodeURIComponent(invitationId)}`);
+  }, [memberPath]);
+  const resendInvitation = useCallback(async (invitationId: string): Promise<TenantInvitation> => {
+    return (await api.post<TenantInvitation>(`${memberPath()}/invitations/${encodeURIComponent(invitationId)}/resend`)).data;
+  }, [memberPath]);
 
-  // Invite member
-  const inviteMember = useCallback(
-    async (email: string, role: TenantMember['role']): Promise<TenantInvitation> => {
-      if (!currentTenant) throw new Error('No tenant selected');
-
-      // In production, call API
-      // const response = await api.post(`/tenants/${currentTenant.id}/invitations`, { email, role });
-
-      const invitation: TenantInvitation = {
-        id: `inv-${Date.now()}`,
-        email,
-        role: role as 'admin' | 'member' | 'viewer',
-        invitedBy: user?.id || '',
-        invitedAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'pending',
-      };
-
-      return invitation;
-    },
-    [currentTenant, user],
-  );
-
-  // Update member role
-  const updateMemberRole = useCallback(
-    async (memberId: string, role: TenantMember['role']) => {
-      if (!currentTenant) throw new Error('No tenant selected');
-
-      // In production, call API
-      // await api.patch(`/tenants/${currentTenant.id}/members/${memberId}`, { role });
-
-      console.log(`Updated member ${memberId} to role ${role}`);
-    },
-    [currentTenant],
-  );
-
-  // Remove member
-  const removeMember = useCallback(
-    async (memberId: string) => {
-      if (!currentTenant) throw new Error('No tenant selected');
-
-      // In production, call API
-      // await api.delete(`/tenants/${currentTenant.id}/members/${memberId}`);
-
-      console.log(`Removed member ${memberId}`);
-    },
-    [currentTenant],
-  );
-
-  // Get invitations
-  const getInvitations = useCallback(async (): Promise<TenantInvitation[]> => {
-    if (!currentTenant) return [];
-
-    // In production, fetch from API
-    // const response = await api.get(`/tenants/${currentTenant.id}/invitations`);
-
-    // Mock pending invitations for demo
-    return [
-      {
-        id: 'inv-1',
-        email: 'pending@example.com',
-        role: 'member',
-        invitedBy: user?.id || '',
-        invitedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'pending',
-      },
-    ];
-  }, [currentTenant, user]);
-
-  // Revoke invitation
-  const revokeInvitation = useCallback(
-    async (invitationId: string) => {
-      if (!currentTenant) throw new Error('No tenant selected');
-
-      // In production, call API
-      // await api.delete(`/tenants/${currentTenant.id}/invitations/${invitationId}`);
-
-      console.log(`Revoked invitation ${invitationId}`);
-    },
-    [currentTenant],
-  );
-
-  // Resend invitation
-  const resendInvitation = useCallback(
-    async (invitationId: string) => {
-      if (!currentTenant) throw new Error('No tenant selected');
-
-      // In production, call API
-      // await api.post(`/tenants/${currentTenant.id}/invitations/${invitationId}/resend`);
-
-      console.log(`Resent invitation ${invitationId}`);
-    },
-    [currentTenant],
-  );
-
-  // Check permission
-  const hasPermission = useCallback(
-    (permission: Permission): boolean => {
-      if (!currentTenant) return false;
-      // Use fetched permissions if available, otherwise fallback to ROLE_PERMISSIONS
-      if (userPermissions) {
-        return userPermissions.permissions.includes(permission);
-      }
-      return ROLE_PERMISSIONS[currentTenant.role].includes(permission);
-    },
-    [currentTenant, userPermissions],
-  );
-
-  // Check entitlement
-  const hasEntitlement = useCallback(
-    (entitlement: string): boolean => {
-      if (!userPermissions) return false;
-      return (
-        userPermissions.entitlements.includes(entitlement) ||
-        userPermissions.overrides.includes(entitlement)
-      );
-    },
-    [userPermissions],
-  );
-
-  // Check if usage is within limit
-  const isWithinLimit = useCallback(
-    (limitKey: string, currentUsage: number): boolean => {
-      if (!userPermissions) return false;
-      const limit = userPermissions.limits[limitKey];
-      if (limit === undefined) return false;
-      // -1 means unlimited
-      if (limit === -1) return true;
-      return currentUsage < limit;
-    },
-    [userPermissions],
-  );
-
-  // Computed permissions
-  const canManageMembers = currentTenant ? hasPermission('manage:members') : false;
-  const canManageSettings = currentTenant ? hasPermission('manage:settings') : false;
-  const canManageBilling = currentTenant ? hasPermission('manage:billing') : false;
-  const isOwner = currentTenant?.role === 'owner';
-  const isAdmin = currentTenant?.role === 'owner' || currentTenant?.role === 'admin';
-
-  // Check if user is PlainLedger internal staff
-  // Internal staff have special roles assigned in Keycloak
-  // This is used to show/hide technical configuration that customers shouldn't see
-  const INTERNAL_STAFF_ROLES = [
-    'plainledger-admin', // PlainLedger administrators
-    'plainledger-staff', // PlainLedger support staff
-    'plainledger-engineer', // PlainLedger engineers
-    'internal', // Generic internal role
-    'realm-admin', // Keycloak realm admin
-  ];
-  const isInternalStaff = user?.roles?.some((role) => INTERNAL_STAFF_ROLES.includes(role)) ?? false;
+  const hasPermission = useCallback((permission: Permission) => {
+    if (!currentTenant) return false;
+    if (mockMode) return ROLE_PERMISSIONS[currentTenant.role].includes(permission);
+    return userPermissions?.permissions.includes(permission) === true;
+  }, [currentTenant, mockMode, userPermissions]);
+  const hasEntitlement = useCallback((entitlement: string) => !!userPermissions &&
+    (userPermissions.entitlements.includes(entitlement) || userPermissions.overrides.includes(entitlement)), [userPermissions]);
+  const isWithinLimit = useCallback((key: string, usage: number) => {
+    const limit = userPermissions?.limits[key];
+    return Number.isFinite(usage) && usage >= 0 && limit !== undefined && (limit === -1 || usage < limit);
+  }, [userPermissions]);
 
   const value: TenantContextType = {
-    currentTenant,
-    setCurrentTenant,
-    tenants,
-    isLoading,
-    error,
-    switchTenant,
-    refreshTenants,
-    createTenant,
-    updateTenantSettings,
-    getMembers,
-    inviteMember,
-    updateMemberRole,
-    removeMember,
-    getInvitations,
-    revokeInvitation,
-    resendInvitation,
-    hasPermission,
-    hasEntitlement,
-    isWithinLimit,
-    canManageMembers,
-    canManageSettings,
-    canManageBilling,
-    isOwner,
-    isAdmin,
-    isInternalStaff,
+    currentTenant, setCurrentTenant, tenants, isLoading, error, switchTenant, refreshTenants,
+    createTenant, updateTenantSettings, getMembers, inviteMember, updateMemberRole, removeMember,
+    getInvitations, revokeInvitation, resendInvitation, hasPermission, hasEntitlement, isWithinLimit,
+    canManageMembers: hasPermission('manage:members'), canManageSettings: hasPermission('manage:settings'),
+    canManageBilling: hasPermission('manage:billing'), isOwner: currentTenant?.role === 'owner',
+    isAdmin: currentTenant?.role === 'owner' || currentTenant?.role === 'admin',
+    isInternalStaff: (user?.roles ?? []).some(role => ['plainledger-admin', 'plainledger-staff', 'plainledger-engineer', 'internal', 'platform-admin', 'super-admin'].includes(role)),
   };
-
   return <TenantContext.Provider value={value}>{children}</TenantContext.Provider>;
 }
 

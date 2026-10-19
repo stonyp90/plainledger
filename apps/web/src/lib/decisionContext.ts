@@ -27,7 +27,8 @@ export type IndustryType =
   | 'wholesale'
   | 'automotive'
   | 'beauty_wellness'
-  | 'technology';
+  | 'technology'
+  | 'other';
 
 export type BusinessSize = 'small' | 'medium' | 'large';
 
@@ -135,6 +136,7 @@ export interface ActionTemplate {
 }
 
 export const INDUSTRY_ACTION_TEMPLATES: Record<IndustryType, ActionTemplate[]> = {
+  other: [],
   restaurant: [
     {
       actionType: 'price_change',
@@ -671,8 +673,7 @@ export function createDecisionEvent(
     source: params.source || 'user',
     createdAt: now,
     updatedAt: now,
-    reminderScheduled: true,
-    reminderDays: 30, // Default 30-day outcome check
+    reminderScheduled: false,
   };
 }
 
@@ -733,6 +734,7 @@ export function getIndustryName(
   industryId: IndustryType,
   language: 'en' | 'fr' = 'en'
 ): string {
+  if (industryId === 'other') return language === 'en' ? 'Other' : 'Autre';
   const template = INDUSTRY_TEMPLATES.find(t => t.id === industryId);
   return template ? template.name[language] : industryId;
 }

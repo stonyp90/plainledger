@@ -2,16 +2,22 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
+import { TenantGuard } from '@infrastructure/auth/tenant.guard';
+import { DatabaseRoleGuard } from '@infrastructure/auth/database-role.guard';
+import { AuthenticationModule } from '@infrastructure/auth/authentication.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { GqlThrottlerGuard } from '@infrastructure/http/guards/gql-throttler.guard';
-import { KeycloakConnectModule, ResourceGuard, RoleGuard, AuthGuard } from 'nest-keycloak-connect';
+import { ResourceGuard, AuthGuard } from 'nest-keycloak-connect';
 
 // Configuration
 import { AppConfig } from '@infrastructure/config/app.config';
 
 // Domain
 import { OrganizationEntity } from '@infrastructure/persistence/postgres/entities/organization.entity';
+import { OrganizationInvitationEntity } from '@infrastructure/persistence/postgres/entities/organization-invitation.entity';
+import { OrganizationFeaturesEntity } from '@infrastructure/persistence/postgres/entities/organization-features.entity';
+import { DataSourceConnectionEntity } from '@infrastructure/persistence/postgres/entities/data-source-connection.entity';
 import { AccountEntity } from '@infrastructure/persistence/postgres/entities/account.entity';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
 import { OrganizationSettingsEntity } from '@infrastructure/persistence/postgres/entities/organization-settings.entity';
@@ -59,7 +65,6 @@ import { AIFeedbackController } from '@infrastructure/http/controllers/ai-feedba
 import { AnalyticsController } from '@infrastructure/http/controllers/analytics.controller';
 import { AIAnalyticsController } from '@infrastructure/http/controllers/ai-analytics.controller';
 import { BIDataController } from '@infrastructure/http/controllers/bi-data.controller';
-import { TeamController } from '@infrastructure/http/controllers/team.controller';
 import { AuthController } from '@infrastructure/http/controllers/auth.controller';
 import { SyncAdminController } from '@infrastructure/http/controllers/sync-admin.controller';
 import { IdentityAdminController } from '@infrastructure/http/controllers/identity-admin.controller';
@@ -95,6 +100,10 @@ import { EmbeddingService } from '@infrastructure/ai/embedding.service';
 import { SimilaritySearchService } from '@application/services/similarity-search.service';
 import { CustomEntityService } from '@application/services/custom-entity.service';
 import { UserPermissionsService } from '@application/services/user-permissions.service';
+import { OrganizationMembershipService } from '@application/services/organization-membership.service';
+import { AccountingConnectionsService } from '@application/services/accounting-connections.service';
+import { OrganizationFeaturePolicyService } from '@application/services/organization-feature-policy.service';
+import { AccountingSyncService } from '@application/services/accounting-sync.service';
 import { ProviderFactory } from '@application/services/provider-factory.service';
 import { QuickBooksProvider } from '@infrastructure/adapters/accounting/quickbooks/quickbooks.provider';
 import { QuickBooksService } from '@infrastructure/adapters/accounting/quickbooks/quickbooks.service';
@@ -130,6 +139,8 @@ import { GqlAuthGuard } from '@infrastructure/graphql/guards/gql-auth.guard';
 import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
 import { GetOrganizationUseCase } from '@application/use-cases/get-organization.use-case';
 import { GenerateBalanceSheetUseCase } from '@application/use-cases/generate-balance-sheet.use-case';
+import { GenerateIncomeStatementUseCase } from '@application/use-cases/generate-income-statement.use-case';
+import { LedgerReportRepository } from '@infrastructure/persistence/postgres/ledger-report.repository';
 import { GetEmbedConfigUseCase } from '@application/use-cases/get-embed-config.use-case';
 import { ListAnalyticsReportsUseCase } from '@application/use-cases/list-analytics-reports.use-case';
 import { UpdateOrgFeaturesUseCase } from '@application/use-cases/update-org-features.use-case';
@@ -206,6 +217,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
         database: configService.get<string>('DATABASE_NAME') || 'plainledger',
         entities: [
           OrganizationEntity,
+          OrganizationInvitationEntity,
+          OrganizationFeaturesEntity,
+          DataSourceConnectionEntity,
           AccountEntity,
           UserProfileEntity,
           OrganizationSettingsEntity,
@@ -235,9 +249,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
           OnboardingProgressEntity,
           CommunicationLogEntity,
         ],
-        // Enable synchronize if SYNC_DB=true or in development (SYNC_DB=false overrides)
+        // Production schema changes run only through the explicit bootstrap/migration job.
         synchronize:
-          process.env.SYNC_DB === 'false'
+          process.env.NODE_ENV === 'production' || process.env.SYNC_DB === 'false'
             ? false
             : process.env.SYNC_DB === 'true' || process.env.NODE_ENV !== 'production',
         logging: process.env.NODE_ENV !== 'production' || process.env.SYNC_DB === 'true',
@@ -252,6 +266,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
       // Create schemas before TypeORM synchronize
       async dataSourceFactory(options) {
         const { DataSource } = await import('typeorm');
+        if (process.env.NODE_ENV === 'production') {
+          return new DataSource({ ...options!, synchronize: false });
+        }
         const { Client } = await import('pg');
 
         // Create schemas using raw PostgreSQL client before TypeORM initializes
@@ -436,6 +453,9 @@ import { PlatformAdminModule } from './modules/platform-admin';
     }),
     TypeOrmModule.forFeature([
       OrganizationEntity,
+      OrganizationInvitationEntity,
+      OrganizationFeaturesEntity,
+      DataSourceConnectionEntity,
       AccountEntity,
       UserProfileEntity,
       OrganizationSettingsEntity,
@@ -458,17 +478,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
     ]),
 
     // Keycloak Authentication
-    KeycloakConnectModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        authServerUrl: configService.get<string>('KEYCLOAK_URL') || 'http://localhost:8080',
-        realm: configService.get<string>('KEYCLOAK_REALM') || 'plainledger',
-        clientId: configService.get<string>('KEYCLOAK_CLIENT_ID') || 'plainledger-api',
-        secret: configService.get<string>('KEYCLOAK_CLIENT_SECRET') || 'change-me-in-production',
-        bearerOnly: true,
-      }),
-      inject: [ConfigService],
-    }),
+    AuthenticationModule,
 
     // Notifications (SES handled via SESEmailModule in SESAdapter)
 
@@ -496,7 +506,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
       useFactory: (configService: ConfigService) => ({
         throttlers: [
           {
-            ttl: 60, // Time window in seconds
+            ttl: 60000, // Nest throttler v6 uses milliseconds
             limit: configService.get<number>('RATE_LIMIT_REQUESTS', 100), // Max requests per window
           },
         ],
@@ -517,7 +527,6 @@ import { PlatformAdminModule } from './modules/platform-admin';
     AnalyticsController,
     AIAnalyticsController,
     BIDataController,
-    TeamController,
     AuthController,
     SyncAdminController,
     IdentityAdminController,
@@ -539,7 +548,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
   providers: [
     // Guards - conditionally register Keycloak guards based on SKIP_AUTH
     // In development with SKIP_AUTH=true, we skip these guards to allow unauthenticated access
-    ...(process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV !== 'production'
+    ...(process.env.SKIP_AUTH === 'true' && process.env.NODE_ENV === 'development'
       ? []
       : [
           {
@@ -552,7 +561,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
           },
           {
             provide: APP_GUARD,
-            useClass: RoleGuard,
+            useClass: DatabaseRoleGuard,
           },
         ]),
     // Rate Limiting Guard (applies to all routes including GraphQL)
@@ -561,11 +570,14 @@ import { PlatformAdminModule } from './modules/platform-admin';
       useClass: GqlThrottlerGuard,
     },
     CPAAdminGuard,
+    TenantGuard,
 
     // Use Cases
     CreateOrganizationUseCase,
     GetOrganizationUseCase,
     GenerateBalanceSheetUseCase,
+    GenerateIncomeStatementUseCase,
+    { provide: 'ILedgerReportRepository', useClass: LedgerReportRepository },
     GetEmbedConfigUseCase,
     ListAnalyticsReportsUseCase,
     UpdateOrgFeaturesUseCase,
@@ -582,6 +594,10 @@ import { PlatformAdminModule } from './modules/platform-admin';
     EmbeddingService,
     SimilaritySearchService,
     UserPermissionsService,
+    OrganizationMembershipService,
+    AccountingConnectionsService,
+    OrganizationFeaturePolicyService,
+    AccountingSyncService,
     ProviderFactory,
     QuickBooksService,
     QuickBooksProvider,
@@ -612,7 +628,7 @@ import { PlatformAdminModule } from './modules/platform-admin';
     },
     {
       provide: 'IDatalakeDataService',
-      useClass: DatalakeDataService,
+      useExisting: DatalakeDataService,
     },
     {
       provide: 'IPowerBIDatalakeService',
@@ -632,7 +648,6 @@ import { PlatformAdminModule } from './modules/platform-admin';
     TaxCreditResolver,
     VisualizationResolver,
     UserSettingsResolver,
-    GqlAuthGuard,
 
     // GraphQL PubSub for subscriptions - keep mock for services that inject it
     {

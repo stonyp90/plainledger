@@ -264,7 +264,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
                 <span className="flex-1">{item.name[language as 'en' | 'fr']}</span>
-                {item.badge && unreadChats > 0 && (
+                {item.href === '/admin/chat' && unreadChats > 0 && (
                   <span 
                     className="px-1.5 py-0.5 text-xs font-medium rounded-full"
                     style={{ 
@@ -408,7 +408,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               >
                 <div className="relative">
                   <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {item.badge && unreadChats > 0 && isSidebarCollapsed && (
+                  {item.href === '/admin/chat' && unreadChats > 0 && isSidebarCollapsed && (
                     <span 
                       className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold rounded-full flex items-center justify-center"
                       style={{ 
@@ -423,7 +423,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 {!isSidebarCollapsed && (
                   <>
                     <span className="flex-1">{item.name[language as 'en' | 'fr']}</span>
-                    {item.badge && unreadChats > 0 && (
+                    {item.href === '/admin/chat' && unreadChats > 0 && (
                       <span 
                         className="px-1.5 py-0.5 text-xs font-medium rounded-full"
                         style={{ 

@@ -216,7 +216,7 @@ export default function CPAPricingSection({ onCTAClick }: CPAPricingSectionProps
                 style={{ 
                   backgroundColor: 'rgb(var(--color-surface))',
                   border: '1px solid rgb(var(--color-border))',
-                  ringColor: isRecommended && qualifies ? 'rgb(var(--color-primary-600))' : undefined,
+                  boxShadow: `0 0 0 2px ${isRecommended && qualifies ? 'rgb(var(--color-primary-600))' : undefined}`,
                 }}
               >
                 {/* Recommended Badge - positioned at top center, centered on border */}

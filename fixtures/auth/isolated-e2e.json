@@ -1,0 +1,29 @@
+{
+  "description": "Synthetic credentials for disposable local/CI Keycloak only. Never import into a production realm.",
+  "username": "e2e-owner@plainledger.test",
+  "userId": "00000000-0000-4000-8000-000000000001",
+  "organizationId": "00000000-0000-4000-8000-000000000100",
+  "password": "PlainLedger-E2E-Only-2026!",
+  "organization": "e2e-org-a",
+  "apiSecret": "plainledger-e2e-disposable-api-secret",
+  "invitees": [
+    {
+      "userId": "00000000-0000-4000-8000-000000000002",
+      "username": "e2e-invitee-0@plainledger.test",
+      "organization": "e2e-unassigned-0"
+    },
+    {
+      "userId": "00000000-0000-4000-8000-000000000003",
+      "username": "e2e-invitee-1@plainledger.test",
+      "organization": "e2e-unassigned-1"
+    }
+  ],
+  "registration": {
+    "firstName": "Isolated",
+    "lastName": "Signup",
+    "organizationName": "Isolated Signup Company",
+    "province": "QC",
+    "emailDomain": "plainledger.test"
+  },
+  "organizationName": "Isolated Ledger A"
+}

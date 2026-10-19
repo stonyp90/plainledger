@@ -65,7 +65,7 @@ export default function ExpenseCard({
         style={{
           backgroundColor: isSelected ? color : `${color}20`,
           border: `2px solid ${color}`,
-          ringColor: isDragging ? color : 'transparent',
+          boxShadow: isDragging ? `0 0 0 2px ${color}` : undefined,
           transform: isDragging ? 'scale(1.02)' : undefined,
           opacity: expense.isLocked ? 0.7 : 1,
         }}

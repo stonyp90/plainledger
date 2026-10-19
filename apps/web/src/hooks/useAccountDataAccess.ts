@@ -1,15 +1,4 @@
-/**
- * Account Data Access Hook
- *
- * Centralized logic for determining data access rules based on:
- * - Account tier (free, professional, enterprise)
- * - Datasource connection status
- *
- * Business Rules:
- * - FREE: Demo data only, cannot connect datasources, upgrade CTA
- * - PAID without connection: Blocked (show connection gate), no data
- * - PAID with connection: Real data only, tier-appropriate features
- */
+/** Ledger access follows the authenticated organization. Connection setup and premium capabilities remain separate. */
 
 import { useMemo } from 'react';
 import { useTenant } from '../contexts/TenantContext';
@@ -17,7 +6,8 @@ import { useDataSources } from '../lib/graphql/hooks';
 import { isMockAuthEnabled } from '../lib/keycloak';
 
 export type AccountAccessType =
-  | 'free-demo' // Free user - sees demo data only
+  | 'free-real'
+  | 'free-demo' // Explicit development sample session
   | 'paid-no-connection' // Paid user without datasource - blocked
   | 'paid-with-connection'; // Paid user with datasource - real data
 
@@ -42,13 +32,13 @@ export interface AccountDataAccessResult {
 
   // UI Control Flags
 
-  /** Should the UI be blocked with connection gate? (paid users without connection) */
+  /** External connections must not hide an existing posted ledger. */
   shouldBlockUI: boolean;
 
-  /** Can see demo/mock data? (free users only) */
+  /** Can see explicitly enabled development sample data? */
   canSeeDemoData: boolean;
 
-  /** Can see real data? (paid users with connection) */
+  /** Can request the authenticated organization’s real data? */
   canSeeRealData: boolean;
 
   /** Can connect datasources? (paid users only) */
@@ -106,7 +96,7 @@ export function useAccountDataAccess(): AccountDataAccessResult {
   // Determine account type
   const accountType = useMemo((): AccountAccessType => {
     if (isFreeUser) {
-      return 'free-demo';
+      return isMockAuthEnabled() ? 'free-demo' : 'free-real';
     }
 
     if (isPaidUser && !hasConnection) {
@@ -116,12 +106,11 @@ export function useAccountDataAccess(): AccountDataAccessResult {
     return 'paid-with-connection';
   }, [isFreeUser, isPaidUser, hasConnection]);
 
-  // UI Control flags
-  // In mock auth mode (local dev), never block paid users - show demo data instead
-  const shouldBlockUI =
-    accountType === 'paid-no-connection' && !dataSourcesLoading && !isMockAuthEnabled();
-  const canSeeDemoData = isFreeUser || isMockAuthEnabled();
-  const canSeeRealData = isPaidUser && hasConnection;
+  // A manual/imported ledger remains usable without an external accounting connection.
+  // Authentication and server authorization protect it; pricing does not replace it with samples.
+  const shouldBlockUI = false;
+  const canSeeDemoData = isMockAuthEnabled();
+  const canSeeRealData = !!currentTenant && !canSeeDemoData;
   const canConnectDatasources = isPaidUser;
 
   // CTA flags

@@ -163,7 +163,7 @@ export default function ModelSpreadsheet({
   const [selection, setSelection] = useState<Selection | null>(null);
   const [showOperationsMenu, setShowOperationsMenu] = useState(false);
   const [operationsMenuPos, setOperationsMenuPos] = useState({ x: 0, y: 0 });
-  const [clipboard, setClipboard] = useState<Record<string, number> | null>(null);
+  const [clipboard, setClipboard] = useState<Record<string, number> | Record<string, Record<string, number>> | null>(null);
   const [showGroupDialog, setShowGroupDialog] = useState(false);
   const [customGroupName, setCustomGroupName] = useState('');
   
@@ -267,7 +267,7 @@ export default function ModelSpreadsheet({
           rangeData[cell.driverId][cell.periodKey] = driver.values[cell.periodKey];
         }
       });
-      setClipboard(rangeData as any);
+      setClipboard(rangeData);
     } else if (sel.type === 'row' && sel.driverId) {
       const driver = model.drivers[sel.driverId];
       if (driver) {
@@ -339,7 +339,7 @@ export default function ModelSpreadsheet({
             // Single cell paste
             const updatedDriver = {
               ...driver,
-              values: { ...driver.values, ...clipboard },
+              values: { ...driver.values, ...(clipboard as Record<string, number>) },
             };
             onModelUpdate({
               ...model,

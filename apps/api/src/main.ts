@@ -72,8 +72,9 @@ async function bootstrap() {
   });
 
   // Global exception filters
-  // CorsExceptionFilter must be last (catch-all) to handle CORS on all error responses
-  app.useGlobalFilters(new DomainExceptionFilter(), new CorsExceptionFilter());
+  // Nest evaluates filters in reverse registration order: match domain errors
+  // before the catch-all, and preserve GraphQL errors for Apollo.
+  app.useGlobalFilters(new CorsExceptionFilter(), new DomainExceptionFilter());
 
   // Set global prefix for all routes except health check
   // This aligns with ALB routing rules that route /api/* to API service
@@ -142,6 +143,8 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'X-Tenant-ID',
+      'X-Organization-ID',
+      'Apollo-Require-Preflight',
       'X-Request-ID',
       'Accept',
       'Origin',

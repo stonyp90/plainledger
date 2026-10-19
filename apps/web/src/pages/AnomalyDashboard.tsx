@@ -146,10 +146,10 @@ export default function AnomalyDashboard() {
   // Transform financial data to account balances for anomaly detection
   const accountsData: AccountBalance[] = useMemo(() => {
     if (!financialData?.accounts) return [];
-    return (financialData.accounts ?? []).map((a) => ({
+    return (financialData.accounts ?? []).filter(a => typeof a.current === 'number' && Number.isFinite(a.current)).map((a) => ({
       code: a?.code ?? '',
       name: a?.name ?? '',
-      current: a?.current ?? 0,
+      current: a.current as number,
       prior: a?.prior ?? 0,
       type: a?.type ?? 'asset',
     }));
@@ -166,7 +166,7 @@ export default function AnomalyDashboard() {
   }, [financialData]);
 
   // Get industry-specific demo anomalies - ONLY show when in sandbox mode (no real connection)
-  const demoAnomalies = useMemo(() => {
+  const demoAnomalies = useMemo<Anomaly[]>(() => {
     // Only include demo anomalies for free users showing sandbox data (not real data)
     if (hasRealData || !shouldShowSandboxData || !isFreeUser) return [];
     if (!financialData?.demoAnomalies) return [];
@@ -262,47 +262,10 @@ export default function AnomalyDashboard() {
           [isEn ? 'Expenses' : 'Dépenses']: expenseData,
         };
 
-        // Add account-specific trends from financialData
-        accountsData.slice(0, 10).forEach((account) => {
-          // Generate synthetic trend data based on current/prior for demonstration
-          const monthlyData: FinancialDataPoint[] = [];
-          const months = isEn
-            ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-            : ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-          const variance = account.current - account.prior;
-          const monthlyChange = variance / 12;
-
-          months.forEach((month, idx) => {
-            monthlyData.push({
-              period: month,
-              value:
-                account.prior +
-                monthlyChange * (idx + 1) +
-                (Math.random() - 0.5) * Math.abs(monthlyChange) * 2,
-              account: account.code,
-            });
-          });
-
-          trendData[account.name] = monthlyData;
-        });
-
-        // Generate mock transactions for Benford analysis
-        const transactions = Array.from({ length: 200 }, () => ({
-          amount: Math.floor(Math.random() * 50000) + 100,
-          date: new Date().toISOString(),
-        }));
-
-        // Ratio history for drift detection
-        const currentRatioValue = financialData?.metrics?.currentRatio ?? 1.5;
-        const ratioHistory = financialData
-          ? [
-              Array.from({ length: 8 }, (_, i) => ({
-                period: `T${i + 1}`,
-                value: currentRatioValue * (1 - i * 0.03 + Math.random() * 0.05),
-                ratioName: isEn ? 'Liquidity Ratio' : 'Ratio de liquidité',
-              })),
-            ]
-          : [];
+        // Per-account monthly history, raw transactions and historical ratios
+        // are not returned by this query. Do not invent inputs for detectors.
+        const transactions: { amount: number; date: string }[] = [];
+        const ratioHistory: { period: string; value: number; ratioName: string }[][] = [];
 
         const result = await runAIAnalysis(
           accountsData,
@@ -356,13 +319,9 @@ export default function AnomalyDashboard() {
     await refresh();
     setLastRefresh(new Date());
     setIsRefreshing(false);
-    showToast({
-      type: 'success',
-      title: isEn ? 'Analysis updated' : 'Analyse actualisée',
-      message: isEn
+    showToast('success', isEn ? 'Analysis updated' : 'Analyse actualisée', isEn
         ? `${analysis.summary.total} anomalies detected in your data.`
-        : `${analysis.summary.total} anomalies détectées sur vos données.`,
-    });
+        : `${analysis.summary.total} anomalies détectées sur vos données.`);
   };
 
   // Show loading state
@@ -403,7 +362,7 @@ export default function AnomalyDashboard() {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
     ].join('\n');
 
     // Download file
@@ -413,13 +372,9 @@ export default function AnomalyDashboard() {
     link.download = `anomalies-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
 
-    showToast({
-      type: 'success',
-      title: isEn ? 'Export successful' : 'Export réussi',
-      message: isEn
+    showToast('success', isEn ? 'Export successful' : 'Export réussi', isEn
         ? `${filteredAnomalies.length} anomalies exported to CSV.`
-        : `${filteredAnomalies.length} anomalies exportées en CSV.`,
-    });
+        : `${filteredAnomalies.length} anomalies exportées en CSV.`);
   };
 
   const toggleAnomaly = (id: string) => {
@@ -711,7 +666,7 @@ export default function AnomalyDashboard() {
         size="md"
         isEn={isEn}
         onClick={scrollToAnomalyList}
-        topRisks={combinedAnalysis.summary.topRisks}
+        topRisks={'topRisks' in combinedAnalysis.summary ? combinedAnalysis.summary.topRisks : undefined}
         anomalies={combinedAnalysis.anomalies.map((a) => ({
           id: a.id,
           title: a.title,

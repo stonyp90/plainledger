@@ -414,6 +414,14 @@ test.describe('Feature Tests', () => {
 
 ## Self-Improvement
 
+### Disposable account and membership checks (October 2026)
+
+- Use the strict configuration for real Keycloak PKCE and accounting verification. Synthetic account-creation tests must validate the exact loopback stack, disposable credentials and database bootstrap marker before writing.
+- Invitation acceptance starts with a verified Keycloak identity that has no database membership. Keep a separate fixture identity for a retry so consumed invitations and removed memberships are never reset to make a test pass.
+- Check role changes with the same signed access token. Current database membership must govern permission changes and removal immediately.
+- Public registration checks must inspect both Keycloak identity and PostgreSQL state. With SMTP disabled, require unverified accounts and `verificationEmailSent: false`; never count account creation as verified email delivery or a completed signup journey.
+- Derive the isolated API service account from the reviewed production realm. Keycloak realm role lookup requires `view-realm` in addition to user management; do not borrow development client administration or grant `realm-admin` to make registration tests pass.
+
 **Update this file when:**
 - Discovering better test patterns
 - Fixing flaky tests

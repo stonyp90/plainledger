@@ -15,9 +15,10 @@ import {
   BadRequestException,
   ConflictException,
   UnauthorizedException,
+  HttpException,
 } from '@nestjs/common';
 import { Public } from 'nest-keycloak-connect';
-import { IsEmail, IsString, IsOptional, MinLength, Matches } from 'class-validator';
+import { IsEmail, IsString, IsOptional, MinLength, MaxLength, Matches } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { IKeycloakAdminService } from '@application/ports/outbound/IKeycloakAdminService';
 import { Inject } from '@nestjs/common';
@@ -27,6 +28,9 @@ import { SESAdapter } from '@infrastructure/adapters/email/ses/ses.adapter';
 import { NovuService } from '@infrastructure/adapters/notifications/novu/novu.adapter';
 import { CreateOrganizationUseCase } from '@application/use-cases/create-organization.use-case';
 import * as crypto from 'crypto';
+import { AuthActionClaims, issueAuthAction, verifyAuthAction } from '../../auth/action-token';
+import { CacheService } from '../../cache/cache.service';
+import { OrganizationMembershipService } from '@application/services/organization-membership.service';
 import { RateLimit } from '@infrastructure/http/decorators/rate-limit.decorator';
 
 // =====================================================
@@ -52,15 +56,18 @@ const _VALID_PROVINCES = [
 
 export class RegisterUserDto {
   @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
+  @MaxLength(254)
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 
   @IsString()
   @MinLength(1, { message: 'First name is required' })
+  @MaxLength(100)
   firstName: string;
 
   @IsString()
   @MinLength(1, { message: 'Last name is required' })
+  @MaxLength(100)
   lastName: string;
 
   @IsString()
@@ -75,10 +82,12 @@ export class RegisterUserDto {
   @Matches(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, {
     message: 'Password must contain at least one special character',
   })
+  @MaxLength(1024)
   password: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   organizationName?: string;
 
   @IsString()
@@ -89,7 +98,13 @@ export class RegisterUserDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   industry?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  invitationToken?: string;
 }
 
 export class ForgotPasswordDto {
@@ -164,6 +179,8 @@ export class AuthController {
     private readonly configService: ConfigService,
     private readonly novuService: NovuService,
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
+    private readonly organizationMembership: OrganizationMembershipService,
+    private readonly cacheService: CacheService,
   ) {}
 
   /**
@@ -172,6 +189,7 @@ export class AuthController {
    * Uses backend API client for secure authentication
    */
   @Post('login')
+  @RateLimit({ ttl: 60, limit: 10 })
   @Public()
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto) {
@@ -466,156 +484,72 @@ export class AuthController {
    * Creates user in Keycloak and sends verification email
    */
   @Post('register')
+  @RateLimit({ ttl: 60, limit: 5 })
   @Public() // Mark as public - no auth required
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterUserDto) {
-    this.logger.log(`Registration request for: ${dto.email}`);
-
     if (!(await this.keycloakAdminService.ensureAvailable())) {
-      this.logger.error('Keycloak Admin Service not configured');
-      throw new BadRequestException(
-        'Registration is temporarily unavailable. Please try again later.',
-      );
+      throw new BadRequestException('Registration is temporarily unavailable. Please try again later.');
     }
-
+    const email = dto.email.toLowerCase().trim();
+    if (await this.keycloakAdminService.findUserByEmail(email)) {
+      throw new ConflictException('An account with this email already exists. Please sign in instead.');
+    }
+    const invitation = dto.invitationToken
+      ? await this.organizationMembership.getInvitationForSignup(dto.invitationToken, email) : undefined;
+    let userId: string | undefined;
+    let provisioned = false;
     try {
-      // Check if user already exists
-      const existingUser = await this.keycloakAdminService.findUserByEmail(dto.email);
-      if (existingUser) {
-        this.logger.warn(`User already exists: ${dto.email}`);
-        throw new ConflictException(
-          'An account with this email already exists. Please sign in instead.',
-        );
-      }
-
-      // Create user in Keycloak first (we'll update with org ID after)
       const user = await this.keycloakAdminService.createUser({
-        email: dto.email.toLowerCase().trim(),
-        firstName: dto.firstName.trim(),
-        lastName: dto.lastName.trim(),
-        password: dto.password,
-        temporaryPassword: false, // User set their own password
-        emailVerified: false,
-        sendVerificationEmail: false, // We'll send our own email via SES
+        email, firstName: dto.firstName.trim(), lastName: dto.lastName.trim(), password: dto.password,
+        temporaryPassword: false, emailVerified: false, sendVerificationEmail: false,
+        requiredActions: ['VERIFY_EMAIL'], roles: [invitation?.role || 'owner', 'user'],
         attributes: {
-          ...(dto.industry ? { industry: [dto.industry] } : {}),
-          province: [dto.province],
-          registrationSource: ['web-signup'],
-          registeredAt: [new Date().toISOString()],
-          // Enable demo mode by default for new signups (free users only see demo data)
-          demoMode: ['true'],
-          plan: ['free'],
-          accountStatus: ['active'],
+          ...(dto.industry ? { industry: [dto.industry] } : {}), province: [dto.province],
+          registrationSource: ['web-signup'], registeredAt: [new Date().toISOString()],
+          demoMode: ['false'], plan: ['free'], accountStatus: ['active'],
         },
-        roles: ['viewer'], // Default role
       });
-
-      this.logger.log(`User created successfully in Keycloak: ${user.id}`);
-
-      // Create a personal organization for this user
-      const orgName = dto.organizationName?.trim() || `${dto.firstName.trim()}'s Organization`;
-      let organization;
+      userId = user.id;
+      const actor = { sub: user.id, email, emailVerified: false,
+        organizationId: invitation?.tenantId || user.id, roles: [invitation?.role || 'owner', 'user'],
+        firstName: dto.firstName.trim(), lastName: dto.lastName.trim(), name: `${dto.firstName.trim()} ${dto.lastName.trim()}` };
+      const finishIdentity = async (organization: { id: string; tenantId: string; name: string }) => {
+        await this.keycloakAdminService.updateUserAttributes({ userId: user.id, attributes: {
+          organization: [organization.tenantId], organizationName: [organization.name], demoMode: ['false'],
+        } });
+      };
+      const organization = dto.invitationToken
+        ? await this.organizationMembership.acceptInvitationForNewUser(dto.invitationToken, actor, finishIdentity)
+        : await this.organizationMembership.createOwnedOrganization(actor, {
+          tenantId: user.id, name: dto.organizationName?.trim() || `${dto.firstName.trim()}'s Organization`,
+          industry: dto.industry, currency: 'CAD',
+        }, finishIdentity);
+      provisioned = true;
+      let verificationEmailSent = false;
       try {
-        organization = await this.createOrganizationUseCase.execute({
-          tenantId: user.id, // Use user ID as tenant ID for personal org
-          name: orgName,
-          industry: dto.industry,
-          currency: 'CAD',
-        });
-        this.logger.log(`Organization created: ${organization.id} for user: ${user.id}`);
-
-        // Update Keycloak user with organization info
-        await this.keycloakAdminService.updateUserAttributes({
-          userId: user.id,
-          attributes: {
-            organization: [organization.id],
-            organizationName: [organization.name],
-          },
-        });
-        this.logger.log(`Keycloak user updated with organization: ${organization.id}`);
-      } catch (orgError) {
-        this.logger.warn(`Failed to create organization: ${orgError.message}`);
-        // Continue without org - user can create one later
+        await this.keycloakAdminService.sendVerificationEmail(user.id);
+        verificationEmailSent = true;
+      } catch (emailError) {
+        this.logger.error(`Registration completed but verification delivery failed for user ${user.id}: ${emailError.message}`);
       }
-
-      // Save user profile to PlainLedger database
-      try {
-        await this.userProfileRepository.create({
-          id: user.id,
-          email: dto.email.toLowerCase().trim(),
-          firstName: dto.firstName.trim(),
-          lastName: dto.lastName.trim(),
-          province: dto.province,
-          organizationId: organization?.id,
-          organizationName: organization?.name || orgName,
-          industry: dto.industry,
-          registrationSource: 'web-signup',
-        });
-        this.logger.log(`User profile saved to database: ${user.id}`);
-      } catch (dbError) {
-        // Log but don't fail - Keycloak user was created successfully
-        this.logger.warn(`Failed to save user profile to database: ${dbError.message}`);
-      }
-
-      // Create/update Novu subscriber for push notifications
-      try {
-        await this.novuService.upsertSubscriber({
-          subscriberId: user.id,
-          email: dto.email.toLowerCase().trim(),
-          firstName: dto.firstName.trim(),
-          lastName: dto.lastName.trim(),
-          locale: 'fr', // Default to French for Quebec users
-          data: {
-            province: dto.province,
-            organizationName: dto.organizationName?.trim(),
-            industry: dto.industry,
-            registrationSource: 'web-signup',
-          },
-        });
-        this.logger.log(`Novu subscriber created: ${user.id}`);
-      } catch (novuError) {
-        // Log but don't fail - user was created successfully
-        this.logger.warn(`Failed to create Novu subscriber: ${novuError.message}`);
-      }
-
-      // Send verification email via SES (our branded email)
-      const verificationToken = this.generateVerificationToken(user.id, user.email);
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'https://plainledger.ca');
-      const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-
-      const emailSent = await this.sesEmailService.sendVerificationEmail(
-        user.email,
-        dto.firstName.trim(),
-        verifyUrl,
-      );
-
-      if (emailSent) {
-        this.logger.log(`Verification email sent via SES to: ${user.email}`);
-      } else {
-        this.logger.warn(`Failed to send verification email to: ${user.email}`);
-      }
-
       return {
-        success: true,
-        message: 'Account created successfully. Please check your email to verify your account.',
-        userId: user.id,
-        email: user.email,
+        success: true, userId: user.id, email: user.email, organizationId: organization.id,
+        requiresEmailVerification: true, verificationEmailSent,
+        message: verificationEmailSent
+          ? 'Account created. Check your email to verify your account.'
+          : 'Account created, but the verification email could not be sent. Please use resend verification when email service is available.',
       };
     } catch (error) {
-      // Re-throw known exceptions
-      if (error instanceof ConflictException || error instanceof BadRequestException) {
-        throw error;
+      if (userId && !provisioned) {
+        try { await this.keycloakAdminService.deleteUser(userId); }
+        catch (cleanupError) {
+          this.logger.error(`Failed to remove incomplete registration ${userId}: ${cleanupError.message}`);
+          await this.keycloakAdminService.disableUser(userId).catch(() => undefined);
+        }
       }
-
-      this.logger.error(`Registration failed: ${error.message}`, error.stack);
-
-      // Check for specific Keycloak errors
-      if (error.response?.status === 409 || error.message?.includes('already exists')) {
-        throw new ConflictException(
-          'An account with this email already exists. Please sign in instead.',
-        );
-      }
-
+      if (error instanceof HttpException) throw error;
+      this.logger.error(`Registration failed: ${error.message}`);
       throw new BadRequestException('Registration failed. Please try again later.');
     }
   }
@@ -627,136 +561,26 @@ export class AuthController {
   /**
    * Get the secret used for signing tokens
    */
-  private getTokenSecret(): string {
-    return (
-      this.configService.get<string>('TOKEN_SECRET') ||
-      this.configService.get<string>('KEYCLOAK_CLIENT_SECRET') ||
-      'plainledger-default-secret-change-me'
-    );
-  }
-
-  /**
-   * Generate a secure password reset token
-   * Format: base64(userId:email:expiry).signature
-   * Expiry: 15 minutes
-   */
   private generateResetToken(userId: string, email: string): string {
-    const secret = this.getTokenSecret();
-    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
-    const payload = Buffer.from(`reset:${userId}:${email}:${expiry}`).toString('base64url');
-
-    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
-
-    return `${payload}.${signature}`;
+    return issueAuthAction(this.configService, 'reset', userId, email);
   }
 
-  /**
-   * Verify and decode a password reset token
-   */
-  private verifyResetToken(token: string): { userId: string; email: string } | null {
-    try {
-      const secret = this.getTokenSecret();
-
-      const [payload, signature] = token.split('.');
-      if (!payload || !signature) return null;
-
-      // Verify signature
-      const expectedSignature = crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('base64url');
-
-      if (signature !== expectedSignature) {
-        this.logger.warn('Invalid password reset token signature');
-        return null;
-      }
-
-      // Decode payload
-      const decoded = Buffer.from(payload, 'base64url').toString();
-      const parts = decoded.split(':');
-
-      // Handle both old format (userId:email:expiry) and new format (reset:userId:email:expiry)
-      let userId: string, email: string, expiryStr: string;
-      if (parts[0] === 'reset') {
-        [, userId, email, expiryStr] = parts;
-      } else {
-        [userId, email, expiryStr] = parts;
-      }
-
-      const expiry = parseInt(expiryStr, 10);
-
-      // Check expiry
-      if (Date.now() > expiry) {
-        this.logger.warn('Password reset token has expired');
-        return null;
-      }
-
-      return { userId, email };
-    } catch (error) {
-      this.logger.error(`Failed to verify reset token: ${error.message}`);
-      return null;
-    }
+  private verifyResetToken(token: string): AuthActionClaims | null {
+    return verifyAuthAction(this.configService, 'reset', token);
   }
 
-  /**
-   * Generate a secure email verification token
-   * Format: base64(verify:userId:email:expiry).signature
-   * Expiry: 24 hours
-   */
   private generateVerificationToken(userId: string, email: string): string {
-    const secret = this.getTokenSecret();
-    const expiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    const payload = Buffer.from(`verify:${userId}:${email}:${expiry}`).toString('base64url');
-
-    const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
-
-    return `${payload}.${signature}`;
+    return issueAuthAction(this.configService, 'verify', userId, email);
   }
 
-  /**
-   * Verify and decode an email verification token
-   */
-  private verifyVerificationToken(token: string): { userId: string; email: string } | null {
-    try {
-      const secret = this.getTokenSecret();
+  private verifyVerificationToken(token: string): AuthActionClaims | null {
+    return verifyAuthAction(this.configService, 'verify', token);
+  }
 
-      const [payload, signature] = token.split('.');
-      if (!payload || !signature) return null;
-
-      // Verify signature
-      const expectedSignature = crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('base64url');
-
-      if (signature !== expectedSignature) {
-        this.logger.warn('Invalid verification token signature');
-        return null;
-      }
-
-      // Decode payload
-      const decoded = Buffer.from(payload, 'base64url').toString();
-      const [type, userId, email, expiryStr] = decoded.split(':');
-
-      // Verify token type
-      if (type !== 'verify') {
-        this.logger.warn('Invalid verification token type');
-        return null;
-      }
-
-      const expiry = parseInt(expiryStr, 10);
-
-      // Check expiry
-      if (Date.now() > expiry) {
-        this.logger.warn('Verification token has expired');
-        return null;
-      }
-
-      return { userId, email };
-    } catch (error) {
-      this.logger.error(`Failed to verify verification token: ${error.message}`);
-      return null;
-    }
+  private async consumeActionToken(token: string, claims: AuthActionClaims): Promise<void> {
+    const fingerprint = crypto.createHash('sha256').update(token).digest('hex');
+    const accepted = await this.cacheService.consumeAuthAction(fingerprint, Math.max(1, Math.ceil((claims.expiry - Date.now()) / 1000)));
+    if (!accepted) throw new BadRequestException('This link has already been used. Please request a new one.');
   }
 
   /**
@@ -764,6 +588,7 @@ export class AuthController {
    * Public endpoint - generates custom token and sends email via AWS SES
    */
   @Post('forgot-password')
+  @RateLimit({ ttl: 60, limit: 3 })
   @Public()
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -779,26 +604,8 @@ export class AuthController {
       const user = await this.keycloakAdminService.findUserByEmail(dto.email);
 
       if (user) {
-        // Generate custom reset token
-        const token = this.generateResetToken(user.id, user.email);
-        const frontendUrl = this.configService.get<string>(
-          'FRONTEND_URL',
-          'https://plainledger.ca',
-        );
-        const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+        await this.keycloakAdminService.sendPasswordResetEmail(user.id);
 
-        // Send password reset email via SES
-        const emailSent = await this.sesEmailService.sendPasswordResetEmail(
-          user.email,
-          user.firstName || 'there',
-          resetUrl,
-        );
-
-        if (emailSent) {
-          this.logger.log(`Password reset email sent via SES to: ${dto.email}`);
-        } else {
-          this.logger.warn(`Failed to send password reset email to: ${dto.email}`);
-        }
       } else {
         // Don't reveal whether email exists or not (security)
         this.logger.log(`Password reset requested for non-existent email: ${dto.email}`);
@@ -827,6 +634,7 @@ export class AuthController {
    * Public endpoint - checks if token is valid and not expired
    */
   @Post('validate-reset-token')
+  @RateLimit({ ttl: 60, limit: 10 })
   @Public()
   @HttpCode(HttpStatus.OK)
   async validateResetToken(@Body() dto: ValidateResetTokenDto) {
@@ -850,6 +658,7 @@ export class AuthController {
    * Public endpoint - sets new password via Keycloak Admin API
    */
   @Post('reset-password')
+  @RateLimit({ ttl: 60, limit: 5 })
   @Public()
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
@@ -878,6 +687,7 @@ export class AuthController {
 
       // Set new password using Keycloak Admin API
       // We need to add this method to the service
+      await this.consumeActionToken(dto.token, tokenData);
       await this.setUserPassword(tokenData.userId, dto.password);
 
       this.logger.log(`Password successfully reset for user: ${tokenData.email}`);
@@ -1001,10 +811,9 @@ export class AuthController {
         profile = await this.ensureUserProfileExists(user);
       }
 
-      // Update email verified status in PlainLedger DB (source of truth)
-      await this.userProfileRepository.markEmailVerified(tokenData.userId);
-      // Keep Keycloak in sync to avoid direct-grant login blocks.
+      await this.consumeActionToken(dto.token, tokenData);
       await this.keycloakAdminService.setEmailVerified(tokenData.userId, true);
+      await this.userProfileRepository.markEmailVerified(tokenData.userId);
 
       this.logger.log(`Email successfully verified in DB for user: ${tokenData.email}`);
 
@@ -1055,25 +864,8 @@ export class AuthController {
           };
         }
 
-        // Generate new verification token and send via SES
-        const verificationToken = this.generateVerificationToken(user.id, user.email);
-        const frontendUrl = this.configService.get<string>(
-          'FRONTEND_URL',
-          'https://plainledger.ca',
-        );
-        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+        await this.keycloakAdminService.sendVerificationEmail(user.id);
 
-        const emailSent = await this.sesEmailService.sendVerificationEmail(
-          user.email,
-          user.firstName || 'there',
-          verifyUrl,
-        );
-
-        if (emailSent) {
-          this.logger.log(`Verification email resent via SES to: ${dto.email}`);
-        } else {
-          this.logger.warn(`Failed to send verification email to: ${dto.email}`);
-        }
       } else {
         this.logger.log(`Verification requested for non-existent email: ${dto.email}`);
       }

@@ -84,6 +84,11 @@ export class PostgresUserProfileRepository {
     return this.repository.findOne({ where: { id } });
   }
 
+  async findActiveWithOrganization(id: string): Promise<UserProfileEntity | null> {
+    if (typeof id !== 'string' || !id.trim()) return null;
+    return this.repository.findOne({ where: { id, isActive: true }, relations: ['organization'] });
+  }
+
   /**
    * Find user profile by email
    */

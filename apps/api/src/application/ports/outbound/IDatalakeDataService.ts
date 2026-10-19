@@ -28,6 +28,7 @@ export interface IDatalakeDataService {
     organizationId: string,
     asOfDate?: Date,
     industryId?: string,
+    startDate?: Date,
   ): Promise<DashboardData>;
 
   /**

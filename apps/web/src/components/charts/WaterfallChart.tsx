@@ -11,6 +11,8 @@
  */
 
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import { ChartDataState } from './ChartDataState';
+import { getChartDataIssue, isChartLabel, isFiniteNumber } from '../../lib/chartDataValidation';
 import { ArrowUp, ArrowDown, AlertTriangle, TrendingUp, TrendingDown, Target, Settings2, Share2, Maximize2, Minimize2, Calendar, ChevronDown } from 'lucide-react';
 import { ChartTooltip } from './ChartTooltip';
 import type { DataMetric, DecisionEvent } from '../../lib/decisionContext';
@@ -192,7 +194,7 @@ interface WaterfallChartProps {
 }
 
 export default function WaterfallChart({
-  data,
+  data: inputData,
   title,
   titleEn,
   subtitle,
@@ -209,6 +211,11 @@ export default function WaterfallChart({
   metricType = 'cash_flow',
   benchmarkValue,
 }: WaterfallChartProps) {
+  const issue = getChartDataIssue(inputData, item =>
+    isChartLabel(item.label) && isFiniteNumber(item.value)
+    && ['start', 'increase', 'decrease', 'subtotal', 'end'].includes(item.type)
+    && (item.planValue == null || isFiniteNumber(item.planValue)));
+  const data = issue ? [] : inputData;
   // Get graph configuration - must be before any early returns (rules of hooks)
   const graphConfig = useGraphConfig(chartId, {
     visual: {
@@ -437,8 +444,8 @@ export default function WaterfallChart({
     });
     
     // Calculate total change and significant items
-    const startValue = data.find(d => d.type === 'start')?.value || 0;
-    const endValue = data.find(d => d.type === 'end')?.value || startValue;
+    const startValue = data.find(d => d.type === 'start')?.value ?? 0;
+    const endValue = data.find(d => d.type === 'end')?.value ?? cumulative;
     const change = endValue - startValue;
     
     // Calculate total plan variance
@@ -472,17 +479,17 @@ export default function WaterfallChart({
   }, [chartRef, responsiveRef]);
 
   // Early return - hide chart completely if no data (after all hooks)
-  if (!data || data.length === 0) {
-    return null;
+  if (issue || ![maxCumulative, minCumulative, totalChange].every(isFiniteNumber)) {
+    return <ChartDataState title={isEn && titleEn ? titleEn : title} issue={issue || 'invalid'} isEn={isEn} />;
   }
 
-  const range = maxCumulative - minCumulative;
+  const range = maxCumulative - minCumulative || 1;
   const getYPosition = (value: number) => {
     return ((maxCumulative - value) / range) * 100;
   };
 
   // Calculate bar width to ensure all columns fit in view
-  const barWidth = Math.min(55, 550 / data.length);
+  const barWidth = data.length > 12 ? 45 : Math.min(55, 550 / data.length);
   const gap = barWidth * 0.35;
   
   // Calculate label rotation based on number of items (more items = more rotation)
@@ -496,7 +503,7 @@ export default function WaterfallChart({
   };
 
   // Dynamic height for fullscreen mode
-  const chartHeight = isFullscreen ? Math.min(window.innerHeight - 300, 500) : height;
+  const chartHeight = isFullscreen ? Math.max(160, Math.min(window.innerHeight - 300, 500)) : height;
 
   return (
     <div 
@@ -674,6 +681,7 @@ export default function WaterfallChart({
           viewBox={`0 0 ${data.length * (barWidth + gap) + 40} ${chartHeight + labelBottomPadding}`}
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full"
+          style={{ minWidth: data.length > 12 ? `${data.length * (barWidth + gap) + 40}px` : undefined }}
         >
           {/* Zero line if needed */}
           {minCumulative < 0 && (
@@ -747,7 +755,7 @@ export default function WaterfallChart({
               <g 
                 key={item.label}
                 className="cursor-pointer"
-                style={{ pointerEvents: 'bounding-box' }}
+                style={{ pointerEvents: 'auto' }}
                 onMouseEnter={(e) => handleBarEnter(index, e)}
                 onMouseMove={handleBarMove}
                 onMouseLeave={handleBarLeave}

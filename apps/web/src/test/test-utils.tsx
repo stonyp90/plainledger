@@ -7,11 +7,12 @@
 import { ReactElement, createContext, useContext } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { I18nProvider } from '../lib/i18n';
+import type { Tenant } from '../contexts/TenantContext';
 
 // Mock tenant context for testing
 const MockTenantContext = createContext<{
-  currentTenant: null;
-  tenants: [];
+  currentTenant: Tenant | null;
+  tenants: Tenant[];
   isLoading: boolean;
   setCurrentTenant: () => void;
   hasFeature: () => boolean;

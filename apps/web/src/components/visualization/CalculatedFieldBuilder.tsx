@@ -28,7 +28,7 @@ import {
   ToggleLeft,
   Percent,
   Sigma,
-  Function as FunctionIcon,
+  SquareFunction as FunctionIcon,
   Braces,
   Info,
 } from 'lucide-react';
@@ -989,7 +989,7 @@ export function CalculatedFieldBuilder({
       name: isEn ? '' : 'Champ calculé',
       nameEn: isEn ? 'Calculated Field' : '',
       formula: '',
-      returnType: 'NUMBER',
+      isValid: false,
     };
     onFieldsChange([...calculatedFields, newField]);
   };

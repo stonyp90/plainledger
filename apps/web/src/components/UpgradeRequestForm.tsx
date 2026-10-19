@@ -81,7 +81,7 @@ export default function UpgradeRequestForm({
           firstName: formData.firstName,
           lastName: formData.lastName,
           company: formData.company,
-          source: 'upgrade_form',
+          source: 'direct',
         });
         
         if (onSubmitted) {

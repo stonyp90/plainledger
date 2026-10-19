@@ -9,6 +9,8 @@ import { useState, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Target, Eye, EyeOff } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { Scenario, CashForecast, calculateCashForecast } from '../../lib/strategicPlanning';
+import { ChartDataState } from '../charts/ChartDataState';
+import { chartExtent } from '../../lib/chartDataValidation';
 
 interface MultiScenarioChartProps {
   scenarios: Scenario[];
@@ -44,9 +46,7 @@ export default function MultiScenarioChart({
   const { language } = useI18n();
   const isEn = language === 'en';
   
-  const [visibleScenarios, setVisibleScenarios] = useState<Set<string>>(
-    new Set(scenarios.map(s => s.id))
-  );
+  const [hiddenScenarios, setHiddenScenarios] = useState<Set<string>>(new Set());
   const [hoveredPoint, setHoveredPoint] = useState<{
     scenarioId: string;
     index: number;
@@ -54,54 +54,38 @@ export default function MultiScenarioChart({
     y: number;
   } | null>(null);
 
-  // Calculate forecasts for all scenarios
-  const scenarioData = useMemo((): ScenarioData[] => {
-    return scenarios.map(scenario => {
-      const forecast = calculateCashForecast(
-        currentCash,
-        currentDate,
-        scenario.initiatives,
-        scenario.assumptions,
-        months
-      );
-      
-      // Determine color based on scenario name
-      let color = SCENARIO_COLORS.default;
-      const nameLower = scenario.name.toLowerCase();
-      if (nameLower.includes('base') || nameLower.includes('baseline')) {
-        color = SCENARIO_COLORS.base;
-      } else if (nameLower.includes('optimi') || nameLower.includes('upside') || nameLower.includes('best')) {
-        color = SCENARIO_COLORS.optimistic;
-      } else if (nameLower.includes('pessimi') || nameLower.includes('downside') || nameLower.includes('worst')) {
-        color = SCENARIO_COLORS.pessimistic;
-      }
-      
-      return {
-        scenario,
-        forecast,
-        color,
-        visible: visibleScenarios.has(scenario.id),
-      };
-    });
-  }, [scenarios, currentCash, currentDate, months, visibleScenarios]);
+  // Forecast math is independent of legend toggles; new scenarios are visible by default.
+  const calculation = useMemo(() => {
+    try {
+      if (!Array.isArray(scenarios) || new Set(scenarios.map(s => s?.id)).size !== scenarios.length) throw new Error('Invalid scenarios');
+      const data = scenarios.map(scenario => {
+        if (!scenario || typeof scenario.name !== 'string' || !scenario.id) throw new Error('Invalid scenario');
+        const forecast = calculateCashForecast(currentCash, currentDate, scenario.initiatives, scenario.assumptions, months);
+        const color = SCENARIO_COLORS[scenario.type] || SCENARIO_COLORS.default;
+        return { scenario, forecast, color };
+      });
+      return { data, invalid: false };
+    } catch {
+      return { data: [], invalid: true };
+    }
+  }, [scenarios, currentCash, currentDate, months]);
+  const scenarioData: ScenarioData[] = useMemo(() => calculation.data.map(data => ({
+    ...data, visible: !hiddenScenarios.has(data.scenario.id),
+  })), [calculation.data, hiddenScenarios]);
 
   // Calculate chart dimensions
   const chartData = useMemo(() => {
-    const allPoints: number[] = [];
+    const values = [currentCash, 0];
     scenarioData.forEach(sd => {
-      if (sd.visible) {
-        sd.forecast.projected.forEach(p => allPoints.push(p.cash));
-        sd.forecast.historical.forEach(p => allPoints.push(p.cash));
-      }
+      if (!sd.visible) return;
+      sd.forecast.historical.forEach(p => values.push(p.cash));
+      sd.forecast.projected.forEach(p => {
+        const uncertainty = Math.abs(p.cash) * (1 - p.confidence) / 2;
+        values.push(p.cash - uncertainty, p.cash + uncertainty);
+      });
     });
-    
-    if (allPoints.length === 0) return { maxCash: currentCash, minCash: 0, range: currentCash };
-    
-    const maxCash = Math.max(...allPoints, currentCash);
-    const minCash = Math.min(...allPoints, 0);
-    const range = maxCash - minCash || 1;
-    
-    return { maxCash, minCash, range };
+    const { min: minCash, max: maxCash } = chartExtent(values);
+    return { maxCash, minCash, range: maxCash - minCash || 1 };
   }, [scenarioData, currentCash]);
 
   const formatCurrency = (value: number) => {
@@ -118,7 +102,7 @@ export default function MultiScenarioChart({
   };
 
   const toggleScenario = (id: string) => {
-    setVisibleScenarios(prev => {
+    setHiddenScenarios(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -139,11 +123,20 @@ export default function MultiScenarioChart({
     return Array.from(dates).sort();
   }, [scenarioData]);
 
+  const dateIndices = useMemo(() => new Map(allDates.map((date, index) => [date, index])), [allDates]);
+
   const getPointPosition = (cash: number, dateIndex: number) => {
-    const x = (dateIndex / (allDates.length - 1)) * 100;
+    const x = (allDates.length === 1 ? 50 : (dateIndex / (allDates.length - 1)) * 100);
     const y = 100 - ((cash - chartData.minCash) / chartData.range) * 90;
     return { x, y };
   };
+
+  if (calculation.invalid || !Number.isFinite(chartData.range) || !Number.isFinite(chartData.maxCash)) {
+    return <ChartDataState title={isEn ? 'Scenario Comparison' : 'Comparaison des scénarios'} issue="invalid" isEn={isEn} />;
+  }
+  if (scenarioData.length === 0 || allDates.length === 0) {
+    return <ChartDataState title={isEn ? 'Scenario Comparison' : 'Comparaison des scénarios'} issue="empty" isEn={isEn} />;
+  }
 
   return (
     <div className="card p-4 sm:p-6">
@@ -165,6 +158,7 @@ export default function MultiScenarioChart({
           <button
             key={sd.scenario.id}
             onClick={() => toggleScenario(sd.scenario.id)}
+            aria-pressed={sd.visible}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeScenarioId === sd.scenario.id ? 'ring-2 ring-offset-2' : ''
             }`}
@@ -173,7 +167,7 @@ export default function MultiScenarioChart({
               color: sd.visible ? sd.color : 'rgb(var(--color-text-muted))',
               borderColor: sd.color,
               border: `1px solid ${sd.visible ? sd.color : 'transparent'}`,
-              ringColor: sd.color,
+              boxShadow: activeScenarioId === sd.scenario.id ? `0 0 0 2px ${sd.color}` : undefined,
             }}
           >
             {sd.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -187,6 +181,11 @@ export default function MultiScenarioChart({
 
       {/* Chart */}
       <div className="relative" style={{ height: '300px' }}>
+        {scenarioData.every(item => !item.visible) && (
+          <p role="status" className="absolute inset-0 z-10 flex items-center justify-center text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+            {isEn ? 'Select a scenario to display its projection.' : 'Sélectionnez un scénario pour afficher sa projection.'}
+          </p>
+        )}
         <svg 
           viewBox="0 0 100 100" 
           preserveAspectRatio="none"
@@ -222,7 +221,7 @@ export default function MultiScenarioChart({
           )}
 
           {/* Historical divider */}
-          {scenarioData[0]?.forecast.historical.length > 0 && (
+          {allDates.length > 1 && scenarioData[0]?.forecast.historical.length > 0 && (
             <line
               x1={((scenarioData[0].forecast.historical.length - 1) / (allDates.length - 1)) * 100}
               y1="0"
@@ -239,22 +238,22 @@ export default function MultiScenarioChart({
             if (!sd.visible) return null;
             
             const historicalPath = sd.forecast.historical.map((p, i) => {
-              const dateIndex = allDates.indexOf(p.date);
+              const dateIndex = (dateIndices.get(p.date) ?? 0);
               const { x, y } = getPointPosition(p.cash, dateIndex);
               return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
             }).join(' ');
 
             const projectedPath = sd.forecast.projected.map((p, i) => {
-              const dateIndex = allDates.indexOf(p.date);
+              const dateIndex = (dateIndices.get(p.date) ?? 0);
               const { x, y } = getPointPosition(p.cash, dateIndex);
               return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
             }).join(' ');
 
             // Confidence band for projected
             const projectedPoints = sd.forecast.projected.map(p => {
-              const dateIndex = allDates.indexOf(p.date);
+              const dateIndex = (dateIndices.get(p.date) ?? 0);
               const pos = getPointPosition(p.cash, dateIndex);
-              const confidenceRange = (p.cash * (1 - p.confidence)) / 2;
+              const confidenceRange = (Math.abs(p.cash) * (1 - p.confidence)) / 2;
               const upperY = 100 - ((p.cash + confidenceRange - chartData.minCash) / chartData.range) * 90;
               const lowerY = 100 - ((p.cash - confidenceRange - chartData.minCash) / chartData.range) * 90;
               return { x: pos.x, upperY, lowerY };
@@ -302,7 +301,7 @@ export default function MultiScenarioChart({
                 {sd.forecast.breakEvenDate && (() => {
                   const point = sd.forecast.projected.find(p => p.date === sd.forecast.breakEvenDate);
                   if (!point) return null;
-                  const dateIndex = allDates.indexOf(point.date);
+                  const dateIndex = (dateIndices.get(point.date) ?? 0);
                   const { x, y } = getPointPosition(point.cash, dateIndex);
                   return (
                     <circle
@@ -317,8 +316,9 @@ export default function MultiScenarioChart({
                 })()}
 
                 {/* Interactive points */}
-                {[...sd.forecast.historical, ...sd.forecast.projected].map((p, i) => {
-                  const dateIndex = allDates.indexOf(p.date);
+                {[...sd.forecast.historical, ...sd.forecast.projected].map((p, i, points) => {
+                  if (i % Math.max(1, Math.ceil(points.length / 150)) !== 0 && i !== points.length - 1 && i !== hoveredPoint?.index) return null;
+                  const dateIndex = (dateIndices.get(p.date) ?? 0);
                   const { x, y } = getPointPosition(p.cash, dateIndex);
                   const isHovered = hoveredPoint?.scenarioId === sd.scenario.id && hoveredPoint?.index === i;
                   
@@ -433,7 +433,7 @@ export default function MultiScenarioChart({
                 <div className="flex justify-between">
                   <span style={{ color: 'rgb(var(--color-text-muted))' }}>{isEn ? 'Runway' : 'Autonomie'}</span>
                   <span style={{ color: runway > 0 && runway < 12 ? 'rgb(var(--color-error))' : 'rgb(var(--color-text))' }}>
-                    {runway < 0 ? '∞' : `${runway} ${isEn ? 'mo' : 'mois'}`}
+                    {runway < 0 ? `>${months} ${isEn ? 'mo' : 'mois'}` : `${runway + 1} ${isEn ? 'mo' : 'mois'}`}
                   </span>
                 </div>
                 {sd.forecast.breakEvenDate && (

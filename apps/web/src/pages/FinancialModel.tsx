@@ -187,29 +187,19 @@ export default function FinancialModelPage() {
   }, []);
   
   // Get account value for a specific period
-  // Uses demo data when real data not available
+  // Missing source data remains unavailable.
   const getAccountValue = useCallback((accountId: string, periodKey: string): number | null => {
-    // Demo values (used when no real financial data)
-    const demoValues: Record<string, number> = {
-      'cash': 850000,
-      'operating-activities': -25000, // Negative = cash outflow
-      'revenue': 120000,
-      'expenses': 145000,
-    };
-    
-    if (!financialData?.summary) {
-      return demoValues[accountId] ?? null;
-    }
-    
+    if (!financialData?.summary) return null;
+
     switch (accountId) {
       case 'cash':
-        return financialData.summary?.cash?.current ?? financialData.summary?.cashBalance ?? demoValues['cash'];
+        return financialData.summary.cash.current ?? null;
       case 'operating-activities':
-        return financialData.summary?.cashFlow?.operating ?? demoValues['operating-activities'];
+        return financialData.summary.cashFlow.operating ?? null;
       case 'revenue':
-        return financialData.summary?.revenue?.current ?? demoValues['revenue'];
+        return financialData.summary.revenue.current ?? null;
       case 'expenses':
-        return financialData.summary?.expenses?.current ?? demoValues['expenses'];
+        return financialData.summary.expenses.current ?? null;
       default:
         return null;
     }

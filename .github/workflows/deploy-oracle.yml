@@ -1,0 +1,96 @@
+name: Deploy Oracle candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Prepare private services, or activate after origin HTTPS and public DNS verification'
+        type: choice
+        options: [prepare, activate]
+        default: prepare
+        required: true
+      initialize_empty_database:
+        description: 'Run guarded first-install schema bootstrap; rejects every non-empty database'
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: plainledger-oracle-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Prepare or activate the explicitly configured OCI VM
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 75
+    env:
+      ORACLE_DEPLOY_ENABLED: ${{ vars.ORACLE_DEPLOY_ENABLED }}
+      ORACLE_HOST: ${{ vars.ORACLE_HOST }}
+      ORACLE_SSH_USER: ${{ vars.ORACLE_SSH_USER }}
+      ORACLE_SSH_PORT: ${{ vars.ORACLE_SSH_PORT || '22' }}
+      ORACLE_BASE_DIR: ${{ vars.ORACLE_BASE_DIR }}
+      DEPLOY_PHASE: ${{ inputs.phase }}
+      INITIALIZE_EMPTY_DATABASE: ${{ inputs.initialize_empty_database }}
+    steps:
+      - name: Select trusted current main source before checkout
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" != 'workflow_dispatch' || "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo '::error::Oracle deployment is restricted to manual dispatch on main.'
+            exit 1
+          fi
+          [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          current_main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          if [[ "$GITHUB_SHA" != "$current_main_sha" ]]; then
+            echo '::error::Main has advanced; this deployment source is stale.'
+            exit 1
+          fi
+          echo "source_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.source_sha }}
+          persist-credentials: false
+      - name: Require verification and existing CI quality gates for the exact source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA"
+      - name: Validate the deployment implementation
+        run: python3 -m unittest discover -s deploy/oracle/tests -v
+      - name: Recheck current main and both quality gates immediately before remote deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git show "${SOURCE_SHA}:.github/scripts/require_production_quality.py" | \
+            python3 - --sha "$SOURCE_SHA"
+      - name: Deploy with pinned SSH identity and fail-loud preflight
+        env:
+          ORACLE_SSH_PRIVATE_KEY: ${{ secrets.ORACLE_SSH_PRIVATE_KEY }}
+          ORACLE_SSH_KNOWN_HOSTS: ${{ secrets.ORACLE_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--phase "$DEPLOY_PHASE")
+          if [[ "$INITIALIZE_EMPTY_DATABASE" == 'true' ]]; then
+            args+=(--initialize-empty-database)
+          fi
+          python3 deploy/oracle/scripts/remote_runner.py "${args[@]}"

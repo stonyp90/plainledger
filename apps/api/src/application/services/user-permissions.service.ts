@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfileEntity } from '@infrastructure/persistence/postgres/entities/user-profile.entity';
@@ -6,6 +6,7 @@ import { OrganizationEntity } from '@infrastructure/persistence/postgres/entitie
 import { RoleEntity } from '@infrastructure/persistence/postgres/entities/role.entity';
 import { PermissionEntity } from '@infrastructure/persistence/postgres/entities/permission.entity';
 import { SubscriptionPlanEntity } from '@infrastructure/persistence/postgres/entities/subscription-plan.entity';
+import { OrganizationFeaturePolicyService } from './organization-feature-policy.service';
 import { EntitlementEntity } from '@infrastructure/persistence/postgres/entities/entitlement.entity';
 
 export interface UserPermissions {
@@ -41,6 +42,7 @@ export class UserPermissionsService {
     private readonly subscriptionPlanRepository: Repository<SubscriptionPlanEntity>,
     @InjectRepository(EntitlementEntity)
     private readonly entitlementRepository: Repository<EntitlementEntity>,
+    private readonly featurePolicy: OrganizationFeaturePolicyService,
   ) {}
 
   /**
@@ -50,15 +52,20 @@ export class UserPermissionsService {
     userId: string,
     organizationId: string,
   ): Promise<UserPermissions> {
-    // Fetch user profile with organization
+    if (typeof userId !== 'string' || !userId.trim() || typeof organizationId !== 'string' || !organizationId.trim()) {
+      throw new ForbiddenException('An authenticated user and organization are required');
+    }
+    // Fetch active membership first; the JWT may carry its tenant slug rather than UUID.
     const userProfile = await this.userProfileRepository.findOne({
-      where: { id: userId, organizationId },
+      where: { id: userId, isActive: true },
       relations: ['organization'],
     });
 
-    if (!userProfile) {
-      throw new Error(`User ${userId} not found in organization ${organizationId}`);
+    if (!userProfile?.organization || userProfile.organization.deletedAt ||
+      ![userProfile.organizationId, userProfile.organization.tenantId].includes(organizationId)) {
+      throw new ForbiddenException('Active membership in the authenticated organization is required');
     }
+    organizationId = userProfile.organizationId!;
 
     // Get user's role (default to 'viewer' if not set)
     const roleId = userProfile.role || 'viewer';
@@ -67,86 +74,15 @@ export class UserPermissionsService {
       relations: ['permissions'],
     });
 
-    if (!role) {
-      this.logger.warn(`Role ${roleId} not found, defaulting to viewer`);
-      const defaultRole = await this.roleRepository.findOne({
-        where: { id: 'viewer' },
-        relations: ['permissions'],
-      });
-      if (!defaultRole) {
-        throw new Error('Default viewer role not found');
-      }
-      return this.buildPermissions(userProfile.organization!, defaultRole, null);
-    }
-
-    // Get organization's subscription plan
-    const organization = await this.organizationRepository.findOne({
-      where: { id: organizationId },
-      relations: ['subscriptionPlan'],
-    });
-
-    if (!organization) {
-      throw new Error(`Organization ${organizationId} not found`);
-    }
-
-    const planId = organization.subscriptionPlanId || 'free';
-    const plan = await this.subscriptionPlanRepository.findOne({
-      where: { id: planId },
-      relations: ['planEntitlements', 'planEntitlements.entitlement'],
-    });
-
-    if (!plan) {
-      this.logger.warn(`Plan ${planId} not found, defaulting to free`);
-      const defaultPlan = await this.subscriptionPlanRepository.findOne({
-        where: { id: 'free' },
-        relations: ['planEntitlements', 'planEntitlements.entitlement'],
-      });
-      if (!defaultPlan) {
-        throw new Error('Default free plan not found');
-      }
-      return this.buildPermissions(organization, role, defaultPlan);
-    }
-
-    return this.buildPermissions(organization, role, plan);
-  }
-
-  /**
-   * Build permissions object from role and plan
-   */
-  private buildPermissions(
-    organization: OrganizationEntity,
-    role: RoleEntity,
-    plan: SubscriptionPlanEntity | null,
-  ): UserPermissions {
-    // Get permissions from role
-    const permissions = (role.permissions || []).map((p) => p.id);
-
-    // Get entitlements from plan (through junction table)
-    const entitlements = (plan?.planEntitlements || [])
-      .map((pe) => pe.entitlement?.id)
-      .filter((id): id is string => !!id);
-
-    // Get limits from plan
-    const limits = plan?.limits || {};
-
-    // TODO: Fetch organization entitlement overrides from database
-    // For now, return empty array
-    const overrides: string[] = [];
-
+    if (!role) throw new ServiceUnavailableException('The current membership role is not configured');
+    const policy = await this.featurePolicy.read(organizationId);
     return {
-      entitlements,
-      permissions,
-      limits,
-      overrides,
-      role: {
-        id: role.id,
-        name: role.name,
-        tierLevel: role.tierLevel,
-      },
-      plan: {
-        id: plan?.id || 'free',
-        name: plan?.name || 'Free',
-      },
+      entitlements: policy.entitlements,
+      permissions: (role.permissions || []).map((permission) => permission.id),
+      limits: policy.limits,
+      overrides: policy.overrides,
+      role: { id: role.id, name: role.name, tierLevel: role.tierLevel },
+      plan: { id: policy.plan.id, name: policy.plan.name },
     };
   }
 

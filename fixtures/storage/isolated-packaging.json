@@ -1,0 +1,18 @@
+{
+  "endpoint": "http://127.0.0.1:19000",
+  "region": "us-east-1",
+  "rootAccessKey": "plainledger-e2e-root",
+  "rootSecretKey": "PlainLedger-E2E-Root-Only-2026",
+  "appAccessKey": "plainledger-e2e-storage",
+  "appSecretKey": "PlainLedger-E2E-Storage-Only-2026",
+  "buckets": {
+    "BRONZE": "plainledger-e2e-bronze",
+    "SILVER": "plainledger-e2e-silver",
+    "GOLD": "plainledger-e2e",
+    "UPLOADS": "plainledger-e2e-public-assets",
+    "DOCUMENT_SHARE": "plainledger-e2e-document-share"
+  },
+  "outsideBucket": "plainledger-e2e-outside-policy",
+  "probeKey": "container-qualification/persistence.txt",
+  "probeBody": "Disposable PlainLedger storage qualification object."
+}

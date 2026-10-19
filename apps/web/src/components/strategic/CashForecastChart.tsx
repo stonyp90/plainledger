@@ -9,6 +9,8 @@ import { TrendingUp, Target } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { CashForecast } from '../../lib/strategicPlanning';
 import { ChartTooltip } from '../charts/ChartTooltip';
+import { ChartDataState } from '../charts/ChartDataState';
+import { chartExtent, getChartDataIssue, isChartDate, isFiniteNumber } from '../../lib/chartDataValidation';
 
 interface CashForecastChartProps {
   forecast: CashForecast;
@@ -17,19 +19,27 @@ interface CashForecastChartProps {
 }
 
 export default function CashForecastChart({
-  forecast,
+  forecast: inputForecast,
   currentCash,
   onPointHover,
 }: CashForecastChartProps) {
+  const forecast = { ...inputForecast, historical: inputForecast?.historical ?? [], projected: inputForecast?.projected ?? [] };
   // Hooks must be called before any early returns (rules of hooks)
   const { language } = useI18n();
   const isEn = language === 'en';
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const historicalIssue = getChartDataIssue(forecast?.historical, point => isChartDate(point.date)
+    && [point.cash, point.revenue, point.expenses].every(isFiniteNumber));
+  const projectedIssue = getChartDataIssue(forecast?.projected, point => isChartDate(point.date)
+    && [point.cash, point.revenue, point.expenses, point.confidence].every(isFiniteNumber)
+    && point.confidence >= 0 && point.confidence <= 1);
+  const issue = !isFiniteNumber(currentCash) || historicalIssue === 'invalid' || projectedIssue === 'invalid' ? 'invalid'
+    : historicalIssue === 'empty' && projectedIssue === 'empty' ? 'empty' : null;
 
   // Early return - hide chart completely if no forecast data (after all hooks)
-  if (!forecast || ((!forecast.historical || forecast.historical.length === 0) && (!forecast.projected || forecast.projected.length === 0))) {
-    return null;
+  if (issue) {
+    return <ChartDataState title={isEn ? 'Cash Forecast' : 'Prévision de trésorerie'} issue={issue} isEn={isEn} />;
   }
 
   const allData = [
@@ -42,12 +52,13 @@ export default function CashForecastChart({
     })),
   ];
 
-  const maxCash = allData.length > 0 
-    ? Math.max(...allData.map(d => d.cash ?? 0), currentCash) 
-    : currentCash;
-  const minCash = allData.length > 0 
-    ? Math.min(...allData.map(d => d.cash ?? 0), 0) 
-    : 0;
+  const { min: minCash, max: maxCash } = chartExtent([
+    currentCash, ...allData.map(point => point.cash),
+    ...forecast.projected.flatMap(point => {
+      const uncertainty = Math.abs(point.cash) * (1 - point.confidence) / 2;
+      return [point.cash - uncertainty, point.cash + uncertainty];
+    }),
+  ], true);
   const range = maxCash - minCash || 1;
 
   const formatCurrency = (value: number) => {
@@ -60,7 +71,7 @@ export default function CashForecastChart({
   };
 
   const getPointPosition = (index: number) => {
-    const x = (index / (allData.length - 1)) * 800;
+    const x = allData.length === 1 ? 400 : (index / (allData.length - 1)) * 800;
     const y = 200 - ((allData[index].cash - minCash) / range) * 180;
     return { x, y };
   };
@@ -129,7 +140,7 @@ export default function CashForecastChart({
           {forecast.projected.length > 1 && forecast.projected.map((point, i) => {
             const index = historicalEndIndex + 1 + i;
             const { x, y } = getPointPosition(index);
-            const confidenceRange = (point.cash * (1 - point.confidence)) / 2;
+            const confidenceRange = (Math.abs(point.cash) * (1 - point.confidence)) / 2;
             const upperY = 200 - ((point.cash + confidenceRange - minCash) / range) * 180;
             const lowerY = 200 - ((point.cash - confidenceRange - minCash) / range) * 180;
 
@@ -275,7 +286,7 @@ export default function CashForecastChart({
         </svg>
 
         {/* Tooltip */}
-        {hoveredIndex !== null && (
+        {hoveredIndex !== null && allData[hoveredIndex] && (
           <ChartTooltip visible={true} position={tooltipPosition}>
             <div className="min-w-[200px]">
               <p className="text-gray-400 text-xs mb-2">

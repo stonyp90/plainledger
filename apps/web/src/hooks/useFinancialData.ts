@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTenant } from '../contexts/TenantContext';
 import { useDemoMode } from '../contexts/DemoModeContext';
 import { isMockAuthEnabled } from '../lib/keycloak';
+import { adaptBalanceSheet, adaptIncomeStatement, createEmptyDashboardSummary } from '../lib/financialAdapters';
 import {
   useDashboardSummary,
   useFinancialTrends,
@@ -123,70 +124,10 @@ export function useFinancialData(
     return connected;
   }, [dataSourcesQueryResult, dataSourcesLoading]);
 
-  // Check if we should use mock/demo data
-  // IMPORTANT BUSINESS RULES:
-  // 1. FREE users ALWAYS see demo data (cannot connect datasources)
-  // 2. PAID users (professional/enterprise) with connection see ONLY real data
-  // 3. PAID users WITHOUT connection see nothing (blocked by PaidNoConnectionGate)
-  const shouldUseMockData = useMemo(() => {
-    // Determine if user is on free tier - checked FIRST before connection status
-    const plan = currentTenant?.plan || 'free';
-    const isFreeUser = plan === 'free';
-
-    // FREE USERS ALWAYS GET MOCK DATA - they cannot connect datasources
-    if (isFreeUser) {
-      console.log('[useFinancialData] FREE tier user - ALWAYS using demo data (cannot connect)', {
-        plan,
-        isDemoMode,
-      });
-      return true;
-    }
-
-    // Wait for dataSources query to complete before deciding (for paid users only)
-    if (dataSourcesLoading) {
-      // While loading, assume we'll use real data to avoid skipping queries prematurely
-      return false;
-    }
-
-    // PAID users with a real connection use real data
-    if (hasRealConnection) {
-      console.log('[useFinancialData] Using REAL data - paid user with connection', {
-        hasConnection: true,
-        plan,
-      });
-      return false;
-    }
-
-    // In mock auth mode (local dev), use mock data for paid users without connection
-    if (isMockAuthEnabled()) {
-      if (!hasLoggedMockAuth.current) {
-        console.log('[useFinancialData] No connection detected, using mock data for local dev', {
-          plan,
-        });
-        hasLoggedMockAuth.current = true;
-      }
-      return true;
-    }
-
-    // PAID USERS WITHOUT CONNECTION - return false (they'll be blocked by PaidNoConnectionGate)
-    if (!hasLoggedMockAuth.current) {
-      console.log(
-        '[useFinancialData] PAID user without connection - will be blocked by connection gate',
-        {
-          plan,
-          hasConnection: false,
-        },
-      );
-      hasLoggedMockAuth.current = true;
-    }
-    return false;
-  }, [
-    dataSourcesLoading,
-    hasRealConnection,
-    currentTenant?.plan,
-    currentTenant?.settings?.demoMode,
-    isDemoMode,
-  ]);
+  // Financial samples require explicit development mock authentication.
+  // Subscription tier and a stored demo preference never override posted ledger data.
+  const shouldUseMockData = isMockAuthEnabled();
+  const skipQueries = shouldUseMockData || !currentTenant || !autoFetch;
 
   // Fetch dashboard summary from GraphQL (no filter - use defaults)
   // Skip if using mock data
@@ -195,7 +136,7 @@ export function useFinancialData(
     loading: summaryLoading,
     error: summaryError,
     refetch: refetchSummary,
-  } = useDashboardSummary({ filter: undefined, skip: shouldUseMockData });
+  } = useDashboardSummary({ filter: undefined, skip: skipQueries });
   const summaryData = shouldUseMockData ? null : summaryQueryData;
 
   // Fetch financial trends from GraphQL - skip if using mock data
@@ -204,7 +145,7 @@ export function useFinancialData(
     loading: trendsLoading,
     error: trendsError,
     refetch: refetchTrends,
-  } = useFinancialTrends(['revenue', 'expenses', 'cashFlow'], { skip: shouldUseMockData });
+  } = useFinancialTrends(['revenue', 'expenses', 'cashFlow'], { skip: skipQueries });
   const trendsData = shouldUseMockData ? null : trendsQueryData;
 
   // Fetch accounts from GraphQL - skip if using mock data
@@ -213,7 +154,7 @@ export function useFinancialData(
     loading: accountsLoading,
     error: accountsError,
     refetch: refetchAccounts,
-  } = useAccounts(undefined, { page: 1, pageSize: 100 }, { skip: shouldUseMockData });
+  } = useAccounts(undefined, { page: 1, pageSize: 100 }, { skip: skipQueries });
   const accountsData = shouldUseMockData ? null : accountsQueryData;
 
   // Fetch real trial balance data - skip if using mock data
@@ -221,7 +162,7 @@ export function useFinancialData(
     data: trialBalanceQueryData,
     loading: trialBalanceLoading,
     refetch: refetchTrialBalance,
-  } = useTrialBalance({ skip: shouldUseMockData });
+  } = useTrialBalance({ skip: skipQueries });
   const trialBalanceData = shouldUseMockData ? null : trialBalanceQueryData?.trialBalance;
 
   // Fetch real cash flow waterfall data - skip if using mock data
@@ -229,7 +170,7 @@ export function useFinancialData(
     data: waterfallQueryData,
     loading: waterfallLoading,
     refetch: refetchWaterfall,
-  } = useCashFlowWaterfall({ startDate: undefined, endDate: undefined, skip: shouldUseMockData });
+  } = useCashFlowWaterfall({ startDate: undefined, endDate: undefined, skip: skipQueries });
   const waterfallData = shouldUseMockData ? null : waterfallQueryData?.cashFlowWaterfall;
 
   // Fetch real AR aging data - skip if using mock data
@@ -237,7 +178,7 @@ export function useFinancialData(
     data: arAgingQueryData,
     loading: arAgingLoading,
     refetch: refetchARaging,
-  } = useReceivablesAging({ skip: shouldUseMockData });
+  } = useReceivablesAging({ skip: skipQueries });
   const arAgingData = shouldUseMockData ? null : arAgingQueryData?.receivablesAging;
 
   // Fetch real AP aging data (may return hasData: false if no bills tracked) - skip if using mock data
@@ -245,7 +186,7 @@ export function useFinancialData(
     data: apAgingQueryData,
     loading: apAgingLoading,
     refetch: refetchAPaging,
-  } = usePayablesAging({ skip: shouldUseMockData });
+  } = usePayablesAging({ skip: skipQueries });
   const apAgingData = shouldUseMockData ? null : apAgingQueryData?.payablesAging;
 
   // Fetch real tax deadlines (calculated from fiscal year and province) - skip if using mock data
@@ -253,7 +194,7 @@ export function useFinancialData(
     data: taxDeadlinesQueryData,
     loading: taxDeadlinesLoading,
     refetch: refetchTaxDeadlines,
-  } = useTaxDeadlines({ skip: shouldUseMockData });
+  } = useTaxDeadlines({ skip: skipQueries });
   const taxDeadlinesData = shouldUseMockData ? null : taxDeadlinesQueryData?.taxDeadlines;
 
   // Fetch budget settings - skip if using mock data
@@ -261,7 +202,7 @@ export function useFinancialData(
     data: budgetQueryData,
     loading: budgetLoading,
     refetch: refetchBudget,
-  } = useBudgetSettings({ skip: shouldUseMockData });
+  } = useBudgetSettings({ skip: skipQueries });
   const budgetData = shouldUseMockData ? null : budgetQueryData?.budgetSettings;
 
   // Check if we have real data from GraphQL
@@ -335,7 +276,7 @@ export function useFinancialData(
       return generateMockFinancialData(
         currentTenant.id,
         currentTenant.name,
-        currentTenant.currency || 'CAD',
+        currentTenant.settings.currency || 'CAD',
         new Date().toISOString().split('T')[0],
         currentTenant.industry || 'real_estate',
       );
@@ -383,36 +324,38 @@ export function useFinancialData(
         }));
       };
 
-      // Build response with ONLY real data - no mock fallbacks
+      // Initialize absent dashboard sections without inventing account data or ratios.
+      const emptySummary = createEmptyDashboardSummary();
       return {
         summary: {
+          ...emptySummary,
           revenue: {
+            ...emptySummary.revenue,
             current: summary?.totalRevenue?.amount || 0,
             prior: 0,
-            change: 0,
             ytd: summary?.totalRevenue?.amount || 0,
           },
           expenses: {
+            ...emptySummary.expenses,
             current: summary?.totalExpenses?.amount || 0,
             prior: 0,
-            change: 0,
             ytd: summary?.totalExpenses?.amount || 0,
           },
           netIncome: {
+            ...emptySummary.netIncome,
             current: summary?.netIncome?.amount || 0,
             prior: 0,
-            change: 0,
             ytd: summary?.netIncome?.amount || 0,
           },
           cash: {
+            ...emptySummary.cash,
             current: summary?.cashOnHand?.amount || 0,
             prior: 0,
-            change: 0,
           },
           receivables: {
+            ...emptySummary.receivables,
             current: summary?.accountsReceivable?.amount || 0,
             prior: 0,
-            change: 0,
             hasData: arAgingData?.hasData ?? false,
             ...(arAgingData?.hasData
               ? {
@@ -421,6 +364,7 @@ export function useFinancialData(
                     labelEn: b.labelEn,
                     amount: b.amount,
                     count: b.count,
+                    percentage: arAgingData.total > 0 ? (b.amount / arAgingData.total) * 100 : 0,
                   })),
                   totalOverdue: arAgingData.totalOverdue,
                   averageDaysOutstanding: arAgingData.averageDays,
@@ -428,9 +372,9 @@ export function useFinancialData(
               : {}),
           },
           payables: {
+            ...emptySummary.payables,
             current: summary?.accountsPayable?.amount || 0,
             prior: 0,
-            change: 0,
             hasData: apAgingData?.hasData ?? false,
             ...(apAgingData?.hasData
               ? {
@@ -439,6 +383,7 @@ export function useFinancialData(
                     labelEn: b.labelEn,
                     amount: b.amount,
                     count: b.count,
+                    percentage: apAgingData.total > 0 ? (b.amount / apAgingData.total) * 100 : 0,
                   })),
                   totalOverdue: apAgingData.totalOverdue,
                   averageDaysPayable: apAgingData.averageDays,
@@ -473,13 +418,13 @@ export function useFinancialData(
                 description: d.description,
                 dueDate: d.dueDate?.split('T')[0] || new Date().toISOString().split('T')[0],
                 daysRemaining: d.daysRemaining,
-                status: d.status as 'upcoming' | 'urgent' | 'overdue',
-                category: d.category as 'tax' | 'filing' | 'payroll' | 'other',
+                status: d.status === 'overdue' ? 'overdue' as const : 'upcoming' as const,
+                type: 'tax' as const,
               }))
             : [],
           hasBudget: budgetData?.hasBudget ?? false,
           budgetYear: budgetData?.year,
-          cashBalance: summary?.cashOnHand?.amount || 0,
+          cashFlow: { ...emptySummary.cashFlow, net: summary?.cashFlow?.netCashFlow?.amount ?? 0 },
         },
         trends: {
           revenue: {
@@ -509,13 +454,13 @@ export function useFinancialData(
             code: string;
             name: string;
             type: string;
-            balance: number;
+            balance: number | null;
             isActive: boolean;
           }) => ({
             code: a.code,
             name: a.name,
             nameEn: a.name,
-            current: a.balance || 0,
+            current: a.balance,
             prior: 0,
             type: a.type?.toLowerCase() as 'asset' | 'liability' | 'equity' | 'revenue' | 'expense',
           }),
@@ -560,7 +505,7 @@ export function useFinancialData(
           return generateMockFinancialData(
             currentTenant.id,
             currentTenant.name,
-            currentTenant.currency || 'CAD',
+            currentTenant.settings.currency || 'CAD',
             new Date().toISOString().split('T')[0],
             currentTenant.industry || 'real_estate',
           );
@@ -579,18 +524,7 @@ export function useFinancialData(
         },
       );
       return {
-        summary: {
-          revenue: { current: 0, prior: 0, change: 0, ytd: 0 },
-          expenses: { current: 0, prior: 0, change: 0, ytd: 0 },
-          netIncome: { current: 0, prior: 0, change: 0, ytd: 0 },
-          cash: { current: 0, prior: 0, change: 0 },
-          receivables: { current: 0, prior: 0, change: 0, hasData: false },
-          payables: { current: 0, prior: 0, change: 0, hasData: false },
-          trialBalance: { totalDebits: 0, totalCredits: 0, isBalanced: true, entries: [] },
-          upcomingDeadlines: [],
-          hasBudget: false,
-          cashBalance: 0,
-        },
+        summary: createEmptyDashboardSummary(),
         trends: {
           revenue: { label: 'Revenus', labelEn: 'Revenue', data: [], budget: [] },
           expenses: { label: 'Dépenses', labelEn: 'Expenses', data: [] },
@@ -615,7 +549,7 @@ export function useFinancialData(
       return generateMockFinancialData(
         currentTenant.id,
         currentTenant.name,
-        currentTenant.currency || 'CAD',
+        currentTenant.settings.currency || 'CAD',
         new Date().toISOString().split('T')[0],
         currentTenant.industry || 'real_estate',
       );
@@ -657,26 +591,16 @@ export function useFinancialData(
     taxDeadlinesLoading ||
     budgetLoading;
 
-  // Only show error if all queries fail AND we have no data (even fallback)
-  // Since we always have mock data fallback in local dev, we should rarely show errors
+  // Surface partial failures too; a missing financial section is not a zero balance.
   const error = useMemo(() => {
-    // If we have transformed data (either from GraphQL or mock), no error
-    if (transformedData) return null;
-
-    // In local dev with mock auth, never show errors (always use mock data)
-    if (isMockAuthEnabled()) {
-      return null;
-    }
-
-    // Only show error if all queries failed and we somehow have no data
-    if (summaryError && trendsError && accountsError) {
-      return new Error('Failed to fetch financial data from server');
-    }
-    return null;
-  }, [summaryError, trendsError, accountsError, transformedData]);
+    if (shouldUseMockData) return null;
+    const failed = summaryError || trendsError || accountsError;
+    return failed ? new Error(failed.message) : null;
+  }, [shouldUseMockData, summaryError, trendsError, accountsError]);
 
   // Refresh function - includes all real data queries
   const refresh = useCallback(async () => {
+    if (shouldUseMockData || !currentTenant) return;
     await Promise.all(
       [
         refetchSummary(),
@@ -691,6 +615,7 @@ export function useFinancialData(
       ].filter(Boolean),
     );
   }, [
+    shouldUseMockData, currentTenant,
     refetchSummary,
     refetchTrends,
     refetchAccounts,
@@ -741,125 +666,42 @@ export function useBalanceSheet(asOfDate: string): UseBalanceSheetResult {
     });
   }, [dataSourcesQueryResult, dataSourcesLoading]);
 
-  // Check if we should use mock data
-  // IMPORTANT: Free users ALWAYS get mock data. Paid users see real data or connection gate.
-  const shouldUseMockData = useMemo(() => {
-    const plan = currentTenant?.plan || 'free';
-    const isFreeUser = plan === 'free';
-
-    // FREE users ALWAYS get mock data - they cannot connect datasources
-    if (isFreeUser) return true;
-
-    // Paid users with connection get real data
-    if (hasRealConnection) return false;
-
-    // In mock auth mode (local dev), use mock data for paid users without connection
-    if (isMockAuthEnabled()) return true;
-
-    // Paid users without connection - return false (blocked by connection gate)
-    return false;
-  }, [hasRealConnection, currentTenant?.plan]);
+  const shouldUseMockData = isMockAuthEnabled();
 
   const {
     data: queryData,
     loading,
     error: queryError,
     refetch,
-  } = useBalanceSheetQuery(asOfDateObj, { skip: shouldUseMockData });
+  } = useBalanceSheetQuery(asOfDateObj, { skip: shouldUseMockData || !currentTenant });
 
   // Transform GraphQL response to BalanceSheetData format
   const transformedData = useMemo((): BalanceSheetData | null => {
+    if (!currentTenant) return null;
     if (!queryData?.balanceSheet) {
       // Only fall back to mock if we should use mock data
       if (shouldUseMockData && currentTenant) {
         const mockData = generateMockFinancialData(
           currentTenant.id,
           currentTenant.name,
-          currentTenant.currency || 'CAD',
+          currentTenant.settings.currency || 'CAD',
           asOfDate,
         );
-        return mockData.balanceSheet;
+        return mockData.balanceSheet ? { ...mockData.balanceSheet, isDemoData: true } : null;
       }
       // Real connection but no data yet - return null (loading/empty state)
       return null;
     }
 
-    const bs = queryData.balanceSheet;
-    return {
-      asOfDate: bs.asOfDate,
-      assets: {
-        current:
-          bs.assets
-            ?.filter((a: { balance: number; level: number }) => a.level <= 2)
-            .map(
-              (a: {
-                accountCode: string;
-                accountName: string;
-                balance: number;
-                isSubtotal?: boolean;
-              }) => ({
-                code: a.accountCode || '',
-                name: a.accountName,
-                nameEn: a.accountName,
-                current: a.balance || 0,
-                prior: 0,
-                isHeader: a.isSubtotal || false,
-              }),
-            ) || [],
-        fixed: [],
-        total: bs.totalAssets || 0,
-      },
-      liabilities: {
-        current:
-          bs.liabilities
-            ?.filter((l: { balance: number; level: number }) => l.level <= 2)
-            .map(
-              (l: {
-                accountCode: string;
-                accountName: string;
-                balance: number;
-                isSubtotal?: boolean;
-              }) => ({
-                code: l.accountCode || '',
-                name: l.accountName,
-                nameEn: l.accountName,
-                current: l.balance || 0,
-                prior: 0,
-                isHeader: l.isSubtotal || false,
-              }),
-            ) || [],
-        longTerm: [],
-        total: bs.totalLiabilities || 0,
-      },
-      equity: {
-        items:
-          bs.equity?.map(
-            (e: {
-              accountCode: string;
-              accountName: string;
-              balance: number;
-              isSubtotal?: boolean;
-            }) => ({
-              code: e.accountCode || '',
-              name: e.accountName,
-              nameEn: e.accountName,
-              current: e.balance || 0,
-              prior: 0,
-              isHeader: e.isSubtotal || false,
-            }),
-          ) || [],
-        total: bs.totalEquity || 0,
-      },
-      totalLiabilitiesAndEquity: (bs.totalLiabilities || 0) + (bs.totalEquity || 0),
-      currency: bs.currency || 'CAD',
-    };
+    return adaptBalanceSheet(queryData.balanceSheet, currentTenant.id);
   }, [queryData, currentTenant, asOfDate, shouldUseMockData]);
 
   const error = queryError ? new Error(queryError.message) : null;
 
   const refresh = useCallback(async () => {
+    if (shouldUseMockData || !currentTenant) return;
     await refetch();
-  }, [refetch]);
+  }, [refetch, shouldUseMockData, currentTenant]);
 
   return {
     data: transformedData,
@@ -899,103 +741,42 @@ export function useIncomeStatement(startDate: string, endDate: string): UseIncom
     });
   }, [dataSourcesQueryResult, dataSourcesLoading]);
 
-  // Check if we should use mock data
-  // IMPORTANT: Free users ALWAYS get mock data. Paid users see real data or connection gate.
-  const shouldUseMockData = useMemo(() => {
-    const plan = currentTenant?.plan || 'free';
-    const isFreeUser = plan === 'free';
-
-    // FREE users ALWAYS get mock data - they cannot connect datasources
-    if (isFreeUser) return true;
-
-    // Paid users with connection get real data
-    if (hasRealConnection) return false;
-
-    // In mock auth mode (local dev), use mock data for paid users without connection
-    if (isMockAuthEnabled()) return true;
-
-    // Paid users without connection - return false (blocked by connection gate)
-    return false;
-  }, [hasRealConnection, currentTenant?.plan]);
+  const shouldUseMockData = isMockAuthEnabled();
 
   const {
     data: queryData,
     loading,
     error: queryError,
     refetch,
-  } = useIncomeStatementQuery(startDateObj, endDateObj, { skip: shouldUseMockData });
+  } = useIncomeStatementQuery(startDateObj, endDateObj, { skip: shouldUseMockData || !currentTenant });
 
   // Transform GraphQL response to IncomeStatementData format
   const transformedData = useMemo((): IncomeStatementData | null => {
+    if (!currentTenant) return null;
     if (!queryData?.incomeStatement) {
       // Only fall back to mock if we should use mock data
       if (shouldUseMockData && currentTenant) {
         const mockData = generateMockFinancialData(
           currentTenant.id,
           currentTenant.name,
-          currentTenant.currency || 'CAD',
+          currentTenant.settings.currency || 'CAD',
           endDate,
         );
-        return mockData.incomeStatement;
+        return mockData.incomeStatement ? { ...mockData.incomeStatement, isDemoData: true } : null;
       }
       // Real connection but no data yet - return null (loading/empty state)
       return null;
     }
 
-    const is = queryData.incomeStatement;
-    return {
-      periodStart: is.startDate,
-      periodEnd: is.endDate,
-      revenue: {
-        items:
-          is.revenue?.map(
-            (r: {
-              accountCode: string;
-              accountName: string;
-              amount: number;
-              budget?: number;
-              variance?: number;
-            }) => ({
-              code: r.accountCode || '',
-              name: r.accountName,
-              nameEn: r.accountName,
-              current: r.amount || 0,
-              budget: r.budget || 0,
-              variance: r.variance || 0,
-            }),
-          ) || [],
-        total: is.grossRevenue || 0,
-      },
-      expenses: {
-        items:
-          is.expenses?.map(
-            (e: {
-              accountCode: string;
-              accountName: string;
-              amount: number;
-              budget?: number;
-              variance?: number;
-            }) => ({
-              code: e.accountCode || '',
-              name: e.accountName,
-              nameEn: e.accountName,
-              current: e.amount || 0,
-              budget: e.budget || 0,
-              variance: e.variance || 0,
-            }),
-          ) || [],
-        total: is.totalExpenses || 0,
-      },
-      netIncome: is.netIncome || 0,
-      currency: is.currency || 'CAD',
-    };
+    return adaptIncomeStatement(queryData.incomeStatement, currentTenant.id);
   }, [queryData, currentTenant, endDate, shouldUseMockData]);
 
   const error = queryError ? new Error(queryError.message) : null;
 
   const refresh = useCallback(async () => {
+    if (shouldUseMockData || !currentTenant) return;
     await refetch();
-  }, [refetch]);
+  }, [refetch, shouldUseMockData, currentTenant]);
 
   return {
     data: transformedData,

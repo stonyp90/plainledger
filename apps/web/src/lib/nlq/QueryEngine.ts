@@ -991,12 +991,12 @@ export class QueryEngine {
 
     // Format decisions for display
     const decisionData = this.decisionHistory.slice(0, 10).map(d => ({
-      date: new Date(d.timestamp).toLocaleDateString(),
+      date: new Date(d.createdAt).toLocaleDateString(),
       description: d.decision.description.slice(0, 50) + (d.decision.description.length > 50 ? '...' : ''),
       type: d.decision.actionType,
       expectedImpact: this.formatCurrency(d.decision.expectedImpact),
       status: d.outcome ? (d.outcome.success ? 'Success' : 'Needs Review') : 'Pending',
-      metric: d.context.metricType,
+      metric: d.trigger.metricType,
     }));
 
     // Calculate summary stats

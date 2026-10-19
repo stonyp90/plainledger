@@ -1,35 +1,40 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import Keycloak from 'keycloak-js';
 
-// Check if mock auth is enabled (for development/testing without Keycloak)
-// Defaults to true in development mode when VITE_MOCK_AUTH is not explicitly set
-// Also check for Storybook-specific flag
-const isStorybook = typeof window !== 'undefined' && (window as any).__STORYBOOK_MOCK_AUTH__;
-const MOCK_AUTH_ENABLED =
-  import.meta.env.VITE_MOCK_AUTH === 'true' ||
-  (import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH !== 'false') ||
-  isStorybook;
-
-// Export for use in other modules that need to skip API calls in mock mode
+// Mock authentication must be explicitly enabled in a development build.
+// URL parameters, saved tokens, and window flags cannot enable it in production.
+const MOCK_AUTH_ENABLED = import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === 'true';
 export const isMockAuthEnabled = () => MOCK_AUTH_ENABLED;
-
-// Key for persisting mock auth logout state
 const MOCK_AUTH_LOGGED_OUT_KEY = 'plainledger_mock_auth_logged_out';
 
-// Check if Keycloak URL is properly configured (not localhost in production)
-const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || '';
-const isKeycloakConfigured =
-  keycloakUrl && !keycloakUrl.includes('localhost') && !keycloakUrl.includes('127.0.0.1');
+const keycloakUrl = import.meta.env.VITE_KEYCLOAK_URL || (import.meta.env.DEV ? 'http://localhost:8080' : '');
+const isKeycloakConfigured = (() => {
+  try {
+    const url = new URL(keycloakUrl);
+    const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    return url.protocol === 'https:' || (url.protocol === 'http:' && (import.meta.env.DEV || isLoopback));
+  } catch {
+    return false;
+  }
+})();
 
-// If Keycloak is not configured in production, fall back to mock auth to prevent hanging
-const KEYCLOAK_AVAILABLE = MOCK_AUTH_ENABLED || isKeycloakConfigured || import.meta.env.DEV;
-
-// Keycloak configuration
 const keycloakConfig = {
-  url: keycloakUrl || 'http://localhost:8080',
+  url: keycloakUrl || window.location.origin,
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'plainledger',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'plainledger-web',
 };
+
+/** Only allow a return to this application after sign-in. */
+export function getLoginRedirectUri(requested?: string | null): string {
+  const fallback = new URL('/app', window.location.origin).href;
+  try {
+    const target = new URL(requested || '/app', window.location.origin);
+    if (target.origin !== window.location.origin || ['/login', '/signin', '/signup', '/register', '/mfa/verify'].includes(target.pathname.replace(/\/+$/, ''))) return fallback;
+    return target.href;
+  } catch {
+    return fallback;
+  }
+}
 
 // Mock user profiles for development sign-in
 // Each profile maps to a Keycloak test user with specific role + subscription tier
@@ -179,7 +184,8 @@ interface KeycloakContextType {
   initialized: boolean;
   authenticated: boolean;
   user: UserProfile | null;
-  login: (idpHint?: string) => void; // Optional IDP hint for direct login
+  authError: string | null;
+  login: (idpHint?: string) => Promise<void>; // Optional IDP hint for direct login
   register: (redirectUri?: string) => void; // Trigger registration flow
   logout: () => void;
   getToken: () => string | undefined;
@@ -215,11 +221,10 @@ function extractUserProfile(keycloak: Keycloak, tokenParsed: Record<string, unkn
     firstName: tokenParsed.given_name as string,
     lastName: tokenParsed.family_name as string,
     organization: tokenParsed.organization as string,
-    roles: keycloak.realmAccess?.roles || [],
+    roles: [...new Set([...(keycloak.realmAccess?.roles || []), ...(keycloak.resourceAccess?.[keycloakConfig.clientId]?.roles || [])])],
     picture,
     locale: tokenParsed.locale as string,
-    // Default to true if not specified - better UX than blocking users
-    emailVerified: tokenParsed.email_verified !== false,
+    emailVerified: tokenParsed.email_verified === true,
     identityProvider: idp,
   };
 }
@@ -264,336 +269,176 @@ interface KeycloakProviderProps {
   children: ReactNode;
 }
 
-export function KeycloakProvider({ children }: KeycloakProviderProps) {
-  // Check for Storybook environment
-  const isStorybookEnv =
-    typeof window !== 'undefined' &&
-    (window.location.href.includes('storybook') || (window as any).__STORYBOOK_MOCK_AUTH__);
+// The adapter only permits one init call; share it across StrictMode effects/remounts.
+let keycloakInitialization: Promise<boolean> | null = null;
+function initializeKeycloak(keycloak: Keycloak): Promise<boolean> {
+  if (!isKeycloakConfigured) return Promise.reject(new Error('Secure sign-in is not configured.'));
+  if (!keycloakInitialization) {
+    keycloakInitialization = keycloak.init({
+      onLoad: 'check-sso',
+      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+      silentCheckSsoFallback: false,
+      pkceMethod: 'S256',
+      flow: 'standard',
+      checkLoginIframe: false,
+    });
+  }
+  return keycloakInitialization;
+}
 
+export function KeycloakProvider({ children }: KeycloakProviderProps) {
   const [initialized, setInitialized] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState<KeycloakContextType['user']>(null);
-  const initCalled = useRef(false);
-  // Track if we used stored tokens (custom login) - Keycloak.init() not called
-  const usedStoredTokensRef = useRef(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const keycloak = getKeycloakInstance();
 
   useEffect(() => {
-    // Prevent double initialization in React StrictMode
-    if (initCalled.current) return;
-    initCalled.current = true;
-
-    // In Storybook, initialize mock auth immediately
-    if (isStorybookEnv) {
-      const mockTokenPayload = {
-        sub: MOCK_USER.id,
-        email: MOCK_USER.email,
-        name: MOCK_USER.name,
-        given_name: MOCK_USER.firstName,
-        family_name: MOCK_USER.lastName,
-        organization: MOCK_USER.organization,
-        realm_access: { roles: MOCK_USER.roles },
-        exp: Math.floor(Date.now() / 1000) + 86400,
-        iat: Math.floor(Date.now() / 1000),
-      };
-      const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));
-      const payload = btoa(JSON.stringify(mockTokenPayload));
-      const mockToken = `${header}.${payload}.mock-signature`;
-      (keycloak as any).token = mockToken;
-      (keycloak as any).authenticated = true;
-      (keycloak as any).subject = MOCK_USER.id;
-      (keycloak as any).tokenParsed = mockTokenPayload;
-      (keycloak as any).realmAccess = mockTokenPayload.realm_access;
-      (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
-      setAuthenticated(true);
-      setUser(MOCK_USER);
-      setInitialized(true);
-      return;
+    let active = true;
+    // Retire the old password-grant session storage. The adapter owns tokens in memory.
+    for (const name of ['kc_token', 'kc_refresh_token', 'kc_id_token', 'kc_user']) {
+      sessionStorage.removeItem(name);
     }
 
-    // FIRST: Check for stored tokens from custom login BEFORE any other initialization
-    // This ensures we use real tokens even if mock auth is enabled
-    const storedToken = sessionStorage.getItem('kc_token');
-    const storedRefreshToken = sessionStorage.getItem('kc_refresh_token');
-    const storedIdToken = sessionStorage.getItem('kc_id_token');
-
-    // If we have real tokens from login, use them instead of mock auth
-    if (storedToken && storedRefreshToken) {
-      const initKeycloak = async () => {
-        try {
-          // We have tokens from custom login - set them in Keycloak client
-          // Try to parse the access token first, fall back to id token
-          let tokenToParse = storedToken;
-          if (storedIdToken) {
-            tokenToParse = storedIdToken;
-          }
-
-          const tokenParts = tokenToParse.split('.');
-          if (tokenParts.length === 3) {
-            // Decode base64 token payload
-            const base64Url = tokenParts[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-              atob(base64)
-                .split('')
-                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                .join(''),
-            );
-            const tokenPayload = JSON.parse(jsonPayload);
-
-            // Set tokens in Keycloak client
-            (keycloak as any).token = storedToken;
-            (keycloak as any).refreshToken = storedRefreshToken;
-            (keycloak as any).idToken = storedIdToken || storedToken;
-            (keycloak as any).authenticated = true;
-            (keycloak as any).tokenParsed = tokenPayload;
-            (keycloak as any).subject = tokenPayload.sub;
-            (keycloak as any).realmAccess = tokenPayload.realm_access || {};
-            (keycloak as any).resourceAccess = tokenPayload.resource_access || {};
-
-            // Mark that we used stored tokens (Keycloak.init() not called)
-            usedStoredTokensRef.current = true;
-
-            // Extract user profile
-            const tokenParsed = tokenPayload as Record<string, unknown>;
-            setAuthenticated(true);
-            setInitialized(true);
-            setUser(extractUserProfile(keycloak, tokenParsed));
-
-            // Expose keycloak to window for other modules to access token
-            (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
-
-            // Set up token refresh - since we didn't call init(), we need to refresh manually
-            keycloak.onTokenExpired = async () => {
-              try {
-                // Refresh token by calling Keycloak token endpoint directly
-                const refreshToken = (keycloak as any).refreshToken;
-                if (!refreshToken) {
-                  throw new Error('No refresh token available');
-                }
-
-                const tokenUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/token`;
-                const response = await fetch(tokenUrl, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                  },
-                  body: new URLSearchParams({
-                    grant_type: 'refresh_token',
-                    client_id: keycloakConfig.clientId,
-                    refresh_token: refreshToken,
-                  }),
-                });
-
-                if (!response.ok) {
-                  throw new Error('Token refresh failed');
-                }
-
-                const tokens = await response.json();
-
-                // Update keycloak instance with new tokens
-                (keycloak as any).token = tokens.access_token;
-                (keycloak as any).refreshToken = tokens.refresh_token;
-                if (tokens.id_token) {
-                  (keycloak as any).idToken = tokens.id_token;
-                }
-
-                console.log('✅ Token refreshed successfully');
-              } catch (error) {
-                console.warn('Failed to refresh token, redirecting to login');
-                sessionStorage.removeItem('kc_token');
-                sessionStorage.removeItem('kc_refresh_token');
-                sessionStorage.removeItem('kc_id_token');
-                // Redirect to logout endpoint to clear server session, then back to login
-                const logoutUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/logout?post_logout_redirect_uri=${encodeURIComponent(window.location.origin + '/login')}&client_id=${keycloakConfig.clientId}`;
-                window.location.href = logoutUrl;
-              }
-            };
-
-            // Clear stored tokens after successful initialization (they're now in Keycloak client)
-            sessionStorage.removeItem('kc_token');
-            sessionStorage.removeItem('kc_refresh_token');
-            sessionStorage.removeItem('kc_id_token');
-            sessionStorage.removeItem('kc_user');
-
-            console.log('✅ Keycloak initialized with stored tokens from custom login');
-            return;
-          }
-        } catch (e) {
-          console.warn('Failed to parse stored token:', e);
-          // Clear invalid tokens
-          sessionStorage.removeItem('kc_token');
-          sessionStorage.removeItem('kc_refresh_token');
-          sessionStorage.removeItem('kc_id_token');
-          sessionStorage.removeItem('kc_user');
-          // Fall through - will continue with normal Keycloak init below
-        }
-      };
-
-      initKeycloak();
-      return; // Exit early - we've handled token-based login
-    }
-
-    // Mock authentication mode for development/testing (only if no stored tokens)
-    // Also enable in Storybook environment
-    if (MOCK_AUTH_ENABLED || isStorybookEnv) {
-      // Check if a mock user was previously selected (persists across refreshes)
-      const savedMockUser = localStorage.getItem(MOCK_USER_SELECTED_KEY);
-
-      if (savedMockUser && !localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY)) {
-        try {
-          const selectedUser: MockUserProfile = JSON.parse(savedMockUser);
-          console.log(`🔓 Mock auth - resuming as ${selectedUser.label} (${selectedUser.email})`);
-          loginAsMockUser(keycloak, selectedUser, setAuthenticated, setUser, setInitialized);
-          return;
-        } catch {
-          localStorage.removeItem(MOCK_USER_SELECTED_KEY);
-        }
-      }
-
-      // No saved user or logged out — show dev sign-in page
-      console.log('🔓 Mock authentication enabled - showing dev sign-in');
-      setAuthenticated(false);
-      setUser(null);
-      setInitialized(true);
-      return;
-    }
-
-    // If Keycloak is not properly configured, use guest mode
-    if (!KEYCLOAK_AVAILABLE) {
-      console.warn(
-        '⚠️ Keycloak not configured - running in guest mode. Set VITE_KEYCLOAK_URL for authentication.',
-      );
-      setAuthenticated(false);
-      setUser(null);
-      setInitialized(true);
-      return;
-    }
-
-    const initKeycloak = async () => {
+    if (MOCK_AUTH_ENABLED) {
       try {
-        // Check if already initialized
-        if (keycloak.authenticated !== undefined) {
-          setAuthenticated(keycloak.authenticated);
-          setInitialized(true);
-
-          if (keycloak.authenticated && keycloak.tokenParsed) {
-            const tokenParsed = keycloak.tokenParsed as Record<string, unknown>;
-            setUser(extractUserProfile(keycloak, tokenParsed));
-          }
+        const selected = JSON.parse(localStorage.getItem(MOCK_USER_SELECTED_KEY) || 'null');
+        const savedUser = MOCK_USERS.find(profile => profile.id === selected?.id);
+        if (savedUser && !localStorage.getItem(MOCK_AUTH_LOGGED_OUT_KEY)) {
+          loginAsMockUser(keycloak, savedUser, setAuthenticated, setUser, setInitialized);
           return;
         }
+      } catch {
+        localStorage.removeItem(MOCK_USER_SELECTED_KEY);
+      }
+      setInitialized(true);
+      return;
+    }
 
-        // Set a timeout to prevent infinite loading
-        const timeoutId = setTimeout(() => {
-          console.warn('⚠️ Keycloak initialization timed out - running in guest mode');
-          setAuthenticated(false);
-          setUser(null);
-          setInitialized(true);
-        }, 10000); // 10 second timeout
-
-        const auth = await keycloak.init({
-          onLoad: 'check-sso',
-          silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-          pkceMethod: 'S256',
-        });
-
-        clearTimeout(timeoutId);
-        setAuthenticated(auth);
-        setInitialized(true);
-
-        // Expose keycloak to window for other modules to access token
-        (window as unknown as { keycloak: typeof keycloak }).keycloak = keycloak;
-
-        if (auth && keycloak.tokenParsed) {
-          const tokenParsed = keycloak.tokenParsed as Record<string, unknown>;
-          setUser(extractUserProfile(keycloak, tokenParsed));
-        }
-
-        // Token refresh
-        keycloak.onTokenExpired = () => {
-          keycloak.updateToken(30).catch(() => {
-            console.warn('Failed to refresh token, logging out');
-            keycloak.logout();
-          });
-        };
-      } catch (error) {
-        console.error('Keycloak initialization failed:', error);
-        // Don't hang - just run without authentication
-        setAuthenticated(false);
-        setUser(null);
-        setInitialized(true);
+    let sessionIdentity: string | null = null;
+    const syncSession = () => {
+      if (!active) return;
+      const loggedIn = keycloak.authenticated === true && !!keycloak.token;
+      const nextIdentity = loggedIn ? JSON.stringify([keycloak.subject, keycloak.tokenParsed?.organization, [...(keycloak.realmAccess?.roles || [])].sort(), keycloak.resourceAccess]) : null;
+      if (sessionIdentity !== nextIdentity) {
+        sessionIdentity = nextIdentity;
+        window.dispatchEvent(new Event('plainledger:auth-changed'));
+      }
+      setAuthenticated(loggedIn);
+      setUser(loggedIn && keycloak.tokenParsed
+        ? extractUserProfile(keycloak, { ...keycloak.idTokenParsed, ...keycloak.tokenParsed })
+        : null);
+      if (loggedIn) setAuthError(null);
+    };
+    const expireSession = () => {
+      keycloak.clearToken();
+      syncSession();
+      if (active) setAuthError('Your session expired. Sign in again.');
+    };
+    const refreshSession = async () => {
+      if (!keycloak.authenticated) return;
+      try {
+        await keycloak.updateToken(60);
+        syncSession();
+      } catch {
+        expireSession();
       }
     };
+    keycloak.onAuthSuccess = syncSession;
+    keycloak.onAuthRefreshSuccess = syncSession;
+    keycloak.onAuthLogout = syncSession;
+    keycloak.onAuthRefreshError = expireSession;
+    keycloak.onTokenExpired = () => { void refreshSession(); };
+    (window as unknown as { keycloak: Keycloak }).keycloak = keycloak;
 
-    initKeycloak();
+    const timeout = window.setTimeout(() => {
+      if (!active) return;
+      setAuthError('Secure sign-in is taking too long. Reload the page and try again.');
+      setInitialized(true);
+    }, 10000);
+    initializeKeycloak(keycloak).then(() => {
+      if (!active) return;
+      window.clearTimeout(timeout);
+      syncSession();
+      setInitialized(true);
+    }).catch(() => {
+      if (!active) return;
+      window.clearTimeout(timeout);
+      setAuthenticated(false);
+      setUser(null);
+      setAuthError('Secure sign-in is unavailable. Reload the page and try again.');
+      setInitialized(true);
+    });
+    const interval = window.setInterval(() => { void refreshSession(); }, 30000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void refreshSession();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      keycloak.onAuthSuccess = undefined;
+      keycloak.onAuthRefreshSuccess = undefined;
+      keycloak.onAuthLogout = undefined;
+      keycloak.onAuthRefreshError = undefined;
+      keycloak.onTokenExpired = undefined;
+    };
   }, [keycloak]);
 
-  // Login with optional email/loginHint (for custom login form) or IDP hint (e.g., 'google', 'microsoft', 'saml')
-  const login = (emailOrIdpHint?: string) => {
-    // Always redirect to custom login page - consistent behavior in all modes
-    // This maintains our custom UI/UX while using Keycloak securely via API
-    const loginUrl =
-      '/login' +
-      (emailOrIdpHint && emailOrIdpHint.includes('@')
-        ? `?email=${encodeURIComponent(emailOrIdpHint)}`
-        : '');
-    window.location.href = loginUrl;
+  const login = async (emailOrIdpHint?: string) => {
+    if (MOCK_AUTH_ENABLED) {
+      window.location.assign('/login');
+      return;
+    }
+    if (authError && !keycloak.authenticated) throw new Error(authError);
+    await initializeKeycloak(keycloak);
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    await keycloak.login({
+      redirectUri: getLoginRedirectUri(redirect),
+      ...(emailOrIdpHint?.includes('@') ? { loginHint: emailOrIdpHint.trim() } : emailOrIdpHint ? { idpHint: emailOrIdpHint } : {}),
+    });
   };
 
-  // Register (signup) - navigates to custom registration page that uses Keycloak Admin API
+  // The existing signup page also collects organization/onboarding information.
   const register = (redirectUri?: string) => {
-    // Always redirect to custom signup page - consistent behavior in all modes
-    // This maintains our custom UI/UX instead of redirecting to Keycloak's UI
-    const signupUrl =
-      '/signup' + (redirectUri ? `?redirect=${encodeURIComponent(redirectUri)}` : '');
-    window.location.href = signupUrl;
+    window.location.assign('/signup' + (redirectUri ? `?redirect=${encodeURIComponent(getLoginRedirectUri(redirectUri))}` : ''));
   };
 
   const logout = () => {
-    // Mock auth mode - just clear state
     if (MOCK_AUTH_ENABLED) {
-      // Persist logged out state and clear selected user
       localStorage.setItem(MOCK_AUTH_LOGGED_OUT_KEY, 'true');
       localStorage.removeItem(MOCK_USER_SELECTED_KEY);
+      keycloak.token = undefined;
+      keycloak.authenticated = false;
       setAuthenticated(false);
       setUser(null);
-      // Navigate to dev sign-in instead of full reload
       window.location.replace(window.location.origin + '/login');
       return;
     }
-
-    // If Keycloak isn't properly configured, just redirect to home
-    if (!isKeycloakConfigured) {
+    if (!keycloak.authenticated) {
       setAuthenticated(false);
       setUser(null);
-      window.location.replace(window.location.origin);
       return;
     }
-
-    // If we used stored tokens (custom login), Keycloak.init() was never called
-    // so the adapter isn't available. Handle logout manually.
-    if (usedStoredTokensRef.current) {
+    // Preserve the adapter's ID token until it builds the server logout request.
+    void keycloak.logout({ redirectUri: window.location.origin }).catch(() => {
+      keycloak.clearToken();
       setAuthenticated(false);
       setUser(null);
-      // Clear any remaining tokens
-      sessionStorage.removeItem('kc_token');
-      sessionStorage.removeItem('kc_refresh_token');
-      sessionStorage.removeItem('kc_id_token');
-      sessionStorage.removeItem('kc_user');
-      // Build logout URL manually to end session on Keycloak server
-      const logoutUrl = `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/logout?post_logout_redirect_uri=${encodeURIComponent(window.location.origin)}&client_id=${keycloakConfig.clientId}`;
-      window.location.href = logoutUrl;
-      return;
-    }
-
-    keycloak.logout({
-      redirectUri: window.location.origin,
+      setAuthError('Unable to complete sign-out. Reload the page and try again.');
     });
   };
 
   const getToken = () => {
-    return keycloak.token;
+    if (!keycloak.authenticated || !keycloak.token) return undefined;
+    if (MOCK_AUTH_ENABLED) return keycloak.token;
+    try {
+      return keycloak.isTokenExpired() ? undefined : keycloak.token;
+    } catch {
+      return undefined;
+    }
   };
 
   // Link an additional identity provider to the current account
@@ -641,7 +486,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
         'device-activity': 'Device & Sessions',
         'linked-accounts': 'Linked Accounts',
         applications: 'Applications',
-        'personal-info': 'Personal Info',
+        log: 'Sign-in History',
       };
 
       const sectionName = section ? sectionLabels[section] : 'Account Console';
@@ -666,6 +511,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
 
   // Dev sign-in: select a mock user and authenticate
   const selectMockUser = (mockUser: MockUserProfile) => {
+    if (!MOCK_AUTH_ENABLED) throw new Error('Mock authentication is disabled.');
     localStorage.setItem(MOCK_USER_SELECTED_KEY, JSON.stringify(mockUser));
     loginAsMockUser(keycloak, mockUser, setAuthenticated, setUser, setInitialized);
   };
@@ -675,6 +521,7 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     initialized,
     authenticated,
     user,
+    authError,
     login,
     register,
     logout,
@@ -685,7 +532,11 @@ export function KeycloakProvider({ children }: KeycloakProviderProps) {
     selectMockUser,
   };
 
-  return <KeycloakContext.Provider value={value}>{children}</KeycloakContext.Provider>;
+  return (
+    <KeycloakContext.Provider value={value}>
+      {children}
+    </KeycloakContext.Provider>
+  );
 }
 
 export function useKeycloak(): KeycloakContextType {
@@ -702,10 +553,12 @@ export function useAuth() {
 }
 
 export function useAuthenticatedFetch() {
-  const { getToken } = useKeycloak();
+  const { getToken, keycloak } = useKeycloak();
 
   return async (url: string, options: RequestInit = {}) => {
+    if (!MOCK_AUTH_ENABLED && keycloak.authenticated) await keycloak.updateToken(30);
     const token = getToken();
+    if (!token) throw new Error('Sign in to continue.');
     const headers = new Headers(options.headers);
 
     if (token) {
@@ -722,6 +575,6 @@ export function useAuthenticatedFetch() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    return response.status === 204 ? undefined : response.json();
   };
 }

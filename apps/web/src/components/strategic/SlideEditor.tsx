@@ -67,7 +67,8 @@ function DraggableElement({
   isEditMode: boolean;
   containerRef: React.RefObject<HTMLDivElement>;
 }) {
-  const { isEn } = useI18n();
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const [isResizing, setIsResizing] = useState(false);
   const resizeStartRef = useRef<{ width: number; height: number; mouseX: number; mouseY: number } | null>(null);
   
@@ -352,7 +353,8 @@ export default function SlideEditor({
   slideTitle,
   backgroundColor,
 }: SlideEditorProps) {
-  const { isEn } = useI18n();
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);

@@ -91,7 +91,7 @@ export function validateAIResponse(
  */
 function extractNumbers(message: string): number[] {
   const numbers: number[] = [];
-  const matches = message.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
+  const matches: string[] = message.match(/\$[\d,]+(?:\.\d{2})?/g) || [];
   
   matches.forEach(match => {
     const num = parseFloat(match.replace(/[$,]/g, ''));

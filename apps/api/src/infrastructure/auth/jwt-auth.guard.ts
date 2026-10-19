@@ -1,217 +1,72 @@
-/**
- * JWT Authentication Guard for REST APIs
- *
- * Protects REST controllers with Keycloak authentication.
- * Extracts user context from JWT token and validates access.
- *
- * Security features:
- * - JWT token validation via Keycloak
- * - Rate limiting per user
- * - Request logging for audit
- * - Tenant isolation enforcement
- */
 import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-  Logger,
+  Injectable, CanActivate, ExecutionContext, Logger, Inject, SetMetadata,
+  HttpException, HttpStatus, OnModuleDestroy,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
-import { SetMetadata } from "@nestjs/common";
-
-// Simple rate limiter for REST
-interface RateLimitEntry {
-  count: number;
-  resetAt: Date;
-}
+import { KEYCLOAK_INSTANCE, META_SKIP_AUTH, META_UNPROTECTED } from "nest-keycloak-connect";
+import * as KeycloakConnect from "keycloak-connect";
+import { assertSelectedOrganization, extractBearerToken, isDevelopmentAuthBypass, verifyKeycloakAccessToken } from "./keycloak-token";
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
+export class JwtAuthGuard implements CanActivate, OnModuleDestroy {
   private readonly logger = new Logger(JwtAuthGuard.name);
-  private readonly rateLimits: Map<string, RateLimitEntry> = new Map();
-  private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute
-  private readonly RATE_LIMIT_MAX = 100; // requests per window
+  private readonly rateLimits = new Map<string, { count: number; resetAt: number }>();
+  private readonly cleanupTimer: ReturnType<typeof setInterval>;
 
   constructor(
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
+    @Inject(KEYCLOAK_INSTANCE) private readonly keycloak: KeycloakConnect.Keycloak,
   ) {
-    // Clean up expired rate limits periodically
-    setInterval(() => {
-      const now = new Date();
-      for (const [key, entry] of this.rateLimits.entries()) {
-        if (entry.resetAt < now) {
-          this.rateLimits.delete(key);
-        }
+    this.cleanupTimer = setInterval(() => {
+      for (const [key, entry] of this.rateLimits) {
+        if (entry.resetAt <= Date.now()) this.rateLimits.delete(key);
       }
     }, 60000);
+    this.cleanupTimer.unref?.();
+  }
+
+  onModuleDestroy(): void {
+    clearInterval(this.cleanupTimer);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Check if endpoint is marked as public
-    const isPublic = this.reflector.get<boolean>(
-      "isPublic",
-      context.getHandler(),
-    );
-    if (isPublic) {
+    const targets = [context.getHandler(), context.getClass()];
+    // The installed Keycloak decorator uses separate unprotected/skip-auth keys.
+    // Honor only an explicit public declaration; acceptance and tenant routes
+    // still verify bearer tokens and the selected organization below.
+    const keycloakPublic = this.reflector.getAllAndOverride<boolean>(META_UNPROTECTED, targets) === true &&
+      this.reflector.getAllAndOverride<boolean>(META_SKIP_AUTH, targets) === true;
+    if (this.reflector.getAllAndOverride<boolean>("isPublic", targets) === true || keycloakPublic) {
       return true;
     }
-
     const request = context.switchToHttp().getRequest();
-
-    // SECURITY: Only skip auth in development mode - NEVER in production
-    const nodeEnv = this.configService.get<string>("NODE_ENV");
-    const isProduction = nodeEnv === "production";
-    const skipAuth = this.configService.get<string>("SKIP_AUTH") === "true";
-
-    if (isProduction && skipAuth) {
-      this.logger.error(
-        "SECURITY: SKIP_AUTH is enabled in production - this is ignored for security",
-      );
-    }
-
-    if (skipAuth && !isProduction) {
-      this.logger.warn(
-        `Authentication skipped (development mode, NODE_ENV=${nodeEnv})`,
-      );
-      request.user = this.getMockUser();
+    if (isDevelopmentAuthBypass(this.configService)) {
+      request.user = {
+        sub: "dev-user-123", userId: "dev-user-123", email: "dev@plainledger.ca",
+        emailVerified: false, roles: ["user", "admin"], name: "Development User",
+        organizationId: this.configService.get<string>("MOCK_ORG_ID") || "demo-org",
+      };
       return true;
     }
 
-    // Extract and validate token
-    const authHeader = request.headers.authorization;
-    if (!authHeader) {
-      this.logger.warn("No authorization header provided");
-      throw new UnauthorizedException("Authentication required");
+    const token = extractBearerToken(request?.headers?.authorization);
+    const user = await verifyKeycloakAccessToken(token, this.keycloak, this.configService);
+    assertSelectedOrganization(request.headers["x-organization-id"], user.organizationId);
+    const now = Date.now();
+    let entry = this.rateLimits.get(user.sub);
+    if (!entry || entry.resetAt <= now) {
+      entry = { count: 0, resetAt: now + 60000 };
+      this.rateLimits.set(user.sub, entry);
     }
-
-    const [type, token] = authHeader.split(" ");
-    if (type !== "Bearer" || !token) {
-      throw new UnauthorizedException("Invalid authorization format");
+    if (++entry.count > 100) {
+      throw new HttpException("Rate limit exceeded. Please try again later.", HttpStatus.TOO_MANY_REQUESTS);
     }
-
-    try {
-      // Decode and validate JWT
-      const user = await this.validateToken(token);
-
-      // Check rate limit
-      await this.checkRateLimit(user.sub);
-
-      // Attach user to request context
-      request.user = user;
-
-      // Log access for audit
-      this.logAccess(request, user);
-
-      return true;
-    } catch (error) {
-      this.logger.error(`Authentication failed: ${error}`);
-      throw new UnauthorizedException("Invalid or expired token");
-    }
-  }
-
-  /**
-   * Validate JWT token
-   * In production, this would verify with Keycloak
-   */
-  private async validateToken(token: string): Promise<{
-    sub: string;
-    email: string;
-    organizationId: string;
-    roles: string[];
-    name?: string;
-  }> {
-    try {
-      // Decode JWT payload (base64)
-      const parts = token.split(".");
-      if (parts.length !== 3) {
-        throw new Error("Invalid JWT format");
-      }
-
-      const payload = JSON.parse(
-        Buffer.from(parts[1], "base64").toString("utf8"),
-      );
-
-      // Check expiration
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        throw new Error("Token expired");
-      }
-
-      // Extract user info
-      return {
-        sub: payload.sub || payload.user_id,
-        email: payload.email || payload.preferred_username,
-        organizationId: payload.organization_id || payload.organization || payload.org_id || "default",
-        roles: payload.realm_access?.roles || payload.roles || [],
-        name: payload.name || payload.given_name,
-      };
-    } catch (error) {
-      throw new Error(`Token validation failed: ${error}`);
-    }
-  }
-
-  /**
-   * Check rate limit for user
-   */
-  private async checkRateLimit(userId: string): Promise<void> {
-    const key = `rate:${userId}`;
-    const now = new Date();
-
-    let entry = this.rateLimits.get(key);
-
-    if (!entry || entry.resetAt < now) {
-      // Create new window
-      entry = {
-        count: 1,
-        resetAt: new Date(now.getTime() + this.RATE_LIMIT_WINDOW),
-      };
-      this.rateLimits.set(key, entry);
-      return;
-    }
-
-    entry.count++;
-
-    if (entry.count > this.RATE_LIMIT_MAX) {
-      this.logger.warn(`Rate limit exceeded for user: ${userId}`);
-      throw new Error("Rate limit exceeded. Please try again later.");
-    }
-  }
-
-  /**
-   * Log access for audit trail
-   */
-  private logAccess(
-    request: any,
-    user: { sub: string; email: string; organizationId: string },
-  ): void {
-    const method = request.method;
-    const url = request.url;
-
-    this.logger.log(
-      `[Audit] ${method} ${url} - User: ${user.email}, Org: ${user.organizationId}`,
-    );
-  }
-
-  /**
-   * Get mock user for development
-   * Organization ID can be set via MOCK_ORG_ID environment variable
-   */
-  private getMockUser() {
-    const mockOrgId =
-      this.configService.get<string>("MOCK_ORG_ID") || "default";
-    return {
-      sub: "dev-user-123",
-      email: "dev@plainledger.ca",
-      organizationId: mockOrgId,
-      roles: ["user", "admin"],
-      name: "Development User",
-    };
+    request.user = user;
+    this.logger.debug(`[Audit] ${request.method} - User: ${user.sub}, Org: ${user.organizationId}`);
+    return true;
   }
 }
 
-/**
- * Decorator to mark endpoint as public (no auth required)
- */
 export const Public = () => SetMetadata("isPublic", true);

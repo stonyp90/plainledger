@@ -33,6 +33,8 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
+import { ChartDataState } from '../charts/ChartDataState';
+import { isFiniteNumber } from '../../lib/chartDataValidation';
 
 // Types
 interface ExpenseCategory {
@@ -91,42 +93,6 @@ const DEFAULT_CATEGORIES: ExpenseCategory[] = [
   { id: 'vehicles', name: 'Véhicules', nameEn: 'Vehicles', type: 'capex', color: '#6366F1' },
 ];
 
-// Generate sample data
-function generateSampleData(months: number, categories: ExpenseCategory[]): ExpenseDataPoint[] {
-  const data: ExpenseDataPoint[] = [];
-  const now = new Date();
-  
-  for (let i = months - 1; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthStr = date.toISOString().slice(0, 7);
-    
-    const categoryData: Record<string, number> = {};
-    let total = 0;
-    
-    categories.forEach(cat => {
-      // Base values with some randomness and growth
-      const baseValues: Record<string, number> = {
-        salaries: 45000 + Math.random() * 5000,
-        rent: 8000,
-        marketing: 5000 + Math.random() * 3000,
-        software: 2000 + Math.random() * 1000,
-        utilities: 1500 + Math.random() * 500,
-        equipment: Math.random() > 0.7 ? 10000 + Math.random() * 15000 : 0,
-        property: Math.random() > 0.9 ? 50000 + Math.random() * 50000 : 0,
-        vehicles: Math.random() > 0.95 ? 25000 + Math.random() * 25000 : 0,
-      };
-      
-      const value = Math.round(baseValues[cat.id] || 1000 + Math.random() * 2000);
-      categoryData[cat.id] = value;
-      total += value;
-    });
-    
-    data.push({ month: monthStr, categories: categoryData, total });
-  }
-  
-  return data;
-}
-
 // Generate projections
 function generateProjections(
   historical: ExpenseDataPoint[],
@@ -184,13 +150,25 @@ export default function OpExCapExChart({
   historicalData,
   projectedData,
   budgetData,
-  categories = DEFAULT_CATEGORIES,
+  categories: inputCategories = DEFAULT_CATEGORIES,
   currentMonth,
   onSettingsChange,
   onExport,
 }: OpExCapExChartProps) {
   const { language } = useI18n();
   const isEn = language === 'en';
+  const categories = Array.isArray(inputCategories) ? inputCategories : [];
+  const invalidCategories = !Array.isArray(inputCategories) || categories.some(category =>
+    !category || !category.id || !['opex', 'capex'].includes(category.type));
+  const validPoint = (point: ExpenseDataPoint) => !!point && /^\d{4}-(0[1-9]|1[0-2])$/.test(point.month) &&
+    isFiniteNumber(point.total) && !!point.categories && typeof point.categories === 'object' &&
+    Object.values(point.categories).every(isFiniteNumber) &&
+    Math.abs(Object.values(point.categories).reduce((sum, value) => sum + value, 0) - point.total) < 0.01;
+  const categoryIds = new Set(categories.map(category => category?.id));
+  const validSeries = (data: ExpenseDataPoint[]) => new Set(data.map(point => point?.month)).size === data.length && data.every(point => validPoint(point) && Object.keys(point.categories).every(id => categoryIds.has(id)));
+  const invalidData = invalidCategories || categoryIds.size !== categories.length || (historicalData !== undefined && (!Array.isArray(historicalData) || !validSeries(historicalData))) ||
+    (projectedData !== undefined && (!Array.isArray(projectedData) || !validSeries(projectedData)));
+
   
   // State
   const [config, setConfig] = useState<ChartConfig>({
@@ -205,16 +183,18 @@ export default function OpExCapExChart({
     compareMode: 'none',
   });
   
+  const [chartPage, setChartPage] = useState(0);
   const [settings, setSettings] = useState<ProjectionSettings>({
-    growthRate: 5,
-    seasonalityEnabled: true,
-    inflationRate: 2.5,
+    growthRate: 0,
+    seasonalityEnabled: false,
+    inflationRate: 0,
     scenarioMultiplier: 1,
   });
   
   const [showSettings, setShowSettings] = useState(false);
   const [hoveredPoint, setHoveredPoint] = useState<{ month: string; x: number; y: number } | null>(null);
-  const [visibleCategories, setVisibleCategories] = useState<Set<string>>(new Set(categories.map(c => c.id)));
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+  const visibleCategories = useMemo(() => new Set(categories.filter(c => c && !hiddenCategories.has(c.id)).map(c => c.id)), [categories, hiddenCategories]);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Handle Escape key to exit fullscreen
@@ -233,35 +213,32 @@ export default function OpExCapExChart({
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [isFullscreen]);
   
-  const historical = historicalData || [];
+  const historical = useMemo(() => invalidData ? [] : (historicalData || []), [historicalData, invalidData]);
   const projected = useMemo(() => {
-    if (projectedData && projectedData.length > 0) return projectedData;
+    if (invalidData) return [];
+    if (projectedData !== undefined) return projectedData;
     return generateProjections(historical, 12, settings, categories);
-  }, [projectedData, historical, settings, categories]);
+  }, [projectedData, historical, settings, categories, invalidData]);
   
-  // Filter data by time range
+  // Center the window on the selected or latest recorded month, including forecasts.
   const filteredData = useMemo(() => {
-    const allData = [...historical, ...projected];
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (config.timeRange) {
-      case '6m':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-        break;
-      case '12m':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
-        break;
-      case '24m':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 12, 1);
-        break;
-      default:
-        startDate = new Date(0);
-    }
-    
-    return allData.filter(d => new Date(d.month + '-01') >= startDate);
-  }, [historical, projected, config.timeRange]);
-  
+    const allData = [...historical, ...(config.showProjection ? projected : [])].sort((a, b) => a.month.localeCompare(b.month));
+    if (config.timeRange === 'all' || allData.length === 0) return allData;
+    const anchor = currentMonth || historical[historical.length - 1]?.month || allData[0].month;
+    const date = new Date(anchor + '-01T00:00:00Z');
+    const halfWindow = Number.parseInt(config.timeRange) / 2;
+    const start = new Date(date); start.setUTCMonth(start.getUTCMonth() - halfWindow + 1);
+    const end = new Date(date); end.setUTCMonth(end.getUTCMonth() + halfWindow + 1);
+    return allData.filter(point => {
+      const month = new Date(point.month + '-01T00:00:00Z');
+      return month >= start && month < end;
+    });
+  }, [historical, projected, config.timeRange, config.showProjection, currentMonth]);
+
+  const safeChartPage = Math.min(chartPage, Math.max(0, Math.ceil(filteredData.length / 60) - 1));
+  const displayedData = filteredData.slice(safeChartPage * 60, (safeChartPage + 1) * 60);
+  const recordedMonths = useMemo(() => new Set(historical.map(point => point.month)), [historical]);
+
   // Calculate totals
   const totals = useMemo(() => {
     const opexCategories = categories.filter(c => c.type === 'opex').map(c => c.id);
@@ -287,20 +264,25 @@ export default function OpExCapExChart({
   
   // Chart dimensions
   const chartHeight = isFullscreen ? 500 : 300;
-  const maxValue = useMemo(() => {
-    return Math.max(...filteredData.map(d => {
-      let sum = 0;
-      categories.forEach(cat => {
-        if (visibleCategories.has(cat.id)) {
-          if ((cat.type === 'opex' && config.showOpex) || (cat.type === 'capex' && config.showCapex)) {
-            sum += d.categories[cat.id] || 0;
-          }
-        }
-      });
-      return sum;
-    })) * 1.1;
-  }, [filteredData, categories, visibleCategories, config]);
-  
+  const { maxValue, minValue } = useMemo(() => {
+    let positiveMax = 0;
+    let negativeMin = 0;
+    for (const point of displayedData) {
+      let positive = 0;
+      let negative = 0;
+      for (const category of categories) {
+        if (!visibleCategories.has(category.id) || (category.type === 'opex' ? !config.showOpex : !config.showCapex)) continue;
+        const value = point.categories[category.id] ?? 0;
+        if (value >= 0) positive += value; else negative += value;
+      }
+      positiveMax = Math.max(positiveMax, positive);
+      negativeMin = Math.min(negativeMin, negative);
+    }
+    return { maxValue: positiveMax === 0 && negativeMin === 0 ? 1 : positiveMax * 1.1, minValue: negativeMin * 1.1 };
+  }, [displayedData, categories, visibleCategories, config.showOpex, config.showCapex]);
+  const plotRange = maxValue - minValue;
+  const valueY = (value: number) => 100 - ((value - minValue) / plotRange) * 100;
+
   const formatCurrency = (value: number) => {
     if (Math.abs(value) >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
     if (Math.abs(value) >= 1000) return `$${(value / 1000).toFixed(0)}K`;
@@ -313,7 +295,7 @@ export default function OpExCapExChart({
   };
   
   const toggleCategory = (id: string) => {
-    setVisibleCategories(prev => {
+    setHiddenCategories(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -353,7 +335,8 @@ export default function OpExCapExChart({
         ...categories.map(c => d.categories[c.id] || 0),
         d.total,
       ]);
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const csvCell = (value: unknown) => `"${String(value).replace(/"/g, '""')}"`;
+      const csv = [headers, ...rows].map(row => row.map(csvCell).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -380,28 +363,35 @@ export default function OpExCapExChart({
       });
   }, [categories, visibleCategories, config.showOpex, config.showCapex]);
 
-  // Return null if no real data - no fallback to sample data (after all hooks)
-  if (!historicalData || historicalData.length === 0) {
-    return null;
+  if (invalidData || projected.some(point => !validPoint(point) || recordedMonths.has(point.month)) || !Number.isFinite(plotRange) ||
+      !Object.values(totals).every(Number.isFinite)) {
+    return <ChartDataState title="OpEx / CapEx" issue="invalid" isEn={isEn} />;
+  }
+  if (historical.length === 0 && projected.length === 0) {
+    return <ChartDataState title="OpEx / CapEx" issue="empty" isEn={isEn} />;
   }
 
   // Render stacked bar chart
   const renderStackedBars = () => {
-    const barWidth = 100 / filteredData.length - 2;
+    const step = 100 / displayedData.length;
+    const barWidth = step * 0.8;
     const historicalMonths = new Set(historical.map(d => d.month));
     const visibleCats = getVisibleCategories();
     
-    return filteredData.map((data, index) => {
+    return displayedData.map((data, index) => {
       const isProjected = !historicalMonths.has(data.month);
-      const x = (index / filteredData.length) * 100 + 1;
-      let yOffset = 0;
+      const x = index * step + step * 0.1;
+      let positiveOffset = 0;
+      let negativeOffset = 0;
       
-      const bars: JSX.Element[] = [];
+      const bars: React.JSX.Element[] = [];
       
       visibleCats.forEach(cat => {
         const value = data.categories[cat.id] || 0;
-        const height = (value / maxValue) * 100;
-        const y = 100 - yOffset - height;
+        const from = value >= 0 ? positiveOffset : negativeOffset;
+        const to = from + value;
+        const height = Math.abs(value) / plotRange * 100;
+        const y = Math.min(valueY(from), valueY(to));
         
         bars.push(
           <rect
@@ -423,7 +413,7 @@ export default function OpExCapExChart({
           />
         );
         
-        yOffset += height;
+        if (value >= 0) positiveOffset += value; else negativeOffset += value;
       });
       
       return (
@@ -446,12 +436,13 @@ export default function OpExCapExChart({
     const numCategories = visibleCats.length;
     if (numCategories === 0) return null;
     
-    const groupWidth = 100 / filteredData.length - 1;
-    const barWidth = groupWidth / numCategories - 0.5;
+    const step = 100 / displayedData.length;
+    const groupWidth = step * 0.8;
+    const barWidth = groupWidth / numCategories * 0.9;
     
-    return filteredData.map((data, index) => {
+    return displayedData.map((data, index) => {
       const isProjected = !historicalMonths.has(data.month);
-      const groupX = (index / filteredData.length) * 100 + 0.5;
+      const groupX = index * step + step * 0.1;
       
       return (
         <g 
@@ -462,9 +453,9 @@ export default function OpExCapExChart({
         >
           {visibleCats.map((cat, catIndex) => {
             const value = data.categories[cat.id] || 0;
-            const height = (value / maxValue) * 100;
-            const x = groupX + catIndex * (barWidth + 0.5);
-            const y = 100 - height;
+            const height = Math.abs(value) / plotRange * 100;
+            const x = groupX + catIndex * (groupWidth / numCategories);
+            const y = Math.min(valueY(0), valueY(value));
             
             return (
               <rect
@@ -495,10 +486,10 @@ export default function OpExCapExChart({
     
     return visibleCats.map(cat => {
       // Build path for this category
-      const points = filteredData.map((data, index) => {
+      const points = displayedData.map((data, index) => {
         const value = data.categories[cat.id] || 0;
-        const x = (index / (filteredData.length - 1)) * 100;
-        const y = 100 - (value / maxValue) * 100;
+        const x = displayedData.length === 1 ? 50 : (index / (displayedData.length - 1)) * 100;
+        const y = valueY(value);
         return { x, y, isProjected: !historicalMonths.has(data.month) };
       });
       
@@ -563,13 +554,13 @@ export default function OpExCapExChart({
               key={i}
               cx={`${point.x}%`}
               cy={`${point.y}%`}
-              r={hoveredPoint?.month === filteredData[i]?.month ? 5 : 3}
+              r={hoveredPoint?.month === displayedData[i]?.month ? 5 : 3}
               fill={cat.color}
               opacity={point.isProjected ? 0.6 : 1}
               className="transition-all duration-200"
               onMouseEnter={(e) => {
-                if (filteredData[i]) {
-                  setHoveredPoint({ month: filteredData[i].month, x: e.clientX, y: e.clientY });
+                if (displayedData[i]) {
+                  setHoveredPoint({ month: displayedData[i].month, x: e.clientX, y: e.clientY });
                 }
               }}
               onMouseLeave={() => setHoveredPoint(null)}
@@ -643,6 +634,7 @@ export default function OpExCapExChart({
               ].map(({ type, icon: Icon }) => (
                 <button
                   key={type}
+                  aria-label={`${isEn ? 'Chart type' : 'Type de graphique'}: ${type}`}
                   onClick={() => setConfig(c => ({ ...c, chartType: type }))}
                   className="p-2 transition-colors"
                   style={{
@@ -890,7 +882,7 @@ export default function OpExCapExChart({
             </span>
           </div>
           <p className="text-lg font-bold" style={{ color: 'rgb(var(--color-text))' }}>
-            {formatCurrency((totals.totalOpex + totals.totalCapex) / historical.length)}
+            {historical.length > 0 ? formatCurrency((totals.totalOpex + totals.totalCapex) / historical.length) : '—'}
           </p>
           <p className="text-xs" style={{ color: 'rgb(var(--color-text-muted))' }}>
             {historical.length} {isEn ? 'months data' : 'mois de données'}
@@ -962,6 +954,11 @@ export default function OpExCapExChart({
       {/* Chart */}
       <div className="px-4 pb-4">
         <div className="relative" style={{ height: chartHeight }}>
+          {(displayedData.length === 0 || getVisibleCategories().length === 0) && (
+            <p role="status" className="absolute inset-0 z-10 flex items-center justify-center text-sm" style={{ color: 'rgb(var(--color-text-muted))' }}>
+              {isEn ? 'Select a period and categories with data to display.' : 'Sélectionnez une période et des catégories contenant des données.'}
+            </p>
+          )}
           <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
             {/* Grid */}
             {[0, 25, 50, 75, 100].map(y => (
@@ -980,7 +977,7 @@ export default function OpExCapExChart({
             
             {/* Projection divider */}
             {(() => {
-              const projectionStart = historical.length / filteredData.length * 100;
+              const projectionStart = displayedData.filter(point => recordedMonths.has(point.month)).length / displayedData.length * 100;
               if (projectionStart > 0 && projectionStart < 100) {
                 return (
                   <line
@@ -1004,13 +1001,13 @@ export default function OpExCapExChart({
           {/* Y-axis labels */}
           <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[10px] -ml-1 pointer-events-none" style={{ color: 'rgb(var(--color-text-muted))' }}>
             <span>{formatCurrency(maxValue)}</span>
-            <span>{formatCurrency(maxValue / 2)}</span>
-            <span>$0</span>
+            <span>{formatCurrency((maxValue + minValue) / 2)}</span>
+            <span>{formatCurrency(minValue)}</span>
           </div>
           
           {/* Hover tooltip */}
           {hoveredPoint && (() => {
-            const data = filteredData.find(d => d.month === hoveredPoint.month);
+            const data = displayedData.find(d => d.month === hoveredPoint.month);
             if (!data) return null;
             
             const isProjected = !historical.find(h => h.month === hoveredPoint.month);
@@ -1056,12 +1053,17 @@ export default function OpExCapExChart({
         
         {/* X-axis labels */}
         <div className="flex justify-between mt-2 text-[10px] px-1" style={{ color: 'rgb(var(--color-text-muted))' }}>
-          {filteredData.filter((_, i) => i % Math.ceil(filteredData.length / 8) === 0).map((d, i) => (
+          {displayedData.filter((_, i) => i % Math.ceil(displayedData.length / 8) === 0).map((d, i) => (
             <span key={i}>{formatMonth(d.month)}</span>
           ))}
         </div>
       </div>
       
+      {filteredData.length > 60 && <nav aria-label="Expense chart periods" className="flex flex-wrap items-center justify-center gap-3 px-4 pb-4 text-sm">
+        <button className="btn-secondary btn-sm" disabled={safeChartPage === 0} onClick={() => setChartPage(safeChartPage - 1)}>{isEn ? 'Previous' : 'Précédent'}</button>
+        <span>{safeChartPage * 60 + 1}–{Math.min((safeChartPage + 1) * 60, filteredData.length)} / {filteredData.length}</span>
+        <button className="btn-secondary btn-sm" disabled={(safeChartPage + 1) * 60 >= filteredData.length} onClick={() => setChartPage(safeChartPage + 1)}>{isEn ? 'Next' : 'Suivant'}</button>
+      </nav>}
       {/* Legend */}
       <div className="px-4 pb-4">
         <div className="flex items-center justify-center gap-4 text-xs">

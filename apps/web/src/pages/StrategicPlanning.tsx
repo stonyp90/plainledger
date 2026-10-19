@@ -98,7 +98,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 're_optimize_expenses',
       title: { en: 'Optimize Operating Expenses', fr: 'Optimiser les dépenses opérationnelles' },
       description: { en: 'Reduce property management costs and negotiate vendor contracts', fr: 'Réduire les coûts de gestion immobilière et négocier les contrats fournisseurs' },
-      metric: 'operating_expenses',
+      metric: 'custom',
       icon: TrendingDown,
       successRate: 80,
       avgImpact: 4500,
@@ -118,7 +118,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 're_renovate',
       title: { en: 'Property Improvements', fr: 'Améliorations de propriété' },
       description: { en: 'Strategic renovations to increase rental value', fr: 'Rénovations stratégiques pour augmenter la valeur locative' },
-      metric: 'rental_income',
+      metric: 'custom',
       icon: DollarSign,
       successRate: 70,
       avgImpact: 12000,
@@ -150,7 +150,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 'rst_revenue',
       title: { en: 'Increase Average Check', fr: 'Augmenter l\'addition moyenne' },
       description: { en: 'Upselling training and menu optimization', fr: 'Formation à la vente additionnelle et optimisation du menu' },
-      metric: 'revenue_per_seat',
+      metric: 'custom',
       icon: TrendingUp,
       successRate: 72,
       avgImpact: 3200,
@@ -172,7 +172,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 'ps_pricing',
       title: { en: 'Review Pricing Strategy', fr: 'Réviser la stratégie tarifaire' },
       description: { en: 'Value-based pricing and rate card updates', fr: 'Tarification basée sur la valeur et mise à jour des tarifs' },
-      metric: 'avg_hourly_rate',
+      metric: 'custom',
       icon: DollarSign,
       successRate: 65,
       avgImpact: 12000,
@@ -182,7 +182,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 'ps_clients',
       title: { en: 'Expand Client Base', fr: 'Élargir la clientèle' },
       description: { en: 'Business development and marketing initiatives', fr: 'Développement commercial et initiatives marketing' },
-      metric: 'new_clients',
+      metric: 'custom',
       icon: Users,
       successRate: 60,
       avgImpact: 15000,
@@ -204,7 +204,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 'ret_margins',
       title: { en: 'Improve Gross Margins', fr: 'Améliorer les marges brutes' },
       description: { en: 'Pricing strategy and supplier negotiations', fr: 'Stratégie de prix et négociations fournisseurs' },
-      metric: 'gross_margin_pct',
+      metric: 'gross_margin',
       icon: DollarSign,
       successRate: 70,
       avgImpact: 8000,
@@ -214,7 +214,7 @@ const INDUSTRY_ACTIONS: Record<string, Array<{
       id: 'ret_traffic',
       title: { en: 'Increase Store Traffic', fr: 'Augmenter l\'achalandage' },
       description: { en: 'Marketing and customer experience improvements', fr: 'Marketing et amélioration de l\'expérience client' },
-      metric: 'foot_traffic',
+      metric: 'custom',
       icon: Users,
       successRate: 65,
       avgImpact: 6000,
@@ -229,7 +229,7 @@ const DEFAULT_ACTIONS = [
     id: 'default_reduce_costs',
     title: { en: 'Reduce Operating Costs', fr: 'Réduire les coûts opérationnels' },
     description: { en: 'Identify and eliminate inefficiencies in operations', fr: 'Identifier et éliminer les inefficacités opérationnelles' },
-    metric: 'operating_expenses' as DataMetric,
+    metric: 'custom' as DataMetric,
     icon: TrendingDown,
     successRate: 75,
     avgImpact: 5000,
@@ -305,16 +305,22 @@ export default function StrategicPlanning() {
   // Get industry-specific actions
   const industryActions = INDUSTRY_ACTIONS[industry] || DEFAULT_ACTIONS;
   
-  // Financial context for AI
-  const financialContext = useMemo(() => ({
-    currentCash: financialData?.summary?.cashBalance || 0,
-    monthlyRevenue: financialData?.metrics?.revenue || 0,
-    monthlyExpenses: financialData?.metrics?.expenses || 0,
-    industry,
-    organizationName: currentTenant?.name || 'Your Business',
-    initiatives: [],
-  }), [financialData, industry, currentTenant]);
-  
+  // Send only finite metrics that actually came from this organization's report.
+  const financialContext = useMemo(() => {
+    if (!financialData) return null;
+    const summary = financialData.summary;
+    const values = [summary.cash.current, summary.revenue.current, summary.expenses.current, summary.cash.runway, summary.cash.burnRate];
+    if (!values.every(Number.isFinite)) return null;
+    return {
+      currentCash: summary.cash.current,
+      monthlyRevenue: summary.revenue.current,
+      monthlyExpenses: summary.expenses.current,
+      runwayMonths: summary.cash.runway,
+      burnRate: summary.cash.burnRate,
+      initiatives: [],
+    };
+  }, [financialData]);
+
   // Scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -333,6 +339,13 @@ export default function StrategicPlanning() {
   const handleSend = async (messageText?: string) => {
     const text = messageText || inputValue.trim();
     if (!text || isLoading) return;
+    if (!financialContext) {
+      setMessages(previous => [...previous, {
+        id: `missing-data-${Date.now()}`, role: 'assistant', timestamp: new Date(),
+        content: isEn ? 'Financial data is not available yet. Load your ledger before requesting a financial analysis.' : 'Les données financières ne sont pas encore disponibles. Chargez votre grand livre avant de demander une analyse financière.',
+      }]);
+      return;
+    }
     
     setInputValue('');
     setIsLoading(true);

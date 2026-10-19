@@ -41,7 +41,7 @@ import {
   generateId,
 } from '../../lib/visualizationTypes';
 import { ChartType, TimeRange, ComparisonMode } from '../../lib/chartFavorites';
-import { DataSourceSelector } from './DataSourceSelector';
+import DataSourceSelector from './SchemaSourceSelector';
 import { FieldPicker } from './FieldPicker';
 import { MetadataEditor } from './MetadataEditor';
 import { JoinBuilder } from './JoinBuilder';
@@ -366,7 +366,7 @@ export function VisualizationBuilder({
   if (!isOpen) return null;
 
   return (
-    <PremiumFeatureGate feature="advancedAnalytics" fallback={null}>
+    <PremiumFeatureGate feature="advancedAnalytics">
       {/* Modal Backdrop */}
       <div 
         className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6"

@@ -518,6 +518,16 @@ lib/
 
 ### Styling Guidelines
 
+**Public navigation:** `PublicHeader` keeps the full desktop navigation at `lg` (1024px) because French navigation labels, the logo, theme and language selectors, and the primary action do not fit at 768px. Keep navigation, actions and the menu toggle on the same breakpoint. Verify the 768px layout in a real browser without hiding page overflow. The mobile menu exposes its expanded state, closes after navigation, supports Escape, and retains dashboard access for authenticated visitors.
+
+**Invitation state:** Preview is public and authorized only by the invitation token: use `authentication: 'none'` so session initialization and tenant changes do not interrupt it or send ambient credentials. Acceptance remains authenticated, requires the verified matching email, and waits for tenant initialization to finish; an invitee need not already have membership. Clear a previous preview before retrying. An unsuccessful or expired preview must not leave an acceptance action enabled. Check expiry again before accepting, and stop preview requests after the server confirms membership.
+
+**Tenant bootstrap:** Change the request scope and await Apollo cache clearing before loading membership. Do not refetch previous-page observers during this transition: the page unmounts while membership loads, and its aborted refetch can prevent bootstrap. The verified page fetches when mounted. Keep response-scope checks so an old tenant response can never populate the new tenant cache.
+
+**Onboarding completion:** Use the shared authenticated API client and require `success: true` with the selected tenant slug and organization UUID before persisting completion or navigating. Prevent duplicate saves, discard responses after account/tenant changes or unmount, and keep server failures retryable. Prefill the current organization and allow members/viewers to complete without changing organization settings. Onboarding does not connect providers or send invitations. Route those actions to Connections and Team settings, and derive completion analytics from confirmed server results.
+
+**Account security:** The current API has no MFA-status, session-list, or login-history endpoints. Display their unavailable state without sample devices, locations, logins, or a guessed disabled MFA status. Use the configured sign-in client's `accountManagement()` for password, authentication methods, and session management, with a retryable navigation error. Never imply that opening account management changed a credential or revoked a session.
+
 **DO:**
 - Use TailwindCSS utility classes
 - Use CSS variables for colors
@@ -876,7 +886,6 @@ test('should navigate to page', async ({ page }) => {
 - `DataVisualization.tsx` (1745 lines) → Split by chart type
 - `OrganizationSwitcher.tsx` (1718 lines) → Extract: OrganizationList, OrganizationSearch, OrganizationCreate
 - `ModelSpreadsheet.tsx` (1480 lines) → Split into: SpreadsheetGrid, SpreadsheetToolbar, SpreadsheetFormulas
-- `Onboarding.tsx` (1437 lines) → Split into steps: WelcomeStep, ConnectStep, ConfigureStep
 - `Layout.tsx` (1393 lines) → Extract: Sidebar, Header, Navigation
 - `HealthScoreGauge.tsx` (1337 lines) → Extract: GaugeChart, ScoreCalculation, ScoreDetails
 - `SearchModal.tsx` (1332 lines) → Extract: SearchInput, SearchResults, SearchFilters

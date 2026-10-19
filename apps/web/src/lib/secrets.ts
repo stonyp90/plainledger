@@ -1,3 +1,5 @@
+import { getAuthenticatedRequestHeaders } from './authRequestContext';
+import { isMockAuthEnabled } from './keycloak';
 /**
  * PlainLedger Secrets Management Service
  * 
@@ -222,28 +224,18 @@ class SecretsService {
   private isDemoMode: boolean;
   
   constructor() {
-    this.apiBaseUrl = import.meta.env.VITE_API_URL || '';
-    // If no API URL is configured, use demo mode with mock data
-    this.isDemoMode = !this.apiBaseUrl;
+    this.apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '').replace(/\/api$/, '');
+    // Example metadata is available only in explicit development authentication mode.
+    this.isDemoMode = isMockAuthEnabled();
   }
   
   /**
    * Get authorization header for API requests
    */
-  private async getAuthHeader(): Promise<Record<string, string>> {
-    // Get JWT token from Keycloak (window.keycloak or sessionStorage)
-    let token = '';
-    if (typeof window !== 'undefined' && (window as unknown as { keycloak?: { token?: string } }).keycloak?.token) {
-      token = (window as unknown as { keycloak: { token: string } }).keycloak.token;
-    } else {
-      token = sessionStorage.getItem('kc_token') || localStorage.getItem('kc_token') || '';
-    }
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
+  private async getAuthHeader(): Promise<Headers> {
+    return getAuthenticatedRequestHeaders({ 'Content-Type': 'application/json' });
   }
-  
+
   /**
    * List all secrets for an organization (metadata only, no values)
    */
@@ -256,14 +248,10 @@ class SecretsService {
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(
-        `${this.apiBaseUrl}/secrets?organizationId=${organizationId}`,
+        `${this.apiBaseUrl}/api/secrets?organizationId=${organizationId}`,
         { headers }
       );
       
-      // 403/404 are expected for free tier or demo users - return mock data silently
-      if (response.status === 403 || response.status === 404) {
-        return this.getMockSecrets(organizationId);
-      }
       
       if (!response.ok) {
         throw new Error('Failed to fetch secrets');
@@ -272,14 +260,12 @@ class SecretsService {
       // Check if response is JSON before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        // Server returned HTML or other non-JSON - return mock data
-        return this.getMockSecrets(organizationId);
+        throw new Error('The secrets service returned an invalid response');
       }
       
       return await response.json();
     } catch (error) {
-      // Silently return mock data - API errors are expected for demo/free tier users
-      return this.getMockSecrets(organizationId);
+      throw error;
     }
   }
   
@@ -315,7 +301,7 @@ class SecretsService {
     
     try {
       const headers = await this.getAuthHeader();
-      const response = await fetch(`${this.apiBaseUrl}/secrets`, {
+      const response = await fetch(`${this.apiBaseUrl}/api/secrets`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -370,7 +356,7 @@ class SecretsService {
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(
-        `${this.apiBaseUrl}/secrets/${request.secretId}/rotate`,
+        `${this.apiBaseUrl}/api/secrets/${request.secretId}/rotate`,
         {
           method: 'POST',
           headers,
@@ -413,7 +399,7 @@ class SecretsService {
     try {
       const headers = await this.getAuthHeader();
       await fetch(
-        `${this.apiBaseUrl}/secrets/${secretId}/revoke`,
+        `${this.apiBaseUrl}/api/secrets/${secretId}/revoke`,
         {
           method: 'POST',
           headers,
@@ -444,7 +430,7 @@ class SecretsService {
     
     try {
       const headers = await this.getAuthHeader();
-      await fetch(`${this.apiBaseUrl}/secrets/${secretId}`, {
+      await fetch(`${this.apiBaseUrl}/api/secrets/${secretId}`, {
         method: 'DELETE',
         headers,
         body: JSON.stringify({ organizationId }),
@@ -474,7 +460,7 @@ class SecretsService {
     try {
       const headers = await this.getAuthHeader();
       const response = await fetch(
-        `${this.apiBaseUrl}/secrets/${secretId}/validate`,
+        `${this.apiBaseUrl}/api/secrets/${secretId}/validate`,
         {
           method: 'POST',
           headers,
@@ -515,7 +501,7 @@ class SecretsService {
       });
       
       const response = await fetch(
-        `${this.apiBaseUrl}/secrets/audit-logs?${params}`,
+        `${this.apiBaseUrl}/api/secrets/audit-logs?${params}`,
         { headers }
       );
       
@@ -525,8 +511,7 @@ class SecretsService {
       
       return await response.json();
     } catch (error) {
-      console.error('[SecretsService] Failed to fetch audit logs:', error);
-      return this.getMockAuditLogs();
+      throw error;
     }
   }
   

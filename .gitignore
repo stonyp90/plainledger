@@ -17,6 +17,7 @@ coverage/
 .nyc_output/
 playwright-report/
 e2e/.auth/
+e2e/.runtime/
 test-results/
 openapi-spec.json
 test/contract/api-contract.json
