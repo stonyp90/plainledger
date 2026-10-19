@@ -10,7 +10,6 @@ import { motion } from 'framer-motion';
 import { useI18n } from '../lib/i18n';
 import PublicHeader from '../components/PublicHeader';
 import ComplianceRoadmap from '../components/ComplianceRoadmap';
-import SEOHead from '../components/SEOHead';
 import {
   Shield,
   Lock,
@@ -92,17 +91,6 @@ export default function Security() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'rgb(var(--color-bg))' }}>
       {/* SEO */}
-      <SEOHead
-        title={{
-          en: 'Security & Compliance | PlainLedger - SOC 2, PIPEDA, Law 25',
-          fr: 'Sécurité et conformité | PlainLedger - SOC 2, PIPEDA, Loi 25',
-        }}
-        description={{
-          en: 'PlainLedger security practices, compliance certifications, and data protection. PIPEDA compliant, Quebec Law 25 compliant, SOC 2 in progress. Data stored in Canada.',
-          fr: 'Pratiques de sécurité PlainLedger, certifications de conformité et protection des données. Conforme PIPEDA, conforme Loi 25, SOC 2 en cours. Données stockées au Canada.',
-        }}
-        canonicalPath="/security"
-      />
 
       {/* Header - Using shared PublicHeader */}
       <PublicHeader minimal />

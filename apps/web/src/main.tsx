@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
+import SEOHead from './components/SEOHead';
 import { KeycloakProvider } from './lib/keycloak';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -40,6 +41,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                   >
                     <NotificationProvider>
                       <ToastProvider>
+                        <SEOHead />
                         <App />
                       </ToastProvider>
                     </NotificationProvider>

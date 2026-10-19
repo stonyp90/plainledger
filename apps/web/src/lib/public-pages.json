@@ -1,0 +1,101 @@
+[
+  {
+    "path": "/",
+    "title": {
+      "fr": "Tableaux de bord financiers pour PME canadiennes | PlainLedger",
+      "en": "Financial dashboards for Canadian SMBs | PlainLedger"
+    },
+    "description": {
+      "fr": "PlainLedger rassemble les rapports financiers, les indicateurs sectoriels et les outils d’analyse pour les entreprises canadiennes.",
+      "en": "PlainLedger brings together financial reports, industry indicators and analysis tools for Canadian businesses."
+    }
+  },
+  {
+    "path": "/newsletter",
+    "title": {
+      "fr": "Infolettre PlainLedger | PlainLedger",
+      "en": "PlainLedger newsletter | PlainLedger"
+    },
+    "description": {
+      "fr": "Découvrez l’infolettre PlainLedger consacrée aux finances d’entreprise et à la comptabilité. Consultez la page pour vous inscrire ou connaître les sujets proposés.",
+      "en": "Explore the PlainLedger newsletter about business finance and accounting. Visit the page to subscribe and see the topics covered."
+    }
+  },
+  {
+    "path": "/terms",
+    "title": {
+      "fr": "Conditions d’utilisation | PlainLedger",
+      "en": "Terms of service | PlainLedger"
+    },
+    "description": {
+      "fr": "Consultez les conditions d’utilisation de la plateforme PlainLedger, notamment les modalités du compte, des abonnements et de l’utilisation du service.",
+      "en": "Read the terms for using the PlainLedger platform, including account, subscription and service conditions."
+    }
+  },
+  {
+    "path": "/privacy",
+    "title": {
+      "fr": "Politique de confidentialité | PlainLedger",
+      "en": "Privacy policy | PlainLedger"
+    },
+    "description": {
+      "fr": "Consultez la politique de confidentialité PlainLedger pour connaître les pratiques concernant les renseignements personnels et la protection des données.",
+      "en": "Read the PlainLedger privacy policy for information about personal information and data protection practices."
+    }
+  },
+  {
+    "path": "/security",
+    "title": {
+      "fr": "Sécurité et protection des données | PlainLedger",
+      "en": "Security and data protection | PlainLedger"
+    },
+    "description": {
+      "fr": "Consultez les renseignements publiés par PlainLedger concernant la sécurité, les contrôles d’accès et la protection des données.",
+      "en": "Review PlainLedger’s published information about security, access controls and data protection."
+    }
+  },
+  {
+    "path": "/quebec",
+    "title": {
+      "fr": "PlainLedger pour les entreprises du Québec | PlainLedger",
+      "en": "PlainLedger for Quebec businesses | PlainLedger"
+    },
+    "description": {
+      "fr": "Explorez les outils de planification financière, les indicateurs et les ressources sur les crédits d’impôt présentés pour les entreprises du Québec.",
+      "en": "Explore the financial planning tools, indicators and tax credit resources presented for Quebec businesses."
+    }
+  },
+  {
+    "path": "/canada",
+    "title": {
+      "fr": "PlainLedger pour les entreprises canadiennes | PlainLedger",
+      "en": "PlainLedger for Canadian businesses | PlainLedger"
+    },
+    "description": {
+      "fr": "Découvrez les rapports financiers, les connexions comptables et les ressources de planification destinés aux entreprises canadiennes. Interface disponible en français et en anglais.",
+      "en": "Explore financial reports, accounting connections and planning resources for Canadian businesses. The interface supports French and English."
+    }
+  },
+  {
+    "path": "/tools/sred-calculator",
+    "title": {
+      "fr": "Calculateur de crédit d’impôt RSDE | PlainLedger",
+      "en": "SR&ED tax credit calculator | PlainLedger"
+    },
+    "description": {
+      "fr": "Utilisez le calculateur pour explorer une estimation de crédit de recherche et développement. Une estimation ne confirme pas l’admissibilité et doit être validée selon votre situation.",
+      "en": "Use the calculator to explore an estimate of research and development credits. An estimate does not confirm eligibility and must be checked for your situation."
+    }
+  },
+  {
+    "path": "/quebec/montreal",
+    "title": {
+      "fr": "PlainLedger pour les entreprises de Montréal | PlainLedger",
+      "en": "PlainLedger for Montreal businesses | PlainLedger"
+    },
+    "description": {
+      "fr": "Découvrez les ressources de planification financière et les renseignements sectoriels présentés pour les entreprises de Montréal.",
+      "en": "Explore the financial planning resources and industry information presented for Montreal businesses."
+    }
+  }
+]

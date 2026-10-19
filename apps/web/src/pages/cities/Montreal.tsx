@@ -13,7 +13,6 @@ import { useAuth } from '../../lib/keycloak';
 import PublicHeader from '../../components/PublicHeader';
 import { useI18n } from '../../lib/i18n';
 import ContactForm from '../../components/ContactForm';
-import SEOHead from '../../components/SEOHead';
 import { 
   ArrowRight,
   Check,
@@ -120,17 +119,6 @@ export default function Montreal() {
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
       {/* SEO */}
-      <SEOHead 
-        title={{
-          en: 'PlainLedger Montreal | Financial Software for Montreal Tech & Gaming Companies',
-          fr: 'PlainLedger Montréal | Logiciel financier pour entreprises tech et jeux vidéo de Montréal',
-        }}
-        description={{
-          en: 'FP&A software for Montreal businesses. CDAE, JEVI, CRIC tax credits. Serving tech, gaming, aerospace, and VFX companies in Montreal. Data stored in Canada.',
-          fr: 'Logiciel FP&A pour entreprises montréalaises. Crédits CDAE, JEVI, CRIC. Pour tech, jeux vidéo, aérospatiale et VFX à Montréal. Données au Canada.',
-        }}
-        canonicalPath="/quebec/montreal"
-      />
 
       {/* Navigation - Using shared PublicHeader */}
       <PublicHeader

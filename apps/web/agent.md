@@ -12,6 +12,14 @@ This is a specialized agent guide for the PlainLedger Web app (React frontend). 
 
 ## Quick Reference
 
+### Public discovery launch requirement
+
+For every public product or route, update `src/lib/public-pages.json`, the canonical sitemap and the public HTML export together. Keep descriptions, schema and AI navigation files factual. Demo metrics are never evidence for customer counts, measured performance, ratings or reviews. `llms.txt` is a navigation aid, not a guarantee of indexing.
+
+Use one shared robots group so private route exclusions apply to all crawlers. Preserve authentication and training preferences. Account, administration, API and shared-document responses require `noindex` and private caching. Do not advertise language alternates until stable URLs actually serve the corresponding translations.
+
+Before release, run `npm run build`, `node --test tests/discoverability.test.mjs` and the SEOHead/worker Vitest tests. Check the deployed public routes, canonical tags, text, sitemap, crawler response and verification file bytes. Preserve analytics and approved brand assets. Record crawl eligibility, submission, confirmed indexing and observed citations separately.
+
 - **Main Agent Guide:** [`../../agent.md`](../../agent.md)
 - **Framework:** React 18 with TypeScript
 - **Build Tool:** Vite

@@ -15,3 +15,155 @@
 # Keep the *.workers.dev copy of the site out of search results (plainledger.ca is canonical)
 https://:worker.:subdomain.workers.dev/*
   X-Robots-Tag: noindex
+
+/app
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/app/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/admin
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/dashboard
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/dashboard/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/settings
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/settings/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/api
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/api/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/graphql
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/graphql/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/shared
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/shared/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/help/knowledge-base
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/help/knowledge-base/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/login
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/login/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/signin
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/signin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/signup
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/signup/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/register
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/register/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/forgot-password
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/forgot-password/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/reset-password
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/reset-password/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/verify-email
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/verify-email/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/onboarding
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/onboarding/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/mfa
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/mfa/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/preview-landing
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/preview-landing/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/silent-check-sso.html
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/silent-check-sso.html/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store

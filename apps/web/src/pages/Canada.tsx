@@ -15,7 +15,6 @@ import { useAuth } from '../lib/keycloak';
 import PublicHeader from '../components/PublicHeader';
 import { useI18n } from '../lib/i18n';
 import ContactForm from '../components/ContactForm';
-import SEOHead from '../components/SEOHead';
 import { 
   ArrowRight,
   Check,
@@ -250,7 +249,6 @@ export default function Canada() {
       style={{ backgroundColor: 'rgb(var(--color-bg))' }}
     >
       {/* SEO */}
-      <SEOHead canonicalPath="/canada" />
       
       {/* Navigation - Using shared PublicHeader */}
       <PublicHeader
