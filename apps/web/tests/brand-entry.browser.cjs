@@ -43,7 +43,7 @@ const server = http.createServer((req, res) => {
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => document.documentElement.dataset.plSplash === 'playing');
       await page.locator('#pl-brand-entry button').first().click();
-      const frame = page.frames().find(f => f.url().includes('/brand/splash/scene.html'));
+      const frame = await (await page.locator('#pl-brand-entry iframe').elementHandle()).contentFrame();
       const before = await frame.evaluate(() => document.querySelector('canvas').toDataURL());
       await page.waitForTimeout(450);
       assert.equal(await frame.evaluate(() => document.querySelector('canvas').toDataURL()), before);

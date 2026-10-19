@@ -1,0 +1,82 @@
+{
+  "url": "https://plainledger.ca/",
+  "checkedAt": "2026-10-19T02:54:58.386Z",
+  "results": [
+    {
+      "test": "automatic playback and visible website handoff",
+      "passed": true,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "test": "full reload replays, pause freezes, Escape skips",
+      "passed": true,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "test": "automatic playback and visible website handoff",
+      "passed": true,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "test": "full reload replays, pause freezes, Escape skips",
+      "passed": true,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "test": "automatic playback and visible website handoff",
+      "passed": true,
+      "width": 320,
+      "height": 568
+    },
+    {
+      "test": "full reload replays, pause freezes, Escape skips",
+      "passed": true,
+      "width": 320,
+      "height": 568
+    },
+    {
+      "test": "automatic playback and visible website handoff",
+      "passed": true,
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "test": "full reload replays, pause freezes, Escape skips",
+      "passed": true,
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "test": "reduced-motion bypass",
+      "passed": true
+    },
+    {
+      "test": "French locale and skip button",
+      "passed": true
+    },
+    {
+      "test": "failed scene does not block website",
+      "passed": true
+    }
+  ],
+  "animationCommit": "15dd6b2bdce803b71f64b677a0c133c84f407102",
+  "cloudflareVersionId": "24d072d4-99c6-45a5-81b7-4babf17f706c",
+  "assetChecks": {
+    "scene.html": {
+      "sha256": "1cef194e16e683999c7a49819c74f0f5c4ca3c60c39cd553375a9144b50e6648",
+      "liveEqualsCommittedSource": true
+    },
+    "entry.js": {
+      "sha256": "0b23dbd33fa41af0f2a92c11b503daed9670103a9f5e199dd19a2745fdc3ea08",
+      "liveEqualsCommittedSource": true
+    },
+    "approval.json": {
+      "sha256": "3cdedda38b4f133213bbbddd7051acdf02b484bdc7bb39fa23508044b1a814b1",
+      "liveEqualsCommittedSource": true
+    }
+  }
+}
